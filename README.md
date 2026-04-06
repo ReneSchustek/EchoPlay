@@ -1,59 +1,66 @@
 # EchoPlay
 
-Windows-Desktop-Anwendung zur Verwaltung von Hörspielserien und -episoden.
+**Hörspiel-Verwaltung für Windows** – Serien entdecken, Episoden verfolgen, lokal und online.
+
+EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organisieren möchten. Serien können aus Online-Quellen (Spotify, Apple Music) importiert oder aus lokalen Audiodateien eingelesen werden. Die App merkt sich den Wiedergabestatus jeder Episode, zeigt Neuerscheinungen an und hilft beim Entdecken fehlender Folgen.
 
 ---
 
-## Zweck
+## Funktionsumfang
 
-EchoPlay ermöglicht das Suchen, Importieren und Verfolgen von Hörspielen aus verschiedenen Streaming-Diensten (Spotify, Apple Music) und lokalen Bibliotheken. Wiedergabestatus, Bibliothek und Einstellungen werden persistent in einer lokalen SQLite-Datenbank gespeichert.
+### Bibliothek
+
+- **Online-Mediathek** – Serien aus Spotify und Apple Music durchsuchen, importieren und verwalten. Kachelansicht mit Cover, Favoriten-Stern und Überwachungs-Icon.
+- **Lokale Mediathek** – Audiodateien scannen und automatisch zu Serien/Episoden zuordnen. Drei-Spalten-Navigation (Serien | Folgen | Tracks).
+- **Nur-Online-Modus** – Für Nutzer ohne lokale Sammlung: lokale Mediathek komplett ausblendbar.
+
+### Dashboard
+
+- **Neuerscheinungen** – Neue Folgen überwachter Serien, monatlich gruppiert. Daten kommen live aus der iTunes-API.
+- **Favoriten** – Schnellzugriff auf Lieblingsserien, per Drag & Drop sortierbar.
+- **Weiterhören** – Serien mit angefangenen, aber nicht abgeschlossenen Episoden.
+- **Zuletzt gehört** – Die letzten Wiedergaben auf einen Blick.
+
+### Wiedergabe
+
+- Integrierter Audioplayer mit MiniPlayer, Zeitanzeige und Playlist-Unterstützung.
+- 8 Audioformate: MP3, M4A, FLAC, OGG, WMA, WAV, AAC, Opus.
+- Automatische Positionsspeicherung – beim nächsten Start wird an der letzten Stelle fortgesetzt.
+
+### Tag-Manager
+
+- Audio-Metadaten lesen und schreiben (TagLib#).
+- Online-Lookup über MusicBrainz mit automatischer Erkennung aus der Ordnerstruktur.
+- Batch-Tagging: gemeinsame Tags auf alle Dateien eines Ordners anwenden.
+- Rekursive Ordnersuche und Mehrfachauswahl.
+- Datei-Umbenennung nach konfigurierbarem Muster.
+
+### Weitere Features
+
+- **Cover-System** – 5 Online-Anbieter, lokaler Fallback, DB-Cache.
+- **6 Themes** – Ruhrcoder, ModernClassic, PaperCoffee, MidnightLibrary, ForestSignal, AmberWhiskey.
+- **Lokalisierung** – Deutsch und Englisch, zur Laufzeit umschaltbar.
+- **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases.
+- **Statistik** – Sammlungsübersicht, Hörfortschritt, Kennzahlen.
+- **Kontexthilfe** – TeachingTips auf jeder Seite für neue Nutzer.
 
 ---
 
 ## Technologie-Stack
 
-| Technologie | Version |
+| Technologie | Einsatz |
 |---|---|
-| .NET | 10 |
-| C# | Neueste Sprachversion |
-| WinUI 3 | Windows App SDK 1.8 |
-| Entity Framework Core | 10 (SQLite) |
-| xUnit | Testframework |
+| .NET 10 / C# | Anwendungsframework |
+| WinUI 3 (Windows App SDK 1.8) | UI-Framework |
+| Entity Framework Core 10 | ORM mit SQLite |
+| TagLib# | Audio-Metadaten |
+| xUnit | Testframework (eigene Fakes, kein Moq) |
 
 ---
 
-## Voraussetzungen
+## Architektur
 
-- Windows 10 (19041) oder neuer
-- .NET 10 SDK
-- Visual Studio 2022 mit WinUI 3 Workload
-
----
-
-## Projekt aufsetzen
-
-```bash
-git clone <repo-url>
-cd EchoPlay
-dotnet build -p:Platform=x64
-dotnet run --project EchoPlay.App
-```
-
-Optional: Spotify-Zugangsdaten in `EchoPlay.App/appsettings.Development.json` hinterlegen, um die Online-Suche zu aktivieren. Die App funktioniert auch ohne Spotify-Anbindung.
-
----
-
-## Tests ausführen
-
-```bash
-dotnet test
-```
-
----
-
-## Architekturübersicht
-
-EchoPlay folgt einer strikten Schichtenarchitektur mit unidirektionalen Abhängigkeiten:
+Strikte Schichtenarchitektur mit unidirektionalen Abhängigkeiten:
 
 ```
 EchoPlay.App          → WinUI 3 UI, Composition Root, Dependency Injection
@@ -63,23 +70,40 @@ EchoPlay.AppleMusic   → iTunes Search API (Suche, Import, Scoring)
 EchoPlay.LocalLibrary → Lokale Bibliotheks-Integration (Scanner, Matcher)
 EchoPlay.Logger       → Eigenes Logging-Framework (keine externen Pakete)
 EchoPlay.TagManager   → Audio-Tag-Editor (TagLib#, MusicBrainz-Lookup)
-EchoPlay.Core         → Fachkern, Heuristiken, Scoring-Interfaces (keine Abhängigkeiten)
+EchoPlay.Core         → Fachkern, Heuristiken, Scoring-Interfaces
 EchoPlay.*.Tests      → Unit-, Integrations- und Smoke-Tests
 ```
 
 ---
 
-## Features
+## Voraussetzungen
 
-- Dashboard (Neuerscheinungen, Favoriten, Weiterhören, Zuletzt gehört)
-- Online-Mediathek (Kachelansicht, Suche/Import, Serien-Überwachung, Favoriten)
-- Lokale Mediathek (Drei-Spalten-Navigation, Scanner, Cover-Loading)
-- Tag-Manager (AudioTag-Editor, MusicBrainz-Lookup, Batch-Tagging, rekursive Ordnersuche, Mehrfachauswahl, Datei-Umbenennung)
-- Audio-Wiedergabe (8 Formate: MP3/M4A/FLAC/OGG/WMA/WAV/AAC/Opus)
-- Cover-System (5 Online-Anbieter, lokaler Fallback, DB-Cache)
-- Einstellungen (Theme, Sprache, Sync, Cache-Management, DB-Pflege)
-- Lokalisierung (Deutsch/Englisch)
-- Auto-Update (GitHub Releases API)
+- Windows 10 (Build 19041) oder neuer
+- .NET 10 SDK
+- Visual Studio 2022 mit WinUI 3 Workload
+
+---
+
+## Schnellstart
+
+```bash
+git clone <repo-url>
+cd EchoPlay
+dotnet build -p:Platform=x64
+dotnet run --project EchoPlay.App
+```
+
+Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche über Spotify können optional Zugangsdaten in `appsettings.Development.json` hinterlegt werden.
+
+---
+
+## Tests
+
+```bash
+dotnet test
+```
+
+Alle Tests laufen ohne externe Abhängigkeiten. Smoke-Tests gegen echte APIs sind standardmäßig übersprungen und erfordern Netzwerkzugang.
 
 ---
 

@@ -40,23 +40,14 @@ git clone <repo-url>
 cd EchoPlay
 ```
 
-Spotify-Zugangsdaten in `EchoPlay.App/appsettings.Development.json` eintragen:
-
-```json
-{
-  "Spotify": {
-    "ClientId": "...",
-    "ClientSecret": "..."
-  }
-}
-```
-
 Starten:
 
 ```bash
-dotnet build
+dotnet build -p:Platform=x64
 dotnet run --project EchoPlay.App
 ```
+
+Optional: Spotify-Zugangsdaten in `EchoPlay.App/appsettings.Development.json` hinterlegen, um die Online-Suche zu aktivieren. Die App funktioniert auch ohne Spotify-Anbindung.
 
 ---
 

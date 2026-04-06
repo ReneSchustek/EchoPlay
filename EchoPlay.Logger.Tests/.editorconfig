@@ -1,0 +1,7 @@
+# Test-Projekt: ConfigureAwait und Dispose in Tests nicht erzwingen
+[*.cs]
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA2000.severity = none
+# LogScope-Tests benötigen using-Blöcke statt using-Deklarationen,
+# weil der Dispose-Zeitpunkt (Block-Ende) für Scope-Assertions wichtig ist
+dotnet_diagnostic.IDE0063.severity = none

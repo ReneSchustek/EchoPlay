@@ -1,0 +1,166 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace EchoPlay.Data.Migrations
+{
+    /// <inheritdoc />
+    public partial class DatabaseOptimization : Migration
+    {
+        private static readonly string[] IsDeletedDeletedAt = ["IsDeleted", "DeletedAt"];
+        private static readonly string[] IsFavoriteTitle = ["IsFavorite", "Title"];
+        private static readonly string[] IsSubscribedTitle = ["IsSubscribed", "Title"];
+        private static readonly string[] IsCompletedEpisodeId = ["IsCompleted", "EpisodeId"];
+        private static readonly string[] EpisodeIdTrackNumber = ["EpisodeId", "TrackNumber"];
+        private static readonly string[] SeriesIdLocalFolderPath = ["SeriesId", "LocalFolderPath"];
+        private static readonly string[] SectionPosition = ["Section", "Position"];
+
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_LocalTracks_EpisodeId",
+                table: "LocalTracks");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Series_AppleMusicArtistId",
+                table: "Series",
+                column: "AppleMusicArtistId",
+                filter: "AppleMusicArtistId IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Series_IsDeleted_DeletedAt",
+                table: "Series",
+                columns: IsDeletedDeletedAt,
+                filter: "IsDeleted = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Series_IsFavorite_Title",
+                table: "Series",
+                columns: IsFavoriteTitle,
+                filter: "IsDeleted = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Series_IsSubscribed_Title",
+                table: "Series",
+                columns: IsSubscribedTitle,
+                filter: "IsDeleted = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Series_SpotifyArtistId",
+                table: "Series",
+                column: "SpotifyArtistId",
+                filter: "SpotifyArtistId IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlaybackStates_IsCompleted_EpisodeId",
+                table: "PlaybackStates",
+                columns: IsCompletedEpisodeId,
+                filter: "IsDeleted = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlaybackStates_IsDeleted_DeletedAt",
+                table: "PlaybackStates",
+                columns: IsDeletedDeletedAt,
+                filter: "IsDeleted = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocalTracks_EpisodeId_TrackNumber",
+                table: "LocalTracks",
+                columns: EpisodeIdTrackNumber);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocalTracks_IsDeleted_DeletedAt",
+                table: "LocalTracks",
+                columns: IsDeletedDeletedAt,
+                filter: "IsDeleted = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Episodes_IsDeleted_DeletedAt",
+                table: "Episodes",
+                columns: IsDeletedDeletedAt,
+                filter: "IsDeleted = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Episodes_SeriesId_LocalFolderPath",
+                table: "Episodes",
+                columns: SeriesIdLocalFolderPath,
+                filter: "IsDeleted = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DashboardPositions_Section_Position",
+                table: "DashboardPositions",
+                columns: SectionPosition,
+                filter: "IsDeleted = 0");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_DashboardPositions_Series_SeriesId",
+                table: "DashboardPositions",
+                column: "SeriesId",
+                principalTable: "Series",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropForeignKey(
+                name: "FK_DashboardPositions_Series_SeriesId",
+                table: "DashboardPositions");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Series_AppleMusicArtistId",
+                table: "Series");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Series_IsDeleted_DeletedAt",
+                table: "Series");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Series_IsFavorite_Title",
+                table: "Series");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Series_IsSubscribed_Title",
+                table: "Series");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Series_SpotifyArtistId",
+                table: "Series");
+
+            migrationBuilder.DropIndex(
+                name: "IX_PlaybackStates_IsCompleted_EpisodeId",
+                table: "PlaybackStates");
+
+            migrationBuilder.DropIndex(
+                name: "IX_PlaybackStates_IsDeleted_DeletedAt",
+                table: "PlaybackStates");
+
+            migrationBuilder.DropIndex(
+                name: "IX_LocalTracks_EpisodeId_TrackNumber",
+                table: "LocalTracks");
+
+            migrationBuilder.DropIndex(
+                name: "IX_LocalTracks_IsDeleted_DeletedAt",
+                table: "LocalTracks");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Episodes_IsDeleted_DeletedAt",
+                table: "Episodes");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Episodes_SeriesId_LocalFolderPath",
+                table: "Episodes");
+
+            migrationBuilder.DropIndex(
+                name: "IX_DashboardPositions_Section_Position",
+                table: "DashboardPositions");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocalTracks_EpisodeId",
+                table: "LocalTracks",
+                column: "EpisodeId");
+        }
+    }
+}

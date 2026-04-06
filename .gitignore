@@ -1,0 +1,85 @@
+# KI-/Projekt-Metadaten – nur lokal
+.ai/
+CLAUDE.md
+CHANGELOG.md
+SECURITY.md
+INSTALLER.md
+reviews/
+
+# Build-Artefakte
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+.vs/
+*.ncrunchproject
+*.ncrunchsolution
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/repositories.config
+*.lock.json
+
+# Test-Ergebnisse
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+*.TestResults.xml
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+CoverageReport/
+
+# Publish / Deployment
+[Pp]ublish/
+publish/
+PublishProfiles/
+*.pubxml
+*.pubxml.user
+
+# Datenbank / SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+
+# Secrets / Konfiguration – appsettings.json darf in Git (enthält nur Base-URLs, keine Secrets)
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Secrets.json
+appsettings.Production.json
+secrets.json
+*.pfx
+*.p12
+*.key
+.env
+.env.*
+!.env.example
+
+# Installer / Builds
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+setup/Output/
+*.exe
+!**/Properties/PublishProfiles/*.pubxml
+
+# Logs
+*.log
+logs/
+
+# Build-Diagnose
+*.binlog
+solution_dump.txt
+

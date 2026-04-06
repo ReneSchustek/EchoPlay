@@ -1,0 +1,202 @@
+using EchoPlay.Data.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System;
+using System.Windows.Input;
+
+namespace EchoPlay.App.ViewModels
+{
+    /// <summary>
+    /// Kachel-ViewModel für eine Hörspielserie in der linken Spalte der lokalen Mediathek.
+    /// Nur Serien mit einem lokal zugeordneten Ordner (<see cref="LocalFolderPath"/> != null) werden hier angezeigt.
+    /// </summary>
+    /// <remarks>
+    /// Erweitert <see cref="ObservableObject"/>, damit <see cref="CoverImage"/> und <see cref="IsFavorite"/>
+    /// nachträglich geändert werden können, ohne die Liste neu aufzubauen. Das ViewModel der lokalen Mediathek
+    /// zeigt die Serien-Kacheln sofort an – Cover laden progressiv im Hintergrund nach.
+    /// </remarks>
+    public sealed class LocalArtistCardViewModel : ObservableObject, IAccordionSelectable
+    {
+        private readonly IServiceScopeFactory _scopeFactory;
+        private BitmapImage? _coverImage;
+        private bool _isFavorite;
+        private bool _isWatched;
+        private bool _isSelectedInAccordion;
+
+        /// <summary>
+        /// Erstellt ein Kachel-ViewModel für die linke Spalte.
+        /// </summary>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
+        /// <param name="title">Titel der Serie.</param>
+        /// <param name="coverImage">Vorschaubild oder null wenn kein Cover vorhanden ist.</param>
+        /// <param name="localFolderPath">Lokaler Serienordner – für den "Alle Tracks"-Button.</param>
+        /// <param name="localEpisodeCount">Episoden mit mindestens einem lokal gefundenen Track.</param>
+        /// <param name="totalEpisodeCount">Gesamtanzahl aller Episoden dieser Serie.</param>
+        /// <param name="isFavorite">Ob die Serie aktuell als Favorit markiert ist.</param>
+        /// <param name="isWatched">Ob die Serie auf Neuerscheinungen überwacht wird.</param>
+        /// <param name="scopeFactory">Für scoped DB-Zugriffe beim Favoriten-Toggle.</param>
+        public LocalArtistCardViewModel(
+            Guid seriesId,
+            string title,
+            BitmapImage? coverImage,
+            string? localFolderPath,
+            int localEpisodeCount,
+            int totalEpisodeCount,
+            bool isFavorite,
+            bool isWatched,
+            IServiceScopeFactory scopeFactory)
+        {
+            SeriesId          = seriesId;
+            Title             = title;
+            _coverImage       = coverImage;
+            LocalFolderPath   = localFolderPath;
+            LocalEpisodeCount = localEpisodeCount;
+            TotalEpisodeCount = totalEpisodeCount;
+            _isFavorite       = isFavorite;
+            _isWatched        = isWatched;
+            _scopeFactory     = scopeFactory;
+
+            ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
+        }
+
+        /// <summary>Datenbank-ID der Serie.</summary>
+        public Guid SeriesId { get; }
+
+        /// <summary>Titel der Serie.</summary>
+        public string Title { get; }
+
+        /// <summary>
+        /// Vorschaubild der Serie oder null wenn keine Coverdaten vorhanden sind.
+        /// Wird nach dem ersten Anzeigen der Liste im Hintergrund nachgeladen –
+        /// das Setzen dieser Property löst <c>PropertyChanged</c> aus und aktualisiert
+        /// die Kachel automatisch dank <c>Mode=OneWay</c> im XAML.
+        /// </summary>
+        public BitmapImage? CoverImage
+        {
+            get => _coverImage;
+            set
+            {
+                if (SetProperty(ref _coverImage, value))
+                {
+                    // NoCoverVisibility hängt direkt vom Cover ab – bei Änderung mitfeuern
+                    OnPropertyChanged(nameof(NoCoverVisibility));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Pfad zum lokalen Serienordner.
+        /// Wird beim "Alle Tracks dieser Serie"-Button als Argument für den Tag-Manager übergeben.
+        /// </summary>
+        public string? LocalFolderPath { get; }
+
+        /// <summary>Anzahl der Episoden mit mindestens einem lokal gefundenen Track.</summary>
+        public int LocalEpisodeCount { get; }
+
+        /// <summary>Gesamtanzahl aller Episoden dieser Serie.</summary>
+        public int TotalEpisodeCount { get; }
+
+        /// <summary>
+        /// Anzeige-Text der Episodenzähler, z.B. "3 / 10".
+        /// Zeigt wie viele Episoden lokal vorhanden sind gegenüber der Gesamtanzahl.
+        /// </summary>
+        public string CountText => $"{LocalEpisodeCount} / {TotalEpisodeCount}";
+
+        /// <summary>
+        /// Sichtbarkeit des Platzhalter-Icons.
+        /// Eingeblendet wenn kein Cover vorhanden ist, damit die Kachel nicht leer wirkt.
+        /// Wird automatisch aktualisiert wenn <see cref="CoverImage"/> sich ändert.
+        /// </summary>
+        public Visibility NoCoverVisibility => _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Gibt an, ob diese Serie als Favorit markiert ist.
+        /// Der Stern auf der Kachel wechselt zwischen gefüllt und leer.
+        /// </summary>
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            private set
+            {
+                if (SetProperty(ref _isFavorite, value))
+                {
+                    OnPropertyChanged(nameof(FavoriteGlyph));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stern-Symbol für die Kachel: gefüllt (★) wenn Favorit, leer (☆) wenn nicht.
+        /// Segoe Fluent Icons: E735 = FavoriteStarFill (gefüllt), E734 = FavoriteStar (leer).
+        /// </summary>
+        public string FavoriteGlyph => _isFavorite ? "\uE735" : "\uE734";
+
+        /// <summary>
+        /// Schaltet den Favoritenstatus der Serie um und persistiert die Änderung in der Datenbank.
+        /// </summary>
+        public ICommand ToggleFavoriteCommand { get; }
+
+        /// <summary>
+        /// Gibt an, ob die Serie auf Neuerscheinungen überwacht wird.
+        /// </summary>
+        public bool IsWatched
+        {
+            get => _isWatched;
+            set
+            {
+                if (SetProperty(ref _isWatched, value))
+                {
+                    OnPropertyChanged(nameof(WatchedGlyph));
+                    OnPropertyChanged(nameof(WatchedVisibility));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Auge-Symbol für die Kachel: Segoe Fluent Icons E7B3 = RedEye.
+        /// </summary>
+        public string WatchedGlyph => "\uE7B3";
+
+        /// <summary>
+        /// Sichtbarkeit des Überwachungs-Icons: nur bei überwachten Serien eingeblendet.
+        /// </summary>
+        public Visibility WatchedVisibility =>
+            _isWatched ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Gibt an, ob diese Serie im Akkordeon aufgeklappt ist.
+        /// Steuert das V-Icon unter der Kachel.
+        /// </summary>
+        public bool IsSelectedInAccordion
+        {
+            get => _isSelectedInAccordion;
+            set
+            {
+                if (SetProperty(ref _isSelectedInAccordion, value))
+                {
+                    OnPropertyChanged(nameof(SelectedIndicatorVisibility));
+                }
+            }
+        }
+
+        /// <summary>Sichtbarkeit des V-Pfeils unter der Kachel.</summary>
+        public Visibility SelectedIndicatorVisibility =>
+            _isSelectedInAccordion ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Schaltet den Favoritenstatus um: Favorit → kein Favorit, kein Favorit → Favorit.
+        /// Speichert den neuen Status sofort in der Datenbank.
+        /// </summary>
+        private async System.Threading.Tasks.Task ToggleFavoriteAsync()
+        {
+            bool newValue = !_isFavorite;
+
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+
+            await seriesService.SetFavoriteAsync(SeriesId, newValue);
+            IsFavorite = newValue;
+        }
+    }
+}

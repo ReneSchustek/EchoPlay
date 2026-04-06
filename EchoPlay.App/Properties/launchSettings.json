@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "EchoPlay.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "EchoPlay.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

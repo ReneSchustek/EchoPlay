@@ -1,0 +1,3 @@
+# App-Projekt: kein ConfigureAwait nötig (WinUI-UI-Thread)
+[*.cs]
+dotnet_diagnostic.CA2007.severity = none

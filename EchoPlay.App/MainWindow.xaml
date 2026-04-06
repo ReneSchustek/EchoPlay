@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="EchoPlay.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:EchoPlay.App.ViewModels"
+    Title="EchoPlay">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <!-- Vier Zeilen: NavigationView-Shell / MiniPlayer / Scan-Fortschrittsbalken / Info-Leiste -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- FontFamily propagiert vom NavigationView an alle gehosteten Seiten und Nav-Elemente -->
+        <NavigationView
+            Grid.Row="0"
+            x:Name="NavView"
+            FontFamily="{ThemeResource ThemeFontFamily}"
+            PaneDisplayMode="Left"
+            IsSettingsVisible="True"
+            IsBackButtonVisible="Auto"
+            SelectionChanged="OnSelectionChanged"
+            BackRequested="OnBackRequested"
+            Loaded="OnLoaded">
+
+            <NavigationView.MenuItems>
+                <NavigationViewItem
+                    x:Name="NavStartseite"
+                    x:Uid="NavStartseite"
+                    Tag="Startseite">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <!-- Mediathek ist ein expandierbarer Eintrag mit zwei Unterseiten -->
+                <NavigationViewItem
+                    x:Uid="NavMediathek"
+                    Tag="Mediathek">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7EE;" />
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem
+                            x:Name="NavMediathekOnline"
+                            x:Uid="NavMediathekOnline"
+                            Tag="MediathekOnline"
+                            Visibility="{x:Bind StatusBar.OnlineMediathekVisibility, Mode=OneWay}">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE774;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem
+                            x:Name="NavMediathekLokal"
+                            x:Uid="NavMediathekLokal"
+                            Tag="MediathekLokal">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8B7;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <!-- Tag-Manager: Audio-Metadaten für lokale Dateien bearbeiten -->
+                        <NavigationViewItem
+                            x:Name="NavTagManager"
+                            x:Uid="NavTagManager"
+                            Tag="TagManager">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8EC;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+
+                <NavigationViewItem
+                    x:Name="NavSuche"
+                    x:Uid="NavSuche"
+                    Tag="Suche">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE721;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem
+                    x:Name="NavPlayer"
+                    x:Uid="NavPlayer"
+                    Tag="Player">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE768;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem
+                    x:Name="NavStatistik"
+                    x:Uid="NavStatistik"
+                    Tag="Statistik">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem x:Name="NavUeber" x:Uid="NavUeber" Tag="Ueber">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE946;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
+            <Frame x:Name="ContentFrame" />
+
+        </NavigationView>
+
+        <!-- MiniPlayer – eingeblendet sobald etwas spielt -->
+        <Grid
+            Grid.Row="1"
+            x:Name="MiniPlayerPanel"
+            Height="72"
+            Padding="16,0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Visibility="{x:Bind MiniPlayer.MiniPlayerVisibility, Mode=OneWay}">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Linke Spalte: Nur Tracktitel -->
+            <TextBlock
+                Grid.Column="0"
+                Text="{x:Bind MiniPlayer.TrackTitle, Mode=OneWay}"
+                TextTrimming="CharacterEllipsis"
+                Style="{ThemeResource BodyStrongTextBlockStyle}"
+                VerticalAlignment="Center"/>
+
+            <!-- Steuerbuttons, Geschwindigkeit und Sleep-Timer -->
+            <StackPanel
+                Grid.Column="1"
+                Orientation="Horizontal"
+                Spacing="8"
+                VerticalAlignment="Center">
+                <Button
+                    x:Uid="MiniPlayerPreviousButton"
+                    Command="{x:Bind MiniPlayer.PreviousCommand}">
+                    <FontIcon Glyph="&#xE892;" FontSize="16"/>
+                </Button>
+                <Button
+                    x:Uid="MiniPlayerPlayPauseButton"
+                    Click="OnPlayPauseClick">
+                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="18"/>
+                </Button>
+                <Button
+                    x:Uid="MiniPlayerNextButton"
+                    Command="{x:Bind MiniPlayer.NextCommand}">
+                    <FontIcon Glyph="&#xE893;" FontSize="16"/>
+                </Button>
+                <ComboBox
+                    x:Name="SpeedComboBox"
+                    x:Uid="MiniPlayerSpeedComboBox"
+                    SelectionChanged="OnSpeedSelectionChanged"
+                    MinWidth="80">
+                    <ComboBoxItem Tag="0.75" Content="0.75×"/>
+                    <ComboBoxItem Tag="1.0" Content="1×"/>
+                    <ComboBoxItem Tag="1.25" Content="1.25×"/>
+                    <ComboBoxItem Tag="1.5" Content="1.5×"/>
+                    <ComboBoxItem Tag="2.0" Content="2×"/>
+                </ComboBox>
+                <Button x:Uid="MiniPlayerSleepTimerButton">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Uid="SleepTimer15" Click="OnSleepTimer15Clicked"/>
+                            <MenuFlyoutItem x:Uid="SleepTimer30" Click="OnSleepTimer30Clicked"/>
+                            <MenuFlyoutItem x:Uid="SleepTimer45" Click="OnSleepTimer45Clicked"/>
+                            <MenuFlyoutItem x:Uid="SleepTimer60" Click="OnSleepTimer60Clicked"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem x:Uid="SleepTimerOff" Click="OnSleepTimerOffClicked"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <FontIcon Glyph="&#xE708;" FontSize="14"/>
+                        <TextBlock
+                            Text="{x:Bind MiniPlayer.SleepTimerText, Mode=OneWay}"
+                            VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+            </StackPanel>
+
+            <!-- Rechte Spalte: Slider + Zeitanzeige darunter -->
+            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="0">
+                <Slider
+                    x:Name="SeekSlider"
+                    Minimum="0"
+                    Maximum="{x:Bind MiniPlayer.DurationSeconds, Mode=OneWay}"
+                    ValueChanged="OnSeekSliderChanged"/>
+                <!-- Zeitanzeige bündig unter dem Slider – Margin 12 px wie in PlayerPage -->
+                <Grid Margin="12,-4,12,0">
+                    <TextBlock
+                        Text="{x:Bind MiniPlayer.ElapsedText, Mode=OneWay}"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        HorizontalAlignment="Left"/>
+                    <TextBlock
+                        Text="{x:Bind MiniPlayer.RemainingText, Mode=OneWay}"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        HorizontalAlignment="Right"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Schließen-Button: oben rechts im MiniPlayer, wie ein klassischer Fenster-Schließen-Button.
+                 Überlagert alle drei Spalten, damit er immer in der rechten oberen Ecke sitzt.
+                 Click statt Command, damit nach Stop() das Panel sofort ausgeblendet wird –
+                 das reine Command + DispatcherQueue-Dispatch hat eine Race-Condition mit
+                 MediaPlaybackList.CurrentItemChanged. -->
+            <Button
+                Grid.ColumnSpan="3"
+                x:Uid="MiniPlayerCloseButton"
+                Click="OnMiniPlayerCloseClick"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Padding="6"
+                Margin="0,4,4,0"
+                Background="Transparent"
+                Style="{ThemeResource SubtleButtonStyle}">
+                <FontIcon Glyph="&#xE711;" FontSize="12"/>
+            </Button>
+
+        </Grid>
+
+        <!-- Scan-Fortschrittsbalken – 3 px hoch, nur sichtbar während ein Scan läuft.
+             IsIndeterminate wechselt automatisch: deterministisch sobald TotalFiles bekannt ist. -->
+        <ProgressBar
+            Grid.Row="2"
+            Height="3"
+            Maximum="100"
+            IsIndeterminate="{x:Bind StatusBar.IsScanIndeterminate, Mode=OneWay}"
+            Value="{x:Bind StatusBar.ScanProgressValue, Mode=OneWay}"
+            HorizontalAlignment="Stretch"
+            Visibility="{x:Bind StatusBar.ScanProgressVisibility, Mode=OneWay}"/>
+
+        <!-- Info-Leiste: Statistiken, Theme-Flyout, Sprachwechsel-Flyout -->
+        <Grid
+            Grid.Row="3"
+            Height="32"
+            Background="{ThemeResource AppBackgroundBrush}"
+            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Linke Gruppe: Theme-Button + Statistik-Texte -->
+            <StackPanel
+                Grid.Column="0"
+                Orientation="Horizontal"
+                VerticalAlignment="Center">
+
+                <!-- Theme-Wechsel-Button mit Palette-Icon (E790) -->
+                <Button
+                    Padding="8,4"
+                    BorderThickness="0"
+                    Background="Transparent"
+                    VerticalAlignment="Center">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem
+                                Text="Ruhrcoder"
+                                Tag="Ruhrcoder"
+                                Click="OnStatusBarThemeClick"/>
+                            <MenuFlyoutItem
+                                Text="Modern Classic"
+                                Tag="ModernClassic"
+                                Click="OnStatusBarThemeClick"/>
+                            <MenuFlyoutItem
+                                Text="Paper Coffee"
+                                Tag="PaperCoffee"
+                                Click="OnStatusBarThemeClick"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem
+                                Text="Midnight Library"
+                                Tag="MidnightLibrary"
+                                Click="OnStatusBarThemeClick"/>
+                            <MenuFlyoutItem
+                                Text="Forest Signal"
+                                Tag="ForestSignal"
+                                Click="OnStatusBarThemeClick"/>
+                            <MenuFlyoutItem
+                                Text="Amber Whiskey"
+                                Tag="AmberWhiskey"
+                                Click="OnStatusBarThemeClick"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                    <FontIcon Glyph="&#xE790;" FontSize="12"/>
+                </Button>
+
+                <Rectangle
+                    Width="1"
+                    Height="16"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Margin="4,0"/>
+
+                <!-- Abonnierte Serien -->
+                <TextBlock
+                    Text="{x:Bind StatusBar.SubscribedSeriesText, Mode=OneWay}"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Margin="8,0"/>
+
+                <Rectangle
+                    Width="1"
+                    Height="16"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Margin="4,0"/>
+
+                <!-- Gehörte Folgen -->
+                <TextBlock
+                    Text="{x:Bind StatusBar.FinishedEpisodesText, Mode=OneWay}"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Margin="8,0"/>
+
+                <Rectangle
+                    Width="1"
+                    Height="16"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Margin="4,0"/>
+
+                <!-- Offene Folgen -->
+                <TextBlock
+                    Text="{x:Bind StatusBar.UnfinishedEpisodesText, Mode=OneWay}"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Margin="8,0"/>
+
+                <!-- Neue Folgen – Separator und Badge nur sichtbar wenn > 0 -->
+                <Rectangle
+                    Width="1"
+                    Height="16"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Margin="4,0"
+                    Visibility="{x:Bind StatusBar.NewEpisodesSeparatorVisibility, Mode=OneWay}"/>
+                <TextBlock
+                    Text="{x:Bind StatusBar.NewEpisodesText, Mode=OneWay}"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Margin="8,0"
+                    Visibility="{x:Bind StatusBar.NewEpisodesVisibility, Mode=OneWay}"/>
+
+                <!-- Roter Hinweis auf ungespeicherte Einstellungen – nur sichtbar wenn Änderungen offen -->
+                <Rectangle
+                    Width="1"
+                    Height="16"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Margin="4,0"
+                    Visibility="{x:Bind StatusBar.UnsavedSettingsVisibility, Mode=OneWay}"/>
+                <TextBlock
+                    x:Uid="UnsavedSettingsHint"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="#E53935"
+                    Margin="8,0"
+                    Visibility="{x:Bind StatusBar.UnsavedSettingsVisibility, Mode=OneWay}"/>
+
+            </StackPanel>
+
+            <!-- Mittlere Gruppe: Scan-Fortschrittstext – nur sichtbar während ein Scan läuft -->
+            <TextBlock
+                Grid.Column="1"
+                Text="{x:Bind StatusBar.ScanProgressText, Mode=OneWay}"
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                TextTrimming="CharacterEllipsis"
+                MaxWidth="300"
+                Visibility="{x:Bind StatusBar.ScanProgressVisibility, Mode=OneWay}"/>
+
+            <!-- Rechte Gruppe: Aktiver Dienst + Sprachwechsel-Button -->
+            <StackPanel
+                Grid.Column="2"
+                Orientation="Horizontal"
+                VerticalAlignment="Center">
+
+                <!-- Online/Offline-Status: Grün wenn online, Grau wenn Offline-Modus aktiv -->
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="4"
+                    Margin="0,0,8,0"
+                    ToolTipService.ToolTip="{x:Bind StatusBar.OnlineOfflineText, Mode=OneWay}">
+                    <FontIcon
+                        Glyph="{x:Bind StatusBar.OnlineOfflineGlyph, Mode=OneWay}"
+                        FontSize="12"
+                        Foreground="{x:Bind StatusBar.OnlineOfflineBrush, Mode=OneWay}"
+                        VerticalAlignment="Center"/>
+                    <TextBlock
+                        Text="{x:Bind StatusBar.OnlineOfflineText, Mode=OneWay}"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Foreground="{x:Bind StatusBar.OnlineOfflineBrush, Mode=OneWay}"
+                        VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Aktiver Metadaten-Anbieter, z.B. "Spotify" oder "Apple Music" -->
+                <TextBlock
+                    Text="{x:Bind StatusBar.ActiveProviderDisplay, Mode=OneWay}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    VerticalAlignment="Center"
+                    Margin="0,0,8,0"/>
+
+                <Button
+                    Padding="8,4"
+                    BorderThickness="0"
+                    Background="Transparent"
+                    VerticalAlignment="Center">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem
+                                Text="Deutsch"
+                                Tag="de"
+                                Click="OnStatusBarLanguageClick"/>
+                            <MenuFlyoutItem
+                                Text="English"
+                                Tag="en"
+                                Click="OnStatusBarLanguageClick"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <FontIcon Glyph="&#xE128;" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock
+                            Text="{x:Bind StatusBar.ActiveLanguageDisplay, Mode=OneWay}"
+                            VerticalAlignment="Center"
+                            Style="{ThemeResource CaptionTextBlockStyle}"/>
+                    </StackPanel>
+                </Button>
+
+            </StackPanel>
+
+        </Grid>
+
+        <!-- Theme-Wechsel-Overlay: semitr. Deckfolie mit Ladeindikator während das neue Theme angewendet wird.
+             Statische Farbe statt ThemeResource – sonst würde der Overlay selbst beim Wechsel aufleuchten.
+             Liegt über allen anderen Inhalten (letztes Kind im Grid = höchster Z-Index). -->
+        <Grid
+            x:Name="ThemeLoadingOverlay"
+            Grid.RowSpan="4"
+            Background="#CC1A1A1A"
+            Visibility="Collapsed">
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="16">
+                <ProgressRing
+                    IsActive="True"
+                    Width="36"
+                    Height="36"
+                    HorizontalAlignment="Center"/>
+                <TextBlock
+                    Text="Theme wird geladen …"
+                    HorizontalAlignment="Center"
+                    Style="{ThemeResource BodyTextBlockStyle}"/>
+            </StackPanel>
+        </Grid>
+
+    </Grid>
+
+</Window>

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows-TFM erforderlich, da EchoPlay.App net10.0-windows10.0.19041.0 als einzigen TFM hat -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- Kein WinUI – Tests laufen ohne echten XAML-Host -->
+    <UseWinUI>false</UseWinUI>
+    <!-- EchoPlay.App wird als x64 gebaut – Testprojekt muss dieselbe Architektur verwenden -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EchoPlay.App\EchoPlay.App.csproj" />
+    <ProjectReference Include="..\EchoPlay.Data\EchoPlay.Data.csproj" />
+    <ProjectReference Include="..\EchoPlay.LocalLibrary\EchoPlay.LocalLibrary.csproj" />
+    <ProjectReference Include="..\EchoPlay.Core\EchoPlay.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

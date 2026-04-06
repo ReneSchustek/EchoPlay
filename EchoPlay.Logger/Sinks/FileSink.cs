@@ -1,0 +1,117 @@
+﻿using EchoPlay.Logger.Abstractions;
+using EchoPlay.Logger.Models;
+using System.Globalization;
+
+namespace EchoPlay.Logger.Sinks
+{
+    /// <summary>
+    /// Schreibt Log-Einträge in Dateien mit täglicher Rotation und Größenlimit.
+    /// </summary>
+    public class FileSink : ILogSink
+    {
+        private readonly string _logDirectory;
+        private readonly ILogFormatter _formatter;
+        private readonly long _maxFileSizeBytes;
+
+        /// <summary>
+        /// Erstellt einen neuen FileSink.
+        /// </summary>
+        /// <param name="logDirectory">Verzeichnis für Log-Dateien.</param>
+        /// <param name="formatter">Der Formatter für die Log-Ausgabe.</param>
+        /// <param name="maxFileSizeMb">Maximale Dateigröße in MB (Standard: 10).</param>
+        public FileSink(string logDirectory, ILogFormatter formatter, int maxFileSizeMb = 10)
+        {
+            _logDirectory = logDirectory;
+            _formatter = formatter;
+            _maxFileSizeBytes = maxFileSizeMb * 1024 * 1024;
+
+            try
+            {
+                if (!Directory.Exists(_logDirectory))
+                {
+                    Directory.CreateDirectory(_logDirectory);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fallback bei Rechteproblem oder ungültigem Pfad: AppData\EchoPlay\Logs nutzen.
+                // Das aktuelle Verzeichnis ist kein tauglicher Fallback – in installierten Apps
+                // liegt das oft unter C:\Program Files\, wo Schreibzugriff verweigert wird.
+                System.Diagnostics.Trace.WriteLine($"FileSink: Konnte Verzeichnis nicht erstellen: {ex.Message}");
+
+                string fallback = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "EchoPlay", "Logs");
+
+                try
+                {
+                    Directory.CreateDirectory(fallback);
+                    _logDirectory = fallback;
+                }
+                catch
+                {
+                    // Kein beschreibbares Verzeichnis verfügbar – Logging deaktiviert.
+                    // Fehler werden in WriteAsync stillschweigend geloggt.
+                    _logDirectory = string.Empty;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Schreibt einen Log-Eintrag asynchron in die Tagesdatei.
+        /// </summary>
+        /// <param name="entry">Der zu schreibende Log-Eintrag.</param>
+        /// <returns>Ein Task der die asynchrone Operation repräsentiert.</returns>
+        public async Task WriteAsync(LogEntry entry)
+        {
+            // Wenn der Konstruktor kein beschreibbares Verzeichnis finden konnte,
+            // wird WriteAsync stillschweigend zu einem No-Op.
+            if (string.IsNullOrEmpty(_logDirectory))
+            {
+                return;
+            }
+
+            try
+            {
+                string filePath = GetCurrentFilePath();
+                string formattedMessage = _formatter.Format(entry);
+
+                await File.AppendAllTextAsync(filePath, formattedMessage + Environment.NewLine).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // Letzter Ausweg: Wenigstens in Debug-Konsole schreiben
+                System.Diagnostics.Trace.WriteLine($"FileSink: Schreiben fehlgeschlagen: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Ermittelt den Pfad zur aktuellen Log-Datei.
+        /// Berücksichtigt tägliche Rotation und Größenlimit.
+        /// </summary>
+        /// <returns>Vollständiger Pfad zur Log-Datei.</returns>
+        private string GetCurrentFilePath()
+        {
+            string baseName = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string filePath = Path.Combine(_logDirectory, $"{baseName}.log");
+
+            // Hauptdatei existiert nicht oder hat noch Platz? → nutzen
+            if (!File.Exists(filePath) || new FileInfo(filePath).Length < _maxFileSizeBytes) return filePath;
+
+            // Hauptdatei voll → suche nächste freie Nummer
+            int counter = 1;
+            while (counter < 1000) // Sicherheitslimit
+            {
+                filePath = Path.Combine(_logDirectory, $"{baseName}_{counter:D3}.log");
+
+                // Datei existiert nicht oder hat noch Platz? → nutzen
+                if (!File.Exists(filePath) || new FileInfo(filePath).Length < _maxFileSizeBytes)  return filePath;
+
+                counter++;
+            }
+
+            // Notfall: Mehr als 1000 Dateien an einem Tag? Überschreibe letzte.
+            return filePath;
+        }
+    }
+}

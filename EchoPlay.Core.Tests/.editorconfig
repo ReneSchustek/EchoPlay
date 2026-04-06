@@ -1,0 +1,4 @@
+# Test-Projekt: ConfigureAwait und Dispose in Tests nicht erzwingen
+[*.cs]
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA2000.severity = none

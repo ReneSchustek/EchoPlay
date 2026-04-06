@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test (.NET 10 / Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Quellcode auschecken
+        uses: actions/checkout@v4
+
+      - name: .NET 10 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Abhängigkeiten wiederherstellen
+        run: dotnet restore EchoPlay.slnx
+
+      - name: Build Library-Projekte
+        run: |
+          dotnet build EchoPlay.Core/EchoPlay.Core.csproj --no-restore
+          dotnet build EchoPlay.Logger/EchoPlay.Logger.csproj --no-restore
+          dotnet build EchoPlay.Data/EchoPlay.Data.csproj --no-restore
+          dotnet build EchoPlay.Spotify/EchoPlay.Spotify.csproj --no-restore
+          dotnet build EchoPlay.LocalLibrary/EchoPlay.LocalLibrary.csproj --no-restore
+          dotnet build EchoPlay.TagManager/EchoPlay.TagManager.csproj --no-restore
+
+      - name: Build App (x64)
+        run: dotnet build EchoPlay.App/EchoPlay.App.csproj -p:Platform=x64 --no-restore
+
+      - name: Tests Library-Projekte
+        run: |
+          dotnet test EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj --no-build --verbosity normal
+          dotnet test EchoPlay.Data.Tests/EchoPlay.Data.Tests.csproj --no-build --verbosity normal
+          dotnet test EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj --no-build --verbosity normal
+
+      - name: Tests App (x64)
+        run: dotnet test EchoPlay.App.Tests/EchoPlay.App.Tests.csproj -p:Platform=x64 --no-build --verbosity normal
+        continue-on-error: true
+
+      - name: Security-Audit
+        run: dotnet list package --vulnerable
+        continue-on-error: true

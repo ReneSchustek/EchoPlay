@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wiederverwendbares Akkordeon für Episoden – identisches Layout in lokaler und Online-Mediathek.
+     Border, GridView und dynamische Breitenberechnung sind zentral.
+     Der Header-Bereich wird von außen als Content übergeben (jede Page hat eigene Controls). -->
+<UserControl
+    x:Class="EchoPlay.App.Controls.EpisodeAccordionControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border
+        x:Name="OuterBorder"
+        Margin="0,4,0,4"
+        HorizontalAlignment="Left"
+        Padding="0,8,0,4"
+        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
+
+        <StackPanel>
+            <!-- Header-Bereich – wird von der Page befüllt -->
+            <ContentPresenter x:Name="HeaderPresenter" Padding="12,0,12,4"/>
+
+            <!-- Episoden-Kachelgrid – kein eigenes Scrolling, äußerer ScrollViewer übernimmt -->
+            <GridView
+                x:Name="EpisodesGridView"
+                SelectionMode="None"
+                ScrollViewer.VerticalScrollMode="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                ScrollViewer.HorizontalScrollMode="Disabled"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <GridView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="148"/>
+                    </ItemsPanelTemplate>
+                </GridView.ItemsPanel>
+                <GridView.ItemContainerStyle>
+                    <Style TargetType="GridViewItem">
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                    </Style>
+                </GridView.ItemContainerStyle>
+            </GridView>
+        </StackPanel>
+    </Border>
+</UserControl>

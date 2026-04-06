@@ -1,0 +1,1129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- NavigationView – main menu -->
+  <data name="NavUeber.Content" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="NavTagManager.Content" xml:space="preserve">
+    <value>Tag Manager</value>
+  </data>
+  <data name="NavStartseite.Content" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="NavMediathek.Content" xml:space="preserve">
+    <value>Media Library</value>
+  </data>
+  <data name="NavMediathekOnline.Content" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="NavMediathekLokal.Content" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="NavSuche.Content" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="NavPlayer.Content" xml:space="preserve">
+    <value>Player</value>
+  </data>
+  <data name="NavStatistik.Content" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+
+  <!-- StatistikPage -->
+  <data name="StatistikHeading.Text" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="StatistikSammlungHeading.Text" xml:space="preserve">
+    <value>Collection</value>
+  </data>
+  <data name="StatistikSerien.Text" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="StatistikFolgen.Text" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="StatistikFortschrittHeading.Text" xml:space="preserve">
+    <value>Listening progress</value>
+  </data>
+  <data name="StatistikGehoert.Text" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="StatistikAngefangen.Text" xml:space="preserve">
+    <value>In progress</value>
+  </data>
+
+  <!-- MiniPlayer – tooltips and sleep timer -->
+  <data name="MiniPlayerPreviousButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Previous track</value>
+  </data>
+  <data name="MiniPlayerPlayPauseButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="MiniPlayerNextButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Next track</value>
+  </data>
+  <data name="MiniPlayerSpeedComboBox.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Playback speed</value>
+  </data>
+  <data name="MiniPlayerSleepTimerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sleep timer</value>
+  </data>
+  <data name="MiniPlayerCloseButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stop playback</value>
+  </data>
+  <data name="SleepTimer15.Text" xml:space="preserve">
+    <value>15 minutes</value>
+  </data>
+  <data name="SleepTimer30.Text" xml:space="preserve">
+    <value>30 minutes</value>
+  </data>
+  <data name="SleepTimer45.Text" xml:space="preserve">
+    <value>45 minutes</value>
+  </data>
+  <data name="SleepTimer60.Text" xml:space="preserve">
+    <value>60 minutes</value>
+  </data>
+  <data name="SleepTimerOff.Text" xml:space="preserve">
+    <value>Disable timer</value>
+  </data>
+
+  <!-- MediathekOnlinePage -->
+  <data name="SeriesSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search series …</value>
+  </data>
+  <data name="ImportButton.Content" xml:space="preserve">
+    <value>+ Import</value>
+  </data>
+
+  <!-- SeriesDetailPage – column headers -->
+  <data name="EpisodeColumnNr.Text" xml:space="preserve">
+    <value>No.</value>
+  </data>
+  <data name="EpisodeColumnTitel.Text" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="EpisodeColumnDauer.Text" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="EpisodePlayButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play</value>
+  </data>
+
+  <!-- SettingsPage – tab headers -->
+  <data name="TabAllgemein.Header" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="TabOnline.Header" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="TabLokal.Header" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="TabProtokolle.Header" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+
+  <!-- SettingsPage – section headings -->
+  <data name="SettingsHeadingAppearance.Text" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="SettingsHeadingProvider.Text" xml:space="preserve">
+    <value>Metadata Source</value>
+  </data>
+  <data name="RadioProviderNone.Content" xml:space="preserve">
+    <value>None (online services disabled)</value>
+  </data>
+  <data name="SettingsHeadingLocalLibrary.Text" xml:space="preserve">
+    <value>Local Library</value>
+  </data>
+  <data name="SettingsHeadingLanguage.Text" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SettingsHeadingLogs.Text" xml:space="preserve">
+    <value>Log</value>
+  </data>
+
+  <!-- SettingsPage – connection test (Online tab) -->
+  <data name="TestConnectionButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
+
+  <!-- SettingsPage – controls -->
+  <data name="LocalLibraryToggle.Header" xml:space="preserve">
+    <value>Use local library</value>
+  </data>
+  <data name="AutoImportAfterScanToggle.Header" xml:space="preserve">
+    <value>Auto-import after scan</value>
+  </data>
+  <data name="AutoImportAfterScanToggle.OffContent" xml:space="preserve">
+    <value>Confirm new series manually</value>
+  </data>
+  <data name="AutoImportAfterScanToggle.OnContent" xml:space="preserve">
+    <value>New series are created automatically</value>
+  </data>
+  <data name="LibraryPathTextBox.Header" xml:space="preserve">
+    <value>Library path</value>
+  </data>
+  <data name="LibraryPathTextBox.PlaceholderText" xml:space="preserve">
+    <value>e.g. D:\Audiobooks</value>
+  </data>
+  <data name="BrowseButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="EpisodeFolderPatternBox.Header" xml:space="preserve">
+    <value>Episode folder pattern</value>
+  </data>
+  <data name="EpisodeFolderPatternBox.PlaceholderText" xml:space="preserve">
+    <value>{number:000} - {title}</value>
+  </data>
+  <data name="AnalyzePatternButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Analyze</value>
+  </data>
+  <data name="SyncButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Synchronize</value>
+  </data>
+  <data name="SaveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="SaveButtonLabel.Text" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="CancelButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CancelButtonLabel.Text" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SyncButtonLabel.Text" xml:space="preserve">
+    <value>Synchronize</value>
+  </data>
+  <data name="DbMaintenanceButtonLabel.Text" xml:space="preserve">
+    <value>Run Cleanup</value>
+  </data>
+  <data name="DbResetButtonLabel.Text" xml:space="preserve">
+    <value>Reset Library</value>
+  </data>
+  <data name="SettingsHeadingLogRetention.Text" xml:space="preserve">
+    <value>Log Retention</value>
+  </data>
+  <data name="SettingsHeadingNewReleaseDays.Text" xml:space="preserve">
+    <value>New Releases</value>
+  </data>
+  <data name="NewReleaseDaysBox.Header" xml:space="preserve">
+    <value>Time Period (Days)</value>
+  </data>
+  <data name="SettingsOfflineMode.Header" xml:space="preserve">
+    <value>Offline Only</value>
+  </data>
+  <data name="SettingsOfflineMode.OnContent" xml:space="preserve">
+    <value>No online queries – local library only</value>
+  </data>
+  <data name="SettingsOfflineMode.OffContent" xml:space="preserve">
+    <value>Online features active</value>
+  </data>
+  <data name="OfflineModeSearchHintTitle" xml:space="preserve">
+    <value>Offline Mode Active</value>
+  </data>
+  <data name="OfflineModeSearchHintMessage" xml:space="preserve">
+    <value>Searching for series requires an internet connection. Please disable offline mode in settings.</value>
+  </data>
+  <data name="SettingsOnlineOnlyMode.Header" xml:space="preserve">
+    <value>Online Only</value>
+  </data>
+  <data name="SettingsOnlineOnlyMode.OnContent" xml:space="preserve">
+    <value>Local library hidden – online library only</value>
+  </data>
+  <data name="SettingsOnlineOnlyMode.OffContent" xml:space="preserve">
+    <value>Local library visible</value>
+  </data>
+  <data name="OnlineOnlyModeHintTitle" xml:space="preserve">
+    <value>Online Only Mode Active</value>
+  </data>
+  <data name="OnlineOnlyModeHintMessage" xml:space="preserve">
+    <value>The local library is disabled in online only mode. Please disable the mode in settings.</value>
+  </data>
+  <data name="OfflineOnlineAccessTitle" xml:space="preserve">
+    <value>Internet connection required</value>
+  </data>
+  <data name="OfflineOnlineAccessMessage" xml:space="preserve">
+    <value>Offline mode is active. This action requires an internet connection. Continue anyway?</value>
+  </data>
+  <data name="UnsavedSettingsDialogTitle" xml:space="preserve">
+    <value>Apply settings?</value>
+  </data>
+  <data name="UnsavedSettingsDialogMessage" xml:space="preserve">
+    <value>There are unsaved changes. Do you want to save the settings?</value>
+  </data>
+  <data name="UnsavedSettingsHint.Text" xml:space="preserve">
+    <value>Unsaved settings</value>
+  </data>
+  <data name="NoProviderHintTitle" xml:space="preserve">
+    <value>No provider configured</value>
+  </data>
+  <data name="NoProviderHintMessage" xml:space="preserve">
+    <value>The online library requires a provider (Spotify or Apple Music) to be configured in settings.</value>
+  </data>
+  <data name="LanguageApplyButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+
+  <!-- MediathekOnlinePage – status filter, actions and subscription menu -->
+  <data name="MediathekOnlineAddButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search for a new series online and import it</value>
+  </data>
+  <data name="MediathekOnlineAddButtonText.Text" xml:space="preserve">
+    <value>Add series</value>
+  </data>
+  <data name="OnlineNoProviderHint.Text" xml:space="preserve">
+    <value>No provider configured. Select a provider (Spotify or Apple Music) in settings to use the online library.</value>
+  </data>
+  <data name="OnlineGoToSettingsButton.Content" xml:space="preserve">
+    <value>Go to settings</value>
+  </data>
+  <data name="OnlineNoSeriesHint.Text" xml:space="preserve">
+    <value>No series in the online library yet. Search for audiobook series and add them.</value>
+  </data>
+  <data name="OnlineSearchSeriesButton.Content" xml:space="preserve">
+    <value>Search for series online</value>
+  </data>
+  <data name="OnlineProviderSearchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search for new series at the provider</value>
+  </data>
+  <data name="OnlineProviderSearchButtonText.Text" xml:space="preserve">
+    <value>Search provider</value>
+  </data>
+  <data name="OnlineAddSelectedButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Add selected series</value>
+  </data>
+  <data name="SeriesDetailsItem.Text" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="WatchSeriesItem.Text" xml:space="preserve">
+    <value>Watch for new releases</value>
+  </data>
+  <data name="OnlineRemoveSeriesItem.Text" xml:space="preserve">
+    <value>Remove series</value>
+  </data>
+  <data name="OnlineRemoveSeriesDialogTitle" xml:space="preserve">
+    <value>Remove series?</value>
+  </data>
+  <data name="OnlineRemoveSeriesDialogMessage" xml:space="preserve">
+    <value>"{0}" will be removed from the online library.</value>
+  </data>
+  <data name="OnlineSearchFailedTitle" xml:space="preserve">
+    <value>Search failed</value>
+  </data>
+  <data name="OnlineSubscribeDialogTitle" xml:space="preserve">
+    <value>Subscribe?</value>
+  </data>
+  <data name="OnlineUnsubscribeDialogTitle" xml:space="preserve">
+    <value>Cancel subscription?</value>
+  </data>
+  <data name="OnlineSubscribeDialogMessage" xml:space="preserve">
+    <value>Do you want to subscribe to "{0}"?</value>
+  </data>
+  <data name="OnlineUnsubscribeDialogMessage" xml:space="preserve">
+    <value>The subscription for "{0}" will be cancelled.</value>
+  </data>
+  <data name="OnlineSearchTypeAll.Content" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="OnlineSearchTypeSeries.Content" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="OnlineSearchTypeEpisodes.Content" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="OnlineSortByName.Content" xml:space="preserve">
+    <value>Name A–Z</value>
+  </data>
+  <data name="OnlineSortByEpisodeCount.Content" xml:space="preserve">
+    <value>Most episodes</value>
+  </data>
+  <data name="OnlineSortByProgress.Content" xml:space="preserve">
+    <value>Progress</value>
+  </data>
+  <data name="OnlineRefreshButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Check for new episodes</value>
+  </data>
+  <data name="OnlineRefreshProgressText" xml:space="preserve">
+    <value>Checking series {0}/{1}: {2} …</value>
+  </data>
+  <data name="OnlineRefreshFailedTitle" xml:space="preserve">
+    <value>Update failed</value>
+  </data>
+  <data name="OnlineEpisodesHeader.Text" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="OnlineCloseEpisodesButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="OnlineEpisodeOpenBrowserItem.Text" xml:space="preserve">
+    <value>Open in browser</value>
+  </data>
+  <data name="OnlineEpisodeCoverSearchItem.Text" xml:space="preserve">
+    <value>Search cover</value>
+  </data>
+  <data name="OnlineOpenInBrowserButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open in browser</value>
+  </data>
+  <data name="OnlineEpisodeSortByTitle.Content" xml:space="preserve">
+    <value>Title A–Z</value>
+  </data>
+  <data name="OnlineEpisodeSortByTitleDesc.Content" xml:space="preserve">
+    <value>Title Z–A</value>
+  </data>
+  <data name="OnlineEpisodeSortByDate.Content" xml:space="preserve">
+    <value>Newest first</value>
+  </data>
+  <data name="OnlineReImportStatusText" xml:space="preserve">
+    <value>Reloading episodes for "{0}" …</value>
+  </data>
+  <data name="OnlineImportFailedTitle" xml:space="preserve">
+    <value>Import failed</value>
+  </data>
+  <data name="FilterAlle.Content" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="FilterNeu.Content" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="FilterInArbeit.Content" xml:space="preserve">
+    <value>Listening</value>
+  </data>
+  <data name="FilterGehoert.Content" xml:space="preserve">
+    <value>Listened</value>
+  </data>
+  <data name="MenuToggleSubscription.Text" xml:space="preserve">
+    <value>Toggle subscription</value>
+  </data>
+
+  <!-- DashboardPage – section headings -->
+  <data name="DashboardHeadingRecent.Text" xml:space="preserve">
+    <value>Recently played</value>
+  </data>
+  <data name="DashboardHeadingNew.Text" xml:space="preserve">
+    <value>New Releases</value>
+  </data>
+  <data name="DashboardLoadingNewReleases.Text" xml:space="preserve">
+    <value>Loading new releases…</value>
+  </data>
+  <data name="DashboardHeadingFavorites.Text" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="DashboardHeadingInProgress.Text" xml:space="preserve">
+    <value>In Progress</value>
+  </data>
+  <data name="DashboardHeadingUnheard.Text" xml:space="preserve">
+    <value>Continue listening</value>
+  </data>
+  <data name="DashboardHeadingOnlineAvailable.Text" xml:space="preserve">
+    <value>Available online</value>
+  </data>
+  <data name="DashboardHeadingAnnounced.Text" xml:space="preserve">
+    <value>Announced</value>
+  </data>
+  <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
+    <value>Mark series as favorites to see new episodes here.</value>
+  </data>
+
+  <!-- DashboardPage – tile context menu -->
+  <data name="DashboardMenuRemoveFavorite.Text" xml:space="preserve">
+    <value>Remove from favorites</value>
+  </data>
+  <data name="DashboardMenuMarkPlayed.Text" xml:space="preserve">
+    <value>Mark as played</value>
+  </data>
+  <data name="DashboardMenuMarkUnplayed.Text" xml:space="preserve">
+    <value>Mark as unplayed</value>
+  </data>
+
+  <!-- PlayerPage – controls and playlist -->
+  <data name="PlayerOpenFolderButton.Content" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="PlayerOpenFilesButton.Content" xml:space="preserve">
+    <value>Open files</value>
+  </data>
+  <data name="PlayerPlaylistHeading.Text" xml:space="preserve">
+    <value>Playlist</value>
+  </data>
+
+  <!-- SuchePage – search and results -->
+  <data name="SucheFirstRunHint.Title" xml:space="preserve">
+    <value>Welcome to EchoPlay</value>
+  </data>
+  <data name="SucheFirstRunHint.Message" xml:space="preserve">
+    <value>Search for an audio drama series to import and subscribe to it.</value>
+  </data>
+  <data name="SucheSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search series …</value>
+  </data>
+  <data name="SucheButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="SucheEmptyState.Text" xml:space="preserve">
+    <value>No results found.</value>
+  </data>
+  <data name="SucheImportButton.Content" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SucheAlreadyImported.Text" xml:space="preserve">
+    <value>Already added</value>
+  </data>
+  <data name="SucheAddedSuccess.Text" xml:space="preserve">
+    <value>Successfully added!</value>
+  </data>
+  <data name="SucheGoToMediathek.Content" xml:space="preserve">
+    <value>Go to Online Library</value>
+  </data>
+  <data name="SucheScopeComboBox.PlaceholderText" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="SucheScopeBoth.Content" xml:space="preserve">
+    <value>All sources</value>
+  </data>
+  <data name="SucheScopeOnline.Content" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="SucheScopeLocal.Content" xml:space="preserve">
+    <value>Local</value>
+  </data>
+
+  <!-- MediathekLokalPage – scan hint (visible while scan is running) -->
+  <data name="LokalScanningHint.Message" xml:space="preserve">
+    <value>Library is being scanned – new series appear automatically in the list.</value>
+  </data>
+
+  <!-- MediathekLokalPage – setup hint -->
+  <data name="LokalNoFolderHint.Title" xml:space="preserve">
+    <value>No library folder configured</value>
+  </data>
+  <data name="LokalNoFolderHint.Message" xml:space="preserve">
+    <value>Choose a folder where your local audio drama files are stored.</value>
+  </data>
+  <data name="LokalPickFolderButton.Content" xml:space="preserve">
+    <value>Choose folder</value>
+  </data>
+
+  <!-- MediathekLokalPage – controls -->
+  <data name="LokalSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search series …</value>
+  </data>
+  <data name="LokalLibraryPathLabel.Text" xml:space="preserve">
+    <value>Library path</value>
+  </data>
+  <data name="LokalScanButton.Content" xml:space="preserve">
+    <value>Scan</value>
+  </data>
+  <data name="LokalReInitButton.Content" xml:space="preserve">
+    <value>Re-initialize</value>
+  </data>
+  <data name="LokalAddFolderButton.Content" xml:space="preserve">
+    <value>Add folder</value>
+  </data>
+  <data name="LokalAddFolderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Add a single folder as a local series without running a full scan</value>
+  </data>
+
+  <!-- MediathekLokalPage – three-column view -->
+  <data name="LokalArtistsHeader.Text" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="LokalCloseEpisodesButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close episodes panel</value>
+  </data>
+  <data name="LokalEpisodesHeader.Text" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="LokalTracksHeader.Text" xml:space="preserve">
+    <value>Tracks</value>
+  </data>
+  <data name="LokalArtistsEmpty.Text" xml:space="preserve">
+    <value>No series with a local folder found. Please run a scan first.</value>
+  </data>
+  <data name="LokalEpisodesEmpty.Text" xml:space="preserve">
+    <value>Select a series to view its episodes.</value>
+  </data>
+  <data name="LokalTracksEmpty.Text" xml:space="preserve">
+    <value>Select an episode to view its tracks.</value>
+  </data>
+  <data name="LokalOpenAllSeriesTracks.Content" xml:space="preserve">
+    <value>Edit all tracks of this series</value>
+  </data>
+  <data name="LokalOpenAllEpisodeTracks.Content" xml:space="preserve">
+    <value>Edit all tracks of this episode</value>
+  </data>
+  <data name="LokalOpenInTagManager.Content" xml:space="preserve">
+    <value>Edit in Tag Manager</value>
+  </data>
+  <data name="LokalMarkAllAsReadItem.Text" xml:space="preserve">
+    <value>Mark all as listened</value>
+  </data>
+  <data name="LokalMissingEpisodesItem.Text" xml:space="preserve">
+    <value>Find missing episodes</value>
+  </data>
+  <data name="LokalCheckAllSeriesButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Check all series for missing episodes</value>
+  </data>
+  <data name="LokalRemoveFromLibraryItem.Text" xml:space="preserve">
+    <value>Remove from library</value>
+  </data>
+  <data name="LokalDeleteFromDiskItem.Text" xml:space="preserve">
+    <value>Delete from disk</value>
+  </data>
+  <data name="LokalSeriesCoverSelectItem.Text" xml:space="preserve">
+    <value>Select cover</value>
+  </data>
+  <data name="LokalSeriesCoverSearchItem.Text" xml:space="preserve">
+    <value>Search cover</value>
+  </data>
+  <data name="LokalRestructureItem.Text" xml:space="preserve">
+    <value>Organize into folders</value>
+  </data>
+  <data name="LokalEpisodeMarkPlayedItem.Text" xml:space="preserve">
+    <value>Mark as played</value>
+  </data>
+  <data name="LokalEpisodeMarkUnplayedItem.Text" xml:space="preserve">
+    <value>Mark as unplayed</value>
+  </data>
+  <data name="LokalEpisodeCoverSelectItem.Text" xml:space="preserve">
+    <value>Select cover</value>
+  </data>
+  <data name="LokalEpisodeCoverSearchItem.Text" xml:space="preserve">
+    <value>Search cover</value>
+  </data>
+  <data name="LokalPlayEpisodeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play episode</value>
+  </data>
+
+  <!-- About page -->
+  <data name="UeberDescription.Text" xml:space="preserve">
+    <value>EchoPlay is a Windows app for managing audio drama series and episodes, including playback state and local library scanning.</value>
+  </data>
+  <data name="UeberDevelopedBy.Text" xml:space="preserve">
+    <value>Developed by</value>
+  </data>
+  <data name="UeberCopyright.Text" xml:space="preserve">
+    <value>© 2025 René Schustek</value>
+  </data>
+  <data name="UeberOrdnerstrukturHeading.Text" xml:space="preserve">
+    <value>Folder Structure</value>
+  </data>
+  <data name="UeberOrdnerstrukturText.Text" xml:space="preserve">
+    <value>{LibraryPath}\&#10;  {SeriesName}\&#10;    {Number} - {Title}\&#10;      Track 01.mp3&#10;      Track 02.mp3&#10;&#10;Example:&#10;D:\Audiobooks\&#10;  The Three Investigators\&#10;    001 - The Secret of Terror Castle\&#10;      01 - Chapter 1.mp3</value>
+  </data>
+  <data name="SettingsEpisodePatternHint.Text" xml:space="preserve">
+    <value>Placeholders: {number:000} for episode number, {title} for title</value>
+  </data>
+
+  <!-- About dialog – programmatic strings (no x:Uid) -->
+  <data name="UeberDialog.Description" xml:space="preserve">
+    <value>Audiobook management and player for Windows 10/11.</value>
+  </data>
+  <data name="UeberDialog.DevelopedBy" xml:space="preserve">
+    <value>Developed by</value>
+  </data>
+  <data name="UeberDialog.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+
+  <!-- TagManagerPage – buttons and fields -->
+  <data name="TagManagerOpenFolderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="TagManagerSaveButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="TagManagerRemoveAllTagsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Remove all tags</value>
+  </data>
+  <!-- ProtokollPage – live log view -->
+  <data name="ProtokollLiveToggle.Header" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="ProtokollClearButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear log</value>
+  </data>
+
+  <data name="TagManagerRenameSectionLabel.Text" xml:space="preserve">
+    <value>Rename files</value>
+  </data>
+  <data name="TagManagerRenamePatternLabel.Text" xml:space="preserve">
+    <value>Pattern</value>
+  </data>
+  <data name="TagManagerRenamePlaceholderHint.Text" xml:space="preserve">
+    <value>Placeholders: {title}, {album}, {artist}, {year}, {track}, {track:00}, {track:000}, {filename}</value>
+  </data>
+  <data name="TagManagerPreviewRenameButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="TagManagerExecuteRenameButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="TagManagerLookupButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Look up tags</value>
+  </data>
+  <data name="TagManagerAutoLookupButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Auto lookup (series + episode from folder names)</value>
+  </data>
+  <data name="TagManagerRemoveCoverButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Remove cover</value>
+  </data>
+  <data name="TagManagerLoadCoverButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Load cover</value>
+  </data>
+  <data name="TagManagerCoverApplyAllButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Apply cover to all files</value>
+  </data>
+  <data name="TagManagerCoverApplyAllText.Text" xml:space="preserve">
+    <value>Apply to all</value>
+  </data>
+  <data name="TagManagerApplyToAllButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Apply tags to all files</value>
+  </data>
+  <data name="TagManagerApplyToAllText.Text" xml:space="preserve">
+    <value>Tag all</value>
+  </data>
+  <data name="TagManagerSaveAllButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Save all modified files</value>
+  </data>
+  <data name="TagManagerSaveAllText.Text" xml:space="preserve">
+    <value>Save all</value>
+  </data>
+  <data name="TagManagerTitleLabel.Text" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="TagManagerAlbumLabel.Text" xml:space="preserve">
+    <value>Album</value>
+  </data>
+  <data name="TagManagerArtistLabel.Text" xml:space="preserve">
+    <value>Artist</value>
+  </data>
+  <data name="TagManagerAlbumArtistLabel.Text" xml:space="preserve">
+    <value>Album artist</value>
+  </data>
+  <data name="TagManagerYearLabel.Text" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="TagManagerTrackLabel.Text" xml:space="preserve">
+    <value>Track no.</value>
+  </data>
+  <data name="TagManagerGenreLabel.Text" xml:space="preserve">
+    <value>Genre</value>
+  </data>
+  <data name="TagManagerCoverLabel.Text" xml:space="preserve">
+    <value>Cover</value>
+  </data>
+
+  <!-- SeriesDetailPage – sort order and empty states -->
+  <data name="SortEpisodeNumber.Content" xml:space="preserve">
+    <value>Episode number</value>
+  </data>
+  <data name="SortTitle.Content" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="SortReleaseDate.Content" xml:space="preserve">
+    <value>Release date</value>
+  </data>
+  <data name="SeriesDetailFavoriteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Toggle favorite</value>
+  </data>
+  <data name="SeriesDetailEpisodesEmpty.Text" xml:space="preserve">
+    <value>No episodes available.</value>
+  </data>
+  <data name="SeriesDetailTracksEmpty.Text" xml:space="preserve">
+    <value>Select an episode to view its tracks.</value>
+  </data>
+  <data name="SeriesDetailNoLocalTracks.Text" xml:space="preserve">
+    <value>No local files for this episode.</value>
+  </data>
+  <data name="SeriesDetailPlayEpisodeButton.Content" xml:space="preserve">
+    <value>Play entire episode</value>
+  </data>
+
+  <!-- SettingsPage – pattern selection dialog (programmatic strings) -->
+  <data name="PatternDialogTitle" xml:space="preserve">
+    <value>Select Pattern</value>
+  </data>
+  <data name="PatternDialogApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="PatternDialogCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="PatternDialogMatchFormat" xml:space="preserve">
+    <value>{0} % of episode folders matched</value>
+  </data>
+  <data name="PatternDialogFlatHint" xml:space="preserve">
+    <value>Flat structure – episodes stored directly as files in series folder</value>
+  </data>
+
+  <!-- SettingsPage – log viewer -->
+  <data name="LogSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search …</value>
+  </data>
+  <data name="LogRefreshButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="LogLevelAll.Content" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="LogLevelInfo.Content" xml:space="preserve">
+    <value>Info+</value>
+  </data>
+  <data name="LogLevelWarning.Content" xml:space="preserve">
+    <value>Warning+</value>
+  </data>
+  <data name="LogLevelError.Content" xml:space="preserve">
+    <value>Error+</value>
+  </data>
+  <data name="LogFileComboBox.PlaceholderText" xml:space="preserve">
+    <value>Select log file …</value>
+  </data>
+  <data name="LogRetentionDaysBox.Header" xml:space="preserve">
+    <value>Retention (days)</value>
+  </data>
+  <data name="SettingsHeadingLogLevel.Text" xml:space="preserve">
+    <value>Minimum Log Level</value>
+  </data>
+  <data name="MinimumLogLevelComboBox.Header" xml:space="preserve">
+    <value>Entries at or above this level will be written</value>
+  </data>
+  <data name="LogLevelTrace.Content" xml:space="preserve">
+    <value>Trace (everything)</value>
+  </data>
+  <data name="LogLevelDebug.Content" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="LogLevelInformation.Content" xml:space="preserve">
+    <value>Information (default)</value>
+  </data>
+  <data name="LogLevelWarningMin.Content" xml:space="preserve">
+    <value>Warning+</value>
+  </data>
+  <data name="LogLevelErrorMin.Content" xml:space="preserve">
+    <value>Error+</value>
+  </data>
+  <data name="LogLiveViewToggle.Content" xml:space="preserve">
+    <value>Live</value>
+  </data>
+
+  <!-- MediathekLokalPage – episode sort -->
+  <data name="LokalTabEpisodes.Content" xml:space="preserve">
+    <value>Episodes</value>
+  </data>
+  <data name="LokalTabSpecial.Text" xml:space="preserve">
+    <value>Specials</value>
+  </data>
+  <data name="LokalFilterAll.Content" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="LokalFilterUnheard.Content" xml:space="preserve">
+    <value>Unheard</value>
+  </data>
+  <data name="LokalFilterHeard.Content" xml:space="preserve">
+    <value>Heard</value>
+  </data>
+  <data name="LokalFilterInProgress.Content" xml:space="preserve">
+    <value>In progress</value>
+  </data>
+  <data name="LokalSortByNumber.Content" xml:space="preserve">
+    <value>Number ↑</value>
+  </data>
+  <data name="LokalSortByNumberDesc.Content" xml:space="preserve">
+    <value>Number ↓</value>
+  </data>
+  <data name="LokalSortByTitle.Content" xml:space="preserve">
+    <value>Title A–Z</value>
+  </data>
+
+  <!-- SettingsPage – database maintenance (local tab) -->
+  <data name="DbMaintenanceHeading.Text" xml:space="preserve">
+    <value>Database Cleanup</value>
+  </data>
+  <data name="DbMaintenanceDescription.Text" xml:space="preserve">
+    <value>Permanently removes all entries that have been marked as deleted for more than the specified number of days and compacts the database file afterwards.</value>
+  </data>
+  <data name="DbPurgeDaysBox.Header" xml:space="preserve">
+    <value>Retention (days)</value>
+  </data>
+  <data name="DbMaintenanceButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Run Cleanup</value>
+  </data>
+  <data name="DbResetHeading.Text" xml:space="preserve">
+    <value>Reset Library</value>
+  </data>
+  <data name="DbResetDescription.Text" xml:space="preserve">
+    <value>Deletes all series, episodes and playback states. Settings are preserved. The app does not need to restart afterwards.</value>
+  </data>
+  <data name="DbResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reset Library</value>
+  </data>
+  <data name="DbResetDialogTitle" xml:space="preserve">
+    <value>Reset Library?</value>
+  </data>
+  <data name="DbResetDialogDescription" xml:space="preserve">
+    <value>All series, episodes and playback states will be permanently deleted. Your settings are preserved. The app does not need to restart.</value>
+  </data>
+  <data name="DbResetDialogConfirm" xml:space="preserve">
+    <value>Delete Permanently</value>
+  </data>
+
+  <!-- ImportViewModel -->
+  <data name="ImportSearchInProgress" xml:space="preserve">
+    <value>Searching …</value>
+  </data>
+  <data name="ImportNoResults" xml:space="preserve">
+    <value>No results.</value>
+  </data>
+  <data name="ImportError" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="ImportInProgress" xml:space="preserve">
+    <value>Importing "{0}" …</value>
+  </data>
+  <data name="ImportSuccess" xml:space="preserve">
+    <value>"{0}" imported successfully.</value>
+  </data>
+
+  <!-- FavoriteSeriesCardViewModel -->
+  <data name="FavoriteRemoveTitle" xml:space="preserve">
+    <value>Remove from favorites?</value>
+  </data>
+  <data name="FavoriteRemoveMessage" xml:space="preserve">
+    <value>"{0}" will no longer appear as a favorite.</value>
+  </data>
+
+  <!-- NewEpisodeCardViewModel -->
+  <data name="EpisodeNumberFormat" xml:space="preserve">
+    <value>Episode {0}</value>
+  </data>
+  <data name="ReleaseDateFormat" xml:space="preserve">
+    <value>Available on {0}</value>
+  </data>
+  <data name="BadgeAnnounced" xml:space="preserve">
+    <value>Announced</value>
+  </data>
+  <data name="BadgeNew" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="EpisodeNotAvailableTitle" xml:space="preserve">
+    <value>Not yet available</value>
+  </data>
+  <data name="EpisodeNotAvailableMessage" xml:space="preserve">
+    <value>This episode is not yet available locally and cannot be played.</value>
+  </data>
+  <data name="StartupOnlineHint.Title" xml:space="preserve">
+    <value>No internet connection</value>
+  </data>
+  <data name="StartupOnlineHint.Message" xml:space="preserve">
+    <value>Could not connect to the internet. Online features (new releases, search) are disabled until the next launch.</value>
+  </data>
+  <data name="StartupLocalLibraryHint.Title" xml:space="preserve">
+    <value>Local library unavailable</value>
+  </data>
+  <data name="StartupLocalLibraryHint.Message" xml:space="preserve">
+    <value>The configured directory is not reachable or not readable. Local features (scan, sync) are disabled until the next launch.</value>
+  </data>
+  <data name="ClearCacheOnNextStartCheckBox.Content" xml:space="preserve">
+    <value>Clear cache on next launch and rebuild (new releases + covers)</value>
+  </data>
+  <data name="TabVerwaltung.Header" xml:space="preserve">
+    <value>Administration</value>
+  </data>
+  <data name="CacheHeading.Text" xml:space="preserve">
+    <value>Cache</value>
+  </data>
+  <data name="ResetScopeOnline.Content" xml:space="preserve">
+    <value>Online library only (all online-imported series)</value>
+  </data>
+  <data name="ResetScopeLocal.Content" xml:space="preserve">
+    <value>Local library only (all local links and scans)</value>
+  </data>
+  <data name="ResetScopeAll.Content" xml:space="preserve">
+    <value>Entire library (online + local)</value>
+  </data>
+  <data name="SyncDisabledHint" xml:space="preserve">
+    <value>Local library is disabled.</value>
+  </data>
+  <data name="SyncNoPathHint" xml:space="preserve">
+    <value>No library folder configured. Please set the path and save.</value>
+  </data>
+  <data name="SyncRunning" xml:space="preserve">
+    <value>Syncing …</value>
+  </data>
+  <data name="SyncFailed" xml:space="preserve">
+    <value>Sync failed</value>
+  </data>
+  <data name="ConnectionSuccess" xml:space="preserve">
+    <value>Connection successful</value>
+  </data>
+  <data name="ConnectionFailed" xml:space="preserve">
+    <value>Connection failed</value>
+  </data>
+  <data name="ResetRunning" xml:space="preserve">
+    <value>Resetting library …</value>
+  </data>
+  <data name="ResetOnlineDone" xml:space="preserve">
+    <value>Online library has been reset.</value>
+  </data>
+  <data name="ResetLocalDone" xml:space="preserve">
+    <value>Local library has been reset.</value>
+  </data>
+  <data name="ResetAllDone" xml:space="preserve">
+    <value>Entire library has been reset. Settings are preserved.</value>
+  </data>
+  <data name="HelpTipDashboard.Subtitle" xml:space="preserve">
+    <value>Everything at a glance: new episodes from your series, your favorites, and where you left off. To check a series for new releases, enable it in the series' three-dot menu.</value>
+  </data>
+  <data name="HelpTipOnline.Subtitle" xml:space="preserve">
+    <value>Your online imported series. Use the search bar to find new series and add them with one click. Click a series to see all episodes.</value>
+  </data>
+  <data name="HelpTipLokal.Subtitle" xml:space="preserve">
+    <value>Series stored on your computer. For EchoPlay to recognize your folders, set the library path in settings and run a scan.</value>
+  </data>
+  <data name="HelpTipSuche.Subtitle" xml:space="preserve">
+    <value>Search for series you don't have yet. Results come directly from the provider – just select and import.</value>
+  </data>
+  <data name="HelpTipPlayer.Subtitle" xml:space="preserve">
+    <value>Your audioplay player. Click an episode to start playback. If you stop midway, EchoPlay remembers the position and picks up where you left off.</value>
+  </data>
+  <data name="HelpTipSettings.Subtitle" xml:space="preserve">
+    <value>Customize EchoPlay to your liking: appearance, language, online provider, and your local library.</value>
+  </data>
+  <data name="HelpTipStatistik.Subtitle" xml:space="preserve">
+    <value>Facts and figures about your collection: how many series, episodes, and hours of audioplays you have.</value>
+  </data>
+  <data name="TagManagerSaveErrorTitle" xml:space="preserve">
+    <value>Error saving</value>
+  </data>
+  <data name="TagManagerRemoveTagsErrorTitle" xml:space="preserve">
+    <value>Error removing tags</value>
+  </data>
+  <data name="TagManagerLookupErrorTitle" xml:space="preserve">
+    <value>Search failed</value>
+  </data>
+  <data name="TagManagerAutoLookupErrorTitle" xml:space="preserve">
+    <value>Automatic search failed</value>
+  </data>
+  <data name="TagManagerRemoveAllTitle" xml:space="preserve">
+    <value>Remove all tags?</value>
+  </data>
+  <data name="TagManagerRemoveAllMessage" xml:space="preserve">
+    <value>All metadata of "{0}" will be permanently removed.</value>
+  </data>
+  <data name="TagManagerBatchProgressText" xml:space="preserve">
+    <value>File {0} of {1}…</value>
+  </data>
+  <data name="TagManagerApplyToAllConfirmTitle" xml:space="preserve">
+    <value>Apply tags to all files?</value>
+  </data>
+  <data name="TagManagerApplyToAllConfirmMessage" xml:space="preserve">
+    <value>Album, artist, year, genre and track count will be overwritten for {0} files. Title and track number are preserved.</value>
+  </data>
+  <data name="TagManagerApplyToAllErrorTitle" xml:space="preserve">
+    <value>Error applying tags</value>
+  </data>
+  <data name="TagManagerSaveAllConfirmTitle" xml:space="preserve">
+    <value>Save all modified files?</value>
+  </data>
+  <data name="TagManagerSaveAllConfirmMessage" xml:space="preserve">
+    <value>{0} modified files will be saved.</value>
+  </data>
+  <data name="TagManagerCoverApplyAllConfirmTitle" xml:space="preserve">
+    <value>Apply cover to all files?</value>
+  </data>
+  <data name="TagManagerCoverApplyAllConfirmMessage" xml:space="preserve">
+    <value>The current cover will be written to {0} files.</value>
+  </data>
+  <data name="TagManagerCoverApplyAllErrorTitle" xml:space="preserve">
+    <value>Error writing cover</value>
+  </data>
+  <data name="TagManagerFolderLoadErrorTitle" xml:space="preserve">
+    <value>Could not load folder</value>
+  </data>
+  <data name="TagManagerTagLoadErrorTitle" xml:space="preserve">
+    <value>Could not load tags</value>
+  </data>
+  <data name="TagManagerPreviewErrorTitle" xml:space="preserve">
+    <value>Could not create preview</value>
+  </data>
+  <data name="TagManagerCoverRemoveErrorTitle" xml:space="preserve">
+    <value>Could not remove cover</value>
+  </data>
+  <data name="TagManagerRenameConfirmTitle" xml:space="preserve">
+    <value>Rename files?</value>
+  </data>
+  <data name="TagManagerRenameConfirmMessage" xml:space="preserve">
+    <value>{0} files will be renamed using the pattern "{1}". This action cannot be undone.</value>
+  </data>
+  <data name="TagManagerRenamePartialErrorTitle" xml:space="preserve">
+    <value>Rename partially failed</value>
+  </data>
+  <data name="TagManagerRenamePartialErrorMessage" xml:space="preserve">
+    <value>{0} of {1} files were renamed. Details in the log.</value>
+  </data>
+  <data name="TagManagerRenameErrorTitle" xml:space="preserve">
+    <value>Rename failed</value>
+  </data>
+  <data name="TagManagerNoResultsTitle" xml:space="preserve">
+    <value>No results</value>
+  </data>
+  <data name="TagManagerNoResultsMessage" xml:space="preserve">
+    <value>MusicBrainz did not find any matching releases.</value>
+  </data>
+  <data name="TagManagerLookupDialogTitle" xml:space="preserve">
+    <value>Tags from MusicBrainz</value>
+  </data>
+  <data name="TagManagerLookupApplyButton" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="TagManagerLookupCancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="TagManagerAutoLookupSearchingText" xml:space="preserve">
+    <value>Searching: {0} …</value>
+  </data>
+  <data name="TagManagerMixedValuePlaceholder" xml:space="preserve">
+    <value>(multiple values)</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>New version available</value>
+  </data>
+  <data name="UpdateAvailableMessage" xml:space="preserve">
+    <value>Version {0} is available. Would you like to update now?</value>
+  </data>
+  <data name="UpdateNowButton" xml:space="preserve">
+    <value>Update now</value>
+  </data>
+  <data name="UpdateLaterButton" xml:space="preserve">
+    <value>Later</value>
+  </data>
+  <data name="UpdateSkipButton" xml:space="preserve">
+    <value>Skip this version</value>
+  </data>
+  <data name="UpdateDownloadingMessage" xml:space="preserve">
+    <value>Downloading update …</value>
+  </data>
+  <data name="UpdateDownloadFailedTitle" xml:space="preserve">
+    <value>Download failed</value>
+  </data>
+  <data name="UpdateDownloadFailedMessage" xml:space="preserve">
+    <value>The update could not be downloaded. Please try again at next startup.</value>
+  </data>
+
+</root>

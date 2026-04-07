@@ -133,17 +133,63 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task CopyFromMatchingEpisodes_DifferentSeriesName_DoesNotCopy()
+        public async Task CopyFromMatchingEpisodes_DifferentTitleAndNumber_DoesNotCopy()
         {
-            // Anderer Serienname → kein Match auf keiner Stufe
+            // Andere Folgentitel → kein Match auf keiner Stufe (auch nicht serienübergreifend)
             Series source = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Folge 1");
+            Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der blinde Hellseher");
             sourceEp.EpisodeNumber = 1;
             await Context.SaveChangesAsync();
             await PersistEpisodeCoverAsync(sourceEp.Id, [0xAA, 0xBB]);
 
             Series target = await DataBuilder.PersistSeriesAsync("Bibi Blocksberg");
-            Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "Folge 1");
+            Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "Hexen gibt es doch");
+            targetEp.EpisodeNumber = 1;
+            await Context.SaveChangesAsync();
+            Context.ChangeTracker.Clear();
+
+            CoverCopyService service = new(Context, NullLoggerFactory);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+
+            Assert.Equal(0, copied);
+        }
+
+        [Fact]
+        public async Task CopyFromMatchingEpisodes_CrossSeries_KeywordMatch_Copies()
+        {
+            // Anderer Serienname, Folgentitel als Schlagwort enthalten → Stufe 3
+            Series source = await DataBuilder.PersistSeriesAsync("Die drei Fragezeichen");
+            source.LocalFolderPath = @"C:\Hoerspiele\Die drei Fragezeichen";
+            Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der Super-Papagei");
+            sourceEp.EpisodeNumber = 1;
+            await Context.SaveChangesAsync();
+            await PersistEpisodeCoverAsync(sourceEp.Id, [0xAA, 0xBB]);
+
+            Series target = await DataBuilder.PersistSeriesAsync("Die drei ???");
+            Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "001/und der Super-Papagei");
+            targetEp.EpisodeNumber = 1;
+            await Context.SaveChangesAsync();
+            Context.ChangeTracker.Clear();
+
+            CoverCopyService service = new(Context, NullLoggerFactory);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+
+            Assert.Equal(1, copied);
+        }
+
+        [Fact]
+        public async Task CopyFromMatchingEpisodes_CrossSeries_DifferentContent_DoesNotCopy()
+        {
+            // Gleiche Nummer aber völlig anderer Titel → kein Schlagwort-Match
+            Series source = await DataBuilder.PersistSeriesAsync("TKKG");
+            source.LocalFolderPath = @"C:\Hoerspiele\TKKG";
+            Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der blinde Hellseher");
+            sourceEp.EpisodeNumber = 1;
+            await Context.SaveChangesAsync();
+            await PersistEpisodeCoverAsync(sourceEp.Id, [0xAA, 0xBB]);
+
+            Series target = await DataBuilder.PersistSeriesAsync("Die drei ???");
+            Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "001/und der Super-Papagei");
             targetEp.EpisodeNumber = 1;
             await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();

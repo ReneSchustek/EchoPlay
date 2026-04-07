@@ -349,7 +349,9 @@ namespace EchoPlay.App
             // Logger registrieren (Cleanup läuft automatisch beim Start)
             builder.Services.AddEchoPlayLogger(options =>
             {
-                options.LogDirectory = "logs";
+                options.LogDirectory = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "EchoPlay", "logs");
                 options.MaxFileSizeMb = 10;
                 options.RetentionDays = 30;
                 options.MaxTotalSizeMb = 100;

@@ -147,37 +147,60 @@ namespace EchoPlay.App.Services
                 _logger.Debug($"{expired} abgelaufene Cache-Einträge entfernt.");
             }
 
-            // Schritt 5: Neuerscheinungen-Refresh (nur wenn online verfügbar)
+            // Schritt 5: Neuerscheinungen-Refresh (nur wenn online verfügbar).
+            // Eigener Scope, weil der Haupt-Scope nach Batch-Deletes (Schritt 3+4)
+            // einen inkonsistenten Change-Tracker haben kann.
             if (isOnlineAvailable && !settings.OfflineMode)
             {
                 onStatus?.Invoke("Überprüfe auf Neuerscheinungen …");
+
+                using IServiceScope refreshScope = _scopeFactory.CreateScope();
+                ICachedNewReleaseDataService refreshCacheService = refreshScope.ServiceProvider
+                    .GetRequiredService<ICachedNewReleaseDataService>();
+
                 await RefreshNewReleaseCacheAsync(
-                    subscribedSeries, cutoffDate, cacheService, scope.ServiceProvider);
+                    subscribedSeries, cutoffDate, refreshCacheService, refreshScope.ServiceProvider);
             }
 
-            // Schritt 6: Cover-Rebuild (nur wenn Cache geleert wurde)
-            if (cacheCleared && isLocalAvailable)
+            // Schritt 6: Fehlende Cover prüfen und nachladen.
+            // Läuft bei jedem Start – der Splash bleibt bis alles durch ist.
+            // Wenn alle Cover vorhanden sind, laufen nur Batch-Queries (ms).
+            // Nach Cache-Clear werden Cover aus Dateisystem + Provider-URLs geladen.
+            try
             {
-                try
+                if (cacheCleared)
                 {
-                    onStatus?.Invoke("Lade Cover neu …");
-                    int coverCount = await _backgroundCoverService.RunOnceAsync();
-                    _logger.Info($"Cover-Rebuild: {coverCount} Cover aus Dateisystem geladen.");
+                    onStatus?.Invoke("Lade Cover neu – das kann einen Moment dauern …");
                 }
-                catch (Exception ex)
+                else
                 {
-                    // Cover-Fehler dürfen den Startup nicht blockieren –
-                    // der BackgroundCoverService lädt fehlende Cover im Hintergrund nach.
-                    _logger.Warning($"Cover-Rebuild teilweise fehlgeschlagen: {ex.Message}");
+                    onStatus?.Invoke("Prüfe Cover …");
                 }
+
+                int coverCount = await _backgroundCoverService.RunOnceAsync();
+
+                if (coverCount > 0)
+                {
+                    _logger.Info($"Cover-Check: {coverCount} fehlende Cover nachgeladen.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Cover-Check fehlgeschlagen: {ex.Message}");
             }
 
             // Schritt 7: Flag zurücksetzen – auch wenn der Rebuild teilweise fehlgeschlagen ist,
             // damit der Cache nicht bei jedem Start erneut geleert wird.
+            // Eigener Scope, weil der Haupt-Scope nach ExecuteDeleteAsync (Cache + Cover)
+            // und weiteren Batch-Operationen keinen sauberen Change-Tracker mehr hat.
             if (cacheCleared)
             {
-                settings.ClearCacheOnNextStart = false;
-                await settingsService.SaveAsync(settings);
+                using IServiceScope resetScope = _scopeFactory.CreateScope();
+                IAppSettingsDataService resetService = resetScope.ServiceProvider
+                    .GetRequiredService<IAppSettingsDataService>();
+                AppSettings current = await resetService.GetAsync();
+                current.ClearCacheOnNextStart = false;
+                await resetService.SaveAsync(current);
                 _logger.Info("Cache-Clear-Flag zurückgesetzt – Neuaufbau abgeschlossen.");
             }
 
@@ -339,7 +362,8 @@ namespace EchoPlay.App.Services
             {
                 // Fehler beim Refresh dürfen den Startup nicht blockieren –
                 // der Cache enthält dann weiterhin die alten (bereinigten) Daten.
-                _logger.Warning($"Neuerscheinungen-Refresh fehlgeschlagen: {ex.Message}");
+                string innerMsg = ex.InnerException?.Message ?? "keine InnerException";
+                _logger.Warning($"Neuerscheinungen-Refresh fehlgeschlagen: {ex.Message} | Inner: {innerMsg}");
             }
         }
     }

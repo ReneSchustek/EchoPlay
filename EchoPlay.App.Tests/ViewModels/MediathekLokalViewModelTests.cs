@@ -285,7 +285,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(Visibility.Visible, vm.TracksAccordionVisibility);
         }
 
-        // ── Arbeitspaket 99: PlayEpisodeCommand ──────────────────────────────────────────
+        // ── PlayEpisodeCommand ───────────────────────────────────────────────────
 
         [Fact]
         public async Task PlayEpisodeCommand_PassesTrackPathsInOrder()
@@ -362,7 +362,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.False(vm.PlayEpisodeCommand.CanExecute(null));
         }
 
-        // ── Arbeitspaket 96: Fehlende Folgen ─────────────────────────────────────────────
+        // ── Fehlende Folgen ──────────────────────────────────────────────────────
 
         [Fact]
         public async Task ShowMissingEpisodesAsync_NonExistentFolder_ReportsNoFolder()
@@ -423,7 +423,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains("Kein lokaler Ordner", received![0]);
         }
 
-        // ── Arbeitspaket 103: Cover-Verwaltung ───────────────────────────────────────────
+        // ── Cover-Verwaltung ─────────────────────────────────────────────────────
 
         [Fact]
         public async Task SetLocalCoverAsync_PersistsCoverBytes()

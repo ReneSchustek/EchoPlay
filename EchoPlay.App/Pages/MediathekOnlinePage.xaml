@@ -319,13 +319,6 @@
                     </GridView.ItemTemplate>
                 </GridView>
 
-                <!-- Lade-Indikator für Episoden -->
-                <ProgressRing
-                    IsActive="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}"
-                    Visibility="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}"
-                    HorizontalAlignment="Center"
-                    Margin="0,16,0,0"/>
-
                 <!-- Lade-Indikator: sichtbar solange Episoden geladen werden -->
                 <ProgressRing
                     IsActive="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}"

@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="EchoPlay">
 
-    <Grid Background="#1A1B2E">
+    <Grid Background="#FFFFFF">
         <StackPanel
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
@@ -22,31 +22,31 @@
                 Text="EchoPlay"
                 FontSize="30"
                 FontWeight="Bold"
-                Foreground="#FFFFFF"
+                Foreground="#1D5274"
                 HorizontalAlignment="Center"/>
 
             <TextBlock
                 Text="Deine Hörspielwelt"
                 FontSize="13"
-                Foreground="#8080AA"
+                Foreground="#3A7A9C"
                 HorizontalAlignment="Center"/>
 
             <TextBlock
                 x:Name="VersionTextBlock"
                 FontSize="11"
-                Foreground="#555577"
+                Foreground="#6A9AB8"
                 HorizontalAlignment="Center"/>
 
             <ProgressBar
                 IsIndeterminate="True"
                 Width="200"
                 Margin="0,8,0,0"
-                Foreground="#5B4DFF"/>
+                Foreground="#1D5274"/>
 
             <TextBlock
                 x:Name="StatusTextBlock"
                 FontSize="11"
-                Foreground="#8080AA"
+                Foreground="#3A7A9C"
                 HorizontalAlignment="Center"
                 Margin="0,4,0,0"/>
 

@@ -64,12 +64,5 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <returns>Anzahl der gelöschten Einträge.</returns>
         Task<int> ClearAllAsync();
 
-        /// <summary>
-        /// Entfernt Cover von Online-Episoden ohne lokalen Ordner.
-        /// Wird beim App-Start aufgerufen, damit fehlerhafte Cover
-        /// aus der Migration oder früheren Fehl-Matches bereinigt werden.
-        /// </summary>
-        /// <returns>Anzahl der gelöschten Einträge.</returns>
-        Task<int> DeleteOnlineEpisodeCoversAsync();
     }
 }

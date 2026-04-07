@@ -97,10 +97,44 @@ namespace EchoPlay.Data.Services
 
             total += byNumber;
 
+            // ── Stufe 3: Episodennummer + Titel-Schlagwort serienübergreifend ───
+            // Greift bei abweichendem Serientitel (z.B. "Die drei Fragezeichen" vs.
+            // "Die drei ???"). Matcht per Episodennummer UND prüft ob der eine
+            // Episodentitel im anderen enthalten ist (LIKE, case-insensitive).
+            // Beispiel: "Der Super-Papagei" ist enthalten in "001/und der Super-Papagei".
+            // Nur von lokalen Serien (LocalFolderPath gesetzt).
+            int byKeyword = await _context.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT OR IGNORE INTO CoverImages (Id, EntityType, EntityId, ImageData, SourceUrl, CreatedAt, IsDeleted)
+                SELECT
+                    lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6))),
+                    'Episode', tgt.Id, ci.ImageData, ci.SourceUrl, datetime('now'), 0
+                FROM Episodes tgt
+                INNER JOIN Episodes src
+                    ON src.EpisodeNumber = tgt.EpisodeNumber
+                    AND src.Id != tgt.Id
+                    AND src.IsDeleted = 0
+                    AND (tgt.Title LIKE '%' || src.Title || '%'
+                         OR src.Title LIKE '%' || tgt.Title || '%')
+                INNER JOIN Series srcSeries
+                    ON src.SeriesId = srcSeries.Id
+                    AND srcSeries.LocalFolderPath IS NOT NULL
+                INNER JOIN CoverImages ci
+                    ON ci.EntityType = 'Episode' AND ci.EntityId = src.Id
+                    AND length(ci.ImageData) > 0
+                WHERE tgt.SeriesId = {targetSeriesId}
+                    AND tgt.IsDeleted = 0
+                    AND tgt.EpisodeNumber IS NOT NULL
+                    AND NOT EXISTS (
+                        SELECT 1 FROM CoverImages x
+                        WHERE x.EntityType = 'Episode' AND x.EntityId = tgt.Id)
+                """).ConfigureAwait(false);
+
+            total += byKeyword;
+
             if (total > 0)
             {
                 _logger.Info($"Cover-Kopie für \"{seriesTitle}\": {total} kopiert " +
-                    $"({byExact} exakt, {byNumber} per Nummer).");
+                    $"({byExact} exakt, {byNumber} per Nummer, {byKeyword} per Schlagwort).");
             }
 
             return total;

@@ -29,17 +29,34 @@ jobs:
           dotnet build EchoPlay.Logger/EchoPlay.Logger.csproj --no-restore
           dotnet build EchoPlay.Data/EchoPlay.Data.csproj --no-restore
           dotnet build EchoPlay.Spotify/EchoPlay.Spotify.csproj --no-restore
+          dotnet build EchoPlay.AppleMusic/EchoPlay.AppleMusic.csproj --no-restore
           dotnet build EchoPlay.LocalLibrary/EchoPlay.LocalLibrary.csproj --no-restore
           dotnet build EchoPlay.TagManager/EchoPlay.TagManager.csproj --no-restore
 
-      - name: Build App (x64)
-        run: dotnet build EchoPlay.App/EchoPlay.App.csproj -p:Platform=x64 --no-restore
+      - name: Build Test-Projekte
+        run: |
+          dotnet build EchoPlay.Core.Tests/EchoPlay.Core.Tests.csproj --no-restore
+          dotnet build EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj --no-restore
+          dotnet build EchoPlay.Data.Tests/EchoPlay.Data.Tests.csproj --no-restore
+          dotnet build EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj --no-restore
+          dotnet build EchoPlay.AppleMusic.Tests/EchoPlay.AppleMusic.Tests.csproj --no-restore
+          dotnet build EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj --no-restore
+          dotnet build EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj --no-restore
+
+      - name: Build App + Tests (x64)
+        run: |
+          dotnet build EchoPlay.App/EchoPlay.App.csproj -p:Platform=x64 --no-restore
+          dotnet build EchoPlay.App.Tests/EchoPlay.App.Tests.csproj -p:Platform=x64 --no-restore
 
       - name: Tests Library-Projekte
         run: |
+          dotnet test EchoPlay.Core.Tests/EchoPlay.Core.Tests.csproj --no-build --verbosity normal
           dotnet test EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj --no-build --verbosity normal
           dotnet test EchoPlay.Data.Tests/EchoPlay.Data.Tests.csproj --no-build --verbosity normal
+          dotnet test EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj --no-build --verbosity normal
+          dotnet test EchoPlay.AppleMusic.Tests/EchoPlay.AppleMusic.Tests.csproj --no-build --verbosity normal
           dotnet test EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj --no-build --verbosity normal
+          dotnet test EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj --no-build --verbosity normal
 
       - name: Tests App (x64)
         run: dotnet test EchoPlay.App.Tests/EchoPlay.App.Tests.csproj -p:Platform=x64 --no-build --verbosity normal

@@ -329,7 +329,23 @@ namespace EchoPlay.App.Services
             {
                 // Titel-basierter Vergleich – robuster als Nummernvergleich,
                 // da Online-Episoden nicht immer eine konsistente Folgennummer haben
-                if (existingTitles.Contains(importEpisode.Title)) continue;
+                if (existingTitles.Contains(importEpisode.Title))
+                {
+                    // Bestehende Episode: CoverImageUrl nachtragen falls noch nicht gesetzt
+                    if (!string.IsNullOrEmpty(importEpisode.CoverImageUrl))
+                    {
+                        Episode? existing = existingEpisodes
+                            .FirstOrDefault(e => string.Equals(e.Title, importEpisode.Title, StringComparison.OrdinalIgnoreCase));
+
+                        if (existing is not null && string.IsNullOrEmpty(existing.CoverImageUrl))
+                        {
+                            existing.CoverImageUrl = importEpisode.CoverImageUrl;
+                            await episodeService.UpdateAsync(existing);
+                        }
+                    }
+
+                    continue;
+                }
 
                 Episode episode = MapToEpisode(importEpisode, series.Id);
                 await episodeService.AddAsync(episode);

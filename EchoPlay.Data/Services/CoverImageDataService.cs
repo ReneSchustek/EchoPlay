@@ -43,7 +43,19 @@ namespace EchoPlay.Data.Services
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return covers.ToDictionary(c => c.EntityId, c => c.ImageData);
+            // Platzhalter-Einträge (ImageData leer, nur LastChecked) ausfiltern,
+            // damit sie nicht fälschlich als vorhandenes Cover gewertet werden
+            Dictionary<Guid, byte[]> result = new(covers.Count);
+
+            foreach (CoverImage cover in covers)
+            {
+                if (cover.ImageData.Length > 0)
+                {
+                    result[cover.EntityId] = cover.ImageData;
+                }
+            }
+
+            return result;
         }
 
         /// <inheritdoc/>
@@ -185,23 +197,5 @@ namespace EchoPlay.Data.Services
             return deleted;
         }
 
-        /// <inheritdoc/>
-        public async Task<int> DeleteOnlineEpisodeCoversAsync()
-        {
-            // Cover von reinen Online-Episoden (kein lokaler Ordner) löschen
-            int deleted = await _context.Database.ExecuteSqlRawAsync("""
-                DELETE FROM CoverImages
-                WHERE EntityType = 'Episode'
-                  AND EntityId IN (
-                      SELECT e.Id FROM Episodes e
-                      INNER JOIN Series s ON e.SeriesId = s.Id
-                      WHERE s.IsOnlineImported = 1
-                        AND (e.LocalFolderPath IS NULL OR e.LocalFolderPath = '')
-                        AND e.IsDeleted = 0
-                  )
-                """).ConfigureAwait(false);
-
-            return deleted;
-        }
     }
 }

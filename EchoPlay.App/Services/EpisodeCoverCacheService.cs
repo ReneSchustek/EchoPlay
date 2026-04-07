@@ -57,11 +57,16 @@ namespace EchoPlay.App.Services
         /// </summary>
         public async Task CacheCoversAsync(
             Guid seriesId,
-            IReadOnlyList<ImportEpisode>? importEpisodes = null)
+            IReadOnlyList<ImportEpisode>? importEpisodes = null,
+            CancellationToken ct = default)
         {
             try
             {
-                await CacheCoversInternalAsync(seriesId, importEpisodes);
+                await CacheCoversInternalAsync(seriesId, importEpisodes, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                // Erwarteter Abbruch (z.B. Serienwechsel) – kein Log nötig
             }
             catch (Exception ex)
             {
@@ -74,7 +79,8 @@ namespace EchoPlay.App.Services
         /// </summary>
         private async Task CacheCoversInternalAsync(
             Guid seriesId,
-            IReadOnlyList<ImportEpisode>? importEpisodes)
+            IReadOnlyList<ImportEpisode>? importEpisodes,
+            CancellationToken ct)
         {
             // ── Phase 1: Lokale Cover kopieren (Raw SQL via Data-Schicht) ────────
             int localFound;
@@ -164,6 +170,7 @@ namespace EchoPlay.App.Services
             // Erst alle Provider-Downloads sammeln (kein Rate-Limiting nötig)
             foreach (Episode episode in needsCheck)
             {
+                ct.ThrowIfCancellationRequested();
                 if (!titleToCoverUrl.TryGetValue(episode.Title, out string? providerUrl)) continue;
 
                 try
@@ -183,6 +190,8 @@ namespace EchoPlay.App.Services
             }
 
             // ── Phase 3: Online-Suchkette für den Rest (mit Rate-Limiting) ──────
+
+            ct.ThrowIfCancellationRequested();
 
             // Erneut prüfen welche Episoden noch kein Cover haben (via CoverImages-Tabelle)
             IReadOnlyList<Episode> afterDownload = await episodeService.GetBySeriesIdAsync(seriesId);
@@ -208,6 +217,8 @@ namespace EchoPlay.App.Services
 
             foreach (Episode episode in stillMissing)
             {
+                ct.ThrowIfCancellationRequested();
+
                 try
                 {
                     byte[]? coverBytes = await SearchCoverOnlineAsync(
@@ -226,7 +237,7 @@ namespace EchoPlay.App.Services
                     await writeService.SetCoverLastCheckedAsync(episode.Id, DateTime.UtcNow);
 
                     // Rate-Limiting nur bei Online-Suche (HTTP-Requests gegen externe APIs)
-                    await Task.Delay(200).ConfigureAwait(false);
+                    await Task.Delay(200, ct).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

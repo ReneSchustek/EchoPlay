@@ -259,7 +259,6 @@ namespace EchoPlay.TagManager.Tests.Services
         public async Task RenameAsync_SkipsUnchangedFilesAndDoesNotCountThem()
         {
             string path = AudioTestFileFactory.CreateTempMp3();
-            string originalFileName = Path.GetFileNameWithoutExtension(path);
 
             try
             {

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EchoPlay.Data.Tests.Infrastructure
 {
     /// <summary>
-    /// Tests für die Datenbank-Optimierungen aus Brief 119:
+    /// Tests für Datenbank-Optimierungen:
     /// PRAGMA-Konfiguration, Indizes und Fremdschlüssel-Beziehungen.
     /// </summary>
     public sealed class DatabaseOptimizationTests : DbTestBase

@@ -14,7 +14,7 @@ namespace EchoPlay.App.ViewModels
     /// Kachel-ViewModel für eine Episode in der Online-Mediathek.
     /// Zeigt Titel, Nummer, Erscheinungsdatum und Cover.
     /// Online-Episoden haben keine lokalen Tracks – stattdessen gibt es
-    /// einen "Im Browser öffnen"-Button (wird in einem späteren Brief implementiert).
+    /// einen „Im Browser öffnen"-Button für den Direktzugriff beim Provider.
     /// </summary>
     public sealed class OnlineEpisodeCardViewModel : ObservableObject
     {

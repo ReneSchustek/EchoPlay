@@ -2659,9 +2659,9 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Erstellt ein <see cref="BitmapImage"/> aus den Seriendaten.
-        /// Priorität: DB-Cover (CoverService) → Online-URL → cover.jpg im Serienordner → null.
-        /// Das Cover aus der CoverImages-Tabelle hat Vorrang, weil es bereits optimiert vorliegt.
-        /// Die cover.jpg im Serienordner ist der Fallback für rein lokal importierte Serien ohne Online-Metadaten.
+        /// Priorität: DB-Cover (CoverImages-Tabelle) → cover.jpg im Serienordner → null.
+        /// Die DB ist Single Source of Truth. Wird ein lokales Cover gefunden das noch nicht
+        /// in der DB liegt, wird es dort gespeichert (für schnelle Batch-Abfragen).
         /// </summary>
         private async Task<BitmapImage?> BuildCoverImageAsync(Series series)
         {
@@ -2675,18 +2675,20 @@ namespace EchoPlay.App.ViewModels
                 }
             }
 
-            if (series.CoverImageUrl is not null)
-            {
-                return new BitmapImage(new Uri(series.CoverImageUrl));
-            }
-
-            // Fallback: cover.jpg im Serienordner – typisch für lokal importierte Serien ohne Online-Match
+            // Fallback: cover.jpg im Serienordner – typisch für lokal importierte Serien ohne Online-Match.
+            // Gefundenes Cover wird in die DB geschrieben, damit es beim nächsten Mal direkt kommt.
             if (series.LocalFolderPath is not null)
             {
                 string coverPath = Path.Combine(series.LocalFolderPath, Core.CoverConstants.CoverFileName);
                 if (File.Exists(coverPath))
                 {
                     byte[] coverBytes = await File.ReadAllBytesAsync(coverPath);
+
+                    if (_coverService is not null && coverBytes.Length > 0)
+                    {
+                        await _coverService.SetSeriesCoverAsync(series.Id, coverBytes);
+                    }
+
                     return await EchoPlay.App.Services.CoverService.ConvertToBitmapAsync(coverBytes);
                 }
             }

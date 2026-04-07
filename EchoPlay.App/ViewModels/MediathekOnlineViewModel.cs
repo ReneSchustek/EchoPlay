@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -53,6 +54,9 @@ namespace EchoPlay.App.ViewModels
         private int _episodeSortIndex;
         private int _searchTypeIndex;
         private SeriesStatusFilter _statusFilter = SeriesStatusFilter.Alle;
+
+        /// <summary>Bricht laufende Cover-Downloads ab wenn eine andere Serie gewählt wird.</summary>
+        private CancellationTokenSource? _episodeCoverCts;
 
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Services.
@@ -447,11 +451,21 @@ namespace EchoPlay.App.ViewModels
         /// <param name="card">Die gewählte Serien-Kachel.</param>
         public async Task SelectSeriesAsync(SeriesCardViewModel card)
         {
+            // Laufende Cover-Downloads der vorherigen Serie abbrechen
+            _episodeCoverCts?.Cancel();
+            _episodeCoverCts?.Dispose();
+            _episodeCoverCts = new CancellationTokenSource();
+            CancellationToken ct = _episodeCoverCts.Token;
+
             // Vorherige Auswahl zurücksetzen
             foreach (SeriesCardViewModel c in _allSeries)
             {
                 c.IsSelectedInAccordion = false;
             }
+
+            // Alte Episoden sofort ausblenden, damit kein Spinner über alten Kacheln erscheint
+            _allEpisodes = [];
+            Episodes = [];
 
             card.IsSelectedInAccordion = true;
             IsLoadingEpisodes = true;
@@ -538,53 +552,89 @@ namespace EchoPlay.App.ViewModels
             if (hasMissingCovers && _coverCacheService is not null)
             {
                 // Cover-Download im Hintergrund starten, UI-Update danach auf dem UI-Thread
-                _ = RefreshMissingEpisodeCoversAsync(card.Id, episodeCards);
+                _ = RefreshMissingEpisodeCoversAsync(card.Id, episodeCards, ct);
             }
         }
 
         /// <summary>
         /// Lädt fehlende Episoden-Cover im Hintergrund herunter und aktualisiert
         /// die Kacheln progressiv – Platzhalter wird durch das geladene Cover ersetzt.
+        /// Wird abgebrochen wenn der Nutzer eine andere Serie wählt.
+        /// Aktualisiert die Kacheln periodisch während des Downloads, damit der Nutzer
+        /// Cover sieht sobald sie in der DB liegen – nicht erst am Ende.
         /// </summary>
         private async Task RefreshMissingEpisodeCoversAsync(
             Guid seriesId,
-            List<OnlineEpisodeCardViewModel> episodeCards)
+            List<OnlineEpisodeCardViewModel> episodeCards,
+            CancellationToken ct)
         {
             try
             {
-                // Download + DB-Write laufen asynchron (kein Task.Run nötig, da IO-bound)
-                await _coverCacheService!.CacheCoversAsync(seriesId);
+                // Cover-Download im Hintergrund starten (nicht awaiten),
+                // damit wir parallel die Kacheln aktualisieren können
+                Task cacheTask = _coverCacheService!.CacheCoversAsync(seriesId, ct: ct);
 
-                // Cover über CoverService laden und auf den Kacheln setzen
-                List<Guid> missingIds = new();
-
-                foreach (OnlineEpisodeCardViewModel epCard in episodeCards)
+                // Kacheln periodisch aktualisieren bis der Download fertig ist
+                while (!cacheTask.IsCompleted && !ct.IsCancellationRequested)
                 {
-                    if (epCard.CoverImage is null) missingIds.Add(epCard.EpisodeId);
+                    // Kurz warten, damit neue Cover in die DB geschrieben werden können
+                    await Task.WhenAny(cacheTask, Task.Delay(2000, ct));
+
+                    if (ct.IsCancellationRequested) return;
+
+                    await UpdateEpisodeCardsFromDbAsync(episodeCards);
                 }
 
-                IReadOnlyDictionary<Guid, byte[]> coverMap = _coverService is not null
-                    ? await _coverService.GetEpisodeCoverBytesAsync(missingIds)
-                    : new Dictionary<Guid, byte[]>();
-
-                foreach (OnlineEpisodeCardViewModel epCard in episodeCards)
+                // Abschließende Aktualisierung nach Abschluss des Downloads
+                await cacheTask;
+                if (!ct.IsCancellationRequested)
                 {
-                    if (epCard.CoverImage is not null) continue;
-
-                    if (coverMap.TryGetValue(epCard.EpisodeId, out byte[]? coverData))
-                    {
-                        BitmapImage? coverImage = await CoverService.ConvertToBitmapAsync(coverData);
-
-                        if (coverImage is not null)
-                        {
-                            epCard.CoverImage = coverImage;
-                        }
-                    }
+                    await UpdateEpisodeCardsFromDbAsync(episodeCards);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Serienwechsel – erwarteter Abbruch
             }
             catch (Exception)
             {
                 // Cover-Nachladen ist optional – kein Fehler für den Nutzer
+            }
+        }
+
+        /// <summary>
+        /// Lädt neu verfügbare Cover aus der DB und setzt sie auf den Kacheln.
+        /// Nur Kacheln ohne Cover werden aktualisiert.
+        /// </summary>
+        private async Task UpdateEpisodeCardsFromDbAsync(
+            List<OnlineEpisodeCardViewModel> episodeCards)
+        {
+            List<Guid> missingIds = new();
+
+            foreach (OnlineEpisodeCardViewModel epCard in episodeCards)
+            {
+                if (epCard.CoverImage is null) missingIds.Add(epCard.EpisodeId);
+            }
+
+            if (missingIds.Count == 0) return;
+
+            IReadOnlyDictionary<Guid, byte[]> coverMap = _coverService is not null
+                ? await _coverService.GetEpisodeCoverBytesAsync(missingIds)
+                : new Dictionary<Guid, byte[]>();
+
+            foreach (OnlineEpisodeCardViewModel epCard in episodeCards)
+            {
+                if (epCard.CoverImage is not null) continue;
+
+                if (coverMap.TryGetValue(epCard.EpisodeId, out byte[]? coverData))
+                {
+                    BitmapImage? coverImage = await CoverService.ConvertToBitmapAsync(coverData);
+
+                    if (coverImage is not null)
+                    {
+                        epCard.CoverImage = coverImage;
+                    }
+                }
             }
         }
 
@@ -725,8 +775,9 @@ namespace EchoPlay.App.ViewModels
 
                 try
                 {
-                    byte[] coverBytes = await _downloadClient.GetByteArrayAsync(series.CoverImageUrl)
-                        .ConfigureAwait(false);
+                    // Kein ConfigureAwait(false): der UI-Thread wird für die
+                    // BitmapImage-Erstellung und Kachel-Aktualisierung danach benötigt.
+                    byte[] coverBytes = await _downloadClient.GetByteArrayAsync(series.CoverImageUrl);
 
                     if (coverBytes.Length == 0) continue;
 
@@ -928,7 +979,9 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Erstellt ein <see cref="BitmapImage"/> aus den Seriendaten.
-        /// Bevorzugt lokale Binärdaten (über CoverService) vor der Remote-URL.
+        /// Priorität: DB-Cover (CoverImages) → URL-Fallback (Übergangsanzeige).
+        /// Der URL-Fallback zeigt das Cover sofort an, während <see cref="CacheSeriesCoversAsync"/>
+        /// es im Hintergrund in die DB persistiert. Beim nächsten Öffnen kommt es aus der DB.
         /// </summary>
         private async Task<BitmapImage?> BuildCoverImageAsync(Series series)
         {
@@ -942,6 +995,7 @@ namespace EchoPlay.App.ViewModels
                 return coverImage;
             }
 
+            // Übergangsanzeige bis CacheSeriesCoversAsync das Cover in die DB geschrieben hat
             if (!string.IsNullOrEmpty(series.CoverImageUrl))
             {
                 return new BitmapImage(new Uri(series.CoverImageUrl));

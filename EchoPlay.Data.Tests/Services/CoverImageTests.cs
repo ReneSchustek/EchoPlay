@@ -116,5 +116,26 @@ namespace EchoPlay.Data.Tests.Services
             Assert.True(result.ContainsKey(id1));
             Assert.True(result.ContainsKey(id2));
         }
+
+        [Fact]
+        public async Task GetImageDataByEntitiesAsync_FiltertPlatzhalterOhneBilddaten()
+        {
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid mitCover = Guid.NewGuid();
+            Guid platzhalter = Guid.NewGuid();
+
+            // Echtes Cover
+            await service.SetCoverAsync("Episode", mitCover, [0xFF, 0xD8]);
+            // Platzhalter: nur LastChecked, keine Bilddaten
+            await service.SetLastCheckedAsync("Episode", platzhalter, DateTime.UtcNow);
+            Context.ChangeTracker.Clear();
+
+            IReadOnlyDictionary<Guid, byte[]> result =
+                await service.GetImageDataByEntitiesAsync("Episode", [mitCover, platzhalter]);
+
+            Assert.Single(result);
+            Assert.True(result.ContainsKey(mitCover));
+            Assert.False(result.ContainsKey(platzhalter));
+        }
     }
 }

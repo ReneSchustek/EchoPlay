@@ -64,27 +64,49 @@ namespace EchoPlay.Data.Services
                 return;
             }
 
-            // Alle betroffenen CollectionIds in einem Batch laden (vermeidet N+1-Abfragen)
-            List<long> collectionIds = entries.Select(e => e.CollectionId).ToList();
+            // Eingabe deduplizieren: dieselbe CollectionId kann in mehreren Serien vorkommen
+            Dictionary<long, CachedNewRelease> uniqueByCollectionId = new();
+            foreach (CachedNewRelease entry in entries)
+            {
+                uniqueByCollectionId[entry.CollectionId] = entry;
+            }
+
+            // Alle betroffenen CollectionIds in einem Batch laden (vermeidet N+1-Abfragen).
+            // IgnoreQueryFilters: auch soft-gelöschte Einträge finden, da der UNIQUE-Index
+            // auf CollectionId unabhängig von IsDeleted gilt.
+            List<long> collectionIds = uniqueByCollectionId.Keys.ToList();
             Dictionary<long, CachedNewRelease> existingByCollectionId = await _context.CachedNewReleases
+                .IgnoreQueryFilters()
                 .Where(c => collectionIds.Contains(c.CollectionId))
                 .ToDictionaryAsync(c => c.CollectionId).ConfigureAwait(false);
 
             int insertCount = 0;
             int updateCount = 0;
 
-            foreach (CachedNewRelease entry in entries)
+            foreach (CachedNewRelease entry in uniqueByCollectionId.Values)
             {
                 if (existingByCollectionId.TryGetValue(entry.CollectionId, out CachedNewRelease? existing))
                 {
-                    // Bestehenden Eintrag aktualisieren (Titel, Cover, Datum können sich ändern)
-                    existing.Title = entry.Title;
-                    existing.EpisodeNumber = entry.EpisodeNumber;
-                    existing.ReleaseDate = entry.ReleaseDate;
-                    existing.CoverUrl = entry.CoverUrl;
-                    existing.CheckedAtUtc = entry.CheckedAtUtc;
-                    existing.MarkAsUpdated(DateTime.UtcNow);
-                    updateCount++;
+                    // Bestehenden Eintrag aktualisieren (Titel, Cover, Datum können sich ändern).
+                    // Soft-gelöschte Einträge physisch entfernen und neu anlegen,
+                    // da Cache-Einträge keine fachlichen Daten sind.
+                    if (existing.IsDeleted)
+                    {
+                        _context.CachedNewReleases.Remove(existing);
+                        _context.CachedNewReleases.Add(entry);
+                        insertCount++;
+                    }
+                    else
+                    {
+                        existing.Title = entry.Title;
+                        existing.SeriesId = entry.SeriesId;
+                        existing.EpisodeNumber = entry.EpisodeNumber;
+                        existing.ReleaseDate = entry.ReleaseDate;
+                        existing.CoverUrl = entry.CoverUrl;
+                        existing.CheckedAtUtc = entry.CheckedAtUtc;
+                        existing.MarkAsUpdated(DateTime.UtcNow);
+                        updateCount++;
+                    }
                 }
                 else
                 {

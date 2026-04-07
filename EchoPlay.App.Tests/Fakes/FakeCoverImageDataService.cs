@@ -98,10 +98,5 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.FromResult(count);
         }
 
-        /// <inheritdoc/>
-        public Task<int> DeleteOnlineEpisodeCoversAsync()
-        {
-            return Task.FromResult(0);
-        }
     }
 }

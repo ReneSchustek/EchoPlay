@@ -160,7 +160,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(string.Empty, vm.SleepTimerText);
         }
 
-        // ── Brief 100: MiniPlayer-Sichtbarkeit bei lokaler Wiedergabe ─────────────
+        // ── MiniPlayer-Sichtbarkeit bei lokaler Wiedergabe ────────────────────────
 
         [Fact]
         public void MiniPlayerVisibility_IsCollapsed_Initially()

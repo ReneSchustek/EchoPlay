@@ -282,6 +282,11 @@ namespace EchoPlay.App.Services
                 }
             }
 
+            // Cover-Abgleich: Für neue lokale Episoden prüfen ob ein Cover bereits
+            // in der DB existiert (z.B. von einer Online-Version). Wenn ja, auf die
+            // neue lokale Episode kopieren und als cover.jpg speichern.
+            await ApplyDbCoversToLocalEpisodesAsync(scope.ServiceProvider);
+
             SyncResult result = new()
             {
                 SeriesMatched    = seriesMatched,
@@ -290,10 +295,6 @@ namespace EchoPlay.App.Services
                 TracksCreated    = tracksCreated
             };
 
-            // Kein abschließendes progress.Report("Sync abgeschlossen") hier –
-            // das ViewModel übernimmt die Erfolgsmeldung, nachdem ClearScanProgress()
-            // aufgerufen wurde. So gibt es keine Race Condition zwischen dem letzten
-            // Progress-Callback und dem Clear-Aufruf im Aufrufer.
             _logger.Info($"Sync abgeschlossen: {result}");
 
             return result;
@@ -476,6 +477,89 @@ namespace EchoPlay.App.Services
             {
                 _logger.Warning($"Cover-Auflösung fehlgeschlagen für '{folderPath}': {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Prüft alle lokalen Episoden ohne Cover in CoverImages, ob ein passendes Cover
+        /// von einer anderen Episode (z.B. Online-Version) in der DB vorliegt.
+        /// Nutzt den CoverCopyService (Nummer + Schlagwort-Match).
+        /// Schreibt übernommene Cover zusätzlich als cover.jpg in den Episodenordner.
+        /// </summary>
+        private async Task ApplyDbCoversToLocalEpisodesAsync(IServiceProvider serviceProvider)
+        {
+            try
+            {
+                ICoverCopyService coverCopy = serviceProvider.GetRequiredService<ICoverCopyService>();
+                ISeriesDataService seriesService = serviceProvider.GetRequiredService<ISeriesDataService>();
+                IEpisodeDataService episodeService = serviceProvider.GetRequiredService<IEpisodeDataService>();
+                ICoverImageDataService coverImageService = serviceProvider
+                    .GetRequiredService<ICoverImageDataService>();
+
+                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+                int totalCopied = 0;
+
+                // CoverCopyService für lokale Serien aufrufen – kopiert Cover
+                // von Online-Episoden auf lokale Episoden per SQL
+                foreach (Series series in allSeries)
+                {
+                    if (string.IsNullOrEmpty(series.LocalFolderPath)) continue;
+
+                    int copied = await coverCopy.CopyFromMatchingEpisodesAsync(series.Id);
+                    totalCopied += copied;
+                }
+
+                if (totalCopied > 0)
+                {
+                    _logger.Info($"Cover-Abgleich nach Scan: {totalCopied} Cover aus DB übernommen.");
+                }
+
+                // Übernommene Cover als cover.jpg in den Episodenordner schreiben
+                foreach (Series series in allSeries)
+                {
+                    if (string.IsNullOrEmpty(series.LocalFolderPath)) continue;
+
+                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
+
+                    List<Episode> localEpisodes = [];
+                    foreach (Episode episode in episodes)
+                    {
+                        if (!string.IsNullOrEmpty(episode.LocalFolderPath))
+                        {
+                            localEpisodes.Add(episode);
+                        }
+                    }
+
+                    if (localEpisodes.Count == 0) continue;
+
+                    List<Guid> ids = localEpisodes.Select(e => e.Id).ToList();
+                    IReadOnlyDictionary<Guid, byte[]> covers =
+                        await coverImageService.GetImageDataByEntitiesAsync(
+                            CoverEntityTypes.Episode, ids);
+
+                    foreach (Episode episode in localEpisodes)
+                    {
+                        if (!covers.TryGetValue(episode.Id, out byte[]? coverData)) continue;
+
+                        string coverPath = Path.Combine(
+                            episode.LocalFolderPath!, Core.CoverConstants.CoverFileName);
+
+                        if (File.Exists(coverPath)) continue;
+
+                        try
+                        {
+                            await File.WriteAllBytesAsync(coverPath, coverData);
+                        }
+                        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                        {
+                            _logger.Debug($"Cover-Datei konnte nicht geschrieben werden: {coverPath} – {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Cover-Abgleich nach Scan fehlgeschlagen: {ex.Message}");
             }
         }
     }

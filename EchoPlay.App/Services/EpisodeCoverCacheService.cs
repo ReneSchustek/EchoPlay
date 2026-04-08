@@ -1,4 +1,5 @@
 using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Scoring;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
@@ -289,9 +290,14 @@ namespace EchoPlay.App.Services
                 {
                     IReadOnlyList<CoverSearchResult> results = await coverSearch.SearchAsync(query);
 
-                    if (results.Count > 0)
+                    // Ergebnisse nach Relevanz filtern – verhindert irrelevante Cover
+                    // (z.B. „Mimi Rutherford" bei Suche nach „Die drei ??? Kids")
+                    CoverSearchResult? best = FindBestMatch(
+                        results, seriesName, episodeNumber, shortTitle);
+
+                    if (best is not null)
                     {
-                        byte[]? bytes = await DownloadSafeAsync(results[0].FullUrl);
+                        byte[]? bytes = await DownloadSafeAsync(best.FullUrl);
                         if (bytes is not null) return bytes;
                     }
                 }
@@ -327,6 +333,35 @@ namespace EchoPlay.App.Services
             }
 
             return title;
+        }
+
+        /// <summary>
+        /// Wählt das relevanteste Suchergebnis anhand des <see cref="CoverRelevanceScorer"/>.
+        /// Ergebnisse unter der Mindest-Schwelle werden verworfen.
+        /// </summary>
+        private static CoverSearchResult? FindBestMatch(
+            IReadOnlyList<CoverSearchResult> results,
+            string seriesName,
+            int? episodeNumber,
+            string? episodeTitle)
+        {
+            CoverSearchResult? best = null;
+            int bestScore = 0;
+
+            foreach (CoverSearchResult result in results)
+            {
+                int score = CoverRelevanceScorer.CalculateScore(
+                    result.ReleaseTitle, seriesName, episodeNumber, episodeTitle);
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = result;
+                }
+            }
+
+            // Nur Treffer über der Mindest-Schwelle zurückgeben
+            return bestScore >= CoverRelevanceScorer.MinimumThreshold ? best : null;
         }
 
         /// <summary>

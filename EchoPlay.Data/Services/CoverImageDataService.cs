@@ -25,7 +25,7 @@ namespace EchoPlay.Data.Services
         public async Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId)
         {
             return await _context.CoverImages
-                .AsNoTracking()
+
                 .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
                 .ConfigureAwait(false);
         }
@@ -38,7 +38,7 @@ namespace EchoPlay.Data.Services
 
             // Ein einziger Query mit WHERE EntityId IN (...) – kein N+1
             List<CoverImage> covers = await _context.CoverImages
-                .AsNoTracking()
+
                 .Where(c => c.EntityType == entityType && entityIds.Contains(c.EntityId))
                 .ToListAsync()
                 .ConfigureAwait(false);
@@ -66,6 +66,7 @@ namespace EchoPlay.Data.Services
             DateTime now = DateTime.UtcNow;
 
             CoverImage? existing = await _context.CoverImages
+                .AsTracking()
                 .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
                 .ConfigureAwait(false);
 
@@ -101,6 +102,7 @@ namespace EchoPlay.Data.Services
                     _context.ChangeTracker.Clear();
 
                     CoverImage? retry = await _context.CoverImages
+                        .AsTracking()
                         .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
                         .ConfigureAwait(false);
 
@@ -121,6 +123,7 @@ namespace EchoPlay.Data.Services
         public async Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt)
         {
             CoverImage? existing = await _context.CoverImages
+                .AsTracking()
                 .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
                 .ConfigureAwait(false);
 
@@ -156,7 +159,7 @@ namespace EchoPlay.Data.Services
 
             // Entities MIT abgelaufenem Check und OHNE Bild
             List<Guid> expired = await _context.CoverImages
-                .AsNoTracking()
+
                 .Where(c => c.EntityType == entityType
                     && c.ImageData.Length == 0
                     && (c.LastChecked == null || c.LastChecked < cooldownThreshold))
@@ -175,7 +178,7 @@ namespace EchoPlay.Data.Services
             // ImageData.Length im Predicate kann je nach EF-Core-Version/Provider zu
             // Übersetzungsproblemen führen, daher wird die Länge per Projektion ermittelt.
             int? length = await _context.CoverImages
-                .AsNoTracking()
+
                 .Where(c => c.EntityType == entityType && c.EntityId == entityId)
                 .Select(c => (int?)c.ImageData.Length)
                 .FirstOrDefaultAsync()

@@ -32,7 +32,7 @@ namespace EchoPlay.Data.Services
             HashSet<Guid> idSet = new(seriesIds);
 
             List<Episode> result = await _context.Episodes
-                .AsNoTracking()
+
                 .Where(episode => idSet.Contains(episode.SeriesId))
                 .ToListAsync().ConfigureAwait(false);
 
@@ -49,7 +49,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug($"Lade Episoden für Serie '{seriesId}'.");
 
             List<Episode> result = await _context.Episodes
-                .AsNoTracking()
+
                 .Where(episode => episode.SeriesId == seriesId)
                 .OrderBy(episode => episode.EpisodeNumber)
                 .ThenBy(episode => episode.Title)
@@ -81,7 +81,7 @@ namespace EchoPlay.Data.Services
 
             // Hilfsprojekt für den EF-Core-GroupBy – anonyme Typen benötigen kein Objekt-Mapping
             List<EpisodeCountRow> rows = await _context.Episodes
-                .AsNoTracking()
+
                 .Where(e => seriesIds.Contains(e.SeriesId))
                 .GroupBy(e => e.SeriesId)
                 .Select(g => new EpisodeCountRow
@@ -128,7 +128,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug($"Lade fehlende lokale Episoden für Serie '{seriesId}'.");
 
             List<Episode> result = await _context.Episodes
-                .AsNoTracking()
+
                 .Where(e => e.SeriesId == seriesId && e.LocalFolderPath == null)
                 .OrderBy(e => e.EpisodeNumber)
                 .ThenBy(e => e.Title)
@@ -187,7 +187,7 @@ namespace EchoPlay.Data.Services
         {
             // MAX über eine leere Menge liefert in SQL NULL – EF Core bildet das auf int? ab
             int? result = await _context.Episodes
-                .AsNoTracking()
+
                 .Where(e => e.SeriesId == seriesId
                          && e.LocalFolderPath != null
                          && e.EpisodeNumber != null)
@@ -206,7 +206,9 @@ namespace EchoPlay.Data.Services
         /// <param name="coverData">Rohe Bilddaten oder <see langword="null"/> zum Entfernen.</param>
         public async Task SetLocalCoverAsync(Guid episodeId, byte[]? coverData)
         {
-            Episode? episode = await _context.Episodes.FindAsync(episodeId).ConfigureAwait(false);
+            Episode? episode = await _context.Episodes
+                .AsTracking()
+                .FirstOrDefaultAsync(e => e.Id == episodeId).ConfigureAwait(false);
 
             if (episode is null)
             {
@@ -223,7 +225,9 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt)
         {
-            Episode? episode = await _context.Episodes.FindAsync(episodeId).ConfigureAwait(false);
+            Episode? episode = await _context.Episodes
+                .AsTracking()
+                .FirstOrDefaultAsync(e => e.Id == episodeId).ConfigureAwait(false);
 
             if (episode is null)
             {
@@ -245,8 +249,9 @@ namespace EchoPlay.Data.Services
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"DB:Episode:Delete:{id}");
 
-            Episode? episode =
-                await _context.Episodes.FindAsync(id).ConfigureAwait(false);
+            Episode? episode = await _context.Episodes
+                .AsTracking()
+                .FirstOrDefaultAsync(e => e.Id == id).ConfigureAwait(false);
 
             if (episode == null)
             {
@@ -260,6 +265,7 @@ namespace EchoPlay.Data.Services
 
             List<PlaybackState> playbackStates =
                 await _context.PlaybackStates
+                    .AsTracking()
                     .Where(state => state.EpisodeId == id)
                     .ToListAsync().ConfigureAwait(false);
 

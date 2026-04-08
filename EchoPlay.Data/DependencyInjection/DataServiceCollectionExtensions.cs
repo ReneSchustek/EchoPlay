@@ -26,8 +26,9 @@ namespace EchoPlay.Data.DependencyInjection
             SqlitePragmaInterceptor pragmaInterceptor = new();
 
             services.AddDbContext<EchoPlayDbContext>(options =>
-                options.UseSqlite($"Data Source={dbPath}")
-                       .AddInterceptors(pragmaInterceptor));
+                options.UseSqlite($"Data Source={dbPath};Cache=Shared")
+                       .AddInterceptors(pragmaInterceptor)
+                       .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
             services.AddScoped<DatabaseInitializer>();
 

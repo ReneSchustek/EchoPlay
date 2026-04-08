@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug("Lade alle Serien.");
 
             List<Series> result = await _context.Series
-                .AsNoTracking()
+
                 .OrderBy(series => series.Title)
                 .ToListAsync().ConfigureAwait(false);
 
@@ -113,7 +113,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug("Lade abonnierte Serien.");
 
             List<Series> result = await _context.Series
-                .AsNoTracking()
+
                 .Where(series => series.IsSubscribed)
                 .OrderBy(series => series.Title)
                 .ToListAsync().ConfigureAwait(false);
@@ -131,9 +131,9 @@ namespace EchoPlay.Data.Services
         /// <param name="isSubscribed"><see langword="true"/> zum Abonnieren, <see langword="false"/> zum Abbestellen.</param>
         public async Task SetSubscribedAsync(Guid seriesId, bool isSubscribed)
         {
-            // FindAsync umgeht den QueryFilter – so kann man auch gelöschte Serien finden,
-            // was für diesen simplen Flag-Update kein Problem darstellt.
-            Series? series = await _context.Series.FindAsync(seriesId).ConfigureAwait(false);
+            Series? series = await _context.Series
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
 
             if (series is null)
             {
@@ -158,7 +158,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug("Lade favorisierte Serien.");
 
             List<Series> result = await _context.Series
-                .AsNoTracking()
+
                 .Where(series => series.IsFavorite)
                 .OrderBy(series => series.Title)
                 .ToListAsync().ConfigureAwait(false);
@@ -176,7 +176,9 @@ namespace EchoPlay.Data.Services
         /// <param name="isFavorite"><see langword="true"/> zum Favorisieren, <see langword="false"/> zum Entfernen.</param>
         public async Task SetFavoriteAsync(Guid seriesId, bool isFavorite)
         {
-            Series? series = await _context.Series.FindAsync(seriesId).ConfigureAwait(false);
+            Series? series = await _context.Series
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
 
             if (series is null)
             {
@@ -198,7 +200,9 @@ namespace EchoPlay.Data.Services
         /// <param name="coverData">Rohe Bilddaten oder <see langword="null"/> zum Entfernen.</param>
         public async Task SetLocalCoverAsync(Guid seriesId, byte[]? coverData)
         {
-            Series? series = await _context.Series.FindAsync(seriesId).ConfigureAwait(false);
+            Series? series = await _context.Series
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
 
             if (series is null)
             {
@@ -215,7 +219,9 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         public async Task SetWatchedAsync(Guid seriesId, bool isWatched)
         {
-            Series? series = await _context.Series.FindAsync(seriesId).ConfigureAwait(false);
+            Series? series = await _context.Series
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
 
             if (series is null)
             {
@@ -239,7 +245,9 @@ namespace EchoPlay.Data.Services
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"DB:Series:Delete:{id}");
 
-            Series? series = await _context.Series.FindAsync(id).ConfigureAwait(false);
+            Series? series = await _context.Series
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.Id == id).ConfigureAwait(false);
 
             if (series == null)
             {
@@ -260,6 +268,7 @@ namespace EchoPlay.Data.Services
 
                 List<Episode> episodes =
                     await _context.Episodes
+                        .AsTracking()
                         .Where(episode => episode.SeriesId == id)
                         .ToListAsync().ConfigureAwait(false);
 
@@ -268,6 +277,7 @@ namespace EchoPlay.Data.Services
 
                 List<PlaybackState> playbackStates =
                     await _context.PlaybackStates
+                        .AsTracking()
                         .Where(state => episodeIds.Contains(state.EpisodeId))
                         .ToListAsync().ConfigureAwait(false);
 

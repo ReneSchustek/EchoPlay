@@ -24,7 +24,7 @@ namespace EchoPlay.Data.Services
         public async Task<IReadOnlyList<CachedNewRelease>> GetAllAsync()
         {
             List<CachedNewRelease> result = await _context.CachedNewReleases
-                .AsNoTracking()
+
                 .Include(c => c.Series)
                 .OrderByDescending(c => c.ReleaseDate)
                 .ToListAsync().ConfigureAwait(false);
@@ -37,7 +37,7 @@ namespace EchoPlay.Data.Services
         public async Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId)
         {
             List<CachedNewRelease> result = await _context.CachedNewReleases
-                .AsNoTracking()
+
                 .Where(c => c.SeriesId == seriesId)
                 .OrderByDescending(c => c.ReleaseDate)
                 .ToListAsync().ConfigureAwait(false);
@@ -50,7 +50,7 @@ namespace EchoPlay.Data.Services
         {
             // Max auf leerer Menge gibt null zurück (nullable DateTime)
             DateTime? latest = await _context.CachedNewReleases
-                .AsNoTracking()
+
                 .MaxAsync(c => (DateTime?)c.CheckedAtUtc).ConfigureAwait(false);
 
             return latest;
@@ -76,6 +76,7 @@ namespace EchoPlay.Data.Services
             // auf CollectionId unabhängig von IsDeleted gilt.
             List<long> collectionIds = uniqueByCollectionId.Keys.ToList();
             Dictionary<long, CachedNewRelease> existingByCollectionId = await _context.CachedNewReleases
+                .AsTracking()
                 .IgnoreQueryFilters()
                 .Where(c => collectionIds.Contains(c.CollectionId))
                 .ToDictionaryAsync(c => c.CollectionId).ConfigureAwait(false);
@@ -130,6 +131,7 @@ namespace EchoPlay.Data.Services
             // nicht zuverlässig in SQL übersetzen kann.
             DateTime now = DateTime.UtcNow;
             List<CachedNewRelease> expired = await _context.CachedNewReleases
+                .AsTracking()
                 .Where(c => c.ReleaseDate < cutoff && c.ReleaseDate < now)
                 .ToListAsync().ConfigureAwait(false);
 

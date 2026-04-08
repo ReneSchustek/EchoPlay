@@ -4,6 +4,7 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 
@@ -24,6 +25,11 @@ namespace EchoPlay.App.Services
         private readonly System.Timers.Timer _positionTimer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
+
+        // Synchronisierung: _stateLock schützt alle mutable Felder (synchron),
+        // _saveLock serialisiert die async DB-Persistierung.
+        private readonly object _stateLock = new();
+        private readonly SemaphoreSlim _saveLock = new(1, 1);
 
         private Guid _currentEpisodeId;
         private TimeSpan? _sleepTimerRemaining;
@@ -49,12 +55,16 @@ namespace EchoPlay.App.Services
 
             _player.PlaybackSession.PlaybackStateChanged += OnPlaybackStateChanged;
             _playlist.CurrentItemChanged += OnCurrentItemChanged;
+            _player.MediaFailed += OnMediaFailed;
         }
 
         /// <summary>
         /// Wird ausgelöst, wenn sich Abspielstatus, Track oder Position geändert haben.
         /// </summary>
         public event EventHandler? StateChanged;
+
+        /// <inheritdoc/>
+        public event EventHandler<string>? ErrorOccurred;
 
         /// <summary>
         /// Gibt an, ob gerade Wiedergabe aktiv ist.
@@ -104,31 +114,50 @@ namespace EchoPlay.App.Services
         public void Play(Guid episodeId, IReadOnlyList<string> trackPaths, int startIndex = 0, TimeSpan resumePosition = default)
         {
             _logger.Debug($"Wiedergabe gestartet: EpisodeId={episodeId}, Tracks={trackPaths.Count}, StartIndex={startIndex}");
-            _currentEpisodeId = episodeId;
-            _autoSaveTick = 0;
 
-            _playlist.Items.Clear();
-
-            foreach (string path in trackPaths)
+            try
             {
-                // CA2000: MediaSource-Lebensdauer wird von der MediaPlaybackList verwaltet –
-                // Dispose erfolgt beim Entfernen aus der Playlist oder beim Player-Shutdown.
+                lock (_stateLock)
+                {
+                    _currentEpisodeId = episodeId;
+                    _autoSaveTick = 0;
+                }
+
+                _playlist.Items.Clear();
+
+                foreach (string path in trackPaths)
+                {
+                    // CA2000: MediaSource-Lebensdauer wird von der MediaPlaybackList verwaltet –
+                    // Dispose erfolgt beim Entfernen aus der Playlist oder beim Player-Shutdown.
 #pragma warning disable CA2000
-                _playlist.Items.Add(
-                    new MediaPlaybackItem(
-                        Windows.Media.Core.MediaSource.CreateFromUri(new Uri(path))));
+                    _playlist.Items.Add(
+                        new MediaPlaybackItem(
+                            Windows.Media.Core.MediaSource.CreateFromUri(new Uri(path))));
 #pragma warning restore CA2000
+                }
+
+                _playlist.MoveTo((uint)startIndex);
+                _player.Play();
+
+                if (resumePosition > TimeSpan.Zero)
+                {
+                    _player.PlaybackSession.Position = resumePosition;
+                }
+
+                _positionTimer.Start();
             }
-
-            _playlist.MoveTo((uint)startIndex);
-            _player.Play();
-
-            if (resumePosition > TimeSpan.Zero)
+            catch (Exception ex) when (ex is UriFormatException or System.IO.FileNotFoundException or UnauthorizedAccessException or ArgumentException)
             {
-                _player.PlaybackSession.Position = resumePosition;
+                _logger.Error($"Wiedergabe konnte nicht gestartet werden: {ex.Message}", ex);
+                lock (_stateLock) { ResetPlaybackState(); }
+                ErrorOccurred?.Invoke(this, $"Wiedergabe fehlgeschlagen: {ex.Message}");
             }
-
-            _positionTimer.Start();
+            catch (Exception ex)
+            {
+                _logger.Error($"Unerwarteter Fehler beim Starten der Wiedergabe: {ex.Message}", ex);
+                lock (_stateLock) { ResetPlaybackState(); }
+                ErrorOccurred?.Invoke(this, "Ein unerwarteter Fehler ist bei der Wiedergabe aufgetreten.");
+            }
         }
 
         /// <summary>
@@ -137,7 +166,7 @@ namespace EchoPlay.App.Services
         public void Pause()
         {
             _player.Pause();
-            _ = SavePlaybackStateAsync();
+            _ = SavePlaybackStateSnapshotAsync();
         }
 
         /// <summary>
@@ -150,10 +179,22 @@ namespace EchoPlay.App.Services
         {
             _logger.Info("Wiedergabe gestoppt – Position wird gespeichert.");
 
-            // Position sichern, bevor die EpisodeId gelöscht wird
-            _ = SavePlaybackStateAsync();
+            // EpisodeId und Position unter Lock kopieren, dann State zurücksetzen.
+            // So kann kein paralleler Timer-Callback mit halbfertigem State arbeiten.
+            Guid episodeToSave;
+            TimeSpan positionToSave;
 
-            ResetPlaybackState();
+            lock (_stateLock)
+            {
+                episodeToSave = _currentEpisodeId;
+                positionToSave = _player.PlaybackSession.Position;
+                ResetPlaybackState();
+            }
+
+            if (episodeToSave != Guid.Empty)
+            {
+                _ = SavePlaybackStateForEpisodeAsync(episodeToSave, positionToSave);
+            }
 
             StateChanged?.Invoke(this, EventArgs.Empty);
 
@@ -178,7 +219,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Setzt den internen Wiedergabezustand zurück: Timer anhalten,
         /// Schlaf-Timer löschen, Titel und Episode-ID leeren.
-        /// Wird von <see cref="Stop"/> aufgerufen, nachdem die Position gespeichert wurde.
+        /// Muss unter <see cref="_stateLock"/> aufgerufen werden.
         /// </summary>
         private void ResetPlaybackState()
         {
@@ -195,7 +236,15 @@ namespace EchoPlay.App.Services
         /// </summary>
         public void Resume()
         {
-            _player.Play();
+            try
+            {
+                _player.Play();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Wiedergabe konnte nicht fortgesetzt werden: {ex.Message}", ex);
+                ErrorOccurred?.Invoke(this, "Wiedergabe konnte nicht fortgesetzt werden.");
+            }
         }
 
         /// <summary>
@@ -230,7 +279,11 @@ namespace EchoPlay.App.Services
         /// <param name="duration">Zeitspanne bis zum automatischen Stopp. Null deaktiviert den Timer.</param>
         public void SetSleepTimer(TimeSpan? duration)
         {
-            _sleepTimerRemaining = duration;
+            lock (_stateLock)
+            {
+                _sleepTimerRemaining = duration;
+            }
+
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -245,7 +298,7 @@ namespace EchoPlay.App.Services
             // Task.Run vermeidet Deadlock falls Dispose() vom UI-Thread aufgerufen wird.
             try
             {
-                System.Threading.Tasks.Task.Run(SavePlaybackStateAsync).GetAwaiter().GetResult();
+                System.Threading.Tasks.Task.Run(() => SavePlaybackStateSnapshotAsync()).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -253,31 +306,47 @@ namespace EchoPlay.App.Services
                 _logger.Error("Abspielposition konnte beim App-Ende nicht gespeichert werden.", ex);
             }
 
+            _saveLock.Dispose();
             _positionTimer.Dispose();
             _player.Dispose();
         }
 
         private void OnPositionTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            // Auto-Save alle 30 Sekunden: Position geht auch bei Force-Close nicht verloren
-            _autoSaveTick++;
-            if (_autoSaveTick >= AutoSaveIntervalTicks)
+            bool shouldSave = false;
+            bool shouldPause = false;
+
+            lock (_stateLock)
             {
-                _autoSaveTick = 0;
-                _ = SavePlaybackStateAsync();
+                // Auto-Save alle 30 Sekunden: Position geht auch bei Force-Close nicht verloren
+                _autoSaveTick++;
+                if (_autoSaveTick >= AutoSaveIntervalTicks)
+                {
+                    _autoSaveTick = 0;
+                    shouldSave = true;
+                }
+
+                // Sleep-Timer runterzählen; bei Ablauf Wiedergabe anhalten
+                if (_sleepTimerRemaining.HasValue)
+                {
+                    _sleepTimerRemaining = _sleepTimerRemaining.Value - TimeSpan.FromMilliseconds(500);
+                    if (_sleepTimerRemaining.Value <= TimeSpan.Zero)
+                    {
+                        _sleepTimerRemaining = null;
+                        shouldPause = true;
+                    }
+                }
             }
 
-            // Sleep-Timer runterzählen; bei Ablauf Wiedergabe anhalten
-            if (_sleepTimerRemaining.HasValue)
+            if (shouldSave)
             {
-                _sleepTimerRemaining = _sleepTimerRemaining.Value - TimeSpan.FromMilliseconds(500);
-                if (_sleepTimerRemaining.Value <= TimeSpan.Zero)
-                {
-                    _sleepTimerRemaining = null;
-                    Pause();
-                    // StateChanged wird über OnPlaybackStateChanged gefeuert
-                    return;
-                }
+                _ = SavePlaybackStateSnapshotAsync();
+            }
+
+            if (shouldPause)
+            {
+                Pause();
+                return;
             }
 
             StateChanged?.Invoke(this, EventArgs.Empty);
@@ -308,12 +377,49 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Speichert die aktuelle Position als PlaybackState in der Datenbank.
-        /// Verwendet einen eigenen Scope, da PlayerService ein Singleton ist.
+        /// Behandelt Codec-Fehler, korrupte Dateien und I/O-Probleme der Media-Pipeline.
         /// </summary>
-        private async System.Threading.Tasks.Task SavePlaybackStateAsync()
+        private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
         {
-            if (_currentEpisodeId == Guid.Empty)
+            string message = args.ErrorMessage ?? "Unbekannter Wiedergabefehler";
+            _logger.Error($"MediaPlayer-Fehler: {message} (Error: {args.Error})");
+            ErrorOccurred?.Invoke(this, $"Wiedergabefehler: {message}");
+        }
+
+        /// <summary>
+        /// Erstellt einen thread-sicheren Snapshot des aktuellen Zustands und speichert ihn.
+        /// Werte werden unter Lock kopiert, die DB-Persistierung erfolgt außerhalb.
+        /// </summary>
+        private async System.Threading.Tasks.Task SavePlaybackStateSnapshotAsync()
+        {
+            Guid episodeId;
+            TimeSpan position;
+
+            lock (_stateLock)
+            {
+                episodeId = _currentEpisodeId;
+                position = _player.PlaybackSession.Position;
+            }
+
+            await SavePlaybackStateForEpisodeAsync(episodeId, position);
+        }
+
+        /// <summary>
+        /// Speichert die Position für eine bestimmte Episode in der Datenbank.
+        /// Wird von <see cref="SavePlaybackStateSnapshotAsync"/> und <see cref="Stop"/> verwendet.
+        /// <see cref="_saveLock"/> stellt sicher, dass nie zwei Saves gleichzeitig laufen.
+        /// </summary>
+        /// <param name="episodeId">Die Episode, für die gespeichert wird.</param>
+        /// <param name="position">Die aktuelle Abspielposition.</param>
+        private async System.Threading.Tasks.Task SavePlaybackStateForEpisodeAsync(Guid episodeId, TimeSpan position)
+        {
+            if (episodeId == Guid.Empty)
+            {
+                return;
+            }
+
+            // Bereits ein Save aktiv → diesen Durchlauf überspringen
+            if (!await _saveLock.WaitAsync(0))
             {
                 return;
             }
@@ -323,15 +429,14 @@ namespace EchoPlay.App.Services
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IPlaybackStateDataService service = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-                PlaybackState? existing = await service.GetByEpisodeIdAsync(_currentEpisodeId);
-                TimeSpan currentPosition = Position;
+                PlaybackState? existing = await service.GetByEpisodeIdAsync(episodeId);
 
                 if (existing is null)
                 {
                     PlaybackState newState = new()
                     {
-                        EpisodeId = _currentEpisodeId,
-                        LastPosition = currentPosition,
+                        EpisodeId = episodeId,
+                        LastPosition = position,
                         LastPlayedAt = DateTime.UtcNow
                     };
 
@@ -339,7 +444,7 @@ namespace EchoPlay.App.Services
                 }
                 else
                 {
-                    existing.LastPosition = currentPosition;
+                    existing.LastPosition = position;
                     existing.LastPlayedAt = DateTime.UtcNow;
                     await service.UpdateAsync(existing);
                 }
@@ -347,6 +452,10 @@ namespace EchoPlay.App.Services
             catch (Exception ex)
             {
                 _logger.Warning($"Wiedergabestatus konnte nicht gespeichert werden: {ex.Message}");
+            }
+            finally
+            {
+                _saveLock.Release();
             }
         }
     }

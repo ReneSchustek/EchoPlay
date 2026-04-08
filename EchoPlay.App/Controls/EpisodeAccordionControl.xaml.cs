@@ -8,8 +8,8 @@ namespace EchoPlay.App.Controls
     /// <summary>
     /// Wiederverwendbares Akkordeon für Episoden-Kacheln.
     /// Stellt Border (farbliche Abgrenzung, dynamische Breite) und GridView bereit.
-    /// Der Header-Bereich wird von der Page als Content übergeben –
-    /// so kann jede Mediathek eigene Controls (Filter, Sortierung, Tabs) definieren.
+    /// Der Header (Titel, Schließen, Sortierung) liegt auf der jeweiligen Page
+    /// außerhalb des ScrollViewers, damit er beim Scrollen fixiert bleibt.
     /// </summary>
     public sealed partial class EpisodeAccordionControl : UserControl
     {
@@ -42,20 +42,6 @@ namespace EchoPlay.App.Controls
                 _lastTilesPerRow = tilesPerRow;
                 OuterBorder.Width = tilesPerRow * TileSlotWidth + 4;
             }
-        }
-
-        // ── Header ──────────────────────────────────────────────────────────────
-
-        /// <summary>Inhalt des Header-Bereichs (Titel, Buttons, Filter etc.).</summary>
-        public static readonly DependencyProperty HeaderContentProperty =
-            DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(EpisodeAccordionControl),
-                new PropertyMetadata(null, (d, e) => ((EpisodeAccordionControl)d).HeaderPresenter.Content = e.NewValue));
-
-        /// <summary>Inhalt des Header-Bereichs.</summary>
-        public object? HeaderContent
-        {
-            get => GetValue(HeaderContentProperty);
-            set => SetValue(HeaderContentProperty, value);
         }
 
         // ── Episoden ────────────────────────────────────────────────────────────

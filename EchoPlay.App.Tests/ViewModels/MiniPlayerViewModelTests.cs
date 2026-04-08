@@ -201,5 +201,57 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Equal(Visibility.Collapsed, vm.MiniPlayerVisibility);
         }
+
+        // ── Error Handling ──────────────────────────────────────────────────────
+
+        [Fact]
+        public void ErrorMessage_IsEmpty_Initially()
+        {
+            // Ohne Fehler muss ErrorMessage leer sein
+            FakePlayerService playerService = new();
+            MiniPlayerViewModel vm = new(playerService);
+
+            Assert.Equal(string.Empty, vm.ErrorMessage);
+        }
+
+        [Fact]
+        public void ErrorMessage_ShowsMessage_WhenErrorOccurred()
+        {
+            // ErrorOccurred vom PlayerService muss als ErrorMessage im ViewModel ankommen
+            FakePlayerService playerService = new();
+            MiniPlayerViewModel vm = new(playerService);
+
+            playerService.SimulateError("Datei nicht gefunden");
+
+            Assert.Equal("Datei nicht gefunden", vm.ErrorMessage);
+        }
+
+        [Fact]
+        public void ErrorMessage_ClearsOnNextStateChange()
+        {
+            // Fehlermeldung wird bei normaler Zustandsänderung zurückgesetzt
+            FakePlayerService playerService = new();
+            MiniPlayerViewModel vm = new(playerService);
+
+            playerService.SimulateError("Wiedergabefehler");
+            Assert.Equal("Wiedergabefehler", vm.ErrorMessage);
+
+            playerService.SetState("Folge 1", isPlaying: true, positionSeconds: 0, durationSeconds: 60);
+
+            Assert.Equal(string.Empty, vm.ErrorMessage);
+        }
+
+        [Fact]
+        public void Dispose_UnsubscribesFromErrorOccurred()
+        {
+            // Nach Dispose darf ErrorOccurred nicht mehr ankommen
+            FakePlayerService playerService = new();
+            MiniPlayerViewModel vm = new(playerService);
+
+            vm.Dispose();
+            playerService.SimulateError("Sollte nicht ankommen");
+
+            Assert.Equal(string.Empty, vm.ErrorMessage);
+        }
     }
 }

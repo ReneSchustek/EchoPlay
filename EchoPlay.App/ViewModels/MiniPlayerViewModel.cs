@@ -25,6 +25,7 @@ namespace EchoPlay.App.ViewModels
         private string _sleepTimerText = string.Empty;
         private string _elapsedText = string.Empty;
         private string _remainingText = string.Empty;
+        private string _errorMessage = string.Empty;
 
         /// <summary>
         /// Initialisiert das ViewModel und registriert sich für Zustandsänderungen des PlayerService.
@@ -51,6 +52,7 @@ namespace EchoPlay.App.ViewModels
             PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
 
             _playerService.StateChanged += OnStateChanged;
+            _playerService.ErrorOccurred += OnErrorOccurred;
         }
 
         /// <summary>Titel des aktuell laufenden Tracks.</summary>
@@ -122,6 +124,16 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Letzte Fehlermeldung des PlayerService.
+        /// Leer, wenn kein Fehler vorliegt. Wird bei jedem neuen StateChanged zurückgesetzt.
+        /// </summary>
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            private set => SetProperty(ref _errorMessage, value);
+        }
+
+        /// <summary>
         /// Sichtbarkeit des MiniPlayers – eingeblendet sobald ein Track geladen ist.
         /// </summary>
         public Visibility MiniPlayerVisibility =>
@@ -167,6 +179,7 @@ namespace EchoPlay.App.ViewModels
         public void Dispose()
         {
             _playerService.StateChanged -= OnStateChanged;
+            _playerService.ErrorOccurred -= OnErrorOccurred;
         }
 
         private void OnStateChanged(object? sender, EventArgs e)
@@ -183,8 +196,23 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
+        private void OnErrorOccurred(object? sender, string message)
+        {
+            // ErrorOccurred kann aus beliebigen Threads kommen – UI-Dispatch erforderlich
+            if (_dispatcherQueue is not null)
+            {
+                _dispatcherQueue.TryEnqueue(() => ErrorMessage = message);
+            }
+            else
+            {
+                ErrorMessage = message;
+            }
+        }
+
         private void UpdateFromState()
         {
+            // Fehlermeldung bei normaler Zustandsänderung zurücksetzen
+            ErrorMessage    = string.Empty;
             TrackTitle      = _playerService.CurrentTrackTitle ?? string.Empty;
             PositionSeconds = _playerService.Position.TotalSeconds;
             DurationSeconds = _playerService.Duration.TotalSeconds;

@@ -102,6 +102,11 @@ namespace EchoPlay.Data.Services
             await _context.Series
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            // Alle Cover löschen – keine Entity-Zuordnung mehr vorhanden
+            await _context.CoverImages
+                .IgnoreQueryFilters()
+                .ExecuteDeleteAsync().ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -144,6 +149,18 @@ namespace EchoPlay.Data.Services
             await _context.Series
                 .IgnoreQueryFilters()
                 .Where(s => onlineSeriesIds.Contains(s.Id))
+                .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            // Cover der gelöschten Online-Episoden und -Serien entfernen
+            if (episodeIds.Count > 0)
+            {
+                await _context.CoverImages
+                    .Where(c => c.EntityType == "Episode" && episodeIds.Contains(c.EntityId))
+                    .ExecuteDeleteAsync().ConfigureAwait(false);
+            }
+
+            await _context.CoverImages
+                .Where(c => c.EntityType == "Series" && onlineSeriesIds.Contains(c.EntityId))
                 .ExecuteDeleteAsync().ConfigureAwait(false);
         }
 
@@ -199,6 +216,18 @@ namespace EchoPlay.Data.Services
                 await _context.Series
                     .IgnoreQueryFilters()
                     .Where(s => localOnlySeriesIds.Contains(s.Id))
+                    .ExecuteDeleteAsync().ConfigureAwait(false);
+
+                // Cover der gelöschten lokalen Episoden und Serien entfernen
+                if (episodeIds.Count > 0)
+                {
+                    await _context.CoverImages
+                        .Where(c => c.EntityType == "Episode" && episodeIds.Contains(c.EntityId))
+                        .ExecuteDeleteAsync().ConfigureAwait(false);
+                }
+
+                await _context.CoverImages
+                    .Where(c => c.EntityType == "Series" && localOnlySeriesIds.Contains(c.EntityId))
                     .ExecuteDeleteAsync().ConfigureAwait(false);
             }
         }

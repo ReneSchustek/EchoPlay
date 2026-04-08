@@ -14,6 +14,9 @@ namespace EchoPlay.App.Tests.Fakes
         public event EventHandler? StateChanged;
 
         /// <inheritdoc/>
+        public event EventHandler<string>? ErrorOccurred;
+
+        /// <inheritdoc/>
         public bool IsPlaying { get; private set; }
 
         /// <inheritdoc/>
@@ -51,6 +54,15 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>Zuletzt übergebene Position aus <see cref="SeekTo"/>.</summary>
         public TimeSpan? SeekToArg { get; private set; }
+
+        /// <summary>
+        /// Simuliert einen Wiedergabefehler und feuert <see cref="ErrorOccurred"/>.
+        /// </summary>
+        /// <param name="message">Die Fehlermeldung für den Nutzer.</param>
+        public void SimulateError(string message)
+        {
+            ErrorOccurred?.Invoke(this, message);
+        }
 
         /// <summary>
         /// Setzt den internen Zustand und feuert <see cref="StateChanged"/>.

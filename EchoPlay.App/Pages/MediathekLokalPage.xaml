@@ -12,6 +12,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -126,7 +127,69 @@
             Margin="8,0,8,4"/>
 
         <!-- Row 4: Akkordeon-Inhalt – Serien-Grid aufgeteilt um das Folgen-Panel -->
-        <ScrollViewer Grid.Row="4">
+        <!-- Episoden-Header: fixiert außerhalb des ScrollViewers, scrollt nicht mit -->
+        <StackPanel Grid.Row="4" Padding="16,4,16,4"
+                    Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}">
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock x:Uid="LokalEpisodesHeader"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                    <Button x:Uid="LokalCloseEpisodesButton"
+                            Click="OnCloseEpisodePanelClick"
+                            Background="Transparent" BorderThickness="0" Padding="4"
+                            VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                    </Button>
+                </StackPanel>
+                <ComboBox Grid.Column="1" MinWidth="120"
+                          SelectedIndex="{x:Bind ViewModel.EpisodeFilterIndex, Mode=TwoWay}"
+                          Visibility="{x:Bind ViewModel.EpisodesLoadedVisibility, Mode=OneWay}">
+                    <ComboBoxItem x:Uid="LokalFilterAll"/>
+                    <ComboBoxItem x:Uid="LokalFilterUnheard"/>
+                    <ComboBoxItem x:Uid="LokalFilterHeard"/>
+                    <ComboBoxItem x:Uid="LokalFilterInProgress"/>
+                </ComboBox>
+                <ComboBox Grid.Column="2" MinWidth="140"
+                          SelectedIndex="{x:Bind ViewModel.EpisodeSortIndex, Mode=TwoWay}"
+                          Visibility="{x:Bind ViewModel.EpisodesLoadedVisibility, Mode=OneWay}">
+                    <ComboBoxItem x:Uid="LokalSortByNumber"/>
+                    <ComboBoxItem x:Uid="LokalSortByNumberDesc"/>
+                    <ComboBoxItem x:Uid="LokalSortByTitle"/>
+                </ComboBox>
+                <Button Grid.Column="3"
+                        ToolTipService.ToolTip="Alle Tracks dieser Serie im Tag-Manager bearbeiten"
+                        Command="{x:Bind ViewModel.OpenAllSeriesTracksCommand}"
+                        Visibility="{x:Bind ViewModel.SeriesActionsVisibility, Mode=OneWay}">
+                    <FontIcon Glyph="&#xE8EC;" FontSize="14"/>
+                </Button>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="4" Padding="0,0"
+                        Visibility="{x:Bind ViewModel.HasSpecialEpisodes, Mode=OneWay}">
+                <RadioButton x:Uid="LokalTabEpisodes" GroupName="EpisodeTab"
+                             IsChecked="True" Checked="OnEpisodeTabRegularChecked"/>
+                <RadioButton GroupName="EpisodeTab" Checked="OnEpisodeTabSpecialChecked">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock x:Uid="LokalTabSpecial"/>
+                        <TextBlock Text="("/>
+                        <TextBlock Text="{x:Bind ViewModel.SpecialEpisodeCount, Mode=OneWay}"/>
+                        <TextBlock Text=")"/>
+                    </StackPanel>
+                </RadioButton>
+            </StackPanel>
+            <TextBlock x:Uid="LokalEpisodesEmpty"
+                       Visibility="{x:Bind ViewModel.EpisodesEmptyVisibility, Mode=OneWay}"
+                       Style="{ThemeResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       HorizontalAlignment="Center" Margin="16,16,16,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="5">
             <StackPanel Padding="8">
 
                 <!-- Leer-Hinweis wenn noch kein Scan durchgeführt -->
@@ -237,73 +300,12 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Linke Spalte: EpisodeAccordionControl -->
+                    <!-- Linke Spalte: Episoden-Kacheln ohne Header – Header ist fixiert in Row 4 -->
                     <ctrl:EpisodeAccordionControl
                         x:Name="EpisodeAccordion"
                         Grid.Column="0"
                         EpisodesSource="{x:Bind ViewModel.Episodes, Mode=OneWay}"
                         SelectionMode="Single">
-                        <ctrl:EpisodeAccordionControl.HeaderContent>
-                            <StackPanel>
-                                <Grid Padding="0,0,0,4" ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <TextBlock x:Uid="LokalEpisodesHeader"
-                                                   Style="{ThemeResource SubtitleTextBlockStyle}"/>
-                                        <Button x:Uid="LokalCloseEpisodesButton"
-                                                Click="OnCloseEpisodePanelClick"
-                                                Background="Transparent" BorderThickness="0" Padding="4"
-                                                VerticalAlignment="Center">
-                                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
-                                        </Button>
-                                    </StackPanel>
-                                    <ComboBox Grid.Column="1" MinWidth="120"
-                                              SelectedIndex="{x:Bind ViewModel.EpisodeFilterIndex, Mode=TwoWay}"
-                                              Visibility="{x:Bind ViewModel.EpisodesLoadedVisibility, Mode=OneWay}">
-                                        <ComboBoxItem x:Uid="LokalFilterAll"/>
-                                        <ComboBoxItem x:Uid="LokalFilterUnheard"/>
-                                        <ComboBoxItem x:Uid="LokalFilterHeard"/>
-                                        <ComboBoxItem x:Uid="LokalFilterInProgress"/>
-                                    </ComboBox>
-                                    <ComboBox Grid.Column="2" MinWidth="140"
-                                              SelectedIndex="{x:Bind ViewModel.EpisodeSortIndex, Mode=TwoWay}"
-                                              Visibility="{x:Bind ViewModel.EpisodesLoadedVisibility, Mode=OneWay}">
-                                        <ComboBoxItem x:Uid="LokalSortByNumber"/>
-                                        <ComboBoxItem x:Uid="LokalSortByNumberDesc"/>
-                                        <ComboBoxItem x:Uid="LokalSortByTitle"/>
-                                    </ComboBox>
-                                    <Button Grid.Column="3"
-                                            ToolTipService.ToolTip="Alle Tracks dieser Serie im Tag-Manager bearbeiten"
-                                            Command="{x:Bind ViewModel.OpenAllSeriesTracksCommand}"
-                                            Visibility="{x:Bind ViewModel.SeriesActionsVisibility, Mode=OneWay}">
-                                        <FontIcon Glyph="&#xE8EC;" FontSize="14"/>
-                                    </Button>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Spacing="4" Padding="0,0"
-                                            Visibility="{x:Bind ViewModel.HasSpecialEpisodes, Mode=OneWay}">
-                                    <RadioButton x:Uid="LokalTabEpisodes" GroupName="EpisodeTab"
-                                                 IsChecked="True" Checked="OnEpisodeTabRegularChecked"/>
-                                    <RadioButton GroupName="EpisodeTab" Checked="OnEpisodeTabSpecialChecked">
-                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                            <TextBlock x:Uid="LokalTabSpecial"/>
-                                            <TextBlock Text="("/>
-                                            <TextBlock Text="{x:Bind ViewModel.SpecialEpisodeCount, Mode=OneWay}"/>
-                                            <TextBlock Text=")"/>
-                                        </StackPanel>
-                                    </RadioButton>
-                                </StackPanel>
-                                <TextBlock x:Uid="LokalEpisodesEmpty"
-                                           Visibility="{x:Bind ViewModel.EpisodesEmptyVisibility, Mode=OneWay}"
-                                           Style="{ThemeResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           HorizontalAlignment="Center" Margin="16,16,16,0" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </ctrl:EpisodeAccordionControl.HeaderContent>
                         <ctrl:EpisodeAccordionControl.EpisodeTemplate>
                             <DataTemplate x:DataType="vm:LocalEpisodeCardViewModel">
                                 <ctrl:EpisodeTileControl

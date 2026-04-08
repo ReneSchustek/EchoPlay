@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services;
 using EchoPlay.Data.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -118,6 +119,80 @@ namespace EchoPlay.Data.Tests.Services
 
             int trackCount = await Context.LocalTracks.IgnoreQueryFilters().CountAsync();
             Assert.Equal(0, trackCount);
+        }
+
+        // ── Cover-Bereinigung bei Reset ─────────────────────────────────────────
+
+        [Fact]
+        public async Task ClearLibraryAsync_DeletesAllCovers()
+        {
+            // Cover für eine Serie anlegen, dann alles löschen
+            Series series = new() { Title = "Test" };
+            Context.Series.Add(series);
+            await Context.SaveChangesAsync();
+
+            Context.CoverImages.Add(new CoverImage
+            {
+                EntityType = "Series",
+                EntityId = series.Id,
+                ImageData = [1, 2, 3]
+            });
+            await Context.SaveChangesAsync();
+            Context.ChangeTracker.Clear();
+
+            DatabaseMaintenanceService service = new(Context);
+            await service.ClearLibraryAsync();
+
+            int coverCount = await Context.CoverImages.IgnoreQueryFilters().CountAsync();
+            Assert.Equal(0, coverCount);
+        }
+
+        [Fact]
+        public async Task ClearOnlineLibraryAsync_DeletesOnlyOnlineCovers()
+        {
+            // Zwei Serien mit je einem Cover – nur Online-Cover soll gelöscht werden
+            Series onlineSeries = new() { Title = "Online", IsOnlineImported = true };
+            Series localSeries = new() { Title = "Lokal", IsOnlineImported = false };
+            Context.Series.AddRange(onlineSeries, localSeries);
+            await Context.SaveChangesAsync();
+
+            Context.CoverImages.AddRange(
+                new CoverImage { EntityType = "Series", EntityId = onlineSeries.Id, ImageData = [1] },
+                new CoverImage { EntityType = "Series", EntityId = localSeries.Id, ImageData = [2] }
+            );
+            await Context.SaveChangesAsync();
+            Context.ChangeTracker.Clear();
+
+            DatabaseMaintenanceService service = new(Context);
+            await service.ClearOnlineLibraryAsync();
+
+            List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync();
+            Assert.Single(remaining);
+            Assert.Equal(localSeries.Id, remaining[0].EntityId);
+        }
+
+        [Fact]
+        public async Task ClearLocalLibraryAsync_DeletesLocalOnlyCovers()
+        {
+            // Rein lokale Serie mit Cover – Cover muss mitgelöscht werden
+            Series localOnly = new() { Title = "Nur Lokal", IsOnlineImported = false };
+            Series onlineSeries = new() { Title = "Online", IsOnlineImported = true };
+            Context.Series.AddRange(localOnly, onlineSeries);
+            await Context.SaveChangesAsync();
+
+            Context.CoverImages.AddRange(
+                new CoverImage { EntityType = "Series", EntityId = localOnly.Id, ImageData = [1] },
+                new CoverImage { EntityType = "Series", EntityId = onlineSeries.Id, ImageData = [2] }
+            );
+            await Context.SaveChangesAsync();
+            Context.ChangeTracker.Clear();
+
+            DatabaseMaintenanceService service = new(Context);
+            await service.ClearLocalLibraryAsync();
+
+            List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync();
+            Assert.Single(remaining);
+            Assert.Equal(onlineSeries.Id, remaining[0].EntityId);
         }
     }
 }

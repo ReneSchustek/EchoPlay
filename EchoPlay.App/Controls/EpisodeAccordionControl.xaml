@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Wiederverwendbares Akkordeon für Episoden – identisches Layout in lokaler und Online-Mediathek.
      Border, GridView und dynamische Breitenberechnung sind zentral.
-     Der Header-Bereich wird von außen als Content übergeben (jede Page hat eigene Controls). -->
+     Der Header liegt auf der Page außerhalb des ScrollViewers (Sticky-Verhalten). -->
 <UserControl
     x:Class="EchoPlay.App.Controls.EpisodeAccordionControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -18,10 +18,9 @@
         CornerRadius="8">
 
         <StackPanel>
-            <!-- Header-Bereich – wird von der Page befüllt -->
-            <ContentPresenter x:Name="HeaderPresenter" Padding="12,0,12,4"/>
-
-            <!-- Episoden-Kachelgrid – kein eigenes Scrolling, äußerer ScrollViewer übernimmt -->
+            <!-- Episoden-Kachelgrid – kein eigenes Scrolling, äußerer ScrollViewer übernimmt.
+                 Der Header (Titel, Schließen, Sortierung) liegt auf der Page außerhalb des
+                 ScrollViewers, damit er beim Scrollen fixiert bleibt. -->
             <GridView
                 x:Name="EpisodesGridView"
                 SelectionMode="None"

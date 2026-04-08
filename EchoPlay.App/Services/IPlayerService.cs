@@ -14,6 +14,12 @@ namespace EchoPlay.App.Services
         /// </summary>
         event EventHandler? StateChanged;
 
+        /// <summary>
+        /// Wird ausgelöst, wenn ein Wiedergabefehler auftritt.
+        /// Die Nachricht ist für die Anzeige an den Nutzer geeignet.
+        /// </summary>
+        event EventHandler<string>? ErrorOccurred;
+
         /// <summary>Gibt an, ob gerade Wiedergabe aktiv ist.</summary>
         bool IsPlaying { get; }
 

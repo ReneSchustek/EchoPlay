@@ -26,7 +26,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug($"Lade Dashboard-Positionen für Bereich '{section}'.");
 
             List<DashboardPosition> result = await _context.DashboardPositions
-                .AsNoTracking()
+
                 .Where(dp => dp.Section == section)
                 .OrderBy(dp => dp.Position)
                 .ToListAsync().ConfigureAwait(false);
@@ -43,6 +43,7 @@ namespace EchoPlay.Data.Services
             // Bestehende Positionen des Bereichs entfernen – Replace-Strategie ist einfacher
             // und konsistenter als ein Merge, da die gesamte Reihenfolge auf einmal gesetzt wird.
             List<DashboardPosition> existing = await _context.DashboardPositions
+                .AsTracking()
                 .Where(dp => dp.Section == section)
                 .ToListAsync().ConfigureAwait(false);
 

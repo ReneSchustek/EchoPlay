@@ -232,14 +232,12 @@ namespace EchoPlay.App.Pages
         /// </summary>
         private void OnAddSeriesClick(object sender, RoutedEventArgs e)
         {
+            SearchBox.Focus(FocusState.Programmatic);
+
             if (!string.IsNullOrWhiteSpace(ViewModel.SearchText)
                 && ViewModel.ProviderSearchCommand.CanExecute(null))
             {
                 ViewModel.ProviderSearchCommand.Execute(null);
-            }
-            else
-            {
-                SearchBox.Focus(FocusState.Programmatic);
             }
         }
 

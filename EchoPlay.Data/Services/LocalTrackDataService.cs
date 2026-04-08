@@ -29,7 +29,7 @@ namespace EchoPlay.Data.Services
             _logger.Debug($"Lade lokale Tracks für Episode '{episodeId}'.");
 
             List<LocalTrack> result = await _context.LocalTracks
-                .AsNoTracking()
+
                 .Where(track => track.EpisodeId == episodeId)
                 .OrderBy(track => track.TrackNumber)
                 .ToListAsync().ConfigureAwait(false);
@@ -52,6 +52,7 @@ namespace EchoPlay.Data.Services
 
             // Vorhandene Einträge hart löschen – Scan-Ergebnisse sind keine Stammdaten
             List<LocalTrack> existing = await _context.LocalTracks
+                .AsTracking()
                 .Where(track => track.EpisodeId == episodeId)
                 .ToListAsync().ConfigureAwait(false);
 

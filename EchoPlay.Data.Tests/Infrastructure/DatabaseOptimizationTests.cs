@@ -225,6 +225,18 @@ namespace EchoPlay.Data.Tests.Infrastructure
             connection.Close();
         }
 
+        // ── Connection-String- und Tracking-Tests ─────────────────────────────────
+
+        [Fact]
+        public void DbContext_UsesNoTrackingByDefault()
+        {
+            // Der globale Default muss NoTracking sein, damit Lese-Abfragen
+            // nicht unnötig den Change-Tracker belasten.
+            Assert.Equal(
+                QueryTrackingBehavior.NoTracking,
+                Context.ChangeTracker.QueryTrackingBehavior);
+        }
+
         // ── Hilfsmethode ─────────────────────────────────────────────────────────
 
         /// <summary>

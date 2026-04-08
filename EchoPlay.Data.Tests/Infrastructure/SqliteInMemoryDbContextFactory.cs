@@ -20,7 +20,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
             connection.Open();
 
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
-            builder.UseSqlite(connection);
+            builder.UseSqlite(connection)
+                   .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
             EchoPlayDbContext context = new(builder.Options);
             context.Database.EnsureCreated();

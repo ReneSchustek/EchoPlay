@@ -25,12 +25,11 @@ namespace EchoPlay.Data.Services
         /// <summary>
         /// Liefert alle aktiven (nicht gelöschten) Wiedergabestände als flache Liste.
         /// Der globale Query-Filter des DbContext schließt logisch gelöschte Einträge automatisch aus.
-        /// AsNoTracking spart Speicher, da die Daten nur gelesen werden.
         /// </summary>
         public async Task<IReadOnlyList<PlaybackState>> GetAllAsync()
         {
             _logger.Debug("Lade alle Wiedergabestände.");
-            return await _context.PlaybackStates.AsNoTracking().ToListAsync().ConfigureAwait(false);
+            return await _context.PlaybackStates.ToListAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -85,7 +84,7 @@ namespace EchoPlay.Data.Services
 
             // Episode-IDs der Serie laden (nur IDs, keine Blobs)
             List<Guid> episodeIds = await _context.Episodes
-                .AsNoTracking()
+
                 .Where(e => e.SeriesId == seriesId)
                 .Select(e => e.Id)
                 .ToListAsync().ConfigureAwait(false);
@@ -96,7 +95,7 @@ namespace EchoPlay.Data.Services
             // TimeSpan-Vergleich kann SQLite nicht in einem JOIN übersetzen,
             // daher Client-Evaluation – bei <500 States pro Serie kein Problem.
             List<PlaybackState> states = await _context.PlaybackStates
-                .AsNoTracking()
+
                 .Where(p => episodeIds.Contains(p.EpisodeId))
                 .ToListAsync().ConfigureAwait(false);
 
@@ -132,8 +131,9 @@ namespace EchoPlay.Data.Services
         /// <param name="id">Die eindeutige ID des zu löschenden Wiedergabestatus.</param>
         public async Task DeleteAsync(Guid id)
         {
-            PlaybackState? playbackState =
-                await _context.PlaybackStates.FindAsync(id).ConfigureAwait(false);
+            PlaybackState? playbackState = await _context.PlaybackStates
+                .AsTracking()
+                .FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
 
             if (playbackState == null)
             {

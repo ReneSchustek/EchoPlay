@@ -25,7 +25,7 @@ namespace EchoPlay.Data.Services
         public async Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId)
         {
             Series? targetSeries = await _context.Series
-                .AsNoTracking()
+
                 .FirstOrDefaultAsync(s => s.Id == targetSeriesId)
                 .ConfigureAwait(false);
 
@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Services
 
             // Prüfen ob überhaupt Episoden ohne Cover existieren
             bool hasMissing = await _context.Episodes
-                .AsNoTracking()
+
                 .AnyAsync(e => e.SeriesId == targetSeriesId
                     && !_context.CoverImages.Any(ci =>
                         ci.EntityType == CoverEntityTypes.Episode && ci.EntityId == e.Id))

@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Sinks;
 using Microsoft.UI.Dispatching;

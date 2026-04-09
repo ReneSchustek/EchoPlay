@@ -1,3 +1,5 @@
+using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.TagManager.Abstractions;
@@ -52,7 +54,11 @@ namespace EchoPlay.App.ViewModels
         private bool _hasUnsavedChanges;
         private string _autoLookupStatusText = string.Empty;
         private string _renamePattern = "{track:00} - {title}";
-        private IReadOnlyList<RenamePreviewItem> _renamePreview = [];
+        // Intern gehaltene Vorschau-Items vom Modul-Typ – für die tatsächliche Umbenennung
+        private IReadOnlyList<RenamePreviewItem> _renamePreviewItems = [];
+
+        // App-eigene Display-Modelle, an die die Page bindet
+        private IReadOnlyList<RenamePreviewDisplay> _renamePreview = [];
         private string _batchProgressText = string.Empty;
 
         // Zuletzt geöffneter Ordnerpfad – wird für Vorschau und Umbenennung benötigt
@@ -68,18 +74,24 @@ namespace EchoPlay.App.ViewModels
         // Nur geänderte Felder werden beim Speichern auf alle selektierten Dateien geschrieben.
         private readonly HashSet<string> _editedFields = [];
 
+        // Letzte Lookup-Trefferliste – wird vorgehalten, damit die Page nur Indizes
+        // zurückgeben muss und keine TagManager-Typen kennen muss.
+        private IReadOnlyList<TagLookupResult> _lastLookupResults = [];
+
         /// <summary>
         /// Wird ausgelöst, wenn der Online-Lookup fertig ist.
         /// Die Page abonniert dieses Event und zeigt den Auswahl-Dialog an.
+        /// Die Liste enthält UI-Display-Modelle (<see cref="TagLookupCandidate"/>),
+        /// damit der Views-Ordner kein <c>using EchoPlay.TagManager</c> braucht.
         /// </summary>
-        public event EventHandler<IReadOnlyList<TagLookupResult>>? LookupResultsReady;
+        public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
 
         /// <summary>
         /// Wird ausgelöst, wenn der Auto-Lookup einen eindeutigen Treffer gefunden
         /// und die Tags automatisch übernommen hat.
         /// Die Page zeigt daraufhin eine Bestätigungs-InfoBar an.
         /// </summary>
-        public event EventHandler<TagLookupResult>? AutoLookupApplied;
+        public event EventHandler<TagLookupCandidate>? AutoLookupApplied;
 
         /// <summary>
         /// Wird ausgelöst, wenn der Nutzer ein Cover per Datei-Picker laden möchte.
@@ -382,19 +394,15 @@ namespace EchoPlay.App.ViewModels
                 if (SetProperty(ref _renamePattern, value))
                 {
                     // Nach Musteränderung alte Vorschau zurücksetzen – sie wäre veraltet
-                    _renamePreview = [];
-                    OnPropertyChanged(nameof(RenamePreview));
-                    OnPropertyChanged(nameof(RenamePreviewVisibility));
-                    RefreshCommandStates();
+                    SetRenamePreviewItems([]);
                 }
             }
         }
 
         /// <summary>
-        /// Vorschau der Umbenennung: zeigt für jede Datei den alten und neuen Namen.
-        /// Leer, solange keine Vorschau angefordert wurde oder das Muster geändert wurde.
+        /// Vorschau der Umbenennung als Display-Modelle für die Page-Bindung.
         /// </summary>
-        public IReadOnlyList<RenamePreviewItem> RenamePreview
+        public IReadOnlyList<RenamePreviewDisplay> RenamePreview
         {
             get => _renamePreview;
             private set
@@ -405,6 +413,21 @@ namespace EchoPlay.App.ViewModels
                     RefreshCommandStates();
                 }
             }
+        }
+
+        /// <summary>
+        /// Setzt die Umbenennungs-Vorschau aus den Modul-Items und mappt sie für die UI-Bindung.
+        /// </summary>
+        private void SetRenamePreviewItems(IReadOnlyList<RenamePreviewItem> items)
+        {
+            _renamePreviewItems = items;
+
+            List<RenamePreviewDisplay> displays = new(items.Count);
+            foreach (RenamePreviewItem item in items)
+            {
+                displays.Add(new RenamePreviewDisplay(item.OldName, item.NewName));
+            }
+            RenamePreview = displays;
         }
 
         // --- Berechnete Visibility-Properties (kein Converter nötig) ---
@@ -453,7 +476,7 @@ namespace EchoPlay.App.ViewModels
         /// Sichtbarkeit der Umbenennungs-Vorschauliste – sichtbar wenn eine Vorschau berechnet wurde.
         /// </summary>
         public Visibility RenamePreviewVisibility =>
-            _renamePreview.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            _renamePreviewItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         // --- Commands ---
 
@@ -520,7 +543,7 @@ namespace EchoPlay.App.ViewModels
             _pendingBatchTag   = null;
             OnPropertyChanged(nameof(HasPendingBatchTag));
             Files              = [];
-            RenamePreview      = [];
+            SetRenamePreviewItems([]);
             ClearTagFields();
 
             try
@@ -639,11 +662,52 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Übernimmt das vom Nutzer im Dialog gewählte Suchergebnis anhand seines Index in
+        /// der zuletzt gemeldeten Lookup-Trefferliste. So muss die Page die Domänen-Klasse
+        /// <c>TagLookupResult</c> nicht selbst kennen.
+        /// </summary>
+        /// <param name="index">Index des gewählten Treffers in der zuletzt gemeldeten Liste.</param>
+        public void ApplyLookupCandidate(int index)
+        {
+            if (index < 0 || index >= _lastLookupResults.Count)
+            {
+                return;
+            }
+
+            ApplyLookupResult(_lastLookupResults[index]);
+        }
+
+        /// <summary>
+        /// Mappt ein einzelnes <see cref="TagLookupResult"/> auf das App-eigene
+        /// Display-Modell <see cref="TagLookupCandidate"/>.
+        /// </summary>
+        private static TagLookupCandidate ToCandidate(TagLookupResult result, int index) =>
+            new(index, result.Title, result.Artist, result.Album, result.Year, result.TrackCount, result.Genre, result.Source);
+
+        /// <summary>
+        /// Mappt eine Liste von Lookup-Ergebnissen auf die App-eigenen Display-Modelle.
+        /// Der Index entspricht der Position in <c>_lastLookupResults</c>, sodass die Page
+        /// nach Auswahl per <see cref="ApplyLookupCandidate"/> wieder den passenden Treffer findet.
+        /// </summary>
+        private static IReadOnlyList<TagLookupCandidate> ToCandidates(IReadOnlyList<TagLookupResult> results)
+        {
+            List<TagLookupCandidate> candidates = new(results.Count);
+            for (int i = 0; i < results.Count; i++)
+            {
+                candidates.Add(ToCandidate(results[i], i));
+            }
+            return candidates;
+        }
+
+        /// <summary>
         /// Übernimmt Felder aus einem Lookup-Ergebnis in die Formularfelder.
         /// Nur nicht-null-Felder werden übernommen – bestehende Werte bleiben erhalten.
+        /// Intern aufgerufen von <see cref="ApplyLookupCandidate"/> sowie aus dem Auto-Lookup.
+        /// <c>internal</c>, weil das App.Tests-Projekt die Methode zur direkten Validierung der
+        /// Formularfeld-Befüllung nutzt; aus dem Views-Ordner darf sie nicht aufgerufen werden.
         /// </summary>
         /// <param name="result">Das vom Nutzer im Dialog gewählte Suchergebnis.</param>
-        public void ApplyLookupResult(TagLookupResult result)
+        internal void ApplyLookupResult(TagLookupResult result)
         {
             if (result.Title is not null)    Title      = result.Title;
             if (result.Artist is not null)   Artist     = result.Artist;
@@ -807,7 +871,8 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 IReadOnlyList<TagLookupResult> results = await _lookupService.SearchAsync(query);
-                LookupResultsReady?.Invoke(this, results);
+                _lastLookupResults = results;
+                LookupResultsReady?.Invoke(this, ToCandidates(results));
             }
             catch (Exception ex)
             {
@@ -850,7 +915,7 @@ namespace EchoPlay.App.ViewModels
                     // Eindeutiger Treffer mit exakter Track-Anzahl → direkt übernehmen
                     ApplyLookupResult(match);
                     AutoLookupStatusText = string.Empty;
-                    AutoLookupApplied?.Invoke(this, match);
+                    AutoLookupApplied?.Invoke(this, ToCandidate(match, 0));
                 }
                 else
                 {
@@ -862,7 +927,8 @@ namespace EchoPlay.App.ViewModels
                         .ThenByDescending(r => r.TrackCount.HasValue)
                         .ToList();
 
-                    LookupResultsReady?.Invoke(this, sorted);
+                    _lastLookupResults = sorted;
+                    LookupResultsReady?.Invoke(this, ToCandidates(sorted));
                 }
             }
             catch (Exception ex)
@@ -1183,7 +1249,7 @@ namespace EchoPlay.App.ViewModels
                 IReadOnlyList<(string FilePath, AudioTag Tag)> filesWithTags =
                     await _tagService.ReadFolderAsync(_currentFolderPath);
 
-                RenamePreview = _fileRenameService.BuildPreview(filesWithTags, _renamePattern);
+                SetRenamePreviewItems(_fileRenameService.BuildPreview(filesWithTags, _renamePattern));
             }
             catch (Exception ex)
             {
@@ -1203,7 +1269,7 @@ namespace EchoPlay.App.ViewModels
         {
             if (string.IsNullOrEmpty(_currentFolderPath)) return;
 
-            int previewCount = _renamePreview.Count;
+            int previewCount = _renamePreviewItems.Count;
 
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 _resources.GetString("TagManagerRenameConfirmTitle"),
@@ -1353,7 +1419,7 @@ namespace EchoPlay.App.ViewModels
                 HasFiles && !string.IsNullOrWhiteSpace(_renamePattern));
 
             // Umbenennen: erst nach Berechnung der Vorschau
-            _executeRenameCommand.SetEnabled(_renamePreview.Count > 0);
+            _executeRenameCommand.SetEnabled(_renamePreviewItems.Count > 0);
         }
     }
 }

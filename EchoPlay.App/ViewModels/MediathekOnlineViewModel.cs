@@ -1,3 +1,5 @@
+using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Library;
@@ -33,6 +35,8 @@ namespace EchoPlay.App.ViewModels
         private readonly EpisodeCoverCacheService? _coverCacheService;
         private readonly CoverService _coverService;
         private readonly BackgroundCoverService? _backgroundCoverService;
+        private readonly INavigationService? _navigationService;
+        private readonly IWatchToggleService? _watchToggleService;
 
         // Wiederverwendbarer HTTP-Client für Cover-Downloads – static verhindert Socket-Erschöpfung
         private static readonly System.Net.Http.HttpClient _downloadClient = new();
@@ -70,6 +74,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverCacheService">Lädt fehlende Episoden-Cover im Hintergrund. Null in Tests.</param>
         /// <param name="coverService">Zentraler Cover-Zugriff über CoverImages-Tabelle.</param>
         /// <param name="backgroundCoverService">Lädt lokale Cover ins DB-Cache. Null in Tests.</param>
+        /// <param name="navigationService">Optionaler Navigationsdienst – nur in der echten App-Shell gesetzt, in Tests <see langword="null"/>.</param>
+        /// <param name="watchToggleService">Optionaler Service für das Umschalten der Neuerscheinungs-Überwachung. In Tests <see langword="null"/>.</param>
         public MediathekOnlineViewModel(
             IServiceScopeFactory scopeFactory,
             IConfirmationDialogService confirmationDialogService,
@@ -79,7 +85,9 @@ namespace EchoPlay.App.ViewModels
             IOnlineAccessGuard onlineAccessGuard,
             EpisodeCoverCacheService? coverCacheService = null,
             CoverService? coverService = null,
-            BackgroundCoverService? backgroundCoverService = null)
+            BackgroundCoverService? backgroundCoverService = null,
+            INavigationService? navigationService = null,
+            IWatchToggleService? watchToggleService = null)
         {
             _scopeFactory               = scopeFactory;
             _confirmationDialogService  = confirmationDialogService;
@@ -90,10 +98,59 @@ namespace EchoPlay.App.ViewModels
             _coverCacheService          = coverCacheService;
             _coverService               = coverService!;
             _backgroundCoverService     = backgroundCoverService;
+            _navigationService          = navigationService;
+            _watchToggleService         = watchToggleService;
 
             ProviderSearchCommand = new RelayCommand(() => _ = SearchProviderAsync());
             AddSelectedCommand = new RelayCommand(() => _ = AddSelectedAsync());
             RefreshCommand = new RelayCommand(() => _ = RefreshAsync());
+        }
+
+        /// <summary>
+        /// Wird vom Code-Behind beim Betreten der Seite aufgerufen. Prüft den Offline-Modus
+        /// und navigiert bei aktivem Offline-Modus zurück zur vorherigen Seite. Liefert
+        /// <see langword="false"/>, falls die Page nicht weiter geladen werden soll.
+        /// </summary>
+        public async Task<bool> InitializeAsync()
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IAppSettingsDataService settingsService =
+                scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+            AppSettings settings = await settingsService.GetAsync();
+
+            if (!settings.OfflineMode)
+            {
+                return true;
+            }
+
+            await _errorDialogService.ShowAsync(
+                _localizationService.Get("OfflineModeSearchHintTitle"),
+                _localizationService.Get("OfflineModeSearchHintMessage"));
+            _navigationService?.GoBack();
+            return false;
+        }
+
+        /// <summary>
+        /// Schaltet die Neuerscheinungs-Überwachung einer Online-Serie um und aktualisiert
+        /// die zugehörige Karte. Die eigentliche Logik (Cache + iTunes-Check) liegt im
+        /// <see cref="IWatchToggleService"/>, damit sie nicht in beiden Mediathek-VMs dupliziert wird.
+        /// </summary>
+        /// <param name="seriesId">ID der Serie.</param>
+        /// <param name="watch">Neuer Status: <see langword="true"/> aktiviert die Überwachung.</param>
+        public async Task ToggleWatchAsync(Guid seriesId, bool watch)
+        {
+            if (_watchToggleService is null)
+            {
+                return;
+            }
+
+            await _watchToggleService.ToggleAsync(seriesId, watch);
+
+            SeriesCardViewModel? card = _series.FirstOrDefault(c => c.Id == seriesId);
+            if (card is not null)
+            {
+                card.IsWatched = watch;
+            }
         }
 
         // ── Serien (Bibliothek) ──────────────────────────────────────────────────

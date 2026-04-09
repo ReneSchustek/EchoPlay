@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;

@@ -138,7 +138,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Ordner laden damit _files.Count = 3 und _currentFolderPath gesetzt ist
             await vm.LoadFolderAsync(@"D:\Hörspiele\Die drei Fragezeichen\001 - Der Super-Papagei");
 
-            TagLookupResult? appliedResult = null;
+            EchoPlay.App.Models.TagLookupCandidate? appliedResult = null;
             vm.AutoLookupApplied += (_, r) => appliedResult = r;
 
             vm.AutoLookupCommand.Execute(null);
@@ -169,7 +169,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagManagerViewModel vm = BuildViewModel(tagService, lookupService);
             await vm.LoadFolderAsync(@"D:\Hörspiele\TKKG\001 - Die Jagd");
 
-            IReadOnlyList<TagLookupResult>? readyResults = null;
+            IReadOnlyList<EchoPlay.App.Models.TagLookupCandidate>? readyResults = null;
             vm.LookupResultsReady += (_, r) => readyResults = r;
 
             vm.AutoLookupCommand.Execute(null);

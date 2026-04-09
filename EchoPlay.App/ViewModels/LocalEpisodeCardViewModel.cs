@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;

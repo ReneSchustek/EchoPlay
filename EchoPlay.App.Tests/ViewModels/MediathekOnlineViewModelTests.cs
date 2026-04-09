@@ -1,3 +1,4 @@
+using EchoPlay.App.Models;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;

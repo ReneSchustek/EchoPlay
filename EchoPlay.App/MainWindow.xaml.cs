@@ -1,6 +1,6 @@
-using EchoPlay.App.Pages;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
+using EchoPlay.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -15,9 +15,15 @@ namespace EchoPlay.App
     /// <summary>
     /// Hauptfenster der Anwendung. Enthält die NavigationView-Shell,
     /// den MiniPlayer und die untere Info-Leiste mit Statistiken und Schnellzugriff.
+    /// Die Navigation und die Sichtbarkeitslogik der Menüpunkte laufen über
+    /// <see cref="MainWindowViewModel"/>; der Code-Behind bleibt auf reine
+    /// UI-Adapter beschränkt (Slider-Feedback, Play/Pause-Glyph, Theme-Overlay).
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        /// <summary>ViewModel des Hauptfensters – Shell-Logik und Navigation.</summary>
+        public MainWindowViewModel ViewModel { get; }
+
         /// <summary>ViewModel für den MiniPlayer – von XAML über x:Bind referenziert.</summary>
         public MiniPlayerViewModel MiniPlayer { get; }
 
@@ -32,11 +38,16 @@ namespace EchoPlay.App
         /// </summary>
         public MainWindow()
         {
-            _playerService        = App.Services.GetRequiredService<PlayerService>();
-            MiniPlayer            = App.Services.GetRequiredService<MiniPlayerViewModel>();
-            StatusBar             = App.Services.GetRequiredService<StatusBarViewModel>();
+            _playerService = App.Services.GetRequiredService<PlayerService>();
+            ViewModel      = App.Services.GetRequiredService<MainWindowViewModel>();
+            MiniPlayer     = App.Services.GetRequiredService<MiniPlayerViewModel>();
+            StatusBar      = App.Services.GetRequiredService<StatusBarViewModel>();
 
             InitializeComponent();
+
+            // NavigationService mit dem Shell-Frame verbinden – genau einmal, direkt nach InitializeComponent.
+            NavigationService navigation = App.Services.GetRequiredService<NavigationService>();
+            navigation.Initialize(ContentFrame);
 
             // Standard-Geschwindigkeit auf 1× vorauswählen (Index 1: 0.75×, 1×, 1.25×, 1.5×, 2×)
             SpeedComboBox.SelectedIndex = 1;
@@ -50,6 +61,10 @@ namespace EchoPlay.App
             // Zurück-Button nach jeder Navigation aktualisieren
             ContentFrame.Navigated += (_, _) => NavView.IsBackEnabled = ContentFrame.CanGoBack;
 
+            // Menüpunkt-Sichtbarkeit an ViewModel-Properties binden –
+            // ohne x:Bind, weil NavigationViewItem.Visibility keine BindableCustomProperty ist.
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+
             // PlayPause-Icon initialisieren – Pause-Glyph, weil der Button immer pausiert/resumt
             MiniPlayer.PropertyChanged += OnMiniPlayerPropertyChanged;
 
@@ -61,117 +76,72 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Navigiert beim ersten Laden zur Startseite.
+        /// Navigiert beim ersten Laden zur Startseite und lädt die Sichtbarkeits-Einstellungen.
         /// </summary>
         /// <param name="sender">Die NavigationView.</param>
         /// <param name="args">Ereignisargumente.</param>
-        private void OnLoaded(object sender, RoutedEventArgs args)
+        private async void OnLoaded(object sender, RoutedEventArgs args)
         {
             NavView.SelectedItem = NavStartseite;
-            _ = UpdateOnlineVisibilityAsync();
+            await ViewModel.LoadAsync();
+            ApplyNavigationItemVisibility();
         }
 
         /// <summary>
-        /// Blendet Online-Menüpunkte aus, wenn kein Online-Provider konfiguriert ist.
-        /// Prüft <c>AppSettings.ActiveProvider</c> – ist kein Provider gesetzt, werden
-        /// die Online-Mediathek und der Online-Tab in der Suche ausgeblendet.
+        /// Spiegelt die ViewModel-Sichtbarkeits-Properties auf die NavigationViewItems.
+        /// Wird initial und bei jeder Property-Änderung aufgerufen.
         /// </summary>
-        private async Task UpdateOnlineVisibilityAsync()
+        private void ApplyNavigationItemVisibility()
         {
-            try
+            NavMediathekOnline.Visibility = ViewModel.IsMediathekOnlineVisible
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            NavMediathekLokal.Visibility = ViewModel.IsMediathekLokalVisible
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            NavTagManager.Visibility = ViewModel.IsTagManagerVisible
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Reagiert auf Änderungen der Sichtbarkeits-Properties des ViewModels.
+        /// </summary>
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(MainWindowViewModel.IsMediathekOnlineVisible)
+                               or nameof(MainWindowViewModel.IsMediathekLokalVisible)
+                               or nameof(MainWindowViewModel.IsTagManagerVisible))
             {
-                using Microsoft.Extensions.DependencyInjection.IServiceScope scope =
-                    App.Services.CreateScope();
-                EchoPlay.Data.Services.Interfaces.IAppSettingsDataService settingsService =
-                    scope.ServiceProvider.GetRequiredService<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>();
-
-                EchoPlay.Data.Entities.Settings.AppSettings settings = await settingsService.GetAsync();
-
-                // ProviderType.None oder Standard-Wert → kein Online-Provider
-                bool hasOnline = settings.ActiveProvider != EchoPlay.Data.Entities.Settings.ProviderType.None;
-
-                NavMediathekOnline.Visibility = hasOnline
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-
-                // Nur-Online-Modus: lokale Mediathek und Tag-Manager ausblenden
-                bool hideLocal = settings.OnlineOnlyMode;
-                NavMediathekLokal.Visibility = hideLocal
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-                NavTagManager.Visibility = hideLocal
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-            }
-            catch
-            {
-                // Bei Fehler: Online-Menüpunkte sicherheitshalber ausblenden
-                NavMediathekOnline.Visibility = Visibility.Collapsed;
+                ApplyNavigationItemVisibility();
             }
         }
 
         /// <summary>
         /// Reagiert auf Navigationswechsel in der NavigationView.
-        /// Einstellungen erkennt den speziellen Settings-Eintrag über <c>IsSettingsSelected</c>.
-        /// Der Mediathek-Elterneintrag hat kein eigenes Tag – nur seine Untereinträge navigieren.
+        /// Der eigentliche Seitenwechsel läuft über <see cref="MainWindowViewModel"/>
+        /// und den <see cref="INavigationService"/>.
         /// </summary>
         /// <param name="sender">Die NavigationView.</param>
         /// <param name="args">Enthält das ausgewählte Item und ob Einstellungen aktiv sind.</param>
         private async void OnSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            Type? pageType = null;
-
-            if (args.IsSettingsSelected)
-            {
-                pageType = typeof(SettingsPage);
-            }
-            else if (args.SelectedItem is NavigationViewItem item)
-            {
-                pageType = (item.Tag as string) switch
-                {
-                    "Startseite"      => typeof(DashboardPage),
-                    "MediathekOnline" => typeof(MediathekOnlinePage),
-                    "MediathekLokal"  => typeof(MediathekLokalPage),
-                    "TagManager"      => typeof(TagManagerPage),
-                    "Suche"           => typeof(SuchePage),
-                    "Player"          => typeof(PlayerPage),
-                    "Statistik"       => typeof(StatistikPage),
-                    "Ueber"           => typeof(UeberPage),
-                    _                 => null
-                };
-            }
-
-            if (pageType is not null)
-            {
-                await NavigateToAsync(pageType);
-            }
-        }
-
-        /// <summary>
-        /// Navigiert zum angegebenen Page-Typ, sofern dieser nicht bereits aktiv ist.
-        /// Prüft vorher, ob die aktuelle Seite ungespeicherte Änderungen hat (z.B. <see cref="SettingsPage"/>).
-        /// </summary>
-        /// <param name="pageType">Der Typ der Zielseite.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
-        private async Task NavigateToAsync(Type pageType)
-        {
-            // Nur identische Seite überspringen – nicht Unterseiten
-            if (ContentFrame.Content?.GetType() == pageType)
+            // Ungespeicherte Settings-Änderungen prüfen, bevor navigiert wird
+            if (!await ConfirmLeaveCurrentPageAsync())
             {
                 return;
             }
 
-            // Prüfung auf ungespeicherte Einstellungen vor dem Verlassen der Settings-Seite
-            if (ContentFrame.Content is SettingsPage settingsPage)
+            if (args.IsSettingsSelected)
             {
-                bool canLeave = await settingsPage.CheckUnsavedChangesAsync();
-                if (!canLeave)
-                {
-                    return;
-                }
+                ViewModel.NavigateToSettings();
+                return;
             }
 
-            ContentFrame.Navigate(pageType);
+            if (args.SelectedItem is NavigationViewItem item)
+            {
+                ViewModel.NavigateToMenuTag(item.Tag as string);
+            }
         }
 
         /// <summary>
@@ -186,17 +156,28 @@ namespace EchoPlay.App
                 return;
             }
 
-            // Prüfung auf ungespeicherte Einstellungen vor dem Verlassen der Settings-Seite
-            if (ContentFrame.Content is SettingsPage settingsPage)
+            if (!await ConfirmLeaveCurrentPageAsync())
             {
-                bool canLeave = await settingsPage.CheckUnsavedChangesAsync();
-                if (!canLeave)
-                {
-                    return;
-                }
+                return;
             }
 
-            ContentFrame.GoBack();
+            ViewModel.GoBack();
+        }
+
+        /// <summary>
+        /// Prüft, ob die aktuelle Seite (insbesondere <see cref="SettingsPage"/>) verlassen werden darf.
+        /// Der Check hängt noch am Page-Typ, weil die ungespeicherten Änderungen im Code-Behind der
+        /// Settings-Seite verwaltet werden. Das wird in einem späteren Brief über ein
+        /// ViewModel-basiertes Guard-Pattern aufgelöst.
+        /// </summary>
+        private async Task<bool> ConfirmLeaveCurrentPageAsync()
+        {
+            if (ContentFrame.Content is SettingsPage settingsPage)
+            {
+                return await settingsPage.CheckUnsavedChangesAsync();
+            }
+
+            return true;
         }
 
         /// <summary>

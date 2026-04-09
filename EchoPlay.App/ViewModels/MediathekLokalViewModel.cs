@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
@@ -43,6 +44,9 @@ namespace EchoPlay.App.ViewModels
         private readonly IOnlineAccessGuard _onlineAccessGuard;
         private readonly IOnlineEpisodeChecker _onlineEpisodeChecker;
         private readonly EchoPlay.App.Services.CoverService? _coverService;
+        private readonly INavigationService? _navigationService;
+        private readonly IWatchToggleService? _watchToggleService;
+        private readonly ILocalizationService? _localizationService;
 
         /// <summary>
         /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst
@@ -110,6 +114,9 @@ namespace EchoPlay.App.ViewModels
         /// <param name="onlineAccessGuard">Prüft den Offline-Modus und zeigt bei Bedarf einen Bestätigungsdialog.</param>
         /// <param name="onlineEpisodeChecker">Prüft online (iTunes) ob neue Folgen verfügbar sind.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
+        /// <param name="navigationService">Optionaler Navigationsdienst – nur in der echten App-Shell gesetzt, in Tests <see langword="null"/>.</param>
+        /// <param name="watchToggleService">Optionaler Service für das Umschalten der Neuerscheinungs-Überwachung. In Tests <see langword="null"/>.</param>
+        /// <param name="localizationService">Optionaler Lokalisierungsdienst für Dialog-Texte. In Tests <see langword="null"/>.</param>
         public MediathekLokalViewModel(
             IServiceScopeFactory scopeFactory,
             ISyncService syncService,
@@ -122,7 +129,10 @@ namespace EchoPlay.App.ViewModels
             ICoverSearchService coverSearchService,
             IOnlineAccessGuard onlineAccessGuard,
             IOnlineEpisodeChecker onlineEpisodeChecker,
-            EchoPlay.App.Services.CoverService? coverService = null)
+            EchoPlay.App.Services.CoverService? coverService = null,
+            INavigationService? navigationService = null,
+            IWatchToggleService? watchToggleService = null,
+            ILocalizationService? localizationService = null)
         {
             _scopeFactory              = scopeFactory;
             _syncService               = syncService;
@@ -136,6 +146,9 @@ namespace EchoPlay.App.ViewModels
             _onlineAccessGuard         = onlineAccessGuard;
             _onlineEpisodeChecker      = onlineEpisodeChecker;
             _coverService              = coverService;
+            _navigationService         = navigationService;
+            _watchToggleService        = watchToggleService;
+            _localizationService       = localizationService;
 
             // DispatcherQueue beim Erstellen auf dem UI-Thread erfassen –
             // OnSeriesSynced wird später vom Hintergrundthread aufgerufen und braucht diesen Handle.
@@ -164,6 +177,57 @@ namespace EchoPlay.App.ViewModels
             PlayEpisodeCommand.SetEnabled(false);
 
             CheckAllSeriesCommand = new RelayCommand(() => _ = CheckAllSeriesAsync());
+        }
+
+        /// <summary>
+        /// Wird vom Code-Behind beim Betreten der Seite aufgerufen. Prüft den
+        /// Nur-Online-Modus und navigiert zurück, falls die lokale Mediathek deaktiviert ist.
+        /// Liefert <see langword="false"/>, falls die Page nicht weiter geladen werden soll.
+        /// </summary>
+        public async Task<bool> InitializeAsync()
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IAppSettingsDataService settingsService =
+                scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+            EchoPlay.Data.Entities.Settings.AppSettings settings = await settingsService.GetAsync();
+
+            if (!settings.OnlineOnlyMode)
+            {
+                return true;
+            }
+
+            if (_localizationService is not null)
+            {
+                await _errorDialogService.ShowAsync(
+                    _localizationService.Get("OnlineOnlyModeHintTitle"),
+                    _localizationService.Get("OnlineOnlyModeHintMessage"));
+            }
+
+            _navigationService?.GoBack();
+            return false;
+        }
+
+        /// <summary>
+        /// Schaltet die Neuerscheinungs-Überwachung einer lokalen Serie um und aktualisiert die Karte.
+        /// Die eigentliche Logik liegt im <see cref="IWatchToggleService"/>.
+        /// </summary>
+        /// <param name="seriesId">ID der Serie.</param>
+        /// <param name="watch">Neuer Status.</param>
+        public async Task ToggleWatchAsync(Guid seriesId, bool watch)
+        {
+            if (_watchToggleService is null)
+            {
+                return;
+            }
+
+            await _watchToggleService.ToggleAsync(seriesId, watch);
+
+            LocalArtistCardViewModel? card = _allArtists
+                .FirstOrDefault(a => a.SeriesId == seriesId);
+            if (card is not null)
+            {
+                card.IsWatched = watch;
+            }
         }
 
         /// <summary>
@@ -613,7 +677,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Wird ausgelöst, wenn der Nutzer den Tag-Manager für einen Pfad öffnen möchte.
-        /// Die <see cref="EchoPlay.App.Pages.MediathekLokalPage"/> abonniert dieses Event
+        /// Die <see cref="EchoPlay.App.Views.MediathekLokalPage"/> abonniert dieses Event
         /// und führt die Frame-Navigation durch.
         /// </summary>
         public event Action<string>? NavigateToTagManagerRequested;

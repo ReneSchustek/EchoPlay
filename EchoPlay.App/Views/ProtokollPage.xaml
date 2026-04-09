@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="EchoPlay.App.Views.ProtokollPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:EchoPlay.App.ViewModels"
+    xmlns:log="using:EchoPlay.Logger.Models">
+
+    <Page.Resources>
+        <DataTemplate x:Key="LogEntryTemplate" x:DataType="vm:LogEntryViewModel">
+            <Grid ColumnSpacing="12" Padding="4,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Zeitstempel -->
+                <TextBlock
+                    Grid.Column="0"
+                    Text="{x:Bind Timestamp}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    VerticalAlignment="Center"/>
+
+                <!-- Level-Badge -->
+                <TextBlock
+                    Grid.Column="1"
+                    Text="{x:Bind Level}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    FontWeight="SemiBold"
+                    VerticalAlignment="Center"/>
+
+                <!-- Kategorie -->
+                <TextBlock
+                    Grid.Column="2"
+                    Text="{x:Bind Category}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextTrimming="CharacterEllipsis"
+                    VerticalAlignment="Center"/>
+
+                <!-- Nachricht -->
+                <TextBlock
+                    Grid.Column="3"
+                    Text="{x:Bind Message}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    TextWrapping="NoWrap"
+                    TextTrimming="CharacterEllipsis"
+                    VerticalAlignment="Center"
+                    ToolTipService.ToolTip="{x:Bind Message}"/>
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar: Live-Toggle und Löschen -->
+        <StackPanel
+            Grid.Row="0"
+            Orientation="Horizontal"
+            Spacing="12"
+            Padding="16,12,16,8">
+
+            <!-- Negatives Margin kompensiert den fest eingebauten Innenabstand des ToggleSwitch-Stils -->
+            <ToggleSwitch
+                x:Uid="ProtokollLiveToggle"
+                IsOn="{x:Bind ViewModel.IsLiveActive, Mode=OneWay}"
+                Toggled="OnLiveToggled"
+                VerticalAlignment="Center"
+                Margin="0,-6,0,-6"/>
+
+            <Button
+                x:Uid="ProtokollClearButton"
+                Command="{x:Bind ViewModel.ClearCommand}"
+                VerticalAlignment="Center">
+                <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+            </Button>
+        </StackPanel>
+
+        <!-- Log-Einträge – neueste oben, kein Selektionsstatus nötig -->
+        <ListView
+            Grid.Row="1"
+            x:Name="LogListView"
+            ItemsSource="{x:Bind ViewModel.LogEntries, Mode=OneWay}"
+            ItemTemplate="{StaticResource LogEntryTemplate}"
+            SelectionMode="None"
+            IsItemClickEnabled="False">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                    <Setter Property="Padding" Value="4,0"/>
+                    <Setter Property="MinHeight" Value="28"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+    </Grid>
+</Page>

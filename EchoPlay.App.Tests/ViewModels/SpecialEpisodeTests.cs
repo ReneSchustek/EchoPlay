@@ -1,3 +1,4 @@
+using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
 
 namespace EchoPlay.App.Tests.ViewModels

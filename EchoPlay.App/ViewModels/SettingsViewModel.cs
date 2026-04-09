@@ -1,3 +1,5 @@
+using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.Data.Entities.Settings;
@@ -24,14 +26,6 @@ using Windows.Storage.Pickers;
 
 namespace EchoPlay.App.ViewModels
 {
-    /// <summary>
-    /// Repräsentiert eine Log-Datei in der Datei-Auswahl des Log-Viewers.
-    /// </summary>
-    /// <param name="FileName">Angezeigter Dateiname ohne Pfad.</param>
-    /// <param name="Date">Datum der Log-Datei.</param>
-    /// <param name="FilePath">Vollständiger Dateipfad. <see langword="null"/> für den Live-Modus.</param>
-    public sealed record LogFileOption(string FileName, DateTime Date, string? FilePath);
-
     /// <summary>
     /// ViewModel für die Einstellungsseite.
     /// Lädt und speichert <see cref="AppSettings"/>, koordiniert den Live-Themewechsel
@@ -65,7 +59,7 @@ namespace EchoPlay.App.ViewModels
         private bool _isLoading;
         private bool _isSyncing;
         private string _syncStatusText = string.Empty;
-        private IReadOnlyList<PatternSuggestion> _patternSuggestions = [];
+        private IReadOnlyList<PatternSuggestionDisplay> _patternSuggestionDisplays = [];
         private IReadOnlyList<LogFileOption> _availableLogFiles = [];
         private LogFileOption? _selectedLogFile;
         private bool _isLiveViewActive;
@@ -178,9 +172,31 @@ namespace EchoPlay.App.ViewModels
                 {
                     // Testbutton sofort reagieren lassen – bei "Keine" ist kein Test sinnvoll
                     _testConnectionCommand.SetEnabled(!_isTestingConnection && value != ProviderType.None);
+                    OnPropertyChanged(nameof(ActiveProviderTag));
                     MarkAsChanged();
                 }
             }
+        }
+
+        /// <summary>
+        /// String-Repräsentation des aktiven Anbieters für die View. Akzeptierte Werte:
+        /// <c>"Spotify"</c>, <c>"AppleMusic"</c>, oder <see cref="string.Empty"/>/<see langword="null"/> für „kein Anbieter".
+        /// Existiert, damit der Views-Ordner nicht direkt mit dem Data-Enum <see cref="ProviderType"/> arbeiten muss.
+        /// </summary>
+        public string ActiveProviderTag
+        {
+            get => _activeProvider switch
+            {
+                ProviderType.Spotify    => "Spotify",
+                ProviderType.AppleMusic => "AppleMusic",
+                _                       => string.Empty
+            };
+            set => ActiveProvider = value switch
+            {
+                "Spotify"    => ProviderType.Spotify,
+                "AppleMusic" => ProviderType.AppleMusic,
+                _            => ProviderType.None
+            };
         }
 
         /// <summary>Gibt an, ob die lokale Bibliothek aktiv ist.</summary>
@@ -276,19 +292,21 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Wird ausgelöst, wenn mehrere Muster-Vorschläge vorliegen oder das beste Ergebnis
         /// unter dem Konfidenz-Schwellwert liegt. Die Page zeigt dann einen Auswahl-Dialog.
+        /// Die übergebenen Display-Modelle entkoppeln den Views-Ordner vom Modul-Typ
+        /// <c>EchoPlay.LocalLibrary.Analysis.PatternSuggestion</c>.
         /// </summary>
-        public event Action<IReadOnlyList<PatternSuggestion>>? PatternSelectionRequested;
+        public event Action<IReadOnlyList<PatternSuggestionDisplay>>? PatternSelectionRequested;
 
         /// <summary>
         /// Vorschläge für das Episodenordner-Muster, ermittelt durch den <see cref="IEpisodePatternAnalyzer"/>.
         /// Leer solange noch keine Analyse durchgeführt wurde oder kein Muster passt.
         /// </summary>
-        public IReadOnlyList<PatternSuggestion> PatternSuggestions
+        public IReadOnlyList<PatternSuggestionDisplay> PatternSuggestions
         {
-            get => _patternSuggestions;
+            get => _patternSuggestionDisplays;
             private set
             {
-                if (SetProperty(ref _patternSuggestions, value))
+                if (SetProperty(ref _patternSuggestionDisplays, value))
                 {
                     OnPropertyChanged(nameof(PatternSuggestionsVisibility));
                 }
@@ -299,7 +317,7 @@ namespace EchoPlay.App.ViewModels
         /// Sichtbarkeit der Vorschlagsliste – nur wenn mindestens ein Vorschlag vorhanden ist.
         /// </summary>
         public Visibility PatternSuggestionsVisibility =>
-            _patternSuggestions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            _patternSuggestionDisplays.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
         /// Übernimmt den angegebenen Vorschlag als aktives Episodenmuster.
@@ -327,17 +345,26 @@ namespace EchoPlay.App.ViewModels
             }
 
             IReadOnlyList<PatternSuggestion> suggestions = await _patternAnalyzer.AnalyzeAsync(_localLibraryRootPath);
-            PatternSuggestions = suggestions;
+            List<PatternSuggestionDisplay> displays = new(suggestions.Count);
+            foreach (PatternSuggestion suggestion in suggestions)
+            {
+                displays.Add(new PatternSuggestionDisplay(
+                    suggestion.Pattern,
+                    suggestion.MatchCount,
+                    suggestion.MatchPercentage,
+                    suggestion.IsFlatStructure));
+            }
+            PatternSuggestions = displays;
 
-            if (suggestions.Count == 1 && suggestions[0].MatchPercentage >= HighConfidenceThreshold)
+            if (displays.Count == 1 && displays[0].MatchPercentage >= HighConfidenceThreshold)
             {
                 // Eindeutiges Ergebnis – direkt übernehmen, kein Dialog nötig
-                ApplyPatternSuggestion(suggestions[0].Pattern);
+                ApplyPatternSuggestion(displays[0].Pattern);
             }
-            else if (suggestions.Count > 0)
+            else if (displays.Count > 0)
             {
                 // Mehrere Treffer oder unsicheres Ergebnis – Nutzer entscheiden lassen
-                PatternSelectionRequested?.Invoke(suggestions);
+                PatternSelectionRequested?.Invoke(displays);
             }
         }
 
@@ -1324,7 +1351,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Stoppt den Live-View-Timer und gibt ihn frei.
-        /// Wird von <see cref="EchoPlay.App.Pages.SettingsPage"/> beim Verlassen der Seite aufgerufen.
+        /// Wird von <see cref="EchoPlay.App.Views.SettingsPage"/> beim Verlassen der Seite aufgerufen.
         /// </summary>
         public void Dispose()
         {

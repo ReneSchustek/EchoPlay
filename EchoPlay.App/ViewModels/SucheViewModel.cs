@@ -1,7 +1,9 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Search;
 using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -28,6 +30,9 @@ namespace EchoPlay.App.ViewModels
         // Wird nur für lokale Suche benötigt – in Tests ohne lokale Serien kann null übergeben werden
         private readonly IServiceScopeFactory? _scopeFactory;
 
+        // Zentraler Navigationsdienst – in Unit-Tests optional, damit der Ctor testbar bleibt
+        private readonly INavigationService? _navigationService;
+
         private string _searchText = string.Empty;
         private bool _isLoading;
         private bool _hasSearched;
@@ -46,19 +51,88 @@ namespace EchoPlay.App.ViewModels
         /// Wenn <see langword="null"/>, ist lokale Suche deaktiviert und gibt immer eine leere Liste zurück.
         /// </param>
         /// <param name="localizationService">Für lokalisierte Dialog-Texte.</param>
+        /// <param name="navigationService">
+        /// Optionaler Navigationsdienst. Nur nötig wenn das ViewModel aus der echten App-Shell
+        /// heraus navigieren können soll (z. B. GoBack bei Offline-Modus, Wechsel zur Online-Mediathek).
+        /// In Unit-Tests kann der Parameter weggelassen werden.
+        /// </param>
         public SucheViewModel(
             ImportService importService,
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
-            IServiceScopeFactory? scopeFactory = null)
+            IServiceScopeFactory? scopeFactory = null,
+            INavigationService? navigationService = null)
         {
             _importService       = importService;
             _errorDialogService  = errorDialogService;
             _localizationService = localizationService;
             _scopeFactory        = scopeFactory;
+            _navigationService   = navigationService;
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
             ResetCommand  = new RelayCommand(Reset);
+        }
+
+        /// <summary>
+        /// Wird beim Betreten der Seite aufgerufen. Prüft den Offline-Modus, verarbeitet den
+        /// Navigationsparameter (<c>"onboarding"</c> oder ein Suchtext) und löst ggf. eine Suche aus.
+        /// Bei aktivem Offline-Modus wird ein Hinweis gezeigt und zurück zur vorherigen Seite navigiert.
+        /// </summary>
+        /// <param name="parameter">Navigationsparameter der Page – meist ein String oder <see langword="null"/>.</param>
+        public async Task InitializeAsync(object? parameter)
+        {
+            if (await IsOfflineModeBlockingAsync())
+            {
+                await _errorDialogService.ShowAsync(
+                    _localizationService.Get("OfflineModeSearchHintTitle"),
+                    _localizationService.Get("OfflineModeSearchHintMessage"));
+                _navigationService?.GoBack();
+                return;
+            }
+
+            if (parameter is not string text || string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            if (text == "onboarding")
+            {
+                IsOnboardingHintVisible = true;
+                return;
+            }
+
+            SearchText = text;
+
+            if (SearchCommand.CanExecute(null))
+            {
+                SearchCommand.Execute(null);
+            }
+        }
+
+        /// <summary>
+        /// Wird aus dem Erfolgshinweis gerufen: navigiert zur Online-Mediathek.
+        /// </summary>
+        public void NavigateToOnlineMediathek()
+        {
+            _navigationService?.NavigateTo(NavigationTarget.MediathekOnline);
+        }
+
+        /// <summary>
+        /// Prüft anhand der AppSettings, ob der Offline-Modus aktiv ist und die Suche damit blockiert wird.
+        /// In Tests ohne Scope-Factory gibt die Methode <see langword="false"/> zurück.
+        /// </summary>
+        private async Task<bool> IsOfflineModeBlockingAsync()
+        {
+            if (_scopeFactory is null)
+            {
+                return false;
+            }
+
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IAppSettingsDataService settingsService = scope.ServiceProvider
+                .GetRequiredService<IAppSettingsDataService>();
+            AppSettings settings = await settingsService.GetAsync();
+            return settings.OfflineMode;
         }
 
         /// <summary>

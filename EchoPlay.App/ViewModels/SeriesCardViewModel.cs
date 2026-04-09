@@ -1,3 +1,5 @@
+using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;

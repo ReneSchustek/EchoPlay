@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;

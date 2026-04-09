@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using System;
 using System.Windows.Input;
 

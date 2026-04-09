@@ -13,7 +13,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert das ViewModel mit den nötigen Daten.
         /// </summary>
-        /// <param name="seriesId">Datenbank-ID der Serie, für die Navigation zu <see cref="Pages.SeriesDetailPage"/>.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie, für die Navigation zu <see cref="Views.SeriesDetailPage"/>.</param>
         /// <param name="seriesName">Titel der Serie.</param>
         /// <param name="lastEpisodeTitle">Titel der zuletzt gehörten Episode.</param>
         /// <param name="coverImage">Coverbild der Serie, oder <see langword="null"/> wenn keines vorhanden ist.</param>

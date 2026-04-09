@@ -1,3 +1,5 @@
+using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -7,7 +9,7 @@ using System.Windows.Input;
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
-    /// Kachel-ViewModel für eine Episode in der Folgen-Ansicht der <see cref="EchoPlay.App.Pages.SeriesDetailPage"/>.
+    /// Kachel-ViewModel für eine Episode in der Folgen-Ansicht der <see cref="EchoPlay.App.Views.SeriesDetailPage"/>.
     /// Entspricht dem Konzept von <see cref="LocalEpisodeCardViewModel"/>, erweitert um
     /// Wiedergabeinformationen und ein optionales Episodenbild.
     /// Das ViewModel ist unveränderlich – bei Datenänderungen wird es neu erzeugt.

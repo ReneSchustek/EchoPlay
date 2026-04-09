@@ -420,6 +420,16 @@ namespace EchoPlay.App
             // ScanEventService als Singleton – überlebt Navigation, benachrichtigt neues ViewModel nach Rückkehr
             builder.Services.AddSingleton<IScanEventService, ScanEventService>();
 
+            // NavigationService als Singleton – der ContentFrame existiert nur einmal pro App-Instanz.
+            // MainWindow ruft Initialize(Frame) nach InitializeComponent() auf.
+            builder.Services.AddSingleton<INavigationService, NavigationService>();
+            builder.Services.AddSingleton<NavigationService>(provider =>
+                (NavigationService)provider.GetRequiredService<INavigationService>());
+
+            // WatchToggleService als Singleton – kapselt Watch-Toggle + NewRelease-Cache-Verwaltung.
+            // Wird von beiden Mediathek-VMs genutzt, statt die Logik im Code-Behind zu duplizieren.
+            builder.Services.AddSingleton<IWatchToggleService, WatchToggleService>();
+
             // LocalLibrary-Services für Scan, Metadaten und Cover.
             builder.Services.AddLocalLibrary();
 
@@ -470,6 +480,9 @@ namespace EchoPlay.App
             // StatusBarViewModel als Singleton – Statistiken müssen App-weit konsistent sein.
             builder.Services.AddSingleton<StatusBarViewModel>();
 
+            // MainWindowViewModel als Singleton – passend zum einzigen Hauptfenster der App.
+            builder.Services.AddSingleton<MainWindowViewModel>();
+
             // ViewModels als Transient – jede Navigation erzeugt eine frische Instanz.
             builder.Services.AddTransient<DashboardViewModel>(provider => new DashboardViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
@@ -488,9 +501,31 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IOnlineAccessGuard>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<CoverService>(),
-                provider.GetRequiredService<BackgroundCoverService>()));
-            builder.Services.AddTransient<MediathekLokalViewModel>();
-            builder.Services.AddTransient<SucheViewModel>();
+                provider.GetRequiredService<BackgroundCoverService>(),
+                provider.GetRequiredService<INavigationService>(),
+                provider.GetRequiredService<IWatchToggleService>()));
+            builder.Services.AddTransient<MediathekLokalViewModel>(provider => new MediathekLokalViewModel(
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                provider.GetRequiredService<ISyncService>(),
+                provider.GetRequiredService<IPlayerService>(),
+                provider.GetRequiredService<IErrorDialogService>(),
+                provider.GetRequiredService<IConfirmationDialogService>(),
+                provider.GetRequiredService<StatusBarViewModel>(),
+                provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(),
+                provider.GetRequiredService<IScanEventService>(),
+                provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
+                provider.GetRequiredService<IOnlineAccessGuard>(),
+                provider.GetRequiredService<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(),
+                provider.GetRequiredService<CoverService>(),
+                provider.GetRequiredService<INavigationService>(),
+                provider.GetRequiredService<IWatchToggleService>(),
+                provider.GetRequiredService<ILocalizationService>()));
+            builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
+                provider.GetRequiredService<ImportService>(),
+                provider.GetRequiredService<IErrorDialogService>(),
+                provider.GetRequiredService<ILocalizationService>(),
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                provider.GetRequiredService<INavigationService>()));
             builder.Services.AddTransient<PlayerViewModel>();
             builder.Services.AddTransient<SeriesDetailViewModel>();
             builder.Services.AddTransient<SettingsViewModel>(provider => new SettingsViewModel(

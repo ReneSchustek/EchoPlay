@@ -1,6 +1,6 @@
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
-using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -26,13 +26,9 @@ namespace EchoPlay.App.Views
     /// </summary>
     public sealed partial class MediathekLokalPage : Page
     {
-        // Breite eines Serien-Kachel-Slots (Kachel 140px + je 4px Margin = 148px)
-
-        // Verhindert rekursive SelectionChanged-Auslösungen während des programmatischen Splits
-        private bool _isUpdatingSplit;
-
-        // Debounce für SizeChanged – nur neu berechnen wenn sich tilesPerRow ändert
-        private int _lastTilesPerRow;
+        // Akkordeon-Split-Handler kapselt die Top/Bottom-Aufteilung der Serien-Kacheln
+        // und das Rekursions-Flag (vorher direkt in der Page geführt).
+        private readonly Helpers.AccordionSplitHandler<LocalArtistCardViewModel> _splitHandler;
 
         // WinUI 3 erlaubt maximal einen offenen ContentDialog gleichzeitig.
         // Dieses Flag verhindert, dass zwei asynchrone Handler gleichzeitig einen Dialog öffnen.
@@ -51,6 +47,13 @@ namespace EchoPlay.App.Views
             ViewModel          = App.Services.GetRequiredService<MediathekLokalViewModel>();
             _navigationService = App.Services.GetRequiredService<INavigationService>();
             InitializeComponent();
+
+            _splitHandler = new Helpers.AccordionSplitHandler<LocalArtistCardViewModel>(
+                SeriesTopGrid,
+                SeriesBottomGrid,
+                () => ViewModel.Artists,
+                () => ViewModel.SelectedArtistIndex,
+                () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 16));
         }
 
         /// <summary>
@@ -100,14 +103,14 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Reagiert auf Änderungen an <see cref="MediathekLokalViewModel.Artists"/>
         /// oder <see cref="MediathekLokalViewModel.SelectedArtistIndex"/> und aktualisiert
-        /// die Aufteilung der Serien-Grids.
+        /// die Aufteilung der Serien-Grids über den <see cref="_splitHandler"/>.
         /// </summary>
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(MediathekLokalViewModel.Artists)
                                or nameof(MediathekLokalViewModel.SelectedArtistIndex))
             {
-                UpdateSeriesSplit();
+                _splitHandler.UpdateSplit();
             }
         }
 
@@ -117,14 +120,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnPageSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            double available = Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 16);
-            int tilesPerRow = Helpers.AccordionSplitHelper.CalculateTilesPerRow(available);
-
-            if (tilesPerRow != _lastTilesPerRow)
-            {
-                _lastTilesPerRow = tilesPerRow;
-                UpdateSeriesSplit();
-            }
+            _splitHandler.HandleSizeChanged();
         }
 
         /// <summary>
@@ -142,60 +138,18 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Teilt <see cref="MediathekLokalViewModel.Artists"/> in zwei Teile auf:
-        /// Kacheln bis zum Ende der Zeile der ausgewählten Serie (Top) und den Rest (Bottom).
-        /// Das Akkordeon-Panel erscheint zwischen den beiden Grids.
-        /// </summary>
-        private void UpdateSeriesSplit()
-        {
-            IReadOnlyList<LocalArtistCardViewModel> all = ViewModel.Artists;
-            int selectedIndex = ViewModel.SelectedArtistIndex;
-
-            _isUpdatingSplit = true;
-            try
-            {
-                if (selectedIndex < 0 || all.Count == 0)
-                {
-                    SeriesTopGrid.ItemsSource     = all;
-                    SeriesTopGrid.SelectedItem    = null;
-                    SeriesBottomGrid.ItemsSource  = Array.Empty<LocalArtistCardViewModel>();
-                    SeriesBottomGrid.SelectedItem = null;
-                    return;
-                }
-
-                double available = Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 16);
-                int splitIndex = Helpers.AccordionSplitHelper.CalculateSplitIndex(
-                    selectedIndex, all.Count, available);
-
-                (IReadOnlyList<LocalArtistCardViewModel> top,
-                 IReadOnlyList<LocalArtistCardViewModel> bottom) =
-                    Helpers.AccordionSplitHelper.Split(all, splitIndex);
-
-                SeriesTopGrid.ItemsSource     = top;
-                SeriesBottomGrid.ItemsSource  = bottom;
-                SeriesBottomGrid.SelectedItem = null;
-
-                SeriesTopGrid.SelectedItem = all[selectedIndex];
-            }
-            finally
-            {
-                _isUpdatingSplit = false;
-            }
-        }
-
-        /// <summary>
         /// Wird ausgelöst, wenn der Nutzer eine Serien-Kachel auswählt.
         /// Lädt die Folgen der gewählten Serie und aktualisiert den Split.
         /// </summary>
         private async void OnArtistSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isUpdatingSplit) return;
+            if (_splitHandler.IsUpdating) return;
 
             if (sender is GridView { SelectedItem: LocalArtistCardViewModel artist })
             {
                 EpisodeAccordion.GridView.SelectedItem = null;
                 await ViewModel.SelectArtistAsync(artist);
-                // UpdateSeriesSplit wird durch PropertyChanged auf SelectedArtistIndex ausgelöst
+                // UpdateSplit wird durch PropertyChanged auf SelectedArtistIndex ausgelöst
             }
         }
 
@@ -372,38 +326,19 @@ namespace EchoPlay.App.Views
                 content = builder.ToString().TrimEnd();
             }
 
-            ContentDialog dialog = new()
-            {
-                XamlRoot         = XamlRoot,
-                Title            = "Fehlende Folgen",
-                Content          = new ScrollViewer
-                {
-                    MaxHeight = 400,
-                    Content   = new TextBlock
-                    {
-                        Text         = content,
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        IsTextSelectionEnabled = true
-                    }
-                },
-                PrimaryButtonText = "Als TXT speichern",
-                CloseButtonText   = "Schließen"
-            };
-
             _isDialogOpen = true;
             try
             {
-                Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                    XamlRoot,
+                    title: "Fehlende Folgen",
+                    content: content,
+                    primaryButtonText: "Als TXT speichern");
 
                 if (result == ContentDialogResult.Primary)
                 {
                     await SaveReportAsTxtAsync(content);
                 }
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                // Ein anderer ContentDialog ist noch offen
             }
             finally
             {
@@ -434,39 +369,21 @@ namespace EchoPlay.App.Views
 
             string reportText = EchoPlay.Core.Models.MissingEpisodesReportFormatter.FormatAsText(report);
 
-            ContentDialog dialog = new()
-            {
-                XamlRoot         = XamlRoot,
-                Title            = "Fehlende Folgen – Gesamtprüfung",
-                Content          = new ScrollViewer
-                {
-                    MaxHeight = 500,
-                    Content   = new TextBlock
-                    {
-                        Text         = reportText,
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
-                        IsTextSelectionEnabled = true,
-                        FontFamily   = new Microsoft.UI.Xaml.Media.FontFamily("Consolas")
-                    }
-                },
-                PrimaryButtonText = "Als TXT speichern",
-                CloseButtonText   = "Schließen"
-            };
-
             _isDialogOpen = true;
             try
             {
-                Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                    XamlRoot,
+                    title: "Fehlende Folgen – Gesamtprüfung",
+                    content: reportText,
+                    primaryButtonText: "Als TXT speichern",
+                    maxHeight: 500,
+                    useMonospace: true);
 
                 if (result == ContentDialogResult.Primary)
                 {
                     await SaveReportAsTxtAsync(reportText);
                 }
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                // Ein anderer ContentDialog ist noch offen
             }
             finally
             {
@@ -601,7 +518,7 @@ namespace EchoPlay.App.Views
             }
 
             // Vorschau im Hintergrund erstellen
-            EchoPlay.LocalLibrary.Models.RestructurePreview? preview = null;
+            RestructurePreviewDisplay? preview = null;
             ViewModel.RestructurePreviewReady += p => preview = p;
             await ViewModel.AnalyzeRestructureAsync(seriesId);
             ViewModel.RestructurePreviewReady -= p => preview = p;
@@ -620,33 +537,21 @@ namespace EchoPlay.App.Views
                 sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
                 sb.AppendLine();
 
-                foreach (EchoPlay.LocalLibrary.Models.RestructureAction action in preview.Actions)
+                foreach (RestructureActionDisplay action in preview.Actions)
                 {
                     sb.Append("  ").AppendLine(action.FileName);
                     sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
                 }
 
-                ContentDialog dialog = new()
-                {
-                    XamlRoot = Content.XamlRoot,
-                    Title = "Ordnerstruktur aufbauen",
-                    Content = new ScrollViewer
-                    {
-                        Content = new TextBlock
-                        {
-                            Text = sb.ToString(),
-                            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
-                            FontSize = 12,
-                            TextWrapping = TextWrapping.NoWrap
-                        },
-                        MaxHeight = 400
-                    },
-                    PrimaryButtonText = "Umbauen",
-                    CloseButtonText = "Abbrechen",
-                    DefaultButton = ContentDialogButton.Close
-                };
-
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                    Content.XamlRoot,
+                    title: "Ordnerstruktur aufbauen",
+                    content: sb.ToString(),
+                    primaryButtonText: "Umbauen",
+                    closeButtonText: "Abbrechen",
+                    useMonospace: true,
+                    monospaceFontSize: 12,
+                    defaultButton: ContentDialogButton.Close);
 
                 if (result == ContentDialogResult.Primary)
                 {
@@ -683,7 +588,7 @@ namespace EchoPlay.App.Views
             using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
             if (onlineScope is null) return;
 
-            CoverSearchResult? selected = await Helpers.CoverSearchDialog.ShowAsync(
+            CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                 card.Title,
                 (query, ct) => ViewModel.SearchCoversAsync(query, ct),
                 Content.XamlRoot);
@@ -740,7 +645,7 @@ namespace EchoPlay.App.Views
             using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
             if (onlineScope is null) return;
 
-            CoverSearchResult? selected = await Helpers.CoverSearchDialog.ShowAsync(
+            CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                 card.Title,
                 (query, ct) => ViewModel.SearchCoversAsync(query, ct),
                 Content.XamlRoot);

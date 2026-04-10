@@ -6,6 +6,51 @@
     xmlns:vm="using:EchoPlay.App.ViewModels"
     xmlns:ctrl="using:EchoPlay.App.Controls">
 
+    <Page.Resources>
+        <!-- Gemeinsamer ItemTemplate für Top- und Bottom-Grid der Online-Mediathek.
+             Vermeidet Duplikation des Kontextmenüs und des SeriesTileControl-Markups. -->
+        <DataTemplate x:Key="OnlineSeriesTileTemplate" x:DataType="vm:SeriesCardViewModel">
+            <ctrl:SeriesTileControl
+                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
+                Title="{x:Bind Title, Mode=OneTime}"
+                Subtitle="{x:Bind CountText, Mode=OneTime}"
+                FavoriteVisibility="Visible"
+                FavoriteGlyph="{x:Bind FavoriteGlyph, Mode=OneWay}"
+                FavoriteCommand="{x:Bind ToggleFavoriteCommand}"
+                WatchedVisibility="{x:Bind WatchedVisibility, Mode=OneWay}"
+                WatchedGlyph="{x:Bind WatchedGlyph, Mode=OneTime}"
+                SelectedIndicatorVisibility="{x:Bind SelectedIndicatorVisibility, Mode=OneWay}">
+                <ctrl:SeriesTileControl.ContextFlyoutMenu>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Uid="SeriesDetailsItem"
+                                        Tag="{x:Bind Id, Mode=OneTime}"
+                                        Click="OnSeriesDetailsClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE946;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <ToggleMenuFlyoutItem
+                            x:Uid="WatchSeriesItem"
+                            Tag="{x:Bind Id, Mode=OneTime}"
+                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
+                            Click="OnToggleWatchSeriesClick">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE7B3;"/>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                        <MenuFlyoutItem x:Uid="OnlineRemoveSeriesItem"
+                                        Tag="{x:Bind Id, Mode=OneTime}"
+                                        Click="OnRemoveOnlineSeriesClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE74D;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </ctrl:SeriesTileControl.ContextFlyoutMenu>
+            </ctrl:SeriesTileControl>
+        </DataTemplate>
+    </Page.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -135,38 +180,22 @@
             </ComboBox>
         </Grid>
 
-        <!-- Leer-Zustand -->
-        <StackPanel
-            Grid.Row="3"
-            Visibility="{x:Bind ViewModel.EmptyStateVisibility, Mode=OneWay}"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Spacing="16" Padding="32">
+        <!-- Leer-Zustand: zwei Varianten je nach VM-Sichtbarkeit -->
+        <Grid Grid.Row="3"
+              Visibility="{x:Bind ViewModel.EmptyStateVisibility, Mode=OneWay}">
 
-            <StackPanel
+            <ctrl:EmptyStatePanel
+                x:Uid="OnlineNoProviderEmptyState"
+                Glyph="&#xE783;"
                 Visibility="{x:Bind ViewModel.NoProviderVisibility, Mode=OneWay}"
-                Spacing="12" HorizontalAlignment="Center">
-                <FontIcon Glyph="&#xE783;" FontSize="48" HorizontalAlignment="Center"
-                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <TextBlock x:Uid="OnlineNoProviderHint" TextAlignment="Center"
-                           TextWrapping="Wrap" MaxWidth="400"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <Button x:Uid="OnlineGoToSettingsButton" HorizontalAlignment="Center"
-                        Click="OnGoToSettingsClick"/>
-            </StackPanel>
+                ActionCommand="{x:Bind ViewModel.GoToSettingsCommand}"/>
 
-            <StackPanel
+            <ctrl:EmptyStatePanel
+                x:Uid="OnlineNoSeriesEmptyState"
+                Glyph="&#xE8F1;"
                 Visibility="{x:Bind ViewModel.NoSeriesVisibility, Mode=OneWay}"
-                Spacing="12" HorizontalAlignment="Center">
-                <FontIcon Glyph="&#xE8F1;" FontSize="48" HorizontalAlignment="Center"
-                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <TextBlock x:Uid="OnlineNoSeriesHint" TextAlignment="Center"
-                           TextWrapping="Wrap" MaxWidth="400"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <Button x:Uid="OnlineSearchSeriesButton" HorizontalAlignment="Center"
-                        Click="OnAddSeriesClick"/>
-            </StackPanel>
-        </StackPanel>
+                ActionCommand="{x:Bind ViewModel.FocusSearchCommand}"/>
+        </Grid>
 
         <!-- Provider-Suchergebnisse – Layout 1:1 wie Serien-Kacheln -->
         <GridView
@@ -290,7 +319,8 @@
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ItemTemplate="{StaticResource OnlineSeriesTileTemplate}">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="166"/>
@@ -302,48 +332,6 @@
                             <Setter Property="Margin" Value="0"/>
                         </Style>
                     </GridView.ItemContainerStyle>
-                    <GridView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:SeriesCardViewModel">
-                            <ctrl:SeriesTileControl
-                                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
-                                Title="{x:Bind Title, Mode=OneTime}"
-                                Subtitle="{x:Bind CountText, Mode=OneTime}"
-                                FavoriteVisibility="Visible"
-                                FavoriteGlyph="{x:Bind FavoriteGlyph, Mode=OneWay}"
-                                FavoriteCommand="{x:Bind ToggleFavoriteCommand}"
-                                WatchedVisibility="{x:Bind WatchedVisibility, Mode=OneWay}"
-                                WatchedGlyph="{x:Bind WatchedGlyph, Mode=OneTime}"
-                                SelectedIndicatorVisibility="{x:Bind SelectedIndicatorVisibility, Mode=OneWay}">
-                                <ctrl:SeriesTileControl.ContextFlyoutMenu>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem x:Uid="SeriesDetailsItem"
-                                                        Tag="{x:Bind Id, Mode=OneTime}"
-                                                        Click="OnSeriesDetailsClick">
-                                            <MenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE946;"/>
-                                            </MenuFlyoutItem.Icon>
-                                        </MenuFlyoutItem>
-                                        <ToggleMenuFlyoutItem
-                                            x:Uid="WatchSeriesItem"
-                                            Tag="{x:Bind Id, Mode=OneTime}"
-                                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
-                                            Click="OnToggleWatchSeriesClick">
-                                            <ToggleMenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE7B3;"/>
-                                            </ToggleMenuFlyoutItem.Icon>
-                                        </ToggleMenuFlyoutItem>
-                                        <MenuFlyoutItem x:Uid="OnlineRemoveSeriesItem"
-                                                        Tag="{x:Bind Id, Mode=OneTime}"
-                                                        Click="OnRemoveOnlineSeriesClick">
-                                            <MenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE74D;"/>
-                                            </MenuFlyoutItem.Icon>
-                                        </MenuFlyoutItem>
-                                    </MenuFlyout>
-                                </ctrl:SeriesTileControl.ContextFlyoutMenu>
-                            </ctrl:SeriesTileControl>
-                        </DataTemplate>
-                    </GridView.ItemTemplate>
                 </GridView>
 
                 <!-- Lade-Indikator: sichtbar solange Episoden geladen werden -->
@@ -403,7 +391,8 @@
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ItemTemplate="{StaticResource OnlineSeriesTileTemplate}">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="166"/>
@@ -415,48 +404,6 @@
                             <Setter Property="Margin" Value="0"/>
                         </Style>
                     </GridView.ItemContainerStyle>
-                    <GridView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:SeriesCardViewModel">
-                            <ctrl:SeriesTileControl
-                                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
-                                Title="{x:Bind Title, Mode=OneTime}"
-                                Subtitle="{x:Bind CountText, Mode=OneTime}"
-                                FavoriteVisibility="Visible"
-                                FavoriteGlyph="{x:Bind FavoriteGlyph, Mode=OneWay}"
-                                FavoriteCommand="{x:Bind ToggleFavoriteCommand}"
-                                WatchedVisibility="{x:Bind WatchedVisibility, Mode=OneWay}"
-                                WatchedGlyph="{x:Bind WatchedGlyph, Mode=OneTime}"
-                                SelectedIndicatorVisibility="{x:Bind SelectedIndicatorVisibility, Mode=OneWay}">
-                                <ctrl:SeriesTileControl.ContextFlyoutMenu>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem x:Uid="SeriesDetailsItem"
-                                                        Tag="{x:Bind Id, Mode=OneTime}"
-                                                        Click="OnSeriesDetailsClick">
-                                            <MenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE946;"/>
-                                            </MenuFlyoutItem.Icon>
-                                        </MenuFlyoutItem>
-                                        <ToggleMenuFlyoutItem
-                                            x:Uid="WatchSeriesItem"
-                                            Tag="{x:Bind Id, Mode=OneTime}"
-                                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
-                                            Click="OnToggleWatchSeriesClick">
-                                            <ToggleMenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE7B3;"/>
-                                            </ToggleMenuFlyoutItem.Icon>
-                                        </ToggleMenuFlyoutItem>
-                                        <MenuFlyoutItem x:Uid="OnlineRemoveSeriesItem"
-                                                        Tag="{x:Bind Id, Mode=OneTime}"
-                                                        Click="OnRemoveOnlineSeriesClick">
-                                            <MenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE74D;"/>
-                                            </MenuFlyoutItem.Icon>
-                                        </MenuFlyoutItem>
-                                    </MenuFlyout>
-                                </ctrl:SeriesTileControl.ContextFlyoutMenu>
-                            </ctrl:SeriesTileControl>
-                        </DataTemplate>
-                    </GridView.ItemTemplate>
                 </GridView>
             </StackPanel>
         </ScrollViewer>

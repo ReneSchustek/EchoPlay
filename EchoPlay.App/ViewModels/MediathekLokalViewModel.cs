@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
@@ -44,9 +45,8 @@ namespace EchoPlay.App.ViewModels
         private readonly IOnlineAccessGuard _onlineAccessGuard;
         private readonly IOnlineEpisodeChecker _onlineEpisodeChecker;
         private readonly EchoPlay.App.Services.CoverService? _coverService;
-        private readonly INavigationService? _navigationService;
         private readonly IWatchToggleService? _watchToggleService;
-        private readonly ILocalizationService? _localizationService;
+        private readonly IPageModeGuard? _pageModeGuard;
 
         /// <summary>
         /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst
@@ -114,9 +114,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="onlineAccessGuard">Prüft den Offline-Modus und zeigt bei Bedarf einen Bestätigungsdialog.</param>
         /// <param name="onlineEpisodeChecker">Prüft online (iTunes) ob neue Folgen verfügbar sind.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
-        /// <param name="navigationService">Optionaler Navigationsdienst – nur in der echten App-Shell gesetzt, in Tests <see langword="null"/>.</param>
         /// <param name="watchToggleService">Optionaler Service für das Umschalten der Neuerscheinungs-Überwachung. In Tests <see langword="null"/>.</param>
-        /// <param name="localizationService">Optionaler Lokalisierungsdienst für Dialog-Texte. In Tests <see langword="null"/>.</param>
+        /// <param name="pageModeGuard">Optionaler Page-Mode-Guard – prüft den Nur-Online-Modus beim Betreten der Page. In Tests <see langword="null"/>.</param>
         public MediathekLokalViewModel(
             IServiceScopeFactory scopeFactory,
             ISyncService syncService,
@@ -130,9 +129,8 @@ namespace EchoPlay.App.ViewModels
             IOnlineAccessGuard onlineAccessGuard,
             IOnlineEpisodeChecker onlineEpisodeChecker,
             EchoPlay.App.Services.CoverService? coverService = null,
-            INavigationService? navigationService = null,
             IWatchToggleService? watchToggleService = null,
-            ILocalizationService? localizationService = null)
+            IPageModeGuard? pageModeGuard = null)
         {
             _scopeFactory              = scopeFactory;
             _syncService               = syncService;
@@ -146,9 +144,8 @@ namespace EchoPlay.App.ViewModels
             _onlineAccessGuard         = onlineAccessGuard;
             _onlineEpisodeChecker      = onlineEpisodeChecker;
             _coverService              = coverService;
-            _navigationService         = navigationService;
             _watchToggleService        = watchToggleService;
-            _localizationService       = localizationService;
+            _pageModeGuard             = pageModeGuard;
 
             // DispatcherQueue beim Erstellen auf dem UI-Thread erfassen –
             // OnSeriesSynced wird später vom Hintergrundthread aufgerufen und braucht diesen Handle.
@@ -183,28 +180,17 @@ namespace EchoPlay.App.ViewModels
         /// Wird vom Code-Behind beim Betreten der Seite aufgerufen. Prüft den
         /// Nur-Online-Modus und navigiert zurück, falls die lokale Mediathek deaktiviert ist.
         /// Liefert <see langword="false"/>, falls die Page nicht weiter geladen werden soll.
+        /// Die Prüfung läuft über den <see cref="IPageModeGuard"/>; in Tests ohne Guard
+        /// wird der Check übersprungen und die Page darf laden.
         /// </summary>
         public async Task<bool> InitializeAsync()
         {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IAppSettingsDataService settingsService =
-                scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            EchoPlay.Data.Entities.Settings.AppSettings settings = await settingsService.GetAsync();
-
-            if (!settings.OnlineOnlyMode)
+            if (_pageModeGuard is null)
             {
                 return true;
             }
 
-            if (_localizationService is not null)
-            {
-                await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineOnlyModeHintTitle"),
-                    _localizationService.Get("OnlineOnlyModeHintMessage"));
-            }
-
-            _navigationService?.GoBack();
-            return false;
+            return await _pageModeGuard.EnsureLocalAccessAsync();
         }
 
         /// <summary>
@@ -704,24 +690,24 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Wird ausgelöst, wenn eine Online-Cover-Suche für eine Serie Treffer liefert.
         /// Die Page öffnet daraufhin den Kachelauswahl-Dialog und ruft anschließend
-        /// <see cref="ApplySelectedSeriesCoverAsync(CoverSearchResult)"/> mit dem gewählten Kandidaten auf.
+        /// <see cref="ApplySelectedSeriesCoverAsync(CoverSearchHit)"/> mit dem gewählten Kandidaten auf.
         /// Ohne abonnierte Listener würde das Ergebnis still verworfen.
         /// </summary>
-        public event EventHandler<IReadOnlyList<CoverSearchResult>>? SeriesCoverSearchResultsReady;
+        public event EventHandler<IReadOnlyList<CoverSearchHit>>? SeriesCoverSearchResultsReady;
 
         /// <summary>
         /// Wird ausgelöst, wenn eine Online-Cover-Suche für eine Episode Treffer liefert.
         /// Die Page öffnet daraufhin den Kachelauswahl-Dialog und ruft anschließend
-        /// <see cref="ApplySelectedEpisodeCoverAsync(CoverSearchResult)"/> mit dem gewählten Kandidaten auf.
+        /// <see cref="ApplySelectedEpisodeCoverAsync(CoverSearchHit)"/> mit dem gewählten Kandidaten auf.
         /// </summary>
-        public event EventHandler<IReadOnlyList<CoverSearchResult>>? EpisodeCoverSearchResultsReady;
+        public event EventHandler<IReadOnlyList<CoverSearchHit>>? EpisodeCoverSearchResultsReady;
 
         /// <summary>
         /// Wird ausgelöst, wenn der Ordnerstruktur-Assistent eine Vorschau erstellt hat.
         /// Die Page zeigt die geplanten Verschiebungen in einem ContentDialog an.
         /// Bei Bestätigung durch den Nutzer ruft die Page <see cref="ExecuteRestructureAsync"/> auf.
         /// </summary>
-        public event Action<EchoPlay.LocalLibrary.Models.RestructurePreview>? RestructurePreviewReady;
+        public event Action<RestructurePreviewDisplay>? RestructurePreviewReady;
 
         // ── Laden ────────────────────────────────────────────────────────────────
 
@@ -2311,23 +2297,25 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            RestructurePreviewReady?.Invoke(preview);
+            RestructurePreviewReady?.Invoke(new RestructurePreviewDisplay(preview));
         }
 
         /// <summary>
         /// Führt den Ordnerstruktur-Umbau aus und löst danach einen Neu-Scan der Bibliothek aus.
         /// </summary>
-        /// <param name="preview">Die zuvor erstellte Vorschau.</param>
+        /// <param name="preview">Die zuvor erstellte App-Display-Vorschau.</param>
         /// <returns>Anzahl der verschobenen Dateien.</returns>
-        public async Task<int> ExecuteRestructureAsync(EchoPlay.LocalLibrary.Models.RestructurePreview preview)
+        public async Task<int> ExecuteRestructureAsync(RestructurePreviewDisplay preview)
         {
+            EchoPlay.LocalLibrary.Models.RestructurePreview original = preview.Original;
+
             int movedCount = await Task.Run(() =>
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 EchoPlay.LocalLibrary.Abstractions.IFolderRestructureService service =
                     scope.ServiceProvider.GetRequiredService<EchoPlay.LocalLibrary.Abstractions.IFolderRestructureService>();
 
-                return service.Execute(preview);
+                return service.Execute(original);
             });
 
             return movedCount;
@@ -2395,8 +2383,11 @@ namespace EchoPlay.App.ViewModels
         /// <param name="query">Suchbegriff, z.B. Serien- oder Episodentitel.</param>
         /// <param name="ct">Abbruchtoken, z.B. für Dialog-Schließen.</param>
         /// <returns>Liste der Treffer, leer wenn nichts gefunden wurde.</returns>
-        public Task<IReadOnlyList<CoverSearchResult>> SearchCoversAsync(string query, CancellationToken ct)
-            => _coverSearchService.SearchAsync(query, ct);
+        public async Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct)
+        {
+            IReadOnlyList<CoverSearchResult> results = await _coverSearchService.SearchAsync(query, ct);
+            return MapHits(results);
+        }
 
         /// <summary>
         /// Übernimmt einen Cover-Kandidaten direkt für die übergebene Serienkachel.
@@ -2404,11 +2395,11 @@ namespace EchoPlay.App.ViewModels
         /// Page die Karte selbst verwaltet – ohne den <see cref="_pendingSeriesCoverCard"/>-Mechanismus.
         /// </summary>
         /// <param name="card">Die Serienkachel, für die das Cover gesetzt werden soll.</param>
-        /// <param name="result">Der vom Nutzer gewählte Cover-Kandidat.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Cover-Kandidat.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchResult result)
+        public async Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit)
         {
-            byte[]? bytes = await DownloadCoverBytesAsync(result.FullUrl);
+            byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl);
 
             if (bytes is null)
             {
@@ -2426,11 +2417,11 @@ namespace EchoPlay.App.ViewModels
         /// Entspricht dem Serien-Overload, aber für Episoden.
         /// </summary>
         /// <param name="card">Die Episodenkachel, für die das Cover gesetzt werden soll.</param>
-        /// <param name="result">Der vom Nutzer gewählte Cover-Kandidat.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Cover-Kandidat.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchResult result)
+        public async Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit)
         {
-            byte[]? bytes = await DownloadCoverBytesAsync(result.FullUrl);
+            byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl);
 
             if (bytes is null)
             {
@@ -2444,11 +2435,25 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Mappt die LocalLibrary-Suchergebnisse auf die App-eigenen <see cref="CoverSearchHit"/>-Wrapper,
+        /// damit Helpers/Pages nicht direkt vom LocalLibrary-Modell abhängen.
+        /// </summary>
+        private static IReadOnlyList<CoverSearchHit> MapHits(IReadOnlyList<CoverSearchResult> results)
+        {
+            List<CoverSearchHit> hits = new(results.Count);
+            foreach (CoverSearchResult r in results)
+            {
+                hits.Add(CoverSearchHit.From(r));
+            }
+            return hits;
+        }
+
+        /// <summary>
         /// Startet eine Online-Cover-Suche für eine Serie über das Cover Art Archive.
         /// Bei Treffern werden diese über <see cref="SeriesCoverSearchResultsReady"/> an die Page
         /// übergeben, die den Kachelauswahl-Dialog öffnet.
         /// Die Referenz auf <paramref name="card"/> wird in <see cref="_pendingSeriesCoverCard"/>
-        /// zwischengespeichert, damit <see cref="ApplySelectedSeriesCoverAsync(CoverSearchResult)"/> die richtige
+        /// zwischengespeichert, damit <see cref="ApplySelectedSeriesCoverAsync(CoverSearchHit)"/> die richtige
         /// Kachel nach dem Dialog-Abschluss aktualisieren kann.
         /// </summary>
         /// <param name="card">Die Serienkachel, für die ein Cover gesucht werden soll.</param>
@@ -2469,7 +2474,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            SeriesCoverSearchResultsReady?.Invoke(this, results);
+            SeriesCoverSearchResultsReady?.Invoke(this, MapHits(results));
         }
 
         /// <summary>
@@ -2478,9 +2483,9 @@ namespace EchoPlay.App.ViewModels
         /// Muss von der Page nach dem Schließen des Auswahl-Dialogs aufgerufen werden.
         /// Ohne ausstehende Karte (z.B. bei unerwartetem parallelem Aufruf) wird still abgebrochen.
         /// </summary>
-        /// <param name="result">Der vom Nutzer gewählte Cover-Kandidat.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Cover-Kandidat.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task ApplySelectedSeriesCoverAsync(CoverSearchResult result)
+        public async Task ApplySelectedSeriesCoverAsync(CoverSearchHit hit)
         {
             if (_pendingSeriesCoverCard is null)
             {
@@ -2490,7 +2495,7 @@ namespace EchoPlay.App.ViewModels
             LocalArtistCardViewModel card = _pendingSeriesCoverCard;
             _pendingSeriesCoverCard = null;
 
-            byte[]? bytes = await DownloadCoverBytesAsync(result.FullUrl);
+            byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl);
 
             if (bytes is null)
             {
@@ -2567,7 +2572,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            EpisodeCoverSearchResultsReady?.Invoke(this, results);
+            EpisodeCoverSearchResultsReady?.Invoke(this, MapHits(results));
         }
 
         /// <summary>
@@ -2575,9 +2580,9 @@ namespace EchoPlay.App.ViewModels
         /// zwischengespeicherte Episode.
         /// Muss von der Page nach dem Schließen des Auswahl-Dialogs aufgerufen werden.
         /// </summary>
-        /// <param name="result">Der vom Nutzer gewählte Cover-Kandidat.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Cover-Kandidat.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task ApplySelectedEpisodeCoverAsync(CoverSearchResult result)
+        public async Task ApplySelectedEpisodeCoverAsync(CoverSearchHit hit)
         {
             if (_pendingEpisodeCoverCard is null)
             {
@@ -2587,7 +2592,7 @@ namespace EchoPlay.App.ViewModels
             LocalEpisodeCardViewModel card = _pendingEpisodeCoverCard;
             _pendingEpisodeCoverCard = null;
 
-            byte[]? bytes = await DownloadCoverBytesAsync(result.FullUrl);
+            byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl);
 
             if (bytes is null)
             {

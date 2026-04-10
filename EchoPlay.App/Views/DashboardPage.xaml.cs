@@ -7,7 +7,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
@@ -21,19 +20,6 @@ namespace EchoPlay.App.Views
     /// </summary>
     public sealed partial class DashboardPage : Page
     {
-        /// <summary>
-        /// Scroll-Schritt in Pixeln beim Klick auf einen Pfeil-Button.
-        /// Berechnung: 3 Kacheln × 168 px (160 px Kachel + 8 px Margin) = 504 px.
-        /// </summary>
-        private const double ScrollStepPixels = 504;
-
-        /// <summary>
-        /// Alle registrierten horizontalen Kachelreihen-ScrollViewer.
-        /// Wird gebraucht, um nach dem initialen Laden alle Pfeil-Buttons
-        /// zentral zu aktualisieren, wenn das Layout vollständig steht.
-        /// </summary>
-        private readonly List<ScrollViewer> _tileRowScrollViewers = new();
-
         private readonly INavigationService _navigationService;
 
         /// <summary>Gibt dem XAML-Compiler Zugriff auf das ViewModel für x:Bind.</summary>
@@ -71,20 +57,13 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Räumt registrierte Event-Handler der Kachelreihen-ScrollViewer auf.
-        /// Verhindert Memory-Leaks bei wiederholter Navigation zum Dashboard.
+        /// Wird beim Verlassen der Seite aufgerufen. Die Pfeil-Logik der Kachelreihen
+        /// liegt im <see cref="EchoPlay.App.Controls.HorizontalTileRowControl"/>; beim Navigieren
+        /// ist nichts mehr aufzuräumen.
         /// </summary>
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-
-            foreach (ScrollViewer scrollViewer in _tileRowScrollViewers)
-            {
-                scrollViewer.ViewChanged -= OnTileRowViewChanged;
-                scrollViewer.SizeChanged -= OnTileRowSizeChanged;
-            }
-
-            _tileRowScrollViewers.Clear();
         }
 
         /// <summary>
@@ -151,149 +130,12 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Wird aufgerufen, wenn ein horizontaler Kachelreihen-ScrollViewer fertig geladen ist.
-        /// Registriert den ViewChanged-Handler, der die Pfeil-Visibility aktualisiert,
-        /// und führt eine initiale Prüfung durch.
-        /// </summary>
-        /// <param name="sender">Der geladene ScrollViewer.</param>
-        /// <param name="e">Ereignisargumente.</param>
-        private void OnTileRowScrollViewerLoaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is ScrollViewer scrollViewer)
-            {
-                _tileRowScrollViewers.Add(scrollViewer);
-                scrollViewer.ViewChanged += OnTileRowViewChanged;
-                scrollViewer.SizeChanged += OnTileRowSizeChanged;
-
-                // ScrollableWidth ändert sich erst, wenn der Content (Kacheln) tatsächlich
-                // gelayoutet ist – das passiert nach LoadAsync, also deutlich nach Loaded/SizeChanged.
-                // Per PropertyChanged-Callback reagieren wir zuverlässig auf den Moment,
-                // in dem der Inhalt breiter wird als der sichtbare Bereich.
-                scrollViewer.RegisterPropertyChangedCallback(
-                    ScrollViewer.ScrollableWidthProperty,
-                    OnScrollableWidthChanged);
-
-                // Bei Kachelreihen, die erst durch späteres Daten-Binding erzeugt werden
-                // (z.B. Neuerscheinungen aus dem DB-Cache), kann ScrollableWidth beim Loaded
-                // bereits den korrekten Wert haben – dann feuert der PropertyChangedCallback nicht.
-                // Verzögerter Check stellt sicher, dass die Pfeile auch in diesem Fall erscheinen.
-                DispatcherQueue.TryEnqueue(() => UpdateArrowVisibility(scrollViewer));
-            }
-        }
-
-        /// <summary>
-        /// Reagiert auf Änderungen an <see cref="ScrollViewer.ScrollableWidthProperty"/>.
-        /// Feuert z.B. wenn nach dem asynchronen Laden neue Kacheln eingefügt werden und
-        /// der Content erstmals breiter wird als der sichtbare Bereich.
-        /// </summary>
-        /// <param name="sender">Der horizontale ScrollViewer der Kachelreihe.</param>
-        /// <param name="dp">Die geänderte DependencyProperty (ScrollableWidth).</param>
-        private void OnScrollableWidthChanged(DependencyObject sender, DependencyProperty dp)
-        {
-            if (sender is ScrollViewer scrollViewer)
-            {
-                UpdateArrowVisibility(scrollViewer);
-            }
-        }
-
-        /// <summary>
-        /// Aktualisiert die Pfeil-Visibility nach einer Größenänderung (z.B. Fenster-Resize).
-        /// Per DispatcherQueue verzögert, weil Layout-Werte wie ScrollableWidth erst nach
-        /// Abschluss des aktuellen Layout-Passes stimmen – z.B. wenn der vertikale Scrollbar
-        /// des MainScrollViewer erscheint und die horizontalen Reihen schmaler werden.
-        /// </summary>
-        private void OnTileRowSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (sender is ScrollViewer scrollViewer)
-            {
-                DispatcherQueue.TryEnqueue(() => UpdateArrowVisibility(scrollViewer));
-            }
-        }
-
-        /// <summary>
-        /// Aktualisiert die Pfeil-Visibility nach horizontalem Scrollen.
-        /// </summary>
-        private void OnTileRowViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
-        {
-            if (sender is ScrollViewer scrollViewer)
-            {
-                UpdateArrowVisibility(scrollViewer);
-            }
-        }
-
-        /// <summary>
-        /// Scrollt die Kachelreihe horizontal um einen Schritt in die Richtung des Pfeils.
-        /// Der Pfeil-Button hat "left" oder "right" als Tag. Der zugehörige ScrollViewer
-        /// ist das Geschwister-Element in Column 1 des umgebenden Grids.
-        /// </summary>
-        /// <param name="sender">Der angeklickte Pfeil-Button.</param>
-        /// <param name="e">Ereignisargumente.</param>
-        private void OnScrollArrowClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is not Button button || button.Parent is not Grid parentGrid)
-            {
-                return;
-            }
-
-            // ScrollViewer ist immer in Column 1 des 3-Spalten-Grids
-            ScrollViewer? scrollViewer = FindScrollViewerInGrid(parentGrid);
-            if (scrollViewer is null)
-            {
-                return;
-            }
-
-            string direction = button.Tag as string ?? "right";
-            double targetOffset = direction == "left"
-                ? Math.Max(0, scrollViewer.HorizontalOffset - ScrollStepPixels)
-                : scrollViewer.HorizontalOffset + ScrollStepPixels;
-
-            scrollViewer.ChangeView(targetOffset, null, null);
-        }
-
-        /// <summary>
-        /// Setzt die Sichtbarkeit der Pfeil-Buttons neben einer Kachelreihe.
-        /// Links-Pfeil erscheint sobald Inhalt links abgeschnitten ist,
-        /// Rechts-Pfeil sobald rechts mindestens ein Cover nicht vollständig sichtbar ist.
-        /// </summary>
-        /// <param name="scrollViewer">Der horizontale ScrollViewer der Kachelreihe.</param>
-        private static void UpdateArrowVisibility(ScrollViewer scrollViewer)
-        {
-            if (scrollViewer.Parent is not Grid parentGrid)
-            {
-                return;
-            }
-
-            double maxOffset = scrollViewer.ScrollableWidth;
-            double currentOffset = scrollViewer.HorizontalOffset;
-
-            // Pfeile einblenden sobald der Inhalt auch nur teilweise abgeschnitten ist.
-            // Toleranz 0.5 px fängt DPI-Rundungsfehler ab, ohne echte Überlappung zu verschlucken.
-            bool showLeft = currentOffset > 0.5;
-            bool showRight = currentOffset < maxOffset - 0.5;
-
-            foreach (Microsoft.UI.Xaml.UIElement child in parentGrid.Children)
-            {
-                if (child is Button arrowButton && arrowButton.Tag is string tag)
-                {
-                    if (tag == "left")
-                    {
-                        arrowButton.Visibility = showLeft ? Visibility.Visible : Visibility.Collapsed;
-                    }
-                    else if (tag == "right")
-                    {
-                        arrowButton.Visibility = showRight ? Visibility.Visible : Visibility.Collapsed;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Wird aufgerufen, wenn das Favoriten-ListView fertig geladen ist.
-        /// Ermittelt die interne ScrollViewer-Instanz des ListViews per VisualTreeHelper,
-        /// damit die Pfeil-Button-Logik auch für die Favoriten-Kachelreihe funktioniert.
+        /// Ermittelt die interne ScrollViewer-Instanz per VisualTreeHelper, damit die
+        /// Pfeil-Button-Logik der Favoriten-Sektion (ListView mit Drag-and-Drop) funktioniert.
+        /// Die anderen Kachelreihen nutzen das <see cref="Controls.HorizontalTileRowControl"/>
+        /// und brauchen diese Logik nicht.
         /// </summary>
-        /// <param name="sender">Das geladene ListView.</param>
-        /// <param name="e">Ereignisargumente.</param>
         private void OnFavoritesListViewLoaded(object sender, RoutedEventArgs e)
         {
             if (sender is not ListView listView)
@@ -308,55 +150,106 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Dieselbe Infrastruktur wie für die anderen Kachelreihen verwenden
-            _tileRowScrollViewers.Add(scrollViewer);
-            scrollViewer.ViewChanged += OnTileRowViewChanged;
-            scrollViewer.SizeChanged += OnTileRowSizeChanged;
+            scrollViewer.ViewChanged += OnFavoritesViewChanged;
+            scrollViewer.SizeChanged += (_, _) => DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
 
             scrollViewer.RegisterPropertyChangedCallback(
                 ScrollViewer.ScrollableWidthProperty,
-                OnScrollableWidthChanged);
+                (_, _) => UpdateFavoritesArrowVisibility(scrollViewer));
+
+            DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
         }
 
         /// <summary>
-        /// Sucht den ScrollViewer im 3-Spalten-Grid (immer in Column 1).
-        /// Unterstützt sowohl direkte ScrollViewer als auch ListViews,
-        /// deren interner ScrollViewer per VisualTreeHelper ermittelt wird.
+        /// Aktualisiert die Pfeil-Sichtbarkeit der Favoriten-Sektion nach Scroll-Events.
         /// </summary>
-        /// <param name="grid">Das übergeordnete Grid.</param>
-        /// <returns>Den gefundenen ScrollViewer oder null.</returns>
-        private static ScrollViewer? FindScrollViewerInGrid(Grid grid)
+        private void OnFavoritesViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
         {
-            foreach (Microsoft.UI.Xaml.UIElement child in grid.Children)
+            if (sender is ScrollViewer scrollViewer)
             {
-                // Grid.GetColumn erwartet FrameworkElement – UIElements ohne Layout-Spalte ignorieren
-                if (child is not FrameworkElement fe || Grid.GetColumn(fe) != 1)
-                {
-                    continue;
-                }
+                UpdateFavoritesArrowVisibility(scrollViewer);
+            }
+        }
 
-                if (fe is ScrollViewer sv)
-                {
-                    return sv;
-                }
+        /// <summary>
+        /// Klick auf die Favoriten-Pfeil-Buttons. Scrollt das interne ScrollViewer des
+        /// Favoriten-ListViews horizontal um einen Schritt in Pfeil-Richtung.
+        /// </summary>
+        private void OnFavoritesArrowClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Parent is not Grid parentGrid)
+            {
+                return;
+            }
 
-                // Favoriten-Sektion: ListView in Column 1 statt direktem ScrollViewer
-                if (fe is ListView listView)
+            ScrollViewer? scrollViewer = null;
+            foreach (Microsoft.UI.Xaml.UIElement child in parentGrid.Children)
+            {
+                if (child is FrameworkElement fe && Grid.GetColumn(fe) == 1 && fe is ListView listView)
                 {
-                    return FindScrollViewerInElement(listView);
+                    scrollViewer = FindScrollViewerInElement(listView);
+                    break;
                 }
             }
 
-            return null;
+            if (scrollViewer is null)
+            {
+                return;
+            }
+
+            const double scrollStep = 504;
+            string direction = button.Tag as string ?? "right";
+            double targetOffset = direction == "left"
+                ? Math.Max(0, scrollViewer.HorizontalOffset - scrollStep)
+                : scrollViewer.HorizontalOffset + scrollStep;
+
+            scrollViewer.ChangeView(targetOffset, null, null);
+        }
+
+        /// <summary>
+        /// Setzt die Sichtbarkeit der beiden Pfeile der Favoriten-Sektion.
+        /// </summary>
+        private void UpdateFavoritesArrowVisibility(ScrollViewer scrollViewer)
+        {
+            // Geht hoch zum 3-Spalten-Grid: ScrollViewer → ... → ListView → Grid
+            DependencyObject current = scrollViewer;
+            Grid? parentGrid = null;
+            for (int i = 0; i < 12 && current is not null; i++)
+            {
+                current = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(current);
+                if (current is Grid g && g.ColumnDefinitions.Count == 3)
+                {
+                    parentGrid = g;
+                    break;
+                }
+            }
+
+            if (parentGrid is null)
+            {
+                return;
+            }
+
+            double maxOffset = scrollViewer.ScrollableWidth;
+            double currentOffset = scrollViewer.HorizontalOffset;
+            bool showLeft = currentOffset > 0.5;
+            bool showRight = currentOffset < maxOffset - 0.5;
+
+            foreach (Microsoft.UI.Xaml.UIElement child in parentGrid.Children)
+            {
+                if (child is Button arrowButton && arrowButton.Tag is string tag)
+                {
+                    arrowButton.Visibility = (tag == "left" ? showLeft : showRight)
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                }
+            }
         }
 
         /// <summary>
         /// Durchsucht den visuellen Baum eines Elements rekursiv nach dem ersten ScrollViewer.
-        /// Wird benötigt, um die interne ScrollViewer-Instanz eines ListViews zu finden,
+        /// Wird benötigt, um die interne ScrollViewer-Instanz des Favoriten-ListViews zu finden,
         /// die nicht direkt über das Control-API zugänglich ist.
         /// </summary>
-        /// <param name="element">Das Startelement der Suche.</param>
-        /// <returns>Den ersten gefundenen ScrollViewer oder null.</returns>
         private static ScrollViewer? FindScrollViewerInElement(DependencyObject element)
         {
             int childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element);
@@ -370,7 +263,6 @@ namespace EchoPlay.App.Views
                     return sv;
                 }
 
-                // Rekursiv in Kindelementen suchen
                 ScrollViewer? found = FindScrollViewerInElement(child);
                 if (found is not null)
                 {
@@ -399,13 +291,9 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Doppelter Dispatch: Der erste Tick wartet, bis alle DataTemplates instanziiert
-            // und Bindings ausgewertet sind. Der zweite Tick stellt sicher, dass der vertikale
-            // Scrollbar des MainScrollViewer sichtbar ist und die endgültige Breite feststeht.
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                DispatcherQueue.TryEnqueue(UpdateAllTileRowArrows);
-            });
+            // Pfeil-Visibility für die Kachelreihen wird vom HorizontalTileRowControl
+            // selbst über RegisterPropertyChangedCallback auf ScrollableWidth gesetzt –
+            // hier ist nichts mehr zu tun.
         }
 
         /// <summary>
@@ -425,18 +313,6 @@ namespace EchoPlay.App.Views
             if (result.LocalLibraryHintText is not null)
             {
                 LocalLibraryHintBar.IsOpen = true;
-            }
-        }
-
-        /// <summary>
-        /// Aktualisiert die Pfeil-Sichtbarkeit aller registrierten Kachelreihen.
-        /// Wird nach dem initialen Laden aufgerufen, wenn das Layout vollständig steht.
-        /// </summary>
-        private void UpdateAllTileRowArrows()
-        {
-            foreach (ScrollViewer scrollViewer in _tileRowScrollViewers)
-            {
-                UpdateArrowVisibility(scrollViewer);
             }
         }
 

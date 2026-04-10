@@ -3,11 +3,12 @@
     x:Class="EchoPlay.App.Views.DashboardPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:viewmodels="using:EchoPlay.App.ViewModels">
+    xmlns:viewmodels="using:EchoPlay.App.ViewModels"
+    xmlns:ctrl="using:EchoPlay.App.Controls">
 
     <Page.Resources>
-        <!-- Dezenter Pfeil-Button für horizontales Scrollen der Kachelreihen.
-             Nutzt Fluent-Theme-Resources, damit die Pfeile in Light/Dark korrekt aussehen. -->
+        <!-- Pfeil-Button für die Favoriten-Sektion (ListView mit Drag-and-Drop, eigene Pfeile).
+             Die anderen Kachelreihen nutzen das HorizontalTileRowControl mit eingebautem Style. -->
         <Style x:Key="ScrollArrowButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="32"/>
             <Setter Property="MinHeight" Value="48"/>
@@ -18,6 +19,135 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
+
+        <!-- Tile-Template für Neuerscheinungen: Cover, Badge, Kontextmenü, Progress, Overlay. -->
+        <DataTemplate x:Key="NewEpisodeTileTemplate" x:DataType="viewmodels:NewEpisodeCardViewModel">
+            <Grid Width="160" Height="160" CornerRadius="8">
+                <Grid.Clip>
+                    <RectangleGeometry Rect="0,0,160,160"/>
+                </Grid.Clip>
+
+                <!-- Cover als klickbare Schaltfläche -->
+                <Button Width="160" Height="160" Padding="0"
+                        Command="{x:Bind PlayCommand}" CornerRadius="8">
+                    <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
+                </Button>
+
+                <!-- Badge oben links: "Angekündigt" (blau) oder "Neu" (grün) -->
+                <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Margin="4,4,0,0" CornerRadius="4"
+                        Background="{x:Bind BadgeBrush}" Padding="6,2"
+                        Visibility="{x:Bind BadgeVisibility}">
+                    <TextBlock Text="{x:Bind BadgeText}" Foreground="White"
+                               FontSize="10" FontWeight="SemiBold"/>
+                </Border>
+
+                <!-- Grüner Haken (nur wenn gehört) -->
+                <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="LimeGreen"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
+                          Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
+
+                <!-- Kontextmenü oben rechts -->
+                <Button Content="&#xE712;" FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Width="28" Height="28" Padding="0"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Margin="0,4,4,0" CornerRadius="4"
+                        Background="#88000000" Foreground="White">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Uid="DashboardMenuMarkPlayed"
+                                            Command="{x:Bind MarkAsPlayedCommand}"/>
+                            <MenuFlyoutItem x:Uid="DashboardMenuMarkUnplayed"
+                                            Command="{x:Bind MarkAsUnplayedCommand}"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+
+                <!-- Text-Overlay -->
+                <Border VerticalAlignment="Bottom" Background="#AA000000"
+                        CornerRadius="0,0,8,8" Padding="6,4">
+                    <StackPanel>
+                        <TextBlock Text="{x:Bind SeriesName}" Foreground="#BBFFFFFF" FontSize="10"
+                                   MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{x:Bind InfoLineText}" Foreground="#BBFFFFFF" FontSize="10"
+                                   Visibility="{x:Bind InfoLineVisibility}"/>
+                        <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="White" FontSize="12"
+                                   MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Fortschrittsbalken -->
+                <ProgressBar VerticalAlignment="Bottom" Value="{x:Bind ProgressPercent, Mode=OneWay}"
+                             Maximum="100" IsIndeterminate="False"
+                             Visibility="{x:Bind ProgressBarVisibility, Mode=OneWay}" Height="3"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Tile-Template für In-Progress: kein Badge, kein Kontextmenü, sonst wie Neuerscheinungen. -->
+        <DataTemplate x:Key="InProgressTileTemplate" x:DataType="viewmodels:NewEpisodeCardViewModel">
+            <Grid Width="160" Height="160" CornerRadius="8">
+                <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
+                <Button Width="160" Height="160" Padding="0"
+                        Command="{x:Bind PlayCommand}" CornerRadius="8">
+                    <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
+                </Button>
+                <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="LimeGreen"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
+                          Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
+                <Border VerticalAlignment="Bottom" Background="#AA000000"
+                        CornerRadius="0,0,8,8" Padding="6,4">
+                    <StackPanel>
+                        <TextBlock Text="{x:Bind EpisodeNumberText}" Foreground="#BBFFFFFF" FontSize="10"/>
+                        <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="White" FontSize="12"
+                                   MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+                <ProgressBar VerticalAlignment="Bottom" Value="{x:Bind ProgressPercent, Mode=OneWay}"
+                             Maximum="100" IsIndeterminate="False"
+                             Visibility="{x:Bind ProgressBarVisibility, Mode=OneWay}" Height="3"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Tile-Template für "Weiterhören": Serie + Restanzeige. -->
+        <DataTemplate x:Key="UnheardSeriesTileTemplate" x:DataType="viewmodels:UnheardSeriesCardViewModel">
+            <Grid Width="160" Height="160" CornerRadius="8">
+                <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
+                <Button Width="160" Height="160" Padding="0" Background="Transparent"
+                        BorderThickness="0" Click="OnUnheardSeriesClick"
+                        Tag="{x:Bind SeriesId}" CornerRadius="8">
+                    <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
+                </Button>
+                <Border VerticalAlignment="Bottom" Background="#AA000000"
+                        CornerRadius="0,0,8,8" Padding="6,4">
+                    <StackPanel>
+                        <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
+                                   MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{x:Bind DisplayText}" Foreground="#BBFFFFFF" FontSize="10"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Tile-Template für "Zuletzt gehört": Serie + letzte Episode. -->
+        <DataTemplate x:Key="RecentSeriesTileTemplate" x:DataType="viewmodels:RecentSeriesCardViewModel">
+            <Grid Width="160" Height="160" CornerRadius="8">
+                <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
+                <Button Width="160" Height="160" Padding="0" Background="Transparent"
+                        BorderThickness="0" Click="OnRecentSeriesClick"
+                        Tag="{x:Bind SeriesId}" CornerRadius="8">
+                    <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
+                </Button>
+                <Border VerticalAlignment="Bottom" Background="#AA000000"
+                        CornerRadius="0,0,8,8" Padding="6,4">
+                    <StackPanel>
+                        <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
+                                   MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{x:Bind LastEpisodeTitle}" Foreground="#BBFFFFFF" FontSize="10"
+                                   MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </DataTemplate>
     </Page.Resources>
 
     <Grid>
@@ -77,156 +207,20 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
                 <!-- Neuerscheinungen: monatlich gruppiert – "Angekündigt" ganz oben,
-                     dann Monate absteigend (neuester zuerst).
-                     ItemsControl statt ListView: kein Drag & Drop mehr nötig. -->
+                     dann Monate absteigend (neuester zuerst). -->
                 <ItemsControl
                     ItemsSource="{x:Bind ViewModel.NewEpisodeGroups, Mode=OneWay}"
                     Visibility="{x:Bind ViewModel.NewEpisodeGroupsVisibility, Mode=OneWay}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="viewmodels:NewEpisodesGroupViewModel">
                             <StackPanel Margin="0,0,0,16">
-                                <!-- Monatsname als Überschrift (z.B. "März 2026" oder "Angekündigt") -->
                                 <TextBlock
                                     Text="{x:Bind GroupLabel}"
                                     Style="{ThemeResource BodyStrongTextBlockStyle}"
                                     Margin="0,0,0,8"/>
-
-                                <!-- Kachelreihe mit Pfeil-Buttons -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Style="{StaticResource ScrollArrowButtonStyle}"
-                                        Tag="left" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE76B;" FontSize="14"/>
-                                    </Button>
-                                    <ScrollViewer Grid.Column="1"
-                                        HorizontalScrollBarVisibility="Hidden"
-                                        VerticalScrollBarVisibility="Disabled"
-                                        HorizontalScrollMode="Enabled"
-                                        Loaded="OnTileRowScrollViewerLoaded">
-                                        <ItemsControl ItemsSource="{x:Bind Episodes}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" Spacing="12"/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="viewmodels:NewEpisodeCardViewModel">
-                                                    <Grid Width="160" Height="160" CornerRadius="8">
-                                                        <Grid.Clip>
-                                                            <RectangleGeometry Rect="0,0,160,160"/>
-                                                        </Grid.Clip>
-
-                                                        <!-- Cover als klickbare Schaltfläche -->
-                                                        <Button
-                                                            Width="160" Height="160"
-                                                            Padding="0"
-                                                            Command="{x:Bind PlayCommand}"
-                                                            CornerRadius="8">
-                                                            <Image
-                                                                Source="{x:Bind CoverImage}"
-                                                                Width="160" Height="160"
-                                                                Stretch="UniformToFill"/>
-                                                        </Button>
-
-                                                        <!-- Badge oben links: "Angekündigt" (blau) oder "Neu" (grün) -->
-                                                        <Border
-                                                            HorizontalAlignment="Left"
-                                                            VerticalAlignment="Top"
-                                                            Margin="4,4,0,0"
-                                                            CornerRadius="4"
-                                                            Background="{x:Bind BadgeBrush}"
-                                                            Padding="6,2"
-                                                            Visibility="{x:Bind BadgeVisibility}">
-                                                            <TextBlock
-                                                                Text="{x:Bind BadgeText}"
-                                                                Foreground="White"
-                                                                FontSize="10"
-                                                                FontWeight="SemiBold"/>
-                                                        </Border>
-
-                                                        <!-- Grüner Haken (nur wenn gehört) -->
-                                                        <FontIcon
-                                                            Glyph="&#xE73E;"
-                                                            FontSize="16"
-                                                            Foreground="LimeGreen"
-                                                            HorizontalAlignment="Left"
-                                                            VerticalAlignment="Top"
-                                                            Margin="6,6,0,0"
-                                                            Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
-
-                                                        <!-- Kontextmenü oben rechts -->
-                                                        <Button
-                                                            Content="&#xE712;"
-                                                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                                            Width="28" Height="28"
-                                                            Padding="0"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Top"
-                                                            Margin="0,4,4,0"
-                                                            CornerRadius="4"
-                                                            Background="#88000000"
-                                                            Foreground="White">
-                                                            <Button.Flyout>
-                                                                <MenuFlyout>
-                                                                    <MenuFlyoutItem
-                                                                        x:Uid="DashboardMenuMarkPlayed"
-                                                                        Command="{x:Bind MarkAsPlayedCommand}"/>
-                                                                    <MenuFlyoutItem
-                                                                        x:Uid="DashboardMenuMarkUnplayed"
-                                                                        Command="{x:Bind MarkAsUnplayedCommand}"/>
-                                                                </MenuFlyout>
-                                                            </Button.Flyout>
-                                                        </Button>
-
-                                                        <!-- Text-Overlay: Serienname, Info-Zeile, Episodentitel -->
-                                                        <Border
-                                                            VerticalAlignment="Bottom"
-                                                            Background="#AA000000"
-                                                            CornerRadius="0,0,8,8"
-                                                            Padding="6,4">
-                                                            <StackPanel>
-                                                                <TextBlock
-                                                                    Text="{x:Bind SeriesName}"
-                                                                    Foreground="#BBFFFFFF"
-                                                                    FontSize="10"
-                                                                    MaxLines="1"
-                                                                    TextTrimming="CharacterEllipsis"/>
-                                                                <TextBlock
-                                                                    Text="{x:Bind InfoLineText}"
-                                                                    Foreground="#BBFFFFFF"
-                                                                    FontSize="10"
-                                                                    Visibility="{x:Bind InfoLineVisibility}"/>
-                                                                <TextBlock
-                                                                    Text="{x:Bind EpisodeTitle}"
-                                                                    Foreground="White"
-                                                                    FontSize="12"
-                                                                    MaxLines="1"
-                                                                    TextTrimming="CharacterEllipsis"/>
-                                                            </StackPanel>
-                                                        </Border>
-
-                                                        <!-- Fortschrittsbalken ganz unten -->
-                                                        <ProgressBar
-                                                            VerticalAlignment="Bottom"
-                                                            Value="{x:Bind ProgressPercent, Mode=OneWay}"
-                                                            Maximum="100"
-                                                            IsIndeterminate="False"
-                                                            Visibility="{x:Bind ProgressBarVisibility, Mode=OneWay}"
-                                                            Height="3"/>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                    <Button Grid.Column="2" Style="{StaticResource ScrollArrowButtonStyle}"
-                                        Tag="right" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE76C;" FontSize="14"/>
-                                    </Button>
-                                </Grid>
+                                <ctrl:HorizontalTileRowControl
+                                    ItemsSource="{x:Bind Episodes}"
+                                    ItemTemplate="{StaticResource NewEpisodeTileTemplate}"/>
                             </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -248,7 +242,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="left" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
+                        Tag="left" Click="OnFavoritesArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
                         <FontIcon Glyph="&#xE76B;" FontSize="14"/>
                     </Button>
                     <ListView Grid.Column="1"
@@ -310,7 +304,7 @@
                         </ListView.ItemTemplate>
                     </ListView>
                     <Button Grid.Column="2" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="right" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
+                        Tag="right" Click="OnFavoritesArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
                         <FontIcon Glyph="&#xE76C;" FontSize="14"/>
                     </Button>
                 </Grid>
@@ -321,53 +315,10 @@
                     Style="{ThemeResource SubtitleTextBlockStyle}"
                     Visibility="{x:Bind ViewModel.UnheardSectionVisibility, Mode=OneWay}"/>
 
-                <Grid Visibility="{x:Bind ViewModel.UnheardSectionVisibility, Mode=OneWay}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="left" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76B;" FontSize="14"/>
-                    </Button>
-                    <ScrollViewer Grid.Column="1"
-                        HorizontalScrollBarVisibility="Hidden"
-                        VerticalScrollBarVisibility="Disabled"
-                        HorizontalScrollMode="Enabled"
-                        Loaded="OnTileRowScrollViewerLoaded">
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.UnheardSeries, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="12"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="viewmodels:UnheardSeriesCardViewModel">
-                                    <Grid Width="160" Height="160" CornerRadius="8">
-                                        <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
-                                        <Button Width="160" Height="160" Padding="0" Background="Transparent"
-                                            BorderThickness="0" Click="OnUnheardSeriesClick"
-                                            Tag="{x:Bind SeriesId}" CornerRadius="8">
-                                            <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
-                                        </Button>
-                                        <Border VerticalAlignment="Bottom" Background="#AA000000" CornerRadius="0,0,8,8" Padding="6,4">
-                                            <StackPanel>
-                                                <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
-                                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{x:Bind DisplayText}" Foreground="#BBFFFFFF" FontSize="10"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                    <Button Grid.Column="2" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="right" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76C;" FontSize="14"/>
-                    </Button>
-                </Grid>
+                <ctrl:HorizontalTileRowControl
+                    Visibility="{x:Bind ViewModel.UnheardSectionVisibility, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.UnheardSeries, Mode=OneWay}"
+                    ItemTemplate="{StaticResource UnheardSeriesTileTemplate}"/>
 
                 <!-- Abschnitt: Läuft gerade – nur einblenden wenn Episoden mit Fortschritt vorhanden -->
                 <TextBlock
@@ -375,58 +326,10 @@
                     Style="{ThemeResource SubtitleTextBlockStyle}"
                     Visibility="{x:Bind ViewModel.InProgressSectionVisibility, Mode=OneWay}"/>
 
-                <Grid Visibility="{x:Bind ViewModel.InProgressSectionVisibility, Mode=OneWay}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="left" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76B;" FontSize="14"/>
-                    </Button>
-                    <ScrollViewer Grid.Column="1"
-                        HorizontalScrollBarVisibility="Hidden"
-                        VerticalScrollBarVisibility="Disabled"
-                        HorizontalScrollMode="Enabled"
-                        Loaded="OnTileRowScrollViewerLoaded">
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.InProgressEpisodes, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="12"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="viewmodels:NewEpisodeCardViewModel">
-                                    <Grid Width="160" Height="160" CornerRadius="8">
-                                        <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
-                                        <Button Width="160" Height="160" Padding="0"
-                                            Command="{x:Bind PlayCommand}" CornerRadius="8">
-                                            <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
-                                        </Button>
-                                        <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="LimeGreen"
-                                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
-                                            Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
-                                        <Border VerticalAlignment="Bottom" Background="#AA000000" CornerRadius="0,0,8,8" Padding="6,4">
-                                            <StackPanel>
-                                                <TextBlock Text="{x:Bind EpisodeNumberText}" Foreground="#BBFFFFFF" FontSize="10"/>
-                                                <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="White" FontSize="12"
-                                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                        </Border>
-                                        <ProgressBar VerticalAlignment="Bottom" Value="{x:Bind ProgressPercent, Mode=OneWay}"
-                                            Maximum="100" IsIndeterminate="False"
-                                            Visibility="{x:Bind ProgressBarVisibility, Mode=OneWay}" Height="3"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                    <Button Grid.Column="2" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="right" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76C;" FontSize="14"/>
-                    </Button>
-                </Grid>
+                <ctrl:HorizontalTileRowControl
+                    Visibility="{x:Bind ViewModel.InProgressSectionVisibility, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.InProgressEpisodes, Mode=OneWay}"
+                    ItemTemplate="{StaticResource InProgressTileTemplate}"/>
 
                 <!-- Abschnitt: Zuletzt gehört – nur einblenden wenn Einträge vorhanden -->
                 <TextBlock
@@ -434,54 +337,10 @@
                     Style="{ThemeResource SubtitleTextBlockStyle}"
                     Visibility="{x:Bind ViewModel.RecentSectionVisibility, Mode=OneWay}"/>
 
-                <Grid Visibility="{x:Bind ViewModel.RecentSectionVisibility, Mode=OneWay}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="left" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76B;" FontSize="14"/>
-                    </Button>
-                    <ScrollViewer Grid.Column="1"
-                        HorizontalScrollBarVisibility="Hidden"
-                        VerticalScrollBarVisibility="Disabled"
-                        HorizontalScrollMode="Enabled"
-                        Loaded="OnTileRowScrollViewerLoaded">
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.RecentSeries, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="12"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="viewmodels:RecentSeriesCardViewModel">
-                                    <Grid Width="160" Height="160" CornerRadius="8">
-                                        <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
-                                        <Button Width="160" Height="160" Padding="0" Background="Transparent"
-                                            BorderThickness="0" Click="OnRecentSeriesClick"
-                                            Tag="{x:Bind SeriesId}" CornerRadius="8">
-                                            <Image Source="{x:Bind CoverImage}" Width="160" Height="160" Stretch="UniformToFill"/>
-                                        </Button>
-                                        <Border VerticalAlignment="Bottom" Background="#AA000000" CornerRadius="0,0,8,8" Padding="6,4">
-                                            <StackPanel>
-                                                <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
-                                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{x:Bind LastEpisodeTitle}" Foreground="#BBFFFFFF" FontSize="10"
-                                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                    <Button Grid.Column="2" Style="{StaticResource ScrollArrowButtonStyle}"
-                        Tag="right" Click="OnScrollArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76C;" FontSize="14"/>
-                    </Button>
-                </Grid>
+                <ctrl:HorizontalTileRowControl
+                    Visibility="{x:Bind ViewModel.RecentSectionVisibility, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.RecentSeries, Mode=OneWay}"
+                    ItemTemplate="{StaticResource RecentSeriesTileTemplate}"/>
 
                 <!-- Ankündigungs-Sektion entfernt: Ankündigungen sind jetzt als "Angekündigt"-Gruppe
                      in den Neuerscheinungen integriert (monatliche Gruppierung, ganz oben). -->

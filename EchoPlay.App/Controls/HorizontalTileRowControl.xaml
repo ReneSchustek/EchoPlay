@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wiederverwendbare horizontale Kachelreihe mit Pfeil-Buttons.
+     Wird im Dashboard für Neuerscheinungen, Weiterhören, In-Progress und
+     Zuletzt-gehört verwendet. Pfeile blenden sich automatisch ein,
+     sobald die Reihe links bzw. rechts überlappt. -->
+<UserControl
+    x:Class="EchoPlay.App.Controls.HorizontalTileRowControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <!-- Dezenter Pfeil-Button: dezelt sich in Light/Dark, kompatibel mit Fluent. -->
+        <Style x:Key="HorizontalTileRowArrowButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}"/>
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Button x:Name="LeftArrow"
+                Grid.Column="0"
+                Style="{StaticResource HorizontalTileRowArrowButtonStyle}"
+                Click="OnLeftArrowClick"
+                Visibility="Collapsed"
+                VerticalAlignment="Center">
+            <FontIcon Glyph="&#xE76B;" FontSize="14"/>
+        </Button>
+
+        <ScrollViewer x:Name="TilesScrollViewer"
+                      Grid.Column="1"
+                      HorizontalScrollBarVisibility="Hidden"
+                      VerticalScrollBarVisibility="Disabled"
+                      HorizontalScrollMode="Enabled"
+                      VerticalScrollMode="Disabled">
+            <ItemsControl x:Name="TilesItemsControl">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="12"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Button x:Name="RightArrow"
+                Grid.Column="2"
+                Style="{StaticResource HorizontalTileRowArrowButtonStyle}"
+                Click="OnRightArrowClick"
+                Visibility="Collapsed"
+                VerticalAlignment="Center">
+            <FontIcon Glyph="&#xE76C;" FontSize="14"/>
+        </Button>
+    </Grid>
+</UserControl>

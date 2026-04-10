@@ -287,16 +287,16 @@
   <data name="MediathekOnlineAddButtonText.Text" xml:space="preserve">
     <value>Add series</value>
   </data>
-  <data name="OnlineNoProviderHint.Text" xml:space="preserve">
+  <data name="OnlineNoProviderEmptyState.Message" xml:space="preserve">
     <value>No provider configured. Select a provider (Spotify or Apple Music) in settings to use the online library.</value>
   </data>
-  <data name="OnlineGoToSettingsButton.Content" xml:space="preserve">
+  <data name="OnlineNoProviderEmptyState.ActionText" xml:space="preserve">
     <value>Go to settings</value>
   </data>
-  <data name="OnlineNoSeriesHint.Text" xml:space="preserve">
+  <data name="OnlineNoSeriesEmptyState.Message" xml:space="preserve">
     <value>No series in the online library yet. Search for audiobook series and add them.</value>
   </data>
-  <data name="OnlineSearchSeriesButton.Content" xml:space="preserve">
+  <data name="OnlineNoSeriesEmptyState.ActionText" xml:space="preserve">
     <value>Search for series online</value>
   </data>
   <data name="OnlineProviderSearchButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -475,7 +475,7 @@
   <data name="SucheButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Search</value>
   </data>
-  <data name="SucheEmptyState.Text" xml:space="preserve">
+  <data name="SucheEmptyState.Message" xml:space="preserve">
     <value>No results found.</value>
   </data>
   <data name="SucheImportButton.Content" xml:space="preserve">

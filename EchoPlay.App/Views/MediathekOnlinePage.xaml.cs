@@ -8,7 +8,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.ComponentModel;
-using System.Linq;
 
 namespace EchoPlay.App.Views
 {
@@ -19,13 +18,11 @@ namespace EchoPlay.App.Views
     /// </summary>
     public sealed partial class MediathekOnlinePage : Page
     {
-        /// <summary>Breite eines Serien-Kachel-Slots (140px Kachel + je 4px Margin = 148px).</summary>
-
-        /// <summary>Verhindert Endlos-Rekursion bei SelectionChanged während des Grid-Splits.</summary>
-        private bool _isUpdatingSplit;
-
-        /// <summary>Letzte berechnete Kacheln pro Reihe – Debounce für SizeChanged.</summary>
-        private int _lastTilesPerRow;
+        /// <summary>
+        /// Akkordeon-Split-Handler kapselt die Top/Bottom-Aufteilung der Serien-Kacheln
+        /// und das Rekursions-Flag (vorher direkt in der Page geführt).
+        /// </summary>
+        private readonly Helpers.AccordionSplitHandler<SeriesCardViewModel> _splitHandler;
 
         private readonly INavigationService _navigationService;
 
@@ -40,6 +37,13 @@ namespace EchoPlay.App.Views
             ViewModel          = App.Services.GetRequiredService<MediathekOnlineViewModel>();
             _navigationService = App.Services.GetRequiredService<INavigationService>();
             InitializeComponent();
+
+            _splitHandler = new Helpers.AccordionSplitHandler<SeriesCardViewModel>(
+                SeriesTopGrid,
+                SeriesBottomGrid,
+                () => ViewModel.Series,
+                () => ViewModel.SelectedSeriesIndex,
+                () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 32));
         }
 
         /// <summary>
@@ -56,8 +60,9 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
-            SizeChanged               += OnPageSizeChanged;
+            ViewModel.PropertyChanged    += OnViewModelPropertyChanged;
+            ViewModel.FocusSearchRequested += OnFocusSearchRequested;
+            SizeChanged                  += OnPageSizeChanged;
 
             await ViewModel.LoadAsync();
         }
@@ -68,63 +73,32 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            SizeChanged               -= OnPageSizeChanged;
+            ViewModel.PropertyChanged    -= OnViewModelPropertyChanged;
+            ViewModel.FocusSearchRequested -= OnFocusSearchRequested;
+            SizeChanged                  -= OnPageSizeChanged;
+        }
+
+        /// <summary>
+        /// Setzt den Fokus auf die Suchbox – wird vom <see cref="MediathekOnlineViewModel.FocusSearchRequested"/>-Event
+        /// ausgelöst, wenn der Empty-State-Button "Serie suchen" geklickt wurde.
+        /// </summary>
+        private void OnFocusSearchRequested()
+        {
+            SearchBox.Focus(FocusState.Programmatic);
         }
 
         // ── Akkordeon Split-Logik ────────────────────────────────────────────────
 
         /// <summary>
-        /// Berechnet die Aufteilung der Serien auf Top- und Bottom-Grid,
-        /// damit das Akkordeon am Ende der Reihe der gewählten Serie erscheint.
-        /// </summary>
-        private void UpdateSeriesSplit()
-        {
-            _isUpdatingSplit = true;
-
-            try
-            {
-                System.Collections.Generic.IReadOnlyList<SeriesCardViewModel> all = ViewModel.Series;
-                int selectedIndex = ViewModel.SelectedSeriesIndex;
-
-                if (selectedIndex < 0 || all.Count == 0)
-                {
-                    SeriesTopGrid.ItemsSource    = all;
-                    SeriesBottomGrid.ItemsSource = System.Array.Empty<SeriesCardViewModel>();
-                    return;
-                }
-
-                double availableWidth = ActualWidth > 0 ? ActualWidth - 32 : 800;
-                int splitIndex = AccordionSplitHelper.CalculateSplitIndex(
-                    selectedIndex, all.Count, availableWidth);
-
-                (System.Collections.Generic.IReadOnlyList<SeriesCardViewModel> top,
-                 System.Collections.Generic.IReadOnlyList<SeriesCardViewModel> bottom) =
-                    AccordionSplitHelper.Split(all, splitIndex);
-
-                SeriesTopGrid.ItemsSource    = top;
-                SeriesBottomGrid.ItemsSource = bottom;
-
-                if (selectedIndex < splitIndex)
-                {
-                    SeriesTopGrid.SelectedIndex = selectedIndex;
-                }
-            }
-            finally
-            {
-                _isUpdatingSplit = false;
-            }
-        }
-
-        /// <summary>
-        /// Reagiert auf Änderungen der Serienliste oder des Auswahl-Index.
+        /// Reagiert auf Änderungen der Serienliste oder des Auswahl-Index und delegiert
+        /// die Top/Bottom-Aufteilung an den <see cref="_splitHandler"/>.
         /// </summary>
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(MediathekOnlineViewModel.Series)
                                or nameof(MediathekOnlineViewModel.SelectedSeriesIndex))
             {
-                UpdateSeriesSplit();
+                _splitHandler.UpdateSplit();
             }
         }
 
@@ -133,14 +107,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnPageSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            double availableWidth = ActualWidth > 0 ? ActualWidth - 32 : 800;
-            int tilesPerRow = AccordionSplitHelper.CalculateTilesPerRow(availableWidth);
-
-            if (tilesPerRow != _lastTilesPerRow)
-            {
-                _lastTilesPerRow = tilesPerRow;
-                UpdateSeriesSplit();
-            }
+            _splitHandler.HandleSizeChanged();
         }
 
         // ── Event-Handler ────────────────────────────────────────────────────────
@@ -151,7 +118,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnSeriesItemClick(object sender, ItemClickEventArgs e)
         {
-            if (_isUpdatingSplit) return;
+            if (_splitHandler.IsUpdating) return;
 
             if (e.ClickedItem is SeriesCardViewModel card)
             {
@@ -199,36 +166,6 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Navigiert zu den Einstellungen (Leer-Zustand Button).
-        /// </summary>
-        private void OnGoToSettingsClick(object sender, RoutedEventArgs e)
-        {
-            _navigationService.NavigateTo(NavigationTarget.Settings);
-        }
-
-        /// <summary>
-        /// Provider-Suche direkt starten (Leer-Zustand Button).
-        /// </summary>
-        /// <summary>
-        /// Navigiert den Fokus zur Suchleiste, damit der Nutzer direkt einen Suchbegriff eingeben kann.
-        /// Wenn bereits ein Suchtext vorhanden ist, wird die Suche sofort ausgelöst.
-        /// </summary>
-        private void OnAddSeriesClick(object sender, RoutedEventArgs e)
-        {
-            SearchBox.Focus(FocusState.Programmatic);
-
-            if (!string.IsNullOrWhiteSpace(ViewModel.SearchText)
-                && ViewModel.ProviderSearchCommand.CanExecute(null))
-            {
-                ViewModel.ProviderSearchCommand.Execute(null);
-            }
-        }
-
-        /// <summary>
-        /// Entfernt eine Online-Serie nach Bestätigung aus der Mediathek.
-        /// Die Serien-ID wird über das Tag-Property des MenuFlyoutItem übergeben.
-        /// </summary>
-        /// <summary>
         /// Navigiert zur Serien-Detailansicht.
         /// </summary>
         private void OnSeriesDetailsClick(object sender, RoutedEventArgs e)
@@ -262,6 +199,8 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Öffnet den Cover-Such-Dialog für eine Online-Episode.
         /// Nutzt den gleichen <see cref="Helpers.CoverSearchDialog"/> wie die lokale Mediathek.
+        /// Such- und Apply-Logik liegt im ViewModel; die Page weiß weder etwas vom DI-Scope
+        /// noch vom LocalLibrary-Modell.
         /// </summary>
         private void OnHelpClick(object sender, RoutedEventArgs e) => HelpTip.IsOpen = true;
 
@@ -277,41 +216,14 @@ namespace EchoPlay.App.Views
 
             if (card is null) return;
 
-            using IServiceScope scope = App.Services.CreateScope();
-            EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearch =
-                scope.ServiceProvider.GetService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>();
-
-            if (coverSearch is null) return;
-
-            EchoPlay.LocalLibrary.Cover.CoverSearchResult? selected =
-                await Helpers.CoverSearchDialog.ShowAsync(
-                    card.Title,
-                    (query, ct) => coverSearch.SearchAsync(query, ct),
-                    Content.XamlRoot);
+            CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
+                card.Title,
+                (query, ct) => ViewModel.SearchEpisodeCoversAsync(query, ct),
+                Content.XamlRoot);
 
             if (selected is null) return;
 
-            try
-            {
-                using System.Net.Http.HttpClient httpClient = new();
-                byte[] coverBytes = await httpClient.GetByteArrayAsync(selected.FullUrl);
-
-                CoverService coverService = App.Services.GetRequiredService<CoverService>();
-                await coverService.SetEpisodeCoverAsync(episodeId, coverBytes);
-
-                // UI direkt aktualisieren – Cover aus Bytes erstellen
-                Microsoft.UI.Xaml.Media.Imaging.BitmapImage? image =
-                    await CoverService.ConvertToBitmapAsync(coverBytes);
-
-                if (image is not null)
-                {
-                    card.CoverImage = image;
-                }
-            }
-            catch (Exception)
-            {
-                // Netzwerkfehler → Platzhalter bleibt
-            }
+            await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
         }
     }
 }

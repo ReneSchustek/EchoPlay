@@ -467,6 +467,10 @@ namespace EchoPlay.App
             // OnlineAccessGuard als Singleton – prüft Offline-Modus und schaltet StatusBar temporär auf Online.
             builder.Services.AddSingleton<IOnlineAccessGuard, OnlineAccessGuard>();
 
+            // PageModeGuard als Singleton – kapselt den Offline-/Nur-Online-Check beim Betreten einer Page,
+            // damit die ViewModels diesen Check nicht jeweils selbst implementieren müssen.
+            builder.Services.AddSingleton<IPageModeGuard, PageModeGuard>();
+
             // StartupValidator: führt alle Checks (Online, Lokal, Cache) im Splash durch.
             builder.Services.AddSingleton<IStartupValidator, StartupValidator>();
 
@@ -502,8 +506,10 @@ namespace EchoPlay.App
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<CoverService>(),
                 provider.GetRequiredService<BackgroundCoverService>(),
-                provider.GetRequiredService<INavigationService>(),
-                provider.GetRequiredService<IWatchToggleService>()));
+                provider.GetRequiredService<IWatchToggleService>(),
+                provider.GetRequiredService<IPageModeGuard>(),
+                provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
+                provider.GetRequiredService<INavigationService>()));
             builder.Services.AddTransient<MediathekLokalViewModel>(provider => new MediathekLokalViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<ISyncService>(),
@@ -517,15 +523,15 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IOnlineAccessGuard>(),
                 provider.GetRequiredService<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(),
                 provider.GetRequiredService<CoverService>(),
-                provider.GetRequiredService<INavigationService>(),
                 provider.GetRequiredService<IWatchToggleService>(),
-                provider.GetRequiredService<ILocalizationService>()));
+                provider.GetRequiredService<IPageModeGuard>()));
             builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<INavigationService>()));
+                provider.GetRequiredService<INavigationService>(),
+                provider.GetRequiredService<IPageModeGuard>()));
             builder.Services.AddTransient<PlayerViewModel>();
             builder.Services.AddTransient<SeriesDetailViewModel>();
             builder.Services.AddTransient<SettingsViewModel>(provider => new SettingsViewModel(

@@ -1,4 +1,4 @@
-using EchoPlay.LocalLibrary.Cover;
+using EchoPlay.App.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -12,8 +12,9 @@ namespace EchoPlay.App.Helpers
 {
     /// <summary>
     /// Wiederverwendbarer Cover-Such-Dialog – wird von lokaler und Online-Mediathek genutzt.
-    /// Zeigt ein Suchfeld, Ergebnis-Kacheln aus dem <see cref="ICoverSearchService"/>
-    /// und gibt das ausgewählte <see cref="CoverSearchResult"/> zurück.
+    /// Zeigt ein Suchfeld, Ergebnis-Kacheln und gibt den ausgewählten
+    /// <see cref="CoverSearchHit"/> zurück. Der Helper kennt nur App-Modelle und ist
+    /// nicht direkt von <see cref="EchoPlay.LocalLibrary.Cover"/> abhängig.
     /// </summary>
     public static class CoverSearchDialog
     {
@@ -33,12 +34,12 @@ namespace EchoPlay.App.Helpers
         /// Null wenn der Dialog abgebrochen wurde oder kein Cover ausgewählt.
         /// </summary>
         /// <param name="initialQuery">Vorbelegter Suchbegriff (z.B. Folgentitel).</param>
-        /// <param name="searchFunc">Suchfunktion die den <see cref="ICoverSearchService"/> aufruft.</param>
+        /// <param name="searchFunc">Suchfunktion – meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.</param>
         /// <param name="xamlRoot">XamlRoot für den ContentDialog – kommt von der aufrufenden Page.</param>
         /// <returns>Das ausgewählte Cover oder null bei Abbruch.</returns>
-        public static async Task<CoverSearchResult?> ShowAsync(
+        public static async Task<CoverSearchHit?> ShowAsync(
             string initialQuery,
-            Func<string, CancellationToken, Task<IReadOnlyList<CoverSearchResult>>> searchFunc,
+            Func<string, CancellationToken, Task<IReadOnlyList<CoverSearchHit>>> searchFunc,
             XamlRoot xamlRoot)
         {
             // UI-Elemente aufbauen
@@ -101,7 +102,7 @@ namespace EchoPlay.App.Helpers
             };
 
             // Zustand
-            List<CoverSearchResult> currentResults = [];
+            List<CoverSearchHit> currentResults = [];
             int selectedIndex = -1;
 
             progressRing.IsActive = true;
@@ -117,7 +118,7 @@ namespace EchoPlay.App.Helpers
                 selectedIndex = -1;
                 dialog.IsPrimaryButtonEnabled = false;
 
-                IReadOnlyList<CoverSearchResult> results =
+                IReadOnlyList<CoverSearchHit> results =
                     await searchFunc(query.Trim(), CancellationToken.None);
 
                 progressRing.IsActive = false;
@@ -133,7 +134,7 @@ namespace EchoPlay.App.Helpers
 
                 for (int i = 0; i < results.Count; i++)
                 {
-                    CoverSearchResult r = results[i];
+                    CoverSearchHit r = results[i];
                     int tileIndex = i;
 
                     Border tileBorder = CreateCoverTile(r);
@@ -237,7 +238,7 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         /// <param name="result">Das Suchergebnis mit Thumbnail-URL und Titel.</param>
         /// <returns>Ein Border-Element, das als klickbare Kachel im Ergebnis-Panel dient.</returns>
-        private static Border CreateCoverTile(CoverSearchResult result)
+        private static Border CreateCoverTile(CoverSearchHit result)
         {
             Image coverImage = new()
             {

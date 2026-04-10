@@ -6,6 +6,77 @@
     xmlns:vm="using:EchoPlay.App.ViewModels"
     xmlns:ctrl="using:EchoPlay.App.Controls">
 
+    <Page.Resources>
+        <!-- Gemeinsamer ItemTemplate für Top- und Bottom-Grid der lokalen Mediathek.
+             Vermeidet Duplikation des Kontextmenüs und stellt sicher, dass die
+             Indikatoren (Favorit, Watched, Auswahl) in beiden Grids konsistent angezeigt werden. -->
+        <DataTemplate x:Key="LokalSeriesTileTemplate" x:DataType="vm:LocalArtistCardViewModel">
+            <ctrl:SeriesTileControl
+                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
+                Title="{x:Bind Title, Mode=OneTime}"
+                Subtitle="{x:Bind CountText, Mode=OneTime}"
+                FavoriteVisibility="Visible"
+                FavoriteGlyph="{x:Bind FavoriteGlyph, Mode=OneWay}"
+                FavoriteCommand="{x:Bind ToggleFavoriteCommand}"
+                WatchedVisibility="{x:Bind WatchedVisibility, Mode=OneWay}"
+                WatchedGlyph="{x:Bind WatchedGlyph, Mode=OneTime}"
+                SelectedIndicatorVisibility="{x:Bind SelectedIndicatorVisibility, Mode=OneWay}">
+                <ctrl:SeriesTileControl.ContextFlyoutMenu>
+                    <MenuFlyout>
+                        <MenuFlyoutItem
+                            x:Uid="SeriesDetailsItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnSeriesDetailsClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE946;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <ToggleMenuFlyoutItem
+                            x:Uid="WatchSeriesItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
+                            Click="OnToggleWatchSeriesClick">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE7B3;"/>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalMarkAllAsReadItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnMarkAllAsReadClick"/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalMissingEpisodesItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnShowMissingEpisodesClick"/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalRemoveFromLibraryItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnRemoveSeriesFromLibraryClick"/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalDeleteFromDiskItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnDeleteSeriesFromDiskClick"/>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalSeriesCoverSelectItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnSeriesCoverSelectClick"/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalSeriesCoverSearchItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnSeriesCoverSearchClick"/>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalRestructureItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnRestructureClick"/>
+                    </MenuFlyout>
+                </ctrl:SeriesTileControl.ContextFlyoutMenu>
+            </ctrl:SeriesTileControl>
+        </DataTemplate>
+    </Page.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -210,7 +281,8 @@
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ItemTemplate="{StaticResource LokalSeriesTileTemplate}">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="166"/>
@@ -222,73 +294,6 @@
                             <Setter Property="Margin" Value="0"/>
                         </Style>
                     </GridView.ItemContainerStyle>
-                    <GridView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:LocalArtistCardViewModel">
-                            <ctrl:SeriesTileControl
-                                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
-                                Title="{x:Bind Title, Mode=OneTime}"
-                                Subtitle="{x:Bind CountText, Mode=OneTime}"
-                                FavoriteVisibility="Visible"
-                                FavoriteGlyph="{x:Bind FavoriteGlyph, Mode=OneWay}"
-                                FavoriteCommand="{x:Bind ToggleFavoriteCommand}"
-                                WatchedVisibility="{x:Bind WatchedVisibility, Mode=OneWay}"
-                                WatchedGlyph="{x:Bind WatchedGlyph, Mode=OneTime}"
-                                SelectedIndicatorVisibility="{x:Bind SelectedIndicatorVisibility, Mode=OneWay}">
-                                <ctrl:SeriesTileControl.ContextFlyoutMenu>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem
-                                            x:Uid="SeriesDetailsItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnSeriesDetailsClick">
-                                            <MenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE946;"/>
-                                            </MenuFlyoutItem.Icon>
-                                        </MenuFlyoutItem>
-                                        <ToggleMenuFlyoutItem
-                                            x:Uid="WatchSeriesItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
-                                            Click="OnToggleWatchSeriesClick">
-                                            <ToggleMenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE7B3;"/>
-                                            </ToggleMenuFlyoutItem.Icon>
-                                        </ToggleMenuFlyoutItem>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalMarkAllAsReadItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnMarkAllAsReadClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalMissingEpisodesItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnShowMissingEpisodesClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalRemoveFromLibraryItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnRemoveSeriesFromLibraryClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalDeleteFromDiskItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnDeleteSeriesFromDiskClick"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalSeriesCoverSelectItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnSeriesCoverSelectClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalSeriesCoverSearchItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnSeriesCoverSearchClick"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalRestructureItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnRestructureClick"/>
-                                    </MenuFlyout>
-                                </ctrl:SeriesTileControl.ContextFlyoutMenu>
-                            </ctrl:SeriesTileControl>
-                        </DataTemplate>
-                    </GridView.ItemTemplate>
                 </GridView>
 
                 <!-- Akkordeon: EpisodeAccordionControl + Track-Panel nebeneinander -->
@@ -457,7 +462,9 @@
                     </Grid>
                 </Grid>
 
-                <!-- Serien – unterer Teil (Kacheln nach der ausgewählten Reihe) -->
+                <!-- Serien – unterer Teil (Kacheln nach der ausgewählten Reihe).
+                     Nutzt das gleiche LokalSeriesTileTemplate wie das obere Grid,
+                     damit Indikatoren und Kontextmenü konsistent sind. -->
                 <GridView
                     x:Name="SeriesBottomGrid"
                     SelectionMode="Single"
@@ -465,7 +472,8 @@
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ItemTemplate="{StaticResource LokalSeriesTileTemplate}">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="166"/>
@@ -477,68 +485,6 @@
                             <Setter Property="Margin" Value="0"/>
                         </Style>
                     </GridView.ItemContainerStyle>
-                    <!-- Gleiche Kachel wie SeriesTopGrid – UserControl statt dupliziertem DataTemplate -->
-                    <GridView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:LocalArtistCardViewModel">
-                            <ctrl:SeriesTileControl
-                                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
-                                Title="{x:Bind Title, Mode=OneTime}"
-                                Subtitle="{x:Bind CountText, Mode=OneTime}">
-                                <ctrl:SeriesTileControl.ContextFlyoutMenu>
-                                    <MenuFlyout>
-                                        <MenuFlyoutItem
-                                            x:Uid="SeriesDetailsItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnSeriesDetailsClick">
-                                            <MenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE946;"/>
-                                            </MenuFlyoutItem.Icon>
-                                        </MenuFlyoutItem>
-                                        <ToggleMenuFlyoutItem
-                                            x:Uid="WatchSeriesItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
-                                            Click="OnToggleWatchSeriesClick">
-                                            <ToggleMenuFlyoutItem.Icon>
-                                                <FontIcon Glyph="&#xE7B3;"/>
-                                            </ToggleMenuFlyoutItem.Icon>
-                                        </ToggleMenuFlyoutItem>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalMarkAllAsReadItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnMarkAllAsReadClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalMissingEpisodesItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnShowMissingEpisodesClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalRemoveFromLibraryItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnRemoveSeriesFromLibraryClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalDeleteFromDiskItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnDeleteSeriesFromDiskClick"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalSeriesCoverSelectItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnSeriesCoverSelectClick"/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalSeriesCoverSearchItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnSeriesCoverSearchClick"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem
-                                            x:Uid="LokalRestructureItem"
-                                            Tag="{x:Bind SeriesId, Mode=OneTime}"
-                                            Click="OnRestructureClick"/>
-                                    </MenuFlyout>
-                                </ctrl:SeriesTileControl.ContextFlyoutMenu>
-                            </ctrl:SeriesTileControl>
-                        </DataTemplate>
-                    </GridView.ItemTemplate>
                 </GridView>
 
             </StackPanel>

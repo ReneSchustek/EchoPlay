@@ -3,7 +3,8 @@
     x:Class="EchoPlay.App.Views.SuchePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:vm="using:EchoPlay.App.ViewModels">
+    xmlns:vm="using:EchoPlay.App.ViewModels"
+    xmlns:ctrl="using:EchoPlay.App.Controls">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -90,12 +91,9 @@
                 VerticalAlignment="Center"/>
 
             <!-- Leer-Hinweis: nur sichtbar wenn gesucht wurde und keine Treffer vorliegen -->
-            <TextBlock
+            <ctrl:EmptyStatePanel
                 x:Uid="SucheEmptyState"
-                Style="{ThemeResource BodyTextBlockStyle}"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
+                Glyph="&#xE721;"
                 Visibility="{x:Bind ViewModel.EmptyStateVisibility, Mode=OneWay}"/>
 
             <!-- Kachelgitter der Suchergebnisse -->

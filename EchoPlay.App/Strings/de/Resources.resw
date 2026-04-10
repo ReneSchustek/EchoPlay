@@ -287,16 +287,16 @@
   <data name="MediathekOnlineAddButtonText.Text" xml:space="preserve">
     <value>Serie hinzufügen</value>
   </data>
-  <data name="OnlineNoProviderHint.Text" xml:space="preserve">
+  <data name="OnlineNoProviderEmptyState.Message" xml:space="preserve">
     <value>Kein Anbieter konfiguriert. Wähle in den Einstellungen einen Anbieter (Spotify oder Apple Music), um die Online-Mediathek nutzen zu können.</value>
   </data>
-  <data name="OnlineGoToSettingsButton.Content" xml:space="preserve">
+  <data name="OnlineNoProviderEmptyState.ActionText" xml:space="preserve">
     <value>Zu den Einstellungen</value>
   </data>
-  <data name="OnlineNoSeriesHint.Text" xml:space="preserve">
+  <data name="OnlineNoSeriesEmptyState.Message" xml:space="preserve">
     <value>Noch keine Serien in der Online-Mediathek. Suche nach Hörspielserien und füge sie hinzu.</value>
   </data>
-  <data name="OnlineSearchSeriesButton.Content" xml:space="preserve">
+  <data name="OnlineNoSeriesEmptyState.ActionText" xml:space="preserve">
     <value>Serie online suchen</value>
   </data>
   <data name="OnlineProviderSearchButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -475,7 +475,7 @@
   <data name="SucheButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Suchen</value>
   </data>
-  <data name="SucheEmptyState.Text" xml:space="preserve">
+  <data name="SucheEmptyState.Message" xml:space="preserve">
     <value>Keine Ergebnisse gefunden.</value>
   </data>
   <data name="SucheImportButton.Content" xml:space="preserve">

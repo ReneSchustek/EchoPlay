@@ -35,8 +35,10 @@ namespace EchoPlay.App.ViewModels
         private readonly EpisodeCoverCacheService? _coverCacheService;
         private readonly CoverService _coverService;
         private readonly BackgroundCoverService? _backgroundCoverService;
-        private readonly INavigationService? _navigationService;
         private readonly IWatchToggleService? _watchToggleService;
+        private readonly IPageModeGuard? _pageModeGuard;
+        private readonly EchoPlay.LocalLibrary.Cover.ICoverSearchService? _coverSearchService;
+        private readonly INavigationService? _navigationService;
 
         // Wiederverwendbarer HTTP-Client für Cover-Downloads – static verhindert Socket-Erschöpfung
         private static readonly System.Net.Http.HttpClient _downloadClient = new();
@@ -74,8 +76,10 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverCacheService">Lädt fehlende Episoden-Cover im Hintergrund. Null in Tests.</param>
         /// <param name="coverService">Zentraler Cover-Zugriff über CoverImages-Tabelle.</param>
         /// <param name="backgroundCoverService">Lädt lokale Cover ins DB-Cache. Null in Tests.</param>
-        /// <param name="navigationService">Optionaler Navigationsdienst – nur in der echten App-Shell gesetzt, in Tests <see langword="null"/>.</param>
         /// <param name="watchToggleService">Optionaler Service für das Umschalten der Neuerscheinungs-Überwachung. In Tests <see langword="null"/>.</param>
+        /// <param name="pageModeGuard">Optionaler Page-Mode-Guard – prüft den Offline-Modus beim Betreten der Page. In Tests <see langword="null"/>.</param>
+        /// <param name="coverSearchService">Optionaler Cover-Suchdienst – wird nur für die manuelle Episoden-Cover-Suche benötigt. In Tests <see langword="null"/>.</param>
+        /// <param name="navigationService">Optionaler Navigationsdienst – nur für Page-Wechsel aus Empty-State-Buttons. In Tests <see langword="null"/>.</param>
         public MediathekOnlineViewModel(
             IServiceScopeFactory scopeFactory,
             IConfirmationDialogService confirmationDialogService,
@@ -86,8 +90,10 @@ namespace EchoPlay.App.ViewModels
             EpisodeCoverCacheService? coverCacheService = null,
             CoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null,
-            INavigationService? navigationService = null,
-            IWatchToggleService? watchToggleService = null)
+            IWatchToggleService? watchToggleService = null,
+            IPageModeGuard? pageModeGuard = null,
+            EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService = null,
+            INavigationService? navigationService = null)
         {
             _scopeFactory               = scopeFactory;
             _confirmationDialogService  = confirmationDialogService;
@@ -98,36 +104,62 @@ namespace EchoPlay.App.ViewModels
             _coverCacheService          = coverCacheService;
             _coverService               = coverService!;
             _backgroundCoverService     = backgroundCoverService;
-            _navigationService          = navigationService;
             _watchToggleService         = watchToggleService;
+            _pageModeGuard              = pageModeGuard;
+            _coverSearchService         = coverSearchService;
+            _navigationService          = navigationService;
 
             ProviderSearchCommand = new RelayCommand(() => _ = SearchProviderAsync());
             AddSelectedCommand = new RelayCommand(() => _ = AddSelectedAsync());
             RefreshCommand = new RelayCommand(() => _ = RefreshAsync());
+            GoToSettingsCommand = new RelayCommand(() => _navigationService?.NavigateTo(NavigationTarget.Settings));
+            FocusSearchCommand = new RelayCommand(StartSearchFromEmptyState);
         }
+
+        /// <summary>
+        /// Wird aus dem Empty-State-Button "Serie suchen" ausgelöst: setzt den Fokus auf
+        /// die Suchleiste (über das <see cref="FocusSearchRequested"/>-Event) und löst
+        /// bei vorhandenem Suchtext sofort die Provider-Suche aus.
+        /// Die Page entscheidet, wie sie den Fokus tatsächlich setzt –
+        /// das ViewModel bleibt frei von WinUI-Konzepten.
+        /// </summary>
+        private void StartSearchFromEmptyState()
+        {
+            FocusSearchRequested?.Invoke();
+
+            if (!string.IsNullOrWhiteSpace(_searchText) && ProviderSearchCommand.CanExecute(null))
+            {
+                ProviderSearchCommand.Execute(null);
+            }
+        }
+
+        /// <summary>
+        /// Wird ausgelöst, wenn der Empty-State-Button "Serie suchen" geklickt wurde.
+        /// Die Page setzt den Fokus auf die Suchbox – im VM existiert kein WinUI-Konzept.
+        /// </summary>
+        public event Action? FocusSearchRequested;
+
+        /// <summary>Navigiert in die Einstellungen – aus dem Empty-State "Kein Anbieter".</summary>
+        public ICommand GoToSettingsCommand { get; }
+
+        /// <summary>Setzt den Fokus auf die Suchleiste und löst ggf. eine Suche aus – aus dem Empty-State "Keine Serien".</summary>
+        public ICommand FocusSearchCommand { get; }
 
         /// <summary>
         /// Wird vom Code-Behind beim Betreten der Seite aufgerufen. Prüft den Offline-Modus
         /// und navigiert bei aktivem Offline-Modus zurück zur vorherigen Seite. Liefert
         /// <see langword="false"/>, falls die Page nicht weiter geladen werden soll.
+        /// Die Prüfung läuft über den <see cref="IPageModeGuard"/>; in Tests ohne Guard
+        /// wird der Check übersprungen und die Page darf laden.
         /// </summary>
         public async Task<bool> InitializeAsync()
         {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IAppSettingsDataService settingsService =
-                scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
-
-            if (!settings.OfflineMode)
+            if (_pageModeGuard is null)
             {
                 return true;
             }
 
-            await _errorDialogService.ShowAsync(
-                _localizationService.Get("OfflineModeSearchHintTitle"),
-                _localizationService.Get("OfflineModeSearchHintMessage"));
-            _navigationService?.GoBack();
-            return false;
+            return await _pageModeGuard.EnsureOnlineAccessAsync();
         }
 
         /// <summary>
@@ -150,6 +182,63 @@ namespace EchoPlay.App.ViewModels
             if (card is not null)
             {
                 card.IsWatched = watch;
+            }
+        }
+
+        // ── Cover-Suche für Episoden ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Sucht Cover-Kandidaten für einen Episoden-Titel über den Cover-Suchdienst und
+        /// gibt die Treffer als App-eigene <see cref="CoverSearchHit"/>-Wrapper zurück.
+        /// Wird vom Cover-Auswahldialog der Online-Mediathek aufgerufen, damit die Page
+        /// keinen eigenen DI-Scope öffnen und das LocalLibrary-Modell nicht direkt kennen muss.
+        /// </summary>
+        /// <param name="query">Suchbegriff – meist der Folgentitel.</param>
+        /// <param name="ct">Abbruchtoken, z.B. für Dialog-Schließen.</param>
+        /// <returns>Liste der Treffer; leer wenn nichts gefunden wurde oder kein Suchdienst verfügbar ist.</returns>
+        public async Task<IReadOnlyList<CoverSearchHit>> SearchEpisodeCoversAsync(string query, CancellationToken ct)
+        {
+            if (_coverSearchService is null)
+            {
+                return [];
+            }
+
+            IReadOnlyList<EchoPlay.LocalLibrary.Cover.CoverSearchResult> results =
+                await _coverSearchService.SearchAsync(query, ct);
+
+            List<CoverSearchHit> hits = new(results.Count);
+            foreach (EchoPlay.LocalLibrary.Cover.CoverSearchResult r in results)
+            {
+                hits.Add(CoverSearchHit.From(r));
+            }
+            return hits;
+        }
+
+        /// <summary>
+        /// Lädt das gewählte Cover herunter, speichert es über den <see cref="CoverService"/>
+        /// und aktualisiert die Episodenkachel sofort. Netzwerkfehler werden still verschluckt –
+        /// in diesem Fall bleibt das bisherige Cover bestehen.
+        /// </summary>
+        /// <param name="card">Die Episodenkachel, deren Cover aktualisiert werden soll.</param>
+        /// <param name="hit">Der vom Nutzer im Auswahldialog bestätigte Cover-Kandidat.</param>
+        public async Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)
+        {
+            try
+            {
+                byte[] coverBytes = await _downloadClient.GetByteArrayAsync(hit.FullUrl);
+                await _coverService.SetEpisodeCoverAsync(card.EpisodeId, coverBytes);
+
+                Microsoft.UI.Xaml.Media.Imaging.BitmapImage? image =
+                    await CoverService.ConvertToBitmapAsync(coverBytes);
+
+                if (image is not null)
+                {
+                    card.CoverImage = image;
+                }
+            }
+            catch (System.Net.Http.HttpRequestException)
+            {
+                // Netzwerkfehler → Platzhalter bleibt
             }
         }
 

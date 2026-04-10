@@ -1,3 +1,4 @@
+using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
@@ -471,7 +472,7 @@ namespace EchoPlay.App.Tests.ViewModels
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService, coverSearchService: coverSearch);
             await vm.LoadAsync();
 
-            IReadOnlyList<CoverSearchResult>? receivedResults = null;
+            IReadOnlyList<CoverSearchHit>? receivedResults = null;
             vm.SeriesCoverSearchResultsReady += (_, results) => receivedResults = results;
 
             await vm.SearchAndApplySeriesCoverAsync(vm.Artists[0]);

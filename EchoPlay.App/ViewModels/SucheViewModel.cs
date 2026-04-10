@@ -3,7 +3,6 @@ using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Search;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -33,6 +32,9 @@ namespace EchoPlay.App.ViewModels
         // Zentraler Navigationsdienst – in Unit-Tests optional, damit der Ctor testbar bleibt
         private readonly INavigationService? _navigationService;
 
+        // Page-Mode-Guard prüft den Offline-Modus beim Betreten der Page; null in Tests
+        private readonly IPageModeGuard? _pageModeGuard;
+
         private string _searchText = string.Empty;
         private bool _isLoading;
         private bool _hasSearched;
@@ -53,21 +55,27 @@ namespace EchoPlay.App.ViewModels
         /// <param name="localizationService">Für lokalisierte Dialog-Texte.</param>
         /// <param name="navigationService">
         /// Optionaler Navigationsdienst. Nur nötig wenn das ViewModel aus der echten App-Shell
-        /// heraus navigieren können soll (z. B. GoBack bei Offline-Modus, Wechsel zur Online-Mediathek).
+        /// heraus navigieren können soll (z. B. Wechsel zur Online-Mediathek nach erfolgreichem Import).
         /// In Unit-Tests kann der Parameter weggelassen werden.
+        /// </param>
+        /// <param name="pageModeGuard">
+        /// Optionaler Page-Mode-Guard – prüft den Offline-Modus beim Betreten der Page.
+        /// In Tests kann der Parameter weggelassen werden, dann wird der Check übersprungen.
         /// </param>
         public SucheViewModel(
             ImportService importService,
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
             IServiceScopeFactory? scopeFactory = null,
-            INavigationService? navigationService = null)
+            INavigationService? navigationService = null,
+            IPageModeGuard? pageModeGuard = null)
         {
             _importService       = importService;
             _errorDialogService  = errorDialogService;
             _localizationService = localizationService;
             _scopeFactory        = scopeFactory;
             _navigationService   = navigationService;
+            _pageModeGuard       = pageModeGuard;
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
             ResetCommand  = new RelayCommand(Reset);
@@ -81,12 +89,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="parameter">Navigationsparameter der Page – meist ein String oder <see langword="null"/>.</param>
         public async Task InitializeAsync(object? parameter)
         {
-            if (await IsOfflineModeBlockingAsync())
+            if (_pageModeGuard is not null && !await _pageModeGuard.EnsureOnlineAccessAsync())
             {
-                await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OfflineModeSearchHintTitle"),
-                    _localizationService.Get("OfflineModeSearchHintMessage"));
-                _navigationService?.GoBack();
                 return;
             }
 
@@ -115,24 +119,6 @@ namespace EchoPlay.App.ViewModels
         public void NavigateToOnlineMediathek()
         {
             _navigationService?.NavigateTo(NavigationTarget.MediathekOnline);
-        }
-
-        /// <summary>
-        /// Prüft anhand der AppSettings, ob der Offline-Modus aktiv ist und die Suche damit blockiert wird.
-        /// In Tests ohne Scope-Factory gibt die Methode <see langword="false"/> zurück.
-        /// </summary>
-        private async Task<bool> IsOfflineModeBlockingAsync()
-        {
-            if (_scopeFactory is null)
-            {
-                return false;
-            }
-
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IAppSettingsDataService settingsService = scope.ServiceProvider
-                .GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
-            return settings.OfflineMode;
         }
 
         /// <summary>

@@ -202,8 +202,6 @@ namespace EchoPlay.App.Views
         /// Such- und Apply-Logik liegt im ViewModel; die Page weiß weder etwas vom DI-Scope
         /// noch vom LocalLibrary-Modell.
         /// </summary>
-        private void OnHelpClick(object sender, RoutedEventArgs e) => HelpTip.IsOpen = true;
-
         private async void OnOnlineEpisodeCoverSearchClick(object sender, RoutedEventArgs e)
         {
             if (sender is not MenuFlyoutItem { Tag: Guid episodeId }) return;

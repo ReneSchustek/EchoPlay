@@ -14,13 +14,10 @@
         </Grid.RowDefinitions>
 
         <!-- Hilfe -->
-        <Button x:Name="HelpButton" Click="OnHelpClick"
-                Grid.Row="0"
-                HorizontalAlignment="Right" VerticalAlignment="Center"
-                Margin="0,4,16,0" Background="Transparent" Padding="6">
-            <FontIcon Glyph="&#xE897;" FontSize="16"
-                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-        </Button>
+        <ctrl:HelpButtonControl TipUid="HelpTipSettings"
+                                Grid.Row="0"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="0,4,16,0"/>
 
         <!-- Ladeindikator überlagert den Inhalt beim initialen Laden -->
         <ProgressRing
@@ -556,11 +553,6 @@
 
         </TabView>
 
-        <TeachingTip x:Name="HelpTip"
-                     x:Uid="HelpTipSettings"
-                     Target="{x:Bind HelpButton}"
-                     PreferredPlacement="BottomLeft"
-                     IsLightDismissEnabled="True"/>
     </Grid>
 
 </Page>

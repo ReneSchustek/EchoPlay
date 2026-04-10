@@ -182,39 +182,21 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Öffnet einen Datei-Picker für Bilddateien und übergibt das gewählte Bild an das ViewModel.
-        /// WinUI 3 erfordert das Fenster-Handle für den FileOpenPicker via WinRT-Interop.
+        /// Öffnet den Bilddatei-Picker über den gemeinsamen <see cref="Helpers.ImageFilePicker"/>
+        /// und übergibt Bilddaten plus MIME-Typ an das ViewModel.
         /// </summary>
         private async void OnLoadCoverRequested(object? sender, EventArgs e)
         {
-            FileOpenPicker picker = new()
-            {
-                SuggestedStartLocation = PickerLocationId.PicturesLibrary,
-                ViewMode               = PickerViewMode.Thumbnail
-            };
+            nint handle = WindowNative.GetWindowHandle(App.MainWindow);
+            (byte[] Data, string MimeType)? result =
+                await Helpers.ImageFilePicker.PickWithMimeTypeAsync(handle);
 
-            picker.FileTypeFilter.Add(".jpg");
-            picker.FileTypeFilter.Add(".jpeg");
-            picker.FileTypeFilter.Add(".png");
-
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
-
-            Windows.Storage.StorageFile? file = await picker.PickSingleFileAsync();
-
-            if (file is null)
+            if (result is null)
             {
                 return;
             }
 
-            // MIME-Typ aus Dateiendung ableiten
-            string mimeType = file.FileType.ToLowerInvariant() switch
-            {
-                ".png" => "image/png",
-                _      => "image/jpeg"
-            };
-
-            byte[] imageData = await File.ReadAllBytesAsync(file.Path);
-            ViewModel.SetCoverFromFile(imageData, mimeType);
+            ViewModel.SetCoverFromFile(result.Value.Data, result.Value.MimeType);
         }
     }
 }

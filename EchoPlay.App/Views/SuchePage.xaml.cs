@@ -47,8 +47,6 @@ namespace EchoPlay.App.Views
             ViewModel.NavigateToOnlineMediathek();
         }
 
-        private void OnHelpClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) => HelpTip.IsOpen = true;
-
         private void OnQuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             ViewModel.SearchText = args.QueryText;

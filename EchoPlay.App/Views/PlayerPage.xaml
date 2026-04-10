@@ -3,7 +3,8 @@
     x:Class="EchoPlay.App.Views.PlayerPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:vm="using:EchoPlay.App.ViewModels">
+    xmlns:vm="using:EchoPlay.App.ViewModels"
+    xmlns:ctrl="using:EchoPlay.App.Controls">
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -14,13 +15,10 @@
         </Grid.ColumnDefinitions>
 
         <!-- Hilfe -->
-        <Button x:Name="HelpButton" Click="OnHelpClick"
-                Grid.ColumnSpan="2"
-                HorizontalAlignment="Right" VerticalAlignment="Top"
-                Margin="0,8,16,0" Background="Transparent" Padding="6" Canvas.ZIndex="1">
-            <FontIcon Glyph="&#xE897;" FontSize="16"
-                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-        </Button>
+        <ctrl:HelpButtonControl TipUid="HelpTipPlayer"
+                                Grid.ColumnSpan="2"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,8,16,0" Canvas.ZIndex="1"/>
 
         <!-- ===== LINKE SPALTE: Player-Oberfläche ===== -->
         <StackPanel Grid.Column="0" Spacing="16" Padding="24" VerticalAlignment="Top">
@@ -178,11 +176,6 @@
             </ListView>
         </Grid>
 
-        <TeachingTip x:Name="HelpTip"
-                     x:Uid="HelpTipPlayer"
-                     Target="{x:Bind HelpButton}"
-                     PreferredPlacement="BottomLeft"
-                     IsLightDismissEnabled="True"/>
     </Grid>
 
 </Page>

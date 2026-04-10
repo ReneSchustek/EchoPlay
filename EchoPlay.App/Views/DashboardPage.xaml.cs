@@ -315,7 +315,5 @@ namespace EchoPlay.App.Views
                 LocalLibraryHintBar.IsOpen = true;
             }
         }
-
-        private void OnHelpClick(object sender, RoutedEventArgs e) => HelpTip.IsOpen = true;
     }
 }

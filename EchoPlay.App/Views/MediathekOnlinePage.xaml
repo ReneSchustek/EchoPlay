@@ -60,13 +60,10 @@
         </Grid.RowDefinitions>
 
         <!-- Hilfe -->
-        <Button x:Name="HelpButton" Click="OnHelpClick"
-                Grid.Row="0"
-                HorizontalAlignment="Right" VerticalAlignment="Center"
-                Margin="0,4,16,0" Background="Transparent" Padding="6">
-            <FontIcon Glyph="&#xE897;" FontSize="16"
-                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-        </Button>
+        <ctrl:HelpButtonControl TipUid="HelpTipOnline"
+                                Grid.Row="0"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="0,4,16,0"/>
 
         <!-- Such- und Filterleiste -->
         <Grid Grid.Row="1" Padding="16,8" ColumnSpacing="8">
@@ -425,10 +422,5 @@
                 Opacity="0.7"/>
         </StackPanel>
 
-        <TeachingTip x:Name="HelpTip"
-                     x:Uid="HelpTipOnline"
-                     Target="{x:Bind HelpButton}"
-                     PreferredPlacement="BottomLeft"
-                     IsLightDismissEnabled="True"/>
     </Grid>
 </Page>

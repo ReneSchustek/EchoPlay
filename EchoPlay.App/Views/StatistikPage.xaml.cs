@@ -30,7 +30,5 @@ namespace EchoPlay.App.Views
             base.OnNavigatedTo(e);
             _ = ViewModel.LoadAsync();
         }
-
-        private void OnHelpClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) => HelpTip.IsOpen = true;
     }
 }

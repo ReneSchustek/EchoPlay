@@ -39,6 +39,38 @@ namespace EchoPlay.Data.Services
             return result;
         }
 
+        /// <inheritdoc/>
+        public async Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(
+            IReadOnlyList<Guid> episodeIds)
+        {
+            if (episodeIds.Count == 0)
+            {
+                return new Dictionary<Guid, LocalTrack>();
+            }
+
+            _logger.Debug($"Lade erste Tracks für {episodeIds.Count} Episoden in einem Batch-Query.");
+
+            // Alle Tracks der angefragten Episoden in einem Roundtrip laden,
+            // dann clientseitig je Episode den niedrigsten Tracknummer-Eintrag wählen.
+            // GroupBy + First würde EF zu mehreren Subqueries zwingen – die clientseitige
+            // Variante ist hier schneller, weil die Track-Anzahl pro Episode klein ist.
+            List<LocalTrack> allTracks = await _context.LocalTracks
+                .Where(track => episodeIds.Contains(track.EpisodeId))
+                .ToListAsync().ConfigureAwait(false);
+
+            Dictionary<Guid, LocalTrack> result = new(episodeIds.Count);
+            foreach (LocalTrack track in allTracks.OrderBy(t => t.TrackNumber))
+            {
+                if (!result.ContainsKey(track.EpisodeId))
+                {
+                    result[track.EpisodeId] = track;
+                }
+            }
+
+            _logger.Debug($"Erste Tracks für {result.Count} von {episodeIds.Count} Episoden gefunden.");
+            return result;
+        }
+
         /// <summary>
         /// Ersetzt alle lokalen Tracks einer Episode durch die übergebene Liste.
         /// Bestehende Einträge werden hart gelöscht, da sie aus einem deterministischen Scan stammen

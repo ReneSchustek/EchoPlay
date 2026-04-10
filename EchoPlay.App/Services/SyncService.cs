@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -75,12 +76,15 @@ namespace EchoPlay.App.Services
         /// Ermöglicht dem ViewModel, Serien sofort in der Liste anzuzeigen.
         /// Bekannte Serien werden bereits in Phase 1 gemeldet; neue erst nach DB-Anlage in Phase 2.
         /// </param>
+        /// <param name="cancellationToken">Optionaler Token zum Abbruch eines laufenden Scans.</param>
         /// <returns>Zusammenfassung des Sync-Ergebnisses.</returns>
         public async Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress    = null,
             bool forceImportAll                  = false,
-            IProgress<Series>? onSeriesSynced    = null)
+            IProgress<Series>? onSeriesSynced    = null,
+            CancellationToken cancellationToken  = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();

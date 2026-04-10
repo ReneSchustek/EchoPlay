@@ -286,8 +286,14 @@ namespace EchoPlay.App.Services
             {
                 subfolders = Directory.GetDirectories(seriesFolderPath);
             }
-            catch
+            catch (IOException)
             {
+                // Serienordner nicht lesbar – kein Bericht möglich
+                return ([], 0);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Keine Leserechte – kein Bericht möglich
                 return ([], 0);
             }
 

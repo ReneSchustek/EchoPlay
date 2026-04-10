@@ -161,6 +161,19 @@ namespace EchoPlay.Data.Services
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) hinzugefügt.");
         }
 
+        /// <inheritdoc/>
+        public async Task AddRangeAsync(IReadOnlyList<Episode> episodes)
+        {
+            if (episodes.Count == 0)
+            {
+                return;
+            }
+
+            _context.Episodes.AddRange(episodes);
+            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _logger.Info($"{episodes.Count} Episoden in einem Batch-Insert hinzugefügt.");
+        }
+
         /// <summary>
         /// Aktualisiert eine bestehende Episode.
         /// Es wird davon ausgegangen, dass die Entität bereits aus dem aktuellen DbContext stammt.

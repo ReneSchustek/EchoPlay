@@ -1,6 +1,7 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Scanning;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -28,10 +29,15 @@ namespace EchoPlay.App.Services
         /// Ermöglicht dem ViewModel, Serien sofort in der Liste anzuzeigen ohne auf das Gesamtergebnis
         /// zu warten. Wird auf dem SynchronizationContext des Aufrufers ausgeführt (UI-Thread).
         /// </param>
+        /// <param name="cancellationToken">
+        /// Optionaler Token zum Abbruch eines laufenden Scans, z.B. wenn der Nutzer die Mediathek-
+        /// Seite verlässt oder die App schließt.
+        /// </param>
         /// <returns>Zusammenfassung des Sync-Ergebnisses.</returns>
         Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
             bool forceImportAll = false,
-            IProgress<Series>? onSeriesSynced = null);
+            IProgress<Series>? onSeriesSynced = null,
+            CancellationToken cancellationToken = default);
     }
 }

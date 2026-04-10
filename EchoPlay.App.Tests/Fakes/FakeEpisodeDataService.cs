@@ -58,6 +58,18 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
+        public Task AddRangeAsync(IReadOnlyList<Episode> episodes)
+        {
+            PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
+            foreach (Episode episode in episodes)
+            {
+                idProp.SetValue(episode, Guid.NewGuid());
+                _episodes.Add(episode);
+            }
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
         public Task UpdateAsync(Episode episode)
         {
             return Task.CompletedTask;

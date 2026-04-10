@@ -29,8 +29,9 @@ namespace EchoPlay.App.Services
         /// </summary>
         private const int CooldownDays = 7;
 
-        private static readonly Lazy<HttpClient> _lazyClient = new(() => new HttpClient());
-        private static HttpClient Client => _lazyClient.Value;
+        // Statischer HttpClient – wiederverwendet, verhindert Socket-Erschöpfung bei häufigen Cover-Downloads.
+        // HttpClient ist thread-safe, eine einzige Instanz pro Prozess reicht.
+        private static readonly HttpClient Client = new();
 
         /// <summary>
         /// Initialisiert den Cover-Cache-Service.

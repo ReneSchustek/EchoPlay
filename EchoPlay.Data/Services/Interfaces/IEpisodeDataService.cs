@@ -50,6 +50,14 @@ namespace EchoPlay.Data.Services.Interfaces
         Task AddAsync(Episode episode);
 
         /// <summary>
+        /// Fügt mehrere neue Episoden in einem einzigen <c>SaveChangesAsync</c>-Aufruf hinzu.
+        /// Ersetzt die Schleife mit einzelnen <see cref="AddAsync"/>-Aufrufen beim Import großer
+        /// Serien (200+ Episoden = 200+ DB-Roundtrips → 1 Roundtrip).
+        /// </summary>
+        /// <param name="episodes">Die zu persistierenden Episoden.</param>
+        Task AddRangeAsync(IReadOnlyList<Episode> episodes);
+
+        /// <summary>
         /// Aktualisiert eine bestehende Episode.
         /// </summary>
         Task UpdateAsync(Episode episode);

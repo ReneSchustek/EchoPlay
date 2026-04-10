@@ -213,19 +213,17 @@ namespace EchoPlay.App.Services
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(importSeries.Source);
             IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId);
 
-            progress?.Report($"Speichere Episoden \u2026 (0/{episodes.Count})");
+            progress?.Report($"Speichere Episoden \u2026 ({episodes.Count})");
 
+            // Batch-Insert: ein einziger SaveChangesAsync-Aufruf statt N. Bei einer
+            // Hörspielserie mit 200 Folgen ersetzt das 200 DB-Roundtrips durch einen.
+            List<Episode> mappedEpisodes = new(episodes.Count);
             for (int i = 0; i < episodes.Count; i++)
             {
-                Episode episode = MapToEpisode(episodes[i], series.Id);
-                await episodeService.AddAsync(episode);
-
-                // Nicht bei jeder Folge melden – zu viele UI-Updates blockieren den Dispatcher
-                if (i > 0 && i % 10 == 0)
-                {
-                    progress?.Report($"Speichere Episoden \u2026 ({i}/{episodes.Count})");
-                }
+                mappedEpisodes.Add(MapToEpisode(episodes[i], series.Id));
             }
+
+            await episodeService.AddRangeAsync(mappedEpisodes);
 
             _logger.Info($"Import abgeschlossen: \"{importSeries.Title}\", {episodes.Count} Episoden");
 

@@ -2,6 +2,7 @@ using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Scanning;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -36,7 +37,8 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
             bool forceImportAll = false,
-            IProgress<Series>? onSeriesSynced = null)
+            IProgress<Series>? onSeriesSynced = null,
+            CancellationToken cancellationToken = default)
         {
             SyncCallCount++;
             LastForceImportAll = forceImportAll;

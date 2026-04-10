@@ -49,7 +49,9 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        public async Task<StartupResult> ValidateAsync(Action<string>? onStatus = null)
+        public async Task<StartupResult> ValidateAsync(
+            Action<string>? onStatus = null,
+            CancellationToken cancellationToken = default)
         {
             _logger.Info("Startup-Validierung gestartet.");
 
@@ -88,6 +90,8 @@ namespace EchoPlay.App.Services
                 _logger.Info("Cache geleert (Neuerscheinungen + Cover) – Neuaufbau läuft.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Schritt 1: Online-Konnektivitätscheck
             bool isOnlineAvailable = true;
             string? onlineHint = null;
@@ -95,7 +99,7 @@ namespace EchoPlay.App.Services
             if (!settings.OfflineMode && settings.ActiveProvider != ProviderType.None)
             {
                 onStatus?.Invoke("Prüfe Internetverbindung …");
-                isOnlineAvailable = await CheckOnlineConnectivityAsync();
+                isOnlineAvailable = await CheckOnlineConnectivityAsync(cancellationToken);
 
                 if (!isOnlineAvailable)
                 {
@@ -228,14 +232,14 @@ namespace EchoPlay.App.Services
         /// Prüft die Online-Konnektivität per HTTP-HEAD-Request auf die iTunes-API.
         /// Leichtgewichtig: kein Body, nur Verbindungsaufbau und Antwort.
         /// </summary>
-        /// <returns><see langword="true"/> wenn die Verbindung innerhalb des Timeouts erfolgreich war.</returns>
-        private async Task<bool> CheckOnlineConnectivityAsync()
+        private async Task<bool> CheckOnlineConnectivityAsync(CancellationToken cancellationToken)
         {
             try
             {
                 using HttpClient client = new() { Timeout = OnlineCheckTimeout };
                 using HttpRequestMessage request = new(HttpMethod.Head, "https://itunes.apple.com/search?term=test&limit=1");
-                using HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                using HttpResponseMessage response = await client.SendAsync(
+                    request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
                 return response.IsSuccessStatusCode;
             }

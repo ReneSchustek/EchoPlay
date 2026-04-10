@@ -426,62 +426,73 @@ namespace EchoPlay.App.Services
             }
 
             // ── Episoden-Cover aus Dateisystem ──────────────────────────────────────
+            //
+            // Drei Batch-Queries statt N+1:
+            // 1) Alle Episoden aller Serien in einem Roundtrip (GetBySeriesIdsAsync).
+            // 2) Alle bereits vorhandenen Episoden-Cover in einem Roundtrip (GetImageDataByEntitiesAsync).
+            // 3) Erste Tracks aller Kandidaten in einem Roundtrip (GetFirstTracksByEpisodeIdsAsync).
+            // Anschließend nur noch CPU-/IO-Arbeit pro Episode – kein DB-Roundtrip mehr in der Schleife.
 
             int totalEpCandidates = 0;
-            int totalEpExisting = 0;
-            int totalEpLoaded = 0;
-            int totalEpNotFound = 0;
+            int totalEpExisting   = 0;
+            int totalEpLoaded     = 0;
+            int totalEpNotFound   = 0;
 
-            foreach (Series series in allSeries)
+            List<Guid> allSeriesIds = [.. allSeries.Select(s => s.Id)];
+            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds);
+
+            List<Episode> candidates = [];
+            foreach (Episode episode in allEpisodes)
             {
-                if (ct.IsCancellationRequested) break;
-
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
-
-                List<Episode> candidates = [];
-
-                foreach (Episode episode in episodes)
+                if (!string.IsNullOrEmpty(episode.LocalFolderPath))
                 {
-                    if (string.IsNullOrEmpty(episode.LocalFolderPath)) continue;
                     candidates.Add(episode);
                 }
+            }
 
-                if (candidates.Count == 0) continue;
+            if (candidates.Count == 0)
+            {
+                _logger.Info("Lokal-Check Episoden: keine Kandidaten mit lokalem Ordner gefunden.");
+                return loaded;
+            }
 
-                totalEpCandidates += candidates.Count;
+            totalEpCandidates = candidates.Count;
 
-                List<Guid> candidateIds = candidates.Select(e => e.Id).ToList();
-                IReadOnlyDictionary<Guid, byte[]> existing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds);
+            List<Guid> candidateIds = [.. candidates.Select(e => e.Id)];
+            IReadOnlyDictionary<Guid, byte[]> existing =
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds);
 
-                totalEpExisting += existing.Count;
+            totalEpExisting = existing.Count;
 
-                foreach (Episode episode in candidates)
+            // Nur für die noch fehlenden Episoden den ersten Track laden – Batch-Query.
+            List<Guid> missingIds = [.. candidates
+                .Where(e => !existing.ContainsKey(e.Id))
+                .Select(e => e.Id)];
+
+            IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
+                await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds);
+
+            foreach (Episode episode in candidates)
+            {
+                if (ct.IsCancellationRequested) break;
+                if (existing.ContainsKey(episode.Id)) continue;
+
+                string? firstTrackPath = firstTracks.TryGetValue(episode.Id, out LocalTrack? firstTrack)
+                    ? firstTrack.FilePath
+                    : null;
+
+                byte[]? coverBytes = await coverLoader.LoadAsync(
+                    episode.LocalFolderPath, firstTrackPath);
+
+                if (coverBytes is not null)
                 {
-                    if (ct.IsCancellationRequested) break;
-                    if (existing.ContainsKey(episode.Id)) continue;
-
-                    string? firstTrackPath = null;
-                    IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id);
-
-                    if (tracks.Count > 0)
-                    {
-                        firstTrackPath = tracks[0].FilePath;
-                    }
-
-                    byte[]? coverBytes = await coverLoader.LoadAsync(
-                        episode.LocalFolderPath, firstTrackPath);
-
-                    if (coverBytes is not null)
-                    {
-                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
-                        loaded++;
-                        totalEpLoaded++;
-                    }
-                    else
-                    {
-                        totalEpNotFound++;
-                    }
+                    await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
+                    loaded++;
+                    totalEpLoaded++;
+                }
+                else
+                {
+                    totalEpNotFound++;
                 }
             }
 

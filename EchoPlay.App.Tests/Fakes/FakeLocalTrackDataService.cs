@@ -39,6 +39,25 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
+        public Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds)
+        {
+            Dictionary<Guid, LocalTrack> result = [];
+            foreach (Guid episodeId in episodeIds)
+            {
+                if (_tracksByEpisode.TryGetValue(episodeId, out IReadOnlyList<LocalTrack>? tracks)
+                    && tracks.Count > 0)
+                {
+                    LocalTrack? first = tracks.OrderBy(t => t.TrackNumber).FirstOrDefault();
+                    if (first is not null)
+                    {
+                        result[episodeId] = first;
+                    }
+                }
+            }
+            return Task.FromResult<IReadOnlyDictionary<Guid, LocalTrack>>(result);
+        }
+
+        /// <inheritdoc/>
         public Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks)
         {
             SavedTracks[episodeId] = tracks;

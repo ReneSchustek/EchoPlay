@@ -363,12 +363,32 @@ namespace EchoPlay.App.ViewModels
                 }
 
                 // Weiterhören: Serien mit mindestens 1 gehörten + ungehörten Folgen.
-                // Nutzt das stateByEpisodeId-Dictionary statt einzelner DB-Abfragen.
+                // Alle Episoden der Favoriten-Serien in einem Batch-Query laden, statt
+                // pro Serie ein separater GetBySeriesIdAsync-Aufruf (N+1).
+                List<Guid> favoriteSeriesIds = [.. favoriteSeries.Select(s => s.Id)];
+                IReadOnlyList<Episode> allFavoriteEpisodes =
+                    await episodeService.GetBySeriesIdsAsync(favoriteSeriesIds);
+
+                Dictionary<Guid, List<Episode>> episodesBySeriesId = new(favoriteSeries.Count);
+                foreach (Episode episode in allFavoriteEpisodes)
+                {
+                    if (!episodesBySeriesId.TryGetValue(episode.SeriesId, out List<Episode>? bucket))
+                    {
+                        bucket = [];
+                        episodesBySeriesId[episode.SeriesId] = bucket;
+                    }
+                    bucket.Add(episode);
+                }
+
                 List<UnheardSeriesCardViewModel> unheardList = [];
 
                 foreach (Series series in favoriteSeries)
                 {
-                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
+                    if (!episodesBySeriesId.TryGetValue(series.Id, out List<Episode>? episodes))
+                    {
+                        continue;
+                    }
+
                     int completedCount = 0;
                     int totalEpisodeCount = episodes.Count;
 

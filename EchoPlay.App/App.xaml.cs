@@ -471,6 +471,20 @@ namespace EchoPlay.App
             // damit die ViewModels diesen Check nicht jeweils selbst implementieren müssen.
             builder.Services.AddSingleton<IPageModeGuard, PageModeGuard>();
 
+            // FolderRestructureCoordinator als Singleton – kapselt AppSettings-Lookup, den
+            // LocalLibrary-Restructure-Service und das Display-Mapping aus dem MediathekLokalViewModel.
+            builder.Services.AddSingleton<IFolderRestructureCoordinator, FolderRestructureCoordinator>();
+
+            // MissingEpisodesCoordinator als Singleton – kapselt Datei-System-Analyse,
+            // Live-Online-Abgleich per iTunes und StatusBar-Aktualisierung für die
+            // Fehlende-Folgen-Prüfung. Aus dem MediathekLokalViewModel ausgelagert.
+            builder.Services.AddSingleton<IMissingEpisodesCoordinator, MissingEpisodesCoordinator>();
+
+            // EpisodeCoverCoordinator als Singleton – kapselt Cover-Suche, Bestätigungs-
+            // Dialog beim Überschreiben, HTTP-Download, CoverImages-Tabelle, optionales
+            // Speichern als cover.jpg und das Card-Bitmap-Update.
+            builder.Services.AddSingleton<IEpisodeCoverCoordinator, EpisodeCoverCoordinator>();
+
             // StartupValidator: führt alle Checks (Online, Lokal, Cache) im Splash durch.
             builder.Services.AddSingleton<IStartupValidator, StartupValidator>();
 
@@ -524,7 +538,10 @@ namespace EchoPlay.App
                 provider.GetRequiredService<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(),
                 provider.GetRequiredService<CoverService>(),
                 provider.GetRequiredService<IWatchToggleService>(),
-                provider.GetRequiredService<IPageModeGuard>()));
+                provider.GetRequiredService<IPageModeGuard>(),
+                provider.GetRequiredService<IFolderRestructureCoordinator>(),
+                provider.GetRequiredService<IMissingEpisodesCoordinator>(),
+                provider.GetRequiredService<IEpisodeCoverCoordinator>()));
             builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),

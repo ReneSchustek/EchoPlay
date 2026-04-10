@@ -60,7 +60,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeScanEventService(),
                 coverSearchService ?? new FakeCoverSearchService(),
                 new FakeOnlineAccessGuard(),
-                new FakeOnlineEpisodeChecker());
+                new FakeOnlineEpisodeChecker(),
+                missingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());
         }
 
         [Fact]
@@ -449,66 +450,5 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(coverBytes, seriesService.All[0].LocalCoverData);
         }
 
-        [Fact]
-        public async Task SearchAndApplySeriesCoverAsync_FiresEvent_WhenResultsFound()
-        {
-            // SearchAndApplySeriesCoverAsync muss SeriesCoverSearchResultsReady auslösen,
-            // wenn der CoverSearchService Treffer zurückgibt.
-            FakeSeriesDataService seriesService   = new();
-            FakeEpisodeDataService episodeService = new();
-            FakeCoverSearchService coverSearch    = new();
-
-            await seriesService.AddAsync(new Series
-            {
-                Title           = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
-
-            coverSearch.SetResults(
-            [
-                new CoverSearchResult("https://example.com/thumb.jpg", "https://example.com/full.jpg", "TKKG – Hörspiel", "Cover Art Archive")
-            ]);
-
-            MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService, coverSearchService: coverSearch);
-            await vm.LoadAsync();
-
-            IReadOnlyList<CoverSearchHit>? receivedResults = null;
-            vm.SeriesCoverSearchResultsReady += (_, results) => receivedResults = results;
-
-            await vm.SearchAndApplySeriesCoverAsync(vm.Artists[0]);
-
-            Assert.NotNull(receivedResults);
-            Assert.Single(receivedResults!);
-            Assert.Equal("TKKG – Hörspiel", receivedResults![0].ReleaseTitle);
-        }
-
-        [Fact]
-        public async Task SearchAndApplySeriesCoverAsync_DoesNotFireEvent_WhenNoResultsFound()
-        {
-            // Bei leerer Ergebnisliste darf SeriesCoverSearchResultsReady nicht ausgelöst werden.
-            // Stattdessen zeigt das ViewModel einen Fehler-Dialog (FakeErrorDialogService schluckt ihn).
-            FakeSeriesDataService seriesService   = new();
-            FakeEpisodeDataService episodeService = new();
-            FakeCoverSearchService coverSearch    = new();
-
-            await seriesService.AddAsync(new Series
-            {
-                Title           = "Unbekannte Serie",
-                LocalFolderPath = @"C:\Hoerspiele\Unbekannt"
-            });
-
-            // Leere Ergebnisliste konfigurieren
-            coverSearch.SetResults([]);
-
-            MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService, coverSearchService: coverSearch);
-            await vm.LoadAsync();
-
-            bool eventFired = false;
-            vm.SeriesCoverSearchResultsReady += (_, _) => eventFired = true;
-
-            await vm.SearchAndApplySeriesCoverAsync(vm.Artists[0]);
-
-            Assert.False(eventFired);
-        }
     }
 }

@@ -263,11 +263,11 @@ namespace EchoPlay.App.Views
         /// Zeigt einen Drei-Optionen-Dialog vor der Fehlende-Folgen-Prüfung:
         /// Online + Offline, Nur offline oder Abbrechen.
         /// </summary>
-        private async Task<ViewModels.MediathekLokalViewModel.MissingEpisodesMode> OnMissingEpisodesModeRequested()
+        private async Task<MissingEpisodesMode> OnMissingEpisodesModeRequested()
         {
             if (_isDialogOpen)
             {
-                return ViewModels.MediathekLokalViewModel.MissingEpisodesMode.Cancel;
+                return MissingEpisodesMode.Cancel;
             }
 
             ContentDialog dialog = new()
@@ -288,14 +288,14 @@ namespace EchoPlay.App.Views
 
                 return result switch
                 {
-                    ContentDialogResult.Primary   => ViewModels.MediathekLokalViewModel.MissingEpisodesMode.WithOnline,
-                    ContentDialogResult.Secondary => ViewModels.MediathekLokalViewModel.MissingEpisodesMode.OfflineOnly,
-                    _                             => ViewModels.MediathekLokalViewModel.MissingEpisodesMode.Cancel
+                    ContentDialogResult.Primary   => MissingEpisodesMode.WithOnline,
+                    ContentDialogResult.Secondary => MissingEpisodesMode.OfflineOnly,
+                    _                             => MissingEpisodesMode.Cancel
                 };
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                return ViewModels.MediathekLokalViewModel.MissingEpisodesMode.Cancel;
+                return MissingEpisodesMode.Cancel;
             }
             finally
             {

@@ -657,30 +657,12 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Öffnet einen Dateiauswahl-Dialog für Bilddateien und gibt die Bytes zurück.
-        /// Gibt <see langword="null"/> zurück wenn der Nutzer abbricht.
+        /// Öffnet den Bilddatei-Picker über den gemeinsamen <see cref="Helpers.ImageFilePicker"/>.
         /// </summary>
-        /// <returns>Bilddaten oder <see langword="null"/> bei Abbruch.</returns>
-        private void OnHelpClick(object sender, RoutedEventArgs e) => HelpTip.IsOpen = true;
-
-        private static async Task<byte[]?> PickImageFileAsync()
+        private static Task<byte[]?> PickImageFileAsync()
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            Windows.Storage.Pickers.FileOpenPicker picker = new();
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, handle);
-            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
-            picker.FileTypeFilter.Add(".jpg");
-            picker.FileTypeFilter.Add(".jpeg");
-            picker.FileTypeFilter.Add(".png");
-
-            Windows.Storage.StorageFile? file = await picker.PickSingleFileAsync();
-
-            if (file is null)
-            {
-                return null;
-            }
-
-            return await File.ReadAllBytesAsync(file.Path);
+            return Helpers.ImageFilePicker.PickAsync(handle);
         }
 
     }

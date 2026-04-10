@@ -14,12 +14,9 @@
         </Grid.RowDefinitions>
 
         <!-- Hilfe -->
-        <Button x:Name="HelpButton" Click="OnHelpClick"
-                HorizontalAlignment="Right" VerticalAlignment="Top"
-                Margin="0,8,16,0" Background="Transparent" Padding="6" Canvas.ZIndex="1">
-            <FontIcon Glyph="&#xE897;" FontSize="16"
-                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-        </Button>
+        <ctrl:HelpButtonControl TipUid="HelpTipSuche"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,8,16,0" Canvas.ZIndex="1"/>
 
         <!-- Onboarding-Hinweis: erscheint beim ersten Start wenn noch keine Serien vorhanden sind -->
         <InfoBar
@@ -168,11 +165,6 @@
 
         </Grid>
 
-        <TeachingTip x:Name="HelpTip"
-                     x:Uid="HelpTipSuche"
-                     Target="{x:Bind HelpButton}"
-                     PreferredPlacement="BottomLeft"
-                     IsLightDismissEnabled="True"/>
     </Grid>
 
 </Page>

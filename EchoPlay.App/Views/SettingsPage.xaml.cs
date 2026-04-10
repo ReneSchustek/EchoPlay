@@ -603,7 +603,5 @@ namespace EchoPlay.App.Views
                 ViewModel.LogRetentionDays = (int)args.NewValue;
             }
         }
-
-        private void OnHelpClick(object sender, RoutedEventArgs e) => HelpTip.IsOpen = true;
     }
 }

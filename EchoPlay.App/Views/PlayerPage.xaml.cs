@@ -136,6 +136,5 @@ namespace EchoPlay.App.Views
             ViewModel.ToggleTimeDisplayCommand.Execute(null);
         }
 
-        private void OnHelpClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) => HelpTip.IsOpen = true;
     }
 }

@@ -153,12 +153,9 @@
     <Grid>
 
         <!-- Hilfe-Button oben rechts -->
-        <Button x:Name="HelpButton" Click="OnHelpClick"
-                HorizontalAlignment="Right" VerticalAlignment="Top"
-                Margin="0,8,16,0" Background="Transparent" Padding="6" Canvas.ZIndex="1">
-            <FontIcon Glyph="&#xE897;" FontSize="16"
-                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-        </Button>
+        <ctrl:HelpButtonControl TipUid="HelpTipDashboard"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,8,16,0" Canvas.ZIndex="1"/>
 
         <!-- Inhaltsbereich: scrollbare Kachelreihen -->
         <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
@@ -354,11 +351,6 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Center"/>
 
-        <TeachingTip x:Name="HelpTip"
-                     x:Uid="HelpTipDashboard"
-                     Target="{x:Bind HelpButton}"
-                     PreferredPlacement="BottomLeft"
-                     IsLightDismissEnabled="True"/>
     </Grid>
 
 </Page>

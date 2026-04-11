@@ -470,6 +470,10 @@ namespace EchoPlay.App
             builder.Services.AddSingleton<ThemeService>(provider =>
                 (ThemeService)provider.GetRequiredService<IThemeService>());
 
+            // IClock als Singleton – einzige Stelle, an der DateTime.UtcNow in Produktion gelesen wird.
+            // Tests injizieren einen FakeClock, damit zeitabhängige Logik reproduzierbar prüfbar wird.
+            builder.Services.AddSingleton<IClock, SystemClock>();
+
             // ScanEventService als Singleton – überlebt Navigation, benachrichtigt neues ViewModel nach Rückkehr
             builder.Services.AddSingleton<IScanEventService, ScanEventService>();
 

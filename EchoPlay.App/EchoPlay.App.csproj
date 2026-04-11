@@ -17,6 +17,11 @@
          Ohne dieses Flag schlägt das Laden der App-Assembly in Unit-Test-Prozessen fehl,
          da dort keine Windows App Runtime registriert ist (keine MSIX-Umgebung). -->
     <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+    <!-- User Secrets fuer Entwickler-Credentials (Spotify ClientId/ClientSecret).
+         Die Werte liegen ausschliesslich im User-Profile unter
+         %APPDATA%\Microsoft\UserSecrets\echoplay-dev-secrets\secrets.json
+         und werden im DEBUG-Build von App.xaml.cs.CreateHost zugeladen. -->
+    <UserSecretsId>echoplay-dev-secrets</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -69,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
@@ -85,9 +91,10 @@
     <ProjectReference Include="..\EchoPlay.Spotify\EchoPlay.Spotify.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="appsettings.Development.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <!-- appsettings.Development.json wird bewusst NICHT ins Build-Output kopiert.
+         Entwickler-Secrets (Spotify ClientId/ClientSecret) liegen stattdessen in
+         User Secrets (UserSecretsId oben) und werden in App.xaml.cs nur im
+         DEBUG-Build geladen. So landen die Secrets weder in bin/ noch im MSIX-Paket. -->
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

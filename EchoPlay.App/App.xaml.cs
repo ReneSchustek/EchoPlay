@@ -390,8 +390,14 @@ namespace EchoPlay.App
             // Konfiguration wird bewusst im Host geladen,
             // da nur dieser Zugriff auf Dateisystem und Umgebungen hat.
             builder.Configuration
-                .AddJsonFile("appsettings.json", optional: false)
-                .AddJsonFile("appsettings.Development.json", optional: true);
+                .AddJsonFile("appsettings.json", optional: false);
+
+#if DEBUG
+            // Entwickler-Credentials (Spotify ClientId/ClientSecret) kommen ausschliesslich
+            // aus User Secrets und liegen unter %APPDATA%\Microsoft\UserSecrets\echoplay-dev-secrets.
+            // Damit landen Secrets weder im Build-Output noch im Repository oder MSIX-Paket.
+            builder.Configuration.AddUserSecrets<App>(optional: true);
+#endif
 
             // Logger registrieren (Cleanup läuft automatisch beim Start)
             builder.Services.AddEchoPlayLogger(options =>

@@ -620,6 +620,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IThemeService>(),
                 provider.GetRequiredService<ISyncService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
+                provider.GetRequiredService<IConfirmationDialogService>(),
+                provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Analysis.IEpisodePatternAnalyzer>(),
                 provider.GetRequiredService<IConnectionTestCoordinator>(),
                 provider.GetRequiredService<ILogViewerCoordinator>(),

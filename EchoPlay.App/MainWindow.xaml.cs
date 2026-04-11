@@ -175,19 +175,50 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Prüft, ob die aktuelle Seite (insbesondere <see cref="SettingsPage"/>) verlassen werden darf.
-        /// Der Check hängt noch am Page-Typ, weil die ungespeicherten Änderungen im Code-Behind der
-        /// Settings-Seite verwaltet werden. Das wird in einem späteren Brief über ein
-        /// ViewModel-basiertes Guard-Pattern aufgelöst.
+        /// Prüft, ob die aktuelle Seite verlassen werden darf. Statt den konkreten Page-Typ
+        /// zu kennen, wird das ViewModel der aktuellen Page über die Page-Property oder
+        /// den DataContext gesucht und auf <see cref="INavigationGuard"/> geprüft. Jedes
+        /// Page-ViewModel, das ungespeicherte Änderungen hat, kann dieses Interface
+        /// implementieren, um das Verlassen zu kontrollieren.
         /// </summary>
         private async Task<bool> ConfirmLeaveCurrentPageAsync()
         {
-            if (ContentFrame.Content is SettingsPage settingsPage)
+            INavigationGuard? guard = ResolveNavigationGuard(ContentFrame.Content);
+            if (guard is null)
             {
-                return await settingsPage.CheckUnsavedChangesAsync();
+                return true;
             }
 
-            return true;
+            return await guard.CanLeaveAsync();
+        }
+
+        /// <summary>
+        /// Extrahiert den <see cref="INavigationGuard"/> aus dem aktuellen Page-Inhalt.
+        /// EchoPlay setzt das ViewModel meist als <c>Page.ViewModel</c>-Property, fällt
+        /// aber bei Bedarf auf den <c>DataContext</c> zurück.
+        /// </summary>
+        private static INavigationGuard? ResolveNavigationGuard(object? pageContent)
+        {
+            if (pageContent is null)
+            {
+                return null;
+            }
+
+            // Primär: ViewModel-Property via Reflection (EchoPlay-Konvention)
+            System.Reflection.PropertyInfo? vmProp = pageContent.GetType().GetProperty("ViewModel");
+            object? viewModel = vmProp?.GetValue(pageContent);
+            if (viewModel is INavigationGuard guardFromProperty)
+            {
+                return guardFromProperty;
+            }
+
+            // Fallback: DataContext eines FrameworkElements
+            if (pageContent is FrameworkElement element && element.DataContext is INavigationGuard guardFromContext)
+            {
+                return guardFromContext;
+            }
+
+            return null;
         }
 
         /// <summary>

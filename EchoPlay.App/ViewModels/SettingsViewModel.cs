@@ -26,11 +26,13 @@ namespace EchoPlay.App.ViewModels
     /// <see cref="HasUnsavedChanges"/>, die gemeinsame Persistenz und die Pass-Through-Eigenschaften
     /// für die unveränderte Page-XAML.
     /// </summary>
-    public sealed class SettingsViewModel : ObservableObject, IDisposable
+    public sealed class SettingsViewModel : ObservableObject, IDisposable, INavigationGuard
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IThemeService _themeService;
         private readonly IErrorDialogService _errorDialogService;
+        private readonly IConfirmationDialogService _confirmationDialogService;
+        private readonly ILocalizationService _localizationService;
         private readonly LoggerManager _loggerManager;
         private readonly StatusBarViewModel _statusBar;
 
@@ -47,6 +49,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="themeService">Service für den Live-Themewechsel.</param>
         /// <param name="syncService">Service für den lokalen Bibliothek-Sync.</param>
         /// <param name="errorDialogService">Service für Fehler-Dialoge.</param>
+        /// <param name="confirmationDialogService">Ja/Nein-Dialog für den Navigation-Guard.</param>
+        /// <param name="localizationService">Lokalisierungs-Service für die Dialogtexte.</param>
         /// <param name="patternAnalyzer">Analysiert Episodenmuster im lokalen Bibliotheksordner.</param>
         /// <param name="connectionTestCoordinator">Kapselt den Verbindungstest gegen den aktiven Provider.</param>
         /// <param name="logViewerCoordinator">Kapselt Dateisystem- und Live-Puffer-Zugriff für den Log-Viewer.</param>
@@ -57,17 +61,21 @@ namespace EchoPlay.App.ViewModels
             IThemeService themeService,
             ISyncService syncService,
             IErrorDialogService errorDialogService,
+            IConfirmationDialogService confirmationDialogService,
+            ILocalizationService localizationService,
             IEpisodePatternAnalyzer patternAnalyzer,
             IConnectionTestCoordinator connectionTestCoordinator,
             ILogViewerCoordinator logViewerCoordinator,
             LoggerManager loggerManager,
             StatusBarViewModel statusBar)
         {
-            _scopeFactory       = scopeFactory;
-            _themeService       = themeService;
-            _errorDialogService = errorDialogService;
-            _loggerManager      = loggerManager;
-            _statusBar          = statusBar;
+            _scopeFactory              = scopeFactory;
+            _themeService              = themeService;
+            _errorDialogService        = errorDialogService;
+            _confirmationDialogService = confirmationDialogService;
+            _localizationService       = localizationService;
+            _loggerManager             = loggerManager;
+            _statusBar                 = statusBar;
 
             // Sub-VMs mit gemeinsamem Edit-Callback – jede Nutzeränderung setzt HasUnsavedChanges
             GeneralVM = new GeneralSettingsViewModel(OnSubVmUserEdit);
@@ -383,6 +391,34 @@ namespace EchoPlay.App.ViewModels
                 HasUnsavedChanges = false;
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Prüft, ob die Einstellungsseite verlassen werden darf. Bei ungespeicherten
+        /// Änderungen wird der Nutzer gefragt, ob gespeichert werden soll. Navigiert wird
+        /// in jedem Fall (bei „Nein" werden Änderungen verworfen) – lediglich der
+        /// Speichern-Schritt ist optional.
+        /// </summary>
+        public async Task<bool> CanLeaveAsync()
+        {
+            if (!HasUnsavedChanges)
+            {
+                return true;
+            }
+
+            bool shouldSave = await _confirmationDialogService.ConfirmAsync(
+                _localizationService.Get("UnsavedSettingsDialogTitle"),
+                _localizationService.Get("UnsavedSettingsDialogMessage"));
+
+            if (shouldSave)
+            {
+                // SaveAsync aktualisiert intern die StatusBar – Provider- und Offline-Änderungen
+                // wirken sich sofort auf die Nav-Leiste aus.
+                await SaveAsync();
+            }
+
+            // Auch bei „Nein" darf navigiert werden – Änderungen werden dann verworfen
+            return true;
         }
 
         /// <summary>

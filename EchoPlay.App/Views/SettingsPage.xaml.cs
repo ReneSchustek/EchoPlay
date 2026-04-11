@@ -23,7 +23,6 @@ namespace EchoPlay.App.Views
     public sealed partial class SettingsPage : Page
     {
         private readonly ILocalizationService _localizationService;
-        private readonly IConfirmationDialogService _confirmationDialogService;
         private DispatcherTimer? _logLiveTimer;
 
         /// <summary>Alle Theme-Vorschauen für die Farbkacheln in den Einstellungen.</summary>
@@ -46,9 +45,8 @@ namespace EchoPlay.App.Views
         /// </summary>
         public SettingsPage()
         {
-            ViewModel                  = App.Services.GetRequiredService<SettingsViewModel>();
-            _localizationService       = App.Services.GetRequiredService<ILocalizationService>();
-            _confirmationDialogService = App.Services.GetRequiredService<IConfirmationDialogService>();
+            ViewModel            = App.Services.GetRequiredService<SettingsViewModel>();
+            _localizationService = App.Services.GetRequiredService<ILocalizationService>();
             InitializeComponent();
         }
 
@@ -83,12 +81,10 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Prüft vor dem Verlassen auf ungespeicherte Änderungen und bietet Speichern an.
-        /// Stoppt den Live-View-Timer, damit er im Hintergrund nicht auf ein aufgeräumtes ViewModel zugreift.
-        /// Da WinUI 3 keine echte Cancel-Möglichkeit bei Frame-Navigation bietet,
-        /// wird die Entscheidung vor der Navigation über <see cref="CheckUnsavedChangesAsync"/> abgefragt.
-        /// Falls der Nutzer beim Abfangen per NavigationView bereits "Nein" gewählt hat,
-        /// werden Änderungen hier nur noch verworfen.
+        /// Räumt Event-Abonnements und das ViewModel beim Verlassen der Seite auf.
+        /// Die „ungespeicherte Änderungen"-Frage liegt jetzt im <see cref="SettingsViewModel"/>
+        /// und wird vom <see cref="MainWindow"/>-Navigation-Guard (<c>INavigationGuard</c>)
+        /// vor der Navigation abgefragt.
         /// </summary>
         /// <param name="e">Ereignisargumente der Navigation.</param>
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
@@ -96,36 +92,6 @@ namespace EchoPlay.App.Views
             base.OnNavigatingFrom(e);
             ViewModel.PatternSelectionRequested -= OnPatternSelectionRequested;
             ViewModel.Dispose();
-        }
-
-        /// <summary>
-        /// Prüft ob ungespeicherte Änderungen vorliegen und zeigt einen Bestätigungsdialog.
-        /// Wird von <see cref="MainWindow"/> aufgerufen, bevor die Navigation tatsächlich stattfindet.
-        /// </summary>
-        /// <returns>
-        /// <c>true</c> wenn die Navigation fortgesetzt werden darf (Änderungen gespeichert oder verworfen).
-        /// <c>false</c> wenn der Nutzer den Dialog abgebrochen hat.
-        /// </returns>
-        public async Task<bool> CheckUnsavedChangesAsync()
-        {
-            if (!ViewModel.HasUnsavedChanges)
-            {
-                return true;
-            }
-
-            bool shouldSave = await _confirmationDialogService.ConfirmAsync(
-                _localizationService.Get("UnsavedSettingsDialogTitle"),
-                _localizationService.Get("UnsavedSettingsDialogMessage"));
-
-            if (shouldSave)
-            {
-                // SaveAsync aktualisiert intern die StatusBar – Provider- und Offline-Änderungen
-                // wirken sich sofort auf die Nav-Leiste aus.
-                await ViewModel.SaveAsync();
-            }
-
-            // Auch bei "Nein" darf navigiert werden – Änderungen werden dann verworfen
-            return true;
         }
 
         /// <summary>

@@ -66,6 +66,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 themeService ?? new FakeThemeService(),
                 syncService ?? new FakeSyncService(new SyncResult()),
                 errorDialogService ?? new FakeErrorDialogService(),
+                new FakeConfirmationDialogService(),
+                new FakeLocalizationService(),
                 new FakeEpisodePatternAnalyzer(),
                 connectionTestCoordinator ?? new FakeConnectionTestCoordinator(),
                 logViewerCoordinator ?? new FakeLogViewerCoordinator(),

@@ -30,6 +30,7 @@ namespace EchoPlay.App.Services
 
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly BackgroundCoverService _backgroundCoverService;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger;
 
         /// <summary>
@@ -37,14 +38,17 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Für scoped DB-Zugriffe.</param>
         /// <param name="backgroundCoverService">Für den synchronen Cover-Rebuild bei Cache-Clear.</param>
+        /// <param name="httpClientFactory">Fabrik für den Online-Check-HttpClient (Named „OnlineCheck").</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public StartupValidator(
             IServiceScopeFactory scopeFactory,
             BackgroundCoverService backgroundCoverService,
+            IHttpClientFactory httpClientFactory,
             EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory)
         {
             _scopeFactory = scopeFactory;
             _backgroundCoverService = backgroundCoverService;
+            _httpClientFactory = httpClientFactory;
             _logger = loggerFactory.CreateLogger("StartupValidator");
         }
 
@@ -236,7 +240,10 @@ namespace EchoPlay.App.Services
         {
             try
             {
-                using HttpClient client = new() { Timeout = OnlineCheckTimeout };
+                // Named „OnlineCheck"-Client hat ein kurzes Timeout (5s) und einen eigenen
+                // User-Agent. IHttpClientFactory recycelt die Handler und verhindert das
+                // Socket-Exhaustion-Risiko des alten „new HttpClient()"-Patterns.
+                HttpClient client = _httpClientFactory.CreateClient("OnlineCheck");
                 using HttpRequestMessage request = new(HttpMethod.Head, "https://itunes.apple.com/search?term=test&limit=1");
                 using HttpResponseMessage response = await client.SendAsync(
                     request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);

@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -36,26 +37,29 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnOpenFolderClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            FolderPicker picker = new()
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                ViewMode               = PickerViewMode.List
-            };
+                FolderPicker picker = new()
+                {
+                    SuggestedStartLocation = PickerLocationId.MusicLibrary,
+                    ViewMode               = PickerViewMode.List
+                };
 
-            picker.FileTypeFilter.Add("*");
+                picker.FileTypeFilter.Add("*");
 
-            // WinUI 3 ohne UWP: Der Picker braucht das Fenster-Handle für den Dialog
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
+                // WinUI 3 ohne UWP: Der Picker braucht das Fenster-Handle für den Dialog
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
 
-            StorageFolder? folder = await picker.PickSingleFolderAsync();
+                StorageFolder? folder = await picker.PickSingleFolderAsync();
 
-            if (folder is null)
-            {
-                return;
-            }
+                if (folder is null)
+                {
+                    return;
+                }
 
-            ViewModel.LoadFolder(folder.Path);
-            _ = ViewModel.SaveLastOpenedFolderAsync(folder.Path);
+                ViewModel.LoadFolder(folder.Path);
+                await ViewModel.SaveLastOpenedFolderAsync(folder.Path);
+            });
         }
 
         /// <summary>
@@ -64,35 +68,38 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnOpenFilesClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            FileOpenPicker picker = new()
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                ViewMode               = PickerViewMode.List
-            };
+                FileOpenPicker picker = new()
+                {
+                    SuggestedStartLocation = PickerLocationId.MusicLibrary,
+                    ViewMode               = PickerViewMode.List
+                };
 
-            // Alle unterstützten Audioformate im Dateidialog anbieten
-            foreach (string ext in EchoPlay.Core.AudioExtensions.Supported)
-            {
-                picker.FileTypeFilter.Add(ext);
-            }
+                // Alle unterstützten Audioformate im Dateidialog anbieten
+                foreach (string ext in EchoPlay.Core.AudioExtensions.Supported)
+                {
+                    picker.FileTypeFilter.Add(ext);
+                }
 
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
 
-            IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
+                IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
 
-            if (files.Count == 0)
-            {
-                return;
-            }
+                if (files.Count == 0)
+                {
+                    return;
+                }
 
-            List<string> paths = new(files.Count);
+                List<string> paths = new(files.Count);
 
-            foreach (StorageFile file in files)
-            {
-                paths.Add(file.Path);
-            }
+                foreach (StorageFile file in files)
+                {
+                    paths.Add(file.Path);
+                }
 
-            ViewModel.LoadFiles(paths);
+                ViewModel.LoadFiles(paths);
+            });
         }
 
         /// <summary>

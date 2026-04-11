@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -36,7 +37,7 @@ namespace EchoPlay.App.Views
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await ViewModel.InitializeAsync(e.Parameter);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.InitializeAsync(e.Parameter));
         }
 
         /// <summary>

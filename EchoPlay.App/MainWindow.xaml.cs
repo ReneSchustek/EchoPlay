@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using EchoPlay.App.Views;
@@ -82,9 +83,12 @@ namespace EchoPlay.App
         /// <param name="args">Ereignisargumente.</param>
         private async void OnLoaded(object sender, RoutedEventArgs args)
         {
-            NavView.SelectedItem = NavStartseite;
-            await ViewModel.LoadAsync();
-            ApplyNavigationItemVisibility();
+            await AsyncEventHandler.RunSafelyAsync(async () =>
+            {
+                NavView.SelectedItem = NavStartseite;
+                await ViewModel.LoadAsync();
+                ApplyNavigationItemVisibility();
+            });
         }
 
         /// <summary>
@@ -126,22 +130,25 @@ namespace EchoPlay.App
         /// <param name="args">Enthält das ausgewählte Item und ob Einstellungen aktiv sind.</param>
         private async void OnSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            // Ungespeicherte Settings-Änderungen prüfen, bevor navigiert wird
-            if (!await ConfirmLeaveCurrentPageAsync())
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                // Ungespeicherte Settings-Änderungen prüfen, bevor navigiert wird
+                if (!await ConfirmLeaveCurrentPageAsync())
+                {
+                    return;
+                }
 
-            if (args.IsSettingsSelected)
-            {
-                ViewModel.NavigateToSettings();
-                return;
-            }
+                if (args.IsSettingsSelected)
+                {
+                    ViewModel.NavigateToSettings();
+                    return;
+                }
 
-            if (args.SelectedItem is NavigationViewItem item)
-            {
-                ViewModel.NavigateToMenuTag(item.Tag as string);
-            }
+                if (args.SelectedItem is NavigationViewItem item)
+                {
+                    ViewModel.NavigateToMenuTag(item.Tag as string);
+                }
+            });
         }
 
         /// <summary>
@@ -151,17 +158,20 @@ namespace EchoPlay.App
         /// <param name="args">Ereignisargumente.</param>
         private async void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
         {
-            if (!ContentFrame.CanGoBack)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                if (!ContentFrame.CanGoBack)
+                {
+                    return;
+                }
 
-            if (!await ConfirmLeaveCurrentPageAsync())
-            {
-                return;
-            }
+                if (!await ConfirmLeaveCurrentPageAsync())
+                {
+                    return;
+                }
 
-            ViewModel.GoBack();
+                ViewModel.GoBack();
+            });
         }
 
         /// <summary>
@@ -314,17 +324,20 @@ namespace EchoPlay.App
                 return;
             }
 
-            ShowThemeOverlay();
+            await AsyncEventHandler.RunSafelyAsync(async () =>
+            {
+                ShowThemeOverlay();
 
-            // Einen Frame abwarten, damit der Overlay sichtbar ist bevor das Theme umschaltet
-            await Task.Delay(50);
+                // Einen Frame abwarten, damit der Overlay sichtbar ist bevor das Theme umschaltet
+                await Task.Delay(50);
 
-            StatusBar.SwitchTheme(themeName);
+                StatusBar.SwitchTheme(themeName);
 
-            // Kurze Pause für den Layout-Pass nach dem Theme-Wechsel
-            await Task.Delay(150);
+                // Kurze Pause für den Layout-Pass nach dem Theme-Wechsel
+                await Task.Delay(150);
 
-            HideThemeOverlay();
+                HideThemeOverlay();
+            });
         }
 
         /// <summary>
@@ -337,7 +350,7 @@ namespace EchoPlay.App
         {
             if (sender is MenuFlyoutItem item && item.Tag is string languageCode)
             {
-                await StatusBar.ChangeLanguageAsync(languageCode);
+                await AsyncEventHandler.RunSafelyAsync(() => StatusBar.ChangeLanguageAsync(languageCode));
             }
         }
     }

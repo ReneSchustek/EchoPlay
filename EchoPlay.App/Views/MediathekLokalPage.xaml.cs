@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
@@ -64,22 +65,25 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedTo(e);
 
-            // Nur-Online-Modus-Check liegt im ViewModel; bei aktivem Modus navigiert das ViewModel zurück.
-            if (!await ViewModel.InitializeAsync())
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                // Nur-Online-Modus-Check liegt im ViewModel; bei aktivem Modus navigiert das ViewModel zurück.
+                if (!await ViewModel.InitializeAsync())
+                {
+                    return;
+                }
 
-            ViewModel.NavigateToTagManagerRequested += OnNavigateToTagManagerRequested;
-            ViewModel.AddFolderRequested            += OnAddFolderRequested;
-            ViewModel.MissingEpisodesResolved       += OnMissingEpisodesResolved;
-            ViewModel.MissingEpisodesModeRequested += OnMissingEpisodesModeRequested;
-            ViewModel.AllSeriesCheckCompleted       += OnAllSeriesCheckCompleted;
-            ViewModel.PropertyChanged               += OnViewModelPropertyChanged;
-            SizeChanged                              += OnPageSizeChanged;
-            EpisodeAccordion.GridView.SelectionChanged += OnEpisodeSelectionChanged;
-            ViewModel.Activate();
-            await ViewModel.LoadAsync();
+                ViewModel.NavigateToTagManagerRequested += OnNavigateToTagManagerRequested;
+                ViewModel.AddFolderRequested            += OnAddFolderRequested;
+                ViewModel.MissingEpisodesResolved       += OnMissingEpisodesResolved;
+                ViewModel.MissingEpisodesModeRequested += OnMissingEpisodesModeRequested;
+                ViewModel.AllSeriesCheckCompleted       += OnAllSeriesCheckCompleted;
+                ViewModel.PropertyChanged               += OnViewModelPropertyChanged;
+                SizeChanged                              += OnPageSizeChanged;
+                EpisodeAccordion.GridView.SelectionChanged += OnEpisodeSelectionChanged;
+                ViewModel.Activate();
+                await ViewModel.LoadAsync();
+            });
         }
 
         /// <summary>
@@ -148,7 +152,7 @@ namespace EchoPlay.App.Views
             if (sender is GridView { SelectedItem: LocalArtistCardViewModel artist })
             {
                 EpisodeAccordion.GridView.SelectedItem = null;
-                await ViewModel.SelectArtistAsync(artist);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectArtistAsync(artist));
                 // UpdateSplit wird durch PropertyChanged auf SelectedArtistIndex ausgelöst
             }
         }
@@ -161,7 +165,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is GridView { SelectedItem: LocalEpisodeCardViewModel episode })
             {
-                await ViewModel.SelectEpisodeAsync(episode);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectEpisodeAsync(episode));
             }
         }
 
@@ -173,7 +177,7 @@ namespace EchoPlay.App.Views
         private async void OnPickFolderClick(object sender, RoutedEventArgs e)
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await ViewModel.PickFolderAsync(handle);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.PickFolderAsync(handle));
         }
 
         /// <summary>
@@ -182,7 +186,7 @@ namespace EchoPlay.App.Views
         private async void OnAddFolderClick(object sender, RoutedEventArgs e)
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await ViewModel.AddFolderAsync(handle);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.AddFolderAsync(handle));
         }
 
         /// <summary>
@@ -192,7 +196,7 @@ namespace EchoPlay.App.Views
         private async void OnAddFolderRequested()
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await ViewModel.AddFolderAsync(handle);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.AddFolderAsync(handle));
         }
 
         /// <summary>
@@ -221,7 +225,8 @@ namespace EchoPlay.App.Views
         {
             if (sender is ToggleMenuFlyoutItem item && item.Tag is Guid seriesId)
             {
-                await ViewModel.ToggleWatchAsync(seriesId, item.IsChecked);
+                bool isChecked = item.IsChecked;
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ToggleWatchAsync(seriesId, isChecked));
             }
         }
 
@@ -229,7 +234,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                await ViewModel.MarkAllAsReadAsync(seriesId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkAllAsReadAsync(seriesId));
             }
         }
 
@@ -241,7 +246,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                await ViewModel.DeleteSeriesFromLibraryAsync(seriesId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.DeleteSeriesFromLibraryAsync(seriesId));
             }
         }
 
@@ -250,7 +255,7 @@ namespace EchoPlay.App.Views
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
                 LocalArtistCardViewModel? card = ViewModel.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
-                await ViewModel.DeleteSeriesFromDiskAsync(seriesId, card?.LocalFolderPath);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.DeleteSeriesFromDiskAsync(seriesId, card?.LocalFolderPath));
             }
         }
 
@@ -310,40 +315,43 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            string content;
+            await AsyncEventHandler.RunSafelyAsync(async () =>
+            {
+                string content;
 
-            if (episodeTitles.Count == 0)
-            {
-                content = "Alle Folgen dieser Serie sind lokal vorhanden.";
-            }
-            else
-            {
-                StringBuilder builder = new();
-                foreach (string title in episodeTitles)
+                if (episodeTitles.Count == 0)
                 {
-                    builder.AppendLine(title);
+                    content = "Alle Folgen dieser Serie sind lokal vorhanden.";
                 }
-                content = builder.ToString().TrimEnd();
-            }
-
-            _isDialogOpen = true;
-            try
-            {
-                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
-                    XamlRoot,
-                    title: "Fehlende Folgen",
-                    content: content,
-                    primaryButtonText: "Als TXT speichern");
-
-                if (result == ContentDialogResult.Primary)
+                else
                 {
-                    await SaveReportAsTxtAsync(content);
+                    StringBuilder builder = new();
+                    foreach (string title in episodeTitles)
+                    {
+                        builder.AppendLine(title);
+                    }
+                    content = builder.ToString().TrimEnd();
                 }
-            }
-            finally
-            {
-                _isDialogOpen = false;
-            }
+
+                _isDialogOpen = true;
+                try
+                {
+                    ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                        XamlRoot,
+                        title: "Fehlende Folgen",
+                        content: content,
+                        primaryButtonText: "Als TXT speichern");
+
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        await SaveReportAsTxtAsync(content);
+                    }
+                }
+                finally
+                {
+                    _isDialogOpen = false;
+                }
+            });
         }
 
         /// <summary>
@@ -354,7 +362,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                await ViewModel.ShowMissingEpisodesAsync(seriesId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ShowMissingEpisodesAsync(seriesId));
             }
         }
 
@@ -367,28 +375,31 @@ namespace EchoPlay.App.Views
         {
             if (_isDialogOpen) return;
 
-            string reportText = EchoPlay.Core.Models.MissingEpisodesReportFormatter.FormatAsText(report);
-
-            _isDialogOpen = true;
-            try
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
-                    XamlRoot,
-                    title: "Fehlende Folgen – Gesamtprüfung",
-                    content: reportText,
-                    primaryButtonText: "Als TXT speichern",
-                    maxHeight: 500,
-                    useMonospace: true);
+                string reportText = EchoPlay.Core.Models.MissingEpisodesReportFormatter.FormatAsText(report);
 
-                if (result == ContentDialogResult.Primary)
+                _isDialogOpen = true;
+                try
                 {
-                    await SaveReportAsTxtAsync(reportText);
+                    ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                        XamlRoot,
+                        title: "Fehlende Folgen – Gesamtprüfung",
+                        content: reportText,
+                        primaryButtonText: "Als TXT speichern",
+                        maxHeight: 500,
+                        useMonospace: true);
+
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        await SaveReportAsTxtAsync(reportText);
+                    }
                 }
-            }
-            finally
-            {
-                _isDialogOpen = false;
-            }
+                finally
+                {
+                    _isDialogOpen = false;
+                }
+            });
         }
 
         /// <summary>
@@ -442,12 +453,15 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            byte[]? bytes = await PickImageFileAsync();
-
-            if (bytes is not null)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                await ViewModel.ApplySeriesCoverFromBytesAsync(card, bytes);
-            }
+                byte[]? bytes = await PickImageFileAsync();
+
+                if (bytes is not null)
+                {
+                    await ViewModel.ApplySeriesCoverFromBytesAsync(card, bytes);
+                }
+            });
         }
 
         /// <summary>
@@ -490,7 +504,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            await ViewModel.MarkEpisodeAsPlayedAsync(episodeId);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkEpisodeAsPlayedAsync(episodeId));
         }
 
         /// <summary>
@@ -503,7 +517,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            await ViewModel.MarkEpisodeAsUnplayedAsync(episodeId);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkEpisodeAsUnplayedAsync(episodeId));
         }
 
         /// <summary>
@@ -517,57 +531,60 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Vorschau im Hintergrund erstellen
-            RestructurePreviewDisplay? preview = null;
-            ViewModel.RestructurePreviewReady += p => preview = p;
-            await ViewModel.AnalyzeRestructureAsync(seriesId);
-            ViewModel.RestructurePreviewReady -= p => preview = p;
-
-            if (preview is null || preview.IsEmpty || _isDialogOpen)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                // Vorschau im Hintergrund erstellen
+                RestructurePreviewDisplay? preview = null;
+                ViewModel.RestructurePreviewReady += p => preview = p;
+                await ViewModel.AnalyzeRestructureAsync(seriesId);
+                ViewModel.RestructurePreviewReady -= p => preview = p;
 
-            _isDialogOpen = true;
-
-            try
-            {
-                // Vorschau-Text zusammenbauen
-                System.Text.StringBuilder sb = new();
-                sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
-                sb.AppendLine();
-
-                foreach (RestructureActionDisplay action in preview.Actions)
+                if (preview is null || preview.IsEmpty || _isDialogOpen)
                 {
-                    sb.Append("  ").AppendLine(action.FileName);
-                    sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
+                    return;
                 }
 
-                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
-                    Content.XamlRoot,
-                    title: "Ordnerstruktur aufbauen",
-                    content: sb.ToString(),
-                    primaryButtonText: "Umbauen",
-                    closeButtonText: "Abbrechen",
-                    useMonospace: true,
-                    monospaceFontSize: 12,
-                    defaultButton: ContentDialogButton.Close);
+                _isDialogOpen = true;
 
-                if (result == ContentDialogResult.Primary)
+                try
                 {
-                    int movedCount = await ViewModel.ExecuteRestructureAsync(preview);
+                    // Vorschau-Text zusammenbauen
+                    System.Text.StringBuilder sb = new();
+                    sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
+                    sb.AppendLine();
 
-                    // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
-                    if (movedCount > 0)
+                    foreach (RestructureActionDisplay action in preview.Actions)
                     {
-                        await ViewModel.LoadAsync();
+                        sb.Append("  ").AppendLine(action.FileName);
+                        sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
+                    }
+
+                    ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                        Content.XamlRoot,
+                        title: "Ordnerstruktur aufbauen",
+                        content: sb.ToString(),
+                        primaryButtonText: "Umbauen",
+                        closeButtonText: "Abbrechen",
+                        useMonospace: true,
+                        monospaceFontSize: 12,
+                        defaultButton: ContentDialogButton.Close);
+
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        int movedCount = await ViewModel.ExecuteRestructureAsync(preview);
+
+                        // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
+                        if (movedCount > 0)
+                        {
+                            await ViewModel.LoadAsync();
+                        }
                     }
                 }
-            }
-            finally
-            {
-                _isDialogOpen = false;
-            }
+                finally
+                {
+                    _isDialogOpen = false;
+                }
+            });
         }
 
         private async void OnSeriesCoverSearchClick(object sender, RoutedEventArgs e)
@@ -584,19 +601,22 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
-            using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
-            if (onlineScope is null) return;
-
-            CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
-                card.Title,
-                (query, ct) => ViewModel.SearchCoversAsync(query, ct),
-                Content.XamlRoot);
-
-            if (selected is not null)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                await ViewModel.ApplySelectedSeriesCoverAsync(card, selected);
-            }
+                // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
+                using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
+                if (onlineScope is null) return;
+
+                CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
+                    card.Title,
+                    (query, ct) => ViewModel.SearchCoversAsync(query, ct),
+                    Content.XamlRoot);
+
+                if (selected is not null)
+                {
+                    await ViewModel.ApplySelectedSeriesCoverAsync(card, selected);
+                }
+            });
         }
 
         /// <summary>
@@ -616,12 +636,15 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            byte[]? bytes = await PickImageFileAsync();
-
-            if (bytes is not null)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                await ViewModel.ApplyEpisodeCoverFromBytesAsync(card, bytes);
-            }
+                byte[]? bytes = await PickImageFileAsync();
+
+                if (bytes is not null)
+                {
+                    await ViewModel.ApplyEpisodeCoverFromBytesAsync(card, bytes);
+                }
+            });
         }
 
         /// <summary>
@@ -641,19 +664,22 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
-            using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
-            if (onlineScope is null) return;
-
-            CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
-                card.Title,
-                (query, ct) => ViewModel.SearchCoversAsync(query, ct),
-                Content.XamlRoot);
-
-            if (selected is not null)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
-            }
+                // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
+                using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
+                if (onlineScope is null) return;
+
+                CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
+                    card.Title,
+                    (query, ct) => ViewModel.SearchCoversAsync(query, ct),
+                    Content.XamlRoot);
+
+                if (selected is not null)
+                {
+                    await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
+                }
+            });
         }
 
         /// <summary>

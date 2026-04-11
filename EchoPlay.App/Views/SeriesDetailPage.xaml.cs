@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
@@ -44,7 +45,7 @@ namespace EchoPlay.App.Views
 
             if (e.Parameter is Guid seriesId)
             {
-                await ViewModel.LoadAsync(seriesId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.LoadAsync(seriesId));
             }
         }
 
@@ -78,7 +79,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is GridView { SelectedItem: EpisodeTileViewModel episode })
             {
-                await ViewModel.SelectEpisodeAsync(episode);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectEpisodeAsync(episode));
             }
         }
 
@@ -103,7 +104,7 @@ namespace EchoPlay.App.Views
         /// <param name="e">Ereignisargumente.</param>
         private async void OnPlayEpisodeClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            await ViewModel.PlaySelectedEpisodeAsync();
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.PlaySelectedEpisodeAsync());
         }
 
         /// <summary>
@@ -113,7 +114,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid episodeId })
             {
-                await ViewModel.MarkAsPlayedAsync(episodeId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkAsPlayedAsync(episodeId));
             }
         }
 
@@ -124,7 +125,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid episodeId })
             {
-                await ViewModel.MarkAsUnplayedAsync(episodeId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkAsUnplayedAsync(episodeId));
             }
         }
     }

@@ -1,7 +1,6 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
-using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.UI.Xaml;
@@ -9,101 +8,23 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.IO;
-using System.Linq;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// ViewModel für den Tag-Manager.
-    /// Verwaltet eine Liste von Audiodateien und erlaubt das Bearbeiten, Online-Nachschlagen
-    /// und Speichern ihrer Metadaten (Tags).
-    /// Bietet zusätzlich die Möglichkeit, alle Dateien im geöffneten Ordner
-    /// nach einem konfigurierbaren Muster umzubenennen.
+    /// Koordiniert vier Sub-VMs (Dateiliste, Editor-Felder, Cover, Rename) und einen internen
+    /// <see cref="TagManagerActions"/>-Orchestrator, der die gesamte Async-Aktions-Schicht
+    /// (Laden, Speichern, MusicBrainz-Lookup, Umbenennen, Batch-Apply) kapselt.
+    /// Das Top-VM hält nur noch Commands, Zustands-Properties (IsLoading, HasUnsavedChanges …)
+    /// und die Pass-Through-Schicht für die unveränderte Page-XAML.
     /// </summary>
     public sealed class TagManagerViewModel : ObservableObject
     {
-        private readonly ITagService _tagService;
-        private readonly ITagLookupService _lookupService;
-        private readonly IFileRenameService _fileRenameService;
-        private readonly IErrorDialogService _errorDialogService;
-        private readonly IConfirmationDialogService _confirmationDialogService;
-        private readonly IOnlineAccessGuard _onlineAccessGuard;
-        private static readonly ResourceLoader _resources = ResourceLoader.GetForViewIndependentUse();
-
-        private ObservableCollection<TagFileItemViewModel> _files = [];
-        private TagFileItemViewModel? _selectedFile;
-        private IReadOnlyList<TagFileItemViewModel> _selectedFiles = [];
-        private string? _title;
-        private string? _album;
-        private string? _artist;
-        private string? _albumArtist;
-        private string? _year;
-        private string? _trackNumber;
-        private string? _trackCount;
-        private string? _genre;
-        private BitmapImage? _coverImage;
-        private byte[]? _coverImageData;
-        private string? _coverMimeType;
-        private bool _isLoading;
-        private bool _isLookingUp;
-        private bool _hasUnsavedChanges;
-        private string _autoLookupStatusText = string.Empty;
-        private string _renamePattern = "{track:00} - {title}";
-        // Intern gehaltene Vorschau-Items vom Modul-Typ – für die tatsächliche Umbenennung
-        private IReadOnlyList<RenamePreviewItem> _renamePreviewItems = [];
-
-        // App-eigene Display-Modelle, an die die Page bindet
-        private IReadOnlyList<RenamePreviewDisplay> _renamePreview = [];
-        private string _batchProgressText = string.Empty;
-
-        // Zuletzt geöffneter Ordnerpfad – wird für Vorschau und Umbenennung benötigt
-        private string? _currentFolderPath;
-
-        // Zwischenspeicher: gemeinsame Tags aus dem letzten Lookup-Ergebnis für "Alle taggen"
-        private AudioTag? _pendingBatchTag;
-
-        // Platzhalter für Felder mit unterschiedlichen Werten bei Mehrfachauswahl
-        private const string MixedValuePlaceholder = "(verschieden)";
-
-        // Merkt sich, welche Felder der Nutzer bei Mehrfachauswahl geändert hat.
-        // Nur geänderte Felder werden beim Speichern auf alle selektierten Dateien geschrieben.
-        private readonly HashSet<string> _editedFields = [];
-
-        // Letzte Lookup-Trefferliste – wird vorgehalten, damit die Page nur Indizes
-        // zurückgeben muss und keine TagManager-Typen kennen muss.
-        private IReadOnlyList<TagLookupResult> _lastLookupResults = [];
-
-        /// <summary>
-        /// Wird ausgelöst, wenn der Online-Lookup fertig ist.
-        /// Die Page abonniert dieses Event und zeigt den Auswahl-Dialog an.
-        /// Die Liste enthält UI-Display-Modelle (<see cref="TagLookupCandidate"/>),
-        /// damit der Views-Ordner kein <c>using EchoPlay.TagManager</c> braucht.
-        /// </summary>
-        public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
-
-        /// <summary>
-        /// Wird ausgelöst, wenn der Auto-Lookup einen eindeutigen Treffer gefunden
-        /// und die Tags automatisch übernommen hat.
-        /// Die Page zeigt daraufhin eine Bestätigungs-InfoBar an.
-        /// </summary>
-        public event EventHandler<TagLookupCandidate>? AutoLookupApplied;
-
-        /// <summary>
-        /// Wird ausgelöst, wenn der Nutzer ein Cover per Datei-Picker laden möchte.
-        /// Die Page öffnet daraufhin einen FileOpenPicker (benötigt WinRT-Interop).
-        /// </summary>
-        public event EventHandler? LoadCoverRequested;
-
-        /// <summary>
-        /// Wird ausgelöst, wenn nach "Alle taggen" die Rename-Vorschau automatisch berechnet wurde.
-        /// Die Page scrollt daraufhin zur Rename-Sektion.
-        /// </summary>
-        public event EventHandler? RenamePreviewReady;
+        private readonly TagManagerActions _actions;
 
         // Typed references sind nötig, um SetEnabled() aufrufen zu können
         private readonly RelayCommand _saveCommand;
@@ -118,41 +39,72 @@ namespace EchoPlay.App.ViewModels
         private readonly RelayCommand _previewRenameCommand;
         private readonly RelayCommand _executeRenameCommand;
 
+        private bool _isLoading;
+        private bool _isLookingUp;
+        private bool _hasUnsavedChanges;
+        private string _autoLookupStatusText = string.Empty;
+        private string _batchProgressText = string.Empty;
+
         /// <summary>
-        /// Initialisiert das ViewModel mit allen benötigten Diensten.
+        /// Initialisiert das ViewModel mit allen benötigten Diensten und erzeugt die vier Sub-VMs
+        /// sowie den Aktions-Orchestrator.
         /// </summary>
         /// <param name="tagService">Liest und schreibt Metadaten in Audiodateien.</param>
-        /// <param name="lookupService">Sucht Metadaten über MusicBrainz.</param>
+        /// <param name="lookupCoordinator">App-Service für den Online-Lookup und die Query-Logik.</param>
         /// <param name="fileRenameService">Erstellt Umbenennungs-Vorschau und führt Umbenennung durch.</param>
         /// <param name="errorDialogService">Zeigt Fehlermeldungen als Dialog an.</param>
         /// <param name="confirmationDialogService">Zeigt Bestätigungsdialoge an.</param>
         /// <param name="onlineAccessGuard">Prüft den Offline-Modus und zeigt bei Bedarf einen Bestätigungsdialog.</param>
         public TagManagerViewModel(
             ITagService tagService,
-            ITagLookupService lookupService,
+            ITagLookupCoordinator lookupCoordinator,
             IFileRenameService fileRenameService,
             IErrorDialogService errorDialogService,
             IConfirmationDialogService confirmationDialogService,
             IOnlineAccessGuard onlineAccessGuard)
         {
-            _tagService                  = tagService;
-            _lookupService               = lookupService;
-            _fileRenameService           = fileRenameService;
-            _errorDialogService          = errorDialogService;
-            _confirmationDialogService   = confirmationDialogService;
-            _onlineAccessGuard           = onlineAccessGuard;
+            FileListVM = new TagFileListViewModel();
+            EditorVM   = new TagEditorFieldsViewModel(() => HasUnsavedChanges = true);
+            CoverVM    = new TagCoverViewModel(() => HasUnsavedChanges = true);
+            RenameVM   = new TagRenameViewModel();
 
-            _saveCommand            = new RelayCommand(() => _ = SaveAsync());
-            _saveAllCommand         = new RelayCommand(() => _ = SaveAllAsync());
-            _removeAllTagsCommand   = new RelayCommand(() => _ = RemoveAllTagsAsync());
-            _lookupOnlineCommand    = new RelayCommand(() => _ = LookupOnlineAsync());
-            _autoLookupCommand      = new RelayCommand(() => _ = AutoLookupAsync());
-            _applyToAllCommand      = new RelayCommand(() => _ = ApplyToAllAsync());
-            _removeCoverCommand     = new RelayCommand(() => _ = RemoveCoverAsync());
+            _actions = new TagManagerActions(
+                tagService, lookupCoordinator, fileRenameService,
+                errorDialogService, confirmationDialogService, onlineAccessGuard,
+                FileListVM, EditorVM, CoverVM, RenameVM,
+                setIsLoading:         v => IsLoading = v,
+                setIsLookingUp:       v => IsLookingUp = v,
+                setAutoLookupStatus:  v => AutoLookupStatusText = v,
+                setBatchProgress:     v => BatchProgressText = v,
+                setHasUnsavedChanges: v => HasUnsavedChanges = v,
+                refreshCommandStates: RefreshCommandStates);
+
+            // Sub-VM-Events an die Page weiterreichen
+            _actions.LookupResultsReady += (s, e) => LookupResultsReady?.Invoke(this, e);
+            _actions.AutoLookupApplied  += (s, e) => AutoLookupApplied?.Invoke(this, e);
+            _actions.RenamePreviewReady += (s, e) => RenamePreviewReady?.Invoke(this, e);
+
+            // PropertyChanged durchreichen, damit die XAML-Bindings auf den Top-VM-Pass-Through-Properties
+            // weiterhin aktualisiert werden, obwohl der Wert in einem Sub-VM liegt.
+            FileListVM.PropertyChanged += OnSubVmPropertyChanged;
+            EditorVM.PropertyChanged   += OnSubVmPropertyChanged;
+            CoverVM.PropertyChanged    += OnSubVmPropertyChanged;
+            RenameVM.PropertyChanged   += OnSubVmPropertyChanged;
+
+            // Auswahländerung in der Dateiliste → Tag-Felder neu laden
+            FileListVM.SelectionChanged += OnFileSelectionChanged;
+
+            _saveCommand            = new RelayCommand(() => _ = _actions.SaveAsync());
+            _saveAllCommand         = new RelayCommand(() => _ = _actions.SaveAllAsync());
+            _removeAllTagsCommand   = new RelayCommand(() => _ = _actions.RemoveAllTagsAsync());
+            _lookupOnlineCommand    = new RelayCommand(() => _ = _actions.LookupOnlineAsync());
+            _autoLookupCommand      = new RelayCommand(() => _ = _actions.AutoLookupAsync());
+            _applyToAllCommand      = new RelayCommand(() => _ = _actions.ApplyToAllAsync());
+            _removeCoverCommand     = new RelayCommand(() => _ = _actions.RemoveCoverAsync());
             _loadCoverCommand       = new RelayCommand(() => LoadCoverRequested?.Invoke(this, EventArgs.Empty));
-            _applyCoverToAllCommand = new RelayCommand(() => _ = ApplyCoverToAllAsync());
-            _previewRenameCommand   = new RelayCommand(() => _ = PreviewRenameAsync());
-            _executeRenameCommand   = new RelayCommand(() => _ = ExecuteRenameAsync());
+            _applyCoverToAllCommand = new RelayCommand(() => _ = _actions.ApplyCoverToAllAsync());
+            _previewRenameCommand   = new RelayCommand(() => _ = _actions.PreviewRenameAsync());
+            _executeRenameCommand   = new RelayCommand(() => _ = _actions.ExecuteRenameAsync());
 
             SaveCommand            = _saveCommand;
             SaveAllCommand         = _saveAllCommand;
@@ -169,161 +121,121 @@ namespace EchoPlay.App.ViewModels
             RefreshCommandStates();
         }
 
-        // --- Dateiliste ---
+        // ── Sub-VMs ─────────────────────────────────────────────────────────────
 
-        /// <summary>Liste aller Audiodateien im geöffneten Ordner.</summary>
-        public ObservableCollection<TagFileItemViewModel> Files
-        {
-            get => _files;
-            private set
-            {
-                if (SetProperty(ref _files, value))
-                {
-                    OnPropertyChanged(nameof(HasFiles));
-                    RefreshCommandStates();
-                }
-            }
-        }
+        /// <summary>Sub-VM für die Dateiliste und Ordnerauswahl.</summary>
+        public TagFileListViewModel FileListVM { get; }
 
-        /// <summary>
-        /// Aktuell ausgewählte Datei (bei Einzelauswahl).
-        /// Wird intern über <see cref="SetSelectedFiles"/> gesetzt.
-        /// </summary>
-        public TagFileItemViewModel? SelectedFile
-        {
-            get => _selectedFile;
-            private set
-            {
-                SetProperty(ref _selectedFile, value);
-                OnPropertyChanged(nameof(HasSelectedFile));
-            }
-        }
+        /// <summary>Sub-VM für die Tag-Editor-Felder (Titel, Album, Interpret …).</summary>
+        public TagEditorFieldsViewModel EditorVM { get; }
+
+        /// <summary>Sub-VM für die Cover-Anzeige und -Verwaltung.</summary>
+        public TagCoverViewModel CoverVM { get; }
+
+        /// <summary>Sub-VM für Umbenennungs-Muster und -Vorschau.</summary>
+        public TagRenameViewModel RenameVM { get; }
+
+        // ── Events (Top-VM → Page) ──────────────────────────────────────────────
 
         /// <summary>
-        /// Alle aktuell ausgewählten Dateien (bei Mehrfachauswahl).
+        /// Wird ausgelöst, wenn der Online-Lookup fertig ist. Die Page zeigt einen ContentDialog.
         /// </summary>
-        public IReadOnlyList<TagFileItemViewModel> SelectedFiles
-        {
-            get => _selectedFiles;
-            private set => SetProperty(ref _selectedFiles, value);
-        }
+        public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
 
         /// <summary>
-        /// Wird vom Code-Behind bei SelectionChanged aufgerufen.
-        /// Entscheidet ob Einzel- oder Mehrfachauswahl vorliegt und lädt die Tags.
+        /// Wird ausgelöst, wenn der Auto-Lookup einen eindeutigen Treffer gefunden hat.
+        /// Die Page zeigt eine Bestätigungs-InfoBar.
         /// </summary>
-        /// <param name="selectedItems">Die aktuell selektierten Dateien.</param>
-        public void SetSelectedFiles(IReadOnlyList<TagFileItemViewModel> selectedItems)
-        {
-            SelectedFiles = selectedItems;
-            _editedFields.Clear();
+        public event EventHandler<TagLookupCandidate>? AutoLookupApplied;
 
-            if (selectedItems.Count == 1)
-            {
-                SelectedFile = selectedItems[0];
-                _ = LoadFileTagsAsync(selectedItems[0]);
-            }
-            else if (selectedItems.Count > 1)
-            {
-                SelectedFile = null;
-                _ = LoadMultipleFileTagsAsync(selectedItems);
-            }
-            else
-            {
-                SelectedFile = null;
-                ClearTagFields();
-            }
+        /// <summary>Wird ausgelöst, wenn der Nutzer ein Cover per Datei-Picker laden möchte.</summary>
+        public event EventHandler? LoadCoverRequested;
 
-            RefreshCommandStates();
-        }
+        /// <summary>Wird ausgelöst, wenn die Rename-Vorschau nach „Alle taggen" bereit ist.</summary>
+        public event EventHandler? RenamePreviewReady;
 
-        // --- Bearbeitbare Tag-Felder (als string, damit die TextBox-Bindung reibungslos funktioniert) ---
+        // ── Pass-Through-Eigenschaften: Dateiliste ──────────────────────────────
 
-        /// <summary>Titel des Tracks.</summary>
-        public string? Title
-        {
-            get => _title;
-            set { SetProperty(ref _title, value); _editedFields.Add(nameof(Title)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagFileListViewModel.Files"/>
+        public ObservableCollection<TagFileItemViewModel> Files => FileListVM.Files;
 
-        /// <summary>Album des Tracks.</summary>
-        public string? Album
-        {
-            get => _album;
-            set { SetProperty(ref _album, value); _editedFields.Add(nameof(Album)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagFileListViewModel.SelectedFile"/>
+        public TagFileItemViewModel? SelectedFile => FileListVM.SelectedFile;
 
-        /// <summary>Haupt-Interpret des Tracks.</summary>
-        public string? Artist
-        {
-            get => _artist;
-            set { SetProperty(ref _artist, value); _editedFields.Add(nameof(Artist)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagFileListViewModel.SelectedFiles"/>
+        public IReadOnlyList<TagFileItemViewModel> SelectedFiles => FileListVM.SelectedFiles;
 
-        /// <summary>Album-Künstler (kann von Artist abweichen, z.B. bei Samplern).</summary>
-        public string? AlbumArtist
-        {
-            get => _albumArtist;
-            set { SetProperty(ref _albumArtist, value); _editedFields.Add(nameof(AlbumArtist)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagFileListViewModel.HasFiles"/>
+        public bool HasFiles => FileListVM.HasFiles;
 
-        /// <summary>Erscheinungsjahr als Text – muss beim Speichern in uint geparst werden.</summary>
-        public string? Year
-        {
-            get => _year;
-            set { SetProperty(ref _year, value); _editedFields.Add(nameof(Year)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagFileListViewModel.HasSelectedFile"/>
+        public bool HasSelectedFile => FileListVM.HasSelectedFile;
 
-        /// <summary>Tracknummer als Text.</summary>
-        public string? TrackNumber
-        {
-            get => _trackNumber;
-            set { SetProperty(ref _trackNumber, value); _editedFields.Add(nameof(TrackNumber)); HasUnsavedChanges = true; }
-        }
+        // ── Pass-Through-Eigenschaften: Editor-Felder ───────────────────────────
 
-        /// <summary>Gesamtanzahl Tracks als Text.</summary>
-        public string? TrackCount
-        {
-            get => _trackCount;
-            set { SetProperty(ref _trackCount, value); _editedFields.Add(nameof(TrackCount)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagEditorFieldsViewModel.Title"/>
+        public string? Title { get => EditorVM.Title; set => EditorVM.Title = value; }
 
-        /// <summary>Genre des Tracks.</summary>
-        public string? Genre
-        {
-            get => _genre;
-            set { SetProperty(ref _genre, value); _editedFields.Add(nameof(Genre)); HasUnsavedChanges = true; }
-        }
+        /// <inheritdoc cref="TagEditorFieldsViewModel.Album"/>
+        public string? Album { get => EditorVM.Album; set => EditorVM.Album = value; }
 
-        // --- Cover-Anzeige (nur lesend – keine Rückbindung) ---
+        /// <inheritdoc cref="TagEditorFieldsViewModel.Artist"/>
+        public string? Artist { get => EditorVM.Artist; set => EditorVM.Artist = value; }
 
-        /// <summary>
-        /// Cover-Bild zur Anzeige als <see cref="BitmapImage"/>.
-        /// Wird nur über <see cref="LoadFileTagsAsync"/> oder <see cref="RemoveCoverAsync"/> gesetzt.
-        /// </summary>
-        public BitmapImage? CoverImage
-        {
-            get => _coverImage;
-            private set
-            {
-                SetProperty(ref _coverImage, value);
-                OnPropertyChanged(nameof(CoverVisibility));
-                RefreshCommandStates();
-            }
-        }
+        /// <inheritdoc cref="TagEditorFieldsViewModel.AlbumArtist"/>
+        public string? AlbumArtist { get => EditorVM.AlbumArtist; set => EditorVM.AlbumArtist = value; }
 
-        // --- Lade- und Zustandsanzeige ---
+        /// <inheritdoc cref="TagEditorFieldsViewModel.Year"/>
+        public string? Year { get => EditorVM.Year; set => EditorVM.Year = value; }
 
-        /// <summary>Gibt an, ob gerade Tags aus einer Datei geladen werden.</summary>
+        /// <inheritdoc cref="TagEditorFieldsViewModel.TrackNumber"/>
+        public string? TrackNumber { get => EditorVM.TrackNumber; set => EditorVM.TrackNumber = value; }
+
+        /// <inheritdoc cref="TagEditorFieldsViewModel.TrackCount"/>
+        public string? TrackCount { get => EditorVM.TrackCount; set => EditorVM.TrackCount = value; }
+
+        /// <inheritdoc cref="TagEditorFieldsViewModel.Genre"/>
+        public string? Genre { get => EditorVM.Genre; set => EditorVM.Genre = value; }
+
+        /// <inheritdoc cref="TagEditorFieldsViewModel.HasPendingBatchTag"/>
+        public bool HasPendingBatchTag => EditorVM.HasPendingBatchTag;
+
+        // ── Pass-Through-Eigenschaften: Cover ───────────────────────────────────
+
+        /// <inheritdoc cref="TagCoverViewModel.CoverImage"/>
+        public BitmapImage? CoverImage => CoverVM.CoverImage;
+
+        /// <inheritdoc cref="TagCoverViewModel.CoverVisibility"/>
+        public Visibility CoverVisibility => CoverVM.CoverVisibility;
+
+        // ── Pass-Through-Eigenschaften: Rename ──────────────────────────────────
+
+        /// <inheritdoc cref="TagRenameViewModel.RenamePattern"/>
+        public string RenamePattern { get => RenameVM.RenamePattern; set => RenameVM.RenamePattern = value; }
+
+        /// <inheritdoc cref="TagRenameViewModel.RenamePreview"/>
+        public IReadOnlyList<RenamePreviewDisplay> RenamePreview => RenameVM.RenamePreview;
+
+        /// <inheritdoc cref="TagRenameViewModel.RenamePreviewVisibility"/>
+        public Visibility RenamePreviewVisibility => RenameVM.RenamePreviewVisibility;
+
+        // ── Zustand am Top-VM ───────────────────────────────────────────────────
+
+        /// <summary>Gibt an, ob gerade Tags geladen, gespeichert oder eine Batch-Operation läuft.</summary>
         public bool IsLoading
         {
             get => _isLoading;
             private set
             {
-                SetProperty(ref _isLoading, value);
-                OnPropertyChanged(nameof(IsLoadingVisibility));
+                if (SetProperty(ref _isLoading, value))
+                {
+                    OnPropertyChanged(nameof(IsLoadingVisibility));
+                }
             }
         }
+
+        /// <summary>Sichtbarkeit des Lade-Indikators.</summary>
+        public Visibility IsLoadingVisibility => IsLoading ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>Gibt an, ob gerade eine MusicBrainz-Suche läuft.</summary>
         public bool IsLookingUp
@@ -331,154 +243,71 @@ namespace EchoPlay.App.ViewModels
             get => _isLookingUp;
             private set
             {
-                SetProperty(ref _isLookingUp, value);
-                OnPropertyChanged(nameof(IsLookingUpVisibility));
-                RefreshCommandStates();
+                if (SetProperty(ref _isLookingUp, value))
+                {
+                    OnPropertyChanged(nameof(IsLookingUpVisibility));
+                    RefreshCommandStates();
+                }
             }
         }
 
+        /// <summary>Sichtbarkeit des Lookup-Indikators.</summary>
+        public Visibility IsLookingUpVisibility => IsLookingUp ? Visibility.Visible : Visibility.Collapsed;
+
         /// <summary>
         /// Statustext des Auto-Lookups – zeigt die verwendete Suchanfrage während der Suche,
-        /// danach den übernommenen Ergebnisnamen oder eine leere Zeichenkette im Ruhezustand.
+        /// danach eine leere Zeichenkette.
         /// </summary>
         public string AutoLookupStatusText
         {
             get => _autoLookupStatusText;
             private set
             {
-                SetProperty(ref _autoLookupStatusText, value);
-                OnPropertyChanged(nameof(AutoLookupStatusVisibility));
+                if (SetProperty(ref _autoLookupStatusText, value))
+                {
+                    OnPropertyChanged(nameof(AutoLookupStatusVisibility));
+                }
             }
         }
 
-        /// <summary>
-        /// Fortschrittstext für Batch-Operationen (z.B. "Datei 5 von 20…").
-        /// Leer wenn keine Batch-Operation läuft.
-        /// </summary>
+        /// <summary>Sichtbarkeit des Auto-Lookup-Statustexts.</summary>
+        public Visibility AutoLookupStatusVisibility =>
+            string.IsNullOrEmpty(_autoLookupStatusText) ? Visibility.Collapsed : Visibility.Visible;
+
+        /// <summary>Fortschrittstext für Batch-Operationen.</summary>
         public string BatchProgressText
         {
             get => _batchProgressText;
             private set
             {
-                SetProperty(ref _batchProgressText, value);
-                OnPropertyChanged(nameof(BatchProgressVisibility));
+                if (SetProperty(ref _batchProgressText, value))
+                {
+                    OnPropertyChanged(nameof(BatchProgressVisibility));
+                }
             }
         }
 
+        /// <summary>Sichtbarkeit des Batch-Fortschrittstexts.</summary>
+        public Visibility BatchProgressVisibility =>
+            string.IsNullOrEmpty(_batchProgressText) ? Visibility.Collapsed : Visibility.Visible;
+
         /// <summary>
-        /// Gibt an, ob ungespeicherte Änderungen vorhanden sind.
-        /// Wird bei jeder Feldänderung auf <c>true</c> gesetzt und nach dem Speichern zurückgesetzt.
+        /// Gibt an, ob ungespeicherte Änderungen vorhanden sind. Wird bei jeder Feld- oder
+        /// Cover-Änderung auf <c>true</c> gesetzt und nach dem Speichern zurückgesetzt.
         /// </summary>
         public bool HasUnsavedChanges
         {
             get => _hasUnsavedChanges;
             private set
             {
-                SetProperty(ref _hasUnsavedChanges, value);
-                RefreshCommandStates();
-            }
-        }
-
-        // --- Datei-Umbenennung nach Muster ---
-
-        /// <summary>
-        /// Muster für die Umbenennung, z.B. <c>"{track:00} - {title}"</c>.
-        /// Unterstützte Platzhalter: {title}, {album}, {artist}, {year},
-        /// {track}, {track:00}, {track:000}, {filename}.
-        /// </summary>
-        public string RenamePattern
-        {
-            get => _renamePattern;
-            set
-            {
-                if (SetProperty(ref _renamePattern, value))
+                if (SetProperty(ref _hasUnsavedChanges, value))
                 {
-                    // Nach Musteränderung alte Vorschau zurücksetzen – sie wäre veraltet
-                    SetRenamePreviewItems([]);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Vorschau der Umbenennung als Display-Modelle für die Page-Bindung.
-        /// </summary>
-        public IReadOnlyList<RenamePreviewDisplay> RenamePreview
-        {
-            get => _renamePreview;
-            private set
-            {
-                if (SetProperty(ref _renamePreview, value))
-                {
-                    OnPropertyChanged(nameof(RenamePreviewVisibility));
                     RefreshCommandStates();
                 }
             }
         }
 
-        /// <summary>
-        /// Setzt die Umbenennungs-Vorschau aus den Modul-Items und mappt sie für die UI-Bindung.
-        /// </summary>
-        private void SetRenamePreviewItems(IReadOnlyList<RenamePreviewItem> items)
-        {
-            _renamePreviewItems = items;
-
-            List<RenamePreviewDisplay> displays = new(items.Count);
-            foreach (RenamePreviewItem item in items)
-            {
-                displays.Add(new RenamePreviewDisplay(item.OldName, item.NewName));
-            }
-            RenamePreview = displays;
-        }
-
-        // --- Berechnete Visibility-Properties (kein Converter nötig) ---
-
-        /// <summary>Ob mindestens eine Datei in der Liste vorhanden ist.</summary>
-        public bool HasFiles => _files.Count > 0;
-
-        /// <summary>
-        /// Ob die Formularfelder aktiv sind – bei Einzel- oder Mehrfachauswahl.
-        /// </summary>
-        public bool HasSelectedFile => SelectedFile is not null || _selectedFiles.Count > 1;
-
-        /// <summary>
-        /// Sichtbarkeit des Lade-Indikators – sichtbar während Tags oder Ordner geladen werden.
-        /// </summary>
-        public Visibility IsLoadingVisibility => IsLoading ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Sichtbarkeit des Lookup-Indikators – sichtbar während MusicBrainz-Suche läuft.
-        /// </summary>
-        public Visibility IsLookingUpVisibility => IsLookingUp ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Sichtbarkeit des Auto-Lookup-Statustexts – sichtbar sobald ein Text gesetzt ist.
-        /// </summary>
-        public Visibility AutoLookupStatusVisibility =>
-            string.IsNullOrEmpty(_autoLookupStatusText) ? Visibility.Collapsed : Visibility.Visible;
-
-        /// <summary>
-        /// Sichtbarkeit des Cover-Bilds – sichtbar wenn ein Cover vorhanden ist.
-        /// </summary>
-        public Visibility CoverVisibility => CoverImage is not null ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Sichtbarkeit des Batch-Fortschrittstexts – sichtbar während einer Batch-Operation.
-        /// </summary>
-        public Visibility BatchProgressVisibility =>
-            string.IsNullOrEmpty(_batchProgressText) ? Visibility.Collapsed : Visibility.Visible;
-
-        /// <summary>
-        /// Ob ein Batch-Tag aus einem Lookup bereitsteht und auf alle Dateien angewendet werden kann.
-        /// </summary>
-        public bool HasPendingBatchTag => _pendingBatchTag is not null;
-
-        /// <summary>
-        /// Sichtbarkeit der Umbenennungs-Vorschauliste – sichtbar wenn eine Vorschau berechnet wurde.
-        /// </summary>
-        public Visibility RenamePreviewVisibility =>
-            _renamePreviewItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-        // --- Commands ---
+        // ── Commands ────────────────────────────────────────────────────────────
 
         /// <summary>Speichert die aktuell angezeigten Tags in die ausgewählte Datei.</summary>
         public ICommand SaveCommand { get; }
@@ -489,24 +318,13 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Entfernt alle Tags der ausgewählten Datei nach Bestätigung.</summary>
         public ICommand RemoveAllTagsCommand { get; }
 
-        /// <summary>
-        /// Sucht online nach Tags bei MusicBrainz.
-        /// Feuert nach Abschluss <see cref="LookupResultsReady"/>, damit die Page den Dialog zeigen kann.
-        /// </summary>
+        /// <summary>Sucht online nach Tags bei MusicBrainz.</summary>
         public ICommand LookupOnlineCommand { get; }
 
-        /// <summary>
-        /// Baut die Suchanfrage automatisch aus dem Ordnerkontext (Serienname + Folgenname)
-        /// und übernimmt Tags ohne Dialog, wenn ein eindeutiger Treffer mit passender Track-Anzahl
-        /// gefunden wird. Sonst wird <see cref="LookupResultsReady"/> gefeuert.
-        /// </summary>
+        /// <summary>Baut die Suchanfrage automatisch aus dem Ordnerkontext.</summary>
         public ICommand AutoLookupCommand { get; }
 
-        /// <summary>
-        /// Wendet die gemeinsamen Tags aus dem letzten Lookup auf alle Dateien im Ordner an.
-        /// Album, Artist, AlbumArtist, Year, Genre und TrackCount werden überschrieben,
-        /// Title und TrackNumber bleiben datei-individuell erhalten.
-        /// </summary>
+        /// <summary>Wendet die gemeinsamen Tags aus dem letzten Lookup auf alle Dateien an.</summary>
         public ICommand ApplyToAllCommand { get; }
 
         /// <summary>Entfernt das Cover-Bild aus der ausgewählten Datei.</summary>
@@ -518,908 +336,115 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Schreibt das aktuelle Cover-Bild auf alle Dateien im Ordner.</summary>
         public ICommand ApplyCoverToAllCommand { get; }
 
-        /// <summary>
-        /// Berechnet die Umbennungs-Vorschau ohne Dateien zu verändern.
-        /// Nur aktiv wenn Dateien geladen sind und ein Muster eingegeben wurde.
-        /// </summary>
+        /// <summary>Berechnet die Umbenennungs-Vorschau.</summary>
         public ICommand PreviewRenameCommand { get; }
 
-        /// <summary>
-        /// Führt die Umbenennung nach Bestätigung durch.
-        /// Nur aktiv wenn eine Vorschau berechnet wurde.
-        /// </summary>
+        /// <summary>Führt die Umbenennung nach Bestätigung durch.</summary>
         public ICommand ExecuteRenameCommand { get; }
 
-        // --- Öffentliche Methoden ---
+        // ── Öffentliche Methoden (Delegation an den Orchestrator) ──────────────
+
+        /// <inheritdoc cref="TagManagerActions.LoadFolderAsync"/>
+        public Task LoadFolderAsync(string folderPath) => _actions.LoadFolderAsync(folderPath);
+
+        /// <summary>Wird vom Page-Code-Behind bei SelectionChanged aufgerufen.</summary>
+        public void SetSelectedFiles(IReadOnlyList<TagFileItemViewModel> selectedItems)
+            => FileListVM.SetSelectedFiles(selectedItems);
+
+        /// <inheritdoc cref="TagManagerActions.ApplyLookupCandidate"/>
+        public void ApplyLookupCandidate(int index) => _actions.ApplyLookupCandidate(index);
 
         /// <summary>
-        /// Lädt alle unterstützten Audiodateien aus dem angegebenen Ordner in die Dateiliste.
+        /// Übernimmt ein Lookup-Ergebnis direkt in die Editor-Felder. <c>internal</c>, weil
+        /// das Tests-Projekt diese Methode zur direkten Validierung der Formularbefüllung nutzt.
         /// </summary>
-        /// <param name="folderPath">Absoluter Pfad zum Ordner.</param>
-        public async Task LoadFolderAsync(string folderPath)
+        internal void ApplyLookupResult(TagLookupResult result) => _actions.ApplyLookupResult(result);
+
+        /// <summary>Setzt das Cover aus einem vom Nutzer geladenen Bild.</summary>
+        public void SetCoverFromFile(byte[] imageData, string mimeType)
+            => CoverVM.SetFromFile(imageData, mimeType);
+
+        // ── Statische Helfer (für Tests beibehalten) ────────────────────────────
+
+        /// <summary>
+        /// Baut die Suchanfrage aus dem Ordnerkontext – delegiert an einen Helper-Coordinator.
+        /// Bleibt als statischer Shim, damit bestehende Unit-Tests weiter kompilieren.
+        /// </summary>
+        internal static string BuildAutoLookupQuery(string? folderPath)
+            => new TagLookupCoordinator(new NullLookupService()).BuildAutoLookupQuery(folderPath);
+
+        /// <summary>
+        /// Wählt den besten Treffer aus den Lookup-Ergebnissen – delegiert an einen Helper-Coordinator.
+        /// Bleibt als statischer Shim, damit bestehende Unit-Tests weiter kompilieren.
+        /// </summary>
+        internal static TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
+            => new TagLookupCoordinator(new NullLookupService()).SelectBestMatch(results, loadedTrackCount);
+
+        private sealed class NullLookupService : ITagLookupService
         {
-            IsLoading          = true;
-            _currentFolderPath = folderPath;
-            _pendingBatchTag   = null;
-            OnPropertyChanged(nameof(HasPendingBatchTag));
-            Files              = [];
-            SetRenamePreviewItems([]);
-            ClearTagFields();
-
-            try
-            {
-                IReadOnlyList<(string FilePath, AudioTag Tag)> results = await _tagService.ReadFolderAsync(folderPath);
-
-                ObservableCollection<TagFileItemViewModel> items = new();
-
-                foreach ((string path, AudioTag _) in results)
-                {
-                    items.Add(new TagFileItemViewModel(path, folderPath));
-                }
-
-                Files = items;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerFolderLoadErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            public Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, System.Threading.CancellationToken cancellationToken = default)
+                => Task.FromResult<IReadOnlyList<TagLookupResult>>([]);
         }
 
-        /// <summary>
-        /// Lädt die Tags der angegebenen Datei in die Formularfelder.
-        /// </summary>
-        /// <param name="file">Das ViewModel der zu ladenden Datei.</param>
-        public async Task LoadFileTagsAsync(TagFileItemViewModel file)
+        // ── Sub-VM-Verdrahtung ─────────────────────────────────────────────────
+
+        private void OnSubVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            IsLoading = true;
-            ClearTagFields();
-
-            try
-            {
-                AudioTag tag = await _tagService.ReadAsync(file.FilePath);
-                PopulateTagFields(tag);
-                HasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerTagLoadErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Lädt die Tags mehrerer Dateien und zeigt gemeinsame Werte an.
-        /// Felder mit unterschiedlichen Werten zeigen den Platzhalter "(verschieden)".
-        /// </summary>
-        /// <param name="files">Die selektierten Dateien.</param>
-        public async Task LoadMultipleFileTagsAsync(IReadOnlyList<TagFileItemViewModel> files)
-        {
-            IsLoading = true;
-            ClearTagFields();
-
-            try
-            {
-                List<AudioTag> tags = new(files.Count);
-
-                foreach (TagFileItemViewModel file in files)
-                {
-                    AudioTag tag = await _tagService.ReadAsync(file.FilePath);
-                    tags.Add(tag);
-                }
-
-                // Gemeinsame Werte berechnen: wenn alle gleich → Wert anzeigen, sonst Platzhalter
-                AudioTag first = tags[0];
-
-                _title       = tags.All(t => t.Title == first.Title)             ? first.Title       : MixedValuePlaceholder;
-                _album       = tags.All(t => t.Album == first.Album)             ? first.Album       : MixedValuePlaceholder;
-                _artist      = tags.All(t => t.Artist == first.Artist)           ? first.Artist      : MixedValuePlaceholder;
-                _albumArtist = tags.All(t => t.AlbumArtist == first.AlbumArtist) ? first.AlbumArtist : MixedValuePlaceholder;
-                _genre       = tags.All(t => t.Genre == first.Genre)             ? first.Genre       : MixedValuePlaceholder;
-
-                _year = tags.All(t => t.Year == first.Year)
-                    ? first.Year?.ToString(CultureInfo.InvariantCulture)
-                    : MixedValuePlaceholder;
-
-                _trackNumber = tags.All(t => t.TrackNumber == first.TrackNumber)
-                    ? first.TrackNumber?.ToString(CultureInfo.InvariantCulture)
-                    : MixedValuePlaceholder;
-
-                _trackCount = tags.All(t => t.TrackCount == first.TrackCount)
-                    ? first.TrackCount?.ToString(CultureInfo.InvariantCulture)
-                    : MixedValuePlaceholder;
-
-                OnPropertyChanged(nameof(Title));
-                OnPropertyChanged(nameof(Album));
-                OnPropertyChanged(nameof(Artist));
-                OnPropertyChanged(nameof(AlbumArtist));
-                OnPropertyChanged(nameof(Year));
-                OnPropertyChanged(nameof(TrackNumber));
-                OnPropertyChanged(nameof(TrackCount));
-                OnPropertyChanged(nameof(Genre));
-
-                // Cover: nur anzeigen wenn alle Dateien dasselbe Cover haben
-                _coverImageData = null;
-                _coverMimeType  = null;
-                CoverImage      = null;
-
-                HasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerTagLoadErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Übernimmt das vom Nutzer im Dialog gewählte Suchergebnis anhand seines Index in
-        /// der zuletzt gemeldeten Lookup-Trefferliste. So muss die Page die Domänen-Klasse
-        /// <c>TagLookupResult</c> nicht selbst kennen.
-        /// </summary>
-        /// <param name="index">Index des gewählten Treffers in der zuletzt gemeldeten Liste.</param>
-        public void ApplyLookupCandidate(int index)
-        {
-            if (index < 0 || index >= _lastLookupResults.Count)
-            {
-                return;
-            }
-
-            ApplyLookupResult(_lastLookupResults[index]);
-        }
-
-        /// <summary>
-        /// Mappt ein einzelnes <see cref="TagLookupResult"/> auf das App-eigene
-        /// Display-Modell <see cref="TagLookupCandidate"/>.
-        /// </summary>
-        private static TagLookupCandidate ToCandidate(TagLookupResult result, int index) =>
-            new(index, result.Title, result.Artist, result.Album, result.Year, result.TrackCount, result.Genre, result.Source);
-
-        /// <summary>
-        /// Mappt eine Liste von Lookup-Ergebnissen auf die App-eigenen Display-Modelle.
-        /// Der Index entspricht der Position in <c>_lastLookupResults</c>, sodass die Page
-        /// nach Auswahl per <see cref="ApplyLookupCandidate"/> wieder den passenden Treffer findet.
-        /// </summary>
-        private static IReadOnlyList<TagLookupCandidate> ToCandidates(IReadOnlyList<TagLookupResult> results)
-        {
-            List<TagLookupCandidate> candidates = new(results.Count);
-            for (int i = 0; i < results.Count; i++)
-            {
-                candidates.Add(ToCandidate(results[i], i));
-            }
-            return candidates;
-        }
-
-        /// <summary>
-        /// Übernimmt Felder aus einem Lookup-Ergebnis in die Formularfelder.
-        /// Nur nicht-null-Felder werden übernommen – bestehende Werte bleiben erhalten.
-        /// Intern aufgerufen von <see cref="ApplyLookupCandidate"/> sowie aus dem Auto-Lookup.
-        /// <c>internal</c>, weil das App.Tests-Projekt die Methode zur direkten Validierung der
-        /// Formularfeld-Befüllung nutzt; aus dem Views-Ordner darf sie nicht aufgerufen werden.
-        /// </summary>
-        /// <param name="result">Das vom Nutzer im Dialog gewählte Suchergebnis.</param>
-        internal void ApplyLookupResult(TagLookupResult result)
-        {
-            if (result.Title is not null)    Title      = result.Title;
-            if (result.Artist is not null)   Artist     = result.Artist;
-            if (result.Album is not null)    Album      = result.Album;
-            if (result.Genre is not null)    Genre      = result.Genre;
-            if (result.Year.HasValue)        Year       = result.Year.Value.ToString(CultureInfo.InvariantCulture);
-            if (result.TrackCount.HasValue)  TrackCount = result.TrackCount.Value.ToString(CultureInfo.InvariantCulture);
-            HasUnsavedChanges = true;
-
-            // Gemeinsame Tags für "Alle taggen" zwischenspeichern
-            _pendingBatchTag = new AudioTag
-            {
-                Album       = result.Album,
-                Artist      = result.Artist,
-                AlbumArtist = result.Artist,
-                Genre       = result.Genre,
-                Year        = result.Year,
-                TrackCount  = result.TrackCount
-            };
-            OnPropertyChanged(nameof(HasPendingBatchTag));
+            OnPropertyChanged(e.PropertyName);
             RefreshCommandStates();
         }
 
-        // --- Private Methoden ---
-
-        private async Task SaveAsync()
+        private void OnFileSelectionChanged(IReadOnlyList<TagFileItemViewModel> selectedItems)
         {
-            // Einzelauswahl: alle Felder schreiben
-            if (SelectedFile is not null)
+            if (selectedItems.Count == 1)
             {
-                try
-                {
-                    AudioTag tag = BuildAudioTagFromFields();
-                    await _tagService.WriteAsync(SelectedFile.FilePath, tag);
-
-                    SelectedFile.IsModified = false;
-                    HasUnsavedChanges = false;
-                }
-                catch (Exception ex)
-                {
-                    await _errorDialogService.ShowAsync(_resources.GetString("TagManagerSaveErrorTitle"), ex.Message);
-                }
-
-                return;
+                _ = _actions.LoadFileTagsAsync(selectedItems[0]);
             }
-
-            // Mehrfachauswahl: nur geänderte Felder auf alle selektierten Dateien schreiben
-            if (_selectedFiles.Count <= 1 || _editedFields.Count == 0) return;
-
-            IsLoading = true;
-            int processedCount = 0;
-
-            try
+            else if (selectedItems.Count > 1)
             {
-                AudioTag editedTag = BuildEditedFieldsTag();
-
-                foreach (TagFileItemViewModel file in _selectedFiles)
-                {
-                    processedCount++;
-                    BatchProgressText = string.Format(
-                        CultureInfo.CurrentCulture,
-                        _resources.GetString("TagManagerBatchProgressText"),
-                        processedCount, _selectedFiles.Count);
-
-                    // Bestehende Tags lesen und nur die geänderten Felder überschreiben
-                    AudioTag existingTag = await _tagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag = MergeEditedIntoExisting(editedTag, existingTag);
-                    await _tagService.WriteAsync(file.FilePath, mergedTag);
-                    file.IsModified = false;
-                }
-
-                HasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerSaveErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                BatchProgressText = string.Empty;
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Baut ein AudioTag nur aus den Feldern, die der Nutzer bei Mehrfachauswahl geändert hat.
-        /// Nicht-geänderte Felder sind null und werden beim Merge ignoriert.
-        /// </summary>
-        private AudioTag BuildEditedFieldsTag()
-        {
-            return new AudioTag
-            {
-                Title       = _editedFields.Contains(nameof(Title))       ? NullIfEmpty(Title)       : null,
-                Album       = _editedFields.Contains(nameof(Album))       ? NullIfEmpty(Album)       : null,
-                Artist      = _editedFields.Contains(nameof(Artist))      ? NullIfEmpty(Artist)      : null,
-                AlbumArtist = _editedFields.Contains(nameof(AlbumArtist)) ? NullIfEmpty(AlbumArtist) : null,
-                Genre       = _editedFields.Contains(nameof(Genre))       ? NullIfEmpty(Genre)       : null,
-                Year        = _editedFields.Contains(nameof(Year)) && uint.TryParse(Year, out uint y)           ? y    : null,
-                TrackNumber = _editedFields.Contains(nameof(TrackNumber)) && uint.TryParse(TrackNumber, out uint tn) ? tn : null,
-                TrackCount  = _editedFields.Contains(nameof(TrackCount)) && uint.TryParse(TrackCount, out uint tc)   ? tc : null
-            };
-        }
-
-        /// <summary>
-        /// Verschmilzt nur die vom Nutzer geänderten Felder in die bestehenden Tags einer Datei.
-        /// Null-Felder im editedTag bedeuten "nicht geändert" → bestehender Wert bleibt erhalten.
-        /// </summary>
-        private static AudioTag MergeEditedIntoExisting(AudioTag edited, AudioTag existing)
-        {
-            return new AudioTag
-            {
-                Title       = edited.Title       ?? existing.Title,
-                Album       = edited.Album       ?? existing.Album,
-                Artist      = edited.Artist      ?? existing.Artist,
-                AlbumArtist = edited.AlbumArtist ?? existing.AlbumArtist,
-                Genre       = edited.Genre       ?? existing.Genre,
-                Year        = edited.Year        ?? existing.Year,
-                TrackNumber = edited.TrackNumber  ?? existing.TrackNumber,
-                TrackCount  = edited.TrackCount   ?? existing.TrackCount
-            };
-        }
-
-        private async Task RemoveAllTagsAsync()
-        {
-            if (SelectedFile is null) return;
-
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerRemoveAllTitle"),
-                string.Format(CultureInfo.CurrentCulture, _resources.GetString("TagManagerRemoveAllMessage"), SelectedFile.FileName));
-
-            if (!confirmed) return;
-
-            try
-            {
-                await _tagService.RemoveAllTagsAsync(SelectedFile.FilePath);
-                ClearTagFields();
-                HasUnsavedChanges = false;
-                SelectedFile.IsModified = false;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerRemoveTagsErrorTitle"), ex.Message);
-            }
-        }
-
-        private async Task LookupOnlineAsync()
-        {
-            if (!HasSelectedFile) return;
-
-            // Offline-Modus: Nutzer fragen, ob trotzdem ins Internet gegangen werden soll
-            using IDisposable? onlineScope = await _onlineAccessGuard.RequestOnlineAccessAsync();
-            if (onlineScope is null) return;
-
-            // Suchbegriff aus Titel oder Dateiname zusammenbauen
-            TagFileItemViewModel firstSelected = SelectedFile ?? _selectedFiles[0];
-            string query = !string.IsNullOrWhiteSpace(Title) && Title != MixedValuePlaceholder
-                ? Title
-                : Path.GetFileNameWithoutExtension(firstSelected.FilePath);
-
-            IsLookingUp = true;
-            try
-            {
-                IReadOnlyList<TagLookupResult> results = await _lookupService.SearchAsync(query);
-                _lastLookupResults = results;
-                LookupResultsReady?.Invoke(this, ToCandidates(results));
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerLookupErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLookingUp = false;
-            }
-        }
-
-        private async Task AutoLookupAsync()
-        {
-            string query = BuildAutoLookupQuery(_currentFolderPath);
-
-            if (string.IsNullOrWhiteSpace(query)) return;
-
-            // Offline-Modus: Nutzer fragen, ob trotzdem ins Internet gegangen werden soll
-            using IDisposable? onlineScope = await _onlineAccessGuard.RequestOnlineAccessAsync();
-            if (onlineScope is null) return;
-
-            // Suchanfrage im UI anzeigen, damit der Nutzer nachvollziehen kann, was gesucht wird
-            AutoLookupStatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                _resources.GetString("TagManagerAutoLookupSearchingText"),
-                query);
-            IsLookingUp          = true;
-
-            try
-            {
-                IReadOnlyList<TagLookupResult> results = await _lookupService.SearchAsync(query);
-
-                // Besten Treffer anhand der Track-Anzahl ermitteln
-                int loadedTrackCount   = _files.Count;
-                TagLookupResult? match = SelectBestMatch(results, loadedTrackCount);
-
-                if (match is not null && match.TrackCount.HasValue
-                    && match.TrackCount.Value == (uint)loadedTrackCount)
-                {
-                    // Eindeutiger Treffer mit exakter Track-Anzahl → direkt übernehmen
-                    ApplyLookupResult(match);
-                    AutoLookupStatusText = string.Empty;
-                    AutoLookupApplied?.Invoke(this, ToCandidate(match, 0));
-                }
-                else
-                {
-                    // Kein eindeutiger Treffer → Auswahl-Dialog öffnen (sortiert nach Qualität)
-                    AutoLookupStatusText = string.Empty;
-
-                    List<TagLookupResult> sorted = results
-                        .OrderByDescending(r => r.TrackCount.HasValue && r.TrackCount.Value == (uint)loadedTrackCount)
-                        .ThenByDescending(r => r.TrackCount.HasValue)
-                        .ToList();
-
-                    _lastLookupResults = sorted;
-                    LookupResultsReady?.Invoke(this, ToCandidates(sorted));
-                }
-            }
-            catch (Exception ex)
-            {
-                AutoLookupStatusText = string.Empty;
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerAutoLookupErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLookingUp = false;
-            }
-        }
-
-        /// <summary>
-        /// Baut die MusicBrainz-Suchanfrage aus dem Ordnerkontext zusammen.
-        /// Serienname = übergeordneter Ordner, Folgenname = aktueller Ordner ohne führende Laufnummer.
-        /// </summary>
-        /// <param name="folderPath">Absoluter Pfad zum aktuell geöffneten Episodenordner.</param>
-        /// <returns>
-        /// Kombinierter Suchbegriff (z.B. „Die drei Fragezeichen Der Super-Papagei")
-        /// oder ein leerer String wenn kein Ordner geöffnet ist.
-        /// </returns>
-        internal static string BuildAutoLookupQuery(string? folderPath)
-        {
-            if (string.IsNullOrWhiteSpace(folderPath)) return string.Empty;
-
-            // Serienname aus dem übergeordneten Ordner
-            string seriesName = Path.GetFileName(Path.GetDirectoryName(folderPath)) ?? string.Empty;
-
-            // Folgentitel aus dem Ordnernamen – führende Laufnummer entfernen
-            // (z.B. "001 - Der Super-Papagei" → "Der Super-Papagei")
-            string episodeFolderName = Path.GetFileName(folderPath) ?? string.Empty;
-            string episodeTitle      = EpisodeFolderParser.StripLeadingSequenceNumber(episodeFolderName);
-
-            if (string.IsNullOrWhiteSpace(seriesName) || string.IsNullOrWhiteSpace(episodeTitle))
-            {
-                return string.Empty;
-            }
-
-            return $"{seriesName} {episodeTitle}";
-        }
-
-        /// <summary>
-        /// Wählt den besten Treffer aus einer Liste von Suchergebnissen anhand der Track-Anzahl.
-        /// Ein exakter Treffer (TrackCount == geladene Tracks) hat höchste Priorität.
-        /// </summary>
-        /// <param name="results">Suchergebnisse, sortiert nach MusicBrainz-Relevanz.</param>
-        /// <param name="loadedTrackCount">Anzahl der aktuell im TagManager geladenen Tracks.</param>
-        /// <returns>
-        /// Ergebnis mit exakter Track-Anzahl, erstes Ergebnis wenn keines passt, oder
-        /// <see langword="null"/> wenn die Liste leer ist.
-        /// </returns>
-        internal static TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
-        {
-            if (results.Count == 0) return null;
-
-            // Exakter Track-Count-Treffer bevorzugen
-            TagLookupResult? exactMatch = results.FirstOrDefault(
-                r => r.TrackCount.HasValue && r.TrackCount.Value == (uint)loadedTrackCount);
-
-            return exactMatch ?? results[0];
-        }
-
-        private async Task RemoveCoverAsync()
-        {
-            if (SelectedFile is null) return;
-
-            try
-            {
-                await _tagService.WriteCoverAsync(SelectedFile.FilePath, null);
-                _coverImageData = null;
-                _coverMimeType  = null;
-                CoverImage      = null;
-                HasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerCoverRemoveErrorTitle"), ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Speichert alle modifizierten Dateien auf einmal.
-        /// Liest die bestehenden Tags jeder Datei und überschreibt die gemeinsamen Felder
-        /// (Album, Artist, AlbumArtist, Year, Genre, TrackCount) aus dem Formular.
-        /// Title und TrackNumber bleiben individuell erhalten.
-        /// </summary>
-        private async Task SaveAllAsync()
-        {
-            List<TagFileItemViewModel> modifiedFiles = _files.Where(f => f.IsModified).ToList();
-
-            if (modifiedFiles.Count == 0) return;
-
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerSaveAllConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerSaveAllConfirmMessage"),
-                    modifiedFiles.Count));
-
-            if (!confirmed) return;
-
-            IsLoading = true;
-            int savedCount = 0;
-
-            try
-            {
-                // Gemeinsame Felder aus dem Formular
-                AudioTag sharedTag = BuildSharedTagFromFields();
-
-                foreach (TagFileItemViewModel file in modifiedFiles)
-                {
-                    savedCount++;
-                    BatchProgressText = string.Format(
-                        CultureInfo.CurrentCulture,
-                        _resources.GetString("TagManagerBatchProgressText"),
-                        savedCount, modifiedFiles.Count);
-
-                    AudioTag existingTag = await _tagService.ReadAsync(file.FilePath);
-
-                    // Gemeinsame Felder überschreiben, individuelle behalten
-                    AudioTag mergedTag = MergeSharedIntoExisting(sharedTag, existingTag);
-                    await _tagService.WriteAsync(file.FilePath, mergedTag);
-                    file.IsModified = false;
-                }
-
-                HasUnsavedChanges = false;
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(
-                    _resources.GetString("TagManagerSaveErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                BatchProgressText = string.Empty;
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Wendet die gemeinsamen Tags aus dem letzten Lookup auf alle Dateien im Ordner an.
-        /// Für jede Datei werden die bestehenden Tags gelesen und die gemeinsamen Felder
-        /// (Album, Artist, AlbumArtist, Year, Genre, TrackCount) überschrieben.
-        /// Title und TrackNumber bleiben datei-individuell erhalten.
-        /// </summary>
-        private async Task ApplyToAllAsync()
-        {
-            if (_pendingBatchTag is null || _files.Count == 0) return;
-
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerApplyToAllConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerApplyToAllConfirmMessage"),
-                    _files.Count));
-
-            if (!confirmed) return;
-
-            IsLoading = true;
-            int processedCount = 0;
-
-            try
-            {
-                foreach (TagFileItemViewModel file in _files)
-                {
-                    processedCount++;
-                    BatchProgressText = string.Format(
-                        CultureInfo.CurrentCulture,
-                        _resources.GetString("TagManagerBatchProgressText"),
-                        processedCount, _files.Count);
-
-                    AudioTag existingTag = await _tagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag = MergeSharedIntoExisting(_pendingBatchTag, existingTag);
-                    await _tagService.WriteAsync(file.FilePath, mergedTag);
-                    file.IsModified = false;
-                }
-
-                _pendingBatchTag = null;
-                OnPropertyChanged(nameof(HasPendingBatchTag));
-                HasUnsavedChanges = false;
-                RefreshCommandStates();
-
-                // Workflow-Verkettung: nach "Alle taggen" automatisch Rename-Vorschau aktualisieren
-                if (!string.IsNullOrWhiteSpace(_renamePattern) && !string.IsNullOrEmpty(_currentFolderPath))
-                {
-                    await PreviewRenameAsync();
-                    RenamePreviewReady?.Invoke(this, EventArgs.Empty);
-                }
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(
-                    _resources.GetString("TagManagerApplyToAllErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                BatchProgressText = string.Empty;
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Schreibt das aktuelle Cover-Bild auf alle Dateien im Ordner.
-        /// </summary>
-        private async Task ApplyCoverToAllAsync()
-        {
-            if (_coverImageData is null || _files.Count == 0) return;
-
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerCoverApplyAllConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerCoverApplyAllConfirmMessage"),
-                    _files.Count));
-
-            if (!confirmed) return;
-
-            IsLoading = true;
-            int processedCount = 0;
-            string mimeType = _coverMimeType ?? "image/jpeg";
-
-            try
-            {
-                foreach (TagFileItemViewModel file in _files)
-                {
-                    processedCount++;
-                    BatchProgressText = string.Format(
-                        CultureInfo.CurrentCulture,
-                        _resources.GetString("TagManagerBatchProgressText"),
-                        processedCount, _files.Count);
-
-                    await _tagService.WriteCoverAsync(file.FilePath, _coverImageData, mimeType);
-                }
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(
-                    _resources.GetString("TagManagerCoverApplyAllErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                BatchProgressText = string.Empty;
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Setzt das Cover-Bild aus den übergebenen Bilddaten.
-        /// Wird von der Page nach dem FileOpenPicker aufgerufen.
-        /// </summary>
-        /// <param name="imageData">Rohdaten des Bilds.</param>
-        /// <param name="mimeType">MIME-Typ des Bilds (z.B. "image/jpeg").</param>
-        public void SetCoverFromFile(byte[] imageData, string mimeType)
-        {
-            _coverImageData = imageData;
-            _coverMimeType  = mimeType;
-
-            BitmapImage bitmap = new();
-            using MemoryStream stream = new(imageData);
-            bitmap.SetSource(stream.AsRandomAccessStream());
-            CoverImage = bitmap;
-
-            HasUnsavedChanges = true;
-        }
-
-        /// <summary>
-        /// Baut ein <see cref="AudioTag"/> nur mit den gemeinsamen Feldern aus dem Formular.
-        /// Title und TrackNumber werden bewusst ausgelassen.
-        /// </summary>
-        private AudioTag BuildSharedTagFromFields()
-        {
-            return new AudioTag
-            {
-                Album       = NullIfEmpty(Album),
-                Artist      = NullIfEmpty(Artist),
-                AlbumArtist = NullIfEmpty(AlbumArtist),
-                Genre       = NullIfEmpty(Genre),
-                Year        = uint.TryParse(Year, out uint year) ? year : null,
-                TrackCount  = uint.TryParse(TrackCount, out uint trackCnt) ? trackCnt : null
-            };
-        }
-
-        /// <summary>
-        /// Verschmilzt gemeinsame Tags in die bestehenden Tags einer Datei.
-        /// Die individuellen Felder (Title, TrackNumber) stammen aus der bestehenden Datei,
-        /// die gemeinsamen Felder (Album, Artist, etc.) aus dem Batch-Tag.
-        /// </summary>
-        private static AudioTag MergeSharedIntoExisting(AudioTag shared, AudioTag existing)
-        {
-            return new AudioTag
-            {
-                // Individuelle Felder: aus der bestehenden Datei übernehmen
-                Title       = existing.Title,
-                TrackNumber = existing.TrackNumber,
-
-                // Gemeinsame Felder: aus dem Batch-Tag überschreiben
-                Album       = shared.Album ?? existing.Album,
-                Artist      = shared.Artist ?? existing.Artist,
-                AlbumArtist = shared.AlbumArtist ?? existing.AlbumArtist,
-                Genre       = shared.Genre ?? existing.Genre,
-                Year        = shared.Year ?? existing.Year,
-                TrackCount  = shared.TrackCount ?? existing.TrackCount
-            };
-        }
-
-        /// <summary>
-        /// Liest alle Tags aus dem aktuell geöffneten Ordner frisch und berechnet die Vorschau.
-        /// Die Tags werden nicht gecacht – so ist die Vorschau auch nach externen Tag-Änderungen korrekt.
-        /// </summary>
-        private async Task PreviewRenameAsync()
-        {
-            if (string.IsNullOrEmpty(_currentFolderPath)) return;
-
-            IsLoading = true;
-            try
-            {
-                IReadOnlyList<(string FilePath, AudioTag Tag)> filesWithTags =
-                    await _tagService.ReadFolderAsync(_currentFolderPath);
-
-                SetRenamePreviewItems(_fileRenameService.BuildPreview(filesWithTags, _renamePattern));
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerPreviewErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Benennt alle Dateien im Ordner nach Nutzerbestätigung um
-        /// und lädt danach den Ordner neu, damit die Dateiliste aktuell ist.
-        /// </summary>
-        private async Task ExecuteRenameAsync()
-        {
-            if (string.IsNullOrEmpty(_currentFolderPath)) return;
-
-            int previewCount = _renamePreviewItems.Count;
-
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerRenameConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerRenameConfirmMessage"),
-                    previewCount, _renamePattern));
-
-            if (!confirmed) return;
-
-            IsLoading = true;
-            try
-            {
-                IReadOnlyList<(string FilePath, AudioTag Tag)> filesWithTags =
-                    await _tagService.ReadFolderAsync(_currentFolderPath);
-
-                int renamedCount = await _fileRenameService.RenameAsync(filesWithTags, _renamePattern);
-
-                // Ordner neu laden – Dateinamen haben sich verändert
-                await LoadFolderAsync(_currentFolderPath);
-
-                if (renamedCount < previewCount)
-                {
-                    await _errorDialogService.ShowAsync(
-                        _resources.GetString("TagManagerRenamePartialErrorTitle"),
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            _resources.GetString("TagManagerRenamePartialErrorMessage"),
-                            renamedCount, previewCount));
-                }
-            }
-            catch (Exception ex)
-            {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerRenameErrorTitle"), ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// Befüllt alle Formularfelder mit den Werten des gegebenen <see cref="AudioTag"/>.
-        /// Setzt HasUnsavedChanges bewusst nicht – das geschieht erst nach echter Nutzeränderung.
-        /// </summary>
-        private void PopulateTagFields(AudioTag tag)
-        {
-            // HasUnsavedChanges darf hier nicht gesetzt werden – wir laden nur Daten, ändern nichts.
-            // Die Setter rufen SetProperty auf, was PropertyChanged feuert – genug für die UI.
-            _title       = tag.Title;
-            _album       = tag.Album;
-            _artist      = tag.Artist;
-            _albumArtist = tag.AlbumArtist;
-            _year        = tag.Year?.ToString(CultureInfo.InvariantCulture);
-            _trackNumber = tag.TrackNumber?.ToString(CultureInfo.InvariantCulture);
-            _trackCount  = tag.TrackCount?.ToString(CultureInfo.InvariantCulture);
-            _genre       = tag.Genre;
-
-            OnPropertyChanged(nameof(Title));
-            OnPropertyChanged(nameof(Album));
-            OnPropertyChanged(nameof(Artist));
-            OnPropertyChanged(nameof(AlbumArtist));
-            OnPropertyChanged(nameof(Year));
-            OnPropertyChanged(nameof(TrackNumber));
-            OnPropertyChanged(nameof(TrackCount));
-            OnPropertyChanged(nameof(Genre));
-
-            // Cover aus Byte-Array laden – MemoryStream wird in BitmapImage konvertiert
-            if (tag.CoverImageData is not null && tag.CoverImageData.Length > 0)
-            {
-                _coverImageData = tag.CoverImageData;
-                _coverMimeType  = tag.CoverMimeType;
-
-                BitmapImage bitmap = new();
-                using MemoryStream stream = new(tag.CoverImageData);
-                bitmap.SetSource(stream.AsRandomAccessStream());
-                CoverImage = bitmap;
+                _ = _actions.LoadMultipleFileTagsAsync(selectedItems);
             }
             else
             {
-                _coverImageData = null;
-                _coverMimeType  = null;
-                CoverImage      = null;
+                EditorVM.Clear();
+                CoverVM.Clear();
             }
-        }
 
-        private void ClearTagFields()
-        {
-            _editedFields.Clear();
-            _title = _album = _artist = _albumArtist = _year = _trackNumber = _trackCount = _genre = null;
-            OnPropertyChanged(nameof(Title));
-            OnPropertyChanged(nameof(Album));
-            OnPropertyChanged(nameof(Artist));
-            OnPropertyChanged(nameof(AlbumArtist));
-            OnPropertyChanged(nameof(Year));
-            OnPropertyChanged(nameof(TrackNumber));
-            OnPropertyChanged(nameof(TrackCount));
-            OnPropertyChanged(nameof(Genre));
-            _coverImageData = null;
-            _coverMimeType  = null;
-            CoverImage      = null;
-            HasUnsavedChanges = false;
+            RefreshCommandStates();
         }
-
-        /// <summary>
-        /// Baut ein <see cref="AudioTag"/> aus den aktuellen Formularfeldern zusammen.
-        /// Leere Strings werden als <see langword="null"/> übergeben, damit TagLib# bestehende Werte entfernt.
-        /// Jahreszahl und Tracknummern werden aus Strings geparst – ungültige Eingaben werden ignoriert.
-        /// </summary>
-        private AudioTag BuildAudioTagFromFields()
-        {
-            return new AudioTag
-            {
-                Title       = NullIfEmpty(Title),
-                Album       = NullIfEmpty(Album),
-                Artist      = NullIfEmpty(Artist),
-                AlbumArtist = NullIfEmpty(AlbumArtist),
-                Genre       = NullIfEmpty(Genre),
-                Year        = uint.TryParse(Year, out uint year) ? year : null,
-                TrackNumber = uint.TryParse(TrackNumber, out uint trackNum) ? trackNum : null,
-                TrackCount  = uint.TryParse(TrackCount, out uint trackCnt) ? trackCnt : null
-            };
-        }
-
-        private static string? NullIfEmpty(string? value)
-            => string.IsNullOrWhiteSpace(value) ? null : value;
 
         /// <summary>
         /// Aktualisiert den aktivierten/deaktivierten Zustand aller Commands anhand des aktuellen Zustands.
-        /// Muss nach jeder Zustandsänderung aufgerufen werden, die CanExecute beeinflusst.
         /// </summary>
         private void RefreshCommandStates()
         {
-            bool hasSelection = HasSelectedFile;
+            bool hasSelection = FileListVM.HasSelectedFile;
+            bool hasFiles     = FileListVM.HasFiles;
+
             _saveCommand.SetEnabled(HasUnsavedChanges && hasSelection);
-            _saveAllCommand.SetEnabled(HasFiles && _files.Any(f => f.IsModified));
-            _removeAllTagsCommand.SetEnabled(SelectedFile is not null);
+            _saveAllCommand.SetEnabled(hasFiles && HasAnyModifiedFile());
+            _removeAllTagsCommand.SetEnabled(FileListVM.SelectedFile is not null);
             _lookupOnlineCommand.SetEnabled(hasSelection && !IsLookingUp);
-            _autoLookupCommand.SetEnabled(HasFiles && !IsLookingUp && !string.IsNullOrEmpty(_currentFolderPath));
-            _applyToAllCommand.SetEnabled(HasFiles && _pendingBatchTag is not null);
-            _removeCoverCommand.SetEnabled(SelectedFile is not null && CoverImage is not null);
+            _autoLookupCommand.SetEnabled(hasFiles && !IsLookingUp && !string.IsNullOrEmpty(FileListVM.CurrentFolderPath));
+            _applyToAllCommand.SetEnabled(hasFiles && EditorVM.HasPendingBatchTag);
+            _removeCoverCommand.SetEnabled(FileListVM.SelectedFile is not null && CoverVM.CoverImage is not null);
             _loadCoverCommand.SetEnabled(hasSelection);
-            _applyCoverToAllCommand.SetEnabled(HasFiles && _coverImageData is not null);
+            _applyCoverToAllCommand.SetEnabled(hasFiles && CoverVM.HasCover);
 
-            // Vorschau: nur wenn Dateien geladen sind und ein nicht-leeres Muster vorhanden ist
-            _previewRenameCommand.SetEnabled(
-                HasFiles && !string.IsNullOrWhiteSpace(_renamePattern));
+            _previewRenameCommand.SetEnabled(hasFiles && !string.IsNullOrWhiteSpace(RenameVM.RenamePattern));
+            _executeRenameCommand.SetEnabled(RenameVM.PreviewItems.Count > 0);
+        }
 
-            // Umbenennen: erst nach Berechnung der Vorschau
-            _executeRenameCommand.SetEnabled(_renamePreviewItems.Count > 0);
+        private bool HasAnyModifiedFile()
+        {
+            foreach (TagFileItemViewModel file in FileListVM.Files)
+            {
+                if (file.IsModified)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

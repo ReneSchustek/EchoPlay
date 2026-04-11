@@ -578,6 +578,8 @@ namespace EchoPlay.App
 
             // TagManager-Dienste (ITagService, ITagLookupService mit MusicBrainz-HttpClient).
             builder.Services.AddTagManager();
+            // App-Service, der den MusicBrainz-Lookup und die Query-/Match-Logik für den Tag-Manager kapselt.
+            builder.Services.AddSingleton<ITagLookupCoordinator, TagLookupCoordinator>();
             builder.Services.AddTransient<TagManagerViewModel>();
 
             // ProtokollViewModel als Transient – jede Navigation erzeugt eine frische Instanz

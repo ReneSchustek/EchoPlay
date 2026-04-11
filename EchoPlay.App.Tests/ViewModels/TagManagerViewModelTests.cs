@@ -1,3 +1,4 @@
+using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Models;
@@ -373,19 +374,24 @@ namespace EchoPlay.App.Tests.ViewModels
 
         /// <summary>
         /// Erstellt ein <see cref="TagManagerViewModel"/> mit minimalen Fakes.
+        /// Der MusicBrainz-Lookup wird über einen echten <see cref="TagLookupCoordinator"/>
+        /// gewrappt, der den übergebenen Fake-Service nutzt.
         /// </summary>
         private static TagManagerViewModel BuildViewModel(
-            FakeTagService? tagService       = null,
+            FakeTagService? tagService          = null,
             FakeTagLookupService? lookupService = null,
             FakeOnlineAccessGuard? onlineGuard  = null)
         {
+            ITagLookupCoordinator coordinator =
+                new TagLookupCoordinator(lookupService ?? new FakeTagLookupService());
+
             return new TagManagerViewModel(
-                tagService          ?? new FakeTagService(),
-                lookupService       ?? new FakeTagLookupService(),
+                tagService ?? new FakeTagService(),
+                coordinator,
                 new FakeFileRenameService(),
                 new FakeErrorDialogService(),
                 new FakeConfirmationDialogService(),
-                onlineGuard         ?? new FakeOnlineAccessGuard());
+                onlineGuard ?? new FakeOnlineAccessGuard());
         }
     }
 }

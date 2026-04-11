@@ -9,6 +9,7 @@
     <Project Path="EchoPlay.Data/EchoPlay.Data.csproj" Id="f932cbe6-e8eb-4bea-8b86-ad30ce1b9ea4" />
     <Project Path="EchoPlay.LocalLibrary/EchoPlay.LocalLibrary.csproj" Id="e220095f-5982-4b64-b947-f7c2d5cd7bf8" />
     <Project Path="EchoPlay.Logger/EchoPlay.Logger.csproj" Id="6c32147f-397e-4d0a-97a6-4e768d34cd11" />
+    <Project Path="EchoPlay.Logger.Abstractions/EchoPlay.Logger.Abstractions.csproj" />
     <Project Path="EchoPlay.Spotify/EchoPlay.Spotify.csproj" Id="0a9be2c6-4bb8-4bbb-9157-55281de4940b" />
   </Folder>
   <Folder Name="/tests/">

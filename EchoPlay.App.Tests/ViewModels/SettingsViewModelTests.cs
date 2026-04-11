@@ -7,35 +7,31 @@ using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Models;
-using EchoPlay.Logger.Sinks;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="SettingsViewModel"/>.
-    /// Prüft Laden, Speichern, Theme-Wechsel und Sync-Verhalten.
+    /// Tests für <see cref="SettingsViewModel"/> (Top-VM nach Brief 211).
+    /// Prüft Load/Save/Theme/Sync gegen die vier Sub-VMs über die Pass-Through-Properties.
     /// </summary>
     public sealed class SettingsViewModelTests
     {
         /// <summary>
         /// Erzeugt einen minimalen <see cref="LoggerManager"/> ohne Dateilogging für Tests.
-        /// File- und Cleanup-Aktivitäten sind deaktiviert, damit keine temporären Dateien entstehen.
         /// </summary>
         private static LoggerManager BuildLoggerManager()
         {
-            LoggerOptions options        = new() { EnableFileLogging = false, EnableAutoCleanup = false };
-            LoggerFactory loggerFactory  = new([], options);
-            LogCleanupService cleanup    = new(options);
+            LoggerOptions options       = new() { EnableFileLogging = false, EnableAutoCleanup = false };
+            LoggerFactory loggerFactory = new([], options);
+            LogCleanupService cleanup   = new(options);
             return new LoggerManager(loggerFactory, cleanup, options);
         }
 
         /// <summary>
         /// Erzeugt einen minimalen <see cref="StatusBarViewModel"/> für Tests.
-        /// Die COM-basierte Taskbar-Integration hat im Test keinen Effekt (kein HWND vorhanden).
         /// </summary>
         private static StatusBarViewModel BuildStatusBar(IServiceScopeFactory scopeFactory)
         {
@@ -50,7 +46,9 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSyncService? syncService = null,
             FakeThemeService? themeService = null,
             FakeErrorDialogService? errorDialogService = null,
-            FakeDatabaseMaintenanceService? maintenanceService = null)
+            FakeDatabaseMaintenanceService? maintenanceService = null,
+            FakeConnectionTestCoordinator? connectionTestCoordinator = null,
+            FakeLogViewerCoordinator? logViewerCoordinator = null)
         {
             ServiceCollection services = new();
             services.AddScoped<IAppSettingsDataService>(_ => settingsService);
@@ -60,7 +58,7 @@ namespace EchoPlay.App.Tests.ViewModels
             services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             services.AddScoped<IDatabaseMaintenanceService>(_ => maintenanceService ?? new FakeDatabaseMaintenanceService());
 
-            ServiceProvider provider = services.BuildServiceProvider();
+            ServiceProvider provider          = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
             return new SettingsViewModel(
@@ -69,6 +67,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 syncService ?? new FakeSyncService(new SyncResult()),
                 errorDialogService ?? new FakeErrorDialogService(),
                 new FakeEpisodePatternAnalyzer(),
+                connectionTestCoordinator ?? new FakeConnectionTestCoordinator(),
+                logViewerCoordinator ?? new FakeLogViewerCoordinator(),
                 BuildLoggerManager(),
                 BuildStatusBar(scopeFactory));
         }
@@ -86,10 +86,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeFolderPattern = "{number} - {title}"
             });
 
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
 
@@ -105,10 +102,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Ohne vorherigen LoadAsync darf SaveAsync nichts speichern
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.SaveAsync();
 
@@ -124,10 +118,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 ActiveTheme = "MidnightLibrary"
             });
 
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
             vm.ActiveTheme = "ModernClassic";
@@ -138,15 +129,12 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task ApplyTheme_UpdatesActiveTheme_AndCallsThemeService()
+        public void ApplyTheme_UpdatesActiveTheme_AndCallsThemeService()
         {
             // ApplyTheme muss ActiveTheme setzen und den ThemeService aufrufen
             FakeThemeService themeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: themeService,
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings, themeService: themeService);
 
             vm.ApplyTheme("PaperCoffee");
 
@@ -159,7 +147,6 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SyncAsync_SetsSyncStatusText_WithResult()
         {
             // Nach SyncAsync muss der Statustext das Ergebnis widerspiegeln.
-            // LoadAsync wird zuerst aufgerufen – SyncAsync prüft ob Bibliotheksordner gesetzt ist.
             SyncResult syncResult = new()
             {
                 SeriesMatched   = 3,
@@ -174,10 +161,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 LocalLibraryEnabled  = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: syncService,
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
 
             await vm.LoadAsync();
             await vm.SyncAsync();
@@ -191,17 +175,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SyncAsync_DoesNothing_WhenAlreadySyncing()
         {
             // Parallele Sync-Aufrufe werden ignoriert.
-            // LoadAsync setzt den Bibliothekspfad – ohne ihn blockt SyncAsync den SyncService.
             FakeSyncService syncService = new(new SyncResult());
             FakeAppSettingsDataService settings = new(new AppSettings
             {
                 LocalLibraryEnabled  = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: syncService,
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
 
             await vm.LoadAsync();
 
@@ -217,16 +197,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task IsSyncEnabled_IsFalse_WhileSyncing()
         {
             // IsSyncEnabled muss nach Abschluss wieder true sein.
-            // LoadAsync setzt den Bibliothekspfad – nötig, damit IsSyncEnabled == true.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
                 LocalLibraryEnabled  = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
             await vm.SyncAsync();
@@ -242,10 +218,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nach dem Laden darf keine "ungespeicherte Änderung" angezeigt werden
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
 
@@ -257,10 +230,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Jede Änderung an einem Einstellungs-Property markiert den Zustand als "unsaved"
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
             vm.OfflineMode = !vm.OfflineMode;
@@ -273,10 +243,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nach dem Speichern sind keine ungespeicherten Änderungen mehr offen
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
             vm.NewReleaseDays = 120;
@@ -291,10 +258,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Erneutes Laden setzt den Änderungszustand zurück
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
             vm.DbPurgeDays = 99;
@@ -310,20 +274,17 @@ namespace EchoPlay.App.Tests.ViewModels
             // Alle relevanten Settings-Properties müssen HasUnsavedChanges auslösen
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                ActiveTheme = "MidnightLibrary",
-                ActiveProvider = ProviderType.AppleMusic,
-                LocalLibraryEnabled = true,
+                ActiveTheme          = "MidnightLibrary",
+                ActiveProvider       = ProviderType.AppleMusic,
+                LocalLibraryEnabled  = true,
                 LocalLibraryRootPath = @"C:\Musik",
                 EpisodeFolderPattern = "{number} - {title}",
-                NewReleaseDays = 60,
-                OfflineMode = false,
-                DbPurgeDays = 30,
-                AutoImportAfterScan = false
+                NewReleaseDays       = 60,
+                OfflineMode          = false,
+                DbPurgeDays          = 30,
+                AutoImportAfterScan  = false
             });
-            SettingsViewModel vm = BuildViewModel(settings,
-                syncService: new FakeSyncService(),
-                themeService: new FakeThemeService(),
-                errorDialogService: new FakeErrorDialogService());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             // Jedes Property einzeln testen – Load setzt HasUnsavedChanges zurück
             await vm.LoadAsync();
@@ -349,41 +310,13 @@ namespace EchoPlay.App.Tests.ViewModels
 
         // --- Log-Viewer-Tests ---
 
-        private static SettingsViewModel BuildViewModelWithSink(MemorySink memorySink)
-        {
-            ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(new AppSettings()));
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
-            return new SettingsViewModel(
-                scopeFactory,
-                new FakeThemeService(),
-                new FakeSyncService(),
-                new FakeErrorDialogService(),
-                new FakeEpisodePatternAnalyzer(),
-                BuildLoggerManager(),
-                BuildStatusBar(scopeFactory),
-                memorySink);
-        }
-
         [Fact]
-        public void RefreshLogs_ReturnsEmpty_WhenNoMemorySink()
+        public void RefreshLogs_ReturnsEmpty_WhenLiveViewUnavailable()
         {
-            // Ohne MemorySink ist der Log-Viewer deaktiviert
-            ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(new AppSettings()));
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
-            SettingsViewModel vm = new(
-                scopeFactory,
-                new FakeThemeService(),
-                new FakeSyncService(),
-                new FakeErrorDialogService(),
-                new FakeEpisodePatternAnalyzer(),
-                BuildLoggerManager(),
-                BuildStatusBar(scopeFactory));
+            // Ohne Live-View-Verfügbarkeit ist der Log-Viewer deaktiviert
+            FakeLogViewerCoordinator coordinator = new() { IsLiveViewAvailable = false };
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
 
             vm.RefreshLogs();
 
@@ -392,28 +325,30 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task RefreshLogs_ShowsAllEntries_WhenNoFilter()
+        public void RefreshLogs_ShowsAllEntries_WhenNoFilter()
         {
-            // Alle Einträge aus dem Puffer erscheinen ungefiltert
-            MemorySink sink = new(50);
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Information, "Gestartet", "App", []));
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Warning, "Warnung", "Service", []));
+            // Alle Einträge aus dem Coordinator erscheinen ungefiltert
+            FakeLogViewerCoordinator coordinator = new();
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Gestartet", "App", []));
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Warning, "Warnung", "Service", []));
 
-            SettingsViewModel vm = BuildViewModelWithSink(sink);
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
             vm.RefreshLogs();
 
             Assert.Equal(2, vm.LogEntries.Count);
         }
 
         [Fact]
-        public async Task RefreshLogs_FiltersBySearchText_CaseInsensitive()
+        public void RefreshLogs_FiltersBySearchText_CaseInsensitive()
         {
             // Suchtext filtert Groß-/Kleinschreibungs-unabhängig
-            MemorySink sink = new(50);
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Information, "Spotify gestartet", "Import", []));
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Information, "Daten gespeichert", "Data", []));
+            FakeLogViewerCoordinator coordinator = new();
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Spotify gestartet", "Import", []));
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Daten gespeichert", "Data", []));
 
-            SettingsViewModel vm = BuildViewModelWithSink(sink);
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
             vm.LogSearchText = "spotify";
 
             Assert.Single(vm.LogEntries);
@@ -421,30 +356,32 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task RefreshLogs_FiltersByMinimumLevel()
+        public void RefreshLogs_FiltersByMinimumLevel()
         {
             // Level-Filter: nur Einträge ab Warning sichtbar
-            MemorySink sink = new(50);
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Debug,       "Debug-Meldung",   "A", []));
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Information, "Info-Meldung",    "B", []));
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Warning,     "Warnung",         "C", []));
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Error,       "Fehler",          "D", []));
+            FakeLogViewerCoordinator coordinator = new();
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Debug,       "Debug-Meldung",   "A", []));
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Info-Meldung",    "B", []));
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Warning,     "Warnung",         "C", []));
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Error,       "Fehler",          "D", []));
 
-            SettingsViewModel vm = BuildViewModelWithSink(sink);
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
             vm.LogMinimumLevel = LogLevel.Warning;
 
             Assert.Equal(2, vm.LogEntries.Count);
         }
 
         [Fact]
-        public async Task RefreshLogs_ShowsExceptionInfo_InFormattedLine()
+        public void RefreshLogs_ShowsExceptionInfo_InFormattedLine()
         {
             // Exception-Nachricht muss im formatierten Eintrag sichtbar sein
-            MemorySink sink = new(50);
             InvalidOperationException ex = new("Verbindung getrennt");
-            await sink.WriteAsync(new LogEntry(DateTime.Now, LogLevel.Error, "Fehler beim Laden", "Net", [], ex));
+            FakeLogViewerCoordinator coordinator = new();
+            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Error, "Fehler beim Laden", "Net", [], ex));
 
-            SettingsViewModel vm = BuildViewModelWithSink(sink);
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
             vm.RefreshLogs();
 
             Assert.Single(vm.LogEntries);
@@ -455,7 +392,8 @@ namespace EchoPlay.App.Tests.ViewModels
         public void LogLevelFilterIndex_RoundTrip_MapsCorrectly()
         {
             // Index 0=Debug, 1=Info, 2=Warning, 3=Error – Hin- und Rückumrechnung korrekt
-            SettingsViewModel vm = BuildViewModelWithSink(new MemorySink());
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings);
 
             vm.LogLevelFilterIndex = 2;
             Assert.Equal(LogLevel.Warning, vm.LogMinimumLevel);
@@ -463,6 +401,53 @@ namespace EchoPlay.App.Tests.ViewModels
 
             vm.LogLevelFilterIndex = 0;
             Assert.Equal(LogLevel.Debug, vm.LogMinimumLevel);
+        }
+
+        // ── Verbindungstest ─────────────────────────────────────────────────
+
+        [Fact]
+        public async Task TestConnectionAsync_Success_SetsSuccessResult()
+        {
+            // Erfolgreicher Test muss ConnectionTestSuccess auf true setzen
+            FakeConnectionTestCoordinator coordinator = new(new ConnectionTestResult(true, null));
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
+            SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
+
+            await vm.LoadAsync();
+            await vm.TestConnectionAsync();
+
+            Assert.Single(coordinator.Calls);
+            Assert.Equal(ProviderType.Spotify, coordinator.Calls[0]);
+            Assert.True(vm.ConnectionTestSuccess);
+        }
+
+        [Fact]
+        public async Task TestConnectionAsync_Failure_SetsFailureResult()
+        {
+            // Fehlerhafter Test muss ConnectionTestSuccess auf false setzen und Fehlerdetail enthalten
+            FakeConnectionTestCoordinator coordinator = new(new ConnectionTestResult(false, "Timeout"));
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.AppleMusic });
+            SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
+
+            await vm.LoadAsync();
+            await vm.TestConnectionAsync();
+
+            Assert.False(vm.ConnectionTestSuccess);
+            Assert.Contains("Timeout", vm.ConnectionTestResultText);
+        }
+
+        [Fact]
+        public async Task TestConnectionAsync_NoProvider_DoesNotCallCoordinator()
+        {
+            // Bei Provider "Keine" darf kein API-Aufruf erfolgen
+            FakeConnectionTestCoordinator coordinator = new();
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.None });
+            SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
+
+            await vm.LoadAsync();
+            await vm.TestConnectionAsync();
+
+            Assert.Empty(coordinator.Calls);
         }
 
         // ── ResetLibrary ────────────────────────────────────────────────────

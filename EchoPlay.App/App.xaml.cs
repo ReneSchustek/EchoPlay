@@ -551,15 +551,23 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IPageModeGuard>()));
             builder.Services.AddTransient<PlayerViewModel>();
             builder.Services.AddTransient<SeriesDetailViewModel>();
+            // App-Services für Settings: Verbindungstest und Log-Viewer sind nach Brief 211
+            // als eigenständige Coordinators implementiert, damit das SettingsViewModel
+            // stateless Logik nicht mehr selbst trägt.
+            builder.Services.AddSingleton<IConnectionTestCoordinator, ConnectionTestCoordinator>();
+            builder.Services.AddSingleton<ILogViewerCoordinator>(provider => new LogViewerCoordinator(
+                provider.GetRequiredService<LoggerManager>(),
+                provider.GetService<MemorySink>()));
             builder.Services.AddTransient<SettingsViewModel>(provider => new SettingsViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IThemeService>(),
                 provider.GetRequiredService<ISyncService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Analysis.IEpisodePatternAnalyzer>(),
+                provider.GetRequiredService<IConnectionTestCoordinator>(),
+                provider.GetRequiredService<ILogViewerCoordinator>(),
                 provider.GetRequiredService<LoggerManager>(),
-                provider.GetRequiredService<StatusBarViewModel>(),
-                provider.GetService<MemorySink>()));
+                provider.GetRequiredService<StatusBarViewModel>()));
             builder.Services.AddTransient<MiniPlayerViewModel>();
             builder.Services.AddTransient<ImportViewModel>(provider => new ImportViewModel(
                 provider.GetRequiredService<ImportService>(),

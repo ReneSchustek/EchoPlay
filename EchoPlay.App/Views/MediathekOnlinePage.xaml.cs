@@ -1,4 +1,5 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
@@ -55,16 +56,19 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedTo(e);
 
-            if (!await ViewModel.InitializeAsync())
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                if (!await ViewModel.InitializeAsync())
+                {
+                    return;
+                }
 
-            ViewModel.PropertyChanged    += OnViewModelPropertyChanged;
-            ViewModel.FocusSearchRequested += OnFocusSearchRequested;
-            SizeChanged                  += OnPageSizeChanged;
+                ViewModel.PropertyChanged    += OnViewModelPropertyChanged;
+                ViewModel.FocusSearchRequested += OnFocusSearchRequested;
+                SizeChanged                  += OnPageSizeChanged;
 
-            await ViewModel.LoadAsync();
+                await ViewModel.LoadAsync();
+            });
         }
 
         /// <summary>
@@ -122,7 +126,7 @@ namespace EchoPlay.App.Views
 
             if (e.ClickedItem is SeriesCardViewModel card)
             {
-                await ViewModel.SelectSeriesAsync(card);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectSeriesAsync(card));
             }
         }
 
@@ -184,7 +188,8 @@ namespace EchoPlay.App.Views
         {
             if (sender is ToggleMenuFlyoutItem item && item.Tag is Guid seriesId)
             {
-                await ViewModel.ToggleWatchAsync(seriesId, item.IsChecked);
+                bool isChecked = item.IsChecked;
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ToggleWatchAsync(seriesId, isChecked));
             }
         }
 
@@ -192,7 +197,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem item && item.Tag is Guid seriesId)
             {
-                await ViewModel.RemoveSeriesAsync(seriesId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.RemoveSeriesAsync(seriesId));
             }
         }
 
@@ -214,14 +219,17 @@ namespace EchoPlay.App.Views
 
             if (card is null) return;
 
-            CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
-                card.Title,
-                (query, ct) => ViewModel.SearchEpisodeCoversAsync(query, ct),
-                Content.XamlRoot);
+            await AsyncEventHandler.RunSafelyAsync(async () =>
+            {
+                CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
+                    card.Title,
+                    (query, ct) => ViewModel.SearchEpisodeCoversAsync(query, ct),
+                    Content.XamlRoot);
 
-            if (selected is null) return;
+                if (selected is null) return;
 
-            await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
+                await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
+            });
         }
     }
 }

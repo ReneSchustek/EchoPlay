@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
@@ -61,21 +62,24 @@ namespace EchoPlay.App.Views
 
             ViewModel.PatternSelectionRequested += OnPatternSelectionRequested;
 
-            await ViewModel.LoadAsync();
+            await AsyncEventHandler.RunSafelyAsync(async () =>
+            {
+                await ViewModel.LoadAsync();
 
-            // RadioButtons nachträglich setzen, da x:Bind für diese nicht geeignet ist
-            SyncThemeRadioButton(ViewModel.ActiveTheme);
-            SyncProviderRadioButton(ViewModel.ActiveProviderTag);
+                // RadioButtons nachträglich setzen, da x:Bind für diese nicht geeignet ist
+                SyncThemeRadioButton(ViewModel.ActiveTheme);
+                SyncProviderRadioButton(ViewModel.ActiveProviderTag);
 
-            // Sprach-ComboBox auf die gespeicherte Sprache setzen
-            SyncLanguageComboBox(ViewModel.ActiveLanguage);
+                // Sprach-ComboBox auf die gespeicherte Sprache setzen
+                SyncLanguageComboBox(ViewModel.ActiveLanguage);
 
-            // Log-Datei-ComboBox: Live-Option direkt nach dem Laden vorauswählen
-            LogFileComboBox.SelectedItem = ViewModel.SelectedLogFile;
+                // Log-Datei-ComboBox: Live-Option direkt nach dem Laden vorauswählen
+                LogFileComboBox.SelectedItem = ViewModel.SelectedLogFile;
 
-            // Erste Log-Einträge laden – der Setter von SelectedLogFile gibt keinen Refresh
-            // aus wenn der Wert sich beim Set nicht geändert hat (SetProperty gibt false zurück).
-            ViewModel.RefreshLogs();
+                // Erste Log-Einträge laden – der Setter von SelectedLogFile gibt keinen Refresh
+                // aus wenn der Wert sich beim Set nicht geändert hat (SetProperty gibt false zurück).
+                ViewModel.RefreshLogs();
+            });
         }
 
         /// <summary>
@@ -150,16 +154,19 @@ namespace EchoPlay.App.Views
 
             string themeName = selected.Tag;
 
-            MainWindow? mainWindow = App.MainWindow as MainWindow;
-            mainWindow?.ShowThemeOverlay();
+            await AsyncEventHandler.RunSafelyAsync(async () =>
+            {
+                MainWindow? mainWindow = App.MainWindow as MainWindow;
+                mainWindow?.ShowThemeOverlay();
 
-            await Task.Delay(50);
+                await Task.Delay(50);
 
-            ViewModel.ApplyTheme(themeName);
+                ViewModel.ApplyTheme(themeName);
 
-            await Task.Delay(150);
+                await Task.Delay(150);
 
-            mainWindow?.HideThemeOverlay();
+                mainWindow?.HideThemeOverlay();
+            });
         }
 
         /// <summary>
@@ -183,7 +190,7 @@ namespace EchoPlay.App.Views
         private async void OnBrowseClick(object sender, RoutedEventArgs e)
         {
             nint hWnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await ViewModel.BrowseLibraryFolderAsync(hWnd);
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.BrowseLibraryFolderAsync(hWnd));
         }
 
         /// <summary>
@@ -193,7 +200,7 @@ namespace EchoPlay.App.Views
         /// <param name="e">Ereignisargumente.</param>
         private async void OnSyncClick(object sender, RoutedEventArgs e)
         {
-            await ViewModel.SyncAsync();
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SyncAsync());
         }
 
         /// <summary>
@@ -206,7 +213,7 @@ namespace EchoPlay.App.Views
         private async void OnSaveClick(object sender, RoutedEventArgs e)
         {
             // SaveAsync aktualisiert intern die StatusBar – kein zusätzlicher Refresh nötig.
-            await ViewModel.SaveAsync();
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SaveAsync());
         }
 
         /// <summary>
@@ -219,7 +226,7 @@ namespace EchoPlay.App.Views
         {
             if (LanguageComboBox.SelectedItem is LanguageOption option)
             {
-                await ViewModel.ChangeLanguageAsync(option.Code);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ChangeLanguageAsync(option.Code));
             }
         }
 
@@ -230,7 +237,7 @@ namespace EchoPlay.App.Views
         /// <param name="e">Ereignisargumente.</param>
         private async void OnAnalyzePatternClick(object sender, RoutedEventArgs e)
         {
-            await ViewModel.AnalyzePatternAsync();
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.AnalyzePatternAsync());
         }
 
         /// <summary>
@@ -253,7 +260,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnCancelClick(object sender, RoutedEventArgs e)
         {
-            await ViewModel.LoadAsync();
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.LoadAsync());
         }
 
         // ── Muster-Auswahl-Dialog ────────────────────────────────────────────────
@@ -266,7 +273,7 @@ namespace EchoPlay.App.Views
         /// <param name="suggestions">Die vom Analyzer vorgeschlagenen Muster.</param>
         private async void OnPatternSelectionRequested(IReadOnlyList<PatternSuggestionDisplay> suggestions)
         {
-            await ShowPatternSelectionDialogAsync(suggestions);
+            await AsyncEventHandler.RunSafelyAsync(() => ShowPatternSelectionDialogAsync(suggestions));
         }
 
         /// <summary>
@@ -423,24 +430,27 @@ namespace EchoPlay.App.Views
         /// <param name="e">Ereignisargumente.</param>
         private async void OnDbMaintenanceClick(object sender, RoutedEventArgs e)
         {
-            await ViewModel.RunMaintenanceAsync();
-
-            // Abschlussdialog – der Nutzer sieht klar, ob die Bereinigung geklappt hat.
-            // MaintenanceStatusText enthält bei Erfolg eine Bestätigung, bei Fehler die Meldung.
-            ContentDialog resultDialog = new()
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                XamlRoot        = XamlRoot,
-                Title           = "Datenbankpflege",
-                Content         = new TextBlock
-                {
-                    Text         = ViewModel.MaintenanceStatusText,
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-                },
-                CloseButtonText = "Schließen"
-            };
+                await ViewModel.RunMaintenanceAsync();
 
-            Helpers.ContentDialogDragHelper.MakeDraggable(resultDialog);
-            await resultDialog.ShowAsync();
+                // Abschlussdialog – der Nutzer sieht klar, ob die Bereinigung geklappt hat.
+                // MaintenanceStatusText enthält bei Erfolg eine Bestätigung, bei Fehler die Meldung.
+                ContentDialog resultDialog = new()
+                {
+                    XamlRoot        = XamlRoot,
+                    Title           = "Datenbankpflege",
+                    Content         = new TextBlock
+                    {
+                        Text         = ViewModel.MaintenanceStatusText,
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+                    },
+                    CloseButtonText = "Schließen"
+                };
+
+                Helpers.ContentDialogDragHelper.MakeDraggable(resultDialog);
+                await resultDialog.ShowAsync();
+            });
         }
 
         /// <summary>
@@ -463,37 +473,40 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnResetClick(object sender, RoutedEventArgs e)
         {
-            // Scope aus RadioButtons ermitteln
-            int selectedIndex = ResetScopeRadio.SelectedIndex;
-            string scopeLabel = selectedIndex switch
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                0 => "Online",
-                1 => "Lokal",
-                _ => "Alle"
-            };
+                // Scope aus RadioButtons ermitteln
+                int selectedIndex = ResetScopeRadio.SelectedIndex;
+                string scopeLabel = selectedIndex switch
+                {
+                    0 => "Online",
+                    1 => "Lokal",
+                    _ => "Alle"
+                };
 
-            TextBlock contentText = new()
-            {
-                Text        = _localizationService.Get("DbResetDialogDescription"),
-                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-            };
+                TextBlock contentText = new()
+                {
+                    Text        = _localizationService.Get("DbResetDialogDescription"),
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+                };
 
-            ContentDialog dialog = new()
-            {
-                XamlRoot          = XamlRoot,
-                Title             = $"{_localizationService.Get("DbResetDialogTitle")} ({scopeLabel})",
-                Content           = contentText,
-                PrimaryButtonText = _localizationService.Get("DbResetDialogConfirm"),
-                CloseButtonText   = _localizationService.Get("PatternDialogCancel")
-            };
+                ContentDialog dialog = new()
+                {
+                    XamlRoot          = XamlRoot,
+                    Title             = $"{_localizationService.Get("DbResetDialogTitle")} ({scopeLabel})",
+                    Content           = contentText,
+                    PrimaryButtonText = _localizationService.Get("DbResetDialogConfirm"),
+                    CloseButtonText   = _localizationService.Get("PatternDialogCancel")
+                };
 
-            Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-            ContentDialogResult result = await dialog.ShowAsync();
+                Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
+                ContentDialogResult result = await dialog.ShowAsync();
 
-            if (result == ContentDialogResult.Primary)
-            {
-                await ViewModel.ResetLibraryAsync(selectedIndex);
-            }
+                if (result == ContentDialogResult.Primary)
+                {
+                    await ViewModel.ResetLibraryAsync(selectedIndex);
+                }
+            });
         }
 
         // ── RadioButton-Synchronisation ──────────────────────────────────────────

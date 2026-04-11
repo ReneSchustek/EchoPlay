@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +49,7 @@ namespace EchoPlay.App.Views
 
             if (e.Parameter is string folderPath && !string.IsNullOrWhiteSpace(folderPath))
             {
-                await ViewModel.LoadFolderAsync(folderPath);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.LoadFolderAsync(folderPath));
             }
         }
 
@@ -70,24 +71,27 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnOpenFolderClick(object sender, RoutedEventArgs e)
         {
-            FolderPicker picker = new()
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                ViewMode               = PickerViewMode.List
-            };
+                FolderPicker picker = new()
+                {
+                    SuggestedStartLocation = PickerLocationId.MusicLibrary,
+                    ViewMode               = PickerViewMode.List
+                };
 
-            picker.FileTypeFilter.Add("*");
+                picker.FileTypeFilter.Add("*");
 
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
 
-            Windows.Storage.StorageFolder? folder = await picker.PickSingleFolderAsync();
+                Windows.Storage.StorageFolder? folder = await picker.PickSingleFolderAsync();
 
-            if (folder is null)
-            {
-                return;
-            }
+                if (folder is null)
+                {
+                    return;
+                }
 
-            await ViewModel.LoadFolderAsync(folder.Path);
+                await ViewModel.LoadFolderAsync(folder.Path);
+            });
         }
 
         /// <summary>
@@ -97,55 +101,58 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnLookupResultsReady(object? sender, IReadOnlyList<TagLookupCandidate> results)
         {
-            Windows.ApplicationModel.Resources.ResourceLoader resources =
-                Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
-
-            if (results.Count == 0)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                ContentDialog noResultsDialog = new()
+                Windows.ApplicationModel.Resources.ResourceLoader resources =
+                    Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
+
+                if (results.Count == 0)
                 {
-                    Title              = resources.GetString("TagManagerNoResultsTitle"),
-                    Content            = resources.GetString("TagManagerNoResultsMessage"),
-                    CloseButtonText    = "OK",
-                    XamlRoot           = XamlRoot
+                    ContentDialog noResultsDialog = new()
+                    {
+                        Title              = resources.GetString("TagManagerNoResultsTitle"),
+                        Content            = resources.GetString("TagManagerNoResultsMessage"),
+                        CloseButtonText    = "OK",
+                        XamlRoot           = XamlRoot
+                    };
+                    Helpers.ContentDialogDragHelper.MakeDraggable(noResultsDialog);
+                    await noResultsDialog.ShowAsync();
+                    return;
+                }
+
+                // ListView mit den Suchergebnissen als Dialog-Inhalt
+                ListView resultList = new()
+                {
+                    ItemsSource = results,
+                    Height      = 200
                 };
-                Helpers.ContentDialogDragHelper.MakeDraggable(noResultsDialog);
-                await noResultsDialog.ShowAsync();
-                return;
-            }
 
-            // ListView mit den Suchergebnissen als Dialog-Inhalt
-            ListView resultList = new()
-            {
-                ItemsSource = results,
-                Height      = 200
-            };
+                resultList.ItemTemplate = (DataTemplate)Resources["LookupResultTemplate"];
 
-            resultList.ItemTemplate = (DataTemplate)Resources["LookupResultTemplate"];
+                ContentDialog dialog = new()
+                {
+                    Title               = resources.GetString("TagManagerLookupDialogTitle"),
+                    Content             = resultList,
+                    PrimaryButtonText   = resources.GetString("TagManagerLookupApplyButton"),
+                    CloseButtonText     = resources.GetString("TagManagerLookupCancelButton"),
+                    XamlRoot            = XamlRoot
+                };
 
-            ContentDialog dialog = new()
-            {
-                Title               = resources.GetString("TagManagerLookupDialogTitle"),
-                Content             = resultList,
-                PrimaryButtonText   = resources.GetString("TagManagerLookupApplyButton"),
-                CloseButtonText     = resources.GetString("TagManagerLookupCancelButton"),
-                XamlRoot            = XamlRoot
-            };
+                // "Übernehmen" nur aktivieren wenn ein Eintrag ausgewählt ist
+                dialog.IsPrimaryButtonEnabled = false;
+                resultList.SelectionChanged += (_, _) =>
+                {
+                    dialog.IsPrimaryButtonEnabled = resultList.SelectedItem is not null;
+                };
 
-            // "Übernehmen" nur aktivieren wenn ein Eintrag ausgewählt ist
-            dialog.IsPrimaryButtonEnabled = false;
-            resultList.SelectionChanged += (_, _) =>
-            {
-                dialog.IsPrimaryButtonEnabled = resultList.SelectedItem is not null;
-            };
+                Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
+                ContentDialogResult dialogResult = await dialog.ShowAsync();
 
-            Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-            ContentDialogResult dialogResult = await dialog.ShowAsync();
-
-            if (dialogResult == ContentDialogResult.Primary && resultList.SelectedItem is TagLookupCandidate selected)
-            {
-                ViewModel.ApplyLookupCandidate(selected.Index);
-            }
+                if (dialogResult == ContentDialogResult.Primary && resultList.SelectedItem is TagLookupCandidate selected)
+                {
+                    ViewModel.ApplyLookupCandidate(selected.Index);
+                }
+            });
         }
 
         /// <summary>
@@ -187,16 +194,19 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnLoadCoverRequested(object? sender, EventArgs e)
         {
-            nint handle = WindowNative.GetWindowHandle(App.MainWindow);
-            (byte[] Data, string MimeType)? result =
-                await Helpers.ImageFilePicker.PickWithMimeTypeAsync(handle);
-
-            if (result is null)
+            await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                nint handle = WindowNative.GetWindowHandle(App.MainWindow);
+                (byte[] Data, string MimeType)? result =
+                    await Helpers.ImageFilePicker.PickWithMimeTypeAsync(handle);
 
-            ViewModel.SetCoverFromFile(result.Value.Data, result.Value.MimeType);
+                if (result is null)
+                {
+                    return;
+                }
+
+                ViewModel.SetCoverFromFile(result.Value.Data, result.Value.MimeType);
+            });
         }
     }
 }

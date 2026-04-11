@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +36,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnSearchClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            await ViewModel.SearchAsync();
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SearchAsync());
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace EchoPlay.App.Views
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                await ViewModel.SearchAsync();
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SearchAsync());
             }
         }
 

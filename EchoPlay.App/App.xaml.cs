@@ -77,97 +77,144 @@ namespace EchoPlay.App
         /// <param name="args">Startparameter der Anwendung.</param>
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
-            // Globaler Handler registrieren, bevor der Host gestartet wird.
-            this.UnhandledException += OnUnhandledException;
-
-            // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
-            SplashWindow splash = new();
-            splash.Activate();
-
-            _host ??= CreateHost();
-
-            // LoggerManager initialisieren – Cleanup läuft beim Dispose (App-Ende)
-            _loggerManager = Services.GetRequiredService<LoggerManager>();
-            _appLogger = _loggerManager.Factory.CreateLogger("App");
-
-            _appLogger.Info("Anwendung gestartet");
-
-            // Migrationen einmalig beim Start anwenden – kein Datenbankzugriff ohne aktuelles Schema.
-            // Eigener Scope, weil DatabaseInitializer Scoped ist (DbContext-Lifetime).
-            using (IServiceScope dbScope = Services.CreateScope())
+            SplashWindow? splash = null;
+            try
             {
-                DatabaseInitializer dbInit = dbScope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
-                await dbInit.InitializeAsync();
+                // Globaler Handler registrieren, bevor der Host gestartet wird.
+                this.UnhandledException += OnUnhandledException;
+
+                // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
+                splash = new SplashWindow();
+                splash.Activate();
+
+                _host ??= CreateHost();
+
+                // LoggerManager initialisieren – Cleanup läuft beim Dispose (App-Ende)
+                _loggerManager = Services.GetRequiredService<LoggerManager>();
+                _appLogger = _loggerManager.Factory.CreateLogger("App");
+
+                _appLogger.Info("Anwendung gestartet");
+
+                // Migrationen einmalig beim Start anwenden – kein Datenbankzugriff ohne aktuelles Schema.
+                // Eigener Scope, weil DatabaseInitializer Scoped ist (DbContext-Lifetime).
+                using (IServiceScope dbScope = Services.CreateScope())
+                {
+                    DatabaseInitializer dbInit = dbScope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+                    await dbInit.InitializeAsync();
+                }
+
+                // Log-Konfiguration und DbPurgeDays aus AppSettings laden.
+                // AddEchoPlayLogger läuft vor dem DB-Zugriff, daher werden die gespeicherten Werte erst jetzt gesetzt.
+                // LastAppStart wird bei jedem Start aktualisiert – dient als Referenz für den
+                // Neuerscheinungen-Filter (nur Folgen der letzten 60 Tage ab LastAppStart).
+                int dbPurgeDays;
+                using (IServiceScope settingsScope = Services.CreateScope())
+                {
+                    EchoPlay.Data.Services.Interfaces.IAppSettingsDataService settingsService =
+                        settingsScope.ServiceProvider.GetRequiredService<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>();
+                    EchoPlay.Data.Entities.Settings.AppSettings appSettings = await settingsService.GetAsync();
+                    _loggerManager.UpdateRetentionDays(appSettings.LogRetentionDays);
+                    _loggerManager.UpdateMinimumLevel(appSettings.MinimumLogLevel);
+                    dbPurgeDays = appSettings.DbPurgeDays;
+
+                    appSettings.LastAppStart = DateTime.UtcNow;
+                    await settingsService.SaveAsync(appSettings);
+                }
+
+                // Datenbankpflege im Hintergrund – kein kritischer Pfad, darf den Start nicht verzögern.
+                // Eigener Scope im Task stellt sicher, dass DbContext nicht vorzeitig freigegeben wird.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using IServiceScope purgeScope = Services.CreateScope();
+                        IDatabaseMaintenanceService maintenance =
+                            purgeScope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
+                        await maintenance.PurgeAsync(dbPurgeDays);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Purge-Fehler beeinflussen die App-Funktion nicht – wird beim nächsten Start erneut versucht
+                        _appLogger?.Warning($"DB-Purge fehlgeschlagen: {ex.Message}");
+                    }
+                });
+
+                // Cover-Hintergrund-Service starten – lädt fehlende lokale Episoden-Cover in die DB
+                Services.GetRequiredService<BackgroundCoverService>().Start();
+
+                // Theme vor dem Fenster-Öffnen setzen, damit kein Flackern entsteht
+                ThemeService themeService = Services.GetRequiredService<ThemeService>();
+                await themeService.InitializeAsync();
+
+                // Startup-Validierung: Online-Check, Lokal-Check, Cache-Bereinigung, Neuerscheinungen-Refresh.
+                // Läuft komplett im Splash, damit das Dashboard sofort aktuelle Daten anzeigen kann.
+                // Der Statustext wird direkt im Splash-Fenster angezeigt.
+                IStartupValidator startupValidator = Services.GetRequiredService<IStartupValidator>();
+                StartupResult startupResult = await startupValidator.ValidateAsync(
+                    status => splash.SetStatus(status));
+                _startupResult = startupResult;
+
+                _appLogger.Info($"Startup-Validierung abgeschlossen: Online={startupResult.IsOnlineAvailable}, Lokal={startupResult.IsLocalLibraryAvailable}");
+
+                // Update-Check: prüft ob eine neuere Version auf GitHub verfügbar ist.
+                // Läuft nach dem Splash, vor dem Hauptfenster – blockiert maximal 5 Sekunden.
+                await CheckForUpdateAsync(splash);
+
+                MainWindow = _window = new MainWindow();
+                _window.Closed += OnWindowClosed;
+
+                // RequestedTheme konnte in InitializeAsync() nicht gesetzt werden,
+                // da das Fenster zu diesem Zeitpunkt noch nicht existierte.
+                // Jetzt, wo Content verfügbar ist, den Wert nachliefern.
+                themeService.SyncRequestedTheme();
+
+                _window.Activate();
+
+                splash.Close();
+            }
+            catch (Exception ex)
+            {
+                await HandleStartupFailureAsync(splash, ex);
+            }
+        }
+
+        /// <summary>
+        /// Zeigt dem Nutzer einen Fehlerdialog, wenn der App-Start nicht abgeschlossen werden konnte,
+        /// und beendet die Anwendung kontrolliert. Loggt in Trace und – falls verfügbar – über den
+        /// App-Logger, damit der Fehler auch ohne sichtbares Hauptfenster nachvollziehbar ist.
+        /// </summary>
+        /// <param name="splash">Das Splash-Fenster, sofern bereits erzeugt.</param>
+        /// <param name="exception">Die während <see cref="OnLaunched"/> geworfene Exception.</param>
+        private async Task HandleStartupFailureAsync(SplashWindow? splash, Exception exception)
+        {
+            // Notfall-Logging in Trace (Logger eventuell noch nicht initialisiert)
+            System.Diagnostics.Trace.WriteLine($"[FATAL OnLaunched] {exception}");
+            try { _appLogger?.Fatal($"OnLaunched fehlgeschlagen: {exception.Message}", exception); }
+            catch { /* Logger-Fehler dürfen den Fehlerdialog nicht verhindern */ }
+
+            // Fallback-Dialog am Splash zeigen, damit der Nutzer eine Rückmeldung sieht.
+            try
+            {
+                if (splash?.Content?.XamlRoot is not null)
+                {
+                    ContentDialog errorDialog = new()
+                    {
+                        Title = "EchoPlay konnte nicht starten",
+                        Content = $"Beim Starten der Anwendung ist ein Fehler aufgetreten:\n\n{exception.Message}\n\nDie Anwendung wird beendet.",
+                        CloseButtonText = "OK",
+                        XamlRoot = splash.Content.XamlRoot
+                    };
+                    await errorDialog.ShowAsync();
+                }
+            }
+            catch
+            {
+                // Dialog konnte nicht angezeigt werden – Logging bleibt als Diagnose-Quelle
             }
 
-            // Log-Konfiguration und DbPurgeDays aus AppSettings laden.
-            // AddEchoPlayLogger läuft vor dem DB-Zugriff, daher werden die gespeicherten Werte erst jetzt gesetzt.
-            // LastAppStart wird bei jedem Start aktualisiert – dient als Referenz für den
-            // Neuerscheinungen-Filter (nur Folgen der letzten 60 Tage ab LastAppStart).
-            int dbPurgeDays;
-            using (IServiceScope settingsScope = Services.CreateScope())
-            {
-                EchoPlay.Data.Services.Interfaces.IAppSettingsDataService settingsService =
-                    settingsScope.ServiceProvider.GetRequiredService<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>();
-                EchoPlay.Data.Entities.Settings.AppSettings appSettings = await settingsService.GetAsync();
-                _loggerManager.UpdateRetentionDays(appSettings.LogRetentionDays);
-                _loggerManager.UpdateMinimumLevel(appSettings.MinimumLogLevel);
-                dbPurgeDays = appSettings.DbPurgeDays;
+            try { splash?.Close(); } catch { /* Schliessen darf das Exit nicht blockieren */ }
 
-                appSettings.LastAppStart = DateTime.UtcNow;
-                await settingsService.SaveAsync(appSettings);
-            }
-
-            // Datenbankpflege im Hintergrund – kein kritischer Pfad, darf den Start nicht verzögern.
-            // Eigener Scope im Task stellt sicher, dass DbContext nicht vorzeitig freigegeben wird.
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using IServiceScope purgeScope = Services.CreateScope();
-                    IDatabaseMaintenanceService maintenance =
-                        purgeScope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
-                    await maintenance.PurgeAsync(dbPurgeDays);
-                }
-                catch (Exception ex)
-                {
-                    // Purge-Fehler beeinflussen die App-Funktion nicht – wird beim nächsten Start erneut versucht
-                    _appLogger?.Warning($"DB-Purge fehlgeschlagen: {ex.Message}");
-                }
-            });
-
-            // Cover-Hintergrund-Service starten – lädt fehlende lokale Episoden-Cover in die DB
-            Services.GetRequiredService<BackgroundCoverService>().Start();
-
-            // Theme vor dem Fenster-Öffnen setzen, damit kein Flackern entsteht
-            ThemeService themeService = Services.GetRequiredService<ThemeService>();
-            await themeService.InitializeAsync();
-
-            // Startup-Validierung: Online-Check, Lokal-Check, Cache-Bereinigung, Neuerscheinungen-Refresh.
-            // Läuft komplett im Splash, damit das Dashboard sofort aktuelle Daten anzeigen kann.
-            // Der Statustext wird direkt im Splash-Fenster angezeigt.
-            IStartupValidator startupValidator = Services.GetRequiredService<IStartupValidator>();
-            StartupResult startupResult = await startupValidator.ValidateAsync(
-                status => splash.SetStatus(status));
-            _startupResult = startupResult;
-
-            _appLogger.Info($"Startup-Validierung abgeschlossen: Online={startupResult.IsOnlineAvailable}, Lokal={startupResult.IsLocalLibraryAvailable}");
-
-            // Update-Check: prüft ob eine neuere Version auf GitHub verfügbar ist.
-            // Läuft nach dem Splash, vor dem Hauptfenster – blockiert maximal 5 Sekunden.
-            await CheckForUpdateAsync(splash);
-
-            MainWindow = _window = new MainWindow();
-            _window.Closed += OnWindowClosed;
-
-            // RequestedTheme konnte in InitializeAsync() nicht gesetzt werden,
-            // da das Fenster zu diesem Zeitpunkt noch nicht existierte.
-            // Jetzt, wo Content verfügbar ist, den Wert nachliefern.
-            themeService.SyncRequestedTheme();
-
-            _window.Activate();
-
-            splash.Close();
+            Exit();
         }
 
         /// <summary>

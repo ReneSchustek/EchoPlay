@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Reine Abstractions-Schicht fuer EchoPlay.Logger. Enthaelt ausschliesslich
+    Interfaces, Records, Enums und die Scope-Primitive. Hat keine NuGet- oder
+    Projekt-Abhaengigkeiten, damit die Domain-Schicht (EchoPlay.Core) hier
+    gefahrlos dagegen arbeiten kann, ohne sich die komplette Logger-Pipeline
+    (File-Sinks, Cleanup, Configuration) einzuladen.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

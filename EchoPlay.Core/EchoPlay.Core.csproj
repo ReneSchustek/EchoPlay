@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EchoPlay.Logger\EchoPlay.Logger.csproj" />
+    <!--
+      Domain darf keine Logger-Implementierung kennen. Nur die Abstractions-
+      Schicht wird referenziert; die konkrete Pipeline (File-Sinks, Cleanup,
+      Formatter) bleibt in EchoPlay.Logger und wird in der Composition Root
+      (EchoPlay.App) verdrahtet.
+    -->
+    <ProjectReference Include="..\EchoPlay.Logger.Abstractions\EchoPlay.Logger.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

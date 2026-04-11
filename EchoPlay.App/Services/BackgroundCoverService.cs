@@ -28,6 +28,7 @@ namespace EchoPlay.App.Services
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly CoverService _coverService;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
         private CancellationTokenSource? _cts;
         private Task? _backgroundTask;
@@ -37,9 +38,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(30);
 
-        /// <summary>HTTP-Client für Provider-URL-Downloads (static gegen Socket-Erschöpfung).</summary>
-        private static readonly HttpClient _downloadClient = new();
-
 
         /// <summary>
         /// Initialisiert den Background-Cover-Service.
@@ -47,10 +45,12 @@ namespace EchoPlay.App.Services
         public BackgroundCoverService(
             IServiceScopeFactory scopeFactory,
             CoverService coverService,
+            IHttpClientFactory httpClientFactory,
             ILoggerFactory loggerFactory)
         {
             _scopeFactory = scopeFactory;
             _coverService = coverService;
+            _httpClientFactory = httpClientFactory;
             _logger = loggerFactory.CreateLogger("BackgroundCoverService");
         }
 
@@ -622,7 +622,8 @@ namespace EchoPlay.App.Services
         {
             try
             {
-                byte[] data = await _downloadClient.GetByteArrayAsync(url).ConfigureAwait(false);
+                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
+                byte[] data = await client.GetByteArrayAsync(url).ConfigureAwait(false);
                 return data.Length > 0 ? data : null;
             }
             catch (Exception ex)

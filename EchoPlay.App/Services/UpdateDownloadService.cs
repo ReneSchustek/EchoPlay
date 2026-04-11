@@ -14,7 +14,17 @@ namespace EchoPlay.App.Services
     /// </summary>
     public sealed class UpdateDownloadService
     {
-        private static readonly HttpClient _httpClient = new();
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        /// <summary>
+        /// Initialisiert den Download-Service. Der Installer-Download nutzt den Named-
+        /// Client <c>UpdateDownload</c>, der ein längeres Timeout und den passenden
+        /// User-Agent trägt.
+        /// </summary>
+        public UpdateDownloadService(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
 
         /// <summary>
         /// Lädt die Setup-Datei herunter und startet den Installer.
@@ -36,7 +46,8 @@ namespace EchoPlay.App.Services
                     Path.GetTempPath(),
                     $"EchoPlay-Setup-{version}.exe");
 
-                using HttpResponseMessage response = await _httpClient
+                HttpClient httpClient = _httpClientFactory.CreateClient("UpdateDownload");
+                using HttpResponseMessage response = await httpClient
                     .GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                     .ConfigureAwait(false);
 

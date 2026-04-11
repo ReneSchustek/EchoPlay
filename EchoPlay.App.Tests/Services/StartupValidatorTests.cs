@@ -6,6 +6,7 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
@@ -30,6 +31,10 @@ namespace EchoPlay.App.Tests.Services
             services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
             services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
             services.AddScoped<ICoverImageDataService>(_ => coverImageService ?? new FakeCoverImageDataService());
+            // Microsoft.Extensions.Http registriert den Default-IHttpClientFactory.
+            // Die Tests lösen keinen echten Online-Check aus (OfflineMode = true), sodass
+            // die Factory nur konstruktor-seitig gebraucht wird und keine Netzwerkzugriffe entstehen.
+            services.AddHttpClient();
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -39,11 +44,13 @@ namespace EchoPlay.App.Tests.Services
             BackgroundCoverService coverService = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new CoverService(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory()),
+                provider.GetRequiredService<IHttpClientFactory>(),
                 new FakeLoggerFactory());
 
             return new StartupValidator(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 coverService,
+                provider.GetRequiredService<IHttpClientFactory>(),
                 new FakeLoggerFactory());
         }
 

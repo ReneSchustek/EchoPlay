@@ -416,6 +416,26 @@ namespace EchoPlay.App
                 options.MemorySinkCapacity = 100;
             });
 
+            // Zentrale Named-HttpClients. Alle App-seitigen HTTP-Konsumenten holen sich
+            // ihren Client ueber IHttpClientFactory, statt eigene statische Instanzen
+            // zu halten. Damit greifen einheitliche Timeouts, User-Agent-Header und
+            // bei Bedarf spaeter auch Polly-Resilience-Policies (siehe Brief 228).
+            builder.Services.AddHttpClient("CoverDownload", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-CoverDownload/1.0");
+            });
+            builder.Services.AddHttpClient("OnlineCheck", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(5);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-OnlineCheck/1.0");
+            });
+            builder.Services.AddHttpClient("UpdateDownload", client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(2);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateDownload/1.0");
+            });
+
             // Spotify-Konfiguration binden und als Singleton bereitstellen.
             SpotifyOptions spotifyOptions = builder.Configuration
                 .GetSection("Spotify")

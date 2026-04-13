@@ -68,9 +68,12 @@ namespace EchoPlay.App.ViewModels
             CoverVM    = new TagCoverViewModel(() => HasUnsavedChanges = true);
             RenameVM   = new TagRenameViewModel();
 
-            _actions = new TagManagerActions(
+            TagManagerActionsContext actionsContext = new(
                 tagService, lookupCoordinator, fileRenameService,
-                errorDialogService, confirmationDialogService, onlineAccessGuard,
+                errorDialogService, confirmationDialogService, onlineAccessGuard);
+
+            _actions = new TagManagerActions(
+                actionsContext,
                 FileListVM, EditorVM, CoverVM, RenameVM,
                 setIsLoading:         v => IsLoading = v,
                 setIsLookingUp:       v => IsLookingUp = v,
@@ -359,6 +362,12 @@ namespace EchoPlay.App.ViewModels
         /// das Tests-Projekt diese Methode zur direkten Validierung der Formularbefüllung nutzt.
         /// </summary>
         internal void ApplyLookupResult(TagLookupResult result) => _actions.ApplyLookupResult(result);
+
+        /// <summary>Wartet auf den Abschluss des laufenden Auto-Lookups (für deterministische Tests).</summary>
+        internal Task WaitForAutoLookupCompleteAsync() => _actions.WaitForAutoLookupCompleteAsync();
+
+        /// <summary>Wartet auf den Abschluss des laufenden Datei-Ladevorgangs (für deterministische Tests).</summary>
+        internal Task WaitForFileLoadCompleteAsync() => _actions.WaitForFileLoadCompleteAsync();
 
         /// <summary>Setzt das Cover aus einem vom Nutzer geladenen Bild.</summary>
         public void SetCoverFromFile(byte[] imageData, string mimeType)

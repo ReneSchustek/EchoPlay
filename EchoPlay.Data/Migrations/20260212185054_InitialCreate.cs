@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,7 +11,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Series",
                 columns: table => new
                 {
@@ -29,10 +29,10 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Series", x => x.Id);
+                    _ = table.PrimaryKey("PK_Series", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Episodes",
                 columns: table => new
                 {
@@ -49,8 +49,8 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Episodes", x => x.Id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_Episodes", x => x.Id);
+                    _ = table.ForeignKey(
                         name: "FK_Episodes_Series_SeriesId",
                         column: x => x.SeriesId,
                         principalTable: "Series",
@@ -58,7 +58,7 @@ namespace EchoPlay.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "PlaybackStates",
                 columns: table => new
                 {
@@ -75,8 +75,8 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PlaybackStates", x => x.Id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_PlaybackStates", x => x.Id);
+                    _ = table.ForeignKey(
                         name: "FK_PlaybackStates_Episodes_EpisodeId",
                         column: x => x.EpisodeId,
                         principalTable: "Episodes",
@@ -84,18 +84,18 @@ namespace EchoPlay.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Episodes_SeriesId_EpisodeNumber",
                 table: "Episodes",
                 columns: ["SeriesId", "EpisodeNumber"]);
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_PlaybackStates_EpisodeId",
                 table: "PlaybackStates",
                 column: "EpisodeId",
                 unique: true);
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Series_Title",
                 table: "Series",
                 column: "Title");
@@ -104,13 +104,13 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "PlaybackStates");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Episodes");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Series");
         }
     }

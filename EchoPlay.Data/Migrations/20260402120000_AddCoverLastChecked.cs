@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         {
             // Zeitpunkt der letzten Cover-Suche – verhindert wiederholtes
             // Durchsuchen bei Episoden ohne Treffer (Cooldown: 7 Tage).
-            migrationBuilder.AddColumn<DateTime>(
+            _ = migrationBuilder.AddColumn<DateTime>(
                 name: "CoverLastChecked",
                 table: "Episodes",
                 type: "TEXT",
@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "CoverLastChecked",
                 table: "Episodes");
         }

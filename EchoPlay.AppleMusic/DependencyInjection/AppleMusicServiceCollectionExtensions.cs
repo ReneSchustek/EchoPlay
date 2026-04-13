@@ -27,27 +27,27 @@ namespace EchoPlay.AppleMusic.DependencyInjection
         {
             // HttpClient mit BaseAddress und Timeout für die iTunes Search API.
             // 15 Sekunden sind für eine Desktop-App das Maximum – danach ist die UX beschädigt.
-            services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(client =>
+            _ = services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(client =>
             {
                 client.BaseAddress = new Uri("https://itunes.apple.com/");
                 client.Timeout = TimeSpan.FromSeconds(15);
             });
 
-            services.AddScoped<ISeriesImportSearch, AppleMusicSeriesSearch>();
-            services.AddScoped<IEpisodeImportSource, AppleMusicEpisodeSource>();
+            _ = services.AddScoped<ISeriesImportSearch, AppleMusicSeriesSearch>();
+            _ = services.AddScoped<IEpisodeImportSource, AppleMusicEpisodeSource>();
 
             // Keyed-Registrierungen für ImportService – Schlüssel entspricht ProviderType.AppleMusic.ToString().
-            services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic",
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic",
                 (sp, _) => sp.GetServices<ISeriesImportSearch>()
                     .First(s => s is AppleMusicSeriesSearch));
-            services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic",
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic",
                 (sp, _) => sp.GetServices<IEpisodeImportSource>()
                     .First(s => s is AppleMusicEpisodeSource));
 
-            services.AddOptions<AppleMusicHoerspielSettings>();
+            _ = services.AddOptions<AppleMusicHoerspielSettings>();
             services.TryAddScoped<HoerspielDecisionCache>();
-            services.AddScoped<AppleMusicHoerspielAnalyzer>();
-            services.AddScoped<IHoerspielScorer<ITunesArtistDto>, AppleMusicHoerspielScorer>();
+            _ = services.AddScoped<AppleMusicHoerspielAnalyzer>();
+            _ = services.AddScoped<IHoerspielScorer<ITunesArtistDto>, AppleMusicHoerspielScorer>();
 
             return services;
         }

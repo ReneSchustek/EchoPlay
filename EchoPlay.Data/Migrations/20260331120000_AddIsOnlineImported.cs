@@ -14,7 +14,7 @@ namespace EchoPlay.Data.Migrations
         {
             // Neues Flag: trennt Online-importierte Serien von lokal gescannten.
             // Standard: false – bestehende lokal gescannte Serien bleiben unsichtbar in der Online-Mediathek.
-            migrationBuilder.AddColumn<bool>(
+            _ = migrationBuilder.AddColumn<bool>(
                 name: "IsOnlineImported",
                 table: "Series",
                 type: "INTEGER",
@@ -25,7 +25,7 @@ namespace EchoPlay.Data.Migrations
             // (Provider-ID vorhanden, aber kein lokaler Ordner) → definitiv Online-Import.
             // Serien mit Provider-ID UND lokalem Ordner → im Zweifel als Online-Import markieren,
             // damit sie in der Online-Mediathek sichtbar bleiben.
-            migrationBuilder.Sql("""
+            _ = migrationBuilder.Sql("""
                 UPDATE Series
                 SET IsOnlineImported = 1
                 WHERE (SpotifyArtistId IS NOT NULL OR AppleMusicArtistId IS NOT NULL)
@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Migrations
                 """);
 
             // Index für die Online-Mediathek: schneller Filter auf IsOnlineImported.
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Series_IsOnlineImported_Title",
                 table: "Series",
                 columns: IndexColumns,
@@ -43,11 +43,11 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
+            _ = migrationBuilder.DropIndex(
                 name: "IX_Series_IsOnlineImported_Title",
                 table: "Series");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "IsOnlineImported",
                 table: "Series");
         }

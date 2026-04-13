@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Neue Tabelle für benutzerdefinierte Dashboard-Sortierung
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "DashboardPositions",
                 columns: table => new
                 {
@@ -27,17 +27,17 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DashboardPositions", x => x.Id);
+                    _ = table.PrimaryKey("PK_DashboardPositions", x => x.Id);
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_DashboardPositions_SeriesId_Section",
                 table: "DashboardPositions",
                 columns: IndexColumns,
                 unique: true);
 
             // Alte Spalte auf Series entfernen – Positionsdaten liegen jetzt in DashboardPositions
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "DashboardSortOrder",
                 table: "Series");
         }
@@ -45,9 +45,9 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "DashboardPositions");
+            _ = migrationBuilder.DropTable(name: "DashboardPositions");
 
-            migrationBuilder.AddColumn<int>(
+            _ = migrationBuilder.AddColumn<int>(
                 name: "DashboardSortOrder",
                 table: "Series",
                 type: "INTEGER",

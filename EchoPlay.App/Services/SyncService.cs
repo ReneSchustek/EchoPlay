@@ -146,7 +146,8 @@ namespace EchoPlay.App.Services
             IReadOnlyList<LocalScanResult> scanResults = await orchestrator.ScanAsync(
                 settings.LocalLibraryRootPath,
                 settings.EpisodeFolderPattern,
-                progress);
+                progress,
+                cancellationToken);
 
             int seriesMatched   = 0;
             int seriesUnmatched = 0;

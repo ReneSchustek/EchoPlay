@@ -41,7 +41,7 @@ namespace EchoPlay.Logger.Tests
 
             await sink.WriteAsync(TestEintrag);
 
-            Assert.Single(formatter.FormattedEntries);
+            _ = Assert.Single(formatter.FormattedEntries);
             Assert.Same(TestEintrag, formatter.FormattedEntries[0]);
         }
 

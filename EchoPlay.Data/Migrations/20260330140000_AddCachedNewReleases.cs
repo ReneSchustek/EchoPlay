@@ -14,7 +14,7 @@ namespace EchoPlay.Data.Migrations
         {
             // Tabelle für gecachte iTunes-Neuerscheinungen.
             // Ermöglicht sofortige Dashboard-Anzeige ohne API-Wartezeit.
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "CachedNewReleases",
                 columns: table => new
                 {
@@ -33,8 +33,8 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CachedNewReleases", x => x.Id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_CachedNewReleases", x => x.Id);
+                    _ = table.ForeignKey(
                         name: "FK_CachedNewReleases_Series_SeriesId",
                         column: x => x.SeriesId,
                         principalTable: "Series",
@@ -43,14 +43,14 @@ namespace EchoPlay.Data.Migrations
                 });
 
             // Unique Index auf CollectionId: ein iTunes-Album darf nur einmal im Cache liegen
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_CachedNewReleases_CollectionId",
                 table: "CachedNewReleases",
                 column: "CollectionId",
                 unique: true);
 
             // Kombi-Index für schnelle Abfragen nach Serie + Zeitfenster
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_CachedNewReleases_SeriesId_ReleaseDate",
                 table: "CachedNewReleases",
                 columns: IndexColumns);
@@ -59,7 +59,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "CachedNewReleases");
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,40 +11,40 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<byte[]>(
+            _ = migrationBuilder.AddColumn<byte[]>(
                 name: "LocalCoverData",
                 table: "Series",
                 type: "BLOB",
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
+            _ = migrationBuilder.AddColumn<string>(
                 name: "LocalFolderPath",
                 table: "Series",
                 type: "TEXT",
                 maxLength: 512,
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
+            _ = migrationBuilder.AddColumn<string>(
                 name: "LocalFolderPath",
                 table: "Episodes",
                 type: "TEXT",
                 maxLength: 512,
                 nullable: true);
 
-            migrationBuilder.AddColumn<int>(
+            _ = migrationBuilder.AddColumn<int>(
                 name: "LocalTrackCount",
                 table: "Episodes",
                 type: "INTEGER",
                 nullable: true);
 
-            migrationBuilder.AddColumn<int>(
+            _ = migrationBuilder.AddColumn<int>(
                 name: "TrackMatchKind",
                 table: "Episodes",
                 type: "INTEGER",
                 nullable: false,
                 defaultValue: 0);
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LocalTracks",
                 columns: table => new
                 {
@@ -60,8 +60,8 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LocalTracks", x => x.Id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_LocalTracks", x => x.Id);
+                    _ = table.ForeignKey(
                         name: "FK_LocalTracks_Episodes_EpisodeId",
                         column: x => x.EpisodeId,
                         principalTable: "Episodes",
@@ -69,7 +69,7 @@ namespace EchoPlay.Data.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LocalTracks_EpisodeId",
                 table: "LocalTracks",
                 column: "EpisodeId");
@@ -78,26 +78,26 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LocalTracks");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LocalCoverData",
                 table: "Series");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LocalFolderPath",
                 table: "Series");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LocalFolderPath",
                 table: "Episodes");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LocalTrackCount",
                 table: "Episodes");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "TrackMatchKind",
                 table: "Episodes");
         }

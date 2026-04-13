@@ -24,40 +24,40 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
         /// <returns>Der erweiterte Container für Method-Chaining.</returns>
         public static IServiceCollection AddLocalLibrary(this IServiceCollection services)
         {
-            services.AddScoped<ILocalLibraryScanner, LocalLibraryScanner>();
-            services.AddScoped<IScanOrchestrator, ScanOrchestrator>();
-            services.AddScoped<ITrackMatcher, TrackMatcher>();
-            services.AddScoped<IMp3MetadataReader, Mp3MetadataReader>();
-            services.AddScoped<ITagTitleReader, TagTitleReader>();
-            services.AddScoped<ILocalCoverLoader, LocalCoverLoader>();
-            services.AddScoped<ILocalCoverService, LocalCoverService>();
-            services.AddTransient<IEpisodePatternAnalyzer, EpisodePatternAnalyzer>();
-            services.AddScoped<IFolderRestructureService, FolderRestructureService>();
+            _ = services.AddScoped<ILocalLibraryScanner, LocalLibraryScanner>();
+            _ = services.AddScoped<IScanOrchestrator, ScanOrchestrator>();
+            _ = services.AddScoped<ITrackMatcher, TrackMatcher>();
+            _ = services.AddScoped<IMp3MetadataReader, Mp3MetadataReader>();
+            _ = services.AddScoped<ITagTitleReader, TagTitleReader>();
+            _ = services.AddScoped<ILocalCoverLoader, LocalCoverLoader>();
+            _ = services.AddScoped<ILocalCoverService, LocalCoverService>();
+            _ = services.AddTransient<IEpisodePatternAnalyzer, EpisodePatternAnalyzer>();
+            _ = services.AddScoped<IFolderRestructureService, FolderRestructureService>();
 
             // CoverService benötigt einen HttpClient – wird über IHttpClientFactory bereitgestellt
-            services.AddHttpClient<CoverService>();
+            _ = services.AddHttpClient<CoverService>();
 
             // ── Cover-Suche: fünf Anbieter, alle kostenlos und ohne API-Key ────────
 
             // Cover Art Archive (MusicBrainz) – Album-Cover, User-Agent ist Pflicht
-            services.AddHttpClient<CoverArtArchiveSearchService>(client =>
+            _ = services.AddHttpClient<CoverArtArchiveSearchService>(client =>
             {
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(
                     "EchoPlay/1.0 (https://ruhrcoder.de)");
             });
 
             // iTunes Search API – Album-Cover
-            services.AddHttpClient<ITunesCoverSearchService>();
+            _ = services.AddHttpClient<ITunesCoverSearchService>();
 
             // Deezer Künstler-Profilbilder – ideal für Serien-Cover
-            services.AddHttpClient<DeezerArtistCoverSearchService>();
+            _ = services.AddHttpClient<DeezerArtistCoverSearchService>();
 
             // Deezer Album-Cover – dritte Quelle für Folgen-Cover
-            services.AddHttpClient<DeezerAlbumCoverSearchService>();
+            _ = services.AddHttpClient<DeezerAlbumCoverSearchService>();
 
             // Discogs – physische Releases (CD, Kassette), User-Agent ist Pflicht.
             // Besonders wertvoll für ältere Hörspielserien, die auf Streaming-Plattformen fehlen.
-            services.AddHttpClient<DiscogsCoverSearchService>(client =>
+            _ = services.AddHttpClient<DiscogsCoverSearchService>(client =>
             {
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(
                     "EchoPlay/1.0 (https://ruhrcoder.de)");
@@ -67,7 +67,7 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
             // Der Composite ist die einzige Implementierung von ICoverSearchService –
             // Konsumenten (ViewModel) bekommen automatisch alle Anbieter.
             // Reihenfolge: Künstlerbilder zuerst (Serien-Cover), dann Album-Cover.
-            services.AddTransient<ICoverSearchService>(provider =>
+            _ = services.AddTransient<ICoverSearchService>(provider =>
             {
                 DeezerArtistCoverSearchService deezerArtists = provider.GetRequiredService<DeezerArtistCoverSearchService>();
                 CoverArtArchiveSearchService musicBrainz     = provider.GetRequiredService<CoverArtArchiveSearchService>();

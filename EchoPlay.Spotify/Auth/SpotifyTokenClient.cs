@@ -65,7 +65,7 @@ namespace EchoPlay.Spotify.Auth
                     ]);
                     return await _httpClient.SendAsync(req).ConfigureAwait(false);
                 }).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
                 using Stream contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(contentStream).ConfigureAwait(false);

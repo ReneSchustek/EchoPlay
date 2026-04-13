@@ -145,7 +145,7 @@ namespace EchoPlay.Logger.Tests
         {
             using (LogScope first = new("Erster"))
             {
-                Assert.Single(LogScopeManager.CurrentScopes);
+                _ = Assert.Single(LogScopeManager.CurrentScopes);
                 Assert.Equal("Erster", LogScopeManager.CurrentScopes[0]);
             }
 
@@ -154,7 +154,7 @@ namespace EchoPlay.Logger.Tests
 
             using (LogScope second = new("Zweiter"))
             {
-                Assert.Single(LogScopeManager.CurrentScopes);
+                _ = Assert.Single(LogScopeManager.CurrentScopes);
                 Assert.Equal("Zweiter", LogScopeManager.CurrentScopes[0]);
             }
         }

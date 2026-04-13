@@ -52,7 +52,7 @@ namespace EchoPlay.Logger.Tests
             await sink.WriteAsync(MakeEntry("B"));
 
             // Snapshot darf nicht nachträglich wachsen
-            Assert.Single(snapshot);
+            _ = Assert.Single(snapshot);
         }
 
         // ── ILiveLogSink – Event ──────────────────────────────────────────────────

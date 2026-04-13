@@ -1,10 +1,13 @@
 ﻿using EchoPlay.Logger.Scoping;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Logger.Abstractions
 {
     /// <summary>
     /// Definiert die Schnittstelle für alle Logger-Implementierungen.
     /// </summary>
+    [SuppressMessage("Naming", "CA1716:Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen",
+        Justification = "Error/Warning/Info sind etablierte Namen in allen gängigen Logging-APIs (Serilog, NLog, Microsoft.Extensions.Logging). Umbenennung würde die Erwartung jedes .NET-Entwicklers verletzen.")]
     public interface ILogger
     {
         /// <summary>

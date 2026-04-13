@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         {
             // Provider-Cover-URL – bleibt auch nach dem Import verfügbar,
             // damit Cover jederzeit nachgeladen werden können.
-            migrationBuilder.AddColumn<string>(
+            _ = migrationBuilder.AddColumn<string>(
                 name: "CoverImageUrl",
                 table: "Episodes",
                 type: "TEXT",
@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "CoverImageUrl",
                 table: "Episodes");
         }

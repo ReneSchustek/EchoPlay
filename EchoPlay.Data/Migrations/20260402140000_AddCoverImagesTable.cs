@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Neue Tabelle für Cover-Binärdaten – getrennt von Metadaten
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "CoverImages",
                 columns: table => new
                 {
@@ -32,28 +32,28 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CoverImages", x => x.Id);
+                    _ = table.PrimaryKey("PK_CoverImages", x => x.Id);
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_CoverImages_EntityType_EntityId",
                 table: "CoverImages",
                 columns: _entityTypeEntityId,
                 unique: true);
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_CoverImages_EntityType_LastChecked",
                 table: "CoverImages",
                 columns: _entityTypeLastChecked);
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_CoverImages_IsDeleted_DeletedAt",
                 table: "CoverImages",
                 columns: _isDeletedDeletedAt,
                 filter: "IsDeleted = 1");
 
             // Bestehende Serien-Cover in die neue Tabelle übertragen
-            migrationBuilder.Sql("""
+            _ = migrationBuilder.Sql("""
                 INSERT INTO CoverImages (Id, EntityType, EntityId, ImageData, SourceUrl, LastChecked, CreatedAt, IsDeleted)
                 SELECT
                     LOWER(HEX(RANDOMBLOB(4)) || '-' || HEX(RANDOMBLOB(2)) || '-4' || SUBSTR(HEX(RANDOMBLOB(2)),2) || '-' || SUBSTR('89ab', ABS(RANDOM()) % 4 + 1, 1) || SUBSTR(HEX(RANDOMBLOB(2)),2) || '-' || HEX(RANDOMBLOB(6))),
@@ -69,7 +69,7 @@ namespace EchoPlay.Data.Migrations
                 """);
 
             // Bestehende Episoden-Cover in die neue Tabelle übertragen
-            migrationBuilder.Sql("""
+            _ = migrationBuilder.Sql("""
                 INSERT INTO CoverImages (Id, EntityType, EntityId, ImageData, SourceUrl, LastChecked, CreatedAt, IsDeleted)
                 SELECT
                     LOWER(HEX(RANDOMBLOB(4)) || '-' || HEX(RANDOMBLOB(2)) || '-4' || SUBSTR(HEX(RANDOMBLOB(2)),2) || '-' || SUBSTR('89ab', ABS(RANDOM()) % 4 + 1, 1) || SUBSTR(HEX(RANDOMBLOB(2)),2) || '-' || HEX(RANDOMBLOB(6))),
@@ -88,7 +88,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "CoverImages");
+            _ = migrationBuilder.DropTable(name: "CoverImages");
         }
     }
 }

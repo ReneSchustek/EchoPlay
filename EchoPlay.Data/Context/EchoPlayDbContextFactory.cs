@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace EchoPlay.Data.Context
@@ -17,7 +17,7 @@ namespace EchoPlay.Data.Context
             string dbPath = DatabasePathProvider.GetDatabasePath();
 
             // Explizite Konfiguration für SQLite während der Migrations-Erstellung.
-            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            _ = optionsBuilder.UseSqlite($"Data Source={dbPath}");
 
             return new(optionsBuilder.Options);
         }

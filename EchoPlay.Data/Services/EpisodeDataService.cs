@@ -156,7 +156,7 @@ namespace EchoPlay.Data.Services
         /// <param name="episode">Die zu persistierende Episode.</param>
         public async Task AddAsync(Episode episode)
         {
-            _context.Episodes.Add(episode);
+            _ = _context.Episodes.Add(episode);
             await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) hinzugefügt.");
         }
@@ -181,7 +181,7 @@ namespace EchoPlay.Data.Services
         /// <param name="episode">Die zu aktualisierende Episode.</param>
         public async Task UpdateAsync(Episode episode)
         {
-            _context.Episodes.Update(episode);
+            _ = _context.Episodes.Update(episode);
             await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) aktualisiert.");
         }

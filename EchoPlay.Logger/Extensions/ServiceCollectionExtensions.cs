@@ -1,4 +1,5 @@
-﻿using EchoPlay.Logger.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Formatting;
@@ -19,10 +20,13 @@ namespace EchoPlay.Logger.Extensions
         /// <param name="services">Die Service-Collection.</param>
         /// <param name="configure">Optionale Konfiguration der Logger-Optionen.</param>
         /// <returns>Die Service-Collection für Method-Chaining.</returns>
+        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "LoggerManager wird als Singleton im DI-Container registriert; der Host verwaltet die Lebensdauer bis App-Shutdown.")]
         public static IServiceCollection AddEchoPlayLogger(
             this IServiceCollection services,
             Action<LoggerOptions>? configure = null)
         {
+            ArgumentNullException.ThrowIfNull(services);
+
             LoggerOptions options = new();
             configure?.Invoke(options);
 
@@ -52,22 +56,18 @@ namespace EchoPlay.Logger.Extensions
             LoggerFactory loggerFactory = new(sinks, options);
             LogCleanupService cleanupService = new(options);
 
-            // CA2000: LoggerManager wird als Singleton im DI-Container registriert –
-            // die Lebensdauer wird vom Host verwaltet, Dispose erfolgt beim App-Shutdown.
-#pragma warning disable CA2000
             LoggerManager loggerManager = new(loggerFactory, cleanupService, options);
-#pragma warning restore CA2000
 
-            services.AddSingleton(options);
-            services.AddSingleton(cleanupService);
-            services.AddSingleton<ILoggerFactory>(loggerFactory);
-            services.AddSingleton(loggerManager);
+            _ = services.AddSingleton(options);
+            _ = services.AddSingleton(cleanupService);
+            _ = services.AddSingleton<ILoggerFactory>(loggerFactory);
+            _ = services.AddSingleton(loggerManager);
 
             // MemorySink als Singleton registrieren – null wenn EnableMemorySink = false.
             // SettingsViewModel prüft auf null und blendet den Log-Viewer aus.
             if (memorySink is not null)
             {
-                services.AddSingleton(memorySink);
+                _ = services.AddSingleton(memorySink);
             }
 
             return services;

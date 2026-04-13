@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.TagManager.Abstractions;
@@ -8,7 +9,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -23,14 +23,10 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     internal sealed class TagManagerActions
     {
-        private static readonly ResourceLoader _resources = ResourceLoader.GetForViewIndependentUse();
+        // SafeResourceLoader statt statischem ResourceLoader, weil der statische Initializer
+        // WinUI-COM-Infrastruktur im Testhost initialisiert und beim Cleanup einen Crash auslöst.
 
-        private readonly ITagService _tagService;
-        private readonly ITagLookupCoordinator _lookupCoordinator;
-        private readonly IFileRenameService _fileRenameService;
-        private readonly IErrorDialogService _errorDialogService;
-        private readonly IConfirmationDialogService _confirmationDialogService;
-        private readonly IOnlineAccessGuard _onlineAccessGuard;
+        private readonly TagManagerActionsContext _ctx;
 
         private readonly TagFileListViewModel _fileListVM;
         private readonly TagEditorFieldsViewModel _editorVM;
@@ -47,17 +43,14 @@ namespace EchoPlay.App.ViewModels
         // Letzte Lookup-Trefferliste – wird vorgehalten, damit die Page nur Indizes
         // zurückgeben muss und keine TagManager-Typen kennen muss.
         private IReadOnlyList<TagLookupResult> _lastLookupResults = [];
+        private TaskCompletionSource<bool>? _autoLookupCompletedSource;
+        private TaskCompletionSource<bool>? _fileLoadCompletedSource;
 
         /// <summary>
-        /// Initialisiert den Orchestrator mit allen Services, Sub-VMs und Zustands-Callbacks.
+        /// Initialisiert den Orchestrator mit dem Service-Context, Sub-VMs und Zustands-Callbacks.
         /// </summary>
         public TagManagerActions(
-            ITagService tagService,
-            ITagLookupCoordinator lookupCoordinator,
-            IFileRenameService fileRenameService,
-            IErrorDialogService errorDialogService,
-            IConfirmationDialogService confirmationDialogService,
-            IOnlineAccessGuard onlineAccessGuard,
+            TagManagerActionsContext context,
             TagFileListViewModel fileListVM,
             TagEditorFieldsViewModel editorVM,
             TagCoverViewModel coverVM,
@@ -69,12 +62,7 @@ namespace EchoPlay.App.ViewModels
             Action<bool> setHasUnsavedChanges,
             Action refreshCommandStates)
         {
-            _tagService                = tagService;
-            _lookupCoordinator         = lookupCoordinator;
-            _fileRenameService         = fileRenameService;
-            _errorDialogService        = errorDialogService;
-            _confirmationDialogService = confirmationDialogService;
-            _onlineAccessGuard         = onlineAccessGuard;
+            _ctx = context;
 
             _fileListVM = fileListVM;
             _editorVM   = editorVM;
@@ -88,6 +76,14 @@ namespace EchoPlay.App.ViewModels
             _setHasUnsavedChanges  = setHasUnsavedChanges;
             _refreshCommandStates  = refreshCommandStates;
         }
+
+        /// <summary>Wartet auf den Abschluss des laufenden Auto-Lookups (für deterministische Tests).</summary>
+        internal Task WaitForAutoLookupCompleteAsync()
+            => _autoLookupCompletedSource?.Task ?? Task.CompletedTask;
+
+        /// <summary>Wartet auf den Abschluss des laufenden Datei-Ladevorgangs (für deterministische Tests).</summary>
+        internal Task WaitForFileLoadCompleteAsync()
+            => _fileLoadCompletedSource?.Task ?? Task.CompletedTask;
 
         /// <summary>Events für die Page – werden vom Top-VM an den Nutzer weitergereicht.</summary>
         public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
@@ -136,7 +132,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                IReadOnlyList<(string FilePath, AudioTag Tag)> results = await _tagService.ReadFolderAsync(folderPath);
+                IReadOnlyList<(string FilePath, AudioTag Tag)> results = await _ctx.TagService.ReadFolderAsync(folderPath);
 
                 List<TagFileItemViewModel> items = new(results.Count);
                 foreach ((string path, AudioTag _) in results)
@@ -150,7 +146,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerFolderLoadErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerFolderLoadErrorTitle"), ex.Message);
             }
             finally
             {
@@ -161,30 +157,37 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Lädt die Tags einer einzelnen Datei in den Editor und das Cover-Sub-VM.</summary>
         public async Task LoadFileTagsAsync(TagFileItemViewModel file)
         {
+            _fileLoadCompletedSource = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
             _setIsLoading(true);
             _editorVM.Clear();
             _coverVM.Clear();
 
             try
             {
-                AudioTag tag = await _tagService.ReadAsync(file.FilePath);
+                AudioTag tag = await _ctx.TagService.ReadAsync(file.FilePath);
                 _editorVM.PopulateFromTag(tag);
                 _coverVM.LoadFromTag(tag);
                 _setHasUnsavedChanges(false);
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerTagLoadErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message);
             }
             finally
             {
                 _setIsLoading(false);
+                _fileLoadCompletedSource?.TrySetResult(true);
             }
         }
 
         /// <summary>Lädt die Tags mehrerer Dateien und zeigt gemeinsame Werte an.</summary>
         public async Task LoadMultipleFileTagsAsync(IReadOnlyList<TagFileItemViewModel> files)
         {
+            _fileLoadCompletedSource = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
             _setIsLoading(true);
             _editorVM.Clear();
             _coverVM.Clear();
@@ -194,7 +197,7 @@ namespace EchoPlay.App.ViewModels
                 List<AudioTag> tags = new(files.Count);
                 foreach (TagFileItemViewModel file in files)
                 {
-                    AudioTag tag = await _tagService.ReadAsync(file.FilePath);
+                    AudioTag tag = await _ctx.TagService.ReadAsync(file.FilePath);
                     tags.Add(tag);
                 }
 
@@ -204,11 +207,12 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerTagLoadErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message);
             }
             finally
             {
                 _setIsLoading(false);
+                _fileLoadCompletedSource?.TrySetResult(true);
             }
         }
 
@@ -226,14 +230,14 @@ namespace EchoPlay.App.ViewModels
                 try
                 {
                     AudioTag tag = _editorVM.BuildAudioTagFromFields();
-                    await _tagService.WriteAsync(_fileListVM.SelectedFile.FilePath, tag);
+                    await _ctx.TagService.WriteAsync(_fileListVM.SelectedFile.FilePath, tag);
 
                     _fileListVM.SelectedFile.IsModified = false;
                     _setHasUnsavedChanges(false);
                 }
                 catch (Exception ex)
                 {
-                    await _errorDialogService.ShowAsync(_resources.GetString("TagManagerSaveErrorTitle"), ex.Message);
+                    await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerSaveErrorTitle"), ex.Message);
                 }
 
                 return;
@@ -248,11 +252,11 @@ namespace EchoPlay.App.ViewModels
             AudioTag editedTag = _editorVM.BuildEditedFieldsTag();
             await RunBatchAsync(_fileListVM.SelectedFiles, async file =>
             {
-                AudioTag existingTag = await _tagService.ReadAsync(file.FilePath);
+                AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
                 AudioTag mergedTag   = MergeEditedIntoExisting(editedTag, existingTag);
-                await _tagService.WriteAsync(file.FilePath, mergedTag);
+                await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
                 file.IsModified = false;
-            }, _resources.GetString("TagManagerSaveErrorTitle"));
+            }, SafeResourceLoader.Get("TagManagerSaveErrorTitle"));
 
             _setHasUnsavedChanges(false);
         }
@@ -267,11 +271,11 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerSaveAllConfirmTitle"),
+            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerSaveAllConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerSaveAllConfirmMessage"),
+                    SafeResourceLoader.Get("TagManagerSaveAllConfirmMessage"),
                     modifiedFiles.Count));
 
             if (!confirmed)
@@ -282,11 +286,11 @@ namespace EchoPlay.App.ViewModels
             AudioTag sharedTag = _editorVM.BuildSharedTagFromFields();
             await RunBatchAsync(modifiedFiles, async file =>
             {
-                AudioTag existingTag = await _tagService.ReadAsync(file.FilePath);
+                AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
                 AudioTag mergedTag   = MergeSharedIntoExisting(sharedTag, existingTag);
-                await _tagService.WriteAsync(file.FilePath, mergedTag);
+                await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
                 file.IsModified = false;
-            }, _resources.GetString("TagManagerSaveErrorTitle"));
+            }, SafeResourceLoader.Get("TagManagerSaveErrorTitle"));
 
             _setHasUnsavedChanges(false);
         }
@@ -299,9 +303,9 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerRemoveAllTitle"),
-                string.Format(CultureInfo.CurrentCulture, _resources.GetString("TagManagerRemoveAllMessage"), _fileListVM.SelectedFile.FileName));
+            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerRemoveAllTitle"),
+                string.Format(CultureInfo.CurrentCulture, SafeResourceLoader.Get("TagManagerRemoveAllMessage"), _fileListVM.SelectedFile.FileName));
 
             if (!confirmed)
             {
@@ -310,7 +314,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                await _tagService.RemoveAllTagsAsync(_fileListVM.SelectedFile.FilePath);
+                await _ctx.TagService.RemoveAllTagsAsync(_fileListVM.SelectedFile.FilePath);
                 _editorVM.Clear();
                 _coverVM.Clear();
                 _setHasUnsavedChanges(false);
@@ -318,7 +322,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerRemoveTagsErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerRemoveTagsErrorTitle"), ex.Message);
             }
         }
 
@@ -332,7 +336,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            using IDisposable? onlineScope = await _onlineAccessGuard.RequestOnlineAccessAsync();
+            using IDisposable? onlineScope = await _ctx.OnlineAccessGuard.RequestOnlineAccessAsync();
             if (onlineScope is null)
             {
                 return;
@@ -346,13 +350,13 @@ namespace EchoPlay.App.ViewModels
             _setIsLookingUp(true);
             try
             {
-                IReadOnlyList<TagLookupResult> results = await _lookupCoordinator.SearchAsync(query);
+                IReadOnlyList<TagLookupResult> results = await _ctx.LookupCoordinator.SearchAsync(query);
                 _lastLookupResults = results;
                 LookupResultsReady?.Invoke(this, ToCandidates(results));
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerLookupErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerLookupErrorTitle"), ex.Message);
             }
             finally
             {
@@ -366,30 +370,35 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public async Task AutoLookupAsync()
         {
-            string query = _lookupCoordinator.BuildAutoLookupQuery(_fileListVM.CurrentFolderPath);
+            _autoLookupCompletedSource = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            string query = _ctx.LookupCoordinator.BuildAutoLookupQuery(_fileListVM.CurrentFolderPath);
             if (string.IsNullOrWhiteSpace(query))
             {
+                _autoLookupCompletedSource.TrySetResult(true);
                 return;
             }
 
-            using IDisposable? onlineScope = await _onlineAccessGuard.RequestOnlineAccessAsync();
+            using IDisposable? onlineScope = await _ctx.OnlineAccessGuard.RequestOnlineAccessAsync();
             if (onlineScope is null)
             {
+                _autoLookupCompletedSource.TrySetResult(true);
                 return;
             }
 
             _setAutoLookupStatus(string.Format(
                 CultureInfo.CurrentCulture,
-                _resources.GetString("TagManagerAutoLookupSearchingText"),
+                SafeResourceLoader.Get("TagManagerAutoLookupSearchingText"),
                 query));
             _setIsLookingUp(true);
 
             try
             {
-                IReadOnlyList<TagLookupResult> results = await _lookupCoordinator.SearchAsync(query);
+                IReadOnlyList<TagLookupResult> results = await _ctx.LookupCoordinator.SearchAsync(query);
 
                 int loadedTrackCount   = _fileListVM.Files.Count;
-                TagLookupResult? match = _lookupCoordinator.SelectBestMatch(results, loadedTrackCount);
+                TagLookupResult? match = _ctx.LookupCoordinator.SelectBestMatch(results, loadedTrackCount);
 
                 if (match is not null && match.TrackCount.HasValue
                     && match.TrackCount.Value == (uint)loadedTrackCount)
@@ -413,11 +422,12 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 _setAutoLookupStatus(string.Empty);
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerAutoLookupErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerAutoLookupErrorTitle"), ex.Message);
             }
             finally
             {
                 _setIsLookingUp(false);
+                _autoLookupCompletedSource?.TrySetResult(true);
             }
         }
 
@@ -430,11 +440,11 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerApplyToAllConfirmTitle"),
+            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerApplyToAllConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerApplyToAllConfirmMessage"),
+                    SafeResourceLoader.Get("TagManagerApplyToAllConfirmMessage"),
                     _fileListVM.Files.Count));
 
             if (!confirmed)
@@ -444,11 +454,11 @@ namespace EchoPlay.App.ViewModels
 
             await RunBatchAsync(_fileListVM.Files, async file =>
             {
-                AudioTag existingTag = await _tagService.ReadAsync(file.FilePath);
+                AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
                 AudioTag mergedTag   = MergeSharedIntoExisting(pendingTag, existingTag);
-                await _tagService.WriteAsync(file.FilePath, mergedTag);
+                await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
                 file.IsModified = false;
-            }, _resources.GetString("TagManagerApplyToAllErrorTitle"));
+            }, SafeResourceLoader.Get("TagManagerApplyToAllErrorTitle"));
 
             _editorVM.ClearPendingBatchTag();
             _setHasUnsavedChanges(false);
@@ -474,13 +484,13 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                await _tagService.WriteCoverAsync(_fileListVM.SelectedFile.FilePath, null);
+                await _ctx.TagService.WriteCoverAsync(_fileListVM.SelectedFile.FilePath, null);
                 _coverVM.Clear();
                 _setHasUnsavedChanges(false);
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerCoverRemoveErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerCoverRemoveErrorTitle"), ex.Message);
             }
         }
 
@@ -492,11 +502,11 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerCoverApplyAllConfirmTitle"),
+            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerCoverApplyAllConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerCoverApplyAllConfirmMessage"),
+                    SafeResourceLoader.Get("TagManagerCoverApplyAllConfirmMessage"),
                     _fileListVM.Files.Count));
 
             if (!confirmed)
@@ -508,8 +518,8 @@ namespace EchoPlay.App.ViewModels
             string mimeType  = _coverVM.CoverMimeType ?? "image/jpeg";
 
             await RunBatchAsync(_fileListVM.Files,
-                file => _tagService.WriteCoverAsync(file.FilePath, imageData, mimeType),
-                _resources.GetString("TagManagerCoverApplyAllErrorTitle"));
+                file => _ctx.TagService.WriteCoverAsync(file.FilePath, imageData, mimeType),
+                SafeResourceLoader.Get("TagManagerCoverApplyAllErrorTitle"));
         }
 
         // ── Rename ─────────────────────────────────────────────────────────────
@@ -526,14 +536,14 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 IReadOnlyList<(string FilePath, AudioTag Tag)> filesWithTags =
-                    await _tagService.ReadFolderAsync(_fileListVM.CurrentFolderPath);
+                    await _ctx.TagService.ReadFolderAsync(_fileListVM.CurrentFolderPath);
 
-                _renameVM.SetPreviewItems(_fileRenameService.BuildPreview(filesWithTags, _renameVM.RenamePattern));
+                _renameVM.SetPreviewItems(_ctx.FileRenameService.BuildPreview(filesWithTags, _renameVM.RenamePattern));
                 _refreshCommandStates();
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerPreviewErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerPreviewErrorTitle"), ex.Message);
             }
             finally
             {
@@ -551,11 +561,11 @@ namespace EchoPlay.App.ViewModels
 
             int previewCount = _renameVM.PreviewItems.Count;
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _resources.GetString("TagManagerRenameConfirmTitle"),
+            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerRenameConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    _resources.GetString("TagManagerRenameConfirmMessage"),
+                    SafeResourceLoader.Get("TagManagerRenameConfirmMessage"),
                     previewCount, _renameVM.RenamePattern));
 
             if (!confirmed)
@@ -567,26 +577,26 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 IReadOnlyList<(string FilePath, AudioTag Tag)> filesWithTags =
-                    await _tagService.ReadFolderAsync(_fileListVM.CurrentFolderPath);
+                    await _ctx.TagService.ReadFolderAsync(_fileListVM.CurrentFolderPath);
 
-                int renamedCount = await _fileRenameService.RenameAsync(filesWithTags, _renameVM.RenamePattern);
+                int renamedCount = await _ctx.FileRenameService.RenameAsync(filesWithTags, _renameVM.RenamePattern);
 
                 // Ordner neu laden – Dateinamen haben sich verändert
                 await LoadFolderAsync(_fileListVM.CurrentFolderPath);
 
                 if (renamedCount < previewCount)
                 {
-                    await _errorDialogService.ShowAsync(
-                        _resources.GetString("TagManagerRenamePartialErrorTitle"),
+                    await _ctx.ErrorDialogService.ShowAsync(
+                        SafeResourceLoader.Get("TagManagerRenamePartialErrorTitle"),
                         string.Format(
                             CultureInfo.CurrentCulture,
-                            _resources.GetString("TagManagerRenamePartialErrorMessage"),
+                            SafeResourceLoader.Get("TagManagerRenamePartialErrorMessage"),
                             renamedCount, previewCount));
                 }
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(_resources.GetString("TagManagerRenameErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerRenameErrorTitle"), ex.Message);
             }
             finally
             {
@@ -615,7 +625,7 @@ namespace EchoPlay.App.ViewModels
                     processed++;
                     _setBatchProgress(string.Format(
                         CultureInfo.CurrentCulture,
-                        _resources.GetString("TagManagerBatchProgressText"),
+                        SafeResourceLoader.Get("TagManagerBatchProgressText"),
                         processed, files.Count));
 
                     await perFile(file);
@@ -623,7 +633,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(errorTitle, ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(errorTitle, ex.Message);
             }
             finally
             {

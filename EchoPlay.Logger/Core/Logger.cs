@@ -1,4 +1,5 @@
-﻿using EchoPlay.Logger.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Scoping;
@@ -17,6 +18,7 @@ namespace EchoPlay.Logger.Core
     /// <param name="category">Die Quelle der Logs (z.B. "ApiService", "Database").</param>
     /// <param name="sinks">Liste der Ausgabeziele für Log-Einträge.</param>
     /// <param name="options">Logger-Konfiguration – <c>MinimumLevel</c> wird bei jedem Aufruf neu gelesen.</param>
+    [SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "Etablierter Framework-Name; Namespace und Typ sind bewusst identisch wie bei Microsoft.Extensions.Logging.")]
     public class Logger(string category, IReadOnlyList<ILogSink> sinks, LoggerOptions options) : ILogger
     {
         private readonly string _category = category;
@@ -97,6 +99,7 @@ namespace EchoPlay.Logger.Core
         /// <param name="level">Die Wichtigkeitsstufe.</param>
         /// <param name="message">Die Nachricht.</param>
         /// <param name="exception">Optionaler Fehler.</param>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Logger darf durch Sink-Fehler die Anwendung nicht crashen; catch-all mit Diagnostics-Trace ist Resilience-Pattern.")]
         private async Task LogAsync(LogLevel level, string message, Exception? exception = null)
         {
             // Frühzeitig abbrechen wenn Level unter Minimum liegt.

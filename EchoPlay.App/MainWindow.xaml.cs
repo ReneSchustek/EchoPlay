@@ -50,8 +50,9 @@ namespace EchoPlay.App
             NavigationService navigation = App.Services.GetRequiredService<NavigationService>();
             navigation.Initialize(ContentFrame);
 
-            // Standard-Geschwindigkeit auf 1× vorauswählen (Index 1: 0.75×, 1×, 1.25×, 1.5×, 2×)
-            SpeedComboBox.SelectedIndex = 1;
+            // Standard-Geschwindigkeit auf 1× vorauswählen (Reihenfolge: 0.75×, 1×, 1.25×, 1.5×, 2×)
+            const int defaultSpeedIndex = 1;
+            SpeedComboBox.SelectedIndex = defaultSpeedIndex;
 
             // Startgröße – groß genug für die NavigationView mit aufgeklapptem Pane
             AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 750));

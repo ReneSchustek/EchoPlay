@@ -61,7 +61,7 @@ namespace EchoPlay.Spotify.Clients
                 // Transport- und Authentifizierungsfehler können hier
                 // nicht fachlich sinnvoll behandelt werden und werden
                 // daher direkt weitergegeben.
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
                 using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
@@ -138,7 +138,7 @@ namespace EchoPlay.Spotify.Clients
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
                     () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
                 using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
@@ -225,7 +225,7 @@ namespace EchoPlay.Spotify.Clients
                 {
                     using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
                         () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
+                    _ = response.EnsureSuccessStatusCode();
 
                     using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                     using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
@@ -313,7 +313,7 @@ namespace EchoPlay.Spotify.Clients
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
                     () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
                 using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);

@@ -39,7 +39,7 @@ namespace EchoPlay.Core.Scoring
             int score = 0;
 
             // Serienname im Release-Titel: Grundvoraussetzung für Relevanz
-            if (normalizedRelease.Contains(normalizedSeries))
+            if (normalizedRelease.Contains(normalizedSeries, StringComparison.Ordinal))
             {
                 score += 50;
             }
@@ -47,9 +47,9 @@ namespace EchoPlay.Core.Scoring
             // Episodennummer im Release-Titel: starker Indikator für korrekte Folge
             if (episodeNumber.HasValue)
             {
-                string numberText = episodeNumber.Value.ToString();
+                string numberText = episodeNumber.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-                if (normalizedRelease.Contains(numberText))
+                if (normalizedRelease.Contains(numberText, StringComparison.Ordinal))
                 {
                     score += 30;
                 }
@@ -61,7 +61,7 @@ namespace EchoPlay.Core.Scoring
                 string normalizedEpisode = HoerspielTextNormalizer.Normalize(episodeTitle);
 
                 // Kurze Titel (≤3 Zeichen nach Normalisierung) sind zu generisch
-                if (normalizedEpisode.Length > 3 && normalizedRelease.Contains(normalizedEpisode))
+                if (normalizedEpisode.Length > 3 && normalizedRelease.Contains(normalizedEpisode, StringComparison.Ordinal))
                 {
                     score += 20;
                 }

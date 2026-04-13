@@ -14,7 +14,9 @@ namespace EchoPlay.Data.Context
         /// <param name="context">Der zu initialisierende Datenbankkontext.</param>
         public static async Task InitializeAsync(EchoPlayDbContext context)
         {
-            // Wir nutzen MigrateAsync statt EnsureCreated, um zukünftige Schema-Änderungen 
+            ArgumentNullException.ThrowIfNull(context);
+
+            // Wir nutzen MigrateAsync statt EnsureCreated, um zukünftige Schema-Änderungen
             // versioniert auf bestehende Installationen anwenden zu können.
             await context.Database.MigrateAsync().ConfigureAwait(false);
         }

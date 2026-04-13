@@ -60,6 +60,8 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc />
         public async Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries)
         {
+            ArgumentNullException.ThrowIfNull(entries);
+
             if (entries.Count == 0)
             {
                 return;
@@ -163,6 +165,8 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc />
         public async Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
         {
+            ArgumentNullException.ThrowIfNull(seriesIds);
+
             if (seriesIds.Count == 0)
             {
                 return 0;

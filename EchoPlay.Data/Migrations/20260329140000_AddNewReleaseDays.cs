@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -10,6 +11,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Konfigurierbares Zeitfenster für Neuerscheinungen (Standard: 90 Tage)
             _ = migrationBuilder.AddColumn<int>(
                 name: "NewReleaseDays",
@@ -22,6 +25,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropColumn(
                 name: "NewReleaseDays",
                 table: "AppSettings");

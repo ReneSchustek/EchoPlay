@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -18,6 +19,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropIndex(
                 name: "IX_LocalTracks_EpisodeId",
                 table: "LocalTracks");
@@ -105,6 +108,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropForeignKey(
                 name: "FK_DashboardPositions_Series_SeriesId",
                 table: "DashboardPositions");

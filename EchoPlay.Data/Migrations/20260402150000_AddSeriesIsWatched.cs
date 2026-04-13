@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -10,6 +11,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Überwachungs-Flag: nur überwachte Serien erscheinen
             // unter Neuerscheinungen/Ankündigungen. Default: true.
             _ = migrationBuilder.AddColumn<bool>(
@@ -23,6 +26,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropColumn(
                 name: "IsWatched",
                 table: "Series");

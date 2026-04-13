@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -14,6 +15,8 @@ namespace EchoPlay.Data.Configurations
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<CoverImage> builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             _ = builder.ToTable("CoverImages");
 
             _ = builder.HasKey(c => c.Id);

@@ -26,6 +26,8 @@ namespace EchoPlay.Data.Context
         /// <param name="eventData">Diagnosedaten zum Verbindungsereignis.</param>
         public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
         {
+            ArgumentNullException.ThrowIfNull(connection);
+
             base.ConnectionOpened(connection, eventData);
             ApplyPragmas(connection);
         }
@@ -44,6 +46,8 @@ namespace EchoPlay.Data.Context
             ConnectionEndEventData eventData,
             CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(connection);
+
             ApplyPragmas(connection);
             return Task.CompletedTask;
         }

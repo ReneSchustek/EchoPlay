@@ -27,6 +27,8 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         public async Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
         {
+            ArgumentNullException.ThrowIfNull(seriesIds);
+
             // Ein einziger Query mit WHERE SeriesId IN (...) statt N einzelne Abfragen.
             // Wichtig für die StatusBar-Statistiken, die alle abonnierten Serien umfassen.
             HashSet<Guid> idSet = new(seriesIds);
@@ -73,6 +75,8 @@ namespace EchoPlay.Data.Services
         public async Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(
             IReadOnlyList<Guid> seriesIds)
         {
+            ArgumentNullException.ThrowIfNull(seriesIds);
+
             // Leere Eingabe → leere Antwort; SQL-IN über leere Liste wäre ungültig
             if (seriesIds.Count == 0)
             {
@@ -156,6 +160,8 @@ namespace EchoPlay.Data.Services
         /// <param name="episode">Die zu persistierende Episode.</param>
         public async Task AddAsync(Episode episode)
         {
+            ArgumentNullException.ThrowIfNull(episode);
+
             _ = _context.Episodes.Add(episode);
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) hinzugefügt.");
@@ -164,6 +170,8 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         public async Task AddRangeAsync(IReadOnlyList<Episode> episodes)
         {
+            ArgumentNullException.ThrowIfNull(episodes);
+
             if (episodes.Count == 0)
             {
                 return;
@@ -181,6 +189,8 @@ namespace EchoPlay.Data.Services
         /// <param name="episode">Die zu aktualisierende Episode.</param>
         public async Task UpdateAsync(Episode episode)
         {
+            ArgumentNullException.ThrowIfNull(episode);
+
             _ = _context.Episodes.Update(episode);
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) aktualisiert.");

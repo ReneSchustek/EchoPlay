@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -12,6 +13,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Neues Flag: trennt Online-importierte Serien von lokal gescannten.
             // Standard: false – bestehende lokal gescannte Serien bleiben unsichtbar in der Online-Mediathek.
             _ = migrationBuilder.AddColumn<bool>(
@@ -43,6 +46,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropIndex(
                 name: "IX_Series_IsOnlineImported_Title",
                 table: "Series");

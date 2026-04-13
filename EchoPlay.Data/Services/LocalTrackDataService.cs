@@ -43,6 +43,8 @@ namespace EchoPlay.Data.Services
         public async Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(
             IReadOnlyList<Guid> episodeIds)
         {
+            ArgumentNullException.ThrowIfNull(episodeIds);
+
             if (episodeIds.Count == 0)
             {
                 return new Dictionary<Guid, LocalTrack>();
@@ -80,6 +82,8 @@ namespace EchoPlay.Data.Services
         /// <param name="tracks">Die neuen Tracks. Die <see cref="LocalTrack.EpisodeId"/> muss bereits gesetzt sein.</param>
         public async Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks)
         {
+            ArgumentNullException.ThrowIfNull(tracks);
+
             _logger.Debug($"Speichere {tracks.Count} Track(s) für Episode '{episodeId}'.");
 
             // Vorhandene Einträge hart löschen – Scan-Ergebnisse sind keine Stammdaten

@@ -11,6 +11,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropForeignKey(
                 name: "FK_Episodes_Series_SeriesId",
                 table: "Episodes");
@@ -59,6 +61,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropForeignKey(
                 name: "FK_Episodes_Series_SeriesId",
                 table: "Episodes");

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -10,6 +11,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Korrektur: Die vorherige Migration hat IsOnlineImported zu breit gesetzt.
             // Serien mit gecachter AppleMusicArtistId (vom OnlineEpisodeChecker) sind
             // keine echten Online-Imports – nur Serien ohne LocalFolderPath sind es.
@@ -28,6 +31,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Rückgängig: wieder alle Serien mit Provider-ID als Online markieren
             _ = migrationBuilder.Sql("""
                 UPDATE Series

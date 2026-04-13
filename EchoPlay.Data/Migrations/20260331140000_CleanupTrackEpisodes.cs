@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -10,6 +11,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Bereinigung: Alle Episoden von online-importierten Serien löschen.
             // Der bisherige Import hat pro Track eine Episode angelegt (N Tracks = N Episoden).
             // Ab jetzt wird pro Album eine Episode angelegt (1 Album = 1 Episode).

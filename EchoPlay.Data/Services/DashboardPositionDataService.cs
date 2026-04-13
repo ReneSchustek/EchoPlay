@@ -39,6 +39,8 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc />
         public async Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds)
         {
+            ArgumentNullException.ThrowIfNull(seriesIds);
+
             _logger.Info($"Speichere Reihenfolge für '{section}' ({seriesIds.Count} Serien).");
 
             // Bestehende Positionen des Bereichs entfernen – Replace-Strategie ist einfacher

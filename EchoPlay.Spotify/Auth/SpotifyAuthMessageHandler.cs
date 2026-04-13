@@ -25,6 +25,8 @@ namespace EchoPlay.Spotify.Auth
         /// <returns>Die HTTP-Antwort von Spotify.</returns>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
             // Das Token wird hier bewusst pro Request abgefragt, da der TokenClient intern cached und bei Bedarf erneuert.
             string accessToken = await _tokenClient.GetAccessTokenAsync().ConfigureAwait(false);
 

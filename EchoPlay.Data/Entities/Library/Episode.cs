@@ -82,6 +82,8 @@ namespace EchoPlay.Data.Entities.Library
         /// Artwork, das Serien-Cover das übergreifende Logo der Serie.
         /// Null wenn kein Cover vorhanden oder noch nicht geladen.
         /// </summary>
+        [SuppressMessage("Performance", "CA1819:Properties should not return arrays",
+            Justification = "EF Core speichert BLOBs als byte[]; Collection<byte> würde die EF-Mapping-Konvention brechen.")]
         public byte[]? LocalCoverData { get; set; }
 
         /// <summary>

@@ -23,6 +23,8 @@ namespace EchoPlay.Data.Entities.Library
         /// <summary>
         /// Cover-Binärdaten (JPEG/PNG).
         /// </summary>
+        [SuppressMessage("Performance", "CA1819:Properties should not return arrays",
+            Justification = "EF Core speichert BLOBs als byte[]; Collection<byte> würde die EF-Mapping-Konvention brechen.")]
         public byte[] ImageData { get; set; } = [];
 
         /// <summary>

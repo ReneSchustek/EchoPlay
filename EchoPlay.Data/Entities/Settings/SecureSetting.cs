@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Settings
 {
@@ -13,6 +14,8 @@ namespace EchoPlay.Data.Entities.Settings
         public string Key { get; set; } = string.Empty;
 
         /// <summary>DPAPI-verschlüsselter Wert als Byte-Array.</summary>
+        [SuppressMessage("Performance", "CA1819:Properties should not return arrays",
+            Justification = "EF Core speichert BLOBs als byte[]; Collection<byte> würde die EF-Mapping-Konvention brechen.")]
         public byte[] EncryptedValue { get; set; } = [];
     }
 }

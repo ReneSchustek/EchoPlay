@@ -86,7 +86,7 @@ namespace EchoPlay.Data.Services
         public async Task AddAsync(Series series)
         {
             _ = _context.Series.Add(series);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Serie '{series.Title}' (ID: {series.Id}) hinzugefügt.");
         }
 
@@ -98,7 +98,7 @@ namespace EchoPlay.Data.Services
         public async Task UpdateAsync(Series series)
         {
             _ = _context.Series.Update(series);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Serie '{series.Title}' (ID: {series.Id}) aktualisiert.");
         }
 
@@ -142,7 +142,7 @@ namespace EchoPlay.Data.Services
             }
 
             series.IsSubscribed = isSubscribed;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"Serie '{series.Title}' (ID: {seriesId}) IsSubscribed = {isSubscribed}.");
         }
@@ -187,7 +187,7 @@ namespace EchoPlay.Data.Services
             }
 
             series.IsFavorite = isFavorite;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"Serie '{series.Title}' (ID: {seriesId}) IsFavorite = {isFavorite}.");
         }
@@ -211,7 +211,7 @@ namespace EchoPlay.Data.Services
             }
 
             series.LocalCoverData = coverData;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"Cover für Serie '{series.Title}' (ID: {seriesId}) {(coverData is null ? "gelöscht" : "gespeichert")}.");
         }
@@ -230,7 +230,7 @@ namespace EchoPlay.Data.Services
             }
 
             series.IsWatched = isWatched;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"Serie \"{series.Title}\" – Überwachung {(isWatched ? "aktiviert" : "deaktiviert")}.");
         }
@@ -291,7 +291,7 @@ namespace EchoPlay.Data.Services
                     playbackState.MarkAsDeleted(DateTime.UtcNow);
                 }
 
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
                 await transaction.CommitAsync().ConfigureAwait(false);
 
                 _logger.Info($"Serie '{series.Title}' (ID: {id}) und {episodes.Count} Episode(n) sowie {playbackStates.Count} PlaybackState(s) als gelöscht markiert.");

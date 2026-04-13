@@ -44,7 +44,7 @@ namespace EchoPlay.Data.Services
 
             AppSettings defaultSettings = new();
             _ = _context.AppSettings.Add(defaultSettings);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info("Standardkonfiguration gespeichert.");
 
@@ -61,7 +61,7 @@ namespace EchoPlay.Data.Services
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("DB:AppSettings:Save");
 
             _ = _context.AppSettings.Update(settings);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info("Einstellungen gespeichert.");
         }
     }

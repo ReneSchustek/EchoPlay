@@ -91,7 +91,7 @@ namespace EchoPlay.Data.Services
             _context.LocalTracks.RemoveRange(existing);
             _context.LocalTracks.AddRange(tracks);
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"{tracks.Count} Track(s) für Episode '{episodeId}' gespeichert ({existing.Count} vorherige entfernt).");
         }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace EchoPlay.AppleMusic.Dtos
@@ -50,6 +51,8 @@ namespace EchoPlay.AppleMusic.Dtos
         /// URL zum Album-Artwork in 100x100 Pixel Auflösung.
         /// </summary>
         [JsonPropertyName("artworkUrl100")]
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "DTO spiegelt externes iTunes-JSON-Feld 'artworkUrl100'; Uri-Umwandlung würde die Serialisierung doppelt durchlaufen.")]
         public string? ArtworkUrl100 { get; init; }
 
         /// <summary>
@@ -63,6 +66,8 @@ namespace EchoPlay.AppleMusic.Dtos
         /// Kann verwendet werden, um das Album direkt in der Apple-Music-App zu öffnen.
         /// </summary>
         [JsonPropertyName("collectionViewUrl")]
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "DTO spiegelt externes iTunes-JSON-Feld 'collectionViewUrl'; Uri-Umwandlung würde die Serialisierung doppelt durchlaufen.")]
         public string? CollectionViewUrl { get; init; }
 
         /// <summary>

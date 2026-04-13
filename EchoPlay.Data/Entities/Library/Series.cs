@@ -1,4 +1,5 @@
 ﻿using EchoPlay.Data.Entities.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Library
 {
@@ -21,6 +22,8 @@ namespace EchoPlay.Data.Entities.Library
         /// <summary>
         /// URL oder lokaler Pfad zum Coverbild der Serie.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Entity spiegelt DB-Spalte CoverImageUrl (URL oder lokaler Pfad als TEXT); Uri-Umwandlung ist für lokale Pfade nicht passend und würde EF-Core-Mapping erfordern.")]
         public string? CoverImageUrl { get; set; }
 
         /// <summary>

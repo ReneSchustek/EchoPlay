@@ -1,4 +1,6 @@
-﻿namespace EchoPlay.Spotify.Dtos
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace EchoPlay.Spotify.Dtos
 {
     /// <summary>
     /// Repräsentiert einen Künstler aus der Spotify-Web-API.
@@ -25,6 +27,8 @@
         /// <summary>
         /// URL zum primären Künstlerbild, sofern von Spotify geliefert.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "DTO spiegelt externes Spotify-JSON-Feld 'images[0].url'; Uri-Umwandlung würde die Deserialisierung doppelt durchlaufen.")]
         public string? ImageUrl { get; init; }
     }
 }

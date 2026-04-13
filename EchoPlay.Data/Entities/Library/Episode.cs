@@ -1,4 +1,5 @@
 ﻿using EchoPlay.Data.Entities.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Library
 {
@@ -62,6 +63,8 @@ namespace EchoPlay.Data.Entities.Library
         /// Wird beim Online-Import gesetzt. Null bei lokalen Folgen.
         /// Beispiel: "https://open.spotify.com/album/abc123"
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Entity spiegelt DB-Spalte ProviderUrl (Spotify/Apple-Music-Deep-Link als TEXT); Uri-Umwandlung würde EF-Core-Mapping erfordern ohne fachlichen Mehrwert.")]
         public string? ProviderUrl { get; set; }
 
         /// <summary>
@@ -69,6 +72,8 @@ namespace EchoPlay.Data.Entities.Library
         /// Wird beim Import gesetzt und dient als Fallback für die Cover-Suche,
         /// wenn <see cref="LocalCoverData"/> noch nicht geladen wurde.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Entity spiegelt DB-Spalte CoverImageUrl (Spotify/Apple-Music-Cover-URL als TEXT); Uri-Umwandlung würde EF-Core-Mapping erfordern ohne fachlichen Mehrwert.")]
         public string? CoverImageUrl { get; set; }
 
         /// <summary>

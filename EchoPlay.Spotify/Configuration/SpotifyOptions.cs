@@ -1,4 +1,6 @@
-﻿namespace EchoPlay.Spotify.Configuration
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace EchoPlay.Spotify.Configuration
 {
     /// <summary>
     /// Enthält die konfigurierbaren Einstellungen für den Zugriff auf die Spotify-Web-API.
@@ -9,11 +11,15 @@
         /// <summary>
         /// Basis-URL der Spotify-Web-API.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Options-Property wird aus appsettings.json als String gebunden; Uri-Umwandlung würde den Options-Pattern-Bindungsfluss brechen.")]
         public string ApiBaseUrl { get; init; } = "https://api.spotify.com/v1/";
 
         /// <summary>
         /// Basis-URL für die Spotify-Authentifizierung.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Options-Property wird aus appsettings.json als String gebunden; Uri-Umwandlung würde den Options-Pattern-Bindungsfluss brechen.")]
         public string AuthBaseUrl { get; init; } = "https://accounts.spotify.com/";
 
         /// <summary>

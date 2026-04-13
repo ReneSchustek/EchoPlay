@@ -52,6 +52,8 @@ namespace EchoPlay.Data.Services
         /// <param name="playbackState">Der zu persistierende Wiedergabestatus.</param>
         public async Task AddAsync(PlaybackState playbackState)
         {
+            ArgumentNullException.ThrowIfNull(playbackState);
+
             _ = _context.PlaybackStates.Add(playbackState);
 
             try
@@ -76,6 +78,8 @@ namespace EchoPlay.Data.Services
         /// <param name="playbackState">Der zu aktualisierende Wiedergabestatus.</param>
         public async Task UpdateAsync(PlaybackState playbackState)
         {
+            ArgumentNullException.ThrowIfNull(playbackState);
+
             _ = _context.PlaybackStates.Update(playbackState);
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' aktualisiert.");
@@ -122,6 +126,8 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc />
         public async Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds)
         {
+            ArgumentNullException.ThrowIfNull(episodeIds);
+
             if (episodeIds.Count == 0)
             {
                 return [];

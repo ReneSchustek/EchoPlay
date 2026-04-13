@@ -23,6 +23,8 @@ namespace EchoPlay.LocalLibrary.Parsing
         /// </param>
         public EpisodeFolderParser(string folderPattern)
         {
+            ArgumentNullException.ThrowIfNull(folderPattern);
+
             string regexPattern = BuildRegex(folderPattern, out _hasNumber, out _hasTitle);
             _pattern = new(regexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }

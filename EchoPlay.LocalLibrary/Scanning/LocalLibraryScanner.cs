@@ -40,6 +40,8 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <param name="tagTitleReader">Liest ID3-Tags aus Audiodateien für bessere Titelqualität.</param>
         public LocalLibraryScanner(ILoggerFactory loggerFactory, ITagTitleReader tagTitleReader)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
+
             _logger = loggerFactory.CreateLogger(nameof(LocalLibraryScanner));
             _tagTitleReader = tagTitleReader;
         }

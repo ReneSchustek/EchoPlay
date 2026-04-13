@@ -31,6 +31,8 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <param name="loggerFactory">Factory für den Logger.</param>
         public FolderRestructureService(ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
+
             _logger = loggerFactory.CreateLogger(nameof(FolderRestructureService));
         }
 
@@ -171,6 +173,8 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <inheritdoc />
         public int Execute(RestructurePreview preview)
         {
+            ArgumentNullException.ThrowIfNull(preview);
+
             List<(string Source, string Destination)> completed = [];
 
             try

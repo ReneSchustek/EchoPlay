@@ -22,6 +22,9 @@ namespace EchoPlay.AppleMusic.Mapping
         /// <returns>Eine Import-Episode die das gesamte Album repräsentiert.</returns>
         public static ImportEpisode MapAlbumToEpisode(ITunesCollectionDto album, IReadOnlyList<ITunesTrackDto> tracks, int orderIndex)
         {
+            ArgumentNullException.ThrowIfNull(album);
+            ArgumentNullException.ThrowIfNull(tracks);
+
             // Gesamtdauer: Summe aller Track-Dauern
             TimeSpan totalDuration = TimeSpan.Zero;
             foreach (ITunesTrackDto track in tracks)

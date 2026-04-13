@@ -51,6 +51,8 @@ namespace EchoPlay.Data.Context
         /// </summary>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ArgumentNullException.ThrowIfNull(modelBuilder);
+
             base.OnModelCreating(modelBuilder);
 
             // Sucht automatisch alle IEntityTypeConfiguration<T>-Klassen im Assembly

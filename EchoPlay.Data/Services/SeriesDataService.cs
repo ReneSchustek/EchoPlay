@@ -85,6 +85,8 @@ namespace EchoPlay.Data.Services
         /// <param name="series">Die zu persistierende Serie.</param>
         public async Task AddAsync(Series series)
         {
+            ArgumentNullException.ThrowIfNull(series);
+
             _ = _context.Series.Add(series);
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Serie '{series.Title}' (ID: {series.Id}) hinzugefügt.");
@@ -97,6 +99,8 @@ namespace EchoPlay.Data.Services
         /// <param name="series">Die zu aktualisierende Serie.</param>
         public async Task UpdateAsync(Series series)
         {
+            ArgumentNullException.ThrowIfNull(series);
+
             _ = _context.Series.Update(series);
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Serie '{series.Title}' (ID: {series.Id}) aktualisiert.");

@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -13,6 +14,8 @@ namespace EchoPlay.Data.Configurations
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<Series> builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             _ = builder.ToTable("Series");
 
             // Primärschlüssel – EF Core würde "Id" auch ohne explizite Angabe erkennen,

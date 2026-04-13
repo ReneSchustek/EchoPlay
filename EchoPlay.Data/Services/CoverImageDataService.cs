@@ -36,6 +36,8 @@ namespace EchoPlay.Data.Services
         public async Task<IReadOnlyDictionary<Guid, byte[]>> GetImageDataByEntitiesAsync(
             string entityType, IReadOnlyList<Guid> entityIds)
         {
+            ArgumentNullException.ThrowIfNull(entityIds);
+
             if (entityIds.Count == 0) return new Dictionary<Guid, byte[]>(0);
 
             // Ein einziger Query mit WHERE EntityId IN (...) – kein N+1

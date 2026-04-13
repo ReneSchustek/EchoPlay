@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,6 +13,8 @@ namespace EchoPlay.Data.Configurations
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<Episode> builder)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             _ = builder.ToTable("Episodes");
 
             _ = builder.HasKey(e => e.Id);

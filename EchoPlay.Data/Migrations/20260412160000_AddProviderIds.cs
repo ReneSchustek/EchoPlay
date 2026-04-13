@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -10,6 +11,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             // Bestehende Series-Spalten von MaxLength 128 auf 64 reduzieren.
             // SQLite ignoriert MaxLength-Änderungen zur Laufzeit, aber die Migration
             // dokumentiert die Absicht und hält den Snapshot konsistent.
@@ -46,6 +49,8 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            ArgumentNullException.ThrowIfNull(migrationBuilder);
+
             _ = migrationBuilder.DropIndex(
                 name: "IX_Episodes_AppleMusicAlbumId",
                 table: "Episodes");

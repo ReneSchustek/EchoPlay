@@ -20,6 +20,9 @@ namespace EchoPlay.AppleMusic.Mapping
         /// <returns>Das importierbare Serienmodell.</returns>
         public static ImportSeries Map(ITunesArtistDto artist, HoerspielScoreResult scoreResult)
         {
+            ArgumentNullException.ThrowIfNull(artist);
+            ArgumentNullException.ThrowIfNull(scoreResult);
+
             return new ImportSeries
             {
                 SourceSeriesId = artist.ArtistId.ToString(CultureInfo.InvariantCulture),

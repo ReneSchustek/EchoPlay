@@ -4,6 +4,7 @@ using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
+using System.Security;
 using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Scanning
@@ -380,7 +381,14 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                 return string.IsNullOrWhiteSpace(album) ? null : album;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException
+                                       or UnauthorizedAccessException
+                                       or SecurityException
+                                       or PathTooLongException
+                                       or DirectoryNotFoundException
+                                       or NotSupportedException
+                                       or TagLib.CorruptFileException
+                                       or TagLib.UnsupportedFormatException)
             {
                 _logger.Warning($"ID3-Tags nicht lesbar, Ordnername wird verwendet: {filePath} – {ex.Message}");
                 return null;
@@ -400,7 +408,12 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return Directory.GetFiles(rootPath, "*", SearchOption.AllDirectories)
                     .Count(EchoPlay.Core.AudioExtensions.IsAudioFile);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException
+                                       or UnauthorizedAccessException
+                                       or SecurityException
+                                       or PathTooLongException
+                                       or DirectoryNotFoundException
+                                       or ArgumentException)
             {
                 _logger.Warning($"Vorab-Zählung fehlgeschlagen, Fortschritt wird indeterministisch: {ex.Message}");
                 return 0;

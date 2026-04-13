@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,7 +55,12 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 response = await _httpClient.GetFromJsonAsync<ITunesSearchResponse>(url, ct).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is HttpRequestException
+                                       or TaskCanceledException
+                                       or JsonException
+                                       or NotSupportedException
+                                       or UriFormatException
+                                       or InvalidOperationException)
             {
                 // Netzwerkfehler oder JSON-Deserialisierung → leere Liste, kein Absturz
                 return [];

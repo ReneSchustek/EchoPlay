@@ -4,6 +4,7 @@ using EchoPlay.AppleMusic.Mapping;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Scoring;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.AppleMusic.Clients
 {
@@ -44,6 +45,8 @@ namespace EchoPlay.AppleMusic.Clients
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <returns>Eine fachlich bewertete Liste importierbarer Serien.</returns>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Einzelne Bewertungsfehler aus der Scoring-Pipeline dürfen die Gesamtsuche nicht abbrechen; der Scorer kombiniert mehrere Heuristiken und die konkreten Fehlertypen sind nicht vollständig vorhersehbar.")]
         public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))

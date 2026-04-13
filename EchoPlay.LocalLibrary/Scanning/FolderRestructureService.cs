@@ -2,6 +2,7 @@ using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
+using System.Security;
 using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Scanning
@@ -211,7 +212,13 @@ namespace EchoPlay.LocalLibrary.Scanning
                     {
                         File.Move(destination, source);
                     }
-                    catch (Exception rollbackEx)
+                    catch (Exception rollbackEx) when (rollbackEx is IOException
+                                                       or UnauthorizedAccessException
+                                                       or SecurityException
+                                                       or PathTooLongException
+                                                       or DirectoryNotFoundException
+                                                       or NotSupportedException
+                                                       or ArgumentException)
                     {
                         _logger.Error($"Rollback fehlgeschlagen für '{source}': {rollbackEx.Message}", rollbackEx);
                     }

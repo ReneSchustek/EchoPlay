@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -58,6 +59,8 @@ namespace EchoPlay.LocalLibrary.Cover
         /// Wrapper, der Exceptions eines einzelnen Anbieters abfängt.
         /// Ein fehlerhafter Anbieter liefert eine leere Liste statt die gesamte Suche abzubrechen.
         /// </summary>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Safe-Wrapper für Provider-Fan-Out; ein einzelner Provider-Fehler (egal welcher Typ) darf die parallelen Provider-Aufrufe nicht abbrechen.")]
         private static async Task<IReadOnlyList<CoverSearchResult>> SafeSearchAsync(
             ICoverSearchService provider,
             string title,

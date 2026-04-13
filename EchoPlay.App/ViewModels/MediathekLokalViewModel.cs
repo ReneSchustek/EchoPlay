@@ -3,23 +3,14 @@ using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
-using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Playback;
-using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
-using EchoPlay.LocalLibrary.Parsing;
-using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Threading;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -33,109 +24,66 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class MediathekLokalViewModel : ObservableObject, IDisposable
     {
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPlayerService _playerService;
-        private readonly IConfirmationDialogService _confirmationDialogService;
-        private readonly StatusBarViewModel _statusBar;
-        private readonly ICoverSearchService _coverSearchService;
-        private readonly IOnlineAccessGuard _onlineAccessGuard;
         private readonly IOnlineEpisodeChecker _onlineEpisodeChecker;
-        private readonly IWatchToggleService? _watchToggleService;
         private readonly IPageModeGuard? _pageModeGuard;
-        private readonly IFolderRestructureCoordinator? _restructureCoordinator;
-        private readonly IMissingEpisodesCoordinator? _missingEpisodesCoordinator;
-        private readonly IEpisodeCoverCoordinator? _coverCoordinator;
-
+        private readonly MediathekLokalActions _actions;
 
         /// <summary>
-        /// Initialisiert das ViewModel mit den benötigten Services.
+        /// Initialisiert das ViewModel mit dem Service-Context.
         /// </summary>
-        /// <param name="scopeFactory">Für Datenbankzugriffe.</param>
-        /// <param name="syncService">Für den Bibliotheks-Scan.</param>
-        /// <param name="playerService">Für die Wiedergabe von Folgen aus der lokalen Mediathek.</param>
-        /// <param name="errorDialogService">Für Fehler-Dialoge.</param>
-        /// <param name="confirmationDialogService">Für Bestätigungs-Dialoge.</param>
-        /// <param name="statusBar">
-        /// Singleton der Info-Leiste – zeigt globalen Scan-Fortschritt im Hauptfenster.
-        /// Als Singleton injiziert, daher kein Lifetime-Problem trotz Transient-ViewModel.
-        /// </param>
-        /// <param name="coverLoader">
-        /// Lädt Cover-Bilder aus dem lokalen Dateisystem (cover.jpg oder ID3-Tag).
-        /// Wird beim Auswählen einer Serie für jede Episodenkachel aufgerufen.
-        /// </param>
-        /// <param name="scanEventService">
-        /// Singleton-Dienst für navigationsübergreifende Scan-Event-Benachrichtigungen.
-        /// </param>
-        /// <param name="coverSearchService">
-        /// Sucht online nach Cover-Kandidaten wenn der Nutzer "Cover suchen" auswählt.
-        /// </param>
-        /// <param name="onlineAccessGuard">Prüft den Offline-Modus und zeigt bei Bedarf einen Bestätigungsdialog.</param>
-        /// <param name="onlineEpisodeChecker">Prüft online (iTunes) ob neue Folgen verfügbar sind.</param>
-        /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
-        /// <param name="watchToggleService">Optionaler Service für das Umschalten der Neuerscheinungs-Überwachung. In Tests <see langword="null"/>.</param>
-        /// <param name="pageModeGuard">Optionaler Page-Mode-Guard – prüft den Nur-Online-Modus beim Betreten der Page. In Tests <see langword="null"/>.</param>
-        /// <param name="restructureCoordinator">Optionaler App-Service für den Ordnerstruktur-Assistenten. In Tests <see langword="null"/>.</param>
-        /// <param name="missingEpisodesCoordinator">Optionaler App-Service für die Fehlende-Folgen-Prüfung. In Tests <see langword="null"/>.</param>
-        /// <param name="coverCoordinator">Optionaler App-Service für Cover-Suche, -Apply und -Download. In Tests <see langword="null"/>.</param>
-        public MediathekLokalViewModel(
-            IServiceScopeFactory scopeFactory,
-            ISyncService syncService,
-            IPlayerService playerService,
-            IErrorDialogService errorDialogService,
-            IConfirmationDialogService confirmationDialogService,
-            StatusBarViewModel statusBar,
-            ILocalCoverLoader coverLoader,
-            IScanEventService scanEventService,
-            ICoverSearchService coverSearchService,
-            IOnlineAccessGuard onlineAccessGuard,
-            IOnlineEpisodeChecker onlineEpisodeChecker,
-            EchoPlay.App.Services.CoverService? coverService = null,
-            IWatchToggleService? watchToggleService = null,
-            IPageModeGuard? pageModeGuard = null,
-            IFolderRestructureCoordinator? restructureCoordinator = null,
-            IMissingEpisodesCoordinator? missingEpisodesCoordinator = null,
-            IEpisodeCoverCoordinator? coverCoordinator = null)
+        /// <param name="context">Bündelt alle per DI aufgelösten Service-Abhängigkeiten.</param>
+        internal MediathekLokalViewModel(MediathekLokalViewModelContext context)
         {
-            _scopeFactory               = scopeFactory;
-            _playerService              = playerService;
-            _confirmationDialogService  = confirmationDialogService;
-            _statusBar                  = statusBar;
-            _coverSearchService         = coverSearchService;
-            _onlineAccessGuard          = onlineAccessGuard;
-            _onlineEpisodeChecker       = onlineEpisodeChecker;
-            _watchToggleService         = watchToggleService;
-            _pageModeGuard              = pageModeGuard;
-            _restructureCoordinator     = restructureCoordinator;
-            _missingEpisodesCoordinator = missingEpisodesCoordinator;
-            _coverCoordinator           = coverCoordinator;
+            _playerService          = context.PlayerService;
+            _onlineEpisodeChecker   = context.OnlineEpisodeChecker;
+            _pageModeGuard          = context.PageModeGuard;
 
             // Sub-VM für die Episoden-Spalte – kapselt Filter, Sortierung, Cover-Laden und
             // den Gehört-Status. Events des Sub-VMs werden an die eigenen Pass-Through-Properties
             // weitergereicht, damit bestehende XAML-Bindings unverändert funktionieren.
-            EpisodesVM = new LocalEpisodesViewModel(scopeFactory, coverLoader, coverService);
+            EpisodesVM = new LocalEpisodesViewModel(context.ScopeFactory, context.CoverLoader, context.Clock, context.CoverService);
             EpisodesVM.PropertyChanged += OnEpisodesVmPropertyChanged;
 
             // Sub-VM für die Track-Spalte – kapselt Trackliste, PlayCommand und Tag-Manager-Sprünge.
             // Events werden ebenfalls an die Pass-Through-Properties weitergereicht.
-            TracksVM = new LocalTracksViewModel(playerService, RequestTagManagerNavigation);
+            TracksVM = new LocalTracksViewModel(context.PlayerService, RequestTagManagerNavigation);
             TracksVM.PropertyChanged += OnTracksVmPropertyChanged;
 
             // Sub-VM für die Künstler-/Serien-Spalte – kapselt Liste, Suchfilter, Cover-Build,
             // AppendArtistCard und Auswahl-State.
-            ArtistsVM = new LocalArtistsViewModel(scopeFactory, coverService);
+            ArtistsVM = new LocalArtistsViewModel(context.ScopeFactory, context.CoverService);
             ArtistsVM.PropertyChanged += OnArtistsVmPropertyChanged;
 
             // Sub-VM für Scan, Neu-Initialisierung und Ordnerauswahl – bekommt als Callback eine
             // Referenz auf ArtistsVM.AppendArtistCardAsync, damit live eintreffende Serien sofort
             // in der lokalen Kachelgrid erscheinen.
             ScanVM = new LocalLibraryScanViewModel(
-                scopeFactory,
-                syncService,
-                errorDialogService,
-                confirmationDialogService,
-                statusBar,
-                scanEventService,
+                context.ScopeFactory,
+                context.SyncService,
+                context.ErrorDialogService,
+                context.ConfirmationDialogService,
+                context.StatusBar,
+                context.ScanEventService,
                 series => _ = ArtistsVM.AppendArtistCardAsync(series));
+
+            // Orchestrator für alle Async-Aktionen – bekommt die Sub-VMs und alle Services,
+            // die nur für Aktionen benötigt werden.
+            _actions = new MediathekLokalActions(
+                context.ScopeFactory,
+                context.ConfirmationDialogService,
+                context.StatusBar,
+                context.CoverSearchService,
+                context.OnlineAccessGuard,
+                context.WatchToggleService,
+                context.RestructureCoordinator,
+                context.MissingEpisodesCoordinator,
+                context.CoverCoordinator,
+                context.Clock,
+                ScanVM,
+                ArtistsVM,
+                EpisodesVM,
+                TracksVM);
 
             // PropertyChanged des Sub-VMs an die eigenen Pass-Through-Properties weiterreichen,
             // damit bestehende XAML-Bindings wie {x:Bind ViewModel.IsScanning} unverändert funktionieren.
@@ -238,26 +186,11 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Schaltet die Neuerscheinungs-Überwachung einer lokalen Serie um und aktualisiert die Karte.
-        /// Die eigentliche Logik liegt im <see cref="IWatchToggleService"/>.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="seriesId">ID der Serie.</param>
         /// <param name="watch">Neuer Status.</param>
-        public async Task ToggleWatchAsync(Guid seriesId, bool watch)
-        {
-            if (_watchToggleService is null)
-            {
-                return;
-            }
-
-            await _watchToggleService.ToggleAsync(seriesId, watch);
-
-            LocalArtistCardViewModel? card = ArtistsVM.AllArtists
-                .FirstOrDefault(a => a.SeriesId == seriesId);
-            if (card is not null)
-            {
-                card.IsWatched = watch;
-            }
-        }
+        public Task ToggleWatchAsync(Guid seriesId, bool watch) => _actions.ToggleWatchAsync(seriesId, watch);
 
         /// <summary>
         /// Aktiviert das ViewModel beim Navigieren zur Seite.
@@ -529,92 +462,56 @@ namespace EchoPlay.App.ViewModels
         /// Die Page zeigt die übergebene Titelliste in einem ContentDialog an.
         /// Die Liste ist leer wenn alle Episoden lokal vorhanden sind.
         /// </summary>
-        public event Action<IReadOnlyList<string>>? MissingEpisodesResolved;
+        public event Action<IReadOnlyList<string>>? MissingEpisodesResolved
+        {
+            add    => _actions.MissingEpisodesResolved += value;
+            remove => _actions.MissingEpisodesResolved -= value;
+        }
 
         /// <summary>
         /// Wird ausgelöst, nachdem die Gesamtprüfung aller Serien abgeschlossen ist.
         /// Die Page zeigt den Bericht in einem Dialog an und bietet den TXT-Export an.
         /// </summary>
-        public event Action<MissingEpisodesReport>? AllSeriesCheckCompleted;
+        public event Action<MissingEpisodesReport>? AllSeriesCheckCompleted
+        {
+            add    => _actions.AllSeriesCheckCompleted += value;
+            remove => _actions.AllSeriesCheckCompleted -= value;
+        }
 
         /// <summary>
         /// Wird ausgelöst, wenn der Ordnerstruktur-Assistent eine Vorschau erstellt hat.
         /// Die Page zeigt die geplanten Verschiebungen in einem ContentDialog an.
         /// Bei Bestätigung durch den Nutzer ruft die Page <see cref="ExecuteRestructureAsync"/> auf.
         /// </summary>
-        public event Action<RestructurePreviewDisplay>? RestructurePreviewReady;
+        public event Action<RestructurePreviewDisplay>? RestructurePreviewReady
+        {
+            add    => _actions.RestructurePreviewReady += value;
+            remove => _actions.RestructurePreviewReady -= value;
+        }
 
         // ── Laden ────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Lädt Bibliothekseinstellungen und alle Serien mit lokalem Ordner. Setzt die
-        /// Auswahl zurück – mittlere und rechte Spalte werden geleert. Die Künstler-Liste
-        /// und das Cover-Laden übernimmt das <see cref="ArtistsVM"/>; das Top-VM koordiniert
-        /// nur die AppSettings-Spiegelung in den ScanVM.
+        /// Lädt Bibliothekseinstellungen und alle Serien mit lokalem Ordner.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public async Task LoadAsync()
-        {
-            using (IServiceScope scope = _scopeFactory.CreateScope())
-            {
-                IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-                EchoPlay.Data.Entities.Settings.AppSettings settings = await settingsService.GetAsync();
-                ScanVM.LibraryRootPath         = settings.LocalLibraryRootPath ?? string.Empty;
-                ScanVM.NeedsLibraryFolderSetup = string.IsNullOrWhiteSpace(settings.LocalLibraryRootPath);
-            }
-
-            EpisodesVM.Clear();
-            TracksVM.Clear();
-            await ArtistsVM.LoadFromDatabaseAsync();
-        }
+        public Task LoadAsync() => _actions.LoadAsync();
 
         // ── Auswahl-Logik ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Wählt eine Serie aus und lädt deren Episoden mit lokalem Ordner in die mittlere Spalte.
-        /// Die rechte Spalte wird dabei geleert. Das Top-VM koordiniert die drei Sub-VMs.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="artist">Die ausgewählte Serie.</param>
-        public async Task SelectArtistAsync(LocalArtistCardViewModel artist)
-        {
-            ArtistsVM.SelectArtist(artist);
-            TracksVM.Clear();
-
-            // Episoden und Wiedergabestatus laden
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
-
-            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(artist.SeriesId);
-
-            List<Guid> episodeIds = [.. episodes
-                .Where(e => e.LocalFolderPath is not null)
-                .Select(e => e.Id)];
-
-            HashSet<Guid> completedIds = await stateService.GetCompletedEpisodeIdsAsync(episodeIds);
-
-            IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
-            HashSet<Guid> inProgressIds = allStates
-                .Where(s => episodeIds.Contains(s.EpisodeId) && !s.IsCompleted && s.LastPosition > TimeSpan.Zero)
-                .Select(s => s.EpisodeId)
-                .ToHashSet();
-
-            await EpisodesVM.LoadForSeriesAsync(artist, episodes, completedIds, inProgressIds);
-        }
+        public Task SelectArtistAsync(LocalArtistCardViewModel artist) => _actions.SelectArtistAsync(artist);
 
         /// <summary>
         /// Wählt eine Episode aus und lädt deren Tracks in die rechte Spalte.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="episode">Die ausgewählte Episode.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
-        public async Task SelectEpisodeAsync(LocalEpisodeCardViewModel episode)
-        {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-
-            IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.EpisodeId);
-
-            TracksVM.SetTracks(episode, tracks);
-        }
+        public Task SelectEpisodeAsync(LocalEpisodeCardViewModel episode) => _actions.SelectEpisodeAsync(episode);
 
         // ── Tag-Manager-Navigation ───────────────────────────────────────────────
 
@@ -649,104 +546,25 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Kennzeichnet alle Episoden einer Serie als vollständig gehört.
-        /// Existiert für eine Episode bereits ein <see cref="PlaybackState"/>, wird nur
-        /// <c>IsCompleted</c> gesetzt. Fehlt der Eintrag, wird er neu angelegt.
-        /// Statistiken in der Statusleiste werden nach dem Vorgang aktualisiert.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="seriesId">ID der betroffenen Serie.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
-        public async Task MarkAllAsReadAsync(Guid seriesId)
-        {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IEpisodeDataService episodeService       = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
-
-            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
-
-            foreach (Episode episode in episodes)
-            {
-                PlaybackState? existing = await playbackService.GetByEpisodeIdAsync(episode.Id);
-
-                if (existing is not null)
-                {
-                    if (!existing.IsCompleted)
-                    {
-                        existing.IsCompleted = true;
-                        existing.CompletedAt = DateTime.UtcNow;
-                        await playbackService.UpdateAsync(existing);
-                    }
-                }
-                else
-                {
-                    await playbackService.AddAsync(new PlaybackState
-                    {
-                        EpisodeId    = episode.Id,
-                        IsCompleted  = true,
-                        CompletedAt  = DateTime.UtcNow,
-                        LastPlayedAt = DateTime.UtcNow
-                    });
-                }
-            }
-
-            // Statistiken (gehörte/offene Folgen) in der Statusleiste aktualisieren
-            await _statusBar.RefreshAsync();
-        }
+        public Task MarkAllAsReadAsync(Guid seriesId) => _actions.MarkAllAsReadAsync(seriesId);
 
         /// <summary>
         /// Entfernt eine Serie aus der Bibliothek (Soft-Delete in der DB).
-        /// Die Dateien auf der Festplatte bleiben erhalten – beim nächsten Scan
-        /// wird die Serie wieder erkannt und kann erneut importiert werden.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="seriesId">ID der zu entfernenden Serie.</param>
-        public async Task DeleteSeriesFromLibraryAsync(Guid seriesId)
-        {
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Aus Bibliothek entfernen",
-                "Die Serie und alle zugehörigen Episoden werden aus der Bibliothek entfernt. " +
-                "Die Dateien auf der Festplatte bleiben erhalten. Fortfahren?");
-
-            if (!confirmed)
-            {
-                return;
-            }
-
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-            await seriesService.DeleteAsync(seriesId);
-
-            await LoadAsync();
-        }
+        public Task DeleteSeriesFromLibraryAsync(Guid seriesId) => _actions.DeleteSeriesFromLibraryAsync(seriesId);
 
         /// <summary>
         /// Löscht eine Serie unwiderruflich – sowohl aus der DB als auch von der Festplatte.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="seriesId">ID der Serie.</param>
         /// <param name="folderPath">Lokaler Ordnerpfad der Serie.</param>
-        public async Task DeleteSeriesFromDiskAsync(Guid seriesId, string? folderPath)
-        {
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Von Festplatte löschen",
-                "Die Serie, alle Episoden und alle Audiodateien werden unwiderruflich gelöscht. " +
-                "Dieser Vorgang kann nicht rückgängig gemacht werden. Fortfahren?");
-
-            if (!confirmed)
-            {
-                return;
-            }
-
-            // Erst aus DB löschen
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-            await seriesService.DeleteAsync(seriesId);
-
-            // Dann Ordner auf der Festplatte löschen
-            if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
-            {
-                await Task.Run(() => Directory.Delete(folderPath, recursive: true));
-            }
-
-            await LoadAsync();
-        }
+        public Task DeleteSeriesFromDiskAsync(Guid seriesId, string? folderPath) => _actions.DeleteSeriesFromDiskAsync(seriesId, folderPath);
 
         // ── Fehlende Folgen ────────────────────────────────────────────────────────
 
@@ -755,70 +573,24 @@ namespace EchoPlay.App.ViewModels
         /// Die Page zeigt einen Drei-Optionen-Dialog (Online / Nur offline / Abbrechen)
         /// und liefert das Ergebnis als <see cref="MissingEpisodesMode"/>.
         /// </summary>
-        public event Func<Task<MissingEpisodesMode>>? MissingEpisodesModeRequested;
+        public event Func<Task<MissingEpisodesMode>>? MissingEpisodesModeRequested
+        {
+            add    => _actions.MissingEpisodesModeRequested += value;
+            remove => _actions.MissingEpisodesModeRequested -= value;
+        }
 
         /// <summary>
-        /// Ermittelt fehlende Folgen einer Serie. Fragt den Nutzer zuerst über
-        /// <see cref="MissingEpisodesModeRequested"/>, ob online geprüft werden soll, und
-        /// delegiert die eigentliche Analyse an den <see cref="IMissingEpisodesCoordinator"/>.
+        /// Ermittelt fehlende Folgen einer Serie.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="seriesId">ID der zu prüfenden Serie.</param>
-        public async Task ShowMissingEpisodesAsync(Guid seriesId)
-        {
-            if (_missingEpisodesCoordinator is null)
-            {
-                return;
-            }
-
-            LocalArtistCardViewModel? card = ArtistsVM.AllArtists.FirstOrDefault(a => a.SeriesId == seriesId);
-
-            MissingEpisodesMode mode = await RequestMissingEpisodesModeAsync();
-            if (mode == MissingEpisodesMode.Cancel)
-            {
-                return;
-            }
-
-            IReadOnlyList<string> result = await _missingEpisodesCoordinator.CheckSingleSeriesAsync(
-                seriesId, card?.LocalFolderPath, mode);
-
-            MissingEpisodesResolved?.Invoke(result);
-        }
+        public Task ShowMissingEpisodesAsync(Guid seriesId) => _actions.ShowMissingEpisodesAsync(seriesId);
 
         /// <summary>
         /// Prüft alle abonnierten Serien mit lokalem Ordner auf fehlende Folgen.
-        /// Delegiert an den <see cref="IMissingEpisodesCoordinator"/> und feuert
-        /// <see cref="AllSeriesCheckCompleted"/> mit dem Ergebnis.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public async Task CheckAllSeriesAsync()
-        {
-            if (_missingEpisodesCoordinator is null)
-            {
-                return;
-            }
-
-            MissingEpisodesMode mode = await RequestMissingEpisodesModeAsync();
-            if (mode == MissingEpisodesMode.Cancel)
-            {
-                return;
-            }
-
-            MissingEpisodesReport report = await _missingEpisodesCoordinator.CheckAllSeriesAsync(mode);
-            AllSeriesCheckCompleted?.Invoke(report);
-        }
-
-        /// <summary>
-        /// Holt den Modus aus dem UI-Dialog. Ohne Listener wird "Nur offline" angenommen –
-        /// das ist das Verhalten in Unit-Tests, in denen kein Dialog existiert.
-        /// </summary>
-        private async Task<MissingEpisodesMode> RequestMissingEpisodesModeAsync()
-        {
-            if (MissingEpisodesModeRequested is null)
-            {
-                return MissingEpisodesMode.OfflineOnly;
-            }
-
-            return await MissingEpisodesModeRequested.Invoke();
-        }
+        public Task CheckAllSeriesAsync() => _actions.CheckAllSeriesAsync();
 
         // ── Episoden-Status (Pass-Through zum EpisodesVM) ──────────────────────
 
@@ -836,128 +608,56 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Analysiert den Serienordner und erstellt eine Vorschau für den Ordnerstruktur-Umbau.
-        /// Löst <see cref="RestructurePreviewReady"/> aus, wenn verschiebbare Dateien gefunden wurden.
-        /// Die eigentliche Analyse läuft im <see cref="IFolderRestructureCoordinator"/>.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="seriesId">ID der Serie, deren Ordner analysiert werden soll.</param>
-        public async Task AnalyzeRestructureAsync(Guid seriesId)
-        {
-            if (_restructureCoordinator is null)
-            {
-                return;
-            }
-
-            LocalArtistCardViewModel? card = ArtistsVM.AllArtists.FirstOrDefault(a => a.SeriesId == seriesId);
-            if (card?.LocalFolderPath is null)
-            {
-                return;
-            }
-
-            RestructurePreviewDisplay? preview =
-                await _restructureCoordinator.AnalyzeAsync(card.LocalFolderPath);
-
-            if (preview is null)
-            {
-                return;
-            }
-
-            RestructurePreviewReady?.Invoke(preview);
-        }
+        public Task AnalyzeRestructureAsync(Guid seriesId) => _actions.AnalyzeRestructureAsync(seriesId);
 
         /// <summary>
-        /// Führt den Ordnerstruktur-Umbau aus und löst danach einen Neu-Scan der Bibliothek aus.
-        /// Delegiert an den <see cref="IFolderRestructureCoordinator"/>.
+        /// Führt den Ordnerstruktur-Umbau aus. Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="preview">Die zuvor erstellte App-Display-Vorschau.</param>
         /// <returns>Anzahl der verschobenen Dateien.</returns>
-        public async Task<int> ExecuteRestructureAsync(RestructurePreviewDisplay preview)
-        {
-            if (_restructureCoordinator is null)
-            {
-                return 0;
-            }
+        public Task<int> ExecuteRestructureAsync(RestructurePreviewDisplay preview) => _actions.ExecuteRestructureAsync(preview);
 
-            return await _restructureCoordinator.ExecuteAsync(preview);
-        }
-
-        // ── Cover-Verwaltung (Delegationen an den IEpisodeCoverCoordinator) ──────
+        // ── Cover-Verwaltung (Delegationen an den MediathekLokalActions) ──────
 
         /// <summary>
         /// Prüft den Offline-Modus und zeigt bei Bedarf einen Bestätigungsdialog.
-        /// Muss von der Page aufgerufen werden, bevor der Cover-Such-Dialog geöffnet wird.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         public Task<IDisposable?> RequestOnlineAccessForCoverSearchAsync()
-            => _onlineAccessGuard.RequestOnlineAccessAsync();
+            => _actions.RequestOnlineAccessForCoverSearchAsync();
 
         /// <summary>
-        /// Sucht Cover-Kandidaten für den angegebenen Begriff. Delegiert an den
-        /// <see cref="IEpisodeCoverCoordinator"/>.
+        /// Sucht Cover-Kandidaten für den angegebenen Begriff.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct)
-        {
-            if (_coverCoordinator is null)
-            {
-                return Task.FromResult<IReadOnlyList<CoverSearchHit>>([]);
-            }
-
-            return _coverCoordinator.SearchCoversAsync(query, ct);
-        }
+        public Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct) => _actions.SearchCoversAsync(query, ct);
 
         /// <summary>
-        /// Übernimmt rohe Bytes als Serien-Cover. Delegiert an den
-        /// <see cref="IEpisodeCoverCoordinator"/>.
+        /// Übernimmt rohe Bytes als Serien-Cover.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes)
-        {
-            if (_coverCoordinator is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return _coverCoordinator.ApplySeriesCoverFromBytesAsync(card, bytes);
-        }
+        public Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes) => _actions.ApplySeriesCoverFromBytesAsync(card, bytes);
 
         /// <summary>
-        /// Übernimmt rohe Bytes als Episoden-Cover. Delegiert an den
-        /// <see cref="IEpisodeCoverCoordinator"/>.
+        /// Übernimmt rohe Bytes als Episoden-Cover.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes)
-        {
-            if (_coverCoordinator is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return _coverCoordinator.ApplyEpisodeCoverFromBytesAsync(card, bytes);
-        }
+        public Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes) => _actions.ApplyEpisodeCoverFromBytesAsync(card, bytes);
 
         /// <summary>
         /// Lädt das gewählte Cover herunter und übernimmt es als Serien-Cover.
-        /// Delegiert an den <see cref="IEpisodeCoverCoordinator"/>.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit)
-        {
-            if (_coverCoordinator is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return _coverCoordinator.ApplySelectedSeriesCoverAsync(card, hit);
-        }
+        public Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit) => _actions.ApplySelectedSeriesCoverAsync(card, hit);
 
         /// <summary>
         /// Lädt das gewählte Cover herunter und übernimmt es als Episoden-Cover.
-        /// Delegiert an den <see cref="IEpisodeCoverCoordinator"/>.
+        /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit)
-        {
-            if (_coverCoordinator is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return _coverCoordinator.ApplySelectedEpisodeCoverAsync(card, hit);
-        }
+        public Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit) => _actions.ApplySelectedEpisodeCoverAsync(card, hit);
 
         /// <summary>
         /// Räumt das ViewModel auf: meldet Sub-VMs ab und entlässt sie.

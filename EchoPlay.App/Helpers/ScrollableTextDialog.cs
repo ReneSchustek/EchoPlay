@@ -12,7 +12,7 @@ namespace EchoPlay.App.Helpers
     /// optionalem Aktions-Button (z.B. "Als TXT speichern", "Umbauen") angezeigt werden soll.
     /// Kapselt Drag-Helper-Verdrahtung, COM-Exception-Behandlung und einheitliches Styling.
     /// </summary>
-    public static class ScrollableTextDialog
+    internal static class ScrollableTextDialog
     {
         /// <summary>
         /// Zeigt den Dialog modal an und gibt das Resultat zurück.

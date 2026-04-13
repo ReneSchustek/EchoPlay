@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// aufeinanderfolgenden Aufrufen erzwingt. Thread-safe dank <see cref="SemaphoreSlim"/>
     /// pro Host und atomarem Zeitstempel-Tracking.
     /// </summary>
-    internal sealed class SemaphoreHostRateLimiter : IHostRateLimiter
+    public sealed class SemaphoreHostRateLimiter : IHostRateLimiter
     {
         private readonly IReadOnlyDictionary<string, TimeSpan> _intervals;
         private readonly TimeSpan _defaultInterval;

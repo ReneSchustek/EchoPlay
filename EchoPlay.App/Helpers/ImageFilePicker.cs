@@ -13,7 +13,7 @@ namespace EchoPlay.App.Helpers
     /// Cover-Auswahl) oder Bytes plus MIME-Typ (für den Tag-Manager, der den Typ
     /// als ID3-Metadatum speichert).
     /// </summary>
-    public static class ImageFilePicker
+    internal static class ImageFilePicker
     {
         /// <summary>
         /// Öffnet den Datei-Picker und liest die Bytes der gewählten Bilddatei.

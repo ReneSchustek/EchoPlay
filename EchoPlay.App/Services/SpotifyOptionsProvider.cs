@@ -7,7 +7,7 @@ namespace EchoPlay.App.Services
     /// Kombiniert die öffentlichen Spotify-URLs aus <see cref="SpotifyOptions"/> mit den
     /// DPAPI-verschlüsselten Credentials aus dem <see cref="ISpotifyCredentialStore"/>.
     /// </summary>
-    internal sealed class SpotifyOptionsProvider : ISpotifyOptionsProvider
+    public sealed class SpotifyOptionsProvider : ISpotifyOptionsProvider
     {
         private readonly SpotifyOptions _baseOptions;
         private readonly ISpotifyCredentialStore _credentialStore;

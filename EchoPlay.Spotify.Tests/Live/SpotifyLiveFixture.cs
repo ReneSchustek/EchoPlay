@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Auth;
 using EchoPlay.Spotify.Clients;
@@ -15,6 +16,7 @@ namespace EchoPlay.Spotify.Tests.Live
     /// Der bewusste Verzicht auf IHttpClientFactory vermeidet
     /// Connection-Pool-Probleme, die in Test-Kontexten ohne Host auftreten.
     /// </summary>
+    [SuppressMessage("Design", "CA1515:Consider making public types internal", Justification = "xUnit-Test-Infrastruktur muss public sein fuer den Test-Runner (IClassFixture<T>).")]
     public sealed class SpotifyLiveFixture : IDisposable
     {
         private readonly HttpClient _tokenHttpClient;

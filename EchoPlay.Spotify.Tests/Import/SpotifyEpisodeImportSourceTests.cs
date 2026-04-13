@@ -27,14 +27,14 @@ namespace EchoPlay.Spotify.Tests.Import
             // Alben und Tracks sind nicht vorhanden.
             ServiceCollection services = new();
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
 
-            services.AddSingleton<ISpotifyApiClient>(
+            _ = services.AddSingleton<ISpotifyApiClient>(
                 new FakeSpotifyApiClient(
                     artists: [SpotifyTestData.DieDreiFragezeichen]));
 
-            services.AddSpotifyImport();
+            _ = services.AddSpotifyImport();
 
             ServiceProvider provider = services.BuildServiceProvider();
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();

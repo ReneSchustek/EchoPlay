@@ -39,7 +39,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             List<ScanProgress> reported = [];
             IProgress<ScanProgress> progress = new Progress<ScanProgress>(p => reported.Add(p));
 
-            await orchestrator.ScanAsync(_root, "{number}", progress);
+            _ = await orchestrator.ScanAsync(_root, "{number}", progress);
 
             // Phase 1 und Phase 2 müssen immer gemeldet werden
             Assert.Contains(reported, p => p.Phase == 1);
@@ -56,12 +56,12 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             List<ScanProgress> reported = [];
             IProgress<ScanProgress> progress = new Progress<ScanProgress>(p => reported.Add(p));
 
-            await orchestrator.ScanAsync(_root, "{number}", progress);
+            _ = await orchestrator.ScanAsync(_root, "{number}", progress);
 
             ScanProgress? phase1 = reported.Find(p => p.Phase == 1);
             Assert.NotNull(phase1);
             Assert.False(string.IsNullOrEmpty(phase1!.PhaseLabel));
-            Assert.Contains("Vorbereitung", phase1.PhaseLabel);
+            Assert.Contains("Vorbereitung", phase1.PhaseLabel, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             FakeLocalLibraryScanner scanner = new();
             ScanOrchestrator orchestrator   = new(scanner);
 
-            await orchestrator.ScanAsync(_root, "{number}");
+            _ = await orchestrator.ScanAsync(_root, "{number}");
 
             Assert.Equal(1, scanner.ScanCallCount);
         }

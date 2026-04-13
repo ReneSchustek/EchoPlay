@@ -26,13 +26,13 @@ namespace EchoPlay.Spotify.Tests.Import
             // Der Szenario-Fake bildet eine realistische Spotify-Struktur ab.
             ServiceCollection services = new();
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
 
-            services.AddSingleton<ISpotifyApiClient>(
+            _ = services.AddSingleton<ISpotifyApiClient>(
                 new ScenarioSpotifyApiClient());
 
-            services.AddSpotifyImport();
+            _ = services.AddSpotifyImport();
 
             ServiceProvider provider = services.BuildServiceProvider();
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();

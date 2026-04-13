@@ -26,11 +26,11 @@ namespace EchoPlay.AppleMusic.Tests.Import
             ServiceCollection services = new();
 
             // AddAppleMusicImport muss vor den Fakes aufgerufen werden, damit die Fake-Registrierungen die produktiven Services überschreiben.
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new ScenarioAppleMusicSearchClient());
 
             ServiceProvider provider = services.BuildServiceProvider();
@@ -44,8 +44,8 @@ namespace EchoPlay.AppleMusic.Tests.Import
             Assert.Equal(2, episodes.Count);
 
             // Die Episoden müssen in der Reihenfolge der Alben erscheinen.
-            Assert.Contains("Späteres Album", episodes[0].Title);
-            Assert.Contains("Früheres Album", episodes[1].Title);
+            Assert.Contains("Späteres Album", episodes[0].Title, StringComparison.Ordinal);
+            Assert.Contains("Früheres Album", episodes[1].Title, StringComparison.Ordinal);
 
             // Die OrderIndizes müssen fortlaufend sein.
             Assert.Equal(0, episodes[0].OrderIndex);
@@ -62,11 +62,11 @@ namespace EchoPlay.AppleMusic.Tests.Import
             ServiceCollection services = new();
 
             // AddAppleMusicImport muss vor den Fakes aufgerufen werden, damit die Fake-Registrierungen die produktiven Services überschreiben.
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new ScenarioAppleMusicSearchClient());
 
             ServiceProvider provider = services.BuildServiceProvider();

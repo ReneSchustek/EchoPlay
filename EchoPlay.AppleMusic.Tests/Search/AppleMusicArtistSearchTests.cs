@@ -23,7 +23,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Die drei ???");
 
             // ASSERT
-            Assert.Single(result.Results);
+            _ = Assert.Single(result.Results);
             Assert.Equal("Die drei ???", result.Results[0].ArtistName);
         }
 

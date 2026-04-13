@@ -73,8 +73,8 @@ namespace EchoPlay.Spotify.Tests.Scoring
             cache.Store(result1);
             cache.Store(result2);
 
-            cache.TryGet("artist-a", out HoerspielScoreResult? retrieved1);
-            cache.TryGet("artist-b", out HoerspielScoreResult? retrieved2);
+            _ = cache.TryGet("artist-a", out HoerspielScoreResult? retrieved1);
+            _ = cache.TryGet("artist-b", out HoerspielScoreResult? retrieved2);
 
             Assert.NotNull(retrieved1);
             Assert.True(retrieved1.IsHoerspiel);
@@ -107,7 +107,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             cache.Store(first);
             cache.Store(second);
 
-            cache.TryGet("artist-x", out HoerspielScoreResult? retrieved);
+            _ = cache.TryGet("artist-x", out HoerspielScoreResult? retrieved);
 
             Assert.NotNull(retrieved);
             // Der erste Eintrag bleibt, weil TryAdd verwendet wird

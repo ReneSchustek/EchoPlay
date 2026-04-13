@@ -19,7 +19,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(1, handler.CallCount);
@@ -35,7 +35,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(2, handler.CallCount);
@@ -51,7 +51,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(2, handler.CallCount);
@@ -66,7 +66,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
             Assert.Equal(1, handler.CallCount);
@@ -81,7 +81,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.Equal(1, handler.CallCount);
@@ -98,7 +98,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
             Assert.Equal(3, handler.CallCount);
@@ -115,8 +115,8 @@ namespace EchoPlay.Spotify.Tests.Http
             handler.EnqueueException(connectionError);
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
-            await Assert.ThrowsAsync<HttpRequestException>(
-                () => SpotifyHttpRetry.SendWithRetryAsync(() => client.GetAsync("api/test")));
+            _ = await Assert.ThrowsAsync<HttpRequestException>(
+                () => SpotifyHttpRetry.SendWithRetryAsync(() => client.GetAsync(new Uri("api/test", UriKind.Relative))));
 
             Assert.Equal(3, handler.CallCount);
         }
@@ -132,7 +132,7 @@ namespace EchoPlay.Spotify.Tests.Http
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
 
             HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => client.GetAsync("api/test"));
+                () => client.GetAsync(new Uri("api/test", UriKind.Relative)));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(2, handler.CallCount);

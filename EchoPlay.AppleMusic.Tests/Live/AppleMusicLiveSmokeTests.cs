@@ -27,6 +27,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <param name="fixture">Die geteilte Fixture mit konfiguriertem Search-Client.</param>
         public AppleMusicLiveSmokeTests(AppleMusicLiveFixture fixture)
         {
+            ArgumentNullException.ThrowIfNull(fixture);
             _searchClient = fixture.SearchClient;
         }
 

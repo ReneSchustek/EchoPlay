@@ -26,11 +26,11 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         {
             string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             string seriesFolder = Path.Combine(root, "TestSerie");
-            Directory.CreateDirectory(seriesFolder);
+            _ = Directory.CreateDirectory(seriesFolder);
 
             foreach (string name in episodeFolderNames)
             {
-                Directory.CreateDirectory(Path.Combine(seriesFolder, name));
+                _ = Directory.CreateDirectory(Path.Combine(seriesFolder, name));
             }
 
             return root;
@@ -44,7 +44,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         {
             string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             string seriesFolder = Path.Combine(root, "TestSerie");
-            Directory.CreateDirectory(seriesFolder);
+            _ = Directory.CreateDirectory(seriesFolder);
 
             foreach (string name in mp3FileNames)
             {
@@ -345,7 +345,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         public async Task Analyze_EmptyLibraryRoot_ReturnsEmpty()
         {
             string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(root);
+            _ = Directory.CreateDirectory(root);
 
             try
             {

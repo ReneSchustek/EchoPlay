@@ -53,6 +53,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="localizationService">Lokalisierungs-Service für die Dialogtexte.</param>
         /// <param name="patternAnalyzer">Analysiert Episodenmuster im lokalen Bibliotheksordner.</param>
         /// <param name="connectionTestCoordinator">Kapselt den Verbindungstest gegen den aktiven Provider.</param>
+        /// <param name="credentialStore">Speichert und liest Spotify-Credentials.</param>
+        /// <param name="optionsProvider">Liefert zur Laufzeit die vollständigen SpotifyOptions.</param>
         /// <param name="logViewerCoordinator">Kapselt Dateisystem- und Live-Puffer-Zugriff für den Log-Viewer.</param>
         /// <param name="loggerManager">Wird nach dem Speichern mit den neuen Werten aktualisiert.</param>
         /// <param name="statusBar">StatusBar-Singleton – wird über <see cref="HasUnsavedChanges"/> informiert.</param>
@@ -65,6 +67,8 @@ namespace EchoPlay.App.ViewModels
             ILocalizationService localizationService,
             IEpisodePatternAnalyzer patternAnalyzer,
             IConnectionTestCoordinator connectionTestCoordinator,
+            ISpotifyCredentialStore credentialStore,
+            ISpotifyOptionsProvider optionsProvider,
             ILogViewerCoordinator logViewerCoordinator,
             LoggerManager loggerManager,
             StatusBarViewModel statusBar)
@@ -79,7 +83,7 @@ namespace EchoPlay.App.ViewModels
 
             // Sub-VMs mit gemeinsamem Edit-Callback – jede Nutzeränderung setzt HasUnsavedChanges
             GeneralVM = new GeneralSettingsViewModel(OnSubVmUserEdit);
-            OnlineVM  = new OnlineSettingsViewModel(connectionTestCoordinator, OnSubVmUserEdit);
+            OnlineVM  = new OnlineSettingsViewModel(connectionTestCoordinator, credentialStore, optionsProvider, OnSubVmUserEdit);
             LocalVM   = new LocalSettingsViewModel(syncService, errorDialogService, patternAnalyzer, OnSubVmUserEdit);
             MaintenanceVM = new MaintenanceSettingsViewModel(scopeFactory, logViewerCoordinator, OnSubVmUserEdit);
 
@@ -242,6 +246,35 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="OnlineSettingsViewModel.TestConnectionCommand"/>
         public ICommand TestConnectionCommand => OnlineVM.TestConnectionCommand;
 
+        /// <inheritdoc cref="OnlineSettingsViewModel.SpotifyClientId"/>
+        public string SpotifyClientId
+        {
+            get => OnlineVM.SpotifyClientId;
+            set => OnlineVM.SpotifyClientId = value;
+        }
+
+        /// <inheritdoc cref="OnlineSettingsViewModel.SpotifyClientSecret"/>
+        public string SpotifyClientSecret
+        {
+            get => OnlineVM.SpotifyClientSecret;
+            set => OnlineVM.SpotifyClientSecret = value;
+        }
+
+        /// <inheritdoc cref="OnlineSettingsViewModel.SpotifyStatus"/>
+        public string SpotifyStatus => OnlineVM.SpotifyStatus;
+
+        /// <inheritdoc cref="OnlineSettingsViewModel.IsSpotifyLinked"/>
+        public bool IsSpotifyLinked => OnlineVM.IsSpotifyLinked;
+
+        /// <inheritdoc cref="OnlineSettingsViewModel.IsTestingCredentials"/>
+        public bool IsTestingCredentials => OnlineVM.IsTestingCredentials;
+
+        /// <inheritdoc cref="OnlineSettingsViewModel.TestAndSaveSpotifyCommand"/>
+        public ICommand TestAndSaveSpotifyCommand => OnlineVM.TestAndSaveSpotifyCommand;
+
+        /// <inheritdoc cref="OnlineSettingsViewModel.RemoveSpotifyCommand"/>
+        public ICommand RemoveSpotifyCommand => OnlineVM.RemoveSpotifyCommand;
+
         // ── Pass-Through-Eigenschaften: Lokal ───────────────────────────────────
 
         /// <inheritdoc cref="LocalSettingsViewModel.LocalLibraryEnabled"/>
@@ -382,6 +415,9 @@ namespace EchoPlay.App.ViewModels
                 OnlineVM.LoadFrom(settings);
                 LocalVM.LoadFrom(settings);
                 MaintenanceVM.LoadFrom(settings);
+
+                // Spotify-Verknüpfungsstatus aus dem Credential-Store laden
+                OnlineVM.LoadSpotifyStatus();
 
                 // Log-Dateien asynchron laden – darf ruhig parallel zur restlichen Initialisierung laufen
                 await MaintenanceVM.LoadLogFilesAsync();

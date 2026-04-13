@@ -38,7 +38,8 @@ namespace EchoPlay.App.Tests.ViewModels
             return new StatusBarViewModel(
                 scopeFactory,
                 new FakeThemeService(),
-                new TaskbarProgressService());
+                new TaskbarProgressService(),
+                new FakeClock());
         }
 
         private static SettingsViewModel BuildViewModel(
@@ -48,7 +49,9 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeErrorDialogService? errorDialogService = null,
             FakeDatabaseMaintenanceService? maintenanceService = null,
             FakeConnectionTestCoordinator? connectionTestCoordinator = null,
-            FakeLogViewerCoordinator? logViewerCoordinator = null)
+            FakeLogViewerCoordinator? logViewerCoordinator = null,
+            FakeSpotifyCredentialStore? credentialStore = null,
+            FakeSpotifyOptionsProvider? optionsProvider = null)
         {
             ServiceCollection services = new();
             services.AddScoped<IAppSettingsDataService>(_ => settingsService);
@@ -61,6 +64,9 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider          = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
+            FakeSpotifyCredentialStore resolvedCredentialStore = credentialStore ?? new FakeSpotifyCredentialStore();
+            FakeSpotifyOptionsProvider resolvedOptionsProvider = optionsProvider ?? new FakeSpotifyOptionsProvider(resolvedCredentialStore);
+
             return new SettingsViewModel(
                 scopeFactory,
                 themeService ?? new FakeThemeService(),
@@ -70,6 +76,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeLocalizationService(),
                 new FakeEpisodePatternAnalyzer(),
                 connectionTestCoordinator ?? new FakeConnectionTestCoordinator(),
+                resolvedCredentialStore,
+                resolvedOptionsProvider,
                 logViewerCoordinator ?? new FakeLogViewerCoordinator(),
                 BuildLoggerManager(),
                 BuildStatusBar(scopeFactory));

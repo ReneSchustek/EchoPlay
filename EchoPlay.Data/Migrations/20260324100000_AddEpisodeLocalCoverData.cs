@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<byte[]>(
+            _ = migrationBuilder.AddColumn<byte[]>(
                 name: "LocalCoverData",
                 table: "Episodes",
                 type: "BLOB",
@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LocalCoverData",
                 table: "Episodes");
         }

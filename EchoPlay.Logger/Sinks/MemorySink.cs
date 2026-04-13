@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Models;
 
@@ -45,7 +46,7 @@ namespace EchoPlay.Logger.Sinks
             {
                 if (_entries.Count >= _capacity)
                 {
-                    _entries.Dequeue();
+                    _ = _entries.Dequeue();
                 }
 
                 _entries.Enqueue(entry);
@@ -64,6 +65,7 @@ namespace EchoPlay.Logger.Sinks
         /// Unveränderliche Liste der aktuell gepufferten Einträge.
         /// Kann leer sein, wenn noch keine Einträge geschrieben wurden.
         /// </returns>
+        [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "GetEntries legt bei jedem Aufruf eine thread-sichere Kopie des Ringpuffers an; eine Property würde wiederholte Allokationen kaschieren.")]
         public IReadOnlyList<LogEntry> GetEntries()
         {
             lock (_lock)

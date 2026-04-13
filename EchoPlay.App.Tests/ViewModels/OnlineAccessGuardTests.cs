@@ -135,7 +135,8 @@ namespace EchoPlay.App.Tests.ViewModels
             StatusBarViewModel vm = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new FakeThemeService(),
-                new EchoPlay.App.Services.TaskbarProgressService());
+                new EchoPlay.App.Services.TaskbarProgressService(),
+                new FakeClock());
 
             // Offline-Status initial laden
             vm.LoadAsync().GetAwaiter().GetResult();
@@ -164,6 +165,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            services.AddSingleton<EchoPlay.App.Services.IClock>(new FakeClock());
+            services.AddHttpClient();
             services.AddSingleton<EchoPlay.App.Services.CoverService>();
             services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 

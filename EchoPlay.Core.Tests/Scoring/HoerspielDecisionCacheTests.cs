@@ -67,7 +67,7 @@ namespace EchoPlay.Core.Tests.Scoring
             cache.Store(first);
             cache.Store(second);
 
-            cache.TryGet("artist-1", out HoerspielScoreResult? result);
+            _ = cache.TryGet("artist-1", out HoerspielScoreResult? result);
 
             // Der erste Eintrag bleibt erhalten – TryAdd ignoriert Duplikate
             Assert.True(result!.IsHoerspiel);
@@ -82,8 +82,8 @@ namespace EchoPlay.Core.Tests.Scoring
             cache.Store(HoerspielScoreResult.Yes("a1", HoerspielDecisionReason.None, 75, ""));
             cache.Store(HoerspielScoreResult.No("a2", HoerspielDecisionReason.NegativeMusicGenre, 5, ""));
 
-            cache.TryGet("a1", out HoerspielScoreResult? r1);
-            cache.TryGet("a2", out HoerspielScoreResult? r2);
+            _ = cache.TryGet("a1", out HoerspielScoreResult? r1);
+            _ = cache.TryGet("a2", out HoerspielScoreResult? r2);
 
             Assert.True(r1!.IsHoerspiel);
             Assert.False(r2!.IsHoerspiel);

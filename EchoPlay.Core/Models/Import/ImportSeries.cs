@@ -1,4 +1,6 @@
-﻿namespace EchoPlay.Core.Models.Import
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace EchoPlay.Core.Models.Import
 {
     /// <summary>
     /// Repräsentiert eine potenzielle Hörspielserie, die aus einer externen Quelle importiert werden kann.
@@ -32,6 +34,7 @@
         /// <summary>
         /// URL zum Coverbild der Serie.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
         public string? CoverImageUrl { get; init; }
 
         /// <summary>

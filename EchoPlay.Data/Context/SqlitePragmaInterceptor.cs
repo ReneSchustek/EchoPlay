@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace EchoPlay.Data.Context
 {
@@ -92,10 +93,12 @@ namespace EchoPlay.Data.Context
         /// </summary>
         /// <param name="command">Das wiederverwendbare Command-Objekt.</param>
         /// <param name="pragma">Das PRAGMA-Statement.</param>
+        [SuppressMessage("Security", "CA2100:SQL-Abfragen auf Sicherheitsrisiken überprüfen",
+            Justification = "PRAGMA-Strings sind ausschließlich hartcodierte Literale aus dieser Klasse.")]
         private static void ExecutePragma(DbCommand command, string pragma)
         {
             command.CommandText = pragma;
-            command.ExecuteNonQuery();
+            _ = command.ExecuteNonQuery();
         }
     }
 }

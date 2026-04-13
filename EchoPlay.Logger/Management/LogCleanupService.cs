@@ -1,4 +1,5 @@
-﻿using EchoPlay.Logger.Configuration;
+﻿using System.Diagnostics.CodeAnalysis;
+using EchoPlay.Logger.Configuration;
 
 namespace EchoPlay.Logger.Management
 {
@@ -63,7 +64,7 @@ namespace EchoPlay.Logger.Management
             {
                 if (file.LastWriteTime < cutoffDate)
                 {
-                    TryDeleteFile(file);
+                    _ = TryDeleteFile(file);
                 }
                 else
                 {
@@ -104,6 +105,7 @@ namespace EchoPlay.Logger.Management
         /// </summary>
         /// <param name="file">Die zu löschende Datei.</param>
         /// <returns>True wenn erfolgreich, sonst false.</returns>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup darf bei einzelnen Lösch-Fehlern nicht abbrechen; jeder Fehler wird geloggt, restliche Dateien werden weiter bearbeitet.")]
         private static bool TryDeleteFile(FileInfo file)
         {
             try

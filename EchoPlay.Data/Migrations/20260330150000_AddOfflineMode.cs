@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         {
             // Offline-Modus: deaktiviert Online-Abfragen (iTunes, Suche).
             // Standard: false (Online-Funktionen aktiv).
-            migrationBuilder.AddColumn<bool>(
+            _ = migrationBuilder.AddColumn<bool>(
                 name: "OfflineMode",
                 table: "AppSettings",
                 type: "INTEGER",
@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "OfflineMode",
                 table: "AppSettings");
         }

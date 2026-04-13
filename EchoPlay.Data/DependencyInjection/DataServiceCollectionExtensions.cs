@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Context;
+using EchoPlay.Data.Context;
 using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Services;
 using EchoPlay.Data.Services.Interfaces;
@@ -25,24 +25,25 @@ namespace EchoPlay.Data.DependencyInjection
             // Als Singleton, weil der Interceptor keinen Zustand hält.
             SqlitePragmaInterceptor pragmaInterceptor = new();
 
-            services.AddDbContext<EchoPlayDbContext>(options =>
+            _ = services.AddDbContext<EchoPlayDbContext>(options =>
                 options.UseSqlite($"Data Source={dbPath};Cache=Shared")
                        .AddInterceptors(pragmaInterceptor)
                        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
-            services.AddScoped<DatabaseInitializer>();
+            _ = services.AddScoped<DatabaseInitializer>();
 
             // Registrierung der Services mit Scoped-Lifetime, passend zum DbContext-Lifecycle.
-            services.AddScoped<ISeriesDataService, SeriesDataService>();
-            services.AddScoped<IEpisodeDataService, EpisodeDataService>();
-            services.AddScoped<IPlaybackStateDataService, PlaybackStateDataService>();
-            services.AddScoped<IAppSettingsDataService, AppSettingsDataService>();
-            services.AddScoped<ILocalTrackDataService, LocalTrackDataService>();
-            services.AddScoped<IDatabaseMaintenanceService, DatabaseMaintenanceService>();
-            services.AddScoped<IDashboardPositionDataService, DashboardPositionDataService>();
-            services.AddScoped<ICachedNewReleaseDataService, CachedNewReleaseDataService>();
-            services.AddScoped<ICoverCopyService, CoverCopyService>();
-            services.AddScoped<ICoverImageDataService, CoverImageDataService>();
+            _ = services.AddScoped<ISeriesDataService, SeriesDataService>();
+            _ = services.AddScoped<IEpisodeDataService, EpisodeDataService>();
+            _ = services.AddScoped<IPlaybackStateDataService, PlaybackStateDataService>();
+            _ = services.AddScoped<IAppSettingsDataService, AppSettingsDataService>();
+            _ = services.AddScoped<ILocalTrackDataService, LocalTrackDataService>();
+            _ = services.AddScoped<IDatabaseMaintenanceService, DatabaseMaintenanceService>();
+            _ = services.AddScoped<IDashboardPositionDataService, DashboardPositionDataService>();
+            _ = services.AddScoped<ICachedNewReleaseDataService, CachedNewReleaseDataService>();
+            _ = services.AddScoped<ICoverCopyService, CoverCopyService>();
+            _ = services.AddScoped<ICoverImageDataService, CoverImageDataService>();
+            _ = services.AddScoped<ISecureSettingsDataService, SecureSettingsDataService>();
 
             return services;
         }

@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         {
             // Überwachungs-Flag: nur überwachte Serien erscheinen
             // unter Neuerscheinungen/Ankündigungen. Default: true.
-            migrationBuilder.AddColumn<bool>(
+            _ = migrationBuilder.AddColumn<bool>(
                 name: "IsWatched",
                 table: "Series",
                 type: "INTEGER",
@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "IsWatched",
                 table: "Series");
         }

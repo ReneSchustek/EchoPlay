@@ -15,6 +15,8 @@ namespace EchoPlay.Logger.Formatting
         /// <returns>Der formatierte String.</returns>
         public string Format(LogEntry entry)
         {
+            ArgumentNullException.ThrowIfNull(entry);
+
             // Pfeil-Notation zeigt die Scope-Hierarchie visuell an
             string scopesPart = entry.Scopes.Count > 0 ? $" [{string.Join(" → ", entry.Scopes)}]" : string.Empty;
 

@@ -1,35 +1,34 @@
 <Project>
   <!--
     Zentrale Build-Konfiguration für alle Projekte in dieser Solution.
-    Einzelne .csproj-Dateien können diese Werte überschreiben.
+    Einzelne .csproj-Dateien k��nnen diese Werte überschreiben.
   -->
   <PropertyGroup>
     <!-- Nullability: Null-Reference-Warnungen als Fehler -->
     <Nullable>enable</Nullable>
     <!-- Moderne using-Direktiven automatisch -->
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Alle Warnungen sind Fehler – kein toter Code, keine Nullable-Verstöße -->
+    <!-- Alle Warnungen sind Fehler -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Alle Analyzer-Regeln aktiv (Zero-Warnings-Regel) -->
+    <AnalysisMode>All</AnalysisMode>
     <!-- Code-Style in Build erzwingen -->
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- XML-Dokumentation generieren (für IntelliSense) -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Dokumentations-Warnungen als Fehler (fehlende XML-Docs) -->
-    <NoWarn></NoWarn>
   </PropertyGroup>
 
-  <!-- Test-Projekte: xUnit-Konventionen und keine XML-Doku erforderlich -->
+  <!-- Test-Projekte: xUnit-Konventionen (Unterstriche in Testnamen) -->
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
-    <NoWarn>CA1707</NoWarn>
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
+
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <!-- Optimierungen in Release -->
     <Optimize>true</Optimize>
-    <!-- Keine Debug-Symbole in Release -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>

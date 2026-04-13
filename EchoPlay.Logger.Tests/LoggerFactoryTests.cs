@@ -75,7 +75,7 @@ namespace EchoPlay.Logger.Tests
             logger.Warning("Wird gefiltert");
             logger.Error("Wird weitergeleitet");
 
-            Assert.Single(sink.Entries);
+            _ = Assert.Single(sink.Entries);
             Assert.Equal(LogLevel.Error, sink.Entries[0].Level);
         }
     }

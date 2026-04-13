@@ -18,6 +18,8 @@ namespace EchoPlay.Core.Scoring
         /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
         public HoerspielDecisionCache(EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
+
             _logger = loggerFactory.CreateLogger("HoerspielDecisionCache");
         }
 
@@ -45,6 +47,8 @@ namespace EchoPlay.Core.Scoring
         /// <param name="result">Das zu cachende Ergebnis. Die Artist-ID wird aus dem Ergebnis gelesen.</param>
         public void Store(HoerspielScoreResult result)
         {
+            ArgumentNullException.ThrowIfNull(result);
+
             // TryAdd schlägt lautlos fehl, wenn der Key bereits existiert.
             // Das ist gewollt – der erste Scorer gewinnt. Wir unterscheiden im Log,
             // damit Diagnosedaten nicht lügen.

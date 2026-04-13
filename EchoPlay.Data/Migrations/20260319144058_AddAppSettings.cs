@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,15 +11,15 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
+            _ = migrationBuilder.DropForeignKey(
                 name: "FK_Episodes_Series_SeriesId",
                 table: "Episodes");
 
-            migrationBuilder.DropForeignKey(
+            _ = migrationBuilder.DropForeignKey(
                 name: "FK_PlaybackStates_Episodes_EpisodeId",
                 table: "PlaybackStates");
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "AppSettings",
                 columns: table => new
                 {
@@ -36,10 +36,10 @@ namespace EchoPlay.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AppSettings", x => x.Id);
+                    _ = table.PrimaryKey("PK_AppSettings", x => x.Id);
                 });
 
-            migrationBuilder.AddForeignKey(
+            _ = migrationBuilder.AddForeignKey(
                 name: "FK_Episodes_Series_SeriesId",
                 table: "Episodes",
                 column: "SeriesId",
@@ -47,7 +47,7 @@ namespace EchoPlay.Data.Migrations
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
 
-            migrationBuilder.AddForeignKey(
+            _ = migrationBuilder.AddForeignKey(
                 name: "FK_PlaybackStates_Episodes_EpisodeId",
                 table: "PlaybackStates",
                 column: "EpisodeId",
@@ -59,18 +59,18 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
+            _ = migrationBuilder.DropForeignKey(
                 name: "FK_Episodes_Series_SeriesId",
                 table: "Episodes");
 
-            migrationBuilder.DropForeignKey(
+            _ = migrationBuilder.DropForeignKey(
                 name: "FK_PlaybackStates_Episodes_EpisodeId",
                 table: "PlaybackStates");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "AppSettings");
 
-            migrationBuilder.AddForeignKey(
+            _ = migrationBuilder.AddForeignKey(
                 name: "FK_Episodes_Series_SeriesId",
                 table: "Episodes",
                 column: "SeriesId",
@@ -78,7 +78,7 @@ namespace EchoPlay.Data.Migrations
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
 
-            migrationBuilder.AddForeignKey(
+            _ = migrationBuilder.AddForeignKey(
                 name: "FK_PlaybackStates_Episodes_EpisodeId",
                 table: "PlaybackStates",
                 column: "EpisodeId",

@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
+            _ = migrationBuilder.AddColumn<string>(
                 name: "ActiveLanguage",
                 table: "AppSettings",
                 type: "TEXT",
@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "ActiveLanguage",
                 table: "AppSettings");
         }

@@ -23,7 +23,7 @@ namespace EchoPlay.Logger.Tests
                 Directory.Delete(_tempDirectory, recursive: true);
             }
 
-            Directory.CreateDirectory(_tempDirectory);
+            _ = Directory.CreateDirectory(_tempDirectory);
         }
 
         /// <summary>

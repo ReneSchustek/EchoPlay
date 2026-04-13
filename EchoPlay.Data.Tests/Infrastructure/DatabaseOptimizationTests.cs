@@ -250,7 +250,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 (Microsoft.Data.Sqlite.SqliteConnection)Context.Database.GetDbConnection();
 
             using Microsoft.Data.Sqlite.SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='{indexName}'";
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=@indexName";
+            command.Parameters.AddWithValue("@indexName", indexName);
             long count = (long)command.ExecuteScalar()!;
 
             Assert.True(count > 0, $"Index '{indexName}' existiert nicht in der Datenbank.");

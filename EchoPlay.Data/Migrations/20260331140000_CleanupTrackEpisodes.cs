@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Migrations
             // Ab jetzt wird pro Album eine Episode angelegt (1 Album = 1 Episode).
             // Die Episoden werden beim nächsten Import der Serie automatisch neu angelegt.
             // PlaybackStates werden per Cascade mitgelöscht (FK Episode → PlaybackState).
-            migrationBuilder.Sql("""
+            _ = migrationBuilder.Sql("""
                 DELETE FROM PlaybackStates
                 WHERE EpisodeId IN (
                     SELECT e.Id FROM Episodes e

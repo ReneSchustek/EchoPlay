@@ -112,7 +112,7 @@ namespace EchoPlay.App.Views
                     {
                         Title              = resources.GetString("TagManagerNoResultsTitle"),
                         Content            = resources.GetString("TagManagerNoResultsMessage"),
-                        CloseButtonText    = "OK",
+                        CloseButtonText    = resources.GetString("CommonOkButton"),
                         XamlRoot           = XamlRoot
                     };
                     Helpers.ContentDialogDragHelper.MakeDraggable(noResultsDialog);

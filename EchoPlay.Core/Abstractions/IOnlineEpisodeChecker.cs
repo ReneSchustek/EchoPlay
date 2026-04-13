@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Core.Models;
 
 namespace EchoPlay.Core.Abstractions
@@ -65,6 +66,7 @@ namespace EchoPlay.Core.Abstractions
         public string? LocalFolderPath { get; init; }
 
         /// <summary>URL zum Serien-Cover.</summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
         public string? CoverImageUrl { get; init; }
     }
 }

@@ -29,6 +29,8 @@ namespace EchoPlay.Core.Scoring
         /// <returns><c>true</c>, wenn die Trackstruktur einem Hörspiel-Muster entspricht.</returns>
         public static bool LooksLikeHoerspiel(IReadOnlyList<TimeSpan> durations)
         {
+            ArgumentNullException.ThrowIfNull(durations);
+
             if (durations.Count == 0 || durations.Count > MaxTracks)
             {
                 return false;

@@ -11,7 +11,7 @@ namespace EchoPlay.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Konfigurierbares Zeitfenster für Neuerscheinungen (Standard: 90 Tage)
-            migrationBuilder.AddColumn<int>(
+            _ = migrationBuilder.AddColumn<int>(
                 name: "NewReleaseDays",
                 table: "AppSettings",
                 type: "INTEGER",
@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "NewReleaseDays",
                 table: "AppSettings");
         }

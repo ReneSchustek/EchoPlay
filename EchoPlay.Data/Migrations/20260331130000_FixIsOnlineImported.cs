@@ -14,7 +14,7 @@ namespace EchoPlay.Data.Migrations
             // Serien mit gecachter AppleMusicArtistId (vom OnlineEpisodeChecker) sind
             // keine echten Online-Imports – nur Serien ohne LocalFolderPath sind es.
             // Erst alles zurücksetzen, dann nur die echten Online-Imports markieren.
-            migrationBuilder.Sql("""
+            _ = migrationBuilder.Sql("""
                 UPDATE Series SET IsOnlineImported = 0;
 
                 UPDATE Series
@@ -29,7 +29,7 @@ namespace EchoPlay.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // Rückgängig: wieder alle Serien mit Provider-ID als Online markieren
-            migrationBuilder.Sql("""
+            _ = migrationBuilder.Sql("""
                 UPDATE Series
                 SET IsOnlineImported = 1
                 WHERE (SpotifyArtistId IS NOT NULL OR AppleMusicArtistId IS NOT NULL)

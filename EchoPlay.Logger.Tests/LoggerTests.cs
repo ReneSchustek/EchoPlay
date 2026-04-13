@@ -22,7 +22,7 @@ namespace EchoPlay.Logger.Tests
 
             logger.Debug("Testmeldung");
 
-            Assert.Single(sink.Entries);
+            _ = Assert.Single(sink.Entries);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace EchoPlay.Logger.Tests
 
             logger.Fatal("Kritischer Fehler");
 
-            Assert.Single(sink.Entries);
+            _ = Assert.Single(sink.Entries);
         }
 
         /// <summary>
@@ -162,9 +162,9 @@ namespace EchoPlay.Logger.Tests
 
             logger.Info("Meldung an alle");
 
-            Assert.Single(sink1.Entries);
-            Assert.Single(sink2.Entries);
-            Assert.Single(sink3.Entries);
+            _ = Assert.Single(sink1.Entries);
+            _ = Assert.Single(sink2.Entries);
+            _ = Assert.Single(sink3.Entries);
             Assert.Equal("Meldung an alle", sink1.Entries[0].Message);
             Assert.Equal("Meldung an alle", sink2.Entries[0].Message);
             Assert.Equal("Meldung an alle", sink3.Entries[0].Message);
@@ -185,7 +185,7 @@ namespace EchoPlay.Logger.Tests
             logger.Info("Meldung mit fehlerhafter Senke");
 
             // Die funktionierende Senke hat den Eintrag dennoch erhalten
-            Assert.Single(capturingSink.Entries);
+            _ = Assert.Single(capturingSink.Entries);
         }
 
         // ===== Eintrag-Inhalt =====

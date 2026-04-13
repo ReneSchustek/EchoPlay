@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Data.Context
+namespace EchoPlay.Data.Context
 {
     /// <summary>
     /// Berechnet den Speicherort der SQLite-Datenbankdatei basierend auf dem Systempfad.
@@ -16,7 +16,7 @@
 
             // Wir stellen sicher, dass das Verzeichnis existiert, damit EF Core beim 
             // Verbindungsaufbau keine "DirectoryNotFound"-Exception wirft.
-            if (!Directory.Exists(appFolder)) Directory.CreateDirectory(appFolder);
+            if (!Directory.Exists(appFolder)) _ = Directory.CreateDirectory(appFolder);
             return Path.Combine(appFolder, "echoplay.db");
         }
     }

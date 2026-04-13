@@ -15,9 +15,6 @@ insert_final_newline = true
 indent_size = 4
 # Namespace-Deklaration: file-scoped (namespace Foo;)
 dotnet_style_namespace_declarations = file_scoped:warning
-# CA1716: Methodennamen wie "Error" und "Resume" kollidieren formal mit reservierten Keywords,
-# sind aber in Domain-APIs (Logger, Mediaplayer) etablierte Konventionen.
-dotnet_diagnostic.CA1716.severity = none
 
 # ── Vereinfachungen erzwingen ────────────────────────────────────────────────
 # using-Anweisungen ohne Block (using var x = ...; statt using (var x = ...) { })
@@ -59,6 +56,73 @@ dotnet_diagnostic.IDE0060.severity = error
 # ConfigureAwait vergessen vermeiden
 dotnet_diagnostic.CA2007.severity = warning
 
+# =========================
+# Security (security.md)
+# =========================
+
+# SQL-Injection
+dotnet_diagnostic.CA2100.severity = error
+
+# Schwacher Zufallsgenerator (System.Random fuer Security)
+dotnet_diagnostic.CA5394.severity = error
+
+# Unsichere Deserialisierung
+dotnet_diagnostic.CA2300.severity = error
+dotnet_diagnostic.CA2301.severity = error
+dotnet_diagnostic.CA2302.severity = error
+
+# Hardcodierte Verschluesselung
+dotnet_diagnostic.CA5350.severity = error
+dotnet_diagnostic.CA5351.severity = error
+
+# Unsichere TLS-Version
+dotnet_diagnostic.CA5364.severity = error
+
+# Cookie ohne HttpOnly/Secure
+dotnet_diagnostic.CA5382.severity = error
+dotnet_diagnostic.CA5383.severity = error
+
+# Unsichere Cipher-Modi (ECB)
+dotnet_diagnostic.CA5358.severity = error
+
+# Path-Traversal
+dotnet_diagnostic.CA3003.severity = error
+
+# XSS
+dotnet_diagnostic.CA3002.severity = error
+
+# =========================
+# Resilience (resilience.md)
+# =========================
+
+# async void (Prozess-Absturz bei unbehandelter Exception)
+dotnet_diagnostic.VSTHRD100.severity = error
+
+# Task.Result / Task.Wait (Deadlock)
+dotnet_diagnostic.CA1849.severity = error
+
+# IDisposable korrekt implementieren
+dotnet_diagnostic.CA1816.severity = warning
+
+# =========================
+# Architecture (architecture.md)
+# =========================
+
+# Nicht verwendete private Member entfernen
+dotnet_diagnostic.IDE0051.severity = error
+
+# Nicht verwendeter Ausdruck
+dotnet_diagnostic.IDE0058.severity = warning
+
+# Kein generischer Exception-Catch
+dotnet_diagnostic.CA1031.severity = warning
+
+# Static-faehige Methoden
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# Logger-Performance
+dotnet_diagnostic.CA1848.severity = suggestion
+
 # Projekt- und Config-Dateien
 [*.{csproj,props,targets,xml}]
 indent_size = 2
@@ -67,7 +131,7 @@ indent_size = 2
 [*.{json,yml,yaml}]
 indent_size = 2
 
-# Markdown – kein Trailing Whitespace entfernen (absichtliche Zeilenumbrüche)
+# Markdown
 [*.md]
 trim_trailing_whitespace = false
 

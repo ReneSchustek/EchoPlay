@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
+            _ = migrationBuilder.AddColumn<int>(
                 name: "LogRetentionDays",
                 table: "AppSettings",
                 type: "INTEGER",
@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LogRetentionDays",
                 table: "AppSettings");
         }

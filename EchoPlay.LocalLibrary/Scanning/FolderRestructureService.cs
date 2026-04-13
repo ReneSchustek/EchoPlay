@@ -137,7 +137,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                     : SanitizeFolderName(title);
 
                 string targetFolderPath = Path.Combine(seriesFolderPath, targetFolderName);
-                targetFolders.Add(targetFolderName);
+                _ = targetFolders.Add(targetFolderName);
 
                 actions.Add(new RestructureAction
                 {
@@ -178,7 +178,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 foreach (RestructureAction action in preview.Actions)
                 {
                     // Zielordner anlegen (falls noch nicht vorhanden)
-                    Directory.CreateDirectory(action.TargetFolderPath);
+                    _ = Directory.CreateDirectory(action.TargetFolderPath);
 
                     string destination = Path.Combine(action.TargetFolderPath, action.FileName);
 
@@ -228,7 +228,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             HashSet<string> createdFolders = [];
             foreach (RestructureAction action in preview.Actions)
             {
-                createdFolders.Add(action.TargetFolderPath);
+                _ = createdFolders.Add(action.TargetFolderPath);
             }
 
             foreach (string folder in createdFolders)

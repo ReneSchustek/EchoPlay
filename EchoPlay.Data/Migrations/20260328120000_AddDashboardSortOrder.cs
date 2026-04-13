@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
+            _ = migrationBuilder.AddColumn<int>(
                 name: "DashboardSortOrder",
                 table: "Series",
                 type: "INTEGER",
@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "DashboardSortOrder",
                 table: "Series");
         }

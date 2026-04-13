@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         {
             // URL zum Öffnen der Folge beim Provider (Spotify/Apple Music).
             // Wird beim Online-Import gesetzt. Null bei lokalen Folgen.
-            migrationBuilder.AddColumn<string>(
+            _ = migrationBuilder.AddColumn<string>(
                 name: "ProviderUrl",
                 table: "Episodes",
                 type: "TEXT",
@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "ProviderUrl",
                 table: "Episodes");
         }

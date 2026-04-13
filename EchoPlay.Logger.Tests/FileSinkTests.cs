@@ -25,7 +25,7 @@ namespace EchoPlay.Logger.Tests
                 Directory.Delete(_tempDirectory, recursive: true);
             }
 
-            Directory.CreateDirectory(_tempDirectory);
+            _ = Directory.CreateDirectory(_tempDirectory);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace EchoPlay.Logger.Tests
         public async Task WriteAsync_ErstelltLogDateiImVerzeichnis()
         {
             string testDir = Path.Combine(_tempDirectory, "test_erstellt");
-            Directory.CreateDirectory(testDir);
+            _ = Directory.CreateDirectory(testDir);
             FileSink sink = new(testDir, new DefaultLogFormatter());
             LogEntry entry = new(
                 Timestamp: new DateTime(2026, 3, 2, 14, 30, 45, 0),
@@ -68,7 +68,7 @@ namespace EchoPlay.Logger.Tests
         public async Task WriteAsync_InhaltEnthältKategorieUndNachricht()
         {
             string testDir = Path.Combine(_tempDirectory, "test_inhalt");
-            Directory.CreateDirectory(testDir);
+            _ = Directory.CreateDirectory(testDir);
             FileSink sink = new(testDir, new DefaultLogFormatter());
             LogEntry entry = new(
                 Timestamp: new DateTime(2026, 3, 2, 14, 30, 45, 0),
@@ -95,7 +95,7 @@ namespace EchoPlay.Logger.Tests
         public async Task WriteAsync_HaengtMehrereMeldungenAnSelbeTagesdatei()
         {
             string testDir = Path.Combine(_tempDirectory, "test_append");
-            Directory.CreateDirectory(testDir);
+            _ = Directory.CreateDirectory(testDir);
             FileSink sink = new(testDir, new DefaultLogFormatter());
 
             LogEntry entry1 = new(
@@ -116,7 +116,7 @@ namespace EchoPlay.Logger.Tests
             await sink.WriteAsync(entry2);
 
             string[] logFiles = Directory.GetFiles(testDir, "*.log");
-            Assert.Single(logFiles);
+            _ = Assert.Single(logFiles);
 
             string content = await File.ReadAllTextAsync(logFiles[0]);
             Assert.Contains("ErsteNachricht", content);
@@ -144,7 +144,7 @@ namespace EchoPlay.Logger.Tests
         public async Task WriteAsync_RuftFormatterFürJedenEintragAuf()
         {
             string testDir = Path.Combine(_tempDirectory, "test_formatter");
-            Directory.CreateDirectory(testDir);
+            _ = Directory.CreateDirectory(testDir);
             CapturingFormatter formatter = new();
             FileSink sink = new(testDir, formatter);
 

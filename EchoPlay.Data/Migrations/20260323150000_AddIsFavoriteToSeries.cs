@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
+            _ = migrationBuilder.AddColumn<bool>(
                 name: "IsFavorite",
                 table: "Series",
                 type: "INTEGER",
@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "IsFavorite",
                 table: "Series");
         }

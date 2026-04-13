@@ -21,24 +21,24 @@ namespace EchoPlay.Spotify.DependencyInjection
         /// <returns>Die erweiterte Service-Sammlung.</returns>
         public static IServiceCollection AddSpotifyImport(this IServiceCollection services)
         {
-            services.AddScoped<ISeriesImportSearch, SpotifySeriesImportSearch>();
-            services.AddScoped<IEpisodeImportSource, SpotifyEpisodeImportSource>();
+            _ = services.AddScoped<ISeriesImportSearch, SpotifySeriesImportSearch>();
+            _ = services.AddScoped<IEpisodeImportSource, SpotifyEpisodeImportSource>();
 
             // Keyed-Registrierungen für ImportService – Schlüssel entspricht ProviderType.Spotify.ToString().
             // Der Typ-Check ist hier sicher, weil wir uns in derselben Assembly befinden.
-            services.AddKeyedScoped<ISeriesImportSearch>("Spotify",
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify",
                 (sp, _) => sp.GetServices<ISeriesImportSearch>()
                     .First(s => s is SpotifySeriesImportSearch));
-            services.AddKeyedScoped<IEpisodeImportSource>("Spotify",
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify",
                 (sp, _) => sp.GetServices<IEpisodeImportSource>()
                     .First(s => s is SpotifyEpisodeImportSource));
 
-            services.AddOptions<SpotifyHoerspielSettings>();
-            services.AddScoped<HoerspielDecisionCache>();
-            services.AddScoped<SpotifyHoerspielAnalyzer>();
-            services.AddScoped<IHoerspielScorer<SpotifyArtistDto>, SpotifyHoerspielScorer>();
+            _ = services.AddOptions<SpotifyHoerspielSettings>();
+            _ = services.AddScoped<HoerspielDecisionCache>();
+            _ = services.AddScoped<SpotifyHoerspielAnalyzer>();
+            _ = services.AddScoped<IHoerspielScorer<SpotifyArtistDto>, SpotifyHoerspielScorer>();
 
-            services.AddScoped<SpotifySeriesMapper>();
+            _ = services.AddScoped<SpotifySeriesMapper>();
 
             return services;
         }

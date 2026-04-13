@@ -1,6 +1,7 @@
-﻿using EchoPlay.Logger.Abstractions;
-using EchoPlay.Logger.Models;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using EchoPlay.Logger.Abstractions;
+using EchoPlay.Logger.Models;
 
 namespace EchoPlay.Logger.Sinks
 {
@@ -19,6 +20,7 @@ namespace EchoPlay.Logger.Sinks
         /// <param name="logDirectory">Verzeichnis für Log-Dateien.</param>
         /// <param name="formatter">Der Formatter für die Log-Ausgabe.</param>
         /// <param name="maxFileSizeMb">Maximale Dateigröße in MB (Standard: 10).</param>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "FileSink darf bei Verzeichnis-Fehlern nicht crashen; Fallback auf AppData\\EchoPlay\\Logs, sonst No-Op, damit die App auch ohne Logging startet.")]
         public FileSink(string logDirectory, ILogFormatter formatter, int maxFileSizeMb = 10)
         {
             _logDirectory = logDirectory;
@@ -29,7 +31,7 @@ namespace EchoPlay.Logger.Sinks
             {
                 if (!Directory.Exists(_logDirectory))
                 {
-                    Directory.CreateDirectory(_logDirectory);
+                    _ = Directory.CreateDirectory(_logDirectory);
                 }
             }
             catch (Exception ex)
@@ -45,10 +47,10 @@ namespace EchoPlay.Logger.Sinks
 
                 try
                 {
-                    Directory.CreateDirectory(fallback);
+                    _ = Directory.CreateDirectory(fallback);
                     _logDirectory = fallback;
                 }
-                catch
+                catch (Exception)
                 {
                     // Kein beschreibbares Verzeichnis verfügbar – Logging deaktiviert.
                     // Fehler werden in WriteAsync stillschweigend geloggt.
@@ -62,6 +64,7 @@ namespace EchoPlay.Logger.Sinks
         /// </summary>
         /// <param name="entry">Der zu schreibende Log-Eintrag.</param>
         /// <returns>Ein Task der die asynchrone Operation repräsentiert.</returns>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sink darf durch IO-Fehler die Anwendung nicht crashen; catch-all mit Diagnostics-Trace ist Resilience-Pattern.")]
         public async Task WriteAsync(LogEntry entry)
         {
             // Wenn der Konstruktor kein beschreibbares Verzeichnis finden konnte,

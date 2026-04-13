@@ -113,22 +113,24 @@ namespace EchoPlay.Core.Models
         /// <returns>Formatierter Klartext mit Überschrift, Serienblöcken und Zusammenfassung.</returns>
         public static string FormatAsText(MissingEpisodesReport report)
         {
+            ArgumentNullException.ThrowIfNull(report);
+
             StringBuilder sb = new();
 
             string dateStr = report.CheckedAtUtc.ToLocalTime()
                 .ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
-            sb.AppendLine(CultureInfo.InvariantCulture, $"Fehlende Folgen – EchoPlay ({dateStr})");
-            sb.AppendLine("===================================");
-            sb.AppendLine();
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"Fehlende Folgen – EchoPlay ({dateStr})");
+            _ = sb.AppendLine("===================================");
+            _ = sb.AppendLine();
 
             foreach (SeriesMissingEpisodesResult result in report.Results)
             {
                 FormatSeriesBlock(sb, result);
-                sb.AppendLine();
+                _ = sb.AppendLine();
             }
 
-            sb.AppendLine("===================================");
-            sb.Append(CultureInfo.InvariantCulture,
+            _ = sb.AppendLine("===================================");
+            _ = sb.Append(CultureInfo.InvariantCulture,
                 $"Geprüft: {report.Results.Count} Serien | " +
                 $"Lokale Lücken: {report.TotalLocalGaps} | " +
                 $"Online neu: {report.TotalOnlineNew}");
@@ -143,8 +145,8 @@ namespace EchoPlay.Core.Models
         {
             if (result.ErrorMessage is not null)
             {
-                sb.AppendLine(result.SeriesTitle);
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  Fehler: {result.ErrorMessage}");
+                _ = sb.AppendLine(result.SeriesTitle);
+                _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Fehler: {result.ErrorMessage}");
                 return;
             }
 
@@ -152,7 +154,7 @@ namespace EchoPlay.Core.Models
             string range = result.LocalHighestNumber > 0
                 ? FormattableString.Invariant($" (lokal: 1–{result.LocalHighestNumber})")
                 : string.Empty;
-            sb.AppendLine(CultureInfo.InvariantCulture, $"{result.SeriesTitle}{range}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"{result.SeriesTitle}{range}");
 
             // Lokale Lücken
             if (result.LocalGaps.Count > 0)
@@ -162,11 +164,11 @@ namespace EchoPlay.Core.Models
                 {
                     gapStrings.Add(FormattableString.Invariant($"Folge {gap:D3}"));
                 }
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  Lokale Lücken: {string.Join(", ", gapStrings)}");
+                _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Lokale Lücken: {string.Join(", ", gapStrings)}");
             }
             else if (result.LocalHighestNumber > 0)
             {
-                sb.AppendLine("  Keine lokalen Lücken.");
+                _ = sb.AppendLine("  Keine lokalen Lücken.");
             }
 
             // Online verfügbare Folgen
@@ -174,7 +176,7 @@ namespace EchoPlay.Core.Models
             {
                 foreach (OnlineEpisodeInfo ep in result.OnlineEpisodes)
                 {
-                    sb.AppendLine(CultureInfo.InvariantCulture,
+                    _ = sb.AppendLine(CultureInfo.InvariantCulture,
                         $"  Online verfügbar: Folge {ep.EpisodeNumber:D3} – {ep.Title}");
                 }
             }
@@ -183,7 +185,7 @@ namespace EchoPlay.Core.Models
             if (result.LocalGaps.Count == 0 && result.OnlineEpisodes.Count == 0
                 && result.LocalHighestNumber > 0)
             {
-                sb.AppendLine("  Alle Folgen komplett.");
+                _ = sb.AppendLine("  Alle Folgen komplett.");
             }
         }
     }

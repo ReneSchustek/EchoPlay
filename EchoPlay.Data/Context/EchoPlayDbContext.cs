@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Entities.Settings;
@@ -27,6 +27,9 @@ namespace EchoPlay.Data.Context
         /// <summary>Wiedergabestände.</summary>
         public DbSet<PlaybackState> PlaybackStates => Set<PlaybackState>();
 
+        /// <summary>Verschlüsselte Einstellungswerte (z. B. Spotify-Credentials).</summary>
+        public DbSet<SecureSetting> SecureSettings => Set<SecureSetting>();
+
         /// <summary>Lokale Audio-Tracks.</summary>
         public DbSet<LocalTrack> LocalTracks => Set<LocalTrack>();
 
@@ -52,18 +55,19 @@ namespace EchoPlay.Data.Context
 
             // Sucht automatisch alle IEntityTypeConfiguration<T>-Klassen im Assembly
             // und wendet sie an – jede Entität hat eine eigene Konfigurationsklasse.
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(EchoPlayDbContext).Assembly);
+            _ = modelBuilder.ApplyConfigurationsFromAssembly(typeof(EchoPlayDbContext).Assembly);
 
             // Globaler Query Filter: Jede Abfrage bekommt automatisch "AND IsDeleted = 0"
             // angehängt. Soft-Delete ist damit transparent – kein Aufrufer muss daran denken.
-            modelBuilder.Entity<Series>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<Episode>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<PlaybackState>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<LocalTrack>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<AppSettings>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<DashboardPosition>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<CachedNewRelease>().HasQueryFilter(entity => !entity.IsDeleted);
-            modelBuilder.Entity<CoverImage>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<Series>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<Episode>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<PlaybackState>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<LocalTrack>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<AppSettings>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<DashboardPosition>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<CachedNewRelease>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<CoverImage>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<SecureSetting>().HasQueryFilter(entity => !entity.IsDeleted);
         }
     }
 }

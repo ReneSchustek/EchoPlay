@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Zeitpunkt des letzten App-Starts – Referenz für den 60-Tage-Neuerscheinungen-Filter
-            migrationBuilder.AddColumn<DateTime>(
+            _ = migrationBuilder.AddColumn<DateTime>(
                 name: "LastAppStart",
                 table: "AppSettings",
                 type: "TEXT",
@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "LastAppStart",
                 table: "AppSettings");
         }

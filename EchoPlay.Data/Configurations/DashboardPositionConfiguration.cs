@@ -17,23 +17,23 @@ namespace EchoPlay.Data.Configurations
         /// <param name="builder">Der Entity-Type-Builder.</param>
         public void Configure(EntityTypeBuilder<DashboardPosition> builder)
         {
-            builder.ToTable("DashboardPositions");
+            _ = builder.ToTable("DashboardPositions");
 
-            builder.Property(dp => dp.Section)
+            _ = builder.Property(dp => dp.Section)
                 .IsRequired()
                 .HasMaxLength(64);
 
             // Fachlicher Schlüssel: pro Serie und Bereich nur eine Position
-            builder.HasIndex(dp => new { dp.SeriesId, dp.Section })
+            _ = builder.HasIndex(dp => new { dp.SeriesId, dp.Section })
                 .IsUnique();
 
             // Abfrage nach Bereich: GetBySectionAsync() filtert auf Section und sortiert nach Position.
-            builder.HasIndex(dp => new { dp.Section, dp.Position })
+            _ = builder.HasIndex(dp => new { dp.Section, dp.Position })
                 .HasFilter("IsDeleted = 0");
 
             // Fremdschlüssel-Beziehung zur Serie – bisher fehlte die explizite FK-Konfiguration.
             // Restrict: Eine Serie darf nicht physisch gelöscht werden, solange Positionen existieren.
-            builder.HasOne(dp => dp.Series)
+            _ = builder.HasOne(dp => dp.Series)
                 .WithMany()
                 .HasForeignKey(dp => dp.SeriesId)
                 .OnDelete(DeleteBehavior.Restrict);

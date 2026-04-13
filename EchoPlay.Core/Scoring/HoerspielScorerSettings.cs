@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace EchoPlay.Core.Scoring
 {
     /// <summary>
@@ -10,7 +12,7 @@ namespace EchoPlay.Core.Scoring
         /// <summary>
         /// Namen bekannter Hörspielserien, die bei Übereinstimmung zur sofortigen Akzeptanz führen.
         /// </summary>
-        public List<string> DefaultKnownSeries { get; init; } =
+        public Collection<string> DefaultKnownSeries { get; init; } =
         [
             "Die drei ???",
             "Die drei ??? Kids",

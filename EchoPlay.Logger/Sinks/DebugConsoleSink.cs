@@ -1,4 +1,5 @@
-﻿using EchoPlay.Logger.Abstractions;
+﻿using System.Diagnostics.CodeAnalysis;
+using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Models;
 
 namespace EchoPlay.Logger.Sinks
@@ -24,6 +25,7 @@ namespace EchoPlay.Logger.Sinks
         /// </summary>
         /// <param name="entry">Der zu schreibende Log-Eintrag.</param>
         /// <returns>Ein abgeschlossener Task.</returns>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sink darf durch Formatter-Fehler nicht crashen; catch-all mit Fallback-Ausgabe ist Resilience-Pattern.")]
         public Task WriteAsync(LogEntry entry)
         {
             try

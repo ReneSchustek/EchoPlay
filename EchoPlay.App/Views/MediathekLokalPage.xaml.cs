@@ -12,8 +12,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.Views
 {
@@ -31,9 +31,7 @@ namespace EchoPlay.App.Views
         // und das Rekursions-Flag (vorher direkt in der Page geführt).
         private readonly Helpers.AccordionSplitHandler<LocalArtistCardViewModel> _splitHandler;
 
-        // WinUI 3 erlaubt maximal einen offenen ContentDialog gleichzeitig.
-        // Dieses Flag verhindert, dass zwei asynchrone Handler gleichzeitig einen Dialog öffnen.
-        private bool _isDialogOpen;
+        private static readonly ResourceLoader _resources = ResourceLoader.GetForViewIndependentUse();
 
         private readonly INavigationService _navigationService;
 
@@ -270,22 +268,19 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async Task<MissingEpisodesMode> OnMissingEpisodesModeRequested()
         {
-            if (_isDialogOpen)
-            {
-                return MissingEpisodesMode.Cancel;
-            }
+            using Helpers.DialogReentrancyGuard? guard = Helpers.DialogReentrancyGuard.TryAcquire();
+            if (guard is null) return MissingEpisodesMode.Cancel;
 
             ContentDialog dialog = new()
             {
                 XamlRoot           = XamlRoot,
-                Title              = "Fehlende Folgen ermitteln",
-                Content            = "Soll auch online (iTunes) geprüft werden, welche Folgen nach der letzten lokalen Nummer existieren?",
-                PrimaryButtonText  = "Online + Offline",
-                SecondaryButtonText = "Nur offline",
-                CloseButtonText    = "Abbrechen"
+                Title              = _resources.GetString("MissingEpisodesDialogTitle"),
+                Content            = _resources.GetString("MissingEpisodesDialogContent"),
+                PrimaryButtonText  = _resources.GetString("MissingEpisodesOnlineButton"),
+                SecondaryButtonText = _resources.GetString("MissingEpisodesOfflineButton"),
+                CloseButtonText    = _resources.GetString("CommonCancelButton")
             };
 
-            _isDialogOpen = true;
             try
             {
                 Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
@@ -302,18 +297,12 @@ namespace EchoPlay.App.Views
             {
                 return MissingEpisodesMode.Cancel;
             }
-            finally
-            {
-                _isDialogOpen = false;
-            }
         }
 
         private async void OnMissingEpisodesResolved(IReadOnlyList<string> episodeTitles)
         {
-            if (_isDialogOpen)
-            {
-                return;
-            }
+            using Helpers.DialogReentrancyGuard? guard = Helpers.DialogReentrancyGuard.TryAcquire();
+            if (guard is null) return;
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
@@ -321,7 +310,7 @@ namespace EchoPlay.App.Views
 
                 if (episodeTitles.Count == 0)
                 {
-                    content = "Alle Folgen dieser Serie sind lokal vorhanden.";
+                    content = _resources.GetString("MissingEpisodesAllPresent");
                 }
                 else
                 {
@@ -333,23 +322,15 @@ namespace EchoPlay.App.Views
                     content = builder.ToString().TrimEnd();
                 }
 
-                _isDialogOpen = true;
-                try
-                {
-                    ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
-                        XamlRoot,
-                        title: "Fehlende Folgen",
-                        content: content,
-                        primaryButtonText: "Als TXT speichern");
+                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                    XamlRoot,
+                    title: _resources.GetString("MissingEpisodesResultTitle"),
+                    content: content,
+                    primaryButtonText: _resources.GetString("CommonSaveAsTxtButton"));
 
-                    if (result == ContentDialogResult.Primary)
-                    {
-                        await SaveReportAsTxtAsync(content);
-                    }
-                }
-                finally
+                if (result == ContentDialogResult.Primary)
                 {
-                    _isDialogOpen = false;
+                    await SaveReportAsTxtAsync(content);
                 }
             });
         }
@@ -373,31 +354,24 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnAllSeriesCheckCompleted(EchoPlay.Core.Models.MissingEpisodesReport report)
         {
-            if (_isDialogOpen) return;
+            using Helpers.DialogReentrancyGuard? guard = Helpers.DialogReentrancyGuard.TryAcquire();
+            if (guard is null) return;
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
                 string reportText = EchoPlay.Core.Models.MissingEpisodesReportFormatter.FormatAsText(report);
 
-                _isDialogOpen = true;
-                try
-                {
-                    ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
-                        XamlRoot,
-                        title: "Fehlende Folgen – Gesamtprüfung",
-                        content: reportText,
-                        primaryButtonText: "Als TXT speichern",
-                        maxHeight: 500,
-                        useMonospace: true);
+                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                    XamlRoot,
+                    title: _resources.GetString("MissingEpisodesAllSeriesTitle"),
+                    content: reportText,
+                    primaryButtonText: _resources.GetString("CommonSaveAsTxtButton"),
+                    maxHeight: 500,
+                    useMonospace: true);
 
-                    if (result == ContentDialogResult.Primary)
-                    {
-                        await SaveReportAsTxtAsync(reportText);
-                    }
-                }
-                finally
+                if (result == ContentDialogResult.Primary)
                 {
-                    _isDialogOpen = false;
+                    await SaveReportAsTxtAsync(reportText);
                 }
             });
         }
@@ -413,7 +387,8 @@ namespace EchoPlay.App.Views
             WinRT.Interop.InitializeWithWindow.Initialize(picker, handle);
             picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
             picker.SuggestedFileName = $"Fehlende-Folgen-{DateTime.Now:yyyy-MM-dd}";
-            picker.FileTypeChoices.Add("Textdatei", [".txt"]);
+            ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
+            picker.FileTypeChoices.Add(resources.GetString("CommonTextFileFilter"), [".txt"]);
 
             Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync();
 
@@ -539,50 +514,44 @@ namespace EchoPlay.App.Views
                 await ViewModel.AnalyzeRestructureAsync(seriesId);
                 ViewModel.RestructurePreviewReady -= p => preview = p;
 
-                if (preview is null || preview.IsEmpty || _isDialogOpen)
+                if (preview is null || preview.IsEmpty)
                 {
                     return;
                 }
 
-                _isDialogOpen = true;
+                using Helpers.DialogReentrancyGuard? restructureGuard = Helpers.DialogReentrancyGuard.TryAcquire();
+                if (restructureGuard is null) return;
 
-                try
+                // Vorschau-Text zusammenbauen
+                System.Text.StringBuilder sb = new();
+                sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
+                sb.AppendLine();
+
+                foreach (RestructureActionDisplay action in preview.Actions)
                 {
-                    // Vorschau-Text zusammenbauen
-                    System.Text.StringBuilder sb = new();
-                    sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
-                    sb.AppendLine();
-
-                    foreach (RestructureActionDisplay action in preview.Actions)
-                    {
-                        sb.Append("  ").AppendLine(action.FileName);
-                        sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
-                    }
-
-                    ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
-                        Content.XamlRoot,
-                        title: "Ordnerstruktur aufbauen",
-                        content: sb.ToString(),
-                        primaryButtonText: "Umbauen",
-                        closeButtonText: "Abbrechen",
-                        useMonospace: true,
-                        monospaceFontSize: 12,
-                        defaultButton: ContentDialogButton.Close);
-
-                    if (result == ContentDialogResult.Primary)
-                    {
-                        int movedCount = await ViewModel.ExecuteRestructureAsync(preview);
-
-                        // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
-                        if (movedCount > 0)
-                        {
-                            await ViewModel.LoadAsync();
-                        }
-                    }
+                    sb.Append("  ").AppendLine(action.FileName);
+                    sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
                 }
-                finally
+
+                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                    Content.XamlRoot,
+                    title: _resources.GetString("RestructureDialogTitle"),
+                    content: sb.ToString(),
+                    primaryButtonText: _resources.GetString("RestructureExecuteButton"),
+                    closeButtonText: _resources.GetString("CommonCancelButton"),
+                    useMonospace: true,
+                    monospaceFontSize: 12,
+                    defaultButton: ContentDialogButton.Close);
+
+                if (result == ContentDialogResult.Primary)
                 {
-                    _isDialogOpen = false;
+                    int movedCount = await ViewModel.ExecuteRestructureAsync(preview);
+
+                    // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
+                    if (movedCount > 0)
+                    {
+                        await ViewModel.LoadAsync();
+                    }
                 }
             });
         }

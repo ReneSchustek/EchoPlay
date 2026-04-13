@@ -12,17 +12,20 @@ namespace EchoPlay.Data.Infrastructure
     internal static class UniqueConstraintHandler
     {
         /// <summary>
-        /// SQLite-Error-Code 19 entspricht <c>SQLITE_CONSTRAINT</c>. Der Sub-Code 2067
-        /// wäre spezifisch für <c>UNIQUE</c>, reicht EchoPlay aktuell aber nicht,
-        /// weil wir keinen anderen Constraint gegen Race-Conditions absichern müssen.
+        /// <c>SQLITE_CONSTRAINT_UNIQUE</c> — der Extended-Error-Code für eine verletzte
+        /// UNIQUE-Constraint. Nur dieser Code rechtfertigt das Retry-als-Update-Verhalten.
+        /// Der Oberkategorie-Code 19 (<c>SQLITE_CONSTRAINT</c>) deckt dagegen auch
+        /// FOREIGN KEY-, NOT NULL-, CHECK- und TRIGGER-Verletzungen ab — die müssen
+        /// durchschlagen, damit echte Datenintegritätsfehler sichtbar bleiben.
         /// </summary>
-        public const int SqliteConstraintCode = 19;
+        public const int SqliteConstraintUniqueExtendedCode = 2067;
 
         /// <summary>
         /// Prüft, ob eine <see cref="DbUpdateException"/> durch eine SQLite-Unique-
-        /// Constraint-Verletzung ausgelöst wurde.
+        /// Constraint-Verletzung ausgelöst wurde. Prüfung erfolgt über den
+        /// Extended-Error-Code (2067), nicht über den Oberkategorie-Code (19).
         /// </summary>
         public static bool IsUniqueViolation(DbUpdateException ex)
-            => ex.InnerException is SqliteException { SqliteErrorCode: SqliteConstraintCode };
+            => ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteConstraintUniqueExtendedCode };
     }
 }

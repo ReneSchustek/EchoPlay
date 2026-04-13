@@ -31,13 +31,13 @@ namespace EchoPlay.App.Tests.ViewModels
             AppSettings? appSettings = null)
         {
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
-            services.AddScoped<IDashboardPositionDataService>(_ => new FakeDashboardPositionDataService());
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(appSettings));
-            services.AddScoped<IOnlineEpisodeChecker>(_ => checker ?? new FakeOnlineEpisodeChecker());
-            services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
+            _ = services.AddScoped<IDashboardPositionDataService>(_ => new FakeDashboardPositionDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(appSettings));
+            _ = services.AddScoped<IOnlineEpisodeChecker>(_ => checker ?? new FakeOnlineEpisodeChecker());
+            _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -101,7 +101,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
 
-            Assert.Single(vm.FavoriteSeries);
+            _ = Assert.Single(vm.FavoriteSeries);
             Assert.Equal("TKKG", vm.FavoriteSeries[0].SeriesName);
         }
 
@@ -148,8 +148,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Kacheln werden synchron aus dem Cache gebaut – kein Delay nötig.
             // Die Gruppierung ist jetzt nach Monat, nicht nach Serie.
-            Assert.Single(vm.NewEpisodeGroups);
-            Assert.Single(vm.NewEpisodeGroups[0].Episodes);
+            _ = Assert.Single(vm.NewEpisodeGroups);
+            _ = Assert.Single(vm.NewEpisodeGroups[0].Episodes);
             Assert.Equal("TKKG", vm.NewEpisodeGroups[0].Episodes[0].SeriesName);
         }
 
@@ -248,12 +248,12 @@ namespace EchoPlay.App.Tests.ViewModels
             // "Angekündigt" ist die erste Gruppe (SortKey 0 = ganz oben)
             NewEpisodesGroupViewModel announcedGroup = vm.NewEpisodeGroups[0];
             Assert.Equal("Angekündigt", announcedGroup.GroupLabel);
-            Assert.Single(announcedGroup.Episodes);
+            _ = Assert.Single(announcedGroup.Episodes);
             Assert.Equal("Angekündigte Folge", announcedGroup.Episodes[0].EpisodeTitle);
 
             // Monatsgruppe enthält die verfügbare Folge
             NewEpisodesGroupViewModel monthGroup = vm.NewEpisodeGroups[1];
-            Assert.Single(monthGroup.Episodes);
+            _ = Assert.Single(monthGroup.Episodes);
             Assert.Equal("Verfügbare Folge", monthGroup.Episodes[0].EpisodeTitle);
         }
 
@@ -340,8 +340,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Zwei Monatsgruppen: Januar und Dezember (neuester zuerst)
             Assert.Equal(2, vm.NewEpisodeGroups.Count);
-            Assert.Contains("Januar", vm.NewEpisodeGroups[0].GroupLabel);
-            Assert.Contains("Dezember", vm.NewEpisodeGroups[1].GroupLabel);
+            Assert.Contains("Januar", vm.NewEpisodeGroups[0].GroupLabel, StringComparison.Ordinal);
+            Assert.Contains("Dezember", vm.NewEpisodeGroups[1].GroupLabel, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -390,9 +390,9 @@ namespace EchoPlay.App.Tests.ViewModels
                 releaseDate: future,
                 episodeNumber: 239);
 
-            Assert.Contains("Nr. 239", card.InfoLineText!);
-            Assert.Contains(future.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture), card.InfoLineText!);
-            Assert.Contains("angekündigt", card.InfoLineText!);
+            Assert.Contains("Nr. 239", card.InfoLineText!, StringComparison.Ordinal);
+            Assert.Contains(future.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture), card.InfoLineText!, StringComparison.Ordinal);
+            Assert.Contains("angekündigt", card.InfoLineText!, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -440,7 +440,7 @@ namespace EchoPlay.App.Tests.ViewModels
             string episodeTitle = "Test-Folge")
         {
             ServiceCollection services = new();
-            services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new NewEpisodeCardViewModel(
@@ -469,7 +469,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakePlaybackStateDataService stateService = new();
 
             ServiceCollection services = new();
-            services.AddScoped<IPlaybackStateDataService>(_ => stateService);
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService);
             ServiceProvider provider = services.BuildServiceProvider();
 
             NewEpisodeCardViewModel card = new(
@@ -529,7 +529,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            Assert.Single(vm.RecentSeries);
+            _ = Assert.Single(vm.RecentSeries);
             Assert.Equal("Die drei Fragezeichen", vm.RecentSeries[0].SeriesName);
             Assert.Equal("Online-Folge", vm.RecentSeries[0].LastEpisodeTitle);
         }
@@ -567,7 +567,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            Assert.Single(vm.RecentSeries);
+            _ = Assert.Single(vm.RecentSeries);
             Assert.Equal("TKKG", vm.RecentSeries[0].SeriesName);
         }
 
@@ -732,7 +732,7 @@ namespace EchoPlay.App.Tests.ViewModels
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: true, releaseDate: future, episodeNumber: 26);
 
-            Assert.Contains("Nr. 26", card.InfoLineText!);
+            Assert.Contains("Nr. 26", card.InfoLineText!, StringComparison.Ordinal);
             Assert.Contains("angekündigt", card.InfoLineText!, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -743,8 +743,8 @@ namespace EchoPlay.App.Tests.ViewModels
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: false, releaseDate: TestIds.ReferenceDate.AddDays(-3), episodeNumber: 170);
 
-            Assert.Contains("Nr. 170", card.InfoLineText!);
-            Assert.Contains("online", card.InfoLineText!);
+            Assert.Contains("Nr. 170", card.InfoLineText!, StringComparison.Ordinal);
+            Assert.Contains("online", card.InfoLineText!, StringComparison.Ordinal);
         }
     }
 }

@@ -54,12 +54,12 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSpotifyOptionsProvider? optionsProvider = null)
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
             // StatusBar.RefreshAsync benötigt diese Services – sonst schlägt SaveAsync fehl
-            services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
-            services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            services.AddScoped<IDatabaseMaintenanceService>(_ => maintenanceService ?? new FakeDatabaseMaintenanceService());
+            _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IDatabaseMaintenanceService>(_ => maintenanceService ?? new FakeDatabaseMaintenanceService());
 
             ServiceProvider provider          = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
@@ -149,7 +149,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.ApplyTheme("PaperCoffee");
 
             Assert.Equal("PaperCoffee", vm.ActiveTheme);
-            Assert.Single(themeService.AppliedThemes);
+            _ = Assert.Single(themeService.AppliedThemes);
             Assert.Equal("PaperCoffee", themeService.AppliedThemes[0]);
         }
 
@@ -178,7 +178,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.False(string.IsNullOrEmpty(vm.SyncStatusText));
             // Ergebnis-String enthält mindestens den SeriesMatched-Zähler
-            Assert.Contains("3", vm.SyncStatusText);
+            Assert.Contains("3", vm.SyncStatusText, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -361,8 +361,8 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
             vm.LogSearchText = "spotify";
 
-            Assert.Single(vm.LogEntries);
-            Assert.Contains("Spotify", vm.LogEntries[0]);
+            _ = Assert.Single(vm.LogEntries);
+            Assert.Contains("Spotify", vm.LogEntries[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -394,8 +394,8 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
             vm.RefreshLogs();
 
-            Assert.Single(vm.LogEntries);
-            Assert.Contains("Verbindung getrennt", vm.LogEntries[0]);
+            _ = Assert.Single(vm.LogEntries);
+            Assert.Contains("Verbindung getrennt", vm.LogEntries[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -426,7 +426,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
             await vm.TestConnectionAsync();
 
-            Assert.Single(coordinator.Calls);
+            _ = Assert.Single(coordinator.Calls);
             Assert.Equal(ProviderType.Spotify, coordinator.Calls[0]);
             Assert.True(vm.ConnectionTestSuccess);
         }
@@ -443,7 +443,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.TestConnectionAsync();
 
             Assert.False(vm.ConnectionTestSuccess);
-            Assert.Contains("Timeout", vm.ConnectionTestResultText);
+            Assert.Contains("Timeout", vm.ConnectionTestResultText, StringComparison.Ordinal);
         }
 
         [Fact]

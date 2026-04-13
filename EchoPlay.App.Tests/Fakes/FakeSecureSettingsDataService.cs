@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         public Task<byte[]?> GetAsync(string key)
         {
-            _store.TryGetValue(key, out byte[]? value);
+            _ = _store.TryGetValue(key, out byte[]? value);
             return Task.FromResult(value);
         }
 
@@ -26,7 +26,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         public Task DeleteAsync(string key)
         {
-            _store.Remove(key);
+            _ = _store.Remove(key);
             return Task.CompletedTask;
         }
     }

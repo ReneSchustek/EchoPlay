@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Services
         private static EpisodeCoverCoordinator BuildCoordinator(FakeCoverSearchService searchService)
         {
             ServiceCollection services = new();
-            services.AddHttpClient();
+            _ = services.AddHttpClient();
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 

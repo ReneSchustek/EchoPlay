@@ -96,7 +96,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Leerer Ordner hat keine Episoden
             string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(1):N}");
-            Directory.CreateDirectory(tempDir);
+            _ = Directory.CreateDirectory(tempDir);
 
             try
             {
@@ -114,10 +114,10 @@ namespace EchoPlay.App.Tests.Services
         {
             // Simuliert eine Serienstruktur mit nummerierten Episodenordnern
             string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(2):N}");
-            Directory.CreateDirectory(tempDir);
-            Directory.CreateDirectory(Path.Combine(tempDir, "001 - Erste Folge"));
-            Directory.CreateDirectory(Path.Combine(tempDir, "002 - Zweite Folge"));
-            Directory.CreateDirectory(Path.Combine(tempDir, "010 - Zehnte Folge"));
+            _ = Directory.CreateDirectory(tempDir);
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "001 - Erste Folge"));
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "002 - Zweite Folge"));
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "010 - Zehnte Folge"));
 
             try
             {
@@ -135,10 +135,10 @@ namespace EchoPlay.App.Tests.Services
         {
             // Sonderfolgen (Nummer 0) und Ordner ohne Nummer werden ignoriert
             string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(3):N}");
-            Directory.CreateDirectory(tempDir);
-            Directory.CreateDirectory(Path.Combine(tempDir, "000 - Sonderfolge"));
-            Directory.CreateDirectory(Path.Combine(tempDir, "005 - Fünfte Folge"));
-            Directory.CreateDirectory(Path.Combine(tempDir, "Bonus - Extra"));
+            _ = Directory.CreateDirectory(tempDir);
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "000 - Sonderfolge"));
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "005 - Fünfte Folge"));
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "Bonus - Extra"));
 
             try
             {

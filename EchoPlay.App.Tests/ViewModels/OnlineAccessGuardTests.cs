@@ -125,10 +125,10 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settingsService = new(new AppSettings { OfflineMode = offlineMode });
 
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
-            services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService);
+            _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -152,23 +152,23 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.None });
 
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settings);
-            services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
-            services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settings);
+            _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
                 "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
                 "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            services.AddSingleton<EchoPlay.App.Services.IClock>(new FakeClock());
-            services.AddHttpClient();
-            services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddSingleton<EchoPlay.App.Services.IClock>(new FakeClock());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
+            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();
             EchoPlay.App.Services.ImportService importService = new(

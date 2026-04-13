@@ -31,8 +31,8 @@ namespace EchoPlay.App.Tests.Services
             });
 
             ServiceCollection services = new();
-            services.AddScoped<IFolderRestructureService>(_ => restructure);
-            services.AddScoped<IAppSettingsDataService>(_ => settings);
+            _ = services.AddScoped<IFolderRestructureService>(_ => restructure);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settings);
             ServiceProvider provider = services.BuildServiceProvider();
 
             FolderRestructureCoordinator coordinator = new(
@@ -180,7 +180,7 @@ namespace EchoPlay.App.Tests.Services
         private static string CreateTempFolder()
         {
             string path = Path.Combine(Path.GetTempPath(), $"echoplay-restructure-{Path.GetRandomFileName()}");
-            Directory.CreateDirectory(path);
+            _ = Directory.CreateDirectory(path);
             return path;
         }
     }

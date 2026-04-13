@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task DeleteAsync(Guid id)
         {
-            _states.RemoveAll(s => s.Id == id);
+            _ = _states.RemoveAll(s => s.Id == id);
             return Task.CompletedTask;
         }
 

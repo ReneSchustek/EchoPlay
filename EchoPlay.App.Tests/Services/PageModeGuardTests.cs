@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(initialSettings);
 
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settings);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settings);
             ServiceProvider provider = services.BuildServiceProvider();
 
             FakeErrorDialogService errorDialog = new();
@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.Services
             bool result = await guard.EnsureOnlineAccessAsync();
 
             Assert.False(result);
-            Assert.Single(errorDialog.ShownDialogs);
+            _ = Assert.Single(errorDialog.ShownDialogs);
             Assert.Equal("OfflineModeSearchHintTitle", errorDialog.ShownDialogs[0].Title);
             Assert.Equal("OfflineModeSearchHintMessage", errorDialog.ShownDialogs[0].Message);
             Assert.Equal(1, navigation.GoBackCallCount);
@@ -88,7 +88,7 @@ namespace EchoPlay.App.Tests.Services
             bool result = await guard.EnsureLocalAccessAsync();
 
             Assert.False(result);
-            Assert.Single(errorDialog.ShownDialogs);
+            _ = Assert.Single(errorDialog.ShownDialogs);
             Assert.Equal("OnlineOnlyModeHintTitle", errorDialog.ShownDialogs[0].Title);
             Assert.Equal("OnlineOnlyModeHintMessage", errorDialog.ShownDialogs[0].Message);
             Assert.Equal(1, navigation.GoBackCallCount);

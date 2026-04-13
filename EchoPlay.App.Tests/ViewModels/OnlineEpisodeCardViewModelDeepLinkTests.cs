@@ -33,8 +33,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             string url = sut.BuildAppleMusicUrl();
 
-            Assert.StartsWith("https://music.apple.com/de/search?term=", url);
-            Assert.Contains("Superpapagei", url);
+            Assert.StartsWith("https://music.apple.com/de/search?term=", url, StringComparison.Ordinal);
+            Assert.Contains("Superpapagei", url, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -61,8 +61,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             string url = sut.BuildSpotifyUrl();
 
-            Assert.StartsWith("https://open.spotify.com/search/", url);
-            Assert.Contains("TKKG", url);
+            Assert.StartsWith("https://open.spotify.com/search/", url, StringComparison.Ordinal);
+            Assert.Contains("TKKG", url, StringComparison.Ordinal);
         }
     }
 }

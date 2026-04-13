@@ -1,4 +1,5 @@
 using EchoPlay.App.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -51,9 +52,9 @@ namespace EchoPlay.App.Tests.ViewModels
             // Alle Farbwerte müssen als Hex-String vorliegen (#RRGGBB)
             foreach (ThemePreviewViewModel theme in ThemePreviewViewModel.All)
             {
-                Assert.StartsWith("#", theme.BackgroundHex);
-                Assert.StartsWith("#", theme.PaneHex);
-                Assert.StartsWith("#", theme.AccentHex);
+                Assert.StartsWith("#", theme.BackgroundHex, StringComparison.Ordinal);
+                Assert.StartsWith("#", theme.PaneHex, StringComparison.Ordinal);
+                Assert.StartsWith("#", theme.AccentHex, StringComparison.Ordinal);
                 Assert.Equal(7, theme.BackgroundHex.Length);
                 Assert.Equal(7, theme.PaneHex.Length);
                 Assert.Equal(7, theme.AccentHex.Length);

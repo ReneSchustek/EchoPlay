@@ -36,11 +36,11 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeCoverSearchService? coverSearchService = null)
         {
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddScoped<ILocalTrackDataService>(_ => trackService ?? new FakeLocalTrackDataService());
-            services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService ?? new FakeAppSettingsDataService());
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => trackService ?? new FakeLocalTrackDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService ?? new FakeAppSettingsDataService());
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -103,7 +103,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Nur TKKG hat einen lokalen Ordner – Bibi bleibt unsichtbar
-            Assert.Single(vm.Artists);
+            _ = Assert.Single(vm.Artists);
             Assert.Equal("TKKG", vm.Artists[0].Title);
         }
 
@@ -145,7 +145,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.SelectArtistAsync(vm.Artists[0]);
 
             // Nur Folge 1 hat einen lokalen Ordner
-            Assert.Single(vm.Episodes);
+            _ = Assert.Single(vm.Episodes);
             Assert.Equal("001 \u2013 Folge 1", vm.Episodes[0].DisplayTitle);
         }
 
@@ -342,7 +342,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             vm.PlayEpisodeCommand.Execute(null);
 
-            Assert.Single(playerService.PlayCalls);
+            _ = Assert.Single(playerService.PlayCalls);
             Assert.Equal(2, playerService.PlayCalls[0].TrackPaths.Count);
             // Track 1 (a.mp3) muss vor Track 2 (b.mp3) übergeben werden
             Assert.Equal(@"C:\TKKG\001_a.mp3", playerService.PlayCalls[0].TrackPaths[0]);
@@ -399,8 +399,8 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.ShowMissingEpisodesAsync(tkkg);
 
             Assert.NotNull(received);
-            Assert.Single(received!);
-            Assert.Contains("Kein lokaler Ordner", received![0]);
+            _ = Assert.Single(received!);
+            Assert.Contains("Kein lokaler Ordner", received![0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -427,8 +427,8 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.ShowMissingEpisodesAsync(tkkg);
 
             Assert.NotNull(received);
-            Assert.Single(received!);
-            Assert.Contains("Kein lokaler Ordner", received![0]);
+            _ = Assert.Single(received!);
+            Assert.Contains("Kein lokaler Ordner", received![0], StringComparison.Ordinal);
         }
 
         // ── Cover-Verwaltung ─────────────────────────────────────────────────────

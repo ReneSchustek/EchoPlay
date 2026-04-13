@@ -33,18 +33,18 @@ namespace EchoPlay.App.Tests.Services
             FakeMp3MetadataReader metadataReader)
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddScoped<ILocalTrackDataService>(_ => trackService);
-            services.AddScoped<ILocalLibraryScanner>(_ => scanner);
-            services.AddScoped<IScanOrchestrator>(_ => new FakeScanOrchestrator(scanner));
-            services.AddScoped<ILocalCoverService>(_ => new FakeLocalCoverService());
-            services.AddScoped<ITrackMatcher>(_ => trackMatcher);
-            services.AddScoped<IMp3MetadataReader>(_ => metadataReader);
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => trackService);
+            _ = services.AddScoped<ILocalLibraryScanner>(_ => scanner);
+            _ = services.AddScoped<IScanOrchestrator>(_ => new FakeScanOrchestrator(scanner));
+            _ = services.AddScoped<ILocalCoverService>(_ => new FakeLocalCoverService());
+            _ = services.AddScoped<ITrackMatcher>(_ => trackMatcher);
+            _ = services.AddScoped<IMp3MetadataReader>(_ => metadataReader);
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
 
-            services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
             ServiceProvider provider = services.BuildServiceProvider();
 
             EchoPlay.App.Services.CoverService coverService = new(
@@ -279,7 +279,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            await service.SyncAsync();
+            _ = await service.SyncAsync();
 
             Assert.True(trackService.SavedTracks.ContainsKey(episode.Id));
             Assert.Equal(2, trackService.SavedTracks[episode.Id].Count);

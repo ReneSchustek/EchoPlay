@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task DeleteAsync(Guid id)
         {
-            _series.RemoveAll(s => s.Id == id);
+            _ = _series.RemoveAll(s => s.Id == id);
             return Task.CompletedTask;
         }
 

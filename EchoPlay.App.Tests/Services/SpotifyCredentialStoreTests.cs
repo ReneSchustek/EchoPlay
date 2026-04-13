@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
             FakeSecureSettingsDataService fakeService = new();
 
             ServiceCollection services = new();
-            services.AddScoped<ISecureSettingsDataService>(_ => fakeService);
+            _ = services.AddScoped<ISecureSettingsDataService>(_ => fakeService);
 
             ServiceProvider provider          = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Tests.Services
 
             (string ClientId, string ClientSecret)? result = await store.GetAsync();
 
-            Assert.NotNull(result);
+            _ = Assert.NotNull(result);
             Assert.Equal("meine-client-id", result.Value.ClientId);
             Assert.Equal("mein-secret", result.Value.ClientSecret);
         }

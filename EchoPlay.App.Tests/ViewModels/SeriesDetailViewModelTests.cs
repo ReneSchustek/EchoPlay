@@ -24,10 +24,10 @@ namespace EchoPlay.App.Tests.ViewModels
             FakePlayerService playerService)
         {
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddScoped<IPlaybackStateDataService>(_ => playbackService);
-            services.AddScoped<ILocalTrackDataService>(_ => trackService);
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => playbackService);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => trackService);
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -223,7 +223,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.PlayEpisodeAsync(episode.Id);
 
-            Assert.Single(playerService.PlayCalls);
+            _ = Assert.Single(playerService.PlayCalls);
             Assert.Equal(episode.Id, playerService.PlayCalls[0].EpisodeId);
             Assert.Equal(2, playerService.PlayCalls[0].TrackPaths.Count);
         }

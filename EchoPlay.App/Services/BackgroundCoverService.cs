@@ -322,7 +322,7 @@ namespace EchoPlay.App.Services
                         .GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
                     IReadOnlyList<ImportEpisode> providerEpisodes =
-                        await episodeSource.GetEpisodesAsync(sourceSeriesId);
+                        await episodeSource.GetEpisodesAsync(sourceSeriesId, ct);
 
                     // Titel → URL Mapping aufbauen
                     Dictionary<string, string> titleToUrl = new(StringComparer.OrdinalIgnoreCase);

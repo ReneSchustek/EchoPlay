@@ -32,16 +32,17 @@ namespace EchoPlay.Spotify.Services
         /// die restlichen Ergebnisse bleiben unberührt.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine Liste fachlich bewerteter Import-Serien.</returns>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
             Justification = "Einzelne Bewertungsfehler aus der Scoring-/Mapper-Pipeline dürfen die Gesamtsuche nicht abbrechen; der Mapper kombiniert mehrere Heuristiken und die konkreten Fehlertypen sind nicht vollständig vorhersehbar.")]
-        public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query)
+        public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:Search");
 
             _logger.Debug($"Spotify-Seriensuche gestartet: '{query}'.");
 
-            IReadOnlyList<SpotifyArtistDto> artists = await _apiClient.SearchArtistsAsync(query, limit: 10).ConfigureAwait(false);
+            IReadOnlyList<SpotifyArtistDto> artists = await _apiClient.SearchArtistsAsync(query, limit: 10, cancellationToken).ConfigureAwait(false);
 
             List<ImportSeries> results = [];
 
@@ -51,7 +52,7 @@ namespace EchoPlay.Spotify.Services
 
                 try
                 {
-                    series = await _seriesMapper.MapToImportSeriesAsync(artist, query).ConfigureAwait(false);
+                    series = await _seriesMapper.MapToImportSeriesAsync(artist, query, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

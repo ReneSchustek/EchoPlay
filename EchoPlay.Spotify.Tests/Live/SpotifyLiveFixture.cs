@@ -51,7 +51,10 @@ namespace EchoPlay.Spotify.Tests.Live
                 BaseAddress = new Uri(spotifyOptions.AuthBaseUrl)
             };
 
-            SpotifyTokenClient tokenClient = new(_tokenHttpClient, spotifyOptions, loggerFactory);
+            SpotifyTokenClient tokenClient = new(
+                new SingleClientHttpClientFactory(_tokenHttpClient),
+                new StaticCredentialsProvider(spotifyOptions.ClientId, spotifyOptions.ClientSecret),
+                loggerFactory);
 
             // Auth-Handler mit eigenem InnerHandler.
             // PooledConnectionLifetime = Zero verhindert, dass abgelaufene
@@ -80,6 +83,26 @@ namespace EchoPlay.Spotify.Tests.Live
         {
             _apiHttpClient.Dispose();
             _tokenHttpClient.Dispose();
+        }
+
+        private sealed class SingleClientHttpClientFactory : IHttpClientFactory
+        {
+            private readonly HttpClient _httpClient;
+
+            public SingleClientHttpClientFactory(HttpClient httpClient) => _httpClient = httpClient;
+
+            public HttpClient CreateClient(string name) => _httpClient;
+        }
+
+        private sealed class StaticCredentialsProvider : ISpotifyClientCredentialsProvider
+        {
+            private readonly SpotifyClientCredentials _credentials;
+
+            public StaticCredentialsProvider(string clientId, string clientSecret)
+                => _credentials = new SpotifyClientCredentials(clientId, clientSecret);
+
+            public Task<SpotifyClientCredentials?> GetAsync(System.Threading.CancellationToken cancellationToken = default)
+                => Task.FromResult<SpotifyClientCredentials?>(_credentials);
         }
     }
 }

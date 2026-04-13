@@ -41,8 +41,9 @@ namespace EchoPlay.Spotify.Clients
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine Liste roher Spotify-Künstlerdaten.</returns>
-        public async Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit)
+        public async Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             // Spotify stellt eine rein query-basierte Such-API bereit.
             // Die Verantwortung für Relevanz oder Scoring liegt nicht hier.
@@ -56,15 +57,15 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative))).ConfigureAwait(false);
+                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken), cancellationToken).ConfigureAwait(false);
 
                 // Transport- und Authentifizierungsfehler können hier
                 // nicht fachlich sinnvoll behandelt werden und werden
                 // daher direkt weitergegeben.
                 _ = response.EnsureSuccessStatusCode();
 
-                using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 JsonElement items =
                     document.RootElement.GetProperty("artists").GetProperty("items");
@@ -125,7 +126,7 @@ namespace EchoPlay.Spotify.Clients
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit)
+        public async Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             string requestUri =
                 $"search?q={Uri.EscapeDataString(query)}&type=album&limit={limit}";
@@ -136,12 +137,12 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative))).ConfigureAwait(false);
+                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken), cancellationToken).ConfigureAwait(false);
 
                 _ = response.EnsureSuccessStatusCode();
 
-                using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 JsonElement items =
                     document.RootElement.GetProperty("albums").GetProperty("items");
@@ -206,8 +207,9 @@ namespace EchoPlay.Spotify.Clients
         /// </summary>
         /// <param name="artistId">Die Spotify-ID des Künstlers.</param>
         /// <param name="limit">Maximale Anzahl der Alben.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine Liste roher Spotify-Albumdaten.</returns>
-        public async Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit)
+        public async Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetArtistAlbums");
 
@@ -226,11 +228,11 @@ namespace EchoPlay.Spotify.Clients
                     // Die Pagination-URL aus "next" ist absolut, der Startwert ist relativ –
                     // UriKind.RelativeOrAbsolute deckt beide Fälle im Loop ab.
                     using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                        () => _httpClient.GetAsync(new Uri(requestUri, UriKind.RelativeOrAbsolute))).ConfigureAwait(false);
+                        () => _httpClient.GetAsync(new Uri(requestUri, UriKind.RelativeOrAbsolute), cancellationToken), cancellationToken).ConfigureAwait(false);
                     _ = response.EnsureSuccessStatusCode();
 
-                    using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                    using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+                    using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                    using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     JsonElement items = document.RootElement.GetProperty("items");
 
@@ -302,8 +304,9 @@ namespace EchoPlay.Spotify.Clients
         /// Die Reihenfolge entspricht der von Spotify gelieferten Track-Reihenfolge.
         /// </summary>
         /// <param name="albumId">Die Spotify-ID des Albums.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine Liste roher Spotify-Trackdaten.</returns>
-        public async Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId)
+        public async Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)
         {
             string requestUri = $"albums/{albumId}/tracks";
 
@@ -314,11 +317,11 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative))).ConfigureAwait(false);
+                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken), cancellationToken).ConfigureAwait(false);
                 _ = response.EnsureSuccessStatusCode();
 
-                using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 JsonElement items = document.RootElement.GetProperty("items");
 

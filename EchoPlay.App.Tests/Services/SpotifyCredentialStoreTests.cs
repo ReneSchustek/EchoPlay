@@ -114,5 +114,40 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.False(store.HasCredentials);
         }
+
+        [Fact]
+        public async Task GetAsync_DeletesCorruptedRecords_AndSetsCorruptionFlag()
+        {
+            // Simuliert Profil-Migration: nicht-entschlüsselbare Bytes stehen in der DB.
+            // GetAsync muss die Records entfernen, null zurückgeben und das Flag setzen.
+            (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
+
+            byte[] corruptedBytes = [0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE];
+            await fakeService.SaveAsync("Spotify:ClientId", corruptedBytes);
+            await fakeService.SaveAsync("Spotify:ClientSecret", corruptedBytes);
+
+            (string ClientId, string ClientSecret)? result = await store.GetAsync();
+
+            Assert.Null(result);
+            Assert.False(store.HasCredentials);
+            Assert.True(store.LastLoadFailedDueToCorruption);
+            Assert.Null(await fakeService.GetAsync("Spotify:ClientId"));
+            Assert.Null(await fakeService.GetAsync("Spotify:ClientSecret"));
+        }
+
+        [Fact]
+        public async Task AcknowledgeCorruptionNotice_ResetsFlag()
+        {
+            (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
+
+            await fakeService.SaveAsync("Spotify:ClientId", [0xDE, 0xAD]);
+            await fakeService.SaveAsync("Spotify:ClientSecret", [0xDE, 0xAD]);
+            _ = await store.GetAsync();
+            Assert.True(store.LastLoadFailedDueToCorruption);
+
+            store.AcknowledgeCorruptionNotice();
+
+            Assert.False(store.LastLoadFailedDueToCorruption);
+        }
     }
 }

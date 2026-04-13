@@ -40,13 +40,13 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// <summary>
         /// Wird von Scoring-Tests nicht benötigt, liefert leere Liste.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit)
+        public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyArtistDto>>([]);
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit)
+        public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyAlbumDto>>([]);
         }
@@ -54,7 +54,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// <summary>
         /// Liefert die konfigurierten Alben für den angegebenen Künstler.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit)
+        public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
         {
             if (_albumsByArtist.TryGetValue(artistId, out IReadOnlyList<SpotifyAlbumDto>? albums))
             {
@@ -68,7 +68,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// <summary>
         /// Liefert die konfigurierten Tracks für das angegebene Album.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId)
+        public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)
         {
             if (_tracksByAlbum.TryGetValue(albumId, out IReadOnlyList<SpotifyTrackDto>? tracks))
             {

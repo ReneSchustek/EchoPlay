@@ -23,7 +23,8 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// <returns>Das fest konfigurierte Bewertungsergebnis.</returns>
         public Task<HoerspielScoreResult> ScoreAsync(
             SpotifyArtistDto source,
-            string searchQuery)
+            string searchQuery,
+            CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_result);
         }

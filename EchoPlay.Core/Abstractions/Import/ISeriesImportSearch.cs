@@ -11,7 +11,8 @@ namespace EchoPlay.Core.Abstractions.Import
         /// Sucht nach potenziellen Hörspielserien anhand eines freien Suchbegriffs.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine fachlich bewertete Liste importierbarer Serien.</returns>
-        Task<IReadOnlyList<ImportSeries>> SearchAsync(string query);
+        Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default);
     }
 }

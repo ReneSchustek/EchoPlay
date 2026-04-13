@@ -21,7 +21,8 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Das fest konfigurierte Bewertungsergebnis.</returns>
         public Task<HoerspielScoreResult> ScoreAsync(
             ITunesArtistDto source,
-            string searchQuery)
+            string searchQuery,
+            CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_result);
         }

@@ -30,8 +30,9 @@ namespace EchoPlay.Spotify.Services
         /// die Episoden der übrigen Alben bleiben unberührt.
         /// </summary>
         /// <param name="sourceSeriesId">Die Spotify-Artist-ID der Serie.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine sortierte Liste importierbarer Episoden.</returns>
-        public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId)
+        public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId, CancellationToken cancellationToken = default)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:{sourceSeriesId}");
 
@@ -39,7 +40,7 @@ namespace EchoPlay.Spotify.Services
 
             // Kein künstliches Limit – alle Alben laden, auch bei Serien mit 200+ Folgen.
             // Die Pagination im ApiClient iteriert seitenweise (je 50) bis alle geladen sind.
-            IReadOnlyList<SpotifyAlbumDto> albums = await _apiClient.GetArtistAlbumsAsync(sourceSeriesId, limit: int.MaxValue).ConfigureAwait(false);
+            IReadOnlyList<SpotifyAlbumDto> albums = await _apiClient.GetArtistAlbumsAsync(sourceSeriesId, limit: int.MaxValue, cancellationToken).ConfigureAwait(false);
 
             List<ImportEpisode> episodes = [];
             int orderIndex = 0;
@@ -50,7 +51,7 @@ namespace EchoPlay.Spotify.Services
 
                 try
                 {
-                    tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId).ConfigureAwait(false);
+                    tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is HttpRequestException
                                            or TaskCanceledException

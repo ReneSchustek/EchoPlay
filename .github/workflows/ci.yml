@@ -60,7 +60,6 @@ jobs:
 
       - name: Tests App (x64)
         run: dotnet test EchoPlay.App.Tests/EchoPlay.App.Tests.csproj -p:Platform=x64 --no-build --verbosity normal
-        continue-on-error: true
 
       - name: Security-Audit
         run: dotnet list package --vulnerable

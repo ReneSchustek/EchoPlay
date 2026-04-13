@@ -299,7 +299,7 @@ namespace EchoPlay.App.Tests.ViewModels
         private sealed class ThrowingSeriesImportSearch : ISeriesImportSearch
         {
             /// <inheritdoc/>
-            public Task<IReadOnlyList<ImportSeries>> SearchAsync(string query) =>
+            public Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default) =>
                 throw new InvalidOperationException("Simulierter Netzwerkfehler");
         }
     }

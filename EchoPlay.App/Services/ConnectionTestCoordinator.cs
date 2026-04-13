@@ -45,7 +45,7 @@ namespace EchoPlay.App.Services
                     case ProviderType.Spotify:
                         ISpotifyApiClient spotifyClient = scope.ServiceProvider.GetRequiredService<ISpotifyApiClient>();
                         // Minimalanfrage – eine Künstlersuche reicht, um Token-Fluss und Netzwerk zu prüfen
-                        _ = await spotifyClient.SearchArtistsAsync("test", 1);
+                        _ = await spotifyClient.SearchArtistsAsync("test", 1, cancellationToken);
                         break;
 
                     case ProviderType.AppleMusic:
@@ -60,7 +60,7 @@ namespace EchoPlay.App.Services
                         _ = await appleBothClient.SearchArtistsAsync("test", 1, cancellationToken);
 
                         ISpotifyApiClient spotifyBothClient = scope.ServiceProvider.GetRequiredService<ISpotifyApiClient>();
-                        _ = await spotifyBothClient.SearchArtistsAsync("test", 1);
+                        _ = await spotifyBothClient.SearchArtistsAsync("test", 1, cancellationToken);
                         break;
                 }
 

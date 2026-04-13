@@ -1,5 +1,6 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Settings;
+using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -59,10 +60,20 @@ namespace EchoPlay.Data.Services
                     Position = i
                 };
 
-                _context.DashboardPositions.Add(position);
+                _ = _context.DashboardPositions.Add(position);
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
+            {
+                // Paralleler Scope hat für dieselbe Section bereits Positionen geschrieben —
+                // ignorieren, da die zweite Reihenfolge gleichwertig ist.
+                _logger.Warning($"UNIQUE-Konflikt bei Dashboard-Positionen ignoriert: {ex.InnerException?.Message}");
+                return;
+            }
 
             _logger.Info($"Reihenfolge für '{section}' gespeichert ({seriesIds.Count} Positionen).");
         }

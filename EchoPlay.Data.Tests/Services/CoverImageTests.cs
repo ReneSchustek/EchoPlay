@@ -137,5 +137,69 @@ namespace EchoPlay.Data.Tests.Services
             Assert.True(result.ContainsKey(mitCover));
             Assert.False(result.ContainsKey(platzhalter));
         }
+        [Fact]
+        public async Task SetCoverAsync_SetsSourceHash()
+        {
+            // SHA-256-Hash muss beim Speichern automatisch berechnet werden
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid entityId = Guid.NewGuid();
+            byte[] imageData = [0xFF, 0xD8, 0xFF, 0xE0];
+
+            await service.SetCoverAsync("Series", entityId, imageData);
+            Context.ChangeTracker.Clear();
+
+            CoverImage? cover = await service.GetByEntityAsync("Series", entityId);
+
+            Assert.NotNull(cover);
+            Assert.NotNull(cover!.SourceHash);
+            Assert.Equal(64, cover.SourceHash!.Length);
+
+            // Hash muss zum erwarteten SHA-256 passen
+            byte[] expectedHash = System.Security.Cryptography.SHA256.HashData(imageData);
+            string expectedHex = Convert.ToHexString(expectedHash);
+            Assert.Equal(expectedHex, cover.SourceHash);
+        }
+
+        [Fact]
+        public async Task SetCoverAsync_UpdatesSourceHash_OnOverwrite()
+        {
+            // Bei Update muss der Hash neu berechnet werden
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid entityId = Guid.NewGuid();
+
+            await service.SetCoverAsync("Series", entityId, [0x01, 0x02]);
+            Context.ChangeTracker.Clear();
+
+            CoverImage? first = await service.GetByEntityAsync("Series", entityId);
+            string? firstHash = first!.SourceHash;
+
+            await service.SetCoverAsync("Series", entityId, [0x03, 0x04, 0x05]);
+            Context.ChangeTracker.Clear();
+
+            CoverImage? second = await service.GetByEntityAsync("Series", entityId);
+
+            Assert.NotEqual(firstHash, second!.SourceHash);
+        }
+
+        [Fact]
+        public async Task SetCoverAsync_UniqueViolation_FallsBackToUpdate()
+        {
+            // Zwei Inserts für dieselbe Entity-Kombination: der zweite muss als Update durchgehen
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid entityId = Guid.NewGuid();
+
+            await service.SetCoverAsync("Episode", entityId, [0x01]);
+            Context.ChangeTracker.Clear();
+
+            // Zweiter Aufruf mit anderen Daten — kein Fehler erwartet
+            await service.SetCoverAsync("Episode", entityId, [0x02, 0x03]);
+            Context.ChangeTracker.Clear();
+
+            CoverImage? cover = await service.GetByEntityAsync("Episode", entityId);
+            Assert.NotNull(cover);
+            Assert.Equal(2, cover!.ImageData.Length);
+            Assert.Equal(0x02, cover.ImageData[0]);
+        }
     }
 }
+

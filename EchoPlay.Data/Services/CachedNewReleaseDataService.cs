@@ -1,5 +1,6 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -93,8 +94,8 @@ namespace EchoPlay.Data.Services
                     // da Cache-Einträge keine fachlichen Daten sind.
                     if (existing.IsDeleted)
                     {
-                        _context.CachedNewReleases.Remove(existing);
-                        _context.CachedNewReleases.Add(entry);
+                        _ = _context.CachedNewReleases.Remove(existing);
+                        _ = _context.CachedNewReleases.Add(entry);
                         insertCount++;
                     }
                     else
@@ -111,12 +112,22 @@ namespace EchoPlay.Data.Services
                 }
                 else
                 {
-                    _context.CachedNewReleases.Add(entry);
+                    _ = _context.CachedNewReleases.Add(entry);
                     insertCount++;
                 }
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
+            {
+                // Paralleler Scope hat denselben CollectionId eingefügt — ignorieren,
+                // da Cache-Einträge redundant sind und der andere Wert gleichwertig ist.
+                _logger.Warning($"UNIQUE-Konflikt beim Cache-Upsert ignoriert: {ex.InnerException?.Message}");
+                return;
+            }
 
             _logger.Info($"Neuerscheinungen-Cache aktualisiert: {insertCount} neu, {updateCount} aktualisiert.");
         }

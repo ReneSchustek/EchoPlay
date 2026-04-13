@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Entities.Playback;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,34 +12,34 @@ namespace EchoPlay.Data.Configurations
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<PlaybackState> builder)
         {
-            builder.ToTable("PlaybackStates");
+            _ = builder.ToTable("PlaybackStates");
 
-            builder.HasKey(p => p.Id);
+            _ = builder.HasKey(p => p.Id);
 
-            builder.Property(p => p.LastPosition)
+            _ = builder.Property(p => p.LastPosition)
                    .IsRequired();
 
-            builder.Property(p => p.LastPlayedAt);
+            _ = builder.Property(p => p.LastPlayedAt);
 
-            builder.Property(p => p.CompletedAt);
+            _ = builder.Property(p => p.CompletedAt);
 
             // Restrict statt Cascade, da das Projekt ausschließlich Soft-Delete verwendet.
             // Physisches Löschen einer Episode darf nicht automatisch PlaybackStates entfernen.
-            builder.HasOne(p => p.Episode)
+            _ = builder.HasOne(p => p.Episode)
                    .WithOne()
                    .HasForeignKey<PlaybackState>(p => p.EpisodeId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasIndex(p => p.EpisodeId)
+            _ = builder.HasIndex(p => p.EpisodeId)
                    .IsUnique();
 
             // Dashboard und StatusBar fragen "welche Episoden sind gehört?" –
             // Kombi-Index beschleunigt GetCompletedEpisodeIdsAsync().
-            builder.HasIndex(p => new { p.IsCompleted, p.EpisodeId })
+            _ = builder.HasIndex(p => new { p.IsCompleted, p.EpisodeId })
                    .HasFilter("IsDeleted = 0");
 
             // Purge-Index für DatabaseMaintenanceService
-            builder.HasIndex(p => new { p.IsDeleted, p.DeletedAt })
+            _ = builder.HasIndex(p => new { p.IsDeleted, p.DeletedAt })
                    .HasFilter("IsDeleted = 1");
         }
     }

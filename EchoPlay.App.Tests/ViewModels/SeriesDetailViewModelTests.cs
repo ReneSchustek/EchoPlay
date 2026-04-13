@@ -33,7 +33,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             return new SeriesDetailViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                playerService);
+                playerService,
+                new FakeClock());
         }
 
         [Fact]

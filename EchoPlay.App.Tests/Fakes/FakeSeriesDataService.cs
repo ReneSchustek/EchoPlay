@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
@@ -16,6 +17,7 @@ namespace EchoPlay.App.Tests.Fakes
     internal sealed class FakeSeriesDataService : ISeriesDataService
     {
         private readonly List<Series> _series = [];
+        private int _nextId;
 
         /// <summary>Alle bisher gespeicherten Serien.</summary>
         public IReadOnlyList<Series> All => _series;
@@ -54,7 +56,7 @@ namespace EchoPlay.App.Tests.Fakes
             // EF Core setzt die Id nach SaveChanges via store-generated value.
             // Im Fake übernehmen wir das per Reflection, da Id protected set hat.
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
-            idProp.SetValue(series, Guid.NewGuid());
+            idProp.SetValue(series, TestIds.Indexed(100 + _nextId++));
             _series.Add(series);
             return Task.CompletedTask;
         }

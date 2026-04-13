@@ -55,6 +55,7 @@ namespace EchoPlay.App.Services
         private readonly IAppleMusicSearchClient _appleMusicClient;
         private readonly ISeriesDataService _seriesDataService;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger;
+        private readonly IClock _clock;
 
         /// <summary>
         /// Initialisiert den Checker mit den benötigten Abhängigkeiten.
@@ -62,14 +63,17 @@ namespace EchoPlay.App.Services
         /// <param name="appleMusicClient">Client für die iTunes Search API.</param>
         /// <param name="seriesDataService">Datenzugriff für Serien (zum Speichern der Apple Music Artist ID).</param>
         /// <param name="loggerFactory">Logger-Factory für diagnostische Ausgaben.</param>
+        /// <param name="clock">Zeitquelle für Zeitstempel.</param>
         public OnlineEpisodeChecker(
             IAppleMusicSearchClient appleMusicClient,
             ISeriesDataService seriesDataService,
-            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory)
+            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory,
+            IClock clock)
         {
             _appleMusicClient = appleMusicClient;
             _seriesDataService = seriesDataService;
             _logger = loggerFactory.CreateLogger("OnlineEpisodeChecker");
+            _clock = clock;
         }
 
         /// <inheritdoc />
@@ -180,7 +184,7 @@ namespace EchoPlay.App.Services
             }
 
             // Alben im Zeitfenster sammeln (Cutoff bis heute) und Ankündigungen (Zukunft)
-            DateTime today = DateTime.UtcNow.Date;
+            DateTime today = _clock.UtcNow.Date;
             List<NewReleaseEpisode> newReleases = [];
             List<AnnouncedEpisode> announced = [];
 
@@ -253,7 +257,7 @@ namespace EchoPlay.App.Services
                 AnnouncedEpisodes = announced,
                 NewReleaseEpisodes = newReleases,
                 CoverUrl = series.CoverImageUrl,
-                CheckedAtUtc = DateTime.UtcNow
+                CheckedAtUtc = _clock.UtcNow
             };
         }
 
@@ -293,7 +297,7 @@ namespace EchoPlay.App.Services
             List<AnnouncedEpisode> announced = [];
             // Nummer → Albumname für die spätere Fehlende-Folgen-Liste
             Dictionary<int, string> episodesByNumber = [];
-            DateTime today = DateTime.UtcNow.Date;
+            DateTime today = _clock.UtcNow.Date;
 
             foreach (ITunesCollectionDto album in albums)
             {
@@ -352,7 +356,7 @@ namespace EchoPlay.App.Services
                 AnnouncedEpisodes = announced,
                 MissingOnlineEpisodes = missingOnline,
                 CoverUrl = series.CoverImageUrl,
-                CheckedAtUtc = DateTime.UtcNow
+                CheckedAtUtc = _clock.UtcNow
             };
         }
 

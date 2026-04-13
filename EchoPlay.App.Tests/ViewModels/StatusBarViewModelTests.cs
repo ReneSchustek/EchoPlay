@@ -1,4 +1,5 @@
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
@@ -32,7 +33,8 @@ namespace EchoPlay.App.Tests.ViewModels
             StatusBarViewModel vm = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new FakeThemeService(),
-                new EchoPlay.App.Services.TaskbarProgressService());
+                new EchoPlay.App.Services.TaskbarProgressService(),
+                new FakeClock());
 
             return (vm, stateService);
         }
@@ -106,14 +108,14 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title       = "Folge 1",
                 SeriesId    = seriesId,
-                ReleaseDate = DateTime.UtcNow.AddDays(-1)
+                ReleaseDate = TestIds.ReferenceDate.AddDays(-1)
             };
             // Zukünftig → zählt nicht als neu
             Episode epKommend = new()
             {
                 Title       = "Folge 2",
                 SeriesId    = seriesId,
-                ReleaseDate = DateTime.UtcNow.AddDays(7)
+                ReleaseDate = TestIds.ReferenceDate.AddDays(7)
             };
 
             await episodeService.AddAsync(epNeu);

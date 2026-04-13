@@ -25,6 +25,7 @@ namespace EchoPlay.App.Services
         private readonly System.Timers.Timer _positionTimer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
+        private readonly IClock _clock;
 
         // Synchronisierung: _stateLock schützt alle mutable Felder (synchron),
         // _saveLock serialisiert die async DB-Persistierung.
@@ -40,10 +41,12 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Fabrik für DI-Scopes (für PlaybackState-Persistenz).</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-        public PlayerService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
+        /// <param name="clock">Zeitquelle für Zeitstempel.</param>
+        public PlayerService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory, IClock clock)
         {
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("PlayerService");
+            _clock = clock;
 
             _player = new();
             _playlist = new();
@@ -437,7 +440,7 @@ namespace EchoPlay.App.Services
                     {
                         EpisodeId = episodeId,
                         LastPosition = position,
-                        LastPlayedAt = DateTime.UtcNow
+                        LastPlayedAt = _clock.UtcNow
                     };
 
                     await service.AddAsync(newState);
@@ -445,7 +448,7 @@ namespace EchoPlay.App.Services
                 else
                 {
                     existing.LastPosition = position;
-                    existing.LastPlayedAt = DateTime.UtcNow;
+                    existing.LastPlayedAt = _clock.UtcNow;
                     await service.UpdateAsync(existing);
                 }
             }

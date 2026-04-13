@@ -1,6 +1,7 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Services.Interfaces;
@@ -36,12 +37,14 @@ namespace EchoPlay.App.Tests.Services
             StatusBarViewModel statusBar = new(
                 scopeFactory,
                 new FakeThemeService(),
-                new TaskbarProgressService());
+                new TaskbarProgressService(),
+                new FakeClock());
 
             return new MissingEpisodesCoordinator(
                 scopeFactory,
                 new FakeOnlineEpisodeChecker(),
-                statusBar);
+                statusBar,
+                new FakeClock());
         }
 
         [Fact]
@@ -50,7 +53,7 @@ namespace EchoPlay.App.Tests.Services
             MissingEpisodesCoordinator coordinator = BuildCoordinator();
 
             IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
-                Guid.NewGuid(),
+                TestIds.SeriesA,
                 Path.GetTempPath(),
                 MissingEpisodesMode.Cancel);
 
@@ -63,7 +66,7 @@ namespace EchoPlay.App.Tests.Services
             MissingEpisodesCoordinator coordinator = BuildCoordinator();
 
             IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
-                Guid.NewGuid(),
+                TestIds.SeriesB,
                 seriesFolderPath: null,
                 MissingEpisodesMode.OfflineOnly);
 
@@ -77,10 +80,10 @@ namespace EchoPlay.App.Tests.Services
             MissingEpisodesCoordinator coordinator = BuildCoordinator();
             string nonExistentPath = Path.Combine(
                 Path.GetTempPath(),
-                $"echoplay-missing-episodes-{Guid.NewGuid():N}");
+                $"echoplay-missing-episodes-{TestIds.SeriesC:N}");
 
             IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
-                Guid.NewGuid(),
+                TestIds.SeriesC,
                 nonExistentPath,
                 MissingEpisodesMode.OfflineOnly);
 
@@ -96,7 +99,7 @@ namespace EchoPlay.App.Tests.Services
             try
             {
                 IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
-                    Guid.NewGuid(),
+                    TestIds.SeriesD,
                     tempFolder,
                     MissingEpisodesMode.OfflineOnly);
 

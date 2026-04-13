@@ -81,7 +81,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc />
         public Task<int> RemoveOlderThanAsync(DateTime cutoff)
         {
-            int removed = _entries.RemoveAll(c => c.ReleaseDate < cutoff && c.ReleaseDate < DateTime.UtcNow);
+            int removed = _entries.RemoveAll(c => c.ReleaseDate < cutoff);
             return Task.FromResult(removed);
         }
 

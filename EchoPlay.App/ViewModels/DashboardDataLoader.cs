@@ -36,6 +36,7 @@ namespace EchoPlay.App.ViewModels
         private readonly IPlayerService _playerService;
         private readonly CoverService? _coverService;
         private readonly ILocalizationService? _localizationService;
+        private readonly IClock _clock;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -48,6 +49,7 @@ namespace EchoPlay.App.ViewModels
             IPlayerService playerService,
             CoverService? coverService,
             ILocalizationService? localizationService,
+            IClock clock,
             ILogger logger)
         {
             _scopeFactory              = scopeFactory;
@@ -56,6 +58,7 @@ namespace EchoPlay.App.ViewModels
             _playerService             = playerService;
             _coverService              = coverService;
             _localizationService       = localizationService;
+            _clock                     = clock;
             _logger                    = logger;
         }
 
@@ -92,7 +95,8 @@ namespace EchoPlay.App.ViewModels
                 playerService:             _playerService,
                 episodeNumber:             episode.EpisodeNumber,
                 releaseDate:               episode.ReleaseDate,
-                localizationService:       _localizationService);
+                localizationService:       _localizationService,
+                clock:                     _clock);
         }
 
         /// <summary>
@@ -375,7 +379,7 @@ namespace EchoPlay.App.ViewModels
             IEpisodeDataService episodeService,
             IPlaybackStateDataService stateService)
         {
-            DateTime today = DateTime.UtcNow.Date;
+            DateTime today = _clock.UtcNow.Date;
 
             // Monatsnamen aus der aktuellen Kultur – funktioniert für DE und EN
             string[] monthNames = CultureInfo.CurrentCulture.DateTimeFormat.MonthNames;
@@ -476,7 +480,8 @@ namespace EchoPlay.App.ViewModels
                     playerService:             _playerService,
                     episodeNumber:             entry.EpisodeNumber,
                     releaseDate:               entry.ReleaseDate,
-                    localizationService:       _localizationService);
+                    localizationService:       _localizationService,
+                    clock:                     _clock);
 
                 cardEntries.Add((card, entry.ReleaseDate));
             }

@@ -28,6 +28,7 @@ namespace EchoPlay.App.ViewModels
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPlayerService _playerService;
         private readonly CoverService? _coverService;
+        private readonly IClock _clock;
 
         private string _seriesTitle = string.Empty;
         private string _seriesDescription = string.Empty;
@@ -50,14 +51,17 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="scopeFactory">DI-Scope-Fabrik für Scoped-Services.</param>
         /// <param name="playerService">Der zentrale Wiedergabe-Service.</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
         public SeriesDetailViewModel(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
+            IClock clock,
             CoverService? coverService = null)
         {
             _scopeFactory  = scopeFactory;
             _playerService = playerService;
+            _clock         = clock;
             _coverService  = coverService;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
@@ -462,7 +466,7 @@ namespace EchoPlay.App.ViewModels
             if (existing is not null)
             {
                 existing.IsCompleted = true;
-                existing.CompletedAt = DateTime.UtcNow;
+                existing.CompletedAt = _clock.UtcNow;
                 await stateService.UpdateAsync(existing);
             }
             else
@@ -471,8 +475,8 @@ namespace EchoPlay.App.ViewModels
                 {
                     EpisodeId = episodeId,
                     IsCompleted = true,
-                    CompletedAt = DateTime.UtcNow,
-                    LastPlayedAt = DateTime.UtcNow
+                    CompletedAt = _clock.UtcNow,
+                    LastPlayedAt = _clock.UtcNow
                 };
                 await stateService.AddAsync(newState);
             }

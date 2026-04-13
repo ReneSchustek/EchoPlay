@@ -1,5 +1,6 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -49,7 +50,7 @@ namespace EchoPlay.App.Tests.Fakes
             AllCalls.Add(mode);
             return Task.FromResult(new MissingEpisodesReport
             {
-                CheckedAtUtc = DateTime.UtcNow,
+                CheckedAtUtc = TestIds.ReferenceDate,
                 Results      = []
             });
         }

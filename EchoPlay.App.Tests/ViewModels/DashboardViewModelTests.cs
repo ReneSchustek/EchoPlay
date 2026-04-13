@@ -1,5 +1,6 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
@@ -45,7 +46,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeErrorDialogService(),
                 new FakeConfirmationDialogService(),
                 new FakePlayerService(),
-                new FakeLoggerFactory());
+                new FakeLoggerFactory(),
+                clock: new FakeClock());
         }
 
         [Fact]
@@ -135,9 +137,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "TKKG - Folge 230 - Der Spion",
                     EpisodeNumber = 230,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-5),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
                     CollectionId = 12345,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
@@ -189,9 +191,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "TKKG - Folge 230",
                     EpisodeNumber = 230,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-5),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
                     CollectionId = 12345,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
@@ -221,9 +223,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "Verfügbare Folge",
                     EpisodeNumber = 238,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-1),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-1),
                     CollectionId = 100,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 },
                 new CachedNewRelease
                 {
@@ -231,9 +233,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "Angekündigte Folge",
                     EpisodeNumber = 239,
-                    ReleaseDate = DateTime.UtcNow.AddDays(7),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(7),
                     CollectionId = 101,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
@@ -274,9 +276,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "Folge Neu",
                     EpisodeNumber = 231,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-1),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-1),
                     CollectionId = 200,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 },
                 new CachedNewRelease
                 {
@@ -284,9 +286,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "Folge Alt",
                     EpisodeNumber = 230,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-5),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
                     CollectionId = 201,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
@@ -315,31 +317,31 @@ namespace EchoPlay.App.Tests.ViewModels
                 {
                     SeriesId = series.Id,
                     Series = series,
-                    Title = "März-Folge",
+                    Title = "Januar-Folge",
                     EpisodeNumber = 231,
-                    ReleaseDate = new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc),
+                    ReleaseDate = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 300,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 },
                 new CachedNewRelease
                 {
                     SeriesId = series.Id,
                     Series = series,
-                    Title = "Februar-Folge",
+                    Title = "Dezember-Folge",
                     EpisodeNumber = 230,
-                    ReleaseDate = new DateTime(2026, 2, 10, 0, 0, 0, DateTimeKind.Utc),
+                    ReleaseDate = new DateTime(2025, 12, 10, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 301,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, cacheService: cacheService);
             await vm.LoadAsync();
 
-            // Zwei Monatsgruppen: März und Februar (neuester zuerst)
+            // Zwei Monatsgruppen: Januar und Dezember (neuester zuerst)
             Assert.Equal(2, vm.NewEpisodeGroups.Count);
-            Assert.Contains("März", vm.NewEpisodeGroups[0].GroupLabel);
-            Assert.Contains("Februar", vm.NewEpisodeGroups[1].GroupLabel);
+            Assert.Contains("Januar", vm.NewEpisodeGroups[0].GroupLabel);
+            Assert.Contains("Dezember", vm.NewEpisodeGroups[1].GroupLabel);
         }
 
         [Fact]
@@ -348,7 +350,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Episode mit Datum in der Zukunft → Badge "Angekündigt"
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: true,
-                releaseDate: DateTime.UtcNow.AddDays(7));
+                releaseDate: TestIds.ReferenceDate.AddDays(7));
 
             Assert.Equal("Angekündigt", card.BadgeText);
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, card.BadgeVisibility);
@@ -360,7 +362,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Episode vor 3 Tagen erschienen → Badge "Neu"
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: false,
-                releaseDate: DateTime.UtcNow.AddDays(-3));
+                releaseDate: TestIds.ReferenceDate.AddDays(-3));
 
             Assert.Equal("Neu", card.BadgeText);
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, card.BadgeVisibility);
@@ -372,7 +374,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Episode vor 30 Tagen erschienen → kein Badge
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: false,
-                releaseDate: DateTime.UtcNow.AddDays(-30));
+                releaseDate: TestIds.ReferenceDate.AddDays(-30));
 
             Assert.Null(card.BadgeText);
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Collapsed, card.BadgeVisibility);
@@ -382,7 +384,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void InfoLine_AnnouncedEpisode_ShowsNumberDateAndLabel()
         {
             // Angekündigte Episode zeigt "Nr. 239 · dd.MM.yyyy · angekündigt"
-            DateTime future = DateTime.UtcNow.AddDays(14);
+            DateTime future = TestIds.ReferenceDate.AddDays(14);
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: true,
                 releaseDate: future,
@@ -411,9 +413,9 @@ namespace EchoPlay.App.Tests.ViewModels
                     Series = series,
                     Title = "TKKG - Folge 230",
                     EpisodeNumber = 230,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-5),
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
                     CollectionId = 99999,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
@@ -442,8 +444,8 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new NewEpisodeCardViewModel(
-                episodeId:                  Guid.NewGuid(),
-                seriesId:                   Guid.NewGuid(),
+                episodeId:                  TestIds.EpisodeA,
+                seriesId:                   TestIds.SeriesA,
                 seriesName:                 seriesName,
                 episodeTitle:               episodeTitle,
                 coverImage:                 null,
@@ -456,7 +458,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 confirmationDialogService:  new FakeConfirmationDialogService(),
                 playerService:              new FakePlayerService(),
                 episodeNumber:              episodeNumber,
-                releaseDate:                releaseDate);
+                releaseDate:                releaseDate,
+                clock:                      new FakeClock());
         }
 
         [Fact]
@@ -470,8 +473,8 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             NewEpisodeCardViewModel card = new(
-                episodeId:                  Guid.NewGuid(),
-                seriesId:                   Guid.NewGuid(),
+                episodeId:                  TestIds.EpisodeB,
+                seriesId:                   TestIds.SeriesB,
                 seriesName:                 "TKKG",
                 episodeTitle:               "Folge 1",
                 coverImage:                 null,
@@ -520,7 +523,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = episodeId,
                 LastPosition = TimeSpan.Zero,
                 IsCompleted = true,
-                LastPlayedAt = DateTime.UtcNow
+                LastPlayedAt = TestIds.ReferenceDate
             });
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
@@ -601,7 +604,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 EpisodeId = episodeAId,
                 IsCompleted = true,
-                LastPlayedAt = DateTime.UtcNow.AddHours(-2)
+                LastPlayedAt = TestIds.ReferenceDate.AddHours(-2)
             });
 
             // Serie B: neuer gehört, aber älteres UpdatedAt
@@ -609,7 +612,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 EpisodeId = episodeBId,
                 LastPosition = TimeSpan.FromMinutes(10),
-                LastPlayedAt = DateTime.UtcNow.AddMinutes(-30)
+                LastPlayedAt = TestIds.ReferenceDate.AddMinutes(-30)
             });
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
@@ -628,7 +631,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // "Kira Kolumna - Folge 26 - Zusammengewachsen" → "Zusammengewachsen"
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow,
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate,
                 seriesName: "Kira Kolumna",
                 episodeTitle: "Kira Kolumna - Folge 26 - Zusammengewachsen");
 
@@ -640,7 +643,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // "Fünf Freunde - Folge 170: und das Flüstern" → "und das Flüstern"
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow,
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate,
                 seriesName: "Fünf Freunde",
                 episodeTitle: "Fünf Freunde - Folge 170: und das Flüstern");
 
@@ -652,7 +655,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // "TKKG - 218 - Der Goldschatz" → "Der Goldschatz"
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow,
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate,
                 seriesName: "TKKG",
                 episodeTitle: "TKKG - 218 - Der Goldschatz");
 
@@ -664,7 +667,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Kein Serienname-Prefix → Titel bleibt
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow,
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate,
                 seriesName: "Andere Serie",
                 episodeTitle: "Ein ganz anderer Titel");
 
@@ -676,7 +679,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nur Serienname ohne Titel dahinter → Original beibehalten
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow,
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate,
                 seriesName: "TKKG",
                 episodeTitle: "TKKG");
 
@@ -689,7 +692,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void InfoLineVisibility_WithReleaseDate_Visible()
         {
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow.AddDays(-3), episodeNumber: 170);
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate.AddDays(-3), episodeNumber: 170);
 
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, card.InfoLineVisibility);
         }
@@ -707,7 +710,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void ReleaseDateVisibility_Announced_Visible()
         {
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: true, releaseDate: DateTime.UtcNow.AddDays(14));
+                isAnnounced: true, releaseDate: TestIds.ReferenceDate.AddDays(14));
 
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, card.ReleaseDateVisibility);
         }
@@ -716,7 +719,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void ReleaseDateVisibility_PastDate_Collapsed()
         {
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow.AddDays(-5));
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate.AddDays(-5));
 
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Collapsed, card.ReleaseDateVisibility);
         }
@@ -725,7 +728,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void InfoLine_Announced_ContainsAnnouncedLabel()
         {
             // Angekündigte Episode: "Nr. 26 · dd.MM.yyyy · angekündigt"
-            DateTime future = DateTime.UtcNow.AddDays(14);
+            DateTime future = TestIds.ReferenceDate.AddDays(14);
             NewEpisodeCardViewModel card = BuildCard(
                 isAnnounced: true, releaseDate: future, episodeNumber: 26);
 
@@ -738,7 +741,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Neuerscheinung ohne lokalen Track: "Nr. 170 · dd.MM.yyyy · online"
             NewEpisodeCardViewModel card = BuildCard(
-                isAnnounced: false, releaseDate: DateTime.UtcNow.AddDays(-3), episodeNumber: 170);
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate.AddDays(-3), episodeNumber: 170);
 
             Assert.Contains("Nr. 170", card.InfoLineText!);
             Assert.Contains("online", card.InfoLineText!);

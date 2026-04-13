@@ -35,6 +35,9 @@ namespace EchoPlay.App.ViewModels
         // Page-Mode-Guard prüft den Offline-Modus beim Betreten der Page; null in Tests
         private readonly IPageModeGuard? _pageModeGuard;
 
+        // Cover-Helligkeitsanalyse und Download – in Tests optional
+        private readonly CoverBrightnessAnalyzer? _coverBrightnessAnalyzer;
+
         private string _searchText = string.Empty;
         private bool _isLoading;
         private bool _hasSearched;
@@ -42,6 +45,7 @@ namespace EchoPlay.App.ViewModels
         private bool _showSuccessHint;
         private int _selectedScopeIndex;
         private IReadOnlyList<SearchResultViewModel> _results = [];
+        private TaskCompletionSource<bool>? _searchCompletedSource;
 
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Services.
@@ -62,20 +66,27 @@ namespace EchoPlay.App.ViewModels
         /// Optionaler Page-Mode-Guard – prüft den Offline-Modus beim Betreten der Page.
         /// In Tests kann der Parameter weggelassen werden, dann wird der Check übersprungen.
         /// </param>
+        /// <param name="coverBrightnessAnalyzer">
+        /// Optionaler Helligkeitsanalysator für Cover-Bilder. Wird an
+        /// <see cref="SearchResultViewModel"/> weitergereicht. In Tests kann der Parameter
+        /// weggelassen werden.
+        /// </param>
         public SucheViewModel(
             ImportService importService,
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
             IServiceScopeFactory? scopeFactory = null,
             INavigationService? navigationService = null,
-            IPageModeGuard? pageModeGuard = null)
+            IPageModeGuard? pageModeGuard = null,
+            CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null)
         {
-            _importService       = importService;
-            _errorDialogService  = errorDialogService;
-            _localizationService = localizationService;
-            _scopeFactory        = scopeFactory;
-            _navigationService   = navigationService;
-            _pageModeGuard       = pageModeGuard;
+            _importService             = importService;
+            _errorDialogService        = errorDialogService;
+            _localizationService       = localizationService;
+            _scopeFactory              = scopeFactory;
+            _navigationService         = navigationService;
+            _pageModeGuard             = pageModeGuard;
+            _coverBrightnessAnalyzer   = coverBrightnessAnalyzer;
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
             ResetCommand  = new RelayCommand(Reset);
@@ -210,6 +221,10 @@ namespace EchoPlay.App.ViewModels
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+        /// <summary>Wartet auf den Abschluss der laufenden Suchanfrage (für deterministische Tests).</summary>
+        internal Task WaitForSearchCompleteAsync()
+            => _searchCompletedSource?.Task ?? Task.CompletedTask;
+
         /// <summary>Startet eine neue Suchanfrage mit dem aktuellen Suchtext.</summary>
         public ICommand SearchCommand { get; }
 
@@ -268,6 +283,9 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            _searchCompletedSource = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
             _hasSearched = false;
             IsLoading    = true;
 
@@ -309,7 +327,7 @@ namespace EchoPlay.App.ViewModels
                         bool alreadyImported = series.IsAlbumResult
                             ? false
                             : await _importService.IsAlreadyImportedAsync(series);
-                        viewModels.Add(new SearchResultViewModel(series, alreadyImported, _importService, _errorDialogService, _localizationService, this));
+                        viewModels.Add(new SearchResultViewModel(series, alreadyImported, _importService, _errorDialogService, _localizationService, _coverBrightnessAnalyzer, this));
                     }
                 }
 
@@ -321,7 +339,7 @@ namespace EchoPlay.App.ViewModels
                     foreach (ImportSeries series in localResults)
                     {
                         // Lokale Einträge existieren bereits in der DB – Import-Button wäre hier nicht sinnvoll
-                        viewModels.Add(new SearchResultViewModel(series, true, _importService, _errorDialogService, _localizationService));
+                        viewModels.Add(new SearchResultViewModel(series, true, _importService, _errorDialogService, _localizationService, _coverBrightnessAnalyzer));
                     }
                 }
 
@@ -336,6 +354,7 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 IsLoading = false;
+                _searchCompletedSource?.TrySetResult(true);
             }
         }
 

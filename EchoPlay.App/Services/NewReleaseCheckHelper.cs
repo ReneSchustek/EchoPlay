@@ -28,6 +28,8 @@ namespace EchoPlay.App.Services
         {
             try
             {
+                IClock clock = serviceProvider.GetRequiredService<IClock>();
+
                 IAppSettingsDataService settingsService =
                     serviceProvider.GetRequiredService<IAppSettingsDataService>();
                 AppSettings settings = await settingsService.GetAsync();
@@ -38,7 +40,7 @@ namespace EchoPlay.App.Services
                     return;
                 }
 
-                DateTime cutoffDate = (settings.LastAppStart ?? DateTime.UtcNow)
+                DateTime cutoffDate = (settings.LastAppStart ?? clock.UtcNow)
                     .AddDays(-settings.NewReleaseDays);
 
                 CheckableSeriesInfo checkable = new()
@@ -57,7 +59,7 @@ namespace EchoPlay.App.Services
                     await checker.CheckNewReleasesAsync([checkable], cutoffDate);
 
                 // Ergebnisse in den Cache schreiben
-                DateTime checkedAt = DateTime.UtcNow;
+                DateTime checkedAt = clock.UtcNow;
                 List<CachedNewRelease> newEntries = [];
 
                 foreach (OnlineEpisodeCheckResult result in results)

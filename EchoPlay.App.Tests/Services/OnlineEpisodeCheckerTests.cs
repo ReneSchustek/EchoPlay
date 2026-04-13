@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using EchoPlay.App.Tests.Helpers;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -94,7 +95,7 @@ namespace EchoPlay.App.Tests.Services
         public void GetLocalHighestEpisodeNumber_EmptyDirectory_ReturnsZero()
         {
             // Leerer Ordner hat keine Episoden
-            string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}");
+            string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(1):N}");
             Directory.CreateDirectory(tempDir);
 
             try
@@ -112,7 +113,7 @@ namespace EchoPlay.App.Tests.Services
         public void GetLocalHighestEpisodeNumber_NumberedFolders_ReturnsHighest()
         {
             // Simuliert eine Serienstruktur mit nummerierten Episodenordnern
-            string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}");
+            string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(2):N}");
             Directory.CreateDirectory(tempDir);
             Directory.CreateDirectory(Path.Combine(tempDir, "001 - Erste Folge"));
             Directory.CreateDirectory(Path.Combine(tempDir, "002 - Zweite Folge"));
@@ -133,7 +134,7 @@ namespace EchoPlay.App.Tests.Services
         public void GetLocalHighestEpisodeNumber_WithSpecialFolders_IgnoresThem()
         {
             // Sonderfolgen (Nummer 0) und Ordner ohne Nummer werden ignoriert
-            string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}");
+            string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(3):N}");
             Directory.CreateDirectory(tempDir);
             Directory.CreateDirectory(Path.Combine(tempDir, "000 - Sonderfolge"));
             Directory.CreateDirectory(Path.Combine(tempDir, "005 - Fünfte Folge"));

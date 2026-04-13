@@ -26,6 +26,7 @@ namespace EchoPlay.App.ViewModels
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly IPlayerService _playerService;
         private readonly ILocalizationService? _localizationService;
+        private readonly IClock _clock;
 
         private PlaybackStatus _status;
         private double _progressPercent;
@@ -49,6 +50,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="episodeNumber">Folgennummer für die Anzeige, oder null wenn nicht bekannt.</param>
         /// <param name="releaseDate">Erscheinungsdatum für Ankündigungen, oder null.</param>
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
         public NewEpisodeCardViewModel(
             Guid episodeId,
             Guid seriesId,
@@ -65,8 +67,10 @@ namespace EchoPlay.App.ViewModels
             IPlayerService playerService,
             int? episodeNumber = null,
             DateTime? releaseDate = null,
-            ILocalizationService? localizationService = null)
+            ILocalizationService? localizationService = null,
+            IClock? clock = null)
         {
+            _clock       = clock ?? new SystemClock();
             EpisodeId    = episodeId;
             SeriesId     = seriesId;
             SeriesName   = seriesName;
@@ -111,7 +115,7 @@ namespace EchoPlay.App.ViewModels
                 InfoLineText = null;
             }
 
-            if (releaseDate.HasValue && releaseDate.Value.Date > DateTime.UtcNow.Date)
+            if (releaseDate.HasValue && releaseDate.Value.Date > _clock.UtcNow.Date)
             {
                 // Nur das Datum – der Badge zeigt bereits "Angekündigt"
                 ReleaseDateText = releaseDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
@@ -144,7 +148,7 @@ namespace EchoPlay.App.ViewModels
                 BadgeVisibility = Visibility.Visible;
                 BadgeBrush = TryResolveAccentBrush();
             }
-            else if (releaseDate.HasValue && (DateTime.UtcNow.Date - releaseDate.Value.Date).TotalDays <= 7)
+            else if (releaseDate.HasValue && (_clock.UtcNow.Date - releaseDate.Value.Date).TotalDays <= 7)
             {
                 BadgeText = localizationService?.Get("BadgeNew") ?? "Neu";
                 BadgeVisibility = Visibility.Visible;
@@ -363,7 +367,7 @@ namespace EchoPlay.App.ViewModels
             if (existing is not null)
             {
                 existing.IsCompleted = true;
-                existing.CompletedAt = DateTime.UtcNow;
+                existing.CompletedAt = _clock.UtcNow;
                 await stateService.UpdateAsync(existing);
             }
             else
@@ -372,9 +376,9 @@ namespace EchoPlay.App.ViewModels
                 {
                     EpisodeId   = EpisodeId,
                     IsCompleted = true,
-                    CompletedAt = DateTime.UtcNow,
+                    CompletedAt = _clock.UtcNow,
                     LastPosition = TimeSpan.Zero,
-                    LastPlayedAt = DateTime.UtcNow
+                    LastPlayedAt = _clock.UtcNow
                 };
                 await stateService.AddAsync(newState);
             }

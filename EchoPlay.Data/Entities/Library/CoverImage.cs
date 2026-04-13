@@ -25,6 +25,12 @@ namespace EchoPlay.Data.Entities.Library
         public byte[] ImageData { get; set; } = [];
 
         /// <summary>
+        /// SHA-256-Hash der <see cref="ImageData"/> als Hex-String (64 Zeichen).
+        /// Dient zur Erkennung von Blob-Korruption durch Storage-Probleme.
+        /// </summary>
+        public string? SourceHash { get; set; }
+
+        /// <summary>
         /// URL der ursprünglichen Cover-Quelle (Spotify, Apple Music, iTunes).
         /// Dient als Fallback für erneuten Download bei Datenverlust.
         /// </summary>

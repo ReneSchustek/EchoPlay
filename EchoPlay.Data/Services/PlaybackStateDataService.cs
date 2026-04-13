@@ -1,5 +1,6 @@
-﻿using EchoPlay.Data.Context;
+using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -51,8 +52,20 @@ namespace EchoPlay.Data.Services
         /// <param name="playbackState">Der zu persistierende Wiedergabestatus.</param>
         public async Task AddAsync(PlaybackState playbackState)
         {
-            _context.PlaybackStates.Add(playbackState);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = _context.PlaybackStates.Add(playbackState);
+
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
+            {
+                // Paralleler Scope hat bereits einen PlaybackState für dieselbe Episode angelegt.
+                // Der erste Eintrag gewinnt — redundante Einfügung ignorieren.
+                _logger.Warning($"UNIQUE-Konflikt beim Anlegen von PlaybackState für Episode '{playbackState.EpisodeId}' ignoriert.");
+                return;
+            }
+
             _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' hinzugefügt.");
         }
 
@@ -63,7 +76,7 @@ namespace EchoPlay.Data.Services
         /// <param name="playbackState">Der zu aktualisierende Wiedergabestatus.</param>
         public async Task UpdateAsync(PlaybackState playbackState)
         {
-            _context.PlaybackStates.Update(playbackState);
+            _ = _context.PlaybackStates.Update(playbackState);
             await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' aktualisiert.");
         }

@@ -1,11 +1,13 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Services
@@ -64,6 +66,7 @@ namespace EchoPlay.Data.Services
             // Upsert per SQL: INSERT OR REPLACE vermeidet Race Conditions zwischen
             // parallelen Scopes (z.B. RunOnceAsync im Splash + Start im Hintergrund).
             DateTime now = DateTime.UtcNow;
+            string hash = ComputeHash(imageData);
 
             CoverImage? existing = await _context.CoverImages
                 .AsTracking()
@@ -73,6 +76,7 @@ namespace EchoPlay.Data.Services
             if (existing is not null)
             {
                 existing.ImageData = imageData;
+                existing.SourceHash = hash;
                 existing.SourceUrl = sourceUrl ?? existing.SourceUrl;
                 existing.LastChecked = now;
             }
@@ -87,15 +91,16 @@ namespace EchoPlay.Data.Services
                         EntityType = entityType,
                         EntityId = entityId,
                         ImageData = imageData,
+                        SourceHash = hash,
                         SourceUrl = sourceUrl,
                         LastChecked = now
                     };
-                    _context.CoverImages.Add(cover);
+                    _ = _context.CoverImages.Add(cover);
                     await _context.SaveChangesAsync().ConfigureAwait(false);
                     _logger.Debug($"Cover gespeichert: {entityType} {entityId}");
                     return;
                 }
-                catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.SqliteErrorCode == 19)
+                catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
                 {
                     // UNIQUE-Konflikt: ein anderer Scope hat parallel eingefügt.
                     // Change-Tracker zurücksetzen und als Update wiederholen.
@@ -109,6 +114,7 @@ namespace EchoPlay.Data.Services
                     if (retry is not null)
                     {
                         retry.ImageData = imageData;
+                        retry.SourceHash = hash;
                         retry.SourceUrl = sourceUrl ?? retry.SourceUrl;
                         retry.LastChecked = now;
                     }
@@ -143,7 +149,7 @@ namespace EchoPlay.Data.Services
                     ImageData = [],
                     LastChecked = checkedAt
                 };
-                _context.CoverImages.Add(placeholder);
+                _ = _context.CoverImages.Add(placeholder);
                 await _context.SaveChangesAsync().ConfigureAwait(false);
             }
         }
@@ -200,5 +206,14 @@ namespace EchoPlay.Data.Services
             return deleted;
         }
 
+        /// <summary>
+        /// Berechnet den SHA-256-Hash der Bilddaten als Hex-String (64 Zeichen).
+        /// </summary>
+        private static string ComputeHash(byte[] data)
+        {
+            Span<byte> hash = stackalloc byte[32];
+            _ = SHA256.HashData(data, hash);
+            return Convert.ToHexString(hash);
+        }
     }
 }

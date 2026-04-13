@@ -1,6 +1,7 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -84,25 +85,19 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Speichert ein Cover für eine Serie.
+        /// Speichert ein Cover für eine Serie mit 3-Retry bei DB-Fehlern.
         /// </summary>
         public async Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null)
         {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ICoverImageDataService coverService = scope.ServiceProvider
-                .GetRequiredService<ICoverImageDataService>();
-            await coverService.SetCoverAsync(EntityTypeSeries, seriesId, imageData, sourceUrl);
+            await WriteWithRetryAsync(EntityTypeSeries, seriesId, imageData, sourceUrl);
         }
 
         /// <summary>
-        /// Speichert ein Cover für eine Episode.
+        /// Speichert ein Cover für eine Episode mit 3-Retry bei DB-Fehlern.
         /// </summary>
         public async Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null)
         {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ICoverImageDataService coverService = scope.ServiceProvider
-                .GetRequiredService<ICoverImageDataService>();
-            await coverService.SetCoverAsync(EntityTypeEpisode, episodeId, imageData, sourceUrl);
+            await WriteWithRetryAsync(EntityTypeEpisode, episodeId, imageData, sourceUrl);
         }
 
         /// <summary>
@@ -134,6 +129,31 @@ namespace EchoPlay.App.Services
             catch (Exception)
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Schreibt Cover-Daten mit bis zu 3 Versuchen und exponentiellem Backoff.
+        /// Jeder Versuch öffnet einen frischen DI-Scope, damit ein korrupter DbContext-Zustand
+        /// den nächsten Versuch nicht blockiert.
+        /// </summary>
+        private async Task WriteWithRetryAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl)
+        {
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    using IServiceScope scope = _scopeFactory.CreateScope();
+                    ICoverImageDataService coverService = scope.ServiceProvider
+                        .GetRequiredService<ICoverImageDataService>();
+                    await coverService.SetCoverAsync(entityType, entityId, imageData, sourceUrl);
+                    return;
+                }
+                catch (DbUpdateException ex) when (attempt < 3)
+                {
+                    _logger.Warning($"Cover-DB-Write Retry {attempt}/3 für {entityType} {entityId}: {ex.Message}");
+                    await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt)).ConfigureAwait(false);
+                }
             }
         }
 

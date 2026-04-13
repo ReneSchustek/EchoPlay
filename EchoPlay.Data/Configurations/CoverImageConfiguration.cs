@@ -14,36 +14,40 @@ namespace EchoPlay.Data.Configurations
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<CoverImage> builder)
         {
-            builder.ToTable("CoverImages");
+            _ = builder.ToTable("CoverImages");
 
-            builder.HasKey(c => c.Id);
+            _ = builder.HasKey(c => c.Id);
 
-            builder.Property(c => c.EntityType)
+            _ = builder.Property(c => c.EntityType)
                    .IsRequired()
                    .HasMaxLength(32);
 
-            builder.Property(c => c.EntityId)
+            _ = builder.Property(c => c.EntityId)
                    .IsRequired();
 
             // Cover maximal 5 MB – gleicher Schutz wie bisher
-            builder.Property(c => c.ImageData)
+            _ = builder.Property(c => c.ImageData)
                    .IsRequired()
                    .HasMaxLength(5_242_880);
 
-            builder.Property(c => c.SourceUrl)
+            // SHA-256 Hex-String: 64 Zeichen
+            _ = builder.Property(c => c.SourceHash)
+                   .HasMaxLength(64);
+
+            _ = builder.Property(c => c.SourceUrl)
                    .HasMaxLength(512);
 
-            builder.Property(c => c.LastChecked);
+            _ = builder.Property(c => c.LastChecked);
 
             // Ein Cover pro Entity – Duplikate verhindern
-            builder.HasIndex(c => new { c.EntityType, c.EntityId })
+            _ = builder.HasIndex(c => new { c.EntityType, c.EntityId })
                    .IsUnique();
 
             // Background-Worker: "alle Entities ohne/mit abgelaufenem Check"
-            builder.HasIndex(c => new { c.EntityType, c.LastChecked });
+            _ = builder.HasIndex(c => new { c.EntityType, c.LastChecked });
 
             // Purge-Index
-            builder.HasIndex(c => new { c.IsDeleted, c.DeletedAt })
+            _ = builder.HasIndex(c => new { c.IsDeleted, c.DeletedAt })
                    .HasFilter("IsDeleted = 1");
         }
     }

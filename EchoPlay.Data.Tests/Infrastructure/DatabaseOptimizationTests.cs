@@ -110,10 +110,10 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 Position = 0
             };
 
-            Context.DashboardPositions.Add(orphanPosition);
+            _ = Context.DashboardPositions.Add(orphanPosition);
 
             // SaveChanges muss fehlschlagen, weil die referenzierte Serie nicht existiert
-            await Assert.ThrowsAsync<DbUpdateException>(() => Context.SaveChangesAsync());
+            _ = await Assert.ThrowsAsync<DbUpdateException>(() => Context.SaveChangesAsync());
         }
 
         [Fact]
@@ -121,8 +121,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             // FK erlaubt Positionen für existierende Serien
             Series series = new() { Title = "TKKG" };
-            Context.Series.Add(series);
-            await Context.SaveChangesAsync();
+            _ = Context.Series.Add(series);
+            _ = await Context.SaveChangesAsync();
 
             DashboardPosition position = new()
             {
@@ -130,8 +130,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 Section = "Favoriten",
                 Position = 0
             };
-            Context.DashboardPositions.Add(position);
-            await Context.SaveChangesAsync();
+            _ = Context.DashboardPositions.Add(position);
+            _ = await Context.SaveChangesAsync();
 
             DashboardPosition? loaded = await Context.DashboardPositions
                 .FirstOrDefaultAsync(dp => dp.SeriesId == series.Id);
@@ -251,7 +251,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
             using Microsoft.Data.Sqlite.SqliteCommand command = connection.CreateCommand();
             command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=@indexName";
-            command.Parameters.AddWithValue("@indexName", indexName);
+            _ = command.Parameters.AddWithValue("@indexName", indexName);
             long count = (long)command.ExecuteScalar()!;
 
             Assert.True(count > 0, $"Index '{indexName}' existiert nicht in der Datenbank.");

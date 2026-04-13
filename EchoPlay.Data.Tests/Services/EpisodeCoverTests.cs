@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series   = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
             episode.LocalCoverData = [0x01, 0x02];
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
@@ -55,7 +55,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series   = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
             episode.LocalCoverData = [0xFF, 0xD8];
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);

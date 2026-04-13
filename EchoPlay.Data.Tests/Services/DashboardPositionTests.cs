@@ -20,8 +20,8 @@ namespace EchoPlay.Data.Tests.Services
         private async Task<Guid> CreateSeriesAsync(string title = "Test-Serie")
         {
             Series series = new() { Title = title };
-            Context.Series.Add(series);
-            await Context.SaveChangesAsync();
+            _ = Context.Series.Add(series);
+            _ = await Context.SaveChangesAsync();
             return series.Id;
         }
         [Fact]
@@ -92,7 +92,7 @@ namespace EchoPlay.Data.Tests.Services
 
             // Bewusst in unsortierter Reihenfolge einfügen
             Context.DashboardPositions.AddRange(positionHigh, positionLow, positionMid);
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
@@ -147,10 +147,10 @@ namespace EchoPlay.Data.Tests.Services
             IReadOnlyList<DashboardPosition> favoritenResult = await service.GetBySectionAsync("Favoriten");
             IReadOnlyList<DashboardPosition> neuResult = await service.GetBySectionAsync("Neuerscheinungen");
 
-            Assert.Single(favoritenResult);
+            _ = Assert.Single(favoritenResult);
             Assert.Equal(seriesFav, favoritenResult[0].SeriesId);
 
-            Assert.Single(neuResult);
+            _ = Assert.Single(neuResult);
             Assert.Equal(seriesNeu, neuResult[0].SeriesId);
         }
     }

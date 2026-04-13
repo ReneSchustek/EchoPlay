@@ -1,11 +1,14 @@
 ﻿using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {
     /// <summary>
     /// Erzeugt Datenbankkontexte für schnelle Unit-Tests unter Verwendung des EF Core In-Memory-Providers.
     /// </summary>
+    [SuppressMessage("Design", "CA1515:Consider making public types internal",
+        Justification = "Gemeinsam mit DbTestBase und TestDataBuilder als public Test-Infrastruktur gehalten.")]
     public static class InMemoryDbContextFactory
     {
         /// <summary>
@@ -16,10 +19,10 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             // Die GUID verhindert, dass parallele Tests in denselben Speicherbereich schreiben.
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
-            builder.UseInMemoryDatabase(Guid.NewGuid().ToString());
+            _ = builder.UseInMemoryDatabase(Guid.NewGuid().ToString());
 
             EchoPlayDbContext context = new(builder.Options);
-            context.Database.EnsureCreated();
+            _ = context.Database.EnsureCreated();
 
             return context;
         }

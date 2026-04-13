@@ -133,7 +133,7 @@ namespace EchoPlay.Data.Tests.Services
             IReadOnlyDictionary<Guid, byte[]> result =
                 await service.GetImageDataByEntitiesAsync("Episode", [mitCover, platzhalter]);
 
-            Assert.Single(result);
+            _ = Assert.Single(result);
             Assert.True(result.ContainsKey(mitCover));
             Assert.False(result.ContainsKey(platzhalter));
         }

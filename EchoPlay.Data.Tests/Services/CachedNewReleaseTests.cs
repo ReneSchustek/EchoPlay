@@ -137,7 +137,7 @@ namespace EchoPlay.Data.Tests.Services
             IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
 
             // Nur ein Eintrag (Update statt zweiter Insert)
-            Assert.Single(result);
+            _ = Assert.Single(result);
             Assert.Equal("Neuer Titel", result[0].Title);
         }
 
@@ -179,7 +179,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
             IReadOnlyList<CachedNewRelease> remaining = await service.GetAllAsync();
 
-            Assert.Single(remaining);
+            _ = Assert.Single(remaining);
             Assert.Equal("Aktuell", remaining[0].Title);
         }
 
@@ -227,7 +227,7 @@ namespace EchoPlay.Data.Tests.Services
 
             DateTime? latest = await service.GetLatestCheckTimeAsync();
 
-            Assert.NotNull(latest);
+            _ = Assert.NotNull(latest);
             Assert.Equal(newerCheck, latest.Value);
         }
 
@@ -301,9 +301,9 @@ namespace EchoPlay.Data.Tests.Services
             IReadOnlyList<CachedNewRelease> resultA = await service.GetBySeriesIdAsync(seriesA.Id);
             IReadOnlyList<CachedNewRelease> resultB = await service.GetBySeriesIdAsync(seriesB.Id);
 
-            Assert.Single(resultA);
+            _ = Assert.Single(resultA);
             Assert.Equal("Folge von A", resultA[0].Title);
-            Assert.Single(resultB);
+            _ = Assert.Single(resultB);
             Assert.Equal("Folge von B", resultB[0].Title);
         }
 
@@ -375,7 +375,7 @@ namespace EchoPlay.Data.Tests.Services
 
             Assert.Equal(1, removed);
             IReadOnlyList<CachedNewRelease> remaining = await service.GetAllAsync();
-            Assert.Single(remaining);
+            _ = Assert.Single(remaining);
             Assert.Equal(seriesB.Id, remaining[0].SeriesId);
         }
 

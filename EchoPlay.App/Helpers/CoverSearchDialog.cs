@@ -16,7 +16,7 @@ namespace EchoPlay.App.Helpers
     /// <see cref="CoverSearchHit"/> zurück. Der Helper kennt nur App-Modelle und ist
     /// nicht direkt von <see cref="EchoPlay.LocalLibrary.Cover"/> abhängig.
     /// </summary>
-    public static class CoverSearchDialog
+    internal static class CoverSearchDialog
     {
         /// <summary>Breite einer Ergebnis-Kachel in Pixeln.</summary>
         private const double TileWidth = 140;

@@ -13,7 +13,7 @@ namespace EchoPlay.App.Services
     /// DPAPI ist an den Windows-Benutzer gebunden — die Daten sind nur auf derselben
     /// Maschine und mit demselben Benutzerkonto entschlüsselbar.
     /// </summary>
-    internal sealed class SpotifyCredentialStore : ISpotifyCredentialStore
+    public sealed class SpotifyCredentialStore : ISpotifyCredentialStore
     {
         private const string KeyClientId = "Spotify:ClientId";
         private const string KeyClientSecret = "Spotify:ClientSecret";

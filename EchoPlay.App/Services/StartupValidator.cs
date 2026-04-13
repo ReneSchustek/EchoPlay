@@ -19,7 +19,7 @@ namespace EchoPlay.App.Services
     /// Die Ergebnisse werden im <see cref="StartupResult"/> zusammengefasst, damit das Dashboard
     /// direkt auf aktuelle, bereinigte Daten zugreifen kann – ohne eigene Checks.
     /// </summary>
-    internal sealed class StartupValidator : IStartupValidator
+    public sealed class StartupValidator : IStartupValidator
     {
         /// <summary>
         /// Maximale Wartezeit für den Online-Konnektivitätscheck.

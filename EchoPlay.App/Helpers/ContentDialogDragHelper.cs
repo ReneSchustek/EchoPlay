@@ -18,7 +18,7 @@ namespace EchoPlay.App.Helpers
     /// Pointer-Events zu verschieben. Der Dialog kehrt bei erneutem Öffnen automatisch
     /// zur Standardposition zurück, weil die Transform bei jedem Aufruf frisch erzeugt wird.
     /// </remarks>
-    public static class ContentDialogDragHelper
+    internal static class ContentDialogDragHelper
     {
         /// <summary>Höhe des Titelbereichs in Pixeln – nur dort soll Drag starten.</summary>
         private const double DialogTitleBarHeight = 60.0;

@@ -29,14 +29,11 @@ namespace EchoPlay.App.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly CoverService _coverService;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ISpotifyCredentialStore _credentialStore;
+        private readonly BackgroundCoverServiceOptions _options;
         private readonly ILogger _logger;
         private CancellationTokenSource? _cts;
         private Task? _backgroundTask;
-
-        /// <summary>
-        /// Intervall zwischen periodischen Durchläufen.
-        /// </summary>
-        private static readonly TimeSpan Interval = TimeSpan.FromMinutes(30);
 
 
         /// <summary>
@@ -46,11 +43,15 @@ namespace EchoPlay.App.Services
             IServiceScopeFactory scopeFactory,
             CoverService coverService,
             IHttpClientFactory httpClientFactory,
+            ISpotifyCredentialStore credentialStore,
+            BackgroundCoverServiceOptions options,
             ILoggerFactory loggerFactory)
         {
             _scopeFactory = scopeFactory;
             _coverService = coverService;
             _httpClientFactory = httpClientFactory;
+            _credentialStore = credentialStore;
+            _options = options;
             _logger = loggerFactory.CreateLogger("BackgroundCoverService");
         }
 
@@ -117,7 +118,7 @@ namespace EchoPlay.App.Services
         private async Task RunAsync(CancellationToken ct)
         {
             // Kurz warten, damit die App vollständig initialisiert ist
-            await Task.Delay(3000, ct).ConfigureAwait(false);
+            await Task.Delay(_options.InitialDelay, ct).ConfigureAwait(false);
 
             while (!ct.IsCancellationRequested)
             {
@@ -146,7 +147,7 @@ namespace EchoPlay.App.Services
 
                 try
                 {
-                    await Task.Delay(Interval, ct).ConfigureAwait(false);
+                    await Task.Delay(_options.Interval, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -283,8 +284,11 @@ namespace EchoPlay.App.Services
                 if (ct.IsCancellationRequested) break;
                 if (!series.IsOnlineImported) continue;
 
-                // Provider-Key und Quell-ID ermitteln
-                string? providerKey = series.SpotifyArtistId is not null ? "Spotify"
+                // Provider-Key und Quell-ID ermitteln.
+                // Spotify nur nutzen wenn Credentials vorhanden sind – ohne gültige
+                // Client-ID/Secret schlägt der Token-Request fehl.
+                string? providerKey = series.SpotifyArtistId is not null && _credentialStore.HasCredentials
+                    ? "Spotify"
                     : series.AppleMusicArtistId is not null ? "AppleMusic"
                     : null;
 

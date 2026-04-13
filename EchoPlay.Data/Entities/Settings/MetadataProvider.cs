@@ -19,6 +19,12 @@
         /// Kein Online-Dienst aktiv.
         /// Online-Mediathek und serienübergreifende Suche sind deaktiviert.
         /// </summary>
-        None = 2
+        None = 2,
+
+        /// <summary>
+        /// Beide Anbieter aktiv. Import läuft über Apple Music,
+        /// Deep-Links und Cover-Suche nutzen beide Quellen.
+        /// </summary>
+        Both = 3
     }
 }

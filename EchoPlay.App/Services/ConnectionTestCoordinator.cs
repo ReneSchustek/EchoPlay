@@ -51,7 +51,16 @@ namespace EchoPlay.App.Services
                     case ProviderType.AppleMusic:
                         IAppleMusicSearchClient appleClient = scope.ServiceProvider.GetRequiredService<IAppleMusicSearchClient>();
                         // iTunes Search API ist öffentlich – kein Token nötig, aber Netzwerk muss erreichbar sein
-                        await appleClient.SearchArtistsAsync("test", 1);
+                        await appleClient.SearchArtistsAsync("test", 1, cancellationToken);
+                        break;
+
+                    case ProviderType.Both:
+                        // Beide Provider testen – Apple Music zuerst (ohne Credentials)
+                        IAppleMusicSearchClient appleBothClient = scope.ServiceProvider.GetRequiredService<IAppleMusicSearchClient>();
+                        await appleBothClient.SearchArtistsAsync("test", 1, cancellationToken);
+
+                        ISpotifyApiClient spotifyBothClient = scope.ServiceProvider.GetRequiredService<ISpotifyApiClient>();
+                        await spotifyBothClient.SearchArtistsAsync("test", 1);
                         break;
                 }
 

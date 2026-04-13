@@ -23,6 +23,8 @@ namespace EchoPlay.App.Views
     public sealed partial class SettingsPage : Page
     {
         private readonly ILocalizationService _localizationService;
+        private static readonly Windows.ApplicationModel.Resources.ResourceLoader _resources =
+            Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
         private DispatcherTimer? _logLiveTimer;
 
         /// <summary>Alle Theme-Vorschauen für die Farbkacheln in den Einstellungen.</summary>
@@ -405,13 +407,13 @@ namespace EchoPlay.App.Views
                 ContentDialog resultDialog = new()
                 {
                     XamlRoot        = XamlRoot,
-                    Title           = "Datenbankpflege",
+                    Title           = _resources.GetString("DatabaseMaintenanceTitle"),
                     Content         = new TextBlock
                     {
                         Text         = ViewModel.MaintenanceStatusText,
                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
                     },
-                    CloseButtonText = "Schließen"
+                    CloseButtonText = _resources.GetString("CommonCloseButton")
                 };
 
                 Helpers.ContentDialogDragHelper.MakeDraggable(resultDialog);
@@ -513,6 +515,7 @@ namespace EchoPlay.App.Views
             {
                 case "Spotify":    RadioSpotify.IsChecked    = true; break;
                 case "AppleMusic": RadioAppleMusic.IsChecked = true; break;
+                case "Both":       RadioBoth.IsChecked       = true; break;
                 default:           RadioNone.IsChecked       = true; break;
             }
         }

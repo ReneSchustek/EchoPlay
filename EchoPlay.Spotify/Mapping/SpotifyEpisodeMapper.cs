@@ -37,7 +37,8 @@ namespace EchoPlay.Spotify.Mapping
                 Duration        = totalDuration,
                 OrderIndex      = orderIndex,
                 ProviderUrl     = $"https://open.spotify.com/album/{album.SpotifyAlbumId}",
-                CoverImageUrl   = album.ImageUrl
+                CoverImageUrl   = album.ImageUrl,
+                Source          = "Spotify"
             };
         }
 

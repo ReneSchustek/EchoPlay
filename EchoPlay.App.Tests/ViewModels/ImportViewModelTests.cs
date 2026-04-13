@@ -44,6 +44,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
             services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            services.AddSingleton<IClock>(new FakeClock());
+            services.AddHttpClient();
             services.AddSingleton<CoverService>();
             services.AddSingleton<EpisodeCoverCacheService>();
             ServiceProvider provider  = services.BuildServiceProvider();

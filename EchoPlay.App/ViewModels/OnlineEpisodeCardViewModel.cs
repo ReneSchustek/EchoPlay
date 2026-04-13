@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ namespace EchoPlay.App.ViewModels
     public sealed class OnlineEpisodeCardViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory? _scopeFactory;
+        private readonly IClock _clock;
         private BitmapImage? _coverImage;
         private bool _isCompleted;
 
@@ -33,6 +35,9 @@ namespace EchoPlay.App.ViewModels
         /// <param name="isCompleted">Ob die Episode als gehört markiert ist.</param>
         /// <param name="providerUrl">URL zum Öffnen beim Provider oder null.</param>
         /// <param name="scopeFactory">Für DB-Zugriff beim Setzen des Gehört-Status. Null in Tests.</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
+        /// <param name="appleMusicAlbumId">Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
+        /// <param name="spotifyAlbumId">Spotify-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
         public OnlineEpisodeCardViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -40,15 +45,21 @@ namespace EchoPlay.App.ViewModels
             DateTime? releaseDate = null,
             bool isCompleted = false,
             string? providerUrl = null,
-            IServiceScopeFactory? scopeFactory = null)
+            IServiceScopeFactory? scopeFactory = null,
+            IClock? clock = null,
+            string? appleMusicAlbumId = null,
+            string? spotifyAlbumId = null)
         {
-            EpisodeId      = episodeId;
-            EpisodeNumber  = episodeNumber;
-            Title          = title;
-            ReleaseDate    = releaseDate;
-            ProviderUrl    = providerUrl;
-            _scopeFactory  = scopeFactory;
-            _isCompleted   = isCompleted;
+            EpisodeId          = episodeId;
+            EpisodeNumber      = episodeNumber;
+            Title              = title;
+            ReleaseDate        = releaseDate;
+            ProviderUrl        = providerUrl;
+            AppleMusicAlbumId  = appleMusicAlbumId;
+            SpotifyAlbumId     = spotifyAlbumId;
+            _scopeFactory      = scopeFactory;
+            _clock             = clock ?? new SystemClock();
+            _isCompleted       = isCompleted;
 
             OpenInBrowserCommand = new RelayCommand(OpenInBrowser);
         }
@@ -67,6 +78,12 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>URL zum Öffnen der Folge beim Provider. Null bei lokalen Folgen.</summary>
         public string? ProviderUrl { get; }
+
+        /// <summary>Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</summary>
+        public string? AppleMusicAlbumId { get; }
+
+        /// <summary>Spotify-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</summary>
+        public string? SpotifyAlbumId { get; }
 
         /// <summary>Öffnet die Folge im Standard-Browser beim Provider.</summary>
         public ICommand OpenInBrowserCommand { get; }
@@ -150,6 +167,28 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Baut die Deep-Link-URL für Apple Music. Mit Album-ID → Direktlink,
+        /// ohne → Suchlink als Fallback.
+        /// </summary>
+        internal string BuildAppleMusicUrl()
+        {
+            return AppleMusicAlbumId is not null
+                ? $"https://music.apple.com/de/album/{AppleMusicAlbumId}"
+                : $"https://music.apple.com/de/search?term={Uri.EscapeDataString($"{Title}")}";
+        }
+
+        /// <summary>
+        /// Baut die Deep-Link-URL für Spotify. Mit Album-ID → Direktlink,
+        /// ohne → Suchlink als Fallback.
+        /// </summary>
+        internal string BuildSpotifyUrl()
+        {
+            return SpotifyAlbumId is not null
+                ? $"https://open.spotify.com/album/{SpotifyAlbumId}"
+                : $"https://open.spotify.com/search/{Uri.EscapeDataString($"{Title}")}";
+        }
+
+        /// <summary>
         /// Speichert den Gehört-Status in der Datenbank.
         /// Erstellt einen neuen PlaybackState wenn noch keiner existiert.
         /// </summary>
@@ -169,7 +208,7 @@ namespace EchoPlay.App.ViewModels
                 if (existing is not null)
                 {
                     existing.IsCompleted = true;
-                    existing.LastPlayedAt = DateTime.UtcNow;
+                    existing.LastPlayedAt = _clock.UtcNow;
                     await stateService.UpdateAsync(existing);
                 }
                 else
@@ -178,7 +217,7 @@ namespace EchoPlay.App.ViewModels
                     {
                         EpisodeId    = EpisodeId,
                         IsCompleted  = true,
-                        LastPlayedAt = DateTime.UtcNow,
+                        LastPlayedAt = _clock.UtcNow,
                         LastPosition = TimeSpan.Zero
                     };
                     await stateService.AddAsync(newState);

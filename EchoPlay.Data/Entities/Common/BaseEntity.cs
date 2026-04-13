@@ -1,4 +1,5 @@
 ﻿using EchoPlay.Data.Entities.Contracts;
+using EchoPlay.Data.Internal;
 
 namespace EchoPlay.Data.Entities.Common
 {
@@ -22,7 +23,7 @@ namespace EchoPlay.Data.Entities.Common
         /// Zeitpunkt der Erstellung (UTC).
         /// Wird bei der Instanziierung automatisch auf den aktuellen UTC-Zeitpunkt gesetzt.
         /// </summary>
-        public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; protected set; } = EntityClock.Current.UtcNow;
 
         /// <summary>
         /// Zeitpunkt der letzten Änderung (UTC).

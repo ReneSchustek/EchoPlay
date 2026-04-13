@@ -1,6 +1,7 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -284,7 +285,7 @@ namespace EchoPlay.Data.Services
             }
 
             // Die Episode wird ausschließlich über die definierte Domänenoperation logisch gelöscht.
-            episode.MarkAsDeleted(DateTime.UtcNow);
+            episode.MarkAsDeleted(EntityClock.Current.UtcNow);
 
             List<PlaybackState> playbackStates =
                 await _context.PlaybackStates
@@ -295,7 +296,7 @@ namespace EchoPlay.Data.Services
             foreach (PlaybackState playbackState in playbackStates)
             {
                 // PlaybackStates besitzen keine eigenständige fachliche Existenz und müssen bei der Löschung ihrer Episode ebenfalls entfernt werden.
-                playbackState.MarkAsDeleted(DateTime.UtcNow);
+                playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
             }
 
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);

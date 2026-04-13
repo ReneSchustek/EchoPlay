@@ -3,6 +3,7 @@ using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Auth;
 using EchoPlay.Spotify.Clients;
 using EchoPlay.Spotify.Configuration;
+using EchoPlay.Spotify.Tests.Fakes;
 using Microsoft.Extensions.Configuration;
 
 namespace EchoPlay.Spotify.Tests.Live
@@ -54,7 +55,8 @@ namespace EchoPlay.Spotify.Tests.Live
             SpotifyTokenClient tokenClient = new(
                 new SingleClientHttpClientFactory(_tokenHttpClient),
                 new StaticCredentialsProvider(spotifyOptions.ClientId, spotifyOptions.ClientSecret),
-                loggerFactory);
+                loggerFactory,
+                new FakeClock());
 
             // Auth-Handler mit eigenem InnerHandler.
             // PooledConnectionLifetime = Zero verhindert, dass abgelaufene

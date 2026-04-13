@@ -1,4 +1,5 @@
 using EchoPlay.Data.Context;
+using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,7 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         public async Task PurgeAsync(int retentionDays)
         {
-            DateTime cutoff = DateTime.UtcNow.AddDays(-retentionDays);
+            DateTime cutoff = EntityClock.Current.UtcNow.AddDays(-retentionDays);
 
             // Phase 1: Kinder gelöschter Episoden bereinigen.
             // Reihenfolge wichtig – FK-Einschränkungen verbieten Löschen mit aktiven Referenzen.

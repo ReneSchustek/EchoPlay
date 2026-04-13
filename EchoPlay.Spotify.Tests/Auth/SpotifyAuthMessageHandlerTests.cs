@@ -1,4 +1,5 @@
 using EchoPlay.Spotify.Auth;
+using EchoPlay.Spotify.Tests.Fakes;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -71,7 +72,8 @@ namespace EchoPlay.Spotify.Tests.Auth
             SpotifyTokenClient tokenClient = new(
                 new SingleHttpClientFactory(tokenHttpClient),
                 new StaticCredentialsProvider("id", "secret"),
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
+                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()),
+                new FakeClock());
 
             SpotifyAuthMessageHandler authHandler = new(tokenClient) { InnerHandler = api };
             HttpClient apiClient = new(authHandler) { BaseAddress = new Uri("https://api.spotify.test/") };

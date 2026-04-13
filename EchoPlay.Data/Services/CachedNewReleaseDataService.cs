@@ -1,6 +1,7 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Infrastructure;
+using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -108,7 +109,7 @@ namespace EchoPlay.Data.Services
                         existing.ReleaseDate = entry.ReleaseDate;
                         existing.CoverUrl = entry.CoverUrl;
                         existing.CheckedAtUtc = entry.CheckedAtUtc;
-                        existing.MarkAsUpdated(DateTime.UtcNow);
+                        existing.MarkAsUpdated(EntityClock.Current.UtcNow);
                         updateCount++;
                     }
                 }
@@ -140,9 +141,9 @@ namespace EchoPlay.Data.Services
             // Einträge mit ReleaseDate vor dem Cutoff UND in der Vergangenheit entfernen.
             // Ankündigungen (Zukunft) bleiben erhalten, auch wenn sie rechnerisch
             // vor dem Cutoff liegen könnten (z.B. bei sehr kurzem Zeitfenster).
-            // DateTime.UtcNow wird vor der Query erfasst, da EF Core den Aufruf
+            // Zeit wird vor der Query erfasst, da EF Core den Aufruf
             // nicht zuverlässig in SQL übersetzen kann.
-            DateTime now = DateTime.UtcNow;
+            DateTime now = EntityClock.Current.UtcNow;
             List<CachedNewRelease> expired = await _context.CachedNewReleases
                 .AsTracking()
                 .Where(c => c.ReleaseDate < cutoff && c.ReleaseDate < now)

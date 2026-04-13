@@ -52,9 +52,12 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 |---|---|
 | .NET 10 / C# | Anwendungsframework |
 | WinUI 3 (Windows App SDK 1.8) | UI-Framework |
-| Entity Framework Core 10 | ORM mit SQLite |
+| Windows SDK BuildTools 10.0.28000 | Manifest-Validierung, XAML-Compiler |
+| Entity Framework Core 10 | ORM mit SQLite (WAL-Modus, Soft-Delete, Migrationen mit Backup) |
+| Microsoft.Extensions.Http.Resilience | Polly-basierte Retry-/Timeout-/Circuit-Breaker-Policies für HTTP-Provider |
+| System.Security.Cryptography.ProtectedData | DPAPI-Verschlüsselung für Spotify-Credentials (CurrentUser-Scope) |
 | TagLib# | Audio-Metadaten |
-| xUnit | Testframework (eigene Fakes, kein Moq) |
+| xUnit | Testframework (eigene Fakes, kein Moq, kein Faker) |
 
 ---
 
@@ -63,15 +66,16 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 Strikte Schichtenarchitektur mit unidirektionalen Abhängigkeiten:
 
 ```
-EchoPlay.App          → WinUI 3 UI, Composition Root, Dependency Injection
-EchoPlay.Data         → EF Core + SQLite, Entities, DataServices, Soft-Delete
-EchoPlay.Spotify      → Spotify Web API (Auth, Suche, Import, Scoring)
-EchoPlay.AppleMusic   → iTunes Search API (Suche, Import, Scoring)
-EchoPlay.LocalLibrary → Lokale Bibliotheks-Integration (Scanner, Matcher)
-EchoPlay.Logger       → Eigenes Logging-Framework (keine externen Pakete)
-EchoPlay.TagManager   → Audio-Tag-Editor (TagLib#, MusicBrainz-Lookup)
-EchoPlay.Core         → Fachkern, Heuristiken, Scoring-Interfaces
-EchoPlay.*.Tests      → Unit-, Integrations- und Smoke-Tests
+EchoPlay.App                  → WinUI 3 UI, Composition Root, Dependency Injection
+EchoPlay.Data                 → EF Core + SQLite, Entities, DataServices, Soft-Delete, SecureSettings (DPAPI)
+EchoPlay.Spotify              → Spotify Web API (Auth, Suche, Import, Scoring)
+EchoPlay.AppleMusic           → iTunes Search API (Suche, Import, Scoring)
+EchoPlay.LocalLibrary         → Lokale Bibliotheks-Integration (Scanner, Matcher, Cover-Suche)
+EchoPlay.Logger               → Eigenes Logging-Framework (keine externen Pakete)
+EchoPlay.Logger.Abstractions  → ILogger/ILoggerFactory-Interfaces (Domänen referenzieren diese, nicht die Logger-Implementierung)
+EchoPlay.TagManager           → Audio-Tag-Editor (TagLib#, MusicBrainz-Lookup)
+EchoPlay.Core                 → Fachkern, Heuristiken, Scoring-Interfaces
+EchoPlay.*.Tests              → Unit-, Integrations- und Smoke-Tests
 ```
 
 ---
@@ -93,7 +97,7 @@ dotnet build -p:Platform=x64
 dotnet run --project EchoPlay.App
 ```
 
-Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche über Spotify können optional Zugangsdaten in `appsettings.Development.json` hinterlegt werden.
+Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche über Spotify können die Zugangsdaten im laufenden Programm unter **Einstellungen → Online** eingegeben werden; sie werden per Windows DPAPI (CurrentUser-Scope) in der lokalen SQLite-Datenbank verschlüsselt abgelegt — weder im Code, in appsettings.json noch in User Secrets.
 
 ---
 

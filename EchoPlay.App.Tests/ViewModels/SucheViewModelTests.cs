@@ -32,23 +32,23 @@ namespace EchoPlay.App.Tests.ViewModels
             ISeriesImportSearch? overrideSearch = null)
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = ProviderType.Spotify }));
-            services.AddKeyedScoped<ISeriesImportSearch>(
+            _ = services.AddKeyedScoped<ISeriesImportSearch>(
                 "Spotify",
                 (_, _) => overrideSearch ?? new FakeSeriesImportSearch(searchResults));
-            services.AddKeyedScoped<IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<IEpisodeImportSource>(
                 "Spotify",
                 (_, _) => new FakeEpisodeImportSource([]));
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            services.AddSingleton<IClock>(new FakeClock());
-            services.AddHttpClient();
-            services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddSingleton<IClock>(new FakeClock());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
+            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new ImportService(
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Tests.ViewModels
         private static IServiceScopeFactory BuildLocalScopeFactory(FakeSeriesDataService seriesService)
         {
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
         }
 
@@ -123,7 +123,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
 
-            Assert.Single(vm.Results);
+            _ = Assert.Single(vm.Results);
             Assert.True(vm.Results[0].IsImported);
         }
 
@@ -146,7 +146,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
 
-            Assert.Single(vm.Results);
+            _ = Assert.Single(vm.Results);
             Assert.False(vm.Results[0].IsImported);
 
             // Import auslösen
@@ -182,7 +182,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.WaitForSearchCompleteAsync();
 
             // Kein Import nötig – bereits vorhanden
-            Assert.Single(vm.Results);
+            _ = Assert.Single(vm.Results);
             Assert.True(vm.Results[0].IsImported);
         }
 
@@ -201,7 +201,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchText = "Irgendwas";
             vm.SearchCommand.Execute(null);
 
-            Assert.Single(errorDialog.ShownDialogs);
+            _ = Assert.Single(errorDialog.ShownDialogs);
         }
 
         [Fact]
@@ -218,7 +218,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
 
-            Assert.Single(vm.Results);
+            _ = Assert.Single(vm.Results);
             Assert.Equal("Spotify", vm.Results[0].SourceLabel);
         }
 
@@ -236,7 +236,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
 
-            Assert.Single(vm.Results);
+            _ = Assert.Single(vm.Results);
             Assert.Equal("TKKG", vm.Results[0].Title);
             Assert.Equal("Lokal", vm.Results[0].SourceLabel);
             // Lokale Einträge gelten als bereits importiert – Import-Button bleibt ausgeblendet
@@ -265,7 +265,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.WaitForSearchCompleteAsync();
 
             // Nur das Online-Ergebnis – lokale "Fünf Freunde" bleibt ausgeschlossen
-            Assert.Single(vm.Results);
+            _ = Assert.Single(vm.Results);
             Assert.Equal("TKKG", vm.Results[0].Title);
         }
 

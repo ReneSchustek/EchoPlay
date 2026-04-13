@@ -34,20 +34,20 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeOnlineAccessGuard? onlineGuard = null)
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddKeyedScoped<ISeriesImportSearch>("Spotify",    (_, _) => spotifySearch);
-            services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
-            services.AddKeyedScoped<IEpisodeImportSource>("Spotify",    (_, _) => spotifyEpisodeSource);
-            services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify",    (_, _) => spotifySearch);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify",    (_, _) => spotifyEpisodeSource);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
 
-            services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            services.AddSingleton<IClock>(new FakeClock());
-            services.AddHttpClient();
-            services.AddSingleton<CoverService>();
-            services.AddSingleton<EpisodeCoverCacheService>();
+            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddSingleton<IClock>(new FakeClock());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<CoverService>();
+            _ = services.AddSingleton<EpisodeCoverCacheService>();
             ServiceProvider provider  = services.BuildServiceProvider();
             ImportService importService = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),

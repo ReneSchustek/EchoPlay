@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// und <see cref="SyncService"/>, ohne einen echten Singleton-Service zu benötigen.
     /// Alle Aufrufe werden aufgezeichnet, damit Tests das erwartete Verhalten prüfen können.
     /// </summary>
-    public sealed class FakeScanEventService : IScanEventService
+    internal sealed class FakeScanEventService : IScanEventService
     {
         /// <inheritdoc/>
         public bool IsScanRunning { get; private set; }

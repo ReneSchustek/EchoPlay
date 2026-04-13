@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId)
         {
-            _covers.TryGetValue((entityType, entityId), out CoverImage? cover);
+            _ = _covers.TryGetValue((entityType, entityId), out CoverImage? cover);
             return Task.FromResult(cover);
         }
 

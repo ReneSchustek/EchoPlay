@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Equal(3, vm.PlaylistItems.Count);
             // PlayerService muss einmal mit allen Pfaden aufgerufen worden sein
-            Assert.Single(playerService.PlayCalls);
+            _ = Assert.Single(playerService.PlayCalls);
         }
 
         [Fact]

@@ -24,29 +24,29 @@ namespace EchoPlay.App.Tests.ViewModels
         private static MediathekOnlineViewModel BuildViewModel(FakeSeriesDataService seriesService)
         {
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
 
             // LoadAsync liest auch Episode-, PlaybackState- und AppSettings-Daten
-            services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new EchoPlay.Data.Entities.Settings.AppSettings { ActiveProvider = EchoPlay.Data.Entities.Settings.ProviderType.Spotify }));
 
             // ImportService + Keyed Services für die Provider-Suche
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
                 "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
                 "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            services.AddSingleton<IClock>(new FakeClock());
-            services.AddHttpClient();
-            services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddSingleton<IClock>(new FakeClock());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
+            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();
             EchoPlay.App.Services.ImportService importService = new(
@@ -91,7 +91,7 @@ namespace EchoPlay.App.Tests.ViewModels
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
 
-            Assert.Single(vm.Series);
+            _ = Assert.Single(vm.Series);
             Assert.Equal("Online-Serie", vm.Series[0].Title);
         }
 
@@ -170,7 +170,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Zweiter Aufruf darf nicht doppelt stapeln
-            Assert.Single(vm.Series);
+            _ = Assert.Single(vm.Series);
         }
 
         // --- Suchfilter-Tests ---
@@ -203,7 +203,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
             vm.SearchText = "drei";
 
-            Assert.Single(vm.Series);
+            _ = Assert.Single(vm.Series);
             Assert.Equal("Die drei Fragezeichen", vm.Series[0].Title);
         }
 
@@ -233,7 +233,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
             vm.SearchText = "TKKG";
 
-            Assert.Single(vm.Series);
+            _ = Assert.Single(vm.Series);
 
             vm.SearchText = string.Empty;
 
@@ -280,25 +280,25 @@ namespace EchoPlay.App.Tests.ViewModels
             await episodeService.AddAsync(new Episode { Title = "Folge 1", SeriesId = tkkg });
 
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddScoped<IPlaybackStateDataService>(_ => stateServiceWithCounts);
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateServiceWithCounts);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new EchoPlay.Data.Entities.Settings.AppSettings { ActiveProvider = EchoPlay.Data.Entities.Settings.ProviderType.Spotify }));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
                 "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
                 "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            services.AddSingleton<IClock>(new FakeClock());
-            services.AddHttpClient();
-            services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddSingleton<IClock>(new FakeClock());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
+            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();
             EchoPlay.App.Services.ImportService importService = new(
@@ -318,7 +318,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
             vm.StatusFilter = SeriesStatusFilter.Neu;
 
-            Assert.Single(vm.Series);
+            _ = Assert.Single(vm.Series);
             Assert.Equal("TKKG", vm.Series[0].Title);
         }
 
@@ -332,7 +332,7 @@ namespace EchoPlay.App.Tests.ViewModels
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
 
-            Assert.Single(vm.Series);
+            _ = Assert.Single(vm.Series);
             Assert.False(vm.Series[0].IsSubscribed);
 
             // Toggle auslösen – FakeConfirmationDialogService bestätigt automatisch

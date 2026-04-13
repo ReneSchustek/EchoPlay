@@ -19,10 +19,10 @@ namespace EchoPlay.App.Tests.Services
         public async Task CheckAndCacheSingleSeriesAsync_OfflineMode_DoesNothing()
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { OfflineMode = true }));
-            services.AddScoped<IOnlineEpisodeChecker>(_ => new FakeOnlineEpisodeChecker());
-            services.AddScoped<ICachedNewReleaseDataService>(_ => new FakeCachedNewReleaseDataService());
+            _ = services.AddScoped<IOnlineEpisodeChecker>(_ => new FakeOnlineEpisodeChecker());
+            _ = services.AddScoped<ICachedNewReleaseDataService>(_ => new FakeCachedNewReleaseDataService());
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -38,11 +38,11 @@ namespace EchoPlay.App.Tests.Services
             FakeCachedNewReleaseDataService cacheService = new();
 
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { OfflineMode = false }));
-            services.AddScoped<IOnlineEpisodeChecker>(_ => new FakeOnlineEpisodeChecker());
-            services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService);
-            services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IOnlineEpisodeChecker>(_ => new FakeOnlineEpisodeChecker());
+            _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService);
+            _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
 
             ServiceProvider provider = services.BuildServiceProvider();
 

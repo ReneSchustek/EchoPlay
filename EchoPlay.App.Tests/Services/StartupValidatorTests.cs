@@ -28,14 +28,14 @@ namespace EchoPlay.App.Tests.Services
             FakeCoverImageDataService? coverImageService = null)
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService ?? new FakeAppSettingsDataService());
-            services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
-            services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
-            services.AddScoped<ICoverImageDataService>(_ => coverImageService ?? new FakeCoverImageDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService ?? new FakeAppSettingsDataService());
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
+            _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
+            _ = services.AddScoped<ICoverImageDataService>(_ => coverImageService ?? new FakeCoverImageDataService());
             // Microsoft.Extensions.Http registriert den Default-IHttpClientFactory.
             // Die Tests lösen keinen echten Online-Check aus (OfflineMode = true), sodass
             // die Factory nur konstruktor-seitig gebraucht wird und keine Netzwerkzugriffe entstehen.
-            services.AddHttpClient();
+            _ = services.AddHttpClient();
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -125,7 +125,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(appSettings);
 
             StartupValidator validator = BuildValidator(settingsService: settings);
-            await validator.ValidateAsync();
+            _ = await validator.ValidateAsync();
 
             // Flag muss nach dem Durchlauf zurückgesetzt sein
             AppSettings reloaded = await settings.GetAsync();
@@ -177,11 +177,11 @@ namespace EchoPlay.App.Tests.Services
                 settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }));
 
             List<string> statusMessages = [];
-            await validator.ValidateAsync(status => statusMessages.Add(status));
+            _ = await validator.ValidateAsync(status => statusMessages.Add(status));
 
             Assert.NotEmpty(statusMessages);
-            Assert.Contains(statusMessages, s => s.Contains("Einstellungen"));
-            Assert.Contains(statusMessages, s => s.Contains("Dashboard"));
+            Assert.Contains(statusMessages, s => s.Contains("Einstellungen", StringComparison.Ordinal));
+            Assert.Contains(statusMessages, s => s.Contains("Dashboard", StringComparison.Ordinal));
         }
     }
 }

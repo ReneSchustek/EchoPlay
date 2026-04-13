@@ -27,7 +27,7 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesDataService series = seriesService ?? new FakeSeriesDataService();
 
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => series);
+            _ = services.AddScoped<ISeriesDataService>(_ => series);
             ServiceProvider provider = services.BuildServiceProvider();
 
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
@@ -70,8 +70,8 @@ namespace EchoPlay.App.Tests.Services
                 seriesFolderPath: null,
                 MissingEpisodesMode.OfflineOnly);
 
-            Assert.Single(result);
-            Assert.Contains("Kein lokaler Ordner", result[0]);
+            _ = Assert.Single(result);
+            Assert.Contains("Kein lokaler Ordner", result[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -87,8 +87,8 @@ namespace EchoPlay.App.Tests.Services
                 nonExistentPath,
                 MissingEpisodesMode.OfflineOnly);
 
-            Assert.Single(result);
-            Assert.Contains("Kein lokaler Ordner", result[0]);
+            _ = Assert.Single(result);
+            Assert.Contains("Kein lokaler Ordner", result[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -103,8 +103,8 @@ namespace EchoPlay.App.Tests.Services
                     tempFolder,
                     MissingEpisodesMode.OfflineOnly);
 
-                Assert.Single(result);
-                Assert.Contains("Keine Folgenordner", result[0]);
+                _ = Assert.Single(result);
+                Assert.Contains("Keine Folgenordner", result[0], StringComparison.Ordinal);
             }
             finally
             {
@@ -138,7 +138,7 @@ namespace EchoPlay.App.Tests.Services
         private static string CreateTempFolder()
         {
             string path = Path.Combine(Path.GetTempPath(), $"echoplay-missing-{Path.GetRandomFileName()}");
-            Directory.CreateDirectory(path);
+            _ = Directory.CreateDirectory(path);
             return path;
         }
     }

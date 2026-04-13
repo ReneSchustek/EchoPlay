@@ -23,10 +23,10 @@ namespace EchoPlay.App.Tests.ViewModels
             FakePlaybackStateDataService stateService)
         {
             ServiceCollection services = new();
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            services.AddScoped<IPlaybackStateDataService>(_ => stateService);
-            services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
 
             ServiceProvider provider = services.BuildServiceProvider();
 

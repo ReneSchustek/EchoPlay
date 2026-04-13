@@ -33,22 +33,22 @@ namespace EchoPlay.App.Tests.Services
             FakeEpisodeImportSource appleMusicEpisodeSource)
         {
             ServiceCollection services = new();
-            services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            services.AddScoped<ISeriesDataService>(_ => seriesService);
-            services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
 
             // Keyed-Registrierung – entspricht dem Produktionscode in App.xaml.cs
-            services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => spotifySearch);
-            services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
-            services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
-            services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => spotifySearch);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
 
-            services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
-            services.AddSingleton<IClock>(new FakeClock());
-            services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            services.AddHttpClient();
-            services.AddSingleton<CoverService>();
-            services.AddSingleton<EpisodeCoverCacheService>();
+            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddSingleton<IClock>(new FakeClock());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<CoverService>();
+            _ = services.AddSingleton<EpisodeCoverCacheService>();
             ServiceProvider provider = services.BuildServiceProvider();
             return new ImportService(
                 provider.GetRequiredService<IServiceScopeFactory>(),
@@ -81,7 +81,7 @@ namespace EchoPlay.App.Tests.Services
 
             IReadOnlyList<ImportSeries> result = await service.SearchAsync("drei");
 
-            Assert.Single(result);
+            _ = Assert.Single(result);
             Assert.Equal("Spotify", result[0].Source);
         }
 
@@ -110,7 +110,7 @@ namespace EchoPlay.App.Tests.Services
 
             IReadOnlyList<ImportSeries> result = await service.SearchAsync("tkkg");
 
-            Assert.Single(result);
+            _ = Assert.Single(result);
             Assert.Equal("AppleMusic", result[0].Source);
         }
 
@@ -154,9 +154,9 @@ namespace EchoPlay.App.Tests.Services
                 Score          = 80
             };
 
-            await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries);
 
-            Assert.Single(seriesService.All);
+            _ = Assert.Single(seriesService.All);
             Assert.Equal("Die drei ???", seriesService.All[0].Title);
         }
 
@@ -190,7 +190,7 @@ namespace EchoPlay.App.Tests.Services
                 Score          = 90
             };
 
-            await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries);
 
             Assert.Equal(3, episodeService.All.Count);
         }
@@ -224,10 +224,10 @@ namespace EchoPlay.App.Tests.Services
                 Score          = 70
             };
 
-            await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries);
 
             // Nur die initial angelegte Serie darf vorhanden sein
-            Assert.Single(seriesService.All);
+            _ = Assert.Single(seriesService.All);
         }
 
         [Fact]

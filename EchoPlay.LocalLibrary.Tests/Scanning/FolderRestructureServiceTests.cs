@@ -64,7 +64,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 
             RestructurePreview preview = _service.Analyze(_root, "{number:000} - {title}");
 
-            Assert.Single(preview.Actions);
+            _ = Assert.Single(preview.Actions);
         }
 
         [Fact]
@@ -94,12 +94,12 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public void Execute_LeavesExistingSubfoldersAlone()
         {
             // Mischform: bestehender Unterordner + lose Dateien
-            Directory.CreateDirectory(Path.Combine(_root, "Kinderparty"));
+            _ = Directory.CreateDirectory(Path.Combine(_root, "Kinderparty"));
             File.WriteAllText(Path.Combine(_root, "Kinderparty", "track.mp3"), string.Empty);
             File.WriteAllText(Path.Combine(_root, "01 Titel.mp3"), "audio");
 
             RestructurePreview preview = _service.Analyze(_root, "{number:000} - {title}");
-            _service.Execute(preview);
+            _ = _service.Execute(preview);
 
             // Der bestehende Unterordner bleibt unangetastet
             Assert.True(Directory.Exists(Path.Combine(_root, "Kinderparty")));

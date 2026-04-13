@@ -27,17 +27,17 @@ namespace EchoPlay.AppleMusic.Tests.Search
             ServiceCollection services = new();
 
             // AddAppleMusicImport muss vor den Fakes aufgerufen werden, damit die Fake-Registrierungen die produktiven Services überschreiben.
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
             // Der Fake-Search-Client simuliert einen bekannten Hörspiel-Künstler.
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(
                     artists: [AppleMusicTestData.DieDreiFragezeichen]));
 
             // Der Fake-Scorer liefert ein positives Ergebnis, das den Künstler als Hörspiel akzeptiert.
-            services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
+            _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
                 new FakeAppleMusicHoerspielScorer(
                     HoerspielScoreResult.Yes(
                         "201306317",
@@ -53,7 +53,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
 
             // ASSERT
             // Der Kandidat muss die Seriensuche passieren.
-            Assert.Single(result);
+            _ = Assert.Single(result);
 
             ImportSeries series = result[0];
 
@@ -76,17 +76,17 @@ namespace EchoPlay.AppleMusic.Tests.Search
             // ARRANGE
             ServiceCollection services = new();
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
             // Der Fake-Search-Client liefert einen Künstler, der namentlich zum Suchbegriff passt.
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(
                     artists: [AppleMusicTestData.UngeeigneterKuenstler]));
 
             // Der Fake-Scorer lehnt den Künstler ab, obwohl die API-Suche ihn findet.
-            services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
+            _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
                 new FakeAppleMusicHoerspielScorer(
                     HoerspielScoreResult.No(
                         "999999999",
@@ -114,15 +114,15 @@ namespace EchoPlay.AppleMusic.Tests.Search
             // ARRANGE
             ServiceCollection services = new();
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
             // Keine Künstler im Fake → simuliert leere Suchantwort
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(artists: []));
 
-            services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
+            _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
                 new FakeAppleMusicHoerspielScorer(
                     HoerspielScoreResult.No("0", HoerspielDecisionReason.None, 0, "Kein Treffer")));
 

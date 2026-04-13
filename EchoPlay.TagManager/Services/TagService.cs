@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -134,6 +135,7 @@ namespace EchoPlay.TagManager.Services
         }
 
         /// <inheritdoc />
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Resilience-Pattern: TagLib# wirft aus nativen Parsern diverse Exceptions (CorruptFileException, UnsupportedFormatException, IOException, UnauthorizedAccessException). Eine einzelne korrupte Datei darf die Verarbeitung des restlichen Ordners nicht stoppen.")]
         public async Task<IReadOnlyList<(string FilePath, AudioTag Tag)>> ReadFolderAsync(string folderPath)
         {
             if (!Directory.Exists(folderPath))

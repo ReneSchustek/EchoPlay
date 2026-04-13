@@ -27,17 +27,17 @@ namespace EchoPlay.Spotify.Tests.Search
             ServiceCollection services = new();
 
             // AddSpotifyImport muss vor den Fakes aufgerufen werden, damit die Fake-Registrierungen die produktiven Services überschreiben.
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddSpotifyImport();
+            _ = services.AddSpotifyImport();
 
             // Der Fake-API-Client simuliert einen bekannten Hörspiel-Künstler.
-            services.AddSingleton<ISpotifyApiClient>(
+            _ = services.AddSingleton<ISpotifyApiClient>(
                 new FakeSpotifyApiClient(
                     artists: [SpotifyTestData.DieDreiFragezeichen]));
 
             // Der Fake-Scorer liefert ein positives Ergebnis, das den Künstler als Hörspiel akzeptiert.
-            services.AddSingleton<IHoerspielScorer<SpotifyArtistDto>>(
+            _ = services.AddSingleton<IHoerspielScorer<SpotifyArtistDto>>(
                 new FakeHoerspielScorer(
                     HoerspielScoreResult.Yes(
                         "artist-ddf",
@@ -53,7 +53,7 @@ namespace EchoPlay.Spotify.Tests.Search
 
             // ASSERT
             // Der Kandidat muss die Seriensuche passieren.
-            Assert.Single(result);
+            _ = Assert.Single(result);
 
             ImportSeries series = result[0];
 
@@ -74,17 +74,17 @@ namespace EchoPlay.Spotify.Tests.Search
             // Auch für den Negativfall wird der vollständige Produktivaufbau verwendet, um sicherzustellen, dass Ablehnungslogik korrekt greift.
             ServiceCollection services = new();
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddSpotifyImport();
+            _ = services.AddSpotifyImport();
 
             // Der Fake-API-Client liefert einen Künstler, der namentlich zum Suchbegriff passt.
-            services.AddSingleton<ISpotifyApiClient>(
+            _ = services.AddSingleton<ISpotifyApiClient>(
                 new FakeSpotifyApiClient(
                     artists: [SpotifyTestData.UngeeigneterKuenstler]));
 
             // Der Fake-Scorer lehnt den Künstler ab, obwohl die API-Suche ihn findet.
-            services.AddSingleton<IHoerspielScorer<SpotifyArtistDto>>(
+            _ = services.AddSingleton<IHoerspielScorer<SpotifyArtistDto>>(
                 new FakeHoerspielScorer(
                     HoerspielScoreResult.No(
                         "spotify-artist-non-hoerspiel",

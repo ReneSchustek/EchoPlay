@@ -20,12 +20,12 @@ namespace EchoPlay.TagManager.DependencyInjection
         /// </returns>
         public static IServiceCollection AddTagManager(this IServiceCollection services)
         {
-            services.AddTransient<ITagService, TagService>();
-            services.AddTransient<IFileRenameService, FileRenameService>();
+            _ = services.AddTransient<ITagService, TagService>();
+            _ = services.AddTransient<IFileRenameService, FileRenameService>();
 
             // MusicBrainz erwartet einen eindeutigen User-Agent im Format
             // "AppName/Version (contact@example.com)" – sonst droht ein 403.
-            services.AddHttpClient<ITagLookupService, MusicBrainzLookupService>(client =>
+            _ = services.AddHttpClient<ITagLookupService, MusicBrainzLookupService>(client =>
             {
                 client.BaseAddress = new Uri("https://musicbrainz.org/");
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay/1.0 (echoplay@ruhrcoder.de)");

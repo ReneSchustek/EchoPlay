@@ -68,7 +68,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal("TKKG", results[0].SeriesName);
         }
 
@@ -119,7 +119,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
 
-            Assert.Single(results[0].Episodes[0].TrackPaths);
+            _ = Assert.Single(results[0].Episodes[0].TrackPaths);
         }
 
         [Fact]
@@ -137,7 +137,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
 
             // Der gematchte Ordner hat eine Nummer, der ungematchte hat null
@@ -149,7 +149,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_ExcludesSeriesWithNoMatchingEpisodes()
         {
             // Serienordner ohne erkannte Episodenordner erscheinen nicht in den Ergebnissen
-            Directory.CreateDirectory(Path.Combine(_root, "LeererOrdner"));
+            _ = Directory.CreateDirectory(Path.Combine(_root, "LeererOrdner"));
 
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
@@ -298,8 +298,8 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public void GetSeriesFolders_ReturnsSeriesFolders_WithoutEpisodeScan()
         {
             // Nur Ordner-Listing – keine Audiodateien nötig, kein Deep-Scan
-            Directory.CreateDirectory(Path.Combine(_root, "TKKG"));
-            Directory.CreateDirectory(Path.Combine(_root, "Die drei Fragezeichen"));
+            _ = Directory.CreateDirectory(Path.Combine(_root, "TKKG"));
+            _ = Directory.CreateDirectory(Path.Combine(_root, "Die drei Fragezeichen"));
 
             IReadOnlyList<string> folders = _scanner.GetSeriesFolders(_root);
 
@@ -313,18 +313,18 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // onSeriesScanned wird pro erkannter Serie genau einmal aufgerufen
             string seriesA = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
-            Directory.CreateDirectory(Path.Combine(seriesA, "001"));
+            _ = Directory.CreateDirectory(Path.Combine(seriesA, "001"));
             await File.WriteAllTextAsync(Path.Combine(seriesA, "001", "track.mp3"), string.Empty);
 
             string seriesB = Directory.CreateDirectory(Path.Combine(_root, "Fünf Freunde")).FullName;
-            Directory.CreateDirectory(Path.Combine(seriesB, "001"));
+            _ = Directory.CreateDirectory(Path.Combine(seriesB, "001"));
             await File.WriteAllTextAsync(Path.Combine(seriesB, "001", "track.mp3"), string.Empty);
 
             List<string> reported = [];
             IProgress<LocalScanResult> onSeriesScanned = new Progress<LocalScanResult>(r =>
                 reported.Add(r.SeriesName));
 
-            await _scanner.ScanSeriesAsync(_root, "{number:000}", onSeriesScanned: onSeriesScanned);
+            _ = await _scanner.ScanSeriesAsync(_root, "{number:000}", onSeriesScanned: onSeriesScanned);
 
             // Kurze Wartezeit, damit Progress-Callbacks verarbeitet werden können
             await Task.Delay(50);
@@ -347,7 +347,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 1);
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 2);
@@ -364,7 +364,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 1);
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 2);
@@ -380,8 +380,8 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
-            Assert.Single(results[0].Episodes);
+            _ = Assert.Single(results);
+            _ = Assert.Single(results[0].Episodes);
             // Kein Muster erkannt → ParsedNumber ist null, Dateiname als Titel
             Assert.Null(results[0].Episodes[0].ParsedNumber);
             Assert.NotNull(results[0].Episodes[0].ParsedTitle);
@@ -399,8 +399,8 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
-            Assert.Single(results[0].Episodes);
+            _ = Assert.Single(results);
+            _ = Assert.Single(results[0].Episodes);
         }
 
         [Fact]
@@ -409,14 +409,14 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             // Mischform: Unterordner ohne Audio + Dateien direkt im Ordner
             // (wie Pumuckl mit "Kinderparty"-Ordner ohne eigene Audio)
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Pumuckel")).FullName;
-            Directory.CreateDirectory(Path.Combine(seriesPath, "Kinderparty"));
+            _ = Directory.CreateDirectory(Path.Combine(seriesPath, "Kinderparty"));
             await File.WriteAllTextAsync(Path.Combine(seriesPath, "01 Spuk in der Werkstatt.mp3"), string.Empty);
             await File.WriteAllTextAsync(Path.Combine(seriesPath, "02 Das verkaufte Bett.mp3"), string.Empty);
 
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
         }
 
@@ -433,9 +433,9 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             // Nur die Episode aus dem Unterordner, nicht die lose Datei
-            Assert.Single(results[0].Episodes);
+            _ = Assert.Single(results[0].Episodes);
             Assert.Equal(1, results[0].Episodes[0].ParsedNumber);
         }
 
@@ -454,7 +454,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(3, results[0].Episodes.Count);
             // 01a → 1, 01b → 2, 02a → 3
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 1);
@@ -473,7 +473,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 1 && e.ParsedTitle == "Kindheit");
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 2 && e.ParsedTitle == "Kindheit");
@@ -490,7 +490,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
             // 11a → 21, 11b → 22
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 21);
@@ -508,7 +508,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal(2, results[0].Episodes.Count);
             // W03a → Kassette 3, Seite a → 5; W03b → 6
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 5);

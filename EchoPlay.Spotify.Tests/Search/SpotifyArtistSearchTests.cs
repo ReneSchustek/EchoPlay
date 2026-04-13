@@ -26,7 +26,7 @@ namespace EchoPlay.Spotify.Tests.Search
 
             // ASSERT
             // Es wird genau ein Treffer erwartet.
-            Assert.Single(result);
+            _ = Assert.Single(result);
 
             // Der Name des gefundenen Künstlers muss übereinstimmen.
             Assert.Equal("Die drei ???", result[0].Name);

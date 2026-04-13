@@ -29,6 +29,7 @@ namespace EchoPlay.Spotify.Tests.Live
         /// <param name="fixture">Die geteilte Fixture mit konfiguriertem API-Client.</param>
         public SpotifyLiveSmokeTests(SpotifyLiveFixture fixture)
         {
+            ArgumentNullException.ThrowIfNull(fixture);
             _apiClient = fixture.ApiClient;
         }
 

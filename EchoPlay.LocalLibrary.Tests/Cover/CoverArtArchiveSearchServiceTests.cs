@@ -83,12 +83,12 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
 
             IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG");
 
-            Assert.Single(result);
+            _ = Assert.Single(result);
             Assert.Equal("TKKG – Hörspiel", result[0].ReleaseTitle);
             Assert.Equal("Cover Art Archive", result[0].Source);
             // URL enthält die MBID aus dem JSON
-            Assert.Contains("abc-123", result[0].ThumbnailUrl);
-            Assert.Contains("abc-123", result[0].FullUrl);
+            Assert.Contains("abc-123", result[0].ThumbnailUrl, StringComparison.Ordinal);
+            Assert.Contains("abc-123", result[0].FullUrl, StringComparison.Ordinal);
         }
 
         [Fact]

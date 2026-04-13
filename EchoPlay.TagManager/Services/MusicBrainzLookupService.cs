@@ -57,8 +57,8 @@ namespace EchoPlay.TagManager.Services
 
                 _logger.Debug($"MusicBrainz-Suche: {requestUri}");
 
-                using HttpResponseMessage response = await _httpClient.GetAsync(requestUri, cancellationToken).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
+                using HttpResponseMessage response = await _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken).ConfigureAwait(false);
+                _ = response.EnsureSuccessStatusCode();
 
                 MusicBrainzReleaseSearchResponse? dto = await response.Content
                     .ReadFromJsonAsync<MusicBrainzReleaseSearchResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -83,7 +83,7 @@ namespace EchoPlay.TagManager.Services
             }
             finally
             {
-                RateLimitSemaphore.Release();
+                _ = RateLimitSemaphore.Release();
             }
         }
 

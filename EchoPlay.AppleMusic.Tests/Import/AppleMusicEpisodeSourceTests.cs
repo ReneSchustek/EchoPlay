@@ -27,11 +27,11 @@ namespace EchoPlay.AppleMusic.Tests.Import
             ServiceCollection services = new();
 
             // AddAppleMusicImport muss vor den Fakes aufgerufen werden, damit die Fake-Registrierungen die produktiven Services überschreiben.
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(
                     artists: [AppleMusicTestData.DieDreiFragezeichen]));
 
@@ -55,18 +55,18 @@ namespace EchoPlay.AppleMusic.Tests.Import
             // ARRANGE
             ServiceCollection services = new();
 
-            services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            services.AddAppleMusicImport();
+            _ = services.AddAppleMusicImport();
 
-            services.AddSingleton<IAppleMusicSearchClient>(
+            _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(artists: []));
 
             ServiceProvider provider = services.BuildServiceProvider();
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
 
             // ACT & ASSERT
-            await Assert.ThrowsAsync<ArgumentException>(
+            _ = await Assert.ThrowsAsync<ArgumentException>(
                 () => episodeImport.GetEpisodesAsync("keine-gueltige-id"));
         }
     }

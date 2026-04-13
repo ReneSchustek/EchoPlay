@@ -1,6 +1,7 @@
 using EchoPlay.Data.Entities.Library;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Services.Interfaces
@@ -33,7 +34,10 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Speichert oder aktualisiert ein Cover für eine Entity.
         /// Existiert bereits ein Cover, werden Bilddaten und SourceUrl überschrieben.
         /// </summary>
-        Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null);
+        Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData,
+            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+                Justification = "Internal API akzeptiert die URL so, wie sie in der DB-Spalte CoverImage.SourceUrl persistiert wird. Uri-Refactor würde Cascade durch Cover-Kaskade und Call-Sites erfordern, Entscheidung dokumentiert in Brief 231.")]
+            string? sourceUrl = null);
 
         /// <summary>
         /// Setzt den LastChecked-Zeitstempel für eine Entity (auch bei Nicht-Treffer).

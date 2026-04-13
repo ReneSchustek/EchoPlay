@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Library
 {
@@ -34,6 +35,8 @@ namespace EchoPlay.Data.Entities.Library
         /// URL der ursprünglichen Cover-Quelle (Spotify, Apple Music, iTunes).
         /// Dient als Fallback für erneuten Download bei Datenverlust.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Entity spiegelt DB-Spalte SourceUrl (Cover-Herkunft als TEXT); Uri-Umwandlung würde EF-Core-Mapping erfordern ohne fachlichen Mehrwert.")]
         public string? SourceUrl { get; set; }
 
         /// <summary>

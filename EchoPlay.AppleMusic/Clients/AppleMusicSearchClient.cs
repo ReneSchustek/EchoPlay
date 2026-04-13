@@ -110,7 +110,7 @@ namespace EchoPlay.AppleMusic.Clients
             try
             {
                 using HttpResponseMessage response = await _httpClient
-                    .GetAsync(relativeUrl, HttpCompletionOption.ResponseHeadersRead, ct)
+                    .GetAsync(new Uri(relativeUrl, UriKind.Relative), HttpCompletionOption.ResponseHeadersRead, ct)
                     .ConfigureAwait(false);
 
                 _ = response.EnsureSuccessStatusCode();

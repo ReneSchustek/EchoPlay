@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Cover
@@ -27,6 +28,9 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <returns>
         /// Rohe Bilddaten als Byte-Array oder <see langword="null"/> wenn kein Cover gefunden wurde.
         /// </returns>
-        Task<byte[]?> ResolveAsync(string seriesFolder, string? coverImageUrl);
+        Task<byte[]?> ResolveAsync(string seriesFolder,
+            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+                Justification = "Internal API nimmt die URL so entgegen, wie sie in der DB-Spalte Series.CoverImageUrl abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern, Entscheidung dokumentiert in Brief 231.")]
+            string? coverImageUrl);
     }
 }

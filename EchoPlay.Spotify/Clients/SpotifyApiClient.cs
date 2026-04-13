@@ -56,7 +56,7 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
+                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative))).ConfigureAwait(false);
 
                 // Transport- und Authentifizierungsfehler können hier
                 // nicht fachlich sinnvoll behandelt werden und werden
@@ -136,7 +136,7 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
+                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative))).ConfigureAwait(false);
 
                 _ = response.EnsureSuccessStatusCode();
 
@@ -223,8 +223,10 @@ namespace EchoPlay.Spotify.Clients
             {
                 while (requestUri is not null && albums.Count < limit)
                 {
+                    // Die Pagination-URL aus "next" ist absolut, der Startwert ist relativ –
+                    // UriKind.RelativeOrAbsolute deckt beide Fälle im Loop ab.
                     using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                        () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
+                        () => _httpClient.GetAsync(new Uri(requestUri, UriKind.RelativeOrAbsolute))).ConfigureAwait(false);
                     _ = response.EnsureSuccessStatusCode();
 
                     using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -312,7 +314,7 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(requestUri)).ConfigureAwait(false);
+                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative))).ConfigureAwait(false);
                 _ = response.EnsureSuccessStatusCode();
 
                 using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);

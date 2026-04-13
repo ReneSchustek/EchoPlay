@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
@@ -24,9 +26,11 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <exception cref="HttpRequestException">
         /// Wird geworfen, wenn der Download fehlschlägt.
         /// </exception>
+        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "Internal API nimmt die URL so entgegen, wie sie in DB/DTO (Provider-URL-String) abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern, Entscheidung dokumentiert in Brief 231.")]
         public async Task<byte[]> DownloadAsync(string imageUrl)
         {
-            return await _httpClient.GetByteArrayAsync(imageUrl).ConfigureAwait(false);
+            return await _httpClient.GetByteArrayAsync(new Uri(imageUrl, UriKind.Absolute)).ConfigureAwait(false);
         }
 
         /// <summary>

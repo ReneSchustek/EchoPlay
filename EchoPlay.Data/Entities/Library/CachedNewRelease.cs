@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Library
 {
@@ -52,6 +53,8 @@ namespace EchoPlay.Data.Entities.Library
         /// Kann über das iTunes-URL-Pattern auf größere Auflösungen skaliert werden
         /// (z.B. /100x100bb → /600x600bb).
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Entity spiegelt DB-Spalte CoverUrl (iTunes-Artwork-URL als TEXT); Uri-Umwandlung würde EF-Core-Mapping und iTunes-URL-Pattern-Manipulation (100x100bb → 600x600bb) komplizieren.")]
         public string? CoverUrl { get; set; }
 
         /// <summary>

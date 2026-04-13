@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace EchoPlay.AppleMusic.Dtos
@@ -31,6 +32,8 @@ namespace EchoPlay.AppleMusic.Dtos
         /// URL zur Apple-Music-Profilseite des Künstlers.
         /// </summary>
         [JsonPropertyName("artistLinkUrl")]
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "DTO spiegelt externes iTunes-JSON-Feld 'artistLinkUrl'; Uri-Umwandlung würde die Serialisierung doppelt durchlaufen.")]
         public string? ArtistLinkUrl { get; init; }
 
         /// <summary>

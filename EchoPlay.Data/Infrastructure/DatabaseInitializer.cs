@@ -1,5 +1,6 @@
 using System.Globalization;
 using EchoPlay.Data.Context;
+using EchoPlay.Data.Internal;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
@@ -63,7 +64,7 @@ namespace EchoPlay.Data.Infrastructure
                     return;
                 }
 
-                string timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+                string timestamp = EntityClock.Current.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
                 string backupPath = $"{dbPath}.backup-{timestamp}";
                 File.Copy(dbPath, backupPath, overwrite: false);
                 _logger?.Info($"DB-Backup vor Migration erstellt: {Path.GetFileName(backupPath)}");

@@ -1,5 +1,6 @@
 ﻿using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Internal;
 
 namespace EchoPlay.Data.Entities.Playback
 {
@@ -56,12 +57,12 @@ namespace EchoPlay.Data.Entities.Playback
         public void UpdatePosition(TimeSpan position, TimeSpan episodeDuration)
         {
             LastPosition = position;
-            LastPlayedAt = DateTime.UtcNow;
+            LastPlayedAt = EntityClock.Current.UtcNow;
 
             if (!IsCompleted && position >= episodeDuration)
             {
                 IsCompleted = true;
-                CompletedAt = DateTime.UtcNow;
+                CompletedAt = EntityClock.Current.UtcNow;
                 LastPosition = episodeDuration;
             }
         }

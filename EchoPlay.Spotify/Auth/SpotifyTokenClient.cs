@@ -1,3 +1,4 @@
+using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Spotify.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -17,6 +18,7 @@ namespace EchoPlay.Spotify.Auth
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISpotifyClientCredentialsProvider _credentialsProvider;
+        private readonly IClock _clock;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger;
         private readonly SemaphoreSlim _tokenLock = new(1, 1);
 
@@ -31,11 +33,14 @@ namespace EchoPlay.Spotify.Auth
         public SpotifyTokenClient(
             IHttpClientFactory httpClientFactory,
             ISpotifyClientCredentialsProvider credentialsProvider,
-            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory)
+            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory,
+            IClock clock)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
+            ArgumentNullException.ThrowIfNull(clock);
             _httpClientFactory = httpClientFactory;
             _credentialsProvider = credentialsProvider;
+            _clock = clock;
             _logger = loggerFactory.CreateLogger("SpotifyTokenClient");
         }
 
@@ -48,7 +53,7 @@ namespace EchoPlay.Spotify.Auth
         /// <exception cref="JsonException">Wenn die Token-Antwort nicht verarbeitet werden kann.</exception>
         public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default)
         {
-            if (_currentToken != null && !_currentToken.IsExpired)
+            if (_currentToken != null && !_currentToken.IsExpired(_clock.UtcNow))
             {
                 _logger.Debug("Gültiges Token aus Cache verwendet.");
                 return _currentToken.AccessToken;
@@ -59,7 +64,7 @@ namespace EchoPlay.Spotify.Auth
             {
                 // Zweite Prüfung nach Lock-Erwerb: ein anderer Task hat evtl. inzwischen
                 // einen Token geholt, während wir am Semaphor warteten.
-                if (_currentToken != null && !_currentToken.IsExpired)
+                if (_currentToken != null && !_currentToken.IsExpired(_clock.UtcNow))
                 {
                     _logger.Debug("Gültiges Token aus Cache verwendet (post-lock).");
                     return _currentToken.AccessToken;
@@ -142,7 +147,7 @@ namespace EchoPlay.Spotify.Auth
                 return new SpotifyAccessToken
                 {
                     AccessToken = accessToken,
-                    ExpiresAtUtc = DateTime.UtcNow.AddSeconds(expiresInSeconds - 60)
+                    ExpiresAtUtc = _clock.UtcNow.AddSeconds(expiresInSeconds - 60)
                 };
             }
             catch (HttpRequestException ex)

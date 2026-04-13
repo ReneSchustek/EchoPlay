@@ -1,19 +1,21 @@
-namespace EchoPlay.App.Services
+using System;
+
+namespace EchoPlay.Core.Abstractions.Time
 {
     /// <summary>
-    /// Liefert die aktuelle Zeit. Wird in Tests durch einen <c>FakeClock</c> ersetzt,
+    /// Liefert die aktuelle Zeit. Wird in Tests durch einen FakeClock ersetzt,
     /// damit zeitabhängige Logik reproduzierbar geprüft werden kann.
     /// </summary>
     public interface IClock
     {
         /// <summary>Aktuelle UTC-Zeit.</summary>
-        System.DateTime UtcNow { get; }
+        DateTime UtcNow { get; }
     }
 
     /// <summary>Standard-Implementierung – liest die System-Zeit.</summary>
     public sealed class SystemClock : IClock
     {
         /// <inheritdoc />
-        public System.DateTime UtcNow => System.DateTime.UtcNow;
+        public DateTime UtcNow => DateTime.UtcNow;
     }
 }

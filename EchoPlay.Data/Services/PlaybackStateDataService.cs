@@ -1,6 +1,7 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Infrastructure;
+using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -162,7 +163,7 @@ namespace EchoPlay.Data.Services
             }
 
             // Der Wiedergabestatus wird ausschließlich über die definierte Domänenoperation logisch gelöscht.
-            playbackState.MarkAsDeleted(DateTime.UtcNow);
+            playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
 
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {id}) als gelöscht markiert.");

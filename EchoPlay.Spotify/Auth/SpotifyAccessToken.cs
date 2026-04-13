@@ -17,8 +17,10 @@
         public DateTime ExpiresAtUtc { get; init; }
 
         /// <summary>
-        /// Gibt an, ob das Token aktuell noch gültig ist.
+        /// Prüft, ob das Token zur übergebenen Referenzzeit bereits abgelaufen ist.
+        /// Die Referenzzeit kommt aus <see cref="EchoPlay.Core.Abstractions.Time.IClock"/>,
+        /// damit Tests den Ablauf deterministisch steuern können.
         /// </summary>
-        public bool IsExpired => DateTime.UtcNow >= ExpiresAtUtc;
+        public bool IsExpired(DateTime utcNow) => utcNow >= ExpiresAtUtc;
     }
 }

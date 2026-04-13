@@ -1,3 +1,4 @@
+using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Settings;
@@ -165,7 +166,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddSingleton<EchoPlay.App.Services.IClock>(new FakeClock());
+            _ = services.AddSingleton<EchoPlay.Core.Abstractions.Time.IClock>(new FakeClock());
             _ = services.AddHttpClient();
             _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
             _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();

@@ -1,6 +1,7 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Infrastructure;
+using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -67,7 +68,7 @@ namespace EchoPlay.Data.Services
         {
             // Upsert per SQL: INSERT OR REPLACE vermeidet Race Conditions zwischen
             // parallelen Scopes (z.B. RunOnceAsync im Splash + Start im Hintergrund).
-            DateTime now = DateTime.UtcNow;
+            DateTime now = EntityClock.Current.UtcNow;
             string hash = ComputeHash(imageData);
 
             CoverImage? existing = await _context.CoverImages

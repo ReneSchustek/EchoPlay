@@ -1,11 +1,10 @@
 using EchoPlay.Core.Abstractions.Time;
 using System;
-using EchoPlay.App.Services;
 
-namespace EchoPlay.App.Tests.Fakes
+namespace EchoPlay.Spotify.Tests.Fakes
 {
     /// <summary>
-    /// Deterministische Uhr für Tests. Der Startwert (2026-01-15 10:00 UTC) ist so
+    /// Deterministische Uhr für Spotify-Tests. Der Startwert (2026-01-15 10:00 UTC) ist so
     /// gewählt, dass er weit genug in der Vergangenheit liegt, um keine Release-Daten
     /// in Test-Fixtures zufällig zu treffen, aber nicht so weit, dass Datumsarithmetik
     /// offensichtlich "historisch" wirkt.

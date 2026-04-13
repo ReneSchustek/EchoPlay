@@ -1,4 +1,5 @@
 using EchoPlay.Spotify.Auth;
+using EchoPlay.Spotify.Tests.Fakes;
 using EchoPlay.Spotify.Tests.Http;
 using System.Net;
 using System.Text;
@@ -80,7 +81,8 @@ namespace EchoPlay.Spotify.Tests.Auth
             SpotifyTokenClient tokenClient = new(
                 new SingleHttpClientFactory(new HttpClient(handler) { BaseAddress = new Uri("https://accounts.spotify.test/") }),
                 new NullCredentialsProvider(),
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
+                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()),
+                new FakeClock());
 
             _ = await Assert.ThrowsAsync<InvalidOperationException>(() => tokenClient.GetAccessTokenAsync());
             Assert.Equal(0, handler.CallCount);
@@ -92,7 +94,8 @@ namespace EchoPlay.Spotify.Tests.Auth
             return new SpotifyTokenClient(
                 new SingleHttpClientFactory(httpClient),
                 new StaticCredentialsProvider("id", "secret"),
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
+                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()),
+                new FakeClock());
         }
 
         private sealed class SingleHttpClientFactory : IHttpClientFactory
@@ -140,6 +143,7 @@ namespace EchoPlay.Spotify.Tests.Auth
 
                 if (ResponseDelay > TimeSpan.Zero)
                 {
+                    // bewusst: simulierte Server-Latenz für Parallel-Cache-Test
                     await Task.Delay(ResponseDelay, cancellationToken).ConfigureAwait(false);
                 }
 

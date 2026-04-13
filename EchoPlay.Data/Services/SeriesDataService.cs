@@ -1,6 +1,7 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -268,7 +269,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                series.MarkAsDeleted(DateTime.UtcNow);
+                series.MarkAsDeleted(EntityClock.Current.UtcNow);
 
                 List<Episode> episodes =
                     await _context.Episodes
@@ -287,12 +288,12 @@ namespace EchoPlay.Data.Services
 
                 foreach (Episode episode in episodes)
                 {
-                    episode.MarkAsDeleted(DateTime.UtcNow);
+                    episode.MarkAsDeleted(EntityClock.Current.UtcNow);
                 }
 
                 foreach (PlaybackState playbackState in playbackStates)
                 {
-                    playbackState.MarkAsDeleted(DateTime.UtcNow);
+                    playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
                 }
 
                 _ = await _context.SaveChangesAsync().ConfigureAwait(false);

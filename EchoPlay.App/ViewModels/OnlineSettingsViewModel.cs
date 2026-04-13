@@ -239,6 +239,16 @@ namespace EchoPlay.App.ViewModels
         public void LoadSpotifyStatus()
         {
             IsSpotifyLinked = _credentialStore.HasCredentials;
+
+            if (_credentialStore.LastLoadFailedDueToCorruption)
+            {
+                // Nach Profil-Migration: korrupte Records wurden automatisch gelöscht,
+                // der Nutzer muss Credentials neu eingeben.
+                SpotifyStatus = "Gespeicherte Credentials konnten nicht entschlüsselt werden. Bitte ClientId und ClientSecret neu eingeben.";
+                _credentialStore.AcknowledgeCorruptionNotice();
+                return;
+            }
+
             SpotifyStatus = IsSpotifyLinked ? "Verknüpft" : "Nicht verknüpft";
         }
 

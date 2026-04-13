@@ -22,6 +22,7 @@ namespace EchoPlay.App.Services
         private readonly ILogger _logger;
 
         private bool _hasCredentials;
+        private bool _lastLoadFailedDueToCorruption;
 
         /// <summary>
         /// Erstellt einen neuen Credential-Store.
@@ -37,6 +38,12 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         public bool HasCredentials => _hasCredentials;
+
+        /// <inheritdoc/>
+        public bool LastLoadFailedDueToCorruption => _lastLoadFailedDueToCorruption;
+
+        /// <inheritdoc/>
+        public void AcknowledgeCorruptionNotice() => _lastLoadFailedDueToCorruption = false;
 
         /// <inheritdoc/>
         public async Task<(string ClientId, string ClientSecret)?> GetAsync()
@@ -61,7 +68,16 @@ namespace EchoPlay.App.Services
             }
             catch (CryptographicException ex)
             {
-                _logger.Error("Spotify-Credentials konnten nicht entschlüsselt werden.", ex);
+                // Nach Windows-Profil-Migration oder PC-Wechsel sind die Cipher-Bytes nicht mehr
+                // entschlüsselbar. Ohne Aufräumen loggt jeder Start denselben Fehler — daher
+                // löschen wir die korrupten Records und erzwingen eine Neu-Eingabe durch den Nutzer.
+                _logger.Warning($"Spotify-Credentials konnten nicht entschlüsselt werden ({ex.Message}). Korrupte Records werden entfernt.");
+
+                await service.DeleteAsync(KeyClientId).ConfigureAwait(false);
+                await service.DeleteAsync(KeyClientSecret).ConfigureAwait(false);
+
+                _hasCredentials = false;
+                _lastLoadFailedDueToCorruption = true;
                 return null;
             }
         }
@@ -80,6 +96,7 @@ namespace EchoPlay.App.Services
             await service.SaveAsync(KeyClientSecret, encryptedSecret);
 
             _hasCredentials = true;
+            _lastLoadFailedDueToCorruption = false;
             _logger.Info("Spotify-Credentials gespeichert.");
         }
 
@@ -94,6 +111,7 @@ namespace EchoPlay.App.Services
             await service.DeleteAsync(KeyClientSecret);
 
             _hasCredentials = false;
+            _lastLoadFailedDueToCorruption = false;
             _logger.Info("Spotify-Credentials gelöscht.");
         }
 

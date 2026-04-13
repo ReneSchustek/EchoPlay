@@ -1,6 +1,7 @@
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -26,7 +27,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<ImportSeries>> SearchAsync(string query)
+        public Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_results);
         }

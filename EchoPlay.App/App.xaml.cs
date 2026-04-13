@@ -472,6 +472,7 @@ namespace EchoPlay.App
             _ = builder.Services.AddSingleton<ISpotifyCredentialStore, SpotifyCredentialStore>();
             _ = builder.Services.AddSingleton<ISpotifyOptionsProvider>(provider =>
                 new SpotifyOptionsProvider(baseSpotifyOptions, provider.GetRequiredService<ISpotifyCredentialStore>()));
+            _ = builder.Services.AddSingleton<ISpotifyClientCredentialsProvider, SpotifyClientCredentialsProvider>();
 
             // Named HttpClient für Token-Anfragen (Client-Credentials-Flow).
             // Timeout kurz halten – ein hängender Token-Request blockiert jeden weiteren API-Call.
@@ -481,16 +482,10 @@ namespace EchoPlay.App
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
 
-            // SpotifyTokenClient manuell registrieren, damit die Credentials zur Laufzeit
-            // aus dem Credential-Store kommen statt aus einer statischen Konfiguration.
-            _ = builder.Services.AddScoped<SpotifyTokenClient>(provider =>
-            {
-                IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-                HttpClient client = httpClientFactory.CreateClient("SpotifyToken");
-                ISpotifyOptionsProvider optionsProvider = provider.GetRequiredService<ISpotifyOptionsProvider>();
-                SpotifyOptions options = optionsProvider.GetAsync().GetAwaiter().GetResult() ?? baseSpotifyOptions;
-                return new SpotifyTokenClient(client, options, provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
-            });
+            // SpotifyTokenClient als Singleton: Der Token-Cache lebt prozessweit, parallele
+            // Anforderungen werden intern per SemaphoreSlim serialisiert. Credentials werden
+            // erst beim ersten GetAccessTokenAsync-Call asynchron geholt — kein Sync-over-Async.
+            _ = builder.Services.AddSingleton<SpotifyTokenClient>();
 
             // Der AuthMessageHandler wird als Transient registriert,
             // damit jede HttpClient-Instanz ihren eigenen Handler erhält.

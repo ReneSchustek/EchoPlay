@@ -44,10 +44,11 @@ namespace EchoPlay.AppleMusic.Clients
         /// die restlichen Ergebnisse bleiben unberührt.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine fachlich bewertete Liste importierbarer Serien.</returns>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
             Justification = "Einzelne Bewertungsfehler aus der Scoring-Pipeline dürfen die Gesamtsuche nicht abbrechen; der Scorer kombiniert mehrere Heuristiken und die konkreten Fehlertypen sind nicht vollständig vorhersehbar.")]
-        public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query)
+        public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -59,7 +60,7 @@ namespace EchoPlay.AppleMusic.Clients
             _logger.Debug($"Apple-Music-Seriensuche gestartet: '{query}'.");
 
             ITunesResponseDto<ITunesArtistDto> response =
-                await _searchClient.SearchArtistsAsync(query).ConfigureAwait(false);
+                await _searchClient.SearchArtistsAsync(query, ct: cancellationToken).ConfigureAwait(false);
 
             if (response.Results.Count == 0)
             {
@@ -75,7 +76,7 @@ namespace EchoPlay.AppleMusic.Clients
 
                 try
                 {
-                    score = await _scorer.ScoreAsync(artist, query).ConfigureAwait(false);
+                    score = await _scorer.ScoreAsync(artist, query, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

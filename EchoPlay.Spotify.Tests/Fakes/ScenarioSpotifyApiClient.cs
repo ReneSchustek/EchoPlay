@@ -13,13 +13,13 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// <summary>
         /// Liefert einen festen Hörspiel-Künstler.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit)
+        public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyArtistDto>>([]);
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit)
+        public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyAlbumDto>>([]);
         }
@@ -28,7 +28,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// Liefert zwei Alben in bewusst unsortierter Reihenfolge,
         /// um die fachliche Sortierung nach ReleaseDate zu erzwingen.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit)
+        public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
         {
             IReadOnlyList<SpotifyAlbumDto> albums =
             [
@@ -56,7 +56,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// Die TrackNumber ist bewusst identisch,
         /// damit nur die Albumreihenfolge relevant ist.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId)
+        public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)
         {
             IReadOnlyList<SpotifyTrackDto> tracks =
             [

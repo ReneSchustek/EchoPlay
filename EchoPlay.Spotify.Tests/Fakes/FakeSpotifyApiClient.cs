@@ -22,7 +22,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
         /// <returns>Gefundene Test-Künstler.</returns>
-        public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit)
+        public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             IReadOnlyList<SpotifyArtistDto> result = [.. _artists
                     .Where(a => a.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
@@ -32,7 +32,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit)
+        public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyAlbumDto>>([]);
         }
@@ -41,7 +41,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// Liefert für Tests keine Alben zurück.
         /// Diese Methode ist vorhanden, um das Interface vollständig zu erfüllen, wird in den aktuellen Tests jedoch nicht genutzt.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit)
+        public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyAlbumDto>>([]);
         }
@@ -50,7 +50,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// Liefert für Tests keine Tracks zurück.
         /// Auch diese Methode dient aktuell nur der Vertragstreue.
         /// </summary>
-        public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId)
+        public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<SpotifyTrackDto>>([]);
         }

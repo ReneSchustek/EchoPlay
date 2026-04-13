@@ -43,10 +43,12 @@ namespace EchoPlay.AppleMusic.Scoring
         /// </summary>
         /// <param name="source">Der iTunes-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Das Ergebnis der Hörspiel-Bewertung.</returns>
         public async Task<HoerspielScoreResult> ScoreAsync(
             ITunesArtistDto source,
-            string searchQuery)
+            string searchQuery,
+            CancellationToken cancellationToken = default)
         {
             string artistId = source.ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture);
 

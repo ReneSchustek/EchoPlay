@@ -21,10 +21,11 @@ namespace EchoPlay.Spotify.Mapping
         /// </summary>
         /// <param name="artist">Der Spotify-Künstler.</param>
         /// <param name="searchQuery">Der ursprüngliche Suchbegriff des Benutzers.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Das fachlich bewertete Import-Serienmodell.</returns>
-        public async Task<ImportSeries> MapToImportSeriesAsync(SpotifyArtistDto artist, string searchQuery)
+        public async Task<ImportSeries> MapToImportSeriesAsync(SpotifyArtistDto artist, string searchQuery, CancellationToken cancellationToken = default)
         {
-            HoerspielScoreResult scoreResult = await _scorer.ScoreAsync(artist, searchQuery).ConfigureAwait(false);
+            HoerspielScoreResult scoreResult = await _scorer.ScoreAsync(artist, searchQuery, cancellationToken).ConfigureAwait(false);
 
             return new ImportSeries
             {

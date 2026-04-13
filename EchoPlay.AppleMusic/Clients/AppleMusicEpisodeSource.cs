@@ -41,8 +41,9 @@ namespace EchoPlay.AppleMusic.Clients
         /// die Episoden der übrigen Alben bleiben unberührt.
         /// </summary>
         /// <param name="sourceSeriesId">Die iTunes-Artist-ID als String.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Eine sortierte Liste importierbarer Episoden.</returns>
-        public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId)
+        public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(sourceSeriesId))
             {
@@ -59,7 +60,7 @@ namespace EchoPlay.AppleMusic.Clients
             _logger.Debug($"Apple-Music-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");
 
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
-                await _searchClient.LookupAlbumsAsync(artistId).ConfigureAwait(false);
+                await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
 
             // Lookup-Antworten enthalten den Künstler als erstes Element
             List<ITunesCollectionDto> albums = albumsResponse.Results
@@ -81,7 +82,7 @@ namespace EchoPlay.AppleMusic.Clients
 
                 try
                 {
-                    tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId).ConfigureAwait(false);
+                    tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is HttpRequestException
                                            or TaskCanceledException

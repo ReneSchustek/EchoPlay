@@ -1,6 +1,7 @@
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -23,7 +24,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId)
+        public Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_episodes);
         }

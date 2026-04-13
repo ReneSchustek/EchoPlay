@@ -43,10 +43,12 @@ namespace EchoPlay.Spotify.Scoring
         /// </summary>
         /// <param name="source">Der Spotify-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Das Ergebnis der Hörspiel-Bewertung.</returns>
         public async Task<HoerspielScoreResult> ScoreAsync(
             SpotifyArtistDto source,
-            string searchQuery)
+            string searchQuery,
+            CancellationToken cancellationToken = default)
         {
             using LogScope scope = _logger.BeginScope($"Scoring:Spotify:{source.SpotifyArtistId}");
 
@@ -59,7 +61,7 @@ namespace EchoPlay.Spotify.Scoring
 
             _logger.Debug($"Starte Analyse für '{source.Name}'");
 
-            SpotifyHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery).ConfigureAwait(false);
+            SpotifyHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery, cancellationToken).ConfigureAwait(false);
 
             HoerspielScoreResult result = Evaluate(source.SpotifyArtistId, analysis);
 

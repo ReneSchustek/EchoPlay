@@ -11,9 +11,11 @@ namespace EchoPlay.Core.Scoring
         /// </summary>
         /// <param name="source">Die zu bewertenden Quelldaten.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Das Bewertungsergebnis.</returns>
         Task<HoerspielScoreResult> ScoreAsync(
             TSource source,
-            string searchQuery);
+            string searchQuery,
+            CancellationToken cancellationToken = default);
     }
 }

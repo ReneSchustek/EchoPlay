@@ -39,10 +39,12 @@ namespace EchoPlay.Spotify.Scoring
         /// </summary>
         /// <param name="source">Der Spotify-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Das Analyse-Ergebnis mit Boolean-Flags.</returns>
         public async Task<SpotifyHoerspielAnalysis> AnalyzeAsync(
             SpotifyArtistDto source,
-            string searchQuery)
+            string searchQuery,
+            CancellationToken cancellationToken = default)
         {
             _logger.Debug($"Hörspiel-Analyse für Künstler '{source.Name}' (ID: {source.SpotifyArtistId}) gestartet.");
 
@@ -56,7 +58,7 @@ namespace EchoPlay.Spotify.Scoring
             bool hasNumberVariantMatch = HasNumberVariantMatch(normalizedName, normalizedQuery);
             bool hasExactWordMatch = IsExactWordMatch(normalizedName, normalizedQuery);
 
-            (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.SpotifyArtistId).ConfigureAwait(false);
+            (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.SpotifyArtistId, cancellationToken).ConfigureAwait(false);
 
             List<string> debugParts = [];
 
@@ -242,12 +244,14 @@ namespace EchoPlay.Spotify.Scoring
         /// Analysiert die Album-Struktur eines Künstlers auf Hörspiel-Merkmale.
         /// </summary>
         /// <param name="artistId">Die Spotify-Artist-ID.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Ein Tupel mit Flags: ob Alben vorhanden sind und ob Hörspiel-Struktur erkannt wurde.</returns>
-        private async Task<(bool HasAlbums, bool HasHoerspielStructure)> AnalyzeAlbumsAsync(string artistId)
+        private async Task<(bool HasAlbums, bool HasHoerspielStructure)> AnalyzeAlbumsAsync(string artistId, CancellationToken cancellationToken)
         {
             IReadOnlyList<SpotifyAlbumDto> albums = await _apiClient.GetArtistAlbumsAsync(
                 artistId,
-                _settings.AlbumsToCheck).ConfigureAwait(false);
+                _settings.AlbumsToCheck,
+                cancellationToken).ConfigureAwait(false);
 
             if (albums.Count == 0)
             {
@@ -260,7 +264,7 @@ namespace EchoPlay.Spotify.Scoring
 
                 try
                 {
-                    tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId).ConfigureAwait(false);
+                    tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is HttpRequestException
                                            or TaskCanceledException

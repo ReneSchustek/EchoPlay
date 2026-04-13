@@ -18,6 +18,8 @@ namespace EchoPlay.App.ViewModels
     public sealed class OnlineSettingsViewModel : ObservableObject
     {
         private readonly IConnectionTestCoordinator _connectionTestCoordinator;
+        private readonly ISpotifyCredentialStore _credentialStore;
+        private readonly ISpotifyOptionsProvider _optionsProvider;
         private readonly Action _onUserEdit;
         private readonly RelayCommand _testConnectionCommand;
 
@@ -26,19 +28,33 @@ namespace EchoPlay.App.ViewModels
         private bool _isTestingConnection;
         private string? _connectionTestResultText;
         private bool? _connectionTestSuccess;
+        private string _spotifyClientId = string.Empty;
+        private string _spotifyClientSecret = string.Empty;
+        private string _spotifyStatus = string.Empty;
+        private bool _isSpotifyLinked;
+        private bool _isTestingCredentials;
 
         /// <summary>
-        /// Initialisiert das Sub-VM mit dem Test-Coordinator und dem Edit-Callback.
+        /// Initialisiert das Sub-VM mit dem Test-Coordinator, dem Credential-Store und dem Edit-Callback.
         /// </summary>
         /// <param name="connectionTestCoordinator">Führt den eigentlichen Verbindungstest aus.</param>
+        /// <param name="credentialStore">Speichert und liest Spotify-Credentials.</param>
+        /// <param name="optionsProvider">Liefert zur Laufzeit die vollständigen SpotifyOptions.</param>
         /// <param name="onUserEdit">Wird bei einer Nutzeränderung aufgerufen.</param>
         public OnlineSettingsViewModel(
             IConnectionTestCoordinator connectionTestCoordinator,
+            ISpotifyCredentialStore credentialStore,
+            ISpotifyOptionsProvider optionsProvider,
             Action onUserEdit)
         {
             _connectionTestCoordinator = connectionTestCoordinator;
+            _credentialStore           = credentialStore;
+            _optionsProvider           = optionsProvider;
             _onUserEdit                = onUserEdit;
             _testConnectionCommand     = new RelayCommand(() => _ = TestConnectionAsync());
+
+            TestAndSaveSpotifyCommand = new RelayCommand(() => _ = TestAndSaveSpotifyAsync());
+            RemoveSpotifyCommand      = new RelayCommand(() => _ = RemoveSpotifyAsync());
         }
 
         /// <summary>Aktiver Metadaten-Anbieter.</summary>
@@ -68,12 +84,14 @@ namespace EchoPlay.App.ViewModels
             {
                 ProviderType.Spotify    => "Spotify",
                 ProviderType.AppleMusic => "AppleMusic",
+                ProviderType.Both       => "Both",
                 _                       => string.Empty
             };
             set => ActiveProvider = value switch
             {
                 "Spotify"    => ProviderType.Spotify,
                 "AppleMusic" => ProviderType.AppleMusic,
+                "Both"       => ProviderType.Both,
                 _            => ProviderType.None
             };
         }
@@ -132,6 +150,59 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Befehl zum Starten des Verbindungstests.</summary>
         public ICommand TestConnectionCommand => _testConnectionCommand;
 
+        /// <summary>Eingegebene Spotify-Client-ID.</summary>
+        public string SpotifyClientId
+        {
+            get => _spotifyClientId;
+            set
+            {
+                if (SetProperty(ref _spotifyClientId, value))
+                {
+                    _onUserEdit?.Invoke();
+                }
+            }
+        }
+
+        /// <summary>Eingegebenes Spotify-Client-Secret.</summary>
+        public string SpotifyClientSecret
+        {
+            get => _spotifyClientSecret;
+            set
+            {
+                if (SetProperty(ref _spotifyClientSecret, value))
+                {
+                    _onUserEdit?.Invoke();
+                }
+            }
+        }
+
+        /// <summary>Statustext der Spotify-Verknüpfung.</summary>
+        public string SpotifyStatus
+        {
+            get => _spotifyStatus;
+            private set => SetProperty(ref _spotifyStatus, value);
+        }
+
+        /// <summary>Ob Spotify-Credentials im Store vorhanden sind.</summary>
+        public bool IsSpotifyLinked
+        {
+            get => _isSpotifyLinked;
+            private set => SetProperty(ref _isSpotifyLinked, value);
+        }
+
+        /// <summary>Ob gerade ein Credential-Test läuft.</summary>
+        public bool IsTestingCredentials
+        {
+            get => _isTestingCredentials;
+            private set => SetProperty(ref _isTestingCredentials, value);
+        }
+
+        /// <summary>Befehl zum Testen und Speichern der Spotify-Credentials.</summary>
+        public ICommand TestAndSaveSpotifyCommand { get; }
+
+        /// <summary>Befehl zum Entfernen der Spotify-Verknüpfung.</summary>
+        public ICommand RemoveSpotifyCommand { get; }
+
         /// <summary>
         /// Führt den Verbindungstest über den <see cref="IConnectionTestCoordinator"/> aus
         /// und spiegelt das Ergebnis in <see cref="ConnectionTestSuccess"/> und
@@ -162,6 +233,51 @@ namespace EchoPlay.App.ViewModels
             {
                 IsTestingConnection = false;
             }
+        }
+
+        /// <summary>Lädt den Spotify-Verknüpfungsstatus beim Initialisieren.</summary>
+        public void LoadSpotifyStatus()
+        {
+            IsSpotifyLinked = _credentialStore.HasCredentials;
+            SpotifyStatus = IsSpotifyLinked ? "Verknüpft" : "Nicht verknüpft";
+        }
+
+        private async Task TestAndSaveSpotifyAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_spotifyClientId) || string.IsNullOrWhiteSpace(_spotifyClientSecret))
+            {
+                SpotifyStatus = "ClientId und ClientSecret dürfen nicht leer sein.";
+                return;
+            }
+
+            IsTestingCredentials = true;
+            SpotifyStatus = "Teste Verbindung…";
+
+            try
+            {
+                await _credentialStore.SaveAsync(_spotifyClientId.Trim(), _spotifyClientSecret.Trim());
+                IsSpotifyLinked = true;
+                SpotifyStatus = "Verknüpft";
+                SpotifyClientId = string.Empty;
+                SpotifyClientSecret = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                SpotifyStatus = $"Fehler: {ex.Message}";
+            }
+            finally
+            {
+                IsTestingCredentials = false;
+            }
+        }
+
+        private async Task RemoveSpotifyAsync()
+        {
+            await _credentialStore.ClearAsync();
+            IsSpotifyLinked = false;
+            SpotifyStatus = "Nicht verknüpft";
+            SpotifyClientId = string.Empty;
+            SpotifyClientSecret = string.Empty;
         }
 
         /// <summary>Übernimmt den Provider aus der Entität ohne Change-Callback.</summary>

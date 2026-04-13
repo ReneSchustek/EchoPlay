@@ -41,6 +41,7 @@ namespace EchoPlay.App.Views
         /// <param name="e">Enthält die SeriesId als <see cref="NavigationEventArgs.Parameter"/>.</param>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
+            ArgumentNullException.ThrowIfNull(e);
             base.OnNavigatedTo(e);
 
             if (e.Parameter is Guid seriesId)
@@ -70,7 +71,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnBackClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            _navigationService.GoBack();
+            _ = _navigationService.GoBack();
         }
 
         /// <param name="sender">Das GridView mit den Episodenkacheln.</param>

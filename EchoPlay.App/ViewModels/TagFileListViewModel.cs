@@ -121,6 +121,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="selectedItems">Die aktuell selektierten Dateien.</param>
         public void SetSelectedFiles(IReadOnlyList<TagFileItemViewModel> selectedItems)
         {
+            ArgumentNullException.ThrowIfNull(selectedItems);
             SelectedFiles = selectedItems;
             SelectedFile  = selectedItems.Count == 1 ? selectedItems[0] : null;
 

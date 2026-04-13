@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
@@ -34,6 +35,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         public CoverService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("CoverService");
         }
@@ -87,6 +89,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Speichert ein Cover für eine Serie mit 3-Retry bei DB-Fehlern.
         /// </summary>
+        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
         public async Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null)
         {
             await WriteWithRetryAsync(EntityTypeSeries, seriesId, imageData, sourceUrl);
@@ -95,6 +99,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Speichert ein Cover für eine Episode mit 3-Retry bei DB-Fehlern.
         /// </summary>
+        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
         public async Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null)
         {
             await WriteWithRetryAsync(EntityTypeEpisode, episodeId, imageData, sourceUrl);
@@ -121,7 +127,7 @@ namespace EchoPlay.App.Services
             {
                 BitmapImage bitmap = new();
                 using InMemoryRandomAccessStream stream = new();
-                await stream.WriteAsync(imageData.AsBuffer());
+                _ = await stream.WriteAsync(imageData.AsBuffer());
                 stream.Seek(0);
                 await bitmap.SetSourceAsync(stream);
                 return bitmap;

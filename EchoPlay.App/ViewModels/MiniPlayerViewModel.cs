@@ -189,7 +189,7 @@ namespace EchoPlay.App.ViewModels
             // In Tests gibt es keinen UI-Thread, daher direkt aktualisieren.
             if (_dispatcherQueue is not null)
             {
-                _dispatcherQueue.TryEnqueue(UpdateFromState);
+                _ = _dispatcherQueue.TryEnqueue(UpdateFromState);
             }
             else
             {
@@ -202,7 +202,7 @@ namespace EchoPlay.App.ViewModels
             // ErrorOccurred kann aus beliebigen Threads kommen – UI-Dispatch erforderlich
             if (_dispatcherQueue is not null)
             {
-                _dispatcherQueue.TryEnqueue(() => ErrorMessage = message);
+                _ = _dispatcherQueue.TryEnqueue(() => ErrorMessage = message);
             }
             else
             {

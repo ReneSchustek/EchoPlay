@@ -178,7 +178,7 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 _setIsLoading(false);
-                _fileLoadCompletedSource?.TrySetResult(true);
+                _ = _fileLoadCompletedSource?.TrySetResult(true);
             }
         }
 
@@ -212,7 +212,7 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 _setIsLoading(false);
-                _fileLoadCompletedSource?.TrySetResult(true);
+                _ = _fileLoadCompletedSource?.TrySetResult(true);
             }
         }
 
@@ -376,14 +376,14 @@ namespace EchoPlay.App.ViewModels
             string query = _ctx.LookupCoordinator.BuildAutoLookupQuery(_fileListVM.CurrentFolderPath);
             if (string.IsNullOrWhiteSpace(query))
             {
-                _autoLookupCompletedSource.TrySetResult(true);
+                _ = _autoLookupCompletedSource.TrySetResult(true);
                 return;
             }
 
             using IDisposable? onlineScope = await _ctx.OnlineAccessGuard.RequestOnlineAccessAsync();
             if (onlineScope is null)
             {
-                _autoLookupCompletedSource.TrySetResult(true);
+                _ = _autoLookupCompletedSource.TrySetResult(true);
                 return;
             }
 
@@ -427,7 +427,7 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 _setIsLookingUp(false);
-                _autoLookupCompletedSource?.TrySetResult(true);
+                _ = _autoLookupCompletedSource?.TrySetResult(true);
             }
         }
 

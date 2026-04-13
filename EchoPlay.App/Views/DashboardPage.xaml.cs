@@ -125,7 +125,7 @@ namespace EchoPlay.App.Views
             if (delta != 0)
             {
                 double targetOffset = MainScrollViewer.VerticalOffset - delta;
-                MainScrollViewer.ChangeView(null, targetOffset, null, true);
+                _ = MainScrollViewer.ChangeView(null, targetOffset, null, true);
                 e.Handled = true;
             }
         }
@@ -154,11 +154,11 @@ namespace EchoPlay.App.Views
             scrollViewer.ViewChanged += OnFavoritesViewChanged;
             scrollViewer.SizeChanged += (_, _) => DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
 
-            scrollViewer.RegisterPropertyChangedCallback(
+            _ = scrollViewer.RegisterPropertyChangedCallback(
                 ScrollViewer.ScrollableWidthProperty,
                 (_, _) => UpdateFavoritesArrowVisibility(scrollViewer));
 
-            DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
+            _ = DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace EchoPlay.App.Views
                 ? Math.Max(0, scrollViewer.HorizontalOffset - scrollStep)
                 : scrollViewer.HorizontalOffset + scrollStep;
 
-            scrollViewer.ChangeView(targetOffset, null, null);
+            _ = scrollViewer.ChangeView(targetOffset, null, null);
         }
 
         /// <summary>

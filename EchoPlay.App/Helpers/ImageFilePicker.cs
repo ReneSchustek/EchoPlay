@@ -44,9 +44,9 @@ namespace EchoPlay.App.Helpers
                 return null;
             }
 
-            string mimeType = file.FileType.ToLowerInvariant() switch
+            string mimeType = file.FileType.ToUpperInvariant() switch
             {
-                ".png" => "image/png",
+                ".PNG" => "image/png",
                 _      => "image/jpeg"
             };
 

@@ -63,6 +63,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes)
         {
+            ArgumentNullException.ThrowIfNull(card);
             if (!await ConfirmOverwriteIfNeededAsync(card.CoverImage is not null))
             {
                 return;
@@ -77,6 +78,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes)
         {
+            ArgumentNullException.ThrowIfNull(card);
             if (!await ConfirmOverwriteIfNeededAsync(card.CoverImage is not null))
             {
                 return;
@@ -91,6 +93,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit)
         {
+            ArgumentNullException.ThrowIfNull(hit);
             byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl);
             if (bytes is null)
             {
@@ -106,6 +109,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit)
         {
+            ArgumentNullException.ThrowIfNull(hit);
             byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl);
             if (bytes is null)
             {
@@ -180,7 +184,7 @@ namespace EchoPlay.App.Services
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                return await client.GetByteArrayAsync(url);
+                return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute));
             }
             catch (HttpRequestException)
             {

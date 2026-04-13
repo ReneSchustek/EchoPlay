@@ -2,6 +2,7 @@ using EchoPlay.Core.Models.Import;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Windows.Input;
+using System;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -20,6 +21,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="importCommand">Befehl zum Importieren dieser Serie.</param>
         public ImportResultViewModel(ImportSeries series, bool isAlreadyImported, ICommand importCommand)
         {
+            ArgumentNullException.ThrowIfNull(series);
             Series            = series;
             Title             = series.Title;
             ScoreText         = $"Score: {series.Score}";

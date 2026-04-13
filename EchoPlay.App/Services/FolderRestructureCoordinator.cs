@@ -4,6 +4,7 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -57,6 +58,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task<int> ExecuteAsync(RestructurePreviewDisplay preview)
         {
+            ArgumentNullException.ThrowIfNull(preview);
             RestructurePreview original = preview.Original;
 
             return await Task.Run(() =>

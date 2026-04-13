@@ -59,7 +59,7 @@ namespace EchoPlay.App.ViewModels
             get => _isModified;
             set
             {
-                SetProperty(ref _isModified, value);
+                _ = SetProperty(ref _isModified, value);
                 OnPropertyChanged(nameof(IsModifiedVisibility));
             }
         }

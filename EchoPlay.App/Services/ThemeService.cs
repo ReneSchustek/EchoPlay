@@ -55,6 +55,7 @@ namespace EchoPlay.App.Services
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public ThemeService(IAppSettingsDataService settingsService, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _settingsService = settingsService;
             _logger = loggerFactory.CreateLogger(nameof(ThemeService));
         }
@@ -106,7 +107,7 @@ namespace EchoPlay.App.Services
 
             if (_activeThemeDictionary is not null)
             {
-                Application.Current.Resources.MergedDictionaries.Remove(_activeThemeDictionary);
+                _ = Application.Current.Resources.MergedDictionaries.Remove(_activeThemeDictionary);
                 _activeThemeDictionary = null;
             }
 
@@ -226,7 +227,7 @@ namespace EchoPlay.App.Services
 
             foreach (ResourceDictionary dict in toRemove)
             {
-                merged.Remove(dict);
+                _ = merged.Remove(dict);
             }
         }
 

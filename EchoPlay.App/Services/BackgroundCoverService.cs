@@ -47,6 +47,7 @@ namespace EchoPlay.App.Services
             BackgroundCoverServiceOptions options,
             ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _coverService = coverService;
             _httpClientFactory = httpClientFactory;
@@ -627,7 +628,7 @@ namespace EchoPlay.App.Services
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                byte[] data = await client.GetByteArrayAsync(url).ConfigureAwait(false);
+                byte[] data = await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute)).ConfigureAwait(false);
                 return data.Length > 0 ? data : null;
             }
             catch (Exception ex)

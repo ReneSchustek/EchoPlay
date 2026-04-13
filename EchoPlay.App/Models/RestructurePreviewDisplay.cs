@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 
 namespace EchoPlay.App.Models
 {
@@ -20,6 +21,7 @@ namespace EchoPlay.App.Models
         /// <param name="original">Das vom Restrukturierungs-Service erzeugte Original-Preview.</param>
         public RestructurePreviewDisplay(EchoPlay.LocalLibrary.Models.RestructurePreview original)
         {
+            ArgumentNullException.ThrowIfNull(original);
             _original = original;
 
             List<RestructureActionDisplay> displays = new(original.Actions.Count);

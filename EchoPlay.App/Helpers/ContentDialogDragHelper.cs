@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
+using System;
 
 namespace EchoPlay.App.Helpers
 {
@@ -28,6 +29,7 @@ namespace EchoPlay.App.Helpers
         /// <param name="dialog">Der verschiebbar zu machende Dialog.</param>
         public static void MakeDraggable(ContentDialog dialog)
         {
+            ArgumentNullException.ThrowIfNull(dialog);
             TranslateTransform transform = new();
             Point dragStart = default;
             bool isDragging = false;
@@ -51,7 +53,7 @@ namespace EchoPlay.App.Helpers
 
                     isDragging = true;
                     dragStart = position;
-                    ((UIElement)s).CapturePointer(e.Pointer);
+                    _ = ((UIElement)s).CapturePointer(e.Pointer);
                 };
 
                 dialog.PointerMoved += (s, e) =>

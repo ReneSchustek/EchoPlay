@@ -334,7 +334,7 @@ namespace EchoPlay.App.Services
             {
                 if (bestParser.TryParse(name, out int? number, out _) && number is > 0)
                 {
-                    foundNumbers.Add(number.Value);
+                    _ = foundNumbers.Add(number.Value);
                     if (number.Value > maxNumber) maxNumber = number.Value;
                 }
             }
@@ -413,7 +413,7 @@ namespace EchoPlay.App.Services
             {
                 if (bestParser.TryParse(name, out int? number, out _) && number is > 0)
                 {
-                    foundNumbers.Add(number.Value);
+                    _ = foundNumbers.Add(number.Value);
                     if (number.Value > maxNumber)
                     {
                         maxNumber = number.Value;

@@ -128,6 +128,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="card">Die auszuwählende Serie aus der aktuellen Sicht.</param>
         public void SelectSeries(SeriesCardViewModel card)
         {
+            ArgumentNullException.ThrowIfNull(card);
             foreach (SeriesCardViewModel c in _allSeries)
             {
                 c.IsSelectedInAccordion = false;

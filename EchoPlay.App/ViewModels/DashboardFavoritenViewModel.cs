@@ -82,6 +82,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="items">Die vom Top-VM vorbereiteten, bereits sortierten Kacheln.</param>
         public void SetItems(IReadOnlyList<FavoriteSeriesCardViewModel> items)
         {
+            ArgumentNullException.ThrowIfNull(items);
             foreach (FavoriteSeriesCardViewModel card in items)
             {
                 card.RemovedFromFavorites += OnSeriesRemovedFromFavorites;
@@ -113,7 +114,7 @@ namespace EchoPlay.App.ViewModels
             if (cardToRemove is not null)
             {
                 cardToRemove.RemovedFromFavorites -= OnSeriesRemovedFromFavorites;
-                _favoriteSeries.Remove(cardToRemove);
+                _ = _favoriteSeries.Remove(cardToRemove);
                 OnPropertyChanged(nameof(FavoriteSectionVisibility));
                 FavoritesChanged?.Invoke();
             }

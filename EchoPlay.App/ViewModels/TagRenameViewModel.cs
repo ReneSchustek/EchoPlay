@@ -3,6 +3,7 @@ using EchoPlay.App.Models;
 using EchoPlay.TagManager.Models;
 using Microsoft.UI.Xaml;
 using System.Collections.Generic;
+using System;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -71,6 +72,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="items">Die vom <see cref="EchoPlay.TagManager.Abstractions.IFileRenameService"/> berechneten Items.</param>
         public void SetPreviewItems(IReadOnlyList<RenamePreviewItem> items)
         {
+            ArgumentNullException.ThrowIfNull(items);
             _renamePreviewItems = items;
 
             List<RenamePreviewDisplay> displays = new(items.Count);

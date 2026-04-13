@@ -58,7 +58,7 @@ namespace EchoPlay.App.Services
             }
             finally
             {
-                semaphore.Release();
+                _ = semaphore.Release();
             }
         }
     }

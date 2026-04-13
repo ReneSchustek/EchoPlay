@@ -410,6 +410,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Die geladene Entität.</param>
         public void LoadFrom(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             _isBatchLoading = true;
             try
             {
@@ -426,6 +427,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Ziel-Entität.</param>
         public void WriteTo(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             // 0 ist erlaubt – bedeutet sofortige Bereinigung aller soft-gelöschten Einträge
             settings.DbPurgeDays           = Math.Max(0, DbPurgeDays);
             settings.ClearCacheOnNextStart = ClearCacheOnNextStart;

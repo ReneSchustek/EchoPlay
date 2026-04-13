@@ -169,6 +169,7 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task ImportAsync(ImportSeries series)
         {
+            ArgumentNullException.ThrowIfNull(series);
             if (IsImporting)
             {
                 return;
@@ -190,7 +191,7 @@ namespace EchoPlay.App.ViewModels
                     _statusBar?.SetScanProgress(text);
                 });
 
-                await _importService.ImportAsync(series, progress);
+                _ = await _importService.ImportAsync(series, progress);
                 StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportSuccess"), series.Title);
                 ImportSucceeded?.Invoke(this, EventArgs.Empty);
             }

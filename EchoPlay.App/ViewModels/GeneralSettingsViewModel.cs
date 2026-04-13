@@ -182,6 +182,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Die geladene Entität.</param>
         public void LoadFrom(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             _isBatchLoading = true;
             try
             {
@@ -206,6 +207,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Die Entität, in die geschrieben wird.</param>
         public void WriteTo(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             settings.ActiveTheme      = ActiveTheme;
             settings.ActiveLanguage   = ActiveLanguage;
             // Mindestwert 7, Maximum 365 – unter einer Woche sind Neuerscheinungen kaum sinnvoll

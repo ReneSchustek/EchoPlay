@@ -66,7 +66,7 @@ namespace EchoPlay.App.Services
                 return;
             }
 
-            frame.Navigate(pageType, parameter);
+            _ = frame.Navigate(pageType, parameter);
         }
 
         /// <inheritdoc/>

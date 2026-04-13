@@ -120,6 +120,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="tracks">Die rohen Tracks aus der DB (sortiert oder unsortiert).</param>
         public void SetTracks(LocalEpisodeCardViewModel episode, IReadOnlyList<LocalTrack> tracks)
         {
+            ArgumentNullException.ThrowIfNull(tracks);
+            ArgumentNullException.ThrowIfNull(episode);
             SelectedEpisode = episode;
 
             List<LocalTrackRowViewModel> trackRows = [];

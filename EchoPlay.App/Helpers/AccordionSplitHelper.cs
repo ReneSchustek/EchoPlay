@@ -54,6 +54,7 @@ namespace EchoPlay.App.Helpers
         public static (IReadOnlyList<T> Top, IReadOnlyList<T> Bottom) Split<T>(
             IReadOnlyList<T> source, int splitIndex)
         {
+            ArgumentNullException.ThrowIfNull(source);
             if (splitIndex <= 0) return (Array.Empty<T>(), source);
             if (splitIndex >= source.Count) return (source, Array.Empty<T>());
 

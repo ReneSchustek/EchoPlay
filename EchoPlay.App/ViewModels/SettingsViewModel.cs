@@ -540,7 +540,7 @@ namespace EchoPlay.App.ViewModels
             Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = languageCode;
 
             // Neustart des MSIX-Pakets – danach lädt die App alle .resw-Ressourcen in der neuen Sprache
-            Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
+            _ = Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
         }
 
         // ── Pass-Through-Methoden ──────────────────────────────────────────────

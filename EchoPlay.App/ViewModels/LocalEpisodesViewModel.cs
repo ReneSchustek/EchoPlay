@@ -188,6 +188,7 @@ namespace EchoPlay.App.ViewModels
             HashSet<Guid> completedIds,
             HashSet<Guid> inProgressIds)
         {
+            ArgumentNullException.ThrowIfNull(artist);
             // Laufende Cover-Tasks der vorherigen Serie abbrechen – verhindert,
             // dass alte Hintergrund-Tasks Cover auf bereits ersetzte Karten setzen.
             if (_coverCts is not null)
@@ -436,7 +437,7 @@ namespace EchoPlay.App.ViewModels
                     }
                     finally
                     {
-                        throttle.Release();
+                        _ = throttle.Release();
                     }
                 }, cancellationToken));
             }
@@ -548,8 +549,8 @@ namespace EchoPlay.App.ViewModels
 
             // Kachel sofort aktualisieren – ohne Serienwechsel und Rückkehr.
             // Haken erscheint per PropertyChanged auf IsCompleted → CompletedCheckVisibility.
-            _completedEpisodeIds.Add(episodeId);
-            _inProgressEpisodeIds.Remove(episodeId);
+            _ = _completedEpisodeIds.Add(episodeId);
+            _ = _inProgressEpisodeIds.Remove(episodeId);
             LocalEpisodeCardViewModel? card = _allEpisodes.FirstOrDefault(c => c.EpisodeId == episodeId);
             if (card is not null)
             {
@@ -576,8 +577,8 @@ namespace EchoPlay.App.ViewModels
             }
 
             // Kachel sofort aktualisieren – Haken verschwindet per PropertyChanged.
-            _completedEpisodeIds.Remove(episodeId);
-            _inProgressEpisodeIds.Remove(episodeId);
+            _ = _completedEpisodeIds.Remove(episodeId);
+            _ = _inProgressEpisodeIds.Remove(episodeId);
             LocalEpisodeCardViewModel? card = _allEpisodes.FirstOrDefault(c => c.EpisodeId == episodeId);
             if (card is not null)
             {

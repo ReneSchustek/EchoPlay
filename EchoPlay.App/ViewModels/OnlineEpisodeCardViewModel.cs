@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -44,6 +45,8 @@ namespace EchoPlay.App.ViewModels
             string title,
             DateTime? releaseDate = null,
             bool isCompleted = false,
+            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+                Justification = "providerUrl stammt aus iTunes/Spotify-API und wird als string an UI-Bindings weitergereicht.")]
             string? providerUrl = null,
             IServiceScopeFactory? scopeFactory = null,
             IClock? clock = null,
@@ -77,6 +80,8 @@ namespace EchoPlay.App.ViewModels
         public DateTime? ReleaseDate { get; }
 
         /// <summary>URL zum Öffnen der Folge beim Provider. Null bei lokalen Folgen.</summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
+            Justification = "Property spiegelt den string-Konstruktor-Parameter providerUrl und wird per x:Bind an UI-Elemente gebunden.")]
         public string? ProviderUrl { get; }
 
         /// <summary>Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</summary>
@@ -154,7 +159,7 @@ namespace EchoPlay.App.ViewModels
         {
             if (string.IsNullOrEmpty(ProviderUrl)) return;
 
-            Process.Start(new ProcessStartInfo
+            _ = Process.Start(new ProcessStartInfo
             {
                 FileName        = ProviderUrl,
                 UseShellExecute = true

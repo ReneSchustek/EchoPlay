@@ -254,7 +254,7 @@ namespace EchoPlay.App.ViewModels
         {
             if (_dispatcherQueue is not null)
             {
-                _dispatcherQueue.TryEnqueue(() => _onSeriesSynced(series));
+                _ = _dispatcherQueue.TryEnqueue(() => _onSeriesSynced(series));
             }
             else
             {

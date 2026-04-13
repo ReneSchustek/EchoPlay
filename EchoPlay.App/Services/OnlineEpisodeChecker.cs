@@ -317,7 +317,7 @@ namespace EchoPlay.App.Services
                     }
 
                     // Albumname merken – wird für die Fehlende-Folgen-Liste benötigt
-                    episodesByNumber.TryAdd(episodeNumber.Value, album.CollectionName);
+                    _ = episodesByNumber.TryAdd(episodeNumber.Value, album.CollectionName);
 
                     if (episodeNumber.Value > onlineHighest)
                     {

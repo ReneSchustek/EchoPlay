@@ -31,7 +31,7 @@ namespace EchoPlay.App.Services
             };
 
             ContentDialogDragHelper.MakeDraggable(dialog);
-            await dialog.ShowAsync();
+            _ = await dialog.ShowAsync();
         }
     }
 }

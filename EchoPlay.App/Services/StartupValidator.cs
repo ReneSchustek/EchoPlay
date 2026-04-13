@@ -93,7 +93,7 @@ namespace EchoPlay.App.Services
 
                 ICoverImageDataService coverImageService =
                     scope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
-                await coverImageService.ClearAllAsync();
+                _ = await coverImageService.ClearAllAsync();
 
                 _logger.Info("Cache geleert (Neuerscheinungen + Cover) – Neuaufbau läuft.");
             }
@@ -278,7 +278,7 @@ namespace EchoPlay.App.Services
                 }
 
                 // Lesezugriff testen – löst IOException bei nicht erreichbaren Netzlaufwerken aus
-                Directory.GetDirectories(path);
+                _ = Directory.GetDirectories(path);
                 return true;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

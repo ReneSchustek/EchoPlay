@@ -147,7 +147,7 @@ namespace EchoPlay.App
 
                 if (args.SelectedItem is NavigationViewItem item)
                 {
-                    ViewModel.NavigateToMenuTag(item.Tag as string);
+                    _ = ViewModel.NavigateToMenuTag(item.Tag as string);
                 }
             });
         }
@@ -171,7 +171,7 @@ namespace EchoPlay.App
                     return;
                 }
 
-                ViewModel.GoBack();
+                _ = ViewModel.GoBack();
             });
         }
 

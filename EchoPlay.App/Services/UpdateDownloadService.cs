@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -34,6 +35,8 @@ namespace EchoPlay.App.Services
         /// <param name="onProgress">Fortschritts-Callback (0.0–1.0). Null wenn kein Fortschritt gewünscht.</param>
         /// <param name="cancellationToken">Abbruch-Token für den Download.</param>
         /// <returns>True wenn der Installer gestartet wurde, false bei Fehler.</returns>
+        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "downloadUrl kommt aus externem Release-Feed (GitHub) und wird als string weitergereicht.")]
         public async Task<bool> DownloadAndInstallAsync(
             string downloadUrl,
             string version,
@@ -48,10 +51,10 @@ namespace EchoPlay.App.Services
 
                 HttpClient httpClient = _httpClientFactory.CreateClient("UpdateDownload");
                 using HttpResponseMessage response = await httpClient
-                    .GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                    .GetAsync(new Uri(downloadUrl, UriKind.Absolute), HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                     .ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
                 long? totalBytes = response.Content.Headers.ContentLength;
                 long downloadedBytes = 0;
@@ -76,7 +79,7 @@ namespace EchoPlay.App.Services
                 }
 
                 // Installer starten – die App beendet sich danach
-                Process.Start(new ProcessStartInfo
+                _ = Process.Start(new ProcessStartInfo
                 {
                     FileName = tempPath,
                     UseShellExecute = true

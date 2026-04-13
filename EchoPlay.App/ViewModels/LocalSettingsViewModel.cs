@@ -293,6 +293,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Die geladene Entität.</param>
         public void LoadFrom(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             _isBatchLoading = true;
             try
             {
@@ -311,6 +312,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Ziel-Entität.</param>
         public void WriteTo(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             settings.LocalLibraryEnabled  = LocalLibraryEnabled;
             settings.LocalLibraryRootPath = string.IsNullOrWhiteSpace(LocalLibraryRootPath) ? null : LocalLibraryRootPath;
             settings.EpisodeFolderPattern = EpisodeFolderPattern;

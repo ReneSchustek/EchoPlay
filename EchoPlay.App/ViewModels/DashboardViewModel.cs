@@ -62,6 +62,7 @@ namespace EchoPlay.App.ViewModels
             ILocalizationService? localizationService = null,
             IClock? clock = null)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory              = scopeFactory;
             _confirmationDialogService = confirmationDialogService;
             _localizationService       = localizationService;

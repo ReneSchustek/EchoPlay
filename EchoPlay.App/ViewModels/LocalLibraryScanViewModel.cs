@@ -207,6 +207,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn der Nutzer den Ordner-Hinzufügen-Button drückt.
         /// Die Page reagiert auf das Event und ruft <see cref="AddFolderAsync"/> mit dem Fenster-Handle auf.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal ohne Nutzdaten: die Page ergaenzt das HWND erst im Handler; ein EventArgs-Wrapper brachte keinen Mehrwert, da MVVM-strict keine HWND-Referenz ins VM lassen will.")]
         public event Action? AddFolderRequested;
 
         /// <summary>
@@ -214,6 +215,7 @@ namespace EchoPlay.App.ViewModels
         /// z.B. nach Abschluss eines Scans, einer Neu-Initialisierung oder einem Ordnerpicker-Ergebnis.
         /// Das übergeordnete ViewModel reagiert darauf und füllt Kacheln, Episoden und Tracks neu.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Async Parent/Sub-VM-Bridge: der Parent-VM-Handler ist asynchron (Re-Load der Kacheln/Episoden/Tracks); Func<Task> erlaubt natives 'await' auf den Subscriber, was EventHandler<T> nicht leistet.")]
         public event Func<Task>? LibraryReloaded;
 
         /// <summary>
@@ -221,6 +223,7 @@ namespace EchoPlay.App.ViewModels
         /// Das übergeordnete ViewModel leert daraufhin seine Listen, damit der Nutzer während
         /// des Scans nicht auf veraltete Kacheln blickt.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Parent-VM-Bridge ohne Nutzdaten: leert Listen vor Scan-Beginn; Action ist semantisch klar, EventArgs-Wrapper waere ohne Inhalt ueberfluessig.")]
         public event Action? ScanStarting;
 
         // ── Aktivierung ──────────────────────────────────────────────────────────
@@ -271,6 +274,7 @@ namespace EchoPlay.App.ViewModels
         /// nach Abschluss meldet das Sub-VM über <see cref="LibraryReloaded"/>, damit das
         /// übergeordnete ViewModel Episodenzähler und Cover konsistent neu lädt.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliotheks-Scan vom Command: IO-/DB-/TagLib-Fehler der vielen gescannten Ordner werden geloggt und der Nutzer sieht die Fehlermeldung in 'StatusMessage', damit ein einzelner defekter Ordner den Scan-Command nicht reisst.")]
         private async Task ScanAsync()
         {
             if (IsScanning)
@@ -337,6 +341,7 @@ namespace EchoPlay.App.ViewModels
         /// Online-importierte Serien behalten ihre Metadaten – nur der lokale Pfad und
         /// die Track-Zuordnungen werden gelöscht. Wiedergabestatus bleibt in jedem Fall erhalten.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuinitialisierung vom Command: DB-/IO-Fehler beim Leeren und Neuanlegen der Bibliothek duerfen den Command nicht reissen; Fehler werden als Status angezeigt.")]
         private async Task ReInitializeAsync()
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(

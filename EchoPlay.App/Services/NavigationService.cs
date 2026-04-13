@@ -18,8 +18,8 @@ namespace EchoPlay.App.Services
     {
         // Mapping logischer Ziele auf Page-Typen. Zentral an einer Stelle,
         // damit beim Hinzufügen einer neuen Seite nur hier und im Enum etwas geändert wird.
-        private static readonly IReadOnlyDictionary<NavigationTarget, Type> TargetMap =
-            new Dictionary<NavigationTarget, Type>
+        private static readonly Dictionary<NavigationTarget, Type> TargetMap =
+            new()
             {
                 [NavigationTarget.Dashboard]       = typeof(DashboardPage),
                 [NavigationTarget.MediathekOnline] = typeof(MediathekOnlinePage),

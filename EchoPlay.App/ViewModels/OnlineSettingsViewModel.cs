@@ -242,6 +242,7 @@ namespace EchoPlay.App.ViewModels
             SpotifyStatus = IsSpotifyLinked ? "Verknüpft" : "Nicht verknüpft";
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Spotify-Credential-Test: HTTP-/OAuth-/DPAPI-Fehler beim Token-Abruf und beim verschluesselten Speichern duerfen den Command nicht reissen; der Status wird dem Nutzer in 'SpotifyStatus' angezeigt.")]
         private async Task TestAndSaveSpotifyAsync()
         {
             if (string.IsNullOrWhiteSpace(_spotifyClientId) || string.IsNullOrWhiteSpace(_spotifyClientSecret))

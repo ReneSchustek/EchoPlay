@@ -119,6 +119,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn der Empty-State-Button „Serie suchen" geklickt wurde.
         /// Die Page setzt den Fokus auf die Suchbox – im VM existiert kein WinUI-Konzept.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Fokus-Signal ohne Nutzdaten: die Page setzt Focus auf die Suchbox, das VM kennt keinen FocusManager; Action ist semantisch klarer als leerer EventArgs.")]
         public event Action? FocusSearchRequested;
 
         // ── Commands ────────────────────────────────────────────────────────────

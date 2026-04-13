@@ -32,6 +32,7 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das ViewModel und registriert sich für Zustandsänderungen des PlayerService.
         /// </summary>
         /// <param name="playerService">Der zentrale Wiedergabe-Service.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch ausserhalb von WinUI zu konstruieren.")]
         public MiniPlayerViewModel(IPlayerService playerService)
         {
             _playerService = playerService;

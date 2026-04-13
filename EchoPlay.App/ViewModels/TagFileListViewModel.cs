@@ -85,6 +85,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn sich die Auswahl geändert hat – das Top-VM lädt daraufhin
         /// die Tag-Felder der neuen Auswahl und aktualisiert den Editor-Zustand.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Sub-VM -> Top-VM-Bridge: meldet die aktuelle Multi-Auswahl an den Orchestrator (LoadMultipleFileTagsAsync); Action<IReadOnlyList<...>> bleibt semantisch klarer als ein EventArgs-Wrapper mit identischem Inhalt.")]
         public event Action<IReadOnlyList<TagFileItemViewModel>>? SelectionChanged;
 
         /// <summary>

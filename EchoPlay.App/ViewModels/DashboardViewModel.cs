@@ -325,7 +325,7 @@ namespace EchoPlay.App.ViewModels
         /// um N+1-Abfragen zu vermeiden.
         /// </summary>
         private async Task<IReadOnlyList<UnheardSeriesCardViewModel>> BuildUnheardSeriesAsync(
-            IReadOnlyList<Series> favoriteSeries,
+            List<Series> favoriteSeries,
             IEpisodeDataService episodeService,
             Dictionary<Guid, PlaybackState> stateByEpisodeId)
         {

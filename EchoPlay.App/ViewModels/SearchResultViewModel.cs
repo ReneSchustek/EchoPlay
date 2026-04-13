@@ -225,6 +225,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Führt den Import durch und aktualisiert danach den Status im ViewModel.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Import einer Trefferkarte: HTTP-/Parser-/DB-Fehler werden als Nutzer-Status gespiegelt, damit der Suche-Ergebnis-Flow nicht abbricht.")]
         private async Task ImportAsync()
         {
             if (_isImporting)
@@ -265,6 +266,7 @@ namespace EchoPlay.App.ViewModels
         /// Vermeidet doppelten Download (einmal für Anzeige, einmal für Analyse).
         /// Die WinRT-COM-Typen für die Analyse leben in <see cref="Services.CoverBrightnessAnalyzer"/>.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse fuer eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler duerfen die Kachel nicht zerstoeren – der Platzhalter bleibt stehen.")]
         private async Task LoadCoverAndAnalyzeAsync(string coverUrl)
         {
             try

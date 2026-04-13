@@ -60,6 +60,7 @@ namespace EchoPlay.App.Services
             Stop();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Enrichment-Schleife: HTTP-Fehler (Spotify/AppleMusic), DB-Concurrency-Fehler oder Provider-Timeouts duerfen die Schleife nicht beenden; Fehler werden als Error geloggt und der naechste Intervall-Zyklus faehrt fort.")]
         private async Task RunLoopAsync(CancellationToken ct)
         {
             // Erster Lauf nach kurzem Delay (App-Start nicht blockieren)

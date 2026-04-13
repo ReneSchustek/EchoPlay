@@ -37,6 +37,7 @@ namespace EchoPlay.App.Helpers
         /// <param name="searchFunc">Suchfunktion – meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.</param>
         /// <param name="xamlRoot">XamlRoot für den ContentDialog – kommt von der aufrufenden Page.</param>
         /// <returns>Das ausgewählte Cover oder null bei Abbruch.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne TriggerSearchAsync-Wrapper-Funktion faengt alle Fehler der externen Cover-Suche (HTTP/iTunes/CoverArtArchive-Provider) ab und zeigt lediglich eine neutrale Statusmeldung, damit der Dialog offen bleibt.")]
         public static async Task<CoverSearchHit?> ShowAsync(
             string initialQuery,
             Func<string, CancellationToken, Task<IReadOnlyList<CoverSearchHit>>> searchFunc,

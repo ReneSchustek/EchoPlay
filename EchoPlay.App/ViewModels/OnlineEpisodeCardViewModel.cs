@@ -197,6 +197,7 @@ namespace EchoPlay.App.ViewModels
         /// Speichert den Gehört-Status in der Datenbank.
         /// Erstellt einen neuen PlaybackState wenn noch keiner existiert.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Toggle-Persistenz des 'Abgeschlossen'-Status: DbContext-/Concurrency-Fehler duerfen die Kachel nicht zerstoeren; der Fehler wird geloggt, die naechste Nutzeraktion kann es erneut versuchen.")]
         private async Task PersistCompletedStatusAsync()
         {
             if (_scopeFactory is null) return;

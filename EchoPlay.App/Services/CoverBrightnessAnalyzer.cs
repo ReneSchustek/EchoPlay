@@ -50,6 +50,7 @@ namespace EchoPlay.App.Services
         /// <see langword="true"/> wenn der Bereich hell ist (Helligkeit > 128),
         /// <see langword="false"/> wenn dunkel. Null bei Fehler.
         /// </returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Helligkeitsanalyse via WinRT BitmapDecoder: kaputte JPEG/PNG-Header, unsupportete Pixel-Formate oder COM-Fehler aus dem WIC-Stack werden zu 'null' normalisiert – der Aufrufer behandelt das als 'Helligkeit unbekannt'.")]
         public static async Task<bool?> AnalyzeBrightnessFromBytesAsync(byte[] coverBytes)
         {
             try

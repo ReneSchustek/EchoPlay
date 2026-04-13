@@ -28,6 +28,7 @@ namespace EchoPlay.App.Services
         /// Zeigt einen bestimmten Fortschrittswert unter dem Taskleisten-Symbol an.
         /// </summary>
         /// <param name="percentComplete">Fortschritt in Prozent (0–100).</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3 ist Win32-COM-Interop: native Shell-Fehler (RPC_E_*, HRESULT-Fehler) aus SetProgressState/SetProgressValue duerfen den Aufrufer nicht reissen. Taskleisten-Fortschritt ist optisch, '_taskbar' wird genullt, damit Folgeaufrufe still abbrechen.")]
         public void SetProgress(double percentComplete)
         {
             ITaskbarList3? taskbar = GetTaskbar();
@@ -53,6 +54,7 @@ namespace EchoPlay.App.Services
         /// Zeigt einen unbestimmten (animierten) Fortschrittsbalken an.
         /// Geeignet für Phasen, in denen die Gesamtdauer noch nicht bekannt ist.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3.SetProgressState (Win32-COM): native Shell-Fehler duerfen den Aufrufer nicht reissen; '_taskbar' wird genullt, damit Folgeaufrufe still abbrechen.")]
         public void SetIndeterminate()
         {
             ITaskbarList3? taskbar = GetTaskbar();
@@ -76,6 +78,7 @@ namespace EchoPlay.App.Services
         /// Entfernt den Fortschrittsbalken aus der Taskleiste.
         /// Wird nach Abschluss des Scans aufgerufen.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3.SetProgressState (Win32-COM): native Shell-Fehler beim Zuruecksetzen des Fortschrittsbalkens duerfen den Aufrufer nicht reissen.")]
         public void Clear()
         {
             ITaskbarList3? taskbar = GetTaskbar();
@@ -101,6 +104,7 @@ namespace EchoPlay.App.Services
         /// Gibt die COM-Instanz zurück, legt sie beim ersten Aufruf an.
         /// Bei Fehlern (z.B. kein Shell-Support) wird null zurückgegeben.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Einmalige COM-Activation von ITaskbarList3: auf Systemen ohne passende Shell-Unterstuetzung kann 'new TaskbarInstance()' oder 'HrInit' scheitern (COMException/InvalidCastException); das Feature wird dann still deaktiviert.")]
         private ITaskbarList3? GetTaskbar()
         {
             if (_initAttempted)

@@ -116,6 +116,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Hauptschleife: einmaliger Durchlauf beim Start, dann periodisch.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Scan-Schleife: TagLib-, DB-, HTTP- oder IO-Fehler einer einzelnen Iteration duerfen die Cover-Schleife nicht beenden; Fehler werden als Warning geloggt und die naechste Iteration faehrt fort.")]
         private async Task RunAsync(CancellationToken ct)
         {
             // Kurz warten, damit die App vollständig initialisiert ist
@@ -269,6 +270,7 @@ namespace EchoPlay.App.Services
         /// fehlende <see cref="Episode.CoverImageUrl"/> auf bestehenden Episoden nach.
         /// Überspringt Serien bei denen alle Episoden bereits eine URL haben.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "URL-Nachtrag pro Serie: HTTP- oder API-Fehler (Spotify/AppleMusic) einer Serie duerfen den Batch fuer die restlichen Serien nicht abbrechen; Einzelfehler werden als Warning geloggt.")]
         private async Task<int> UpdateMissingCoverUrlsAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -623,6 +625,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt Bilddaten von einer URL. Null bei Fehler.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, Timeout-, TLS- oder Redirect-Fehler beim Laden einzelner Cover-URLs werden alle zu 'null' normalisiert, damit der Aufrufer die Episode ueberspringen und mit anderen weitermachen kann.")]
         private async Task<byte[]?> DownloadSafeAsync(string url)
         {
             try

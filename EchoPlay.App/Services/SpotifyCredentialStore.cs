@@ -30,6 +30,7 @@ namespace EchoPlay.App.Services
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("SpotifyCredentialStore");
         }

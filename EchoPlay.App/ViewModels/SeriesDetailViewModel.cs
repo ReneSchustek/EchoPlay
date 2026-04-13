@@ -600,6 +600,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="episode">Die Episode deren Cover geladen wird.</param>
         /// <returns>Das geladene Cover oder null wenn keins vorhanden.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Aufbau pro Episode: DB-/IO-/Bild-Dekodier-Fehler einer einzelnen Episode duerfen die Detailansicht nicht stoeren – 'null' fuehrt zum Serien-Fallback-Cover.")]
         private async Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode)
         {
             // DB-Cover über CoverService laden (CoverImages-Tabelle)
@@ -655,6 +656,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="series">Die Serie deren Cover als Fallback dient.</param>
         /// <returns>Das geladene Cover oder null.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Fallback-Serien-Cover-Aufbau: DB-/IO-/Bild-Dekodier-Fehler duerfen die Detailansicht nicht stoeren – 'null' fuehrt zum Platzhalter-Cover.")]
         private async Task<BitmapImage?> BuildSeriesCoverAsync(Series? series)
         {
             if (series is null)

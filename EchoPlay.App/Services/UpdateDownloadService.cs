@@ -37,6 +37,7 @@ namespace EchoPlay.App.Services
         /// <returns>True wenn der Installer gestartet wurde, false bei Fehler.</returns>
         [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
             Justification = "downloadUrl kommt aus externem Release-Feed (GitHub) und wird als string weitergereicht.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Setup-Download+Start: HTTP-Fehler, IO-Fehler beim Schreiben der Temp-Datei oder Win32Exception aus 'Process.Start' duerfen den App-Start nicht stoeren – false signalisiert 'Download fehlgeschlagen, Nutzer kann spaeter erneut versuchen'.")]
         public async Task<bool> DownloadAndInstallAsync(
             string downloadUrl,
             string version,

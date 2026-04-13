@@ -3,6 +3,7 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 using AppCoverService = EchoPlay.App.Services.CoverService;
 using System.Collections.Generic;
 using System.Threading;
@@ -21,6 +22,7 @@ namespace EchoPlay.App.Tests.Services
         private static EpisodeCoverCoordinator BuildCoordinator(FakeCoverSearchService searchService)
         {
             ServiceCollection services = new();
+            services.AddHttpClient();
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
@@ -29,7 +31,8 @@ namespace EchoPlay.App.Tests.Services
                 searchService,
                 new AppCoverService(scopeFactory, new FakeLoggerFactory()),
                 new FakeConfirmationDialogService(),
-                new FakeErrorDialogService());
+                new FakeErrorDialogService(),
+                provider.GetRequiredService<IHttpClientFactory>());
         }
 
         [Fact]

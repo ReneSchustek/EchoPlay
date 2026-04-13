@@ -4,6 +4,7 @@ using EchoPlay.App.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
+using System.Net.Http;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace EchoPlay.App.ViewModels
     /// Das Top-VM hält nur noch Commands, Cross-Cutting-Zustand und die Pass-Through-
     /// Schicht für die unveränderte Page-XAML.
     /// </summary>
-    public sealed class MediathekOnlineViewModel : ObservableObject
+    public sealed class MediathekOnlineViewModel : ObservableObject, IDisposable
     {
         private readonly MediathekOnlineActions _actions;
         private readonly IPageModeGuard? _pageModeGuard;
@@ -42,10 +43,13 @@ namespace EchoPlay.App.ViewModels
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
             IOnlineAccessGuard onlineAccessGuard,
+            IHttpClientFactory httpClientFactory,
+            CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null,
             EpisodeCoverCacheService? coverCacheService = null,
             CoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null,
             IWatchToggleService? watchToggleService = null,
+            IHostRateLimiter? rateLimiter = null,
             IPageModeGuard? pageModeGuard = null,
             EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService = null,
             INavigationService? navigationService = null)
@@ -58,7 +62,7 @@ namespace EchoPlay.App.ViewModels
             EpisodesVM       = new OnlineEpisodesViewModel();
             ProviderSearchVM = new OnlineProviderSearchViewModel();
 
-            _actions = new MediathekOnlineActions(
+            MediathekOnlineActionsContext actionsContext = new(
                 scopeFactory,
                 confirmationDialogService,
                 importService,
@@ -69,6 +73,12 @@ namespace EchoPlay.App.ViewModels
                 coverService!,
                 backgroundCoverService,
                 watchToggleService,
+                httpClientFactory,
+                coverBrightnessAnalyzer,
+                rateLimiter);
+
+            _actions = new MediathekOnlineActions(
+                actionsContext,
                 SeriesVM, EpisodesVM, ProviderSearchVM,
                 setIsLoading:          v => IsLoading = v,
                 setLoadingStatusText:  v => LoadingStatusText = v,
@@ -370,6 +380,12 @@ namespace EchoPlay.App.ViewModels
             {
                 OnPropertyChanged(nameof(EmptyStateVisibility));
             }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _actions.Dispose();
         }
     }
 }

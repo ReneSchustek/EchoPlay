@@ -20,6 +20,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ImportService _importService;
         private readonly IErrorDialogService _errorDialogService;
         private readonly ILocalizationService _localizationService;
+        private readonly CoverBrightnessAnalyzer? _coverBrightnessAnalyzer;
         private readonly SucheViewModel? _parentViewModel;
         private readonly Func<Task>? _onImportCompleted;
 
@@ -35,6 +36,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="isAlreadyImported">Ob die Serie bereits in der lokalen Datenbank vorhanden ist.</param>
         /// <param name="importService">Führt den tatsächlichen Import durch.</param>
         /// <param name="errorDialogService">Zeigt Fehlermeldungen an.</param>
+        /// <param name="localizationService">Für lokalisierte Fehlertexte.</param>
+        /// <param name="coverBrightnessAnalyzer">Analysiert die Cover-Helligkeit und lädt Bilder herunter.</param>
         /// <param name="parentViewModel">
         /// Optionale Referenz auf das übergeordnete SucheViewModel – wird nach
         /// erfolgreichem Hinzufügen benachrichtigt, um den Erfolgshinweis zu zeigen.
@@ -43,23 +46,24 @@ namespace EchoPlay.App.ViewModels
         /// Optionaler Callback nach erfolgreichem Import – z.B. zum Neuladen der Serienliste
         /// in der Online-Mediathek. Wird zusätzlich zu <paramref name="parentViewModel"/> aufgerufen.
         /// </param>
-        /// <param name="localizationService">Für lokalisierte Fehlertexte.</param>
         public SearchResultViewModel(
             ImportSeries importSeries,
             bool isAlreadyImported,
             ImportService importService,
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
+            CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null,
             SucheViewModel? parentViewModel = null,
             Func<Task>? onImportCompleted = null)
         {
-            _importSeries        = importSeries;
-            _importService       = importService;
-            _errorDialogService  = errorDialogService;
-            _localizationService = localizationService;
-            _parentViewModel     = parentViewModel;
-            _onImportCompleted   = onImportCompleted;
-            _isImported          = isAlreadyImported;
+            _importSeries              = importSeries;
+            _importService             = importService;
+            _errorDialogService        = errorDialogService;
+            _localizationService       = localizationService;
+            _coverBrightnessAnalyzer   = coverBrightnessAnalyzer;
+            _parentViewModel           = parentViewModel;
+            _onImportCompleted         = onImportCompleted;
+            _isImported                = isAlreadyImported;
 
             // Bei Album-Ergebnissen: Künstlername als Untertitel anzeigen
             Title       = importSeries.IsAlbumResult && !string.IsNullOrEmpty(importSeries.ArtistName)
@@ -265,7 +269,7 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 // Bytes einmal herunterladen
-                byte[] coverBytes = await Services.CoverBrightnessAnalyzer.DownloadAsync(coverUrl);
+                byte[] coverBytes = await _coverBrightnessAnalyzer!.DownloadAsync(coverUrl);
 
                 // BitmapImage aus den Bytes erstellen (UI-Thread nötig)
                 Microsoft.UI.Xaml.Media.Imaging.BitmapImage image = new();
@@ -276,7 +280,7 @@ namespace EchoPlay.App.ViewModels
                 CoverImage = image;
 
                 // Helligkeit aus den gleichen Bytes analysieren
-                bool? isBright = await Services.CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(coverBytes);
+                bool? isBright = await CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(coverBytes);
 
                 if (isBright.HasValue)
                 {

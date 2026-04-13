@@ -26,17 +26,18 @@ namespace EchoPlay.App.Services
         /// <summary>Maximale Wartezeit für die GitHub-API-Abfrage.</summary>
         private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
 
-        private static readonly HttpClient _httpClient = CreateHttpClient();
-
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServiceScopeFactory _scopeFactory;
 
         /// <summary>
         /// Initialisiert den Service mit der ScopeFactory für DB-Zugriffe.
         /// </summary>
         /// <param name="scopeFactory">Für scoped AppSettings-Abfrage.</param>
-        public UpdateCheckService(IServiceScopeFactory scopeFactory)
+        /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
+        public UpdateCheckService(IServiceScopeFactory scopeFactory, IHttpClientFactory httpClientFactory)
         {
             _scopeFactory = scopeFactory;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -63,7 +64,8 @@ namespace EchoPlay.App.Services
                 using CancellationTokenSource cts = new(RequestTimeout);
                 string url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";
 
-                GitHubRelease? release = await _httpClient
+                HttpClient client = _httpClientFactory.CreateClient("UpdateCheck");
+                GitHubRelease? release = await client
                     .GetFromJsonAsync(url, GitHubJsonContext.Default.GitHubRelease, cts.Token)
                     .ConfigureAwait(false);
 
@@ -136,17 +138,6 @@ namespace EchoPlay.App.Services
         private static Version? GetCurrentVersion()
         {
             return Assembly.GetExecutingAssembly().GetName().Version;
-        }
-
-        /// <summary>
-        /// Erstellt einen HTTP-Client mit korrektem User-Agent für die GitHub-API.
-        /// </summary>
-        private static HttpClient CreateHttpClient()
-        {
-            HttpClient client = new();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateCheck/1.0");
-            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-            return client;
         }
 
         // ── GitHub-API-DTOs ─────────────────────────────────────────────────────

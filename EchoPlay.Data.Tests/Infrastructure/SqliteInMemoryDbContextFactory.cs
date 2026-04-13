@@ -1,12 +1,15 @@
 ﻿using EchoPlay.Data.Context;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {
     /// <summary>
     /// Erzeugt Datenbankkontexte auf Basis von SQLite im Arbeitsspeicher für relationale Test-Szenarien.
     /// </summary>
+    [SuppressMessage("Design", "CA1515:Consider making public types internal",
+        Justification = "Gemeinsam mit DbTestBase und TestDataBuilder als public Test-Infrastruktur gehalten.")]
     public static class SqliteInMemoryDbContextFactory
     {
         /// <summary>
@@ -20,11 +23,11 @@ namespace EchoPlay.Data.Tests.Infrastructure
             connection.Open();
 
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
-            builder.UseSqlite(connection)
+            _ = builder.UseSqlite(connection)
                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
             EchoPlayDbContext context = new(builder.Options);
-            context.Database.EnsureCreated();
+            _ = context.Database.EnsureCreated();
 
             return context;
         }

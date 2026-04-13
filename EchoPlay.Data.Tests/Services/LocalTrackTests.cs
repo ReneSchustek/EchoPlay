@@ -15,19 +15,19 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
-            Context.LocalTracks.Add(new LocalTrack
+            _ = Context.LocalTracks.Add(new LocalTrack
             {
                 EpisodeId = episode.Id,
                 FilePath = @"C:\track1.mp3",
                 TrackNumber = 1
             });
-            Context.LocalTracks.Add(new LocalTrack
+            _ = Context.LocalTracks.Add(new LocalTrack
             {
                 EpisodeId = episode.Id,
                 FilePath = @"C:\track2.mp3",
                 TrackNumber = 2
             });
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             LocalTrackDataService service = new(Context, NullLoggerFactory);
@@ -75,13 +75,13 @@ namespace EchoPlay.Data.Tests.Services
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             // Alte Tracks anlegen
-            Context.LocalTracks.Add(new LocalTrack
+            _ = Context.LocalTracks.Add(new LocalTrack
             {
                 EpisodeId = episode.Id,
                 FilePath = @"C:\old.mp3",
                 TrackNumber = 1
             });
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             // Neue Tracks speichern (ersetzt alte)

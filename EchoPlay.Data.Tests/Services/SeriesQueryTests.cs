@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Tests.Services
             // Das Soft-Delete erfolgt bewusst nach dem Persistieren, da der QueryFilter
             // ausschließlich auf gespeicherte Zustände wirkt.
             deletedSeries.MarkAsDeleted(DateTime.UtcNow);
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
 
             // Der ChangeTracker wird geleert, um sicherzustellen, dass die folgende
             // Abfrage tatsächlich über die Datenbank erfolgt und nicht auf bereits
@@ -74,8 +74,8 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetByAppleMusicArtistIdAsync_FindsSeries()
         {
             Series series = new() { Title = "Die drei ???", AppleMusicArtistId = "12345" };
-            Context.Series.Add(series);
-            await Context.SaveChangesAsync();
+            _ = Context.Series.Add(series);
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);

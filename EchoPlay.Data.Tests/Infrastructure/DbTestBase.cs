@@ -1,5 +1,6 @@
 ﻿using EchoPlay.Data.Context;
 using EchoPlay.Data.Tests.Helper;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {
@@ -12,6 +13,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// und kapselt alle Infrastrukturdetails, um die einzelnen Tests
     /// auf fachliches Verhalten fokussieren zu können.
     /// </summary>
+    [SuppressMessage("Design", "CA1515:Consider making public types internal",
+        Justification = "Basisklasse für xUnit-Test-Klassen, die public sein müssen; public ist konsistent mit den Ableitungen.")]
     public abstract class DbTestBase : IDisposable
     {
         /// <summary>
@@ -45,16 +48,25 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
         /// <summary>
         /// Gibt alle vom Test verwendeten Ressourcen frei.
-        /// Die explizite Freigabe des DbContext ist erforderlich, da SQLite-InMemory-Datenbanken an die Lebensdauer der Verbindung
-        /// gebunden sind und andernfalls unerwartete Seiteneffekte auftreten können.
         /// </summary>
         public void Dispose()
         {
-            Context.Dispose();
-
-            // Unterdrückt den Finalizer, da keine unmanaged Ressourcen
-            // außerhalb des DbContext verwaltet werden.
+            Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Gibt die für den Test gehaltenen Ressourcen frei.
+        /// Die explizite Freigabe des DbContext ist erforderlich, da SQLite-InMemory-Datenbanken an die Lebensdauer der Verbindung
+        /// gebunden sind und andernfalls unerwartete Seiteneffekte auftreten können.
+        /// </summary>
+        /// <param name="disposing"><c>true</c>, wenn verwaltete Ressourcen freigegeben werden sollen.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Context.Dispose();
+            }
         }
     }
 }

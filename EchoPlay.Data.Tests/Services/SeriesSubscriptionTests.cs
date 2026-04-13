@@ -14,17 +14,17 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetSubscribed_ReturnsOnlySubscribed()
         {
             // Nicht abonnierte Serie darf nicht im Ergebnis erscheinen
-            await DataBuilder.PersistSeriesAsync("TKKG");
+            _ = await DataBuilder.PersistSeriesAsync("TKKG");
 
             Series subscribed = await DataBuilder.PersistSeriesAsync("Die drei ???");
             subscribed.IsSubscribed = true;
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
             IReadOnlyList<Series> result = await service.GetSubscribedAsync();
 
-            Assert.Single(result);
+            _ = Assert.Single(result);
             Assert.Equal("Die drei ???", result[0].Title);
         }
 
@@ -52,7 +52,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.IsSubscribed = true;
             series.MarkAsDeleted(DateTime.UtcNow);
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Tests.Services
             bibi.IsSubscribed = true;
             tkkg.IsSubscribed = true;
             drei.IsSubscribed = true;
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);

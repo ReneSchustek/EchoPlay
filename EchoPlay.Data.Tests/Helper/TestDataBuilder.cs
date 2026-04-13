@@ -1,17 +1,20 @@
 ﻿using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Tests.Helper
 {
     /// <summary>
-    /// Stellt explizite Hilfsmethoden zum Erzeugen und Persistieren konsistenter Testdaten für EF-Core-Integrationstests bereit. 
+    /// Stellt explizite Hilfsmethoden zum Erzeugen und Persistieren konsistenter Testdaten für EF-Core-Integrationstests bereit.
     /// Der Fokus liegt auf Korrektheit, Lesbarkeit und realistischem Datenbankverhalten statt auf maximaler Bequemlichkeit.
     /// </summary>
     /// <remarks>
     /// Initialisiert eine neue Instanz des <see cref="TestDataBuilder"/>.
     /// </remarks>
     /// <param name="context">Der zu verwendende Datenbankkontext, der bereits mit einem relationalen Provider wie SQLite konfiguriert sein muss.</param>
+    [SuppressMessage("Design", "CA1515:Consider making public types internal",
+        Justification = "Wird in public xUnit-Test-Klassen (DbTestBase-Ableitungen) als protected Property exponiert und muss daher public sein.")]
     public sealed class TestDataBuilder(EchoPlayDbContext context)
     {
         private readonly EchoPlayDbContext _context = context;
@@ -29,8 +32,8 @@ namespace EchoPlay.Data.Tests.Helper
                 Title = title
             };
 
-            _context.Series.Add(series);
-            await _context.SaveChangesAsync();
+            _ = _context.Series.Add(series);
+            _ = await _context.SaveChangesAsync();
 
             return series;
         }
@@ -44,14 +47,15 @@ namespace EchoPlay.Data.Tests.Helper
         /// <returns>Die persistierte Episodeninstanz.</returns>
         public async Task<Episode> PersistEpisodeAsync(Series series, string title)
         {
+            ArgumentNullException.ThrowIfNull(series);
             Episode episode = new()
             {
                 SeriesId = series.Id,
                 Title = title
             };
 
-            _context.Episodes.Add(episode);
-            await _context.SaveChangesAsync();
+            _ = _context.Episodes.Add(episode);
+            _ = await _context.SaveChangesAsync();
 
             return episode;
         }
@@ -64,14 +68,15 @@ namespace EchoPlay.Data.Tests.Helper
         /// <returns>Der persistierte PlaybackState.</returns>
         public async Task<PlaybackState> PersistPlaybackStateAsync(Episode episode)
         {
+            ArgumentNullException.ThrowIfNull(episode);
             PlaybackState playbackState = new()
             {
                 EpisodeId = episode.Id,
                 LastPosition = TimeSpan.Zero
             };
 
-            _context.PlaybackStates.Add(playbackState);
-            await _context.SaveChangesAsync();
+            _ = _context.PlaybackStates.Add(playbackState);
+            _ = await _context.SaveChangesAsync();
 
             return playbackState;
         }

@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Tests.Services
             // Ein bereits gespeichertes Cover wird durch den neuen Wert ersetzt
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.LocalCoverData = [0x01, 0x02];
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
@@ -52,7 +52,7 @@ namespace EchoPlay.Data.Tests.Services
             // Null-Übergabe muss das Cover löschen – wird beim Reset benötigt
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.LocalCoverData = [0xFF, 0xD8];
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);

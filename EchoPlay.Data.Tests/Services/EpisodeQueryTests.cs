@@ -13,8 +13,8 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetBySeriesIdAsync_ReturnsEpisodesForSeries()
         {
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
-            await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
-            await DataBuilder.PersistEpisodeAsync(series, "Folge 2");
+            _ = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
+            _ = await DataBuilder.PersistEpisodeAsync(series, "Folge 2");
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
@@ -63,8 +63,8 @@ namespace EchoPlay.Data.Tests.Services
         {
             Series seriesA = await DataBuilder.PersistSeriesAsync("Serie A");
             Series seriesB = await DataBuilder.PersistSeriesAsync("Serie B");
-            await DataBuilder.PersistEpisodeAsync(seriesA, "A-Folge");
-            await DataBuilder.PersistEpisodeAsync(seriesB, "B-Folge");
+            _ = await DataBuilder.PersistEpisodeAsync(seriesA, "A-Folge");
+            _ = await DataBuilder.PersistEpisodeAsync(seriesB, "B-Folge");
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
@@ -99,7 +99,7 @@ namespace EchoPlay.Data.Tests.Services
             Episode ep2 = new() { SeriesId = series.Id, Title = "F2", EpisodeNumber = 20, LocalFolderPath = @"C:\2" };
             Episode ep3 = new() { SeriesId = series.Id, Title = "F3", EpisodeNumber = 5 }; // kein lokaler Pfad
             Context.Episodes.AddRange(ep1, ep2, ep3);
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
@@ -113,8 +113,8 @@ namespace EchoPlay.Data.Tests.Services
         {
             Series series = await DataBuilder.PersistSeriesAsync("Nur Online");
             Episode ep = new() { SeriesId = series.Id, Title = "Online", EpisodeNumber = 5 };
-            Context.Episodes.Add(ep);
-            await Context.SaveChangesAsync();
+            _ = Context.Episodes.Add(ep);
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
@@ -131,7 +131,7 @@ namespace EchoPlay.Data.Tests.Services
             Episode ep1 = new() { SeriesId = series.Id, Title = "Lokal", LocalFolderPath = @"C:\Lokal" };
             Episode ep2 = new() { SeriesId = series.Id, Title = "Online" };
             Context.Episodes.AddRange(ep1, ep2);
-            await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
@@ -156,7 +156,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             Episode? reloaded = await service.GetByIdAsync(episode.Id);
-            Assert.NotNull(reloaded!.CoverLastChecked);
+            _ = Assert.NotNull(reloaded!.CoverLastChecked);
         }
     }
 }

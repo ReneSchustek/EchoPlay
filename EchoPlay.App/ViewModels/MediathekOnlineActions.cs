@@ -25,21 +25,9 @@ namespace EchoPlay.App.ViewModels
     /// Zustands-Properties und die Pass-Through-Schicht. Folgt dem Muster aus
     /// <see cref="DashboardDataLoader"/> und <see cref="TagManagerActions"/>.
     /// </summary>
-    internal sealed class MediathekOnlineActions
+    internal sealed class MediathekOnlineActions : IDisposable
     {
-        // Wiederverwendbarer HTTP-Client für Cover-Downloads – static verhindert Socket-Erschöpfung
-        private static readonly HttpClient _downloadClient = new();
-
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IConfirmationDialogService _confirmationDialogService;
-        private readonly ImportService _importService;
-        private readonly IErrorDialogService _errorDialogService;
-        private readonly ILocalizationService _localizationService;
-        private readonly IOnlineAccessGuard _onlineAccessGuard;
-        private readonly EpisodeCoverCacheService? _coverCacheService;
-        private readonly CoverService _coverService;
-        private readonly BackgroundCoverService? _backgroundCoverService;
-        private readonly IWatchToggleService? _watchToggleService;
+        private readonly MediathekOnlineActionsContext _ctx;
 
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineEpisodesViewModel _episodesVM;
@@ -58,19 +46,10 @@ namespace EchoPlay.App.ViewModels
         private CancellationTokenSource? _episodeCoverCts;
 
         /// <summary>
-        /// Initialisiert den Orchestrator mit allen Services, Sub-VMs und Zustands-Callbacks.
+        /// Initialisiert den Orchestrator mit dem Service-Context, Sub-VMs und Zustands-Callbacks.
         /// </summary>
         public MediathekOnlineActions(
-            IServiceScopeFactory scopeFactory,
-            IConfirmationDialogService confirmationDialogService,
-            ImportService importService,
-            IErrorDialogService errorDialogService,
-            ILocalizationService localizationService,
-            IOnlineAccessGuard onlineAccessGuard,
-            EpisodeCoverCacheService? coverCacheService,
-            CoverService coverService,
-            BackgroundCoverService? backgroundCoverService,
-            IWatchToggleService? watchToggleService,
+            MediathekOnlineActionsContext context,
             OnlineSeriesViewModel seriesVM,
             OnlineEpisodesViewModel episodesVM,
             OnlineProviderSearchViewModel providerSearchVM,
@@ -79,16 +58,7 @@ namespace EchoPlay.App.ViewModels
             Action<bool> setHasNoProvider,
             Func<Task> reloadAfterImportAsync)
         {
-            _scopeFactory              = scopeFactory;
-            _confirmationDialogService = confirmationDialogService;
-            _importService             = importService;
-            _errorDialogService        = errorDialogService;
-            _localizationService       = localizationService;
-            _onlineAccessGuard         = onlineAccessGuard;
-            _coverCacheService         = coverCacheService;
-            _coverService              = coverService;
-            _backgroundCoverService    = backgroundCoverService;
-            _watchToggleService        = watchToggleService;
+            _ctx = context;
 
             _seriesVM         = seriesVM;
             _episodesVM       = episodesVM;
@@ -112,7 +82,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                using IServiceScope scope = _scopeFactory.CreateScope();
+                using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
                 ISeriesDataService        seriesService   = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
                 IEpisodeDataService       episodeService  = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
                 IPlaybackStateDataService stateService    = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
@@ -146,17 +116,17 @@ namespace EchoPlay.App.ViewModels
                     {
                         _setLoadingStatusText(string.Format(
                             CultureInfo.CurrentCulture,
-                            _localizationService.Get("OnlineReImportStatusText"), series.Title));
+                            _ctx.LocalizationService.Get("OnlineReImportStatusText"), series.Title));
 
                         try
                         {
-                            int reImported = await _importService.ReImportEpisodesAsync(series);
+                            int reImported = await _ctx.ImportService.ReImportEpisodesAsync(series);
 
                             if (reImported > 0)
                             {
                                 // Neuer Scope für die erneute Abfrage – der aktuelle Scope sieht
                                 // die gerade per ImportService geschriebenen Daten evtl. nicht sofort
-                                using IServiceScope freshScope = _scopeFactory.CreateScope();
+                                using IServiceScope freshScope = _ctx.ScopeFactory.CreateScope();
                                 IEpisodeDataService freshEpisodeService = freshScope.ServiceProvider
                                     .GetRequiredService<IEpisodeDataService>();
                                 episodes = await freshEpisodeService.GetBySeriesIdAsync(series.Id);
@@ -182,9 +152,9 @@ namespace EchoPlay.App.ViewModels
                         isSubscribed:              series.IsSubscribed,
                         isFavorite:                series.IsFavorite,
                         isWatched:                 series.IsWatched,
-                        scopeFactory:              _scopeFactory,
-                        confirmationDialogService: _confirmationDialogService,
-                        localizationService:       _localizationService));
+                        scopeFactory:              _ctx.ScopeFactory,
+                        confirmationDialogService: _ctx.ConfirmationDialogService,
+                        localizationService:       _ctx.LocalizationService));
                 }
 
                 _seriesVM.SetAllSeries(cards);
@@ -210,8 +180,11 @@ namespace EchoPlay.App.ViewModels
         public async Task SelectSeriesAsync(SeriesCardViewModel card)
         {
             // Laufende Cover-Downloads der vorherigen Serie abbrechen
-            _episodeCoverCts?.Cancel();
-            _episodeCoverCts?.Dispose();
+            if (_episodeCoverCts is not null)
+            {
+                await _episodeCoverCts.CancelAsync();
+                _episodeCoverCts.Dispose();
+            }
             _episodeCoverCts = new CancellationTokenSource();
             CancellationToken ct = _episodeCoverCts.Token;
 
@@ -222,13 +195,13 @@ namespace EchoPlay.App.ViewModels
             _episodesVM.IsLoadingEpisodes = true;
 
             // Lokale Cover in CoverImages sicherstellen – liest cover.jpg / ID3-Tags aus dem Dateisystem
-            if (_backgroundCoverService is not null)
+            if (_ctx.BackgroundCoverService is not null)
             {
-                await _backgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
+                await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
             }
 
             // Cover aus lokalen Episoden auf Online-Episoden kopieren (reine SQL-Operation, ms)
-            using IServiceScope scope = _scopeFactory.CreateScope();
+            using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
 
             ICoverCopyService coverCopy = scope.ServiceProvider.GetRequiredService<ICoverCopyService>();
             await coverCopy.CopyFromMatchingEpisodesAsync(card.Id);
@@ -244,8 +217,8 @@ namespace EchoPlay.App.ViewModels
                 episodeIds.Add(episode.Id);
             }
 
-            IReadOnlyDictionary<Guid, byte[]> coverMap = _coverService is not null
-                ? await _coverService.GetEpisodeCoverBytesAsync(episodeIds)
+            IReadOnlyDictionary<Guid, byte[]> coverMap = _ctx.CoverService is not null
+                ? await _ctx.CoverService.GetEpisodeCoverBytesAsync(episodeIds)
                 : new Dictionary<Guid, byte[]>();
 
             List<OnlineEpisodeCardViewModel> episodeCards = new(episodes.Count);
@@ -253,13 +226,15 @@ namespace EchoPlay.App.ViewModels
             foreach (Episode episode in episodes)
             {
                 OnlineEpisodeCardViewModel episodeCard = new(
-                    episodeId:     episode.Id,
-                    episodeNumber: episode.EpisodeNumber,
-                    title:         episode.Title,
-                    releaseDate:   episode.ReleaseDate,
-                    isCompleted:   _completedEpisodeIds.Contains(episode.Id),
-                    providerUrl:   episode.ProviderUrl,
-                    scopeFactory:  _scopeFactory);
+                    episodeId:          episode.Id,
+                    episodeNumber:      episode.EpisodeNumber,
+                    title:              episode.Title,
+                    releaseDate:        episode.ReleaseDate,
+                    isCompleted:        _completedEpisodeIds.Contains(episode.Id),
+                    providerUrl:        episode.ProviderUrl,
+                    scopeFactory:       _ctx.ScopeFactory,
+                    appleMusicAlbumId:  episode.AppleMusicAlbumId,
+                    spotifyAlbumId:     episode.SpotifyAlbumId);
 
                 if (coverMap.TryGetValue(episode.Id, out byte[]? coverData))
                 {
@@ -288,7 +263,7 @@ namespace EchoPlay.App.ViewModels
                 }
             }
 
-            if (hasMissingCovers && _coverCacheService is not null)
+            if (hasMissingCovers && _ctx.CoverCacheService is not null)
             {
                 _ = RefreshMissingEpisodeCoversAsync(card.Id, episodeCards, ct);
             }
@@ -305,7 +280,7 @@ namespace EchoPlay.App.ViewModels
         {
             try
             {
-                Task cacheTask = _coverCacheService!.CacheCoversAsync(seriesId, ct: ct);
+                Task cacheTask = _ctx.CoverCacheService!.CacheCoversAsync(seriesId, ct: ct);
 
                 // Kacheln periodisch aktualisieren bis der Download fertig ist
                 while (!cacheTask.IsCompleted && !ct.IsCancellationRequested)
@@ -356,8 +331,8 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            IReadOnlyDictionary<Guid, byte[]> coverMap = _coverService is not null
-                ? await _coverService.GetEpisodeCoverBytesAsync(missingIds)
+            IReadOnlyDictionary<Guid, byte[]> coverMap = _ctx.CoverService is not null
+                ? await _ctx.CoverService.GetEpisodeCoverBytesAsync(missingIds)
                 : new Dictionary<Guid, byte[]>();
 
             foreach (OnlineEpisodeCardViewModel epCard in episodeCards)
@@ -400,11 +375,11 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                _localizationService.Get("OnlineRemoveSeriesDialogTitle"),
+            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
+                _ctx.LocalizationService.Get("OnlineRemoveSeriesDialogTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    _localizationService.Get("OnlineRemoveSeriesDialogMessage"),
+                    _ctx.LocalizationService.Get("OnlineRemoveSeriesDialogMessage"),
                     card.Title));
 
             if (!confirmed)
@@ -412,7 +387,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
+            using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             await seriesService.DeleteAsync(seriesId);
 
@@ -425,12 +400,12 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public async Task ToggleWatchAsync(Guid seriesId, bool watch)
         {
-            if (_watchToggleService is null)
+            if (_ctx.WatchToggleService is null)
             {
                 return;
             }
 
-            await _watchToggleService.ToggleAsync(seriesId, watch);
+            await _ctx.WatchToggleService.ToggleAsync(seriesId, watch);
 
             SeriesCardViewModel? card = _seriesVM.Series.FirstOrDefault(c => c.Id == seriesId);
             if (card is not null)
@@ -465,10 +440,10 @@ namespace EchoPlay.App.ViewModels
 
                 IReadOnlyList<ImportSeries> seriesResults = searchTypeIndex == 2
                     ? []
-                    : await _importService.SearchAsync(searchText);
+                    : await _ctx.ImportService.SearchAsync(searchText);
                 IReadOnlyList<ImportSeries> albumResults = searchTypeIndex == 1
                     ? []
-                    : await _importService.SearchAlbumsAsync(searchText);
+                    : await _ctx.ImportService.SearchAlbumsAsync(searchText);
 
                 string searchLower = searchText.ToLowerInvariant();
                 List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
@@ -492,18 +467,19 @@ namespace EchoPlay.App.ViewModels
                 List<SearchResultViewModel> viewModels = new(combined.Count);
                 foreach (ImportSeries series in combined)
                 {
-                    bool alreadyImported = await _importService.IsAlreadyImportedAsync(series);
+                    bool alreadyImported = await _ctx.ImportService.IsAlreadyImportedAsync(series);
                     viewModels.Add(new SearchResultViewModel(
-                        series, alreadyImported, _importService, _errorDialogService,
-                        _localizationService, onImportCompleted: _reloadAfterImportAsync));
+                        series, alreadyImported, _ctx.ImportService, _ctx.ErrorDialogService,
+                        _ctx.LocalizationService, _ctx.CoverBrightnessAnalyzer,
+                        onImportCompleted: _reloadAfterImportAsync));
                 }
 
                 _providerSearchVM.ProviderSearchResults = viewModels;
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(
+                    _ctx.LocalizationService.Get("OnlineSearchFailedTitle"), ex.Message);
             }
             finally
             {
@@ -550,7 +526,7 @@ namespace EchoPlay.App.ViewModels
         public async Task RefreshAllOnlineSeriesAsync()
         {
             // Offline-Modus: Nutzer fragen, ob temporär online gegangen werden soll
-            using IDisposable? onlineAccess = await _onlineAccessGuard.RequestOnlineAccessAsync();
+            using IDisposable? onlineAccess = await _ctx.OnlineAccessGuard.RequestOnlineAccessAsync();
             if (onlineAccess is null)
             {
                 return;
@@ -560,7 +536,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                using IServiceScope scope = _scopeFactory.CreateScope();
+                using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
                 ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
                 IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
 
@@ -579,22 +555,22 @@ namespace EchoPlay.App.ViewModels
                     Series series = onlineSeries[i];
                     _setLoadingStatusText(string.Format(
                         CultureInfo.CurrentCulture,
-                        _localizationService.Get("OnlineRefreshProgressText"),
+                        _ctx.LocalizationService.Get("OnlineRefreshProgressText"),
                         i + 1, onlineSeries.Count, series.Title));
 
                     try
                     {
-                        await _importService.DeltaImportEpisodesAsync(series);
+                        await _ctx.ImportService.DeltaImportEpisodesAsync(series);
                     }
                     catch (Exception)
                     {
                         // Einzelne Serien-Fehler nicht abbrechen – nächste Serie prüfen
                     }
 
-                    // Rate-Limiting: kurze Pause zwischen Provider-Aufrufen
-                    if (i < onlineSeries.Count - 1)
+                    // Rate-Limiting: drosselt aufeinanderfolgende Provider-Aufrufe
+                    if (_ctx.RateLimiter is not null && i < onlineSeries.Count - 1)
                     {
-                        await Task.Delay(1500);
+                        await _ctx.RateLimiter.WaitAsync("itunes.apple.com");
                     }
                 }
 
@@ -605,8 +581,8 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineRefreshFailedTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(
+                    _ctx.LocalizationService.Get("OnlineRefreshFailedTitle"), ex.Message);
             }
             finally
             {
@@ -650,8 +626,9 @@ namespace EchoPlay.App.ViewModels
         {
             try
             {
-                byte[] coverBytes = await _downloadClient.GetByteArrayAsync(hit.FullUrl);
-                await _coverService.SetEpisodeCoverAsync(card.EpisodeId, coverBytes);
+                HttpClient client = _ctx.HttpClientFactory.CreateClient("CoverDownload");
+                byte[] coverBytes = await client.GetByteArrayAsync(hit.FullUrl);
+                await _ctx.CoverService.SetEpisodeCoverAsync(card.EpisodeId, coverBytes);
 
                 BitmapImage? image = await CoverService.ConvertToBitmapAsync(coverBytes);
                 if (image is not null)
@@ -673,7 +650,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task CacheSeriesCoversAsync(IReadOnlyList<Series> seriesList)
         {
-            if (_coverService is null)
+            if (_ctx.CoverService is null)
             {
                 return;
             }
@@ -690,7 +667,7 @@ namespace EchoPlay.App.ViewModels
                     continue;
                 }
 
-                bool hasCover = await _coverService.HasSeriesCoverAsync(series.Id);
+                bool hasCover = await _ctx.CoverService.HasSeriesCoverAsync(series.Id);
                 if (hasCover)
                 {
                     continue;
@@ -698,13 +675,14 @@ namespace EchoPlay.App.ViewModels
 
                 try
                 {
-                    byte[] coverBytes = await _downloadClient.GetByteArrayAsync(series.CoverImageUrl);
+                    HttpClient client = _ctx.HttpClientFactory.CreateClient("CoverDownload");
+                    byte[] coverBytes = await client.GetByteArrayAsync(series.CoverImageUrl);
                     if (coverBytes.Length == 0)
                     {
                         continue;
                     }
 
-                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
+                    await _ctx.CoverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
 
                     SeriesCardViewModel? card = _seriesVM.AllSeries.FirstOrDefault(c => c.Id == series.Id);
                     if (card is not null)
@@ -729,8 +707,8 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task<BitmapImage?> BuildCoverImageAsync(Series series)
         {
-            BitmapImage? coverImage = _coverService is not null
-                ? await _coverService.GetSeriesCoverImageAsync(series.Id)
+            BitmapImage? coverImage = _ctx.CoverService is not null
+                ? await _ctx.CoverService.GetSeriesCoverImageAsync(series.Id)
                 : null;
 
             if (coverImage is not null)
@@ -745,6 +723,14 @@ namespace EchoPlay.App.ViewModels
             }
 
             return null;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _episodeCoverCts?.Cancel();
+            _episodeCoverCts?.Dispose();
+            _episodeCoverCts = null;
         }
     }
 }

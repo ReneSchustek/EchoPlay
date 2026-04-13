@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
@@ -42,6 +43,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            services.AddSingleton<IClock>(new FakeClock());
+            services.AddHttpClient();
             services.AddSingleton<EchoPlay.App.Services.CoverService>();
             services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
@@ -57,7 +60,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 importService,
                 new FakeErrorDialogService(),
                 new FakeLocalizationService(),
-                new FakeOnlineAccessGuard());
+                new FakeOnlineAccessGuard(),
+                provider.GetRequiredService<System.Net.Http.IHttpClientFactory>());
         }
 
         [Fact]
@@ -291,6 +295,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            services.AddSingleton<IClock>(new FakeClock());
+            services.AddHttpClient();
             services.AddSingleton<EchoPlay.App.Services.CoverService>();
             services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
@@ -306,7 +312,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 importService,
                 new FakeErrorDialogService(),
                 new FakeLocalizationService(),
-                new FakeOnlineAccessGuard());
+                new FakeOnlineAccessGuard(),
+                provider.GetRequiredService<System.Net.Http.IHttpClientFactory>());
 
             await vm.LoadAsync();
             vm.StatusFilter = SeriesStatusFilter.Neu;

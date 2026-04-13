@@ -27,10 +27,7 @@ namespace EchoPlay.App.Services
         private readonly CoverService _coverService;
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly IErrorDialogService _errorDialogService;
-
-        // Wiederverwendbarer Download-Client – statisch, weil der Coordinator als Singleton lebt
-        // und HttpClient ohnehin Thread-safe ist. Verhindert Socket-Erschöpfung.
-        private static readonly HttpClient _downloadClient = new();
+        private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
@@ -40,13 +37,15 @@ namespace EchoPlay.App.Services
             ICoverSearchService coverSearchService,
             CoverService coverService,
             IConfirmationDialogService confirmationDialogService,
-            IErrorDialogService errorDialogService)
+            IErrorDialogService errorDialogService,
+            IHttpClientFactory httpClientFactory)
         {
             _scopeFactory              = scopeFactory;
             _coverSearchService        = coverSearchService;
             _coverService              = coverService;
             _confirmationDialogService = confirmationDialogService;
             _errorDialogService        = errorDialogService;
+            _httpClientFactory         = httpClientFactory;
         }
 
         /// <inheritdoc/>
@@ -176,11 +175,12 @@ namespace EchoPlay.App.Services
         /// Lädt Bilddaten von der angegebenen URL als Byte-Array herunter.
         /// Liefert <see langword="null"/> bei Netzwerk- oder HTTP-Fehlern – kein Throw.
         /// </summary>
-        private static async Task<byte[]?> DownloadCoverBytesAsync(string url)
+        private async Task<byte[]?> DownloadCoverBytesAsync(string url)
         {
             try
             {
-                return await _downloadClient.GetByteArrayAsync(url);
+                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
+                return await client.GetByteArrayAsync(url);
             }
             catch (HttpRequestException)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -13,18 +14,28 @@ namespace EchoPlay.App.Services
     /// nicht beim Laden des ViewModels initialisiert werden – das würde in
     /// Unit-Tests ohne WinUI-Hosting eine COM-Exception auslösen.
     /// </summary>
-    public static class CoverBrightnessAnalyzer
+    public class CoverBrightnessAnalyzer
     {
-        private static readonly Lazy<System.Net.Http.HttpClient> _lazyClient = new(() => new System.Net.Http.HttpClient());
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        /// <summary>
+        /// Initialisiert den Analyzer mit der HTTP-Client-Fabrik.
+        /// </summary>
+        /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
+        public CoverBrightnessAnalyzer(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
 
         /// <summary>
         /// Lädt ein Bild von einer URL als Byte-Array herunter.
         /// </summary>
         /// <param name="url">Die Bild-URL.</param>
         /// <returns>Die rohen Bilddaten.</returns>
-        public static async Task<byte[]> DownloadAsync(string url)
+        public async Task<byte[]> DownloadAsync(string url)
         {
-            return await _lazyClient.Value.GetByteArrayAsync(url).ConfigureAwait(false);
+            HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
+            return await client.GetByteArrayAsync(url).ConfigureAwait(false);
         }
 
         /// <summary>

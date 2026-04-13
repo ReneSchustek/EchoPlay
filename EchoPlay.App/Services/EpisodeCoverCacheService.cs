@@ -23,15 +23,13 @@ namespace EchoPlay.App.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
         private readonly CoverService _coverService;
+        private readonly IClock _clock;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>
         /// Cooldown in Tagen: Erfolglose Cover-Suchen werden erst nach Ablauf dieser Frist wiederholt.
         /// </summary>
         private const int CooldownDays = 7;
-
-        // Statischer HttpClient – wiederverwendet, verhindert Socket-Erschöpfung bei häufigen Cover-Downloads.
-        // HttpClient ist thread-safe, eine einzige Instanz pro Prozess reicht.
-        private static readonly HttpClient Client = new();
 
         /// <summary>
         /// Initialisiert den Cover-Cache-Service.
@@ -39,14 +37,20 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Fabrik für DI-Scopes.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="coverService">Singleton-Dienst für Cover-Operationen über die CoverImages-Tabelle.</param>
+        /// <param name="clock">Zeitquelle für Cooldown-Berechnung.</param>
+        /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
         public EpisodeCoverCacheService(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
-            CoverService coverService)
+            CoverService coverService,
+            IClock clock,
+            IHttpClientFactory httpClientFactory)
         {
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("EpisodeCoverCacheService");
             _coverService = coverService;
+            _clock = clock;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -104,7 +108,7 @@ namespace EchoPlay.App.Services
             string seriesName = series?.Title ?? string.Empty;
 
             IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
-            DateTime cooldownThreshold = DateTime.UtcNow.AddDays(-CooldownDays);
+            DateTime cooldownThreshold = _clock.UtcNow.AddDays(-CooldownDays);
 
             // Batch-Prüfung: welche Episoden haben bereits ein Cover in der CoverImages-Tabelle?
             List<Guid> episodeIds = new(episodes.Count);
@@ -236,7 +240,7 @@ namespace EchoPlay.App.Services
                     using IServiceScope writeScope = _scopeFactory.CreateScope();
                     IEpisodeDataService writeService = writeScope.ServiceProvider
                         .GetRequiredService<IEpisodeDataService>();
-                    await writeService.SetCoverLastCheckedAsync(episode.Id, DateTime.UtcNow);
+                    await writeService.SetCoverLastCheckedAsync(episode.Id, _clock.UtcNow);
 
                     // Rate-Limiting nur bei Online-Suche (HTTP-Requests gegen externe APIs)
                     await Task.Delay(200, ct).ConfigureAwait(false);
@@ -368,11 +372,12 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt ein Bild von einer URL. Null bei Fehler.
         /// </summary>
-        private static async Task<byte[]?> DownloadSafeAsync(string url)
+        private async Task<byte[]?> DownloadSafeAsync(string url)
         {
             try
             {
-                return await Client.GetByteArrayAsync(url).ConfigureAwait(false);
+                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
+                return await client.GetByteArrayAsync(url).ConfigureAwait(false);
             }
             catch (Exception)
             {

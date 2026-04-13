@@ -16,8 +16,8 @@ namespace EchoPlay.Core.Tests.Models
 
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("Fehlende Folgen – EchoPlay", text);
-            Assert.Contains("===", text);
+            Assert.Contains("Fehlende Folgen – EchoPlay", text, StringComparison.Ordinal);
+            Assert.Contains("===", text, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -35,10 +35,10 @@ namespace EchoPlay.Core.Tests.Models
             MissingEpisodesReport report = BuildReport([result]);
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("TKKG (lokal: 1–210)", text);
-            Assert.Contains("Folge 005", text);
-            Assert.Contains("Folge 042", text);
-            Assert.Contains("Lokale Lücken", text);
+            Assert.Contains("TKKG (lokal: 1–210)", text, StringComparison.Ordinal);
+            Assert.Contains("Folge 005", text, StringComparison.Ordinal);
+            Assert.Contains("Folge 042", text, StringComparison.Ordinal);
+            Assert.Contains("Lokale Lücken", text, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -61,9 +61,9 @@ namespace EchoPlay.Core.Tests.Models
             MissingEpisodesReport report = BuildReport([result]);
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("Online verfügbar: Folge 230", text);
-            Assert.Contains("Online verfügbar: Folge 231", text);
-            Assert.Contains("Keine lokalen Lücken", text);
+            Assert.Contains("Online verfügbar: Folge 230", text, StringComparison.Ordinal);
+            Assert.Contains("Online verfügbar: Folge 231", text, StringComparison.Ordinal);
+            Assert.Contains("Keine lokalen Lücken", text, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -81,7 +81,7 @@ namespace EchoPlay.Core.Tests.Models
             MissingEpisodesReport report = BuildReport([result]);
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("Alle Folgen komplett", text);
+            Assert.Contains("Alle Folgen komplett", text, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -106,9 +106,9 @@ namespace EchoPlay.Core.Tests.Models
             MissingEpisodesReport report = BuildReport([r1, r2]);
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("Geprüft: 2 Serien", text);
-            Assert.Contains("Lokale Lücken: 2", text);
-            Assert.Contains("Online neu: 1", text);
+            Assert.Contains("Geprüft: 2 Serien", text, StringComparison.Ordinal);
+            Assert.Contains("Lokale Lücken: 2", text, StringComparison.Ordinal);
+            Assert.Contains("Online neu: 1", text, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace EchoPlay.Core.Tests.Models
             MissingEpisodesReport report = BuildReport([result]);
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("Fehler: Ordner nicht lesbar", text);
+            Assert.Contains("Fehler: Ordner nicht lesbar", text, StringComparison.Ordinal);
         }
 
         [Fact]

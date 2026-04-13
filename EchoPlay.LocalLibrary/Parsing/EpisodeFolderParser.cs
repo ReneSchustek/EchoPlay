@@ -97,12 +97,12 @@ namespace EchoPlay.LocalLibrary.Parsing
             // Platzhalter in geordneter Reihenfolge ersetzen, damit die Flags korrekt gesetzt werden
             string working = folderPattern;
 
-            if (working.Contains("{number:000}") || working.Contains("{number}"))
+            if (working.Contains("{number:000}", StringComparison.Ordinal) || working.Contains("{number}", StringComparison.Ordinal))
             {
                 hasNumber = true;
             }
 
-            if (working.Contains("{title}"))
+            if (working.Contains("{title}", StringComparison.Ordinal))
             {
                 hasTitle = true;
             }
@@ -111,10 +111,10 @@ namespace EchoPlay.LocalLibrary.Parsing
             // Teilmuster-Kollisionen auftreten. Regex.Escape stellt sicher, dass Sonderzeichen im
             // literalen Mustertext (z.B. " - ") korrekt als solche behandelt werden.
             string escaped = Regex.Escape(working)
-                .Replace(Regex.Escape("{*}"), "(?:.+?)")
-                .Replace(Regex.Escape("{number:000}"), "(?<number>\\d+)")
-                .Replace(Regex.Escape("{number}"), "(?<number>\\d+)")
-                .Replace(Regex.Escape("{title}"), "(?<title>.+)");
+                .Replace(Regex.Escape("{*}"), "(?:.+?)", StringComparison.Ordinal)
+                .Replace(Regex.Escape("{number:000}"), "(?<number>\\d+)", StringComparison.Ordinal)
+                .Replace(Regex.Escape("{number}"), "(?<number>\\d+)", StringComparison.Ordinal)
+                .Replace(Regex.Escape("{title}"), "(?<title>.+)", StringComparison.Ordinal);
 
             return $"^{escaped}$";
         }

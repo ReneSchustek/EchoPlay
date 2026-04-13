@@ -120,11 +120,9 @@ namespace EchoPlay.Spotify.Scoring
         {
             foreach (string genre in genres)
             {
-                string normalizedGenre = genre.ToLowerInvariant();
-
                 foreach (string negative in _settings.NegativeMusicGenres)
                 {
-                    if (normalizedGenre.Contains(negative, StringComparison.OrdinalIgnoreCase))
+                    if (genre.Contains(negative, StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
@@ -189,15 +187,15 @@ namespace EchoPlay.Spotify.Scoring
             foreach (KeyValuePair<string, string> mapping in _settings.NumberWordMapping)
             {
                 // Ziffer → Zahlwort
-                if (normalizedQuery.Contains(mapping.Key))
+                if (normalizedQuery.Contains(mapping.Key, StringComparison.Ordinal))
                 {
-                    variants.Add(normalizedQuery.Replace(mapping.Key, mapping.Value));
+                    variants.Add(normalizedQuery.Replace(mapping.Key, mapping.Value, StringComparison.Ordinal));
                 }
 
                 // Zahlwort → Ziffer
-                if (normalizedQuery.Contains(mapping.Value))
+                if (normalizedQuery.Contains(mapping.Value, StringComparison.Ordinal))
                 {
-                    variants.Add(normalizedQuery.Replace(mapping.Value, mapping.Key));
+                    variants.Add(normalizedQuery.Replace(mapping.Value, mapping.Key, StringComparison.Ordinal));
                 }
             }
 

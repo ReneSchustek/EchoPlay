@@ -326,8 +326,11 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 
             _ = await _scanner.ScanSeriesAsync(_root, "{number:000}", onSeriesScanned: onSeriesScanned);
 
-            // Kurze Wartezeit, damit Progress-Callbacks verarbeitet werden können
-            await Task.Delay(50);
+            // Polling statt fester Wartezeit: Progress-Callbacks laufen über den Synchronization-Context.
+            for (int wait = 0; wait < 50 && reported.Count < 2; wait++)
+            {
+                await Task.Yield();
+            }
 
             Assert.Equal(2, reported.Count);
             Assert.Contains("TKKG", reported);

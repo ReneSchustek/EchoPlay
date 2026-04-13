@@ -10,7 +10,7 @@ namespace EchoPlay.Logger.Tests
     public sealed class MemorySinkTests
     {
         private static LogEntry MakeEntry(string message) =>
-            new(DateTime.UtcNow, LogLevel.Information, message, "Test", []);
+            new(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, message, "Test", []);
 
         // ── Ringpuffer ────────────────────────────────────────────────────────────
 

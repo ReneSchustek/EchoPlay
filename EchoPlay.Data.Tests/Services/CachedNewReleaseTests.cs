@@ -36,7 +36,7 @@ namespace EchoPlay.Data.Tests.Services
                     EpisodeNumber = 238,
                     ReleaseDate = new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 100001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 },
                 new CachedNewRelease
                 {
@@ -45,7 +45,7 @@ namespace EchoPlay.Data.Tests.Services
                     EpisodeNumber = 239,
                     ReleaseDate = new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 100002,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Tests.Services
                     Title = "Ältere Folge",
                     ReleaseDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 200001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 },
                 new CachedNewRelease
                 {
@@ -80,7 +80,7 @@ namespace EchoPlay.Data.Tests.Services
                     Title = "Neuere Folge",
                     ReleaseDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 200002,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -110,7 +110,7 @@ namespace EchoPlay.Data.Tests.Services
                     EpisodeNumber = 150,
                     ReleaseDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 300001,
-                    CheckedAtUtc = DateTime.UtcNow.AddDays(-1)
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc).AddDays(-1)
                 }
             ];
 
@@ -127,7 +127,7 @@ namespace EchoPlay.Data.Tests.Services
                     EpisodeNumber = 150,
                     ReleaseDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 300001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -157,7 +157,7 @@ namespace EchoPlay.Data.Tests.Services
                     Title = "Zu alt",
                     ReleaseDate = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 400001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 },
                 new CachedNewRelease
                 {
@@ -165,7 +165,7 @@ namespace EchoPlay.Data.Tests.Services
                     Title = "Aktuell",
                     ReleaseDate = new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc),
                     CollectionId = 400002,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -243,17 +243,17 @@ namespace EchoPlay.Data.Tests.Services
                 {
                     SeriesId = series.Id,
                     Title = "Folge 1",
-                    ReleaseDate = DateTime.UtcNow,
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
                     CollectionId = 600001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 },
                 new CachedNewRelease
                 {
                     SeriesId = series.Id,
                     Title = "Folge 2",
-                    ReleaseDate = DateTime.UtcNow,
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
                     CollectionId = 600002,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -281,17 +281,17 @@ namespace EchoPlay.Data.Tests.Services
                 {
                     SeriesId = seriesA.Id,
                     Title = "Folge von A",
-                    ReleaseDate = DateTime.UtcNow,
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
                     CollectionId = 700001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 },
                 new CachedNewRelease
                 {
                     SeriesId = seriesB.Id,
                     Title = "Folge von B",
-                    ReleaseDate = DateTime.UtcNow,
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
                     CollectionId = 700002,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -319,9 +319,9 @@ namespace EchoPlay.Data.Tests.Services
                 {
                     SeriesId = series.Id,
                     Title = "Folge 100",
-                    ReleaseDate = DateTime.UtcNow,
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
                     CollectionId = 800001,
-                    CheckedAtUtc = DateTime.UtcNow
+                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 
@@ -359,12 +359,12 @@ namespace EchoPlay.Data.Tests.Services
                 new CachedNewRelease
                 {
                     SeriesId = seriesA.Id, Title = "Folge A", CollectionId = 900001,
-                    ReleaseDate = DateTime.UtcNow, CheckedAtUtc = DateTime.UtcNow
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 },
                 new CachedNewRelease
                 {
                     SeriesId = seriesB.Id, Title = "Folge B", CollectionId = 900002,
-                    ReleaseDate = DateTime.UtcNow, CheckedAtUtc = DateTime.UtcNow
+                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
                 }
             ];
 

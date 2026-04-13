@@ -1,3 +1,5 @@
+using System.Threading;
+
 namespace EchoPlay.TagManager.Tests.Infrastructure
 {
     /// <summary>
@@ -7,6 +9,8 @@ namespace EchoPlay.TagManager.Tests.Infrastructure
     /// </summary>
     internal static class AudioTestFileFactory
     {
+        private static int _fileCounter;
+
         /// <summary>
         /// Minimales MP3: ID3v2.3-Header mit einem TIT2-Frame ("TestTitle") gefolgt von einem
         /// stillen MPEG1-Layer3-Frame (128 kbps, 44100 Hz, Stereo, 417 Bytes).
@@ -91,7 +95,8 @@ namespace EchoPlay.TagManager.Tests.Infrastructure
         /// <returns>Absoluter Pfad zur temporären MP3-Datei.</returns>
         public static string CreateTempMp3()
         {
-            string path = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}.mp3");
+            int id = Interlocked.Increment(ref _fileCounter);
+            string path = Path.Combine(Path.GetTempPath(), $"echoplay_test_{id:D6}.mp3");
             File.WriteAllBytes(path, MinimalMp3Data);
             return path;
         }
@@ -103,7 +108,8 @@ namespace EchoPlay.TagManager.Tests.Infrastructure
         /// <returns>Absoluter Pfad zur temporären FLAC-Datei.</returns>
         public static string CreateTempFlac()
         {
-            string path = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}.flac");
+            int id = Interlocked.Increment(ref _fileCounter);
+            string path = Path.Combine(Path.GetTempPath(), $"echoplay_test_{id:D6}.flac");
             File.WriteAllBytes(path, MinimalFlacData);
             return path;
         }
@@ -115,7 +121,8 @@ namespace EchoPlay.TagManager.Tests.Infrastructure
         /// <returns>Absoluter Pfad zur temporären Datei.</returns>
         public static string CreateTempUnsupportedFile()
         {
-            string path = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}.xyz");
+            int id = Interlocked.Increment(ref _fileCounter);
+            string path = Path.Combine(Path.GetTempPath(), $"echoplay_test_{id:D6}.xyz");
             File.WriteAllBytes(path, [0x00, 0x01, 0x02]);
             return path;
         }

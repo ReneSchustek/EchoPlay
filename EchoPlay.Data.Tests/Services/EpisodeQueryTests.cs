@@ -53,7 +53,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            Episode? result = await service.GetByIdAsync(Guid.NewGuid());
+            Episode? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999996"));
 
             Assert.Null(result);
         }
@@ -151,7 +151,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            DateTime now = DateTime.UtcNow;
+            DateTime now = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
             await service.SetCoverLastCheckedAsync(episode.Id, now);
             Context.ChangeTracker.Clear();
 

@@ -51,7 +51,7 @@ namespace EchoPlay.Data.Tests.Services
             // Gelöschte Serien dürfen nicht zurückgegeben werden, auch wenn favorisiert
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.IsFavorite = true;
-            series.MarkAsDeleted(DateTime.UtcNow);
+            series.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
             _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 
@@ -91,7 +91,7 @@ namespace EchoPlay.Data.Tests.Services
             SeriesDataService service = new(Context, NullLoggerFactory);
 
             // Kein Assert nötig – der Test schlägt fehl wenn eine Exception geworfen wird
-            await service.SetFavoriteAsync(Guid.NewGuid(), true);
+            await service.SetFavoriteAsync(new Guid("99999999-9999-9999-9999-999999999995"), true);
         }
     }
 }

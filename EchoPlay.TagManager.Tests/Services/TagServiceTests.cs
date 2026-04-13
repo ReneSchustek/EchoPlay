@@ -12,6 +12,8 @@ namespace EchoPlay.TagManager.Tests.Services
     /// </summary>
     public sealed class TagServiceTests
     {
+        private static int _folderCounter;
+
         private static TagService CreateService() => new(new FakeLoggerFactory());
 
         [Fact]
@@ -189,7 +191,8 @@ namespace EchoPlay.TagManager.Tests.Services
         [Fact]
         public async Task ReadFolderAsync_ReturnsAllFiles()
         {
-            string folder = Path.Combine(Path.GetTempPath(), $"echoplay_test_{Guid.NewGuid():N}");
+            int folderId = Interlocked.Increment(ref _folderCounter);
+            string folder = Path.Combine(Path.GetTempPath(), $"echoplay_test_{folderId:D6}");
             Directory.CreateDirectory(folder);
             try
             {

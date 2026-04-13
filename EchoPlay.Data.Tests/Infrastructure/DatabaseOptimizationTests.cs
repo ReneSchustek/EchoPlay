@@ -105,7 +105,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // für nicht existierende Serien angelegt werden.
             DashboardPosition orphanPosition = new()
             {
-                SeriesId = Guid.NewGuid(),
+                SeriesId = new Guid("99999999-9999-9999-9999-999999999994"),
                 Section = "Favoriten",
                 Position = 0
             };

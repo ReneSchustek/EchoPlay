@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -91,12 +92,14 @@ namespace EchoPlay.LocalLibrary.Cover
 
         // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────
 
+        [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class DiscogsSearchResponse
         {
             [JsonPropertyName("results")]
             public List<DiscogsRelease>? Results { get; set; }
         }
 
+        [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class DiscogsRelease
         {
             [JsonPropertyName("title")]

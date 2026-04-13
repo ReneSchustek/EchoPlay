@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -9,6 +10,7 @@ namespace EchoPlay.Data.Configurations
     /// Stellt einen eindeutigen Index auf SeriesId + Section sicher, damit
     /// pro Serie und Bereich maximal eine Position existiert.
     /// </summary>
+    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "EF Core instanziiert IEntityTypeConfiguration-Implementierungen zur Modell-Erstellung via ApplyConfigurationsFromAssembly-Reflection.")]
     internal sealed class DashboardPositionConfiguration : IEntityTypeConfiguration<DashboardPosition>
     {
         /// <summary>

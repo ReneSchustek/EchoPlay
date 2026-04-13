@@ -1,4 +1,6 @@
-﻿namespace EchoPlay.Core.Models.Import
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace EchoPlay.Core.Models.Import
 {
     /// <summary>
     /// Repräsentiert eine einzelne Episode einer importierbaren Hörspielserie.
@@ -40,12 +42,20 @@
         /// <summary>
         /// URL zum Öffnen der Folge beim Provider (Spotify/Apple Music).
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
         public string? ProviderUrl { get; init; }
 
         /// <summary>
         /// URL zum Album-Cover beim Provider.
         /// Wird beim Import heruntergeladen und als <c>LocalCoverData</c> in der Episode gespeichert.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
         public string? CoverImageUrl { get; init; }
+
+        /// <summary>
+        /// Bezeichner der Importquelle ("Spotify" oder "AppleMusic").
+        /// Wird vom Mapper gesetzt, damit der ImportService die richtige Provider-ID-Spalte befüllen kann.
+        /// </summary>
+        public string? Source { get; init; }
     }
 }

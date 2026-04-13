@@ -17,6 +17,7 @@ using EchoPlay.Spotify.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -117,7 +118,8 @@ namespace EchoPlay.App
                     _loggerManager.UpdateMinimumLevel(appSettings.MinimumLogLevel);
                     dbPurgeDays = appSettings.DbPurgeDays;
 
-                    appSettings.LastAppStart = DateTime.UtcNow;
+                    IClock clock = Services.GetRequiredService<IClock>();
+                    appSettings.LastAppStart = clock.UtcNow;
                     await settingsService.SaveAsync(appSettings);
                 }
 
@@ -141,6 +143,9 @@ namespace EchoPlay.App
 
                 // Cover-Hintergrund-Service starten – lädt fehlende lokale Episoden-Cover in die DB
                 Services.GetRequiredService<BackgroundCoverService>().Start();
+
+                // Provider-ID-Enrichment starten – ergänzt fehlende SpotifyAlbumId/AppleMusicAlbumId
+                Services.GetRequiredService<BackgroundProviderIdService>().Start();
 
                 // Theme vor dem Fenster-Öffnen setzen, damit kein Flackern entsteht
                 ThemeService themeService = Services.GetRequiredService<ThemeService>();
@@ -392,13 +397,6 @@ namespace EchoPlay.App
             builder.Configuration
                 .AddJsonFile("appsettings.json", optional: false);
 
-#if DEBUG
-            // Entwickler-Credentials (Spotify ClientId/ClientSecret) kommen ausschliesslich
-            // aus User Secrets und liegen unter %APPDATA%\Microsoft\UserSecrets\echoplay-dev-secrets.
-            // Damit landen Secrets weder im Build-Output noch im Repository oder MSIX-Paket.
-            builder.Configuration.AddUserSecrets<App>(optional: true);
-#endif
-
             // Logger registrieren (Cleanup läuft automatisch beim Start)
             builder.Services.AddEchoPlayLogger(options =>
             {
@@ -424,6 +422,14 @@ namespace EchoPlay.App
             {
                 client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-CoverDownload/1.0");
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 3;
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
             });
             builder.Services.AddHttpClient("OnlineCheck", client =>
             {
@@ -434,39 +440,74 @@ namespace EchoPlay.App
             {
                 client.Timeout = TimeSpan.FromMinutes(2);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateDownload/1.0");
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 3;
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
+            });
+            builder.Services.AddHttpClient("UpdateCheck", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(5);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateCheck/1.0");
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             });
 
-            // Spotify-Konfiguration binden und als Singleton bereitstellen.
-            SpotifyOptions spotifyOptions = builder.Configuration
-                .GetSection("Spotify")
-                .Get<SpotifyOptions>()
-                ?? throw new InvalidOperationException("Spotify-Konfiguration fehlt.");
-
-            builder.Services.AddSingleton(spotifyOptions);
-
-            // HttpClient für Token-Anfragen (Client-Credentials-Flow).
-            // Timeout kurz halten – ein hängender Token-Request blockiert jeden weiteren API-Call.
-            builder.Services.AddHttpClient<SpotifyTokenClient>((services, client) =>
+            // Basis-URLs aus Konfiguration (keine Credentials — die kommen aus dem Credential-Store).
+            SpotifyOptions baseSpotifyOptions = new()
             {
-                SpotifyOptions options = services.GetRequiredService<SpotifyOptions>();
-                client.BaseAddress = new(options.AuthBaseUrl);
+                ApiBaseUrl = builder.Configuration.GetValue<string>("Spotify:ApiBaseUrl") ?? "https://api.spotify.com/v1/",
+                AuthBaseUrl = builder.Configuration.GetValue<string>("Spotify:AuthBaseUrl") ?? "https://accounts.spotify.com/"
+            };
+
+            // Credential-Store und Options-Provider registrieren.
+            builder.Services.AddSingleton<ISpotifyCredentialStore, SpotifyCredentialStore>();
+            builder.Services.AddSingleton<ISpotifyOptionsProvider>(provider =>
+                new SpotifyOptionsProvider(baseSpotifyOptions, provider.GetRequiredService<ISpotifyCredentialStore>()));
+
+            // Named HttpClient für Token-Anfragen (Client-Credentials-Flow).
+            // Timeout kurz halten – ein hängender Token-Request blockiert jeden weiteren API-Call.
+            builder.Services.AddHttpClient("SpotifyToken", client =>
+            {
+                client.BaseAddress = new(baseSpotifyOptions.AuthBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(10);
+            });
+
+            // SpotifyTokenClient manuell registrieren, damit die Credentials zur Laufzeit
+            // aus dem Credential-Store kommen statt aus einer statischen Konfiguration.
+            builder.Services.AddScoped<SpotifyTokenClient>(provider =>
+            {
+                IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+                HttpClient client = httpClientFactory.CreateClient("SpotifyToken");
+                ISpotifyOptionsProvider optionsProvider = provider.GetRequiredService<ISpotifyOptionsProvider>();
+                SpotifyOptions options = optionsProvider.GetAsync().GetAwaiter().GetResult() ?? baseSpotifyOptions;
+                return new SpotifyTokenClient(client, options, provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
             });
 
             // Der AuthMessageHandler wird als Transient registriert,
             // damit jede HttpClient-Instanz ihren eigenen Handler erhält.
             builder.Services.AddTransient<SpotifyAuthMessageHandler>();
 
-            // HttpClient für Spotify-Web-API mit automatischer Authentifizierung.
-            builder.Services.AddHttpClient<SpotifyApiClient>((services, client) =>
+            // Named HttpClient für Spotify-Web-API mit automatischer Authentifizierung.
+            builder.Services.AddHttpClient("SpotifyApi", client =>
             {
-                SpotifyOptions options = services.GetRequiredService<SpotifyOptions>();
-                client.BaseAddress = new(options.ApiBaseUrl);
+                client.BaseAddress = new(baseSpotifyOptions.ApiBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(15);
             })
             .AddHttpMessageHandler<SpotifyAuthMessageHandler>();
 
-            // ISpotifyApiClient auf den vom Factory verwalteten SpotifyApiClient abbilden.
+            // SpotifyApiClient manuell registrieren, damit der Named HttpClient verwendet wird.
+            builder.Services.AddScoped<SpotifyApiClient>(provider =>
+            {
+                IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+                HttpClient client = httpClientFactory.CreateClient("SpotifyApi");
+                return new SpotifyApiClient(client, provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            });
+
+            // ISpotifyApiClient auf den manuell registrierten SpotifyApiClient abbilden.
             builder.Services.AddScoped<ISpotifyApiClient>(provider =>
                 provider.GetRequiredService<SpotifyApiClient>());
 
@@ -493,6 +534,13 @@ namespace EchoPlay.App
             // IClock als Singleton – einzige Stelle, an der DateTime.UtcNow in Produktion gelesen wird.
             // Tests injizieren einen FakeClock, damit zeitabhängige Logik reproduzierbar prüfbar wird.
             builder.Services.AddSingleton<IClock, SystemClock>();
+            builder.Services.AddSingleton<IHostRateLimiter>(_ =>
+                new SemaphoreHostRateLimiter(new Dictionary<string, TimeSpan>
+                {
+                    ["musicbrainz.org"]     = TimeSpan.FromSeconds(1),
+                    ["coverartarchive.org"] = TimeSpan.FromSeconds(1),
+                    ["itunes.apple.com"]    = TimeSpan.FromMilliseconds(1500),
+                }));
 
             // ScanEventService als Singleton – überlebt Navigation, benachrichtigt neues ViewModel nach Rückkehr
             builder.Services.AddSingleton<IScanEventService, ScanEventService>();
@@ -527,8 +575,11 @@ namespace EchoPlay.App
             // Eigener Service statt Teil von ImportService, damit die LocalLibrary-Assembly
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
             builder.Services.AddSingleton<EpisodeCoverCacheService>();
+            builder.Services.AddSingleton<CoverBrightnessAnalyzer>();
             builder.Services.AddSingleton<CoverService>();
+            builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
             builder.Services.AddSingleton<BackgroundCoverService>();
+            builder.Services.AddSingleton<BackgroundProviderIdService>();
 
             // LocalizationService als Singleton – ResourceLoader-Instanz ist thread-sicher und teuer zu erzeugen.
             builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -586,7 +637,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IPlayerService>(),
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
                 provider.GetRequiredService<CoverService>(),
-                provider.GetRequiredService<ILocalizationService>()));
+                provider.GetRequiredService<ILocalizationService>(),
+                provider.GetRequiredService<IClock>()));
             builder.Services.AddTransient<MediathekOnlineViewModel>(provider => new MediathekOnlineViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IConfirmationDialogService>(),
@@ -594,38 +646,44 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IOnlineAccessGuard>(),
+                provider.GetRequiredService<IHttpClientFactory>(),
+                provider.GetRequiredService<CoverBrightnessAnalyzer>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<CoverService>(),
                 provider.GetRequiredService<BackgroundCoverService>(),
                 provider.GetRequiredService<IWatchToggleService>(),
+                provider.GetRequiredService<IHostRateLimiter>(),
                 provider.GetRequiredService<IPageModeGuard>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
                 provider.GetRequiredService<INavigationService>()));
             builder.Services.AddTransient<MediathekLokalViewModel>(provider => new MediathekLokalViewModel(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<ISyncService>(),
-                provider.GetRequiredService<IPlayerService>(),
-                provider.GetRequiredService<IErrorDialogService>(),
-                provider.GetRequiredService<IConfirmationDialogService>(),
-                provider.GetRequiredService<StatusBarViewModel>(),
-                provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(),
-                provider.GetRequiredService<IScanEventService>(),
-                provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
-                provider.GetRequiredService<IOnlineAccessGuard>(),
-                provider.GetRequiredService<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(),
-                provider.GetRequiredService<CoverService>(),
-                provider.GetRequiredService<IWatchToggleService>(),
-                provider.GetRequiredService<IPageModeGuard>(),
-                provider.GetRequiredService<IFolderRestructureCoordinator>(),
-                provider.GetRequiredService<IMissingEpisodesCoordinator>(),
-                provider.GetRequiredService<IEpisodeCoverCoordinator>()));
+                new MediathekLokalViewModelContext(
+                    provider.GetRequiredService<IServiceScopeFactory>(),
+                    provider.GetRequiredService<ISyncService>(),
+                    provider.GetRequiredService<IPlayerService>(),
+                    provider.GetRequiredService<IErrorDialogService>(),
+                    provider.GetRequiredService<IConfirmationDialogService>(),
+                    provider.GetRequiredService<StatusBarViewModel>(),
+                    provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(),
+                    provider.GetRequiredService<IScanEventService>(),
+                    provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
+                    provider.GetRequiredService<IOnlineAccessGuard>(),
+                    provider.GetRequiredService<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(),
+                    provider.GetRequiredService<IClock>(),
+                    provider.GetRequiredService<CoverService>(),
+                    provider.GetRequiredService<IWatchToggleService>(),
+                    provider.GetRequiredService<IPageModeGuard>(),
+                    provider.GetRequiredService<IFolderRestructureCoordinator>(),
+                    provider.GetRequiredService<IMissingEpisodesCoordinator>(),
+                    provider.GetRequiredService<IEpisodeCoverCoordinator>())));
             builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<INavigationService>(),
-                provider.GetRequiredService<IPageModeGuard>()));
+                provider.GetRequiredService<IPageModeGuard>(),
+                provider.GetRequiredService<CoverBrightnessAnalyzer>()));
             builder.Services.AddTransient<PlayerViewModel>();
             builder.Services.AddTransient<SeriesDetailViewModel>();
             // App-Services für Settings: Verbindungstest und Log-Viewer sind nach Brief 211
@@ -644,6 +702,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Analysis.IEpisodePatternAnalyzer>(),
                 provider.GetRequiredService<IConnectionTestCoordinator>(),
+                provider.GetRequiredService<ISpotifyCredentialStore>(),
+                provider.GetRequiredService<ISpotifyOptionsProvider>(),
                 provider.GetRequiredService<ILogViewerCoordinator>(),
                 provider.GetRequiredService<LoggerManager>(),
                 provider.GetRequiredService<StatusBarViewModel>()));

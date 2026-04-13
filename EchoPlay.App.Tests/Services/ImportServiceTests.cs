@@ -44,7 +44,9 @@ namespace EchoPlay.App.Tests.Services
             services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
 
             services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
+            services.AddSingleton<IClock>(new FakeClock());
             services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            services.AddHttpClient();
             services.AddSingleton<CoverService>();
             services.AddSingleton<EpisodeCoverCacheService>();
             ServiceProvider provider = services.BuildServiceProvider();

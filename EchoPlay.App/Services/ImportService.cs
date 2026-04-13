@@ -67,8 +67,13 @@ namespace EchoPlay.App.Services
                 return [];
             }
 
+            // Both nutzt beim Import Apple Music (kein Spotify-Import im Both-Modus)
+            ProviderType importProvider = settings.ActiveProvider == ProviderType.Both
+                ? ProviderType.AppleMusic
+                : settings.ActiveProvider;
+
             // Provider-Schlüssel entspricht dem Enum-Namen ("Spotify" / "AppleMusic")
-            string providerKey = settings.ActiveProvider.ToString();
+            string providerKey = importProvider.ToString();
             _logger.Debug($"Suche nach \"{query}\" via {providerKey}");
             ISeriesImportSearch search = scope.ServiceProvider.GetRequiredKeyedService<ISeriesImportSearch>(providerKey);
 
@@ -98,11 +103,16 @@ namespace EchoPlay.App.Services
                 return [];
             }
 
-            _logger.Debug($"Album-Suche nach \"{query}\" via {settings.ActiveProvider}");
+            // Both nutzt beim Import Apple Music (kein Spotify-Import im Both-Modus)
+            ProviderType importProvider = settings.ActiveProvider == ProviderType.Both
+                ? ProviderType.AppleMusic
+                : settings.ActiveProvider;
+
+            _logger.Debug($"Album-Suche nach \"{query}\" via {importProvider}");
 
             List<ImportSeries> results = [];
 
-            if (settings.ActiveProvider == ProviderType.Spotify)
+            if (importProvider == ProviderType.Spotify)
             {
                 EchoPlay.Spotify.Abstractions.ISpotifyApiClient? spotifyClient =
                     scope.ServiceProvider.GetService<EchoPlay.Spotify.Abstractions.ISpotifyApiClient>();
@@ -127,7 +137,7 @@ namespace EchoPlay.App.Services
                     });
                 }
             }
-            else if (settings.ActiveProvider == ProviderType.AppleMusic)
+            else if (importProvider == ProviderType.AppleMusic)
             {
                 EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient? appleClient =
                     scope.ServiceProvider.GetService<EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient>();
@@ -396,18 +406,21 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Erstellt eine <see cref="Episode"/>-Entität aus einem <see cref="ImportEpisode"/>-Modell.
+        /// Setzt die provider-spezifische Album-ID anhand der Source-Bezeichnung.
         /// </summary>
         private static Episode MapToEpisode(ImportEpisode importEpisode, Guid seriesId)
         {
             return new Episode
             {
-                SeriesId      = seriesId,
-                Title         = importEpisode.Title,
-                EpisodeNumber = importEpisode.EpisodeNumber,
-                ReleaseDate   = importEpisode.ReleaseDate,
-                Duration      = importEpisode.Duration,
-                ProviderUrl   = importEpisode.ProviderUrl,
-                CoverImageUrl = importEpisode.CoverImageUrl,
+                SeriesId         = seriesId,
+                Title            = importEpisode.Title,
+                EpisodeNumber    = importEpisode.EpisodeNumber,
+                ReleaseDate      = importEpisode.ReleaseDate,
+                Duration         = importEpisode.Duration,
+                ProviderUrl      = importEpisode.ProviderUrl,
+                CoverImageUrl    = importEpisode.CoverImageUrl,
+                SpotifyAlbumId   = importEpisode.Source == "Spotify"    ? importEpisode.SourceEpisodeId : null,
+                AppleMusicAlbumId = importEpisode.Source == "AppleMusic" ? importEpisode.SourceEpisodeId : null,
             };
         }
 

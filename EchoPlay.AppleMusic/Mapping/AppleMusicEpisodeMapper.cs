@@ -40,7 +40,8 @@ namespace EchoPlay.AppleMusic.Mapping
                 OrderIndex      = orderIndex,
                 ProviderUrl     = $"https://music.apple.com/de/album/{album.CollectionId}",
                 // iTunes liefert 100px-Thumbnails – für höhere Auflösung "100x100" durch "600x600" ersetzen
-                CoverImageUrl   = album.ArtworkUrl100?.Replace("100x100", "600x600", StringComparison.Ordinal)
+                CoverImageUrl   = album.ArtworkUrl100?.Replace("100x100", "600x600", StringComparison.Ordinal),
+                Source          = "AppleMusic"
             };
         }
 

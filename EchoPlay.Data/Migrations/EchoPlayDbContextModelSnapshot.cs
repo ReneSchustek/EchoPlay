@@ -100,6 +100,10 @@ namespace EchoPlay.Data.Migrations
                     b.Property<DateTime?>("LastChecked")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SourceHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SourceUrl")
                         .HasMaxLength(512)
                         .HasColumnType("TEXT");
@@ -124,6 +128,10 @@ namespace EchoPlay.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AppleMusicAlbumId")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CoverImageUrl")
@@ -168,6 +176,10 @@ namespace EchoPlay.Data.Migrations
                     b.Property<Guid>("SeriesId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SpotifyAlbumId")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -182,6 +194,12 @@ namespace EchoPlay.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppleMusicAlbumId")
+                        .HasFilter("AppleMusicAlbumId IS NOT NULL");
+
+                    b.HasIndex("SpotifyAlbumId")
+                        .HasFilter("SpotifyAlbumId IS NOT NULL");
 
                     b.HasIndex("IsDeleted", "DeletedAt")
                         .HasFilter("IsDeleted = 1");
@@ -243,7 +261,7 @@ namespace EchoPlay.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("AppleMusicArtistId")
-                        .HasMaxLength(128)
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CoverImageUrl")
@@ -291,7 +309,7 @@ namespace EchoPlay.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SpotifyArtistId")
-                        .HasMaxLength(128)
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
@@ -372,6 +390,41 @@ namespace EchoPlay.Data.Migrations
                         .HasFilter("IsDeleted = 1");
 
                     b.ToTable("PlaybackStates", (string)null);
+                });
+
+            modelBuilder.Entity("EchoPlay.Data.Entities.Settings.SecureSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("EncryptedValue")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SecureSettings");
                 });
 
             modelBuilder.Entity("EchoPlay.Data.Entities.Settings.AppSettings", b =>

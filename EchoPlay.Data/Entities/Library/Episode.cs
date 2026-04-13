@@ -86,5 +86,17 @@ namespace EchoPlay.Data.Entities.Library
         /// gesetzt und erst nach Ablauf des Cooldowns (7 Tage) erneut gesucht.
         /// </summary>
         public DateTime? CoverLastChecked { get; set; }
+
+        /// <summary>
+        /// Album-ID der Episode bei Spotify.
+        /// Wird gesetzt, wenn die Episode von Spotify importiert wurde.
+        /// </summary>
+        public string? SpotifyAlbumId { get; set; }
+
+        /// <summary>
+        /// Album-ID der Episode bei Apple Music.
+        /// Wird gesetzt, wenn die Episode von Apple Music importiert wurde.
+        /// </summary>
+        public string? AppleMusicAlbumId { get; set; }
     }
 }

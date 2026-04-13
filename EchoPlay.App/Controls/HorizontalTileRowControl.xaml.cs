@@ -33,7 +33,7 @@ namespace EchoPlay.App.Controls
 
             // ScrollableWidth ändert sich erst nachdem der Content tatsächlich gelayoutet ist –
             // PropertyChangedCallback fängt diesen Moment zuverlässig ab.
-            TilesScrollViewer.RegisterPropertyChangedCallback(
+            _ = TilesScrollViewer.RegisterPropertyChangedCallback(
                 ScrollViewer.ScrollableWidthProperty,
                 (_, _) => UpdateArrowVisibility());
 
@@ -106,13 +106,13 @@ namespace EchoPlay.App.Controls
         private void OnLeftArrowClick(object sender, RoutedEventArgs e)
         {
             double targetOffset = Math.Max(0, TilesScrollViewer.HorizontalOffset - ScrollStepPixels);
-            TilesScrollViewer.ChangeView(targetOffset, null, null);
+            _ = TilesScrollViewer.ChangeView(targetOffset, null, null);
         }
 
         private void OnRightArrowClick(object sender, RoutedEventArgs e)
         {
             double targetOffset = TilesScrollViewer.HorizontalOffset + ScrollStepPixels;
-            TilesScrollViewer.ChangeView(targetOffset, null, null);
+            _ = TilesScrollViewer.ChangeView(targetOffset, null, null);
         }
     }
 }

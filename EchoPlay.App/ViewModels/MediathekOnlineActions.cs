@@ -197,14 +197,14 @@ namespace EchoPlay.App.ViewModels
             // Lokale Cover in CoverImages sicherstellen – liest cover.jpg / ID3-Tags aus dem Dateisystem
             if (_ctx.BackgroundCoverService is not null)
             {
-                await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
+                _ = await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
             }
 
             // Cover aus lokalen Episoden auf Online-Episoden kopieren (reine SQL-Operation, ms)
             using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
 
             ICoverCopyService coverCopy = scope.ServiceProvider.GetRequiredService<ICoverCopyService>();
-            await coverCopy.CopyFromMatchingEpisodesAsync(card.Id);
+            _ = await coverCopy.CopyFromMatchingEpisodesAsync(card.Id);
 
             // Episoden aus DB laden – Cover sind jetzt schon gesetzt
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
@@ -285,7 +285,7 @@ namespace EchoPlay.App.ViewModels
                 // Kacheln periodisch aktualisieren bis der Download fertig ist
                 while (!cacheTask.IsCompleted && !ct.IsCancellationRequested)
                 {
-                    await Task.WhenAny(cacheTask, Task.Delay(2000, ct));
+                    _ = await Task.WhenAny(cacheTask, Task.Delay(2000, ct));
 
                     if (ct.IsCancellationRequested)
                     {
@@ -445,7 +445,7 @@ namespace EchoPlay.App.ViewModels
                     ? []
                     : await _ctx.ImportService.SearchAlbumsAsync(searchText);
 
-                string searchLower = searchText.ToLowerInvariant();
+                string searchLower = searchText.ToUpperInvariant();
                 List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
                 combined.AddRange(seriesResults);
                 combined.AddRange(albumResults);
@@ -560,7 +560,7 @@ namespace EchoPlay.App.ViewModels
 
                     try
                     {
-                        await _ctx.ImportService.DeltaImportEpisodesAsync(series);
+                        _ = await _ctx.ImportService.DeltaImportEpisodesAsync(series);
                     }
                     catch (Exception)
                     {
@@ -627,7 +627,7 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 HttpClient client = _ctx.HttpClientFactory.CreateClient("CoverDownload");
-                byte[] coverBytes = await client.GetByteArrayAsync(hit.FullUrl);
+                byte[] coverBytes = await client.GetByteArrayAsync(new Uri(hit.FullUrl, UriKind.Absolute));
                 await _ctx.CoverService.SetEpisodeCoverAsync(card.EpisodeId, coverBytes);
 
                 BitmapImage? image = await CoverService.ConvertToBitmapAsync(coverBytes);
@@ -676,7 +676,7 @@ namespace EchoPlay.App.ViewModels
                 try
                 {
                     HttpClient client = _ctx.HttpClientFactory.CreateClient("CoverDownload");
-                    byte[] coverBytes = await client.GetByteArrayAsync(series.CoverImageUrl);
+                    byte[] coverBytes = await client.GetByteArrayAsync(new Uri(series.CoverImageUrl, UriKind.Absolute));
                     if (coverBytes.Length == 0)
                     {
                         continue;

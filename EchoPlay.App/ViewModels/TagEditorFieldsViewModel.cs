@@ -50,56 +50,56 @@ namespace EchoPlay.App.ViewModels
         public string? Title
         {
             get => _title;
-            set { SetProperty(ref _title, value); _editedFields.Add(nameof(Title)); _onUserEdit(); }
+            set { _ = SetProperty(ref _title, value); _ = _editedFields.Add(nameof(Title)); _onUserEdit(); }
         }
 
         /// <summary>Album des Tracks.</summary>
         public string? Album
         {
             get => _album;
-            set { SetProperty(ref _album, value); _editedFields.Add(nameof(Album)); _onUserEdit(); }
+            set { _ = SetProperty(ref _album, value); _ = _editedFields.Add(nameof(Album)); _onUserEdit(); }
         }
 
         /// <summary>Haupt-Interpret des Tracks.</summary>
         public string? Artist
         {
             get => _artist;
-            set { SetProperty(ref _artist, value); _editedFields.Add(nameof(Artist)); _onUserEdit(); }
+            set { _ = SetProperty(ref _artist, value); _ = _editedFields.Add(nameof(Artist)); _onUserEdit(); }
         }
 
         /// <summary>Album-Künstler (kann von Artist abweichen, z.B. bei Samplern).</summary>
         public string? AlbumArtist
         {
             get => _albumArtist;
-            set { SetProperty(ref _albumArtist, value); _editedFields.Add(nameof(AlbumArtist)); _onUserEdit(); }
+            set { _ = SetProperty(ref _albumArtist, value); _ = _editedFields.Add(nameof(AlbumArtist)); _onUserEdit(); }
         }
 
         /// <summary>Erscheinungsjahr als Text – muss beim Speichern in <c>uint</c> geparst werden.</summary>
         public string? Year
         {
             get => _year;
-            set { SetProperty(ref _year, value); _editedFields.Add(nameof(Year)); _onUserEdit(); }
+            set { _ = SetProperty(ref _year, value); _ = _editedFields.Add(nameof(Year)); _onUserEdit(); }
         }
 
         /// <summary>Tracknummer als Text.</summary>
         public string? TrackNumber
         {
             get => _trackNumber;
-            set { SetProperty(ref _trackNumber, value); _editedFields.Add(nameof(TrackNumber)); _onUserEdit(); }
+            set { _ = SetProperty(ref _trackNumber, value); _ = _editedFields.Add(nameof(TrackNumber)); _onUserEdit(); }
         }
 
         /// <summary>Gesamtanzahl Tracks als Text.</summary>
         public string? TrackCount
         {
             get => _trackCount;
-            set { SetProperty(ref _trackCount, value); _editedFields.Add(nameof(TrackCount)); _onUserEdit(); }
+            set { _ = SetProperty(ref _trackCount, value); _ = _editedFields.Add(nameof(TrackCount)); _onUserEdit(); }
         }
 
         /// <summary>Genre des Tracks.</summary>
         public string? Genre
         {
             get => _genre;
-            set { SetProperty(ref _genre, value); _editedFields.Add(nameof(Genre)); _onUserEdit(); }
+            set { _ = SetProperty(ref _genre, value); _ = _editedFields.Add(nameof(Genre)); _onUserEdit(); }
         }
 
         /// <summary>
@@ -124,6 +124,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="tag">Die gelesenen Tags einer Datei.</param>
         public void PopulateFromTag(AudioTag tag)
         {
+            ArgumentNullException.ThrowIfNull(tag);
             // Setter umgehen, damit keine Nutzeränderung gemeldet wird.
             _title       = tag.Title;
             _album       = tag.Album;
@@ -144,6 +145,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="tags">Die gelesenen Tags der selektierten Dateien. Mindestens ein Eintrag.</param>
         public void PopulateFromMultipleTags(IReadOnlyList<AudioTag> tags)
         {
+            ArgumentNullException.ThrowIfNull(tags);
             _editedFields.Clear();
 
             AudioTag first = tags[0];
@@ -187,6 +189,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="result">Das vom Nutzer gewählte oder vom Auto-Lookup gefundene Ergebnis.</param>
         public void ApplyLookupResult(TagLookupResult result)
         {
+            ArgumentNullException.ThrowIfNull(result);
             if (result.Title is not null)   Title      = result.Title;
             if (result.Artist is not null)  Artist     = result.Artist;
             if (result.Album is not null)   Album      = result.Album;

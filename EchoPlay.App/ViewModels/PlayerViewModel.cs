@@ -128,7 +128,7 @@ namespace EchoPlay.App.ViewModels
                 // Nur während manuellem Seek schreiben – verhindert Rückkopplung vom PlayerService
                 if (_isSeeking)
                 {
-                    SetProperty(ref _positionSeconds, value);
+                    _ = SetProperty(ref _positionSeconds, value);
                 }
             }
         }
@@ -236,6 +236,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="filePaths">Absolute Pfade der ausgewählten Audiodateien.</param>
         public void LoadFiles(IReadOnlyList<string> filePaths)
         {
+            ArgumentNullException.ThrowIfNull(filePaths);
             BuildPlaylist(filePaths);
         }
 
@@ -281,7 +282,7 @@ namespace EchoPlay.App.ViewModels
             // Slider nur aktualisieren wenn kein Drag läuft – sonst springt der Slider zurück
             if (!_isSeeking)
             {
-                SetProperty(ref _positionSeconds, _playerService.Position.TotalSeconds, nameof(PositionSeconds));
+                _ = SetProperty(ref _positionSeconds, _playerService.Position.TotalSeconds, nameof(PositionSeconds));
             }
 
             UpdateTimeDisplay();
@@ -450,7 +451,7 @@ namespace EchoPlay.App.ViewModels
                 using Windows.Storage.Streams.InMemoryRandomAccessStream randomAccessStream = new();
                 using Windows.Storage.Streams.DataWriter writer = new(randomAccessStream.GetOutputStreamAt(0));
                 writer.WriteBytes(imageData);
-                await writer.StoreAsync();
+                _ = await writer.StoreAsync();
 
                 BitmapImage bitmap = new();
                 await bitmap.SetSourceAsync(randomAccessStream);

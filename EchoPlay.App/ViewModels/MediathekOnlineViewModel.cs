@@ -301,7 +301,11 @@ namespace EchoPlay.App.ViewModels
         public Task LoadAsync() => _actions.LoadAsync();
 
         /// <inheritdoc cref="MediathekOnlineActions.SelectSeriesAsync"/>
-        public Task SelectSeriesAsync(SeriesCardViewModel card) => _actions.SelectSeriesAsync(card);
+        public Task SelectSeriesAsync(SeriesCardViewModel card)
+        {
+            ArgumentNullException.ThrowIfNull(card);
+            return _actions.SelectSeriesAsync(card);
+        }
 
         /// <summary>Hebt die Serien-Auswahl auf und schließt das Akkordeon.</summary>
         public void DeselectSeries()
@@ -324,7 +328,11 @@ namespace EchoPlay.App.ViewModels
 
         /// <inheritdoc cref="MediathekOnlineActions.ApplySelectedEpisodeCoverAsync"/>
         public Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)
-            => _actions.ApplySelectedEpisodeCoverAsync(card, hit);
+        {
+            ArgumentNullException.ThrowIfNull(card);
+            ArgumentNullException.ThrowIfNull(hit);
+            return _actions.ApplySelectedEpisodeCoverAsync(card, hit);
+        }
 
         /// <summary>Lädt die Mediathek nach einem erfolgreichen Import neu.</summary>
         public async Task ReloadAfterImportAsync()

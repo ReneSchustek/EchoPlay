@@ -364,6 +364,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="progress">Aktueller Scan-Fortschritt mit Text und Prozentwert.</param>
         public void UpdateScanProgress(ScanProgress progress)
         {
+            ArgumentNullException.ThrowIfNull(progress);
             ScanProgressText  = progress.StatusText;
             ScanProgressValue = progress.PercentComplete;
             IsScanActive      = true;
@@ -561,7 +562,7 @@ namespace EchoPlay.App.ViewModels
             Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = languageCode;
 
             // Neustart des MSIX-Pakets – danach lädt die App alle .resw-Ressourcen in der neuen Sprache
-            Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
+            _ = Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
         }
     }
 }

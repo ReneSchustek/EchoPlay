@@ -187,7 +187,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            _dispatcherQueue.TryEnqueue(() =>
+            _ = _dispatcherQueue.TryEnqueue(() =>
             {
                 LogEntries.Insert(0, Map(entry));
 

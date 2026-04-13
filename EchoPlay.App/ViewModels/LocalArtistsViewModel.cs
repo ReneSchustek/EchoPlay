@@ -185,6 +185,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public async Task AppendArtistCardAsync(Series series)
         {
+            ArgumentNullException.ThrowIfNull(series);
             try
             {
                 if (_allArtists.Any(a => a.SeriesId == series.Id))
@@ -244,6 +245,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="artist">Die zu markierende Künstler-Karte.</param>
         public void SelectArtist(LocalArtistCardViewModel artist)
         {
+            ArgumentNullException.ThrowIfNull(artist);
             foreach (LocalArtistCardViewModel a in _allArtists)
             {
                 a.IsSelectedInAccordion = false;

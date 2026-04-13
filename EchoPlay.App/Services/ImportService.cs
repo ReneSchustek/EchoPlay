@@ -37,6 +37,7 @@ namespace EchoPlay.App.Services
             EpisodeCoverCacheService coverCacheService,
             ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _coverCacheService = coverCacheService;
             _logger = loggerFactory.CreateLogger("ImportService");
@@ -178,6 +179,7 @@ namespace EchoPlay.App.Services
         /// <returns>True wenn die Serie bereits importiert wurde.</returns>
         public async Task<bool> IsAlreadyImportedAsync(ImportSeries series)
         {
+            ArgumentNullException.ThrowIfNull(series);
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
 
@@ -198,6 +200,7 @@ namespace EchoPlay.App.Services
         /// <returns>Die ID der neuen oder bereits vorhandenen Serie.</returns>
         public async Task<Guid> ImportAsync(ImportSeries importSeries, IProgress<string>? progress = null)
         {
+            ArgumentNullException.ThrowIfNull(importSeries);
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
@@ -253,6 +256,7 @@ namespace EchoPlay.App.Services
         /// <returns>Anzahl der neu angelegten Episoden. 0 wenn kein Provider zugeordnet oder keine Episoden gefunden.</returns>
         public async Task<int> ReImportEpisodesAsync(Series series)
         {
+            ArgumentNullException.ThrowIfNull(series);
             // Provider-Schlüssel aus der Serie ableiten – Spotify hat Vorrang
             string? providerKey = series.SpotifyArtistId is not null ? "Spotify"
                                 : series.AppleMusicArtistId is not null ? "AppleMusic"
@@ -306,6 +310,7 @@ namespace EchoPlay.App.Services
         /// <returns>Anzahl der neu importierten Episoden. 0 wenn keine neuen gefunden.</returns>
         public async Task<int> DeltaImportEpisodesAsync(Series series)
         {
+            ArgumentNullException.ThrowIfNull(series);
             string? providerKey = series.SpotifyArtistId is not null ? "Spotify"
                                 : series.AppleMusicArtistId is not null ? "AppleMusic"
                                 : null;
@@ -326,7 +331,7 @@ namespace EchoPlay.App.Services
 
             foreach (Episode existing in existingEpisodes)
             {
-                existingTitles.Add(existing.Title);
+                _ = existingTitles.Add(existing.Title);
             }
 
             IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(sourceSeriesId);

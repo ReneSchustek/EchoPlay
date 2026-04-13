@@ -417,7 +417,7 @@ namespace EchoPlay.App.Views
                 };
 
                 Helpers.ContentDialogDragHelper.MakeDraggable(resultDialog);
-                await resultDialog.ShowAsync();
+                _ = await resultDialog.ShowAsync();
             });
         }
 

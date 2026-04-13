@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
@@ -32,10 +33,12 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="url">Die Bild-URL.</param>
         /// <returns>Die rohen Bilddaten.</returns>
+        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "URL stammt aus externen Cover-Quellen (Apple Music/Spotify/DB) und wird als string verwaltet.")]
         public async Task<byte[]> DownloadAsync(string url)
         {
             HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-            return await client.GetByteArrayAsync(url).ConfigureAwait(false);
+            return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute)).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -52,7 +55,7 @@ namespace EchoPlay.App.Services
             try
             {
                 using InMemoryRandomAccessStream stream = new();
-                await stream.WriteAsync(coverBytes.AsBuffer());
+                _ = await stream.WriteAsync(coverBytes.AsBuffer());
                 stream.Seek(0);
 
                 BitmapDecoder decoder = await BitmapDecoder.CreateAsync(stream);

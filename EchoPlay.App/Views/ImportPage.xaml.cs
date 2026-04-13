@@ -56,7 +56,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnImportSucceeded(object? sender, EventArgs e)
         {
-            _navigationService.GoBack();
+            _ = _navigationService.GoBack();
         }
     }
 }

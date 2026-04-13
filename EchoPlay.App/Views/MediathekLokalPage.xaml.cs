@@ -317,7 +317,7 @@ namespace EchoPlay.App.Views
                     StringBuilder builder = new();
                     foreach (string title in episodeTitles)
                     {
-                        builder.AppendLine(title);
+                        _ = builder.AppendLine(title);
                     }
                     content = builder.ToString().TrimEnd();
                 }
@@ -524,13 +524,13 @@ namespace EchoPlay.App.Views
 
                 // Vorschau-Text zusammenbauen
                 System.Text.StringBuilder sb = new();
-                sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
-                sb.AppendLine();
+                _ = sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
+                _ = sb.AppendLine();
 
                 foreach (RestructureActionDisplay action in preview.Actions)
                 {
-                    sb.Append("  ").AppendLine(action.FileName);
-                    sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
+                    _ = sb.Append("  ").AppendLine(action.FileName);
+                    _ = sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
                 }
 
                 ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(

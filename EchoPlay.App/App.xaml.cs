@@ -209,7 +209,7 @@ namespace EchoPlay.App
                         CloseButtonText = "OK",
                         XamlRoot = splash.Content.XamlRoot
                     };
-                    await errorDialog.ShowAsync();
+                    _ = await errorDialog.ShowAsync();
                 }
             }
             catch
@@ -394,11 +394,11 @@ namespace EchoPlay.App
 
             // Konfiguration wird bewusst im Host geladen,
             // da nur dieser Zugriff auf Dateisystem und Umgebungen hat.
-            builder.Configuration
+            _ = builder.Configuration
                 .AddJsonFile("appsettings.json", optional: false);
 
             // Logger registrieren (Cleanup läuft automatisch beim Start)
-            builder.Services.AddEchoPlayLogger(options =>
+            _ = builder.Services.AddEchoPlayLogger(options =>
             {
                 options.LogDirectory = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -418,7 +418,7 @@ namespace EchoPlay.App
             // ihren Client ueber IHttpClientFactory, statt eigene statische Instanzen
             // zu halten. Damit greifen einheitliche Timeouts, User-Agent-Header und
             // bei Bedarf spaeter auch Polly-Resilience-Policies (siehe Brief 228).
-            builder.Services.AddHttpClient("CoverDownload", client =>
+            _ = builder.Services.AddHttpClient("CoverDownload", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-CoverDownload/1.0");
@@ -431,12 +431,12 @@ namespace EchoPlay.App
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
             });
-            builder.Services.AddHttpClient("OnlineCheck", client =>
+            _ = builder.Services.AddHttpClient("OnlineCheck", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-OnlineCheck/1.0");
             });
-            builder.Services.AddHttpClient("UpdateDownload", client =>
+            _ = builder.Services.AddHttpClient("UpdateDownload", client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(2);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateDownload/1.0");
@@ -449,7 +449,7 @@ namespace EchoPlay.App
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
             });
-            builder.Services.AddHttpClient("UpdateCheck", client =>
+            _ = builder.Services.AddHttpClient("UpdateCheck", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateCheck/1.0");
@@ -464,13 +464,13 @@ namespace EchoPlay.App
             };
 
             // Credential-Store und Options-Provider registrieren.
-            builder.Services.AddSingleton<ISpotifyCredentialStore, SpotifyCredentialStore>();
-            builder.Services.AddSingleton<ISpotifyOptionsProvider>(provider =>
+            _ = builder.Services.AddSingleton<ISpotifyCredentialStore, SpotifyCredentialStore>();
+            _ = builder.Services.AddSingleton<ISpotifyOptionsProvider>(provider =>
                 new SpotifyOptionsProvider(baseSpotifyOptions, provider.GetRequiredService<ISpotifyCredentialStore>()));
 
             // Named HttpClient für Token-Anfragen (Client-Credentials-Flow).
             // Timeout kurz halten – ein hängender Token-Request blockiert jeden weiteren API-Call.
-            builder.Services.AddHttpClient("SpotifyToken", client =>
+            _ = builder.Services.AddHttpClient("SpotifyToken", client =>
             {
                 client.BaseAddress = new(baseSpotifyOptions.AuthBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -478,7 +478,7 @@ namespace EchoPlay.App
 
             // SpotifyTokenClient manuell registrieren, damit die Credentials zur Laufzeit
             // aus dem Credential-Store kommen statt aus einer statischen Konfiguration.
-            builder.Services.AddScoped<SpotifyTokenClient>(provider =>
+            _ = builder.Services.AddScoped<SpotifyTokenClient>(provider =>
             {
                 IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
                 HttpClient client = httpClientFactory.CreateClient("SpotifyToken");
@@ -489,10 +489,10 @@ namespace EchoPlay.App
 
             // Der AuthMessageHandler wird als Transient registriert,
             // damit jede HttpClient-Instanz ihren eigenen Handler erhält.
-            builder.Services.AddTransient<SpotifyAuthMessageHandler>();
+            _ = builder.Services.AddTransient<SpotifyAuthMessageHandler>();
 
             // Named HttpClient für Spotify-Web-API mit automatischer Authentifizierung.
-            builder.Services.AddHttpClient("SpotifyApi", client =>
+            _ = builder.Services.AddHttpClient("SpotifyApi", client =>
             {
                 client.BaseAddress = new(baseSpotifyOptions.ApiBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(15);
@@ -500,7 +500,7 @@ namespace EchoPlay.App
             .AddHttpMessageHandler<SpotifyAuthMessageHandler>();
 
             // SpotifyApiClient manuell registrieren, damit der Named HttpClient verwendet wird.
-            builder.Services.AddScoped<SpotifyApiClient>(provider =>
+            _ = builder.Services.AddScoped<SpotifyApiClient>(provider =>
             {
                 IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
                 HttpClient client = httpClientFactory.CreateClient("SpotifyApi");
@@ -508,33 +508,33 @@ namespace EchoPlay.App
             });
 
             // ISpotifyApiClient auf den manuell registrierten SpotifyApiClient abbilden.
-            builder.Services.AddScoped<ISpotifyApiClient>(provider =>
+            _ = builder.Services.AddScoped<ISpotifyApiClient>(provider =>
                 provider.GetRequiredService<SpotifyApiClient>());
 
             // Registrierung der Spotify-Use-Cases inkl. Keyed-Services für ImportService.
-            builder.Services.AddSpotifyImport();
+            _ = builder.Services.AddSpotifyImport();
 
             // Registrierung der AppleMusic-Use-Cases inkl. Keyed-Services für ImportService.
             // Die iTunes Search API ist kostenfrei und benötigt keine Konfiguration oder Authentifizierung.
-            builder.Services.AddAppleMusicImport();
+            _ = builder.Services.AddAppleMusicImport();
 
             // Online-Folgenprüfung: vergleicht lokalen Stand mit iTunes-Katalog.
             // Checker als Scoped (nutzt DB + API), Cache-Ergebnisse liegen in der DB (CachedNewReleases).
-            builder.Services.AddScoped<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker,
+            _ = builder.Services.AddScoped<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker,
                 EchoPlay.App.Services.OnlineEpisodeChecker>();
 
             // Datenbankdienste für AppSettings und Mediathek-Verwaltung.
-            builder.Services.AddEchoPlayData();
+            _ = builder.Services.AddEchoPlayData();
 
             // ThemeService als Singleton – der Zustand (aktives Theme) darf nur einmal existieren.
-            builder.Services.AddSingleton<IThemeService, ThemeService>();
-            builder.Services.AddSingleton<ThemeService>(provider =>
+            _ = builder.Services.AddSingleton<IThemeService, ThemeService>();
+            _ = builder.Services.AddSingleton<ThemeService>(provider =>
                 (ThemeService)provider.GetRequiredService<IThemeService>());
 
             // IClock als Singleton – einzige Stelle, an der DateTime.UtcNow in Produktion gelesen wird.
             // Tests injizieren einen FakeClock, damit zeitabhängige Logik reproduzierbar prüfbar wird.
-            builder.Services.AddSingleton<IClock, SystemClock>();
-            builder.Services.AddSingleton<IHostRateLimiter>(_ =>
+            _ = builder.Services.AddSingleton<IClock, SystemClock>();
+            _ = builder.Services.AddSingleton<IHostRateLimiter>(_ =>
                 new SemaphoreHostRateLimiter(new Dictionary<string, TimeSpan>
                 {
                     ["musicbrainz.org"]     = TimeSpan.FromSeconds(1),
@@ -543,94 +543,94 @@ namespace EchoPlay.App
                 }));
 
             // ScanEventService als Singleton – überlebt Navigation, benachrichtigt neues ViewModel nach Rückkehr
-            builder.Services.AddSingleton<IScanEventService, ScanEventService>();
+            _ = builder.Services.AddSingleton<IScanEventService, ScanEventService>();
 
             // NavigationService als Singleton – der ContentFrame existiert nur einmal pro App-Instanz.
             // MainWindow ruft Initialize(Frame) nach InitializeComponent() auf.
-            builder.Services.AddSingleton<INavigationService, NavigationService>();
-            builder.Services.AddSingleton<NavigationService>(provider =>
+            _ = builder.Services.AddSingleton<INavigationService, NavigationService>();
+            _ = builder.Services.AddSingleton<NavigationService>(provider =>
                 (NavigationService)provider.GetRequiredService<INavigationService>());
 
             // WatchToggleService als Singleton – kapselt Watch-Toggle + NewRelease-Cache-Verwaltung.
             // Wird von beiden Mediathek-VMs genutzt, statt die Logik im Code-Behind zu duplizieren.
-            builder.Services.AddSingleton<IWatchToggleService, WatchToggleService>();
+            _ = builder.Services.AddSingleton<IWatchToggleService, WatchToggleService>();
 
             // LocalLibrary-Services für Scan, Metadaten und Cover.
-            builder.Services.AddLocalLibrary();
+            _ = builder.Services.AddLocalLibrary();
 
             // PlayerService als Singleton – es darf immer nur eine Wiedergabeinstanz geben.
-            builder.Services.AddSingleton<IPlayerService, PlayerService>();
-            builder.Services.AddSingleton<PlayerService>(provider =>
+            _ = builder.Services.AddSingleton<IPlayerService, PlayerService>();
+            _ = builder.Services.AddSingleton<PlayerService>(provider =>
                 (PlayerService)provider.GetRequiredService<IPlayerService>());
 
             // SyncService als Singleton – nutzt eigenen DI-Scope intern via IServiceScopeFactory.
-            builder.Services.AddSingleton<ISyncService, SyncService>();
-            builder.Services.AddSingleton<SyncService>(provider =>
+            _ = builder.Services.AddSingleton<ISyncService, SyncService>();
+            _ = builder.Services.AddSingleton<SyncService>(provider =>
                 (SyncService)provider.GetRequiredService<ISyncService>());
 
             // ImportService als Singleton – nutzt eigenen DI-Scope intern via IServiceScopeFactory.
-            builder.Services.AddSingleton<ImportService>();
+            _ = builder.Services.AddSingleton<ImportService>();
 
             // EpisodeCoverCacheService als Singleton – lädt fehlende Episoden-Cover im Hintergrund.
             // Eigener Service statt Teil von ImportService, damit die LocalLibrary-Assembly
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
-            builder.Services.AddSingleton<EpisodeCoverCacheService>();
-            builder.Services.AddSingleton<CoverBrightnessAnalyzer>();
-            builder.Services.AddSingleton<CoverService>();
-            builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
-            builder.Services.AddSingleton<BackgroundCoverService>();
-            builder.Services.AddSingleton<BackgroundProviderIdService>();
+            _ = builder.Services.AddSingleton<EpisodeCoverCacheService>();
+            _ = builder.Services.AddSingleton<CoverBrightnessAnalyzer>();
+            _ = builder.Services.AddSingleton<CoverService>();
+            _ = builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
+            _ = builder.Services.AddSingleton<BackgroundCoverService>();
+            _ = builder.Services.AddSingleton<BackgroundProviderIdService>();
 
             // LocalizationService als Singleton – ResourceLoader-Instanz ist thread-sicher und teuer zu erzeugen.
-            builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+            _ = builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
 
             // ErrorDialogService als Singleton – zeigt WinUI-3-ContentDialogs an.
-            builder.Services.AddSingleton<IErrorDialogService, ErrorDialogService>();
-            builder.Services.AddSingleton<ErrorDialogService>(provider =>
+            _ = builder.Services.AddSingleton<IErrorDialogService, ErrorDialogService>();
+            _ = builder.Services.AddSingleton<ErrorDialogService>(provider =>
                 (ErrorDialogService)provider.GetRequiredService<IErrorDialogService>());
 
             // ConfirmationDialogService als Singleton – zeigt Ja/Abbrechen-ContentDialogs an.
-            builder.Services.AddSingleton<IConfirmationDialogService, ConfirmationDialogService>();
+            _ = builder.Services.AddSingleton<IConfirmationDialogService, ConfirmationDialogService>();
 
             // OnlineAccessGuard als Singleton – prüft Offline-Modus und schaltet StatusBar temporär auf Online.
-            builder.Services.AddSingleton<IOnlineAccessGuard, OnlineAccessGuard>();
+            _ = builder.Services.AddSingleton<IOnlineAccessGuard, OnlineAccessGuard>();
 
             // PageModeGuard als Singleton – kapselt den Offline-/Nur-Online-Check beim Betreten einer Page,
             // damit die ViewModels diesen Check nicht jeweils selbst implementieren müssen.
-            builder.Services.AddSingleton<IPageModeGuard, PageModeGuard>();
+            _ = builder.Services.AddSingleton<IPageModeGuard, PageModeGuard>();
 
             // FolderRestructureCoordinator als Singleton – kapselt AppSettings-Lookup, den
             // LocalLibrary-Restructure-Service und das Display-Mapping aus dem MediathekLokalViewModel.
-            builder.Services.AddSingleton<IFolderRestructureCoordinator, FolderRestructureCoordinator>();
+            _ = builder.Services.AddSingleton<IFolderRestructureCoordinator, FolderRestructureCoordinator>();
 
             // MissingEpisodesCoordinator als Singleton – kapselt Datei-System-Analyse,
             // Live-Online-Abgleich per iTunes und StatusBar-Aktualisierung für die
             // Fehlende-Folgen-Prüfung. Aus dem MediathekLokalViewModel ausgelagert.
-            builder.Services.AddSingleton<IMissingEpisodesCoordinator, MissingEpisodesCoordinator>();
+            _ = builder.Services.AddSingleton<IMissingEpisodesCoordinator, MissingEpisodesCoordinator>();
 
             // EpisodeCoverCoordinator als Singleton – kapselt Cover-Suche, Bestätigungs-
             // Dialog beim Überschreiben, HTTP-Download, CoverImages-Tabelle, optionales
             // Speichern als cover.jpg und das Card-Bitmap-Update.
-            builder.Services.AddSingleton<IEpisodeCoverCoordinator, EpisodeCoverCoordinator>();
+            _ = builder.Services.AddSingleton<IEpisodeCoverCoordinator, EpisodeCoverCoordinator>();
 
             // StartupValidator: führt alle Checks (Online, Lokal, Cache) im Splash durch.
-            builder.Services.AddSingleton<IStartupValidator, StartupValidator>();
+            _ = builder.Services.AddSingleton<IStartupValidator, StartupValidator>();
 
             // TaskbarProgressService als Singleton – steuert den Fortschrittsbalken im Taskleisten-Symbol.
-            builder.Services.AddSingleton<TaskbarProgressService>();
+            _ = builder.Services.AddSingleton<TaskbarProgressService>();
 
             // Update-Services: prüft auf neue Versionen und lädt die Setup-Datei herunter.
-            builder.Services.AddSingleton<UpdateCheckService>();
-            builder.Services.AddSingleton<UpdateDownloadService>();
+            _ = builder.Services.AddSingleton<UpdateCheckService>();
+            _ = builder.Services.AddSingleton<UpdateDownloadService>();
 
             // StatusBarViewModel als Singleton – Statistiken müssen App-weit konsistent sein.
-            builder.Services.AddSingleton<StatusBarViewModel>();
+            _ = builder.Services.AddSingleton<StatusBarViewModel>();
 
             // MainWindowViewModel als Singleton – passend zum einzigen Hauptfenster der App.
-            builder.Services.AddSingleton<MainWindowViewModel>();
+            _ = builder.Services.AddSingleton<MainWindowViewModel>();
 
             // ViewModels als Transient – jede Navigation erzeugt eine frische Instanz.
-            builder.Services.AddTransient<DashboardViewModel>(provider => new DashboardViewModel(
+            _ = builder.Services.AddTransient<DashboardViewModel>(provider => new DashboardViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<IConfirmationDialogService>(),
@@ -639,7 +639,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<CoverService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IClock>()));
-            builder.Services.AddTransient<MediathekOnlineViewModel>(provider => new MediathekOnlineViewModel(
+            _ = builder.Services.AddTransient<MediathekOnlineViewModel>(provider => new MediathekOnlineViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IConfirmationDialogService>(),
                 provider.GetRequiredService<ImportService>(),
@@ -656,7 +656,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IPageModeGuard>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
                 provider.GetRequiredService<INavigationService>()));
-            builder.Services.AddTransient<MediathekLokalViewModel>(provider => new MediathekLokalViewModel(
+            _ = builder.Services.AddTransient<MediathekLokalViewModel>(provider => new MediathekLokalViewModel(
                 new MediathekLokalViewModelContext(
                     provider.GetRequiredService<IServiceScopeFactory>(),
                     provider.GetRequiredService<ISyncService>(),
@@ -676,7 +676,7 @@ namespace EchoPlay.App
                     provider.GetRequiredService<IFolderRestructureCoordinator>(),
                     provider.GetRequiredService<IMissingEpisodesCoordinator>(),
                     provider.GetRequiredService<IEpisodeCoverCoordinator>())));
-            builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
+            _ = builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<ILocalizationService>(),
@@ -684,16 +684,16 @@ namespace EchoPlay.App
                 provider.GetRequiredService<INavigationService>(),
                 provider.GetRequiredService<IPageModeGuard>(),
                 provider.GetRequiredService<CoverBrightnessAnalyzer>()));
-            builder.Services.AddTransient<PlayerViewModel>();
-            builder.Services.AddTransient<SeriesDetailViewModel>();
+            _ = builder.Services.AddTransient<PlayerViewModel>();
+            _ = builder.Services.AddTransient<SeriesDetailViewModel>();
             // App-Services für Settings: Verbindungstest und Log-Viewer sind nach Brief 211
             // als eigenständige Coordinators implementiert, damit das SettingsViewModel
             // stateless Logik nicht mehr selbst trägt.
-            builder.Services.AddSingleton<IConnectionTestCoordinator, ConnectionTestCoordinator>();
-            builder.Services.AddSingleton<ILogViewerCoordinator>(provider => new LogViewerCoordinator(
+            _ = builder.Services.AddSingleton<IConnectionTestCoordinator, ConnectionTestCoordinator>();
+            _ = builder.Services.AddSingleton<ILogViewerCoordinator>(provider => new LogViewerCoordinator(
                 provider.GetRequiredService<LoggerManager>(),
                 provider.GetService<MemorySink>()));
-            builder.Services.AddTransient<SettingsViewModel>(provider => new SettingsViewModel(
+            _ = builder.Services.AddTransient<SettingsViewModel>(provider => new SettingsViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IThemeService>(),
                 provider.GetRequiredService<ISyncService>(),
@@ -707,8 +707,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<ILogViewerCoordinator>(),
                 provider.GetRequiredService<LoggerManager>(),
                 provider.GetRequiredService<StatusBarViewModel>()));
-            builder.Services.AddTransient<MiniPlayerViewModel>();
-            builder.Services.AddTransient<ImportViewModel>(provider => new ImportViewModel(
+            _ = builder.Services.AddTransient<MiniPlayerViewModel>();
+            _ = builder.Services.AddTransient<ImportViewModel>(provider => new ImportViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<IOnlineAccessGuard>(),
@@ -716,17 +716,17 @@ namespace EchoPlay.App
                 provider.GetRequiredService<StatusBarViewModel>()));
 
             // TagManager-Dienste (ITagService, ITagLookupService mit MusicBrainz-HttpClient).
-            builder.Services.AddTagManager();
+            _ = builder.Services.AddTagManager();
             // App-Service, der den MusicBrainz-Lookup und die Query-/Match-Logik für den Tag-Manager kapselt.
-            builder.Services.AddSingleton<ITagLookupCoordinator, TagLookupCoordinator>();
-            builder.Services.AddTransient<TagManagerViewModel>();
+            _ = builder.Services.AddSingleton<ITagLookupCoordinator, TagLookupCoordinator>();
+            _ = builder.Services.AddTransient<TagManagerViewModel>();
 
             // ProtokollViewModel als Transient – jede Navigation erzeugt eine frische Instanz
             // und meldet sich sauber beim MemorySink ab.
-            builder.Services.AddTransient<ProtokollViewModel>(provider => new ProtokollViewModel(
+            _ = builder.Services.AddTransient<ProtokollViewModel>(provider => new ProtokollViewModel(
                 provider.GetService<MemorySink>()));
 
-            builder.Services.AddTransient<StatistikViewModel>();
+            _ = builder.Services.AddTransient<StatistikViewModel>();
 
             return builder.Build();
         }

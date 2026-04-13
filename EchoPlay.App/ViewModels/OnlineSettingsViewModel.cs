@@ -284,6 +284,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Die geladene Entität.</param>
         public void LoadFrom(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             _isBatchLoading = true;
             try
             {
@@ -299,6 +300,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="settings">Ziel-Entität.</param>
         public void WriteTo(AppSettings settings)
         {
+            ArgumentNullException.ThrowIfNull(settings);
             settings.ActiveProvider = ActiveProvider;
         }
 

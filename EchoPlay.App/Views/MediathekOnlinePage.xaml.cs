@@ -88,7 +88,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnFocusSearchRequested()
         {
-            SearchBox.Focus(FocusState.Programmatic);
+            _ = SearchBox.Focus(FocusState.Programmatic);
         }
 
         // ── Akkordeon Split-Logik ────────────────────────────────────────────────

@@ -458,7 +458,7 @@ namespace EchoPlay.App.ViewModels
                 // iTunes-Cover als Fallback: höhere Auflösung per URL-Pattern
                 if (cover is null && !string.IsNullOrEmpty(entry.CoverUrl))
                 {
-                    string highResCoverUrl = entry.CoverUrl.Replace("100x100bb", "600x600bb");
+                    string highResCoverUrl = entry.CoverUrl.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
                     cover = new BitmapImage(new Uri(highResCoverUrl));
                 }
 

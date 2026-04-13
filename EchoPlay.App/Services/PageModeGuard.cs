@@ -49,7 +49,7 @@ namespace EchoPlay.App.Services
             await _errorDialogService.ShowAsync(
                 _localizationService.Get("OfflineModeSearchHintTitle"),
                 _localizationService.Get("OfflineModeSearchHintMessage"));
-            _navigationService.GoBack();
+            _ = _navigationService.GoBack();
             return false;
         }
 
@@ -66,7 +66,7 @@ namespace EchoPlay.App.Services
             await _errorDialogService.ShowAsync(
                 _localizationService.Get("OnlineOnlyModeHintTitle"),
                 _localizationService.Get("OnlineOnlyModeHintMessage"));
-            _navigationService.GoBack();
+            _ = _navigationService.GoBack();
             return false;
         }
 

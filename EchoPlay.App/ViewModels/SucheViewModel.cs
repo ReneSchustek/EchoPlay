@@ -307,7 +307,7 @@ namespace EchoPlay.App.ViewModels
 
                     // Zusammenführen und nach Relevanz sortieren:
                     // Treffer mit Suchbegriff im Titel/Künstler zuerst, dann nach Score
-                    string searchLower = _searchText.ToLowerInvariant();
+                    string searchLower = _searchText.ToUpperInvariant();
                     List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
                     combined.AddRange(seriesResults);
                     combined.AddRange(albumResults);
@@ -354,7 +354,7 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 IsLoading = false;
-                _searchCompletedSource?.TrySetResult(true);
+                _ = _searchCompletedSource?.TrySetResult(true);
             }
         }
 

@@ -20,7 +20,7 @@ namespace EchoPlay.App.Helpers
         {
             if (Interlocked.Increment(ref _openCount) > 1)
             {
-                Interlocked.Decrement(ref _openCount);
+                _ = Interlocked.Decrement(ref _openCount);
                 return null;
             }
 

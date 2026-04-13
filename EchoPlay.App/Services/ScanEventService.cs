@@ -23,13 +23,13 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public void BeginScan()
         {
-            Interlocked.Exchange(ref _isRunning, 1);
+            _ = Interlocked.Exchange(ref _isRunning, 1);
         }
 
         /// <inheritdoc/>
         public void EndScan()
         {
-            Interlocked.Exchange(ref _isRunning, 0);
+            _ = Interlocked.Exchange(ref _isRunning, 0);
         }
 
         /// <inheritdoc/>

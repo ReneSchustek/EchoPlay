@@ -56,6 +56,7 @@ namespace EchoPlay.App.ViewModels
             SucheViewModel? parentViewModel = null,
             Func<Task>? onImportCompleted = null)
         {
+            ArgumentNullException.ThrowIfNull(importSeries);
             _importSeries              = importSeries;
             _importService             = importService;
             _errorDialogService        = errorDialogService;
@@ -235,7 +236,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                await _importService.ImportAsync(_importSeries);
+                _ = await _importService.ImportAsync(_importSeries);
                 // Erst nach erfolgreichem Import den Status setzen – kein optimistisches Update
                 IsImported = true;
                 _parentViewModel?.NotifySeriesAdded();
@@ -274,7 +275,7 @@ namespace EchoPlay.App.ViewModels
                 // BitmapImage aus den Bytes erstellen (UI-Thread nötig)
                 Microsoft.UI.Xaml.Media.Imaging.BitmapImage image = new();
                 using Windows.Storage.Streams.InMemoryRandomAccessStream stream = new();
-                await stream.WriteAsync(coverBytes.AsBuffer());
+                _ = await stream.WriteAsync(coverBytes.AsBuffer());
                 stream.Seek(0);
                 await image.SetSourceAsync(stream);
                 CoverImage = image;

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace EchoPlay.App.Services
 {
@@ -59,6 +60,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc />
         public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
         {
+            ArgumentNullException.ThrowIfNull(results);
             if (results.Count == 0)
             {
                 return null;

@@ -41,6 +41,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
+            ArgumentNullException.ThrowIfNull(e);
             base.OnNavigatedTo(e);
             ViewModel.LookupResultsReady  += OnLookupResultsReady;
             ViewModel.AutoLookupApplied   += OnAutoLookupApplied;
@@ -116,7 +117,7 @@ namespace EchoPlay.App.Views
                         XamlRoot           = XamlRoot
                     };
                     Helpers.ContentDialogDragHelper.MakeDraggable(noResultsDialog);
-                    await noResultsDialog.ShowAsync();
+                    _ = await noResultsDialog.ShowAsync();
                     return;
                 }
 

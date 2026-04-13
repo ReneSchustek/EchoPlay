@@ -49,6 +49,7 @@ namespace EchoPlay.App.Services
             IScanEventService scanEventService,
             CoverService coverService)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory     = scopeFactory;
             _logger           = loggerFactory.CreateLogger("SyncService");
             _scanEventService = scanEventService;
@@ -188,7 +189,7 @@ namespace EchoPlay.App.Services
                         };
 
                         await seriesService.AddAsync(importedSeries);
-                        usedFolderPaths.Add(scanResult.SeriesFolderPath);
+                        _ = usedFolderPaths.Add(scanResult.SeriesFolderPath);
 
                         // Episoden für die neue lokale Serie aus den Scan-Ergebnissen anlegen.
                         // Ordnet jeder Folge eine Nummer zu: aus dem Muster oder sequenziell.

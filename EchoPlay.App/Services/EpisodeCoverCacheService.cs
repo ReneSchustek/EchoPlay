@@ -46,6 +46,7 @@ namespace EchoPlay.App.Services
             IClock clock,
             IHttpClientFactory httpClientFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("EpisodeCoverCacheService");
             _coverService = coverService;
@@ -377,7 +378,7 @@ namespace EchoPlay.App.Services
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                return await client.GetByteArrayAsync(url).ConfigureAwait(false);
+                return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute)).ConfigureAwait(false);
             }
             catch (Exception)
             {

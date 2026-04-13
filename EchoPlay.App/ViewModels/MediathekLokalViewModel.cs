@@ -504,14 +504,22 @@ namespace EchoPlay.App.ViewModels
         /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="artist">Die ausgewählte Serie.</param>
-        public Task SelectArtistAsync(LocalArtistCardViewModel artist) => _actions.SelectArtistAsync(artist);
+        public Task SelectArtistAsync(LocalArtistCardViewModel artist)
+        {
+            ArgumentNullException.ThrowIfNull(artist);
+            return _actions.SelectArtistAsync(artist);
+        }
 
         /// <summary>
         /// Wählt eine Episode aus und lädt deren Tracks in die rechte Spalte.
         /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
         /// <param name="episode">Die ausgewählte Episode.</param>
-        public Task SelectEpisodeAsync(LocalEpisodeCardViewModel episode) => _actions.SelectEpisodeAsync(episode);
+        public Task SelectEpisodeAsync(LocalEpisodeCardViewModel episode)
+        {
+            ArgumentNullException.ThrowIfNull(episode);
+            return _actions.SelectEpisodeAsync(episode);
+        }
 
         // ── Tag-Manager-Navigation ───────────────────────────────────────────────
 

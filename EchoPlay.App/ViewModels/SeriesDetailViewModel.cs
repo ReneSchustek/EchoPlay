@@ -311,7 +311,7 @@ namespace EchoPlay.App.ViewModels
 
                 foreach (Episode episode in episodes)
                 {
-                    stateById.TryGetValue(episode.Id, out PlaybackState? episodeState);
+                    _ = stateById.TryGetValue(episode.Id, out PlaybackState? episodeState);
                     PlaybackStatus playbackStatus = DetermineStatus(episodeState);
 
                     if (playbackStatus == PlaybackStatus.Finished)
@@ -381,6 +381,7 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task SelectEpisodeAsync(EpisodeTileViewModel episode)
         {
+            ArgumentNullException.ThrowIfNull(episode);
             SelectedEpisode = episode;
             _hasLocalTracks = false;
             Tracks = [];

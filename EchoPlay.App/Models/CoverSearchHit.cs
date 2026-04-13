@@ -1,3 +1,5 @@
+using System;
+
 namespace EchoPlay.App.Models
 {
     /// <summary>
@@ -22,6 +24,9 @@ namespace EchoPlay.App.Models
         /// </summary>
         /// <param name="result">Das LocalLibrary-Suchergebnis.</param>
         public static CoverSearchHit From(EchoPlay.LocalLibrary.Cover.CoverSearchResult result)
-            => new(result.ThumbnailUrl, result.FullUrl, result.ReleaseTitle, result.Source);
+        {
+            ArgumentNullException.ThrowIfNull(result);
+            return new(result.ThumbnailUrl, result.FullUrl, result.ReleaseTitle, result.Source);
+        }
     }
 }

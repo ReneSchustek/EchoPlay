@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -51,6 +52,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="releaseDate">Erscheinungsdatum für Ankündigungen, oder null.</param>
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
+        [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase",
+            Justification = "Lowercase-Badge-Text wird im UI direkt angezeigt und muss kleingeschrieben bleiben.")]
         public NewEpisodeCardViewModel(
             Guid episodeId,
             Guid seriesId,
@@ -70,6 +73,8 @@ namespace EchoPlay.App.ViewModels
             ILocalizationService? localizationService = null,
             IClock? clock = null)
         {
+            ArgumentNullException.ThrowIfNull(seriesName);
+            ArgumentNullException.ThrowIfNull(episodeTitle);
             _clock       = clock ?? new SystemClock();
             EpisodeId    = episodeId;
             SeriesId     = seriesId;

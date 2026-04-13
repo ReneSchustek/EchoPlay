@@ -47,7 +47,7 @@ namespace EchoPlay.App.Services
             // Beim Deaktivieren: gemerkte Neuerscheinungen dieser Serie entfernen.
             ICachedNewReleaseDataService cacheService =
                 scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
-            await cacheService.RemoveBySeriesIdsAsync([seriesId]);
+            _ = await cacheService.RemoveBySeriesIdsAsync([seriesId]);
         }
     }
 }

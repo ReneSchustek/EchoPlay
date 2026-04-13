@@ -44,6 +44,7 @@ namespace EchoPlay.App.Services
         /// <param name="clock">Zeitquelle für Zeitstempel.</param>
         public PlayerService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory, IClock clock)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("PlayerService");
             _clock = clock;
@@ -116,6 +117,7 @@ namespace EchoPlay.App.Services
         /// <param name="resumePosition">Position, ab der fortgesetzt werden soll.</param>
         public void Play(Guid episodeId, IReadOnlyList<string> trackPaths, int startIndex = 0, TimeSpan resumePosition = default)
         {
+            ArgumentNullException.ThrowIfNull(trackPaths);
             _logger.Debug($"Wiedergabe gestartet: EpisodeId={episodeId}, Tracks={trackPaths.Count}, StartIndex={startIndex}");
 
             try
@@ -139,7 +141,7 @@ namespace EchoPlay.App.Services
 #pragma warning restore CA2000
                 }
 
-                _playlist.MoveTo((uint)startIndex);
+                _ = _playlist.MoveTo((uint)startIndex);
                 _player.Play();
 
                 if (resumePosition > TimeSpan.Zero)
@@ -203,7 +205,7 @@ namespace EchoPlay.App.Services
 
             // Media-Pipeline auf Hintergrund-Thread stoppen –
             // Pause() und Items.Clear() können den UI-Thread deadlocken
-            System.Threading.Tasks.Task.Run(() =>
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
                 try
                 {
@@ -255,7 +257,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         public void SkipToNext()
         {
-            _playlist.MoveNext();
+            _ = _playlist.MoveNext();
         }
 
         /// <summary>
@@ -263,7 +265,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         public void SkipToPrevious()
         {
-            _playlist.MovePrevious();
+            _ = _playlist.MovePrevious();
         }
 
         /// <summary>
@@ -458,7 +460,7 @@ namespace EchoPlay.App.Services
             }
             finally
             {
-                _saveLock.Release();
+                _ = _saveLock.Release();
             }
         }
     }

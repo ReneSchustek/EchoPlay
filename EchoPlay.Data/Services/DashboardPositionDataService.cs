@@ -65,7 +65,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
             {

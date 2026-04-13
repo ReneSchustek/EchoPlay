@@ -56,7 +56,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
             {
@@ -77,7 +77,7 @@ namespace EchoPlay.Data.Services
         public async Task UpdateAsync(PlaybackState playbackState)
         {
             _ = _context.PlaybackStates.Update(playbackState);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' aktualisiert.");
         }
 
@@ -158,7 +158,7 @@ namespace EchoPlay.Data.Services
             // Der Wiedergabestatus wird ausschließlich über die definierte Domänenoperation logisch gelöscht.
             playbackState.MarkAsDeleted(DateTime.UtcNow);
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {id}) als gelöscht markiert.");
         }
     }

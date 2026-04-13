@@ -48,7 +48,7 @@ namespace EchoPlay.Data.Services
                 });
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Verschlüsselter Wert für '{key}' gespeichert.");
         }
 
@@ -63,7 +63,7 @@ namespace EchoPlay.Data.Services
             if (existing is not null)
             {
                 _ = _context.SecureSettings.Remove(existing);
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
                 _logger.Info($"Verschlüsselter Wert für '{key}' gelöscht.");
             }
         }

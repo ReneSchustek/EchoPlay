@@ -157,7 +157,7 @@ namespace EchoPlay.Data.Services
         public async Task AddAsync(Episode episode)
         {
             _ = _context.Episodes.Add(episode);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) hinzugefügt.");
         }
 
@@ -170,7 +170,7 @@ namespace EchoPlay.Data.Services
             }
 
             _context.Episodes.AddRange(episodes);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"{episodes.Count} Episoden in einem Batch-Insert hinzugefügt.");
         }
 
@@ -182,7 +182,7 @@ namespace EchoPlay.Data.Services
         public async Task UpdateAsync(Episode episode)
         {
             _ = _context.Episodes.Update(episode);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) aktualisiert.");
         }
 
@@ -230,7 +230,7 @@ namespace EchoPlay.Data.Services
             }
 
             episode.LocalCoverData = coverData;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"Cover für Episode '{episode.Title}' (ID: {episodeId}) {(coverData is null ? "gelöscht" : "gespeichert")}.");
         }
@@ -249,7 +249,7 @@ namespace EchoPlay.Data.Services
             }
 
             episode.CoverLastChecked = checkedAt;
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -288,7 +288,7 @@ namespace EchoPlay.Data.Services
                 playbackState.MarkAsDeleted(DateTime.UtcNow);
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {id}) und {playbackStates.Count} PlaybackState(s) als gelöscht markiert.");
         }
     }

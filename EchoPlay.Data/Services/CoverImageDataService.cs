@@ -96,7 +96,7 @@ namespace EchoPlay.Data.Services
                         LastChecked = now
                     };
                     _ = _context.CoverImages.Add(cover);
-                    await _context.SaveChangesAsync().ConfigureAwait(false);
+                    _ = await _context.SaveChangesAsync().ConfigureAwait(false);
                     _logger.Debug($"Cover gespeichert: {entityType} {entityId}");
                     return;
                 }
@@ -121,7 +121,7 @@ namespace EchoPlay.Data.Services
                 }
             }
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Debug($"Cover gespeichert: {entityType} {entityId}");
         }
 
@@ -136,7 +136,7 @@ namespace EchoPlay.Data.Services
             if (existing is not null)
             {
                 existing.LastChecked = checkedAt;
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             else
             {
@@ -150,7 +150,7 @@ namespace EchoPlay.Data.Services
                     LastChecked = checkedAt
                 };
                 _ = _context.CoverImages.Add(placeholder);
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             }
         }
 

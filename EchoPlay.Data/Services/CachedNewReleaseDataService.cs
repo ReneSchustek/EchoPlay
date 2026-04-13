@@ -119,7 +119,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
             {
@@ -154,7 +154,7 @@ namespace EchoPlay.Data.Services
             // Physisches Löschen: Cache-Einträge sind keine fachlichen Daten,
             // sondern API-Ergebnisse – Soft-Delete wäre hier unnötig.
             _context.CachedNewReleases.RemoveRange(expired);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
 
             _logger.Info($"{expired.Count} abgelaufene Neuerscheinung(en) aus dem Cache entfernt (Cutoff: {cutoff:yyyy-MM-dd}).");
             return expired.Count;

@@ -1126,4 +1126,57 @@
     <value>The update could not be downloaded. Please try again at next startup.</value>
   </data>
 
+  <!-- Common buttons (programmatic strings) -->
+  <data name="CommonCancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CommonCloseButton" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="CommonOkButton" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="CommonSaveAsTxtButton" xml:space="preserve">
+    <value>Save as TXT</value>
+  </data>
+  <data name="CommonTextFileFilter" xml:space="preserve">
+    <value>Text file</value>
+  </data>
+
+  <!-- MediathekLokalPage – Missing episodes dialog (programmatic strings) -->
+  <data name="MissingEpisodesDialogTitle" xml:space="preserve">
+    <value>Check for missing episodes</value>
+  </data>
+  <data name="MissingEpisodesDialogContent" xml:space="preserve">
+    <value>Should we also check online (iTunes) for episodes after the last local number?</value>
+  </data>
+  <data name="MissingEpisodesOnlineButton" xml:space="preserve">
+    <value>Online + Offline</value>
+  </data>
+  <data name="MissingEpisodesOfflineButton" xml:space="preserve">
+    <value>Offline only</value>
+  </data>
+  <data name="MissingEpisodesAllPresent" xml:space="preserve">
+    <value>All episodes of this series are available locally.</value>
+  </data>
+  <data name="MissingEpisodesResultTitle" xml:space="preserve">
+    <value>Missing episodes</value>
+  </data>
+  <data name="MissingEpisodesAllSeriesTitle" xml:space="preserve">
+    <value>Missing episodes – Full check</value>
+  </data>
+
+  <!-- MediathekLokalPage – Restructure dialog (programmatic strings) -->
+  <data name="RestructureDialogTitle" xml:space="preserve">
+    <value>Restructure folders</value>
+  </data>
+  <data name="RestructureExecuteButton" xml:space="preserve">
+    <value>Restructure</value>
+  </data>
+
+  <!-- SettingsPage – Database maintenance dialog (programmatic strings) -->
+  <data name="DatabaseMaintenanceTitle" xml:space="preserve">
+    <value>Database maintenance</value>
+  </data>
+
 </root>

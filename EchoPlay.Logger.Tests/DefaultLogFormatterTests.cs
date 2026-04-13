@@ -47,7 +47,7 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.Contains("2026-01-07 09:05:03.007", result);
+            Assert.Contains("2026-01-07 09:05:03.007", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.Contains("[Warning]", result);
+            Assert.Contains("[Warning]", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -85,8 +85,8 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.Contains("[MeineKlasse]", result);
-            Assert.Contains("Die eigentliche Meldung", result);
+            Assert.Contains("[MeineKlasse]", result, StringComparison.Ordinal);
+            Assert.Contains("Die eigentliche Meldung", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace EchoPlay.Logger.Tests
             string result = formatter.Format(entry);
 
             // Kein Pfeil-Trennzeichen, das auf Scopes hinweist
-            Assert.DoesNotContain(" →", result);
+            Assert.DoesNotContain(" →", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.Contains("[API:Test:Vorgang]", result);
+            Assert.Contains("[API:Test:Vorgang]", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.Contains("Erster → Zweiter → Dritter", result);
+            Assert.Contains("Erster → Zweiter → Dritter", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.DoesNotContain("Exception", result);
+            Assert.DoesNotContain("Exception", result, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -185,8 +185,8 @@ namespace EchoPlay.Logger.Tests
 
             string result = formatter.Format(entry);
 
-            Assert.Contains("Exception:", result);
-            Assert.Contains("Testfehler-Ursache", result);
+            Assert.Contains("Exception:", result, StringComparison.Ordinal);
+            Assert.Contains("Testfehler-Ursache", result, StringComparison.Ordinal);
         }
     }
 }

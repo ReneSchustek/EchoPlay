@@ -82,9 +82,9 @@ namespace EchoPlay.Logger.Tests
             string[] logFiles = Directory.GetFiles(testDir, "*.log");
             string content = await File.ReadAllTextAsync(logFiles[0]);
 
-            Assert.Contains("ProfilierungsMeldung", content);
-            Assert.Contains("InhaltKlasse", content);
-            Assert.Contains("Warning", content);
+            Assert.Contains("ProfilierungsMeldung", content, StringComparison.Ordinal);
+            Assert.Contains("InhaltKlasse", content, StringComparison.Ordinal);
+            Assert.Contains("Warning", content, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -119,8 +119,8 @@ namespace EchoPlay.Logger.Tests
             _ = Assert.Single(logFiles);
 
             string content = await File.ReadAllTextAsync(logFiles[0]);
-            Assert.Contains("ErsteNachricht", content);
-            Assert.Contains("ZweiteNachricht", content);
+            Assert.Contains("ErsteNachricht", content, StringComparison.Ordinal);
+            Assert.Contains("ZweiteNachricht", content, StringComparison.Ordinal);
         }
 
         /// <summary>

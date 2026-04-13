@@ -190,15 +190,15 @@ namespace EchoPlay.AppleMusic.Scoring
             foreach (KeyValuePair<string, string> mapping in _settings.NumberWordMapping)
             {
                 // Ziffer → Zahlwort
-                if (normalizedQuery.Contains(mapping.Key))
+                if (normalizedQuery.Contains(mapping.Key, StringComparison.Ordinal))
                 {
-                    variants.Add(normalizedQuery.Replace(mapping.Key, mapping.Value));
+                    variants.Add(normalizedQuery.Replace(mapping.Key, mapping.Value, StringComparison.Ordinal));
                 }
 
                 // Zahlwort → Ziffer
-                if (normalizedQuery.Contains(mapping.Value))
+                if (normalizedQuery.Contains(mapping.Value, StringComparison.Ordinal))
                 {
-                    variants.Add(normalizedQuery.Replace(mapping.Value, mapping.Key));
+                    variants.Add(normalizedQuery.Replace(mapping.Value, mapping.Key, StringComparison.Ordinal));
                 }
             }
 

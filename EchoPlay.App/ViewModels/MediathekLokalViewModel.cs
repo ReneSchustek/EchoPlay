@@ -444,6 +444,7 @@ namespace EchoPlay.App.ViewModels
         /// Die <see cref="EchoPlay.App.Views.MediathekLokalPage"/> abonniert dieses Event
         /// und führt die Frame-Navigation durch.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Navigations-Bridge: der Nutzlast-String ist der Zielpfad fuer den Tag-Manager; Action<string> bleibt klarer als 'PathEventArgs' ohne Mehrwert.")]
         public event Action<string>? NavigateToTagManagerRequested;
 
         /// <summary>
@@ -451,6 +452,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Page muss das HWND liefern und <see cref="AddFolderAsync"/> aufrufen.
         /// Pass-Through zum <see cref="ScanVM"/>.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf ScanVM.AddFolderRequested; Signatur muss identisch zum Sub-VM bleiben.")]
         public event Action? AddFolderRequested
         {
             add    => ScanVM.AddFolderRequested += value;
@@ -462,6 +464,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Page zeigt die übergebene Titelliste in einem ContentDialog an.
         /// Die Liste ist leer wenn alle Episoden lokal vorhanden sind.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.MissingEpisodesResolved; Titelliste wird in einem Dialog angezeigt, Signatur muss identisch zum Orchestrator bleiben.")]
         public event Action<IReadOnlyList<string>>? MissingEpisodesResolved
         {
             add    => _actions.MissingEpisodesResolved += value;
@@ -472,6 +475,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, nachdem die Gesamtprüfung aller Serien abgeschlossen ist.
         /// Die Page zeigt den Bericht in einem Dialog an und bietet den TXT-Export an.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.AllSeriesCheckCompleted; Bericht wird in einem Dialog angezeigt, Signatur muss identisch zum Orchestrator bleiben.")]
         public event Action<MissingEpisodesReport>? AllSeriesCheckCompleted
         {
             add    => _actions.AllSeriesCheckCompleted += value;
@@ -483,6 +487,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Page zeigt die geplanten Verschiebungen in einem ContentDialog an.
         /// Bei Bestätigung durch den Nutzer ruft die Page <see cref="ExecuteRestructureAsync"/> auf.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.RestructurePreviewReady; Vorschau-Display wird in einem Dialog angezeigt, Signatur muss identisch zum Orchestrator bleiben.")]
         public event Action<RestructurePreviewDisplay>? RestructurePreviewReady
         {
             add    => _actions.RestructurePreviewReady += value;
@@ -581,6 +586,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Page zeigt einen Drei-Optionen-Dialog (Online / Nur offline / Abbrechen)
         /// und liefert das Ergebnis als <see cref="MissingEpisodesMode"/>.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.MissingEpisodesModeRequested; Signatur Func<Task<MissingEpisodesMode>> ist noetig, damit die Page das Dialog-Ergebnis asynchron zurueckliefern kann (EventHandler<T> unterstuetzt kein await/Rueckgabewert).")]
         public event Func<Task<MissingEpisodesMode>>? MissingEpisodesModeRequested
         {
             add    => _actions.MissingEpisodesModeRequested += value;

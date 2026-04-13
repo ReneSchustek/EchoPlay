@@ -23,6 +23,7 @@ namespace EchoPlay.App.Services
         /// Handler laufen auf dem UI-Thread, wenn <see cref="SyncService"/> <c>Progress&lt;T&gt;</c>
         /// für die Benachrichtigung verwendet.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Event transportiert ausschliesslich die synchronisierte 'Series'-Entity; Action<Series> bleibt semantisch klarer als ein kuenstlicher EventArgs-Wrapper und vermeidet invasive Umstellung aller Subscriber und Progress<Series>-Integrationen.")]
         event Action<Series>? SeriesSynced;
 
         /// <summary>
@@ -41,6 +42,7 @@ namespace EchoPlay.App.Services
         /// Benachrichtigt alle Abonnenten über eine neu synchronisierte Serie.
         /// </summary>
         /// <param name="series">Die synchronisierte Serie.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1030:Use events where appropriate", Justification = "Raise-Methode ist der Publisher-API-Kontrakt des Singletons; das Event 'SeriesSynced' wird hierueber gezielt von 'SyncService' aus ausgeloest und darf nicht von aussen umgangen werden.")]
         void RaiseSeriesSynced(Series series);
     }
 }

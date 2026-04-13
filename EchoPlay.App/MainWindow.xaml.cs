@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using System;
 using System.ComponentModel;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App
@@ -71,10 +72,14 @@ namespace EchoPlay.App
             MiniPlayer.PropertyChanged += OnMiniPlayerPropertyChanged;
 
             // Info-Leiste beim Fensterstart befüllen – Fehler sind nicht kritisch
-            _ = StatusBar.LoadAsync().ContinueWith(t =>
-            {
-                if (t.IsFaulted) System.Diagnostics.Trace.WriteLine($"StatusBar.LoadAsync fehlgeschlagen: {t.Exception?.Message}");
-            }, TaskContinuationOptions.OnlyOnFaulted);
+            _ = StatusBar.LoadAsync().ContinueWith(
+                t =>
+                {
+                    if (t.IsFaulted) System.Diagnostics.Trace.WriteLine($"StatusBar.LoadAsync fehlgeschlagen: {t.Exception?.Message}");
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
         }
 
         /// <summary>

@@ -33,6 +33,7 @@ namespace EchoPlay.App
     /// verantwortlich für den Aufbau von Konfiguration
     /// und Dependency Injection.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "WinUI-3 Entry-Point-Typ heisst per Konvention 'App' im 'EchoPlay.App'-Namespace.")]
     public partial class App : Application
     {
         private static IHost? _host;
@@ -76,6 +77,7 @@ namespace EchoPlay.App
         /// Das Theme wird vor dem ersten Rendern gesetzt, damit kein falsches Theme aufblitzt.
         /// </summary>
         /// <param name="args">Startparameter der Anwendung.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "WinUI-Entry-Point: jede unbehandelte Exception waehrend des Starts (DB-Purge-Background-Task, DI-Fehler, Theme, StartupValidator) muss gefangen werden, damit HandleStartupFailureAsync dem Nutzer einen Dialog anzeigen und die App kontrolliert beenden kann.")]
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             SplashWindow? splash = null;
@@ -190,6 +192,7 @@ namespace EchoPlay.App
         /// </summary>
         /// <param name="splash">Das Splash-Fenster, sofern bereits erzeugt.</param>
         /// <param name="exception">Die während <see cref="OnLaunched"/> geworfene Exception.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Letzte Fehlerbehandlungsstufe beim App-Start: Logger-, Dialog- und Splash-Close-Fehler duerfen den kontrollierten Shutdown (Exit) nicht verhindern, unabhaengig vom konkreten Exception-Typ.")]
         private async Task HandleStartupFailureAsync(SplashWindow? splash, Exception exception)
         {
             // Notfall-Logging in Trace (Logger eventuell noch nicht initialisiert)
@@ -228,6 +231,7 @@ namespace EchoPlay.App
         /// </summary>
         /// <param name="sender">Das geschlossene Fenster.</param>
         /// <param name="args">Event-Argumente.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup beim Fensterschliessen: SQLite-Optimize ist optional und darf den Shutdown nicht blockieren, unabhaengig davon welche Exception der DbContext / Maintenance-Service wirft.")]
         private void OnWindowClosed(object sender, WindowEventArgs args)
         {
             _appLogger?.Info("Anwendung wird beendet");
@@ -309,6 +313,7 @@ namespace EchoPlay.App
         /// Wird nach dem Splash aufgerufen, bevor das Hauptfenster geöffnet wird.
         /// </summary>
         /// <param name="splash">Das aktive Splash-Fenster für den XamlRoot des Dialogs.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Update-Check ist nicht kritischer Pfad: GitHub-HTTP-Fehler, JSON-Parse-Fehler oder Dialog-Probleme duerfen den App-Start nicht blockieren.")]
         private async Task CheckForUpdateAsync(SplashWindow splash)
         {
             try

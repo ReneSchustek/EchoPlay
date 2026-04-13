@@ -18,6 +18,7 @@ namespace EchoPlay.App.Services
         /// Wird ausgelöst, wenn ein Wiedergabefehler auftritt.
         /// Die Nachricht ist für die Anzeige an den Nutzer geeignet.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<string> liefert die fertige UI-Fehlermeldung als einfachen String; ein dedizierter EventArgs-Typ brächte keinen Mehrwert.")]
         event EventHandler<string>? ErrorOccurred;
 
         /// <summary>Gibt an, ob gerade Wiedergabe aktiv ist.</summary>
@@ -64,9 +65,11 @@ namespace EchoPlay.App.Services
         /// und leert die Playlist. Der MiniPlayer wird dadurch ausgeblendet,
         /// weil <see cref="CurrentTrackTitle"/> auf null gesetzt wird.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Folgt der Windows.Media.Playback.MediaPlayer.Stop-Konvention und entspricht dem etablierten Wiedergabe-Control-Vokabular.")]
         void Stop();
 
         /// <summary>Setzt eine pausierte Wiedergabe fort.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Folgt der Windows.Media.Playback.MediaPlayer.Play/Resume-Konvention und entspricht dem etablierten Wiedergabe-Control-Vokabular.")]
         void Resume();
 
         /// <summary>Springt zum nächsten Track in der Wiedergabeliste.</summary>

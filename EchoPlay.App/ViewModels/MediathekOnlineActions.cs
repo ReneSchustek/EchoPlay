@@ -76,6 +76,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt alle online-importierten Serien aus der Datenbank, füllt
         /// <see cref="OnlineSeriesViewModel"/> und startet das Hintergrund-Cover-Caching.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Mediathek-Ladevorgang iteriert ueber abonnierte Serien: Import-/Provider-/DB-Fehler einer einzelnen Serie duerfen die Kachel-Erstellung der restlichen Serien nicht abbrechen.")]
         public async Task LoadAsync()
         {
             _setIsLoading(true);
@@ -273,6 +274,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt fehlende Episoden-Cover im Hintergrund herunter und aktualisiert die Kacheln
         /// progressiv. Wird abgebrochen, wenn der Nutzer eine andere Serie wählt.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Nachlade-Task fuer fehlende Episoden-Cover im Hintergrund: HTTP-/Provider-/Cache-Fehler duerfen die UI nicht stoeren; Fehler werden geloggt.")]
         private async Task RefreshMissingEpisodeCoversAsync(
             Guid seriesId,
             List<OnlineEpisodeCardViewModel> episodeCards,
@@ -420,6 +422,7 @@ namespace EchoPlay.App.ViewModels
         /// Startet eine Provider-Suche mit dem übergebenen Suchtext und befüllt das
         /// <see cref="OnlineProviderSearchViewModel"/>.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Provider-Suche in der Online-Mediathek: HTTP-/Parser-/Timeout-Fehler aus Spotify/AppleMusic werden als Nutzer-Fehlermeldung angezeigt, damit der Suche-Command nicht reisst.")]
         public async Task SearchProviderAsync(string searchText)
         {
             if (_providerSearchVM.IsSearchingProvider || string.IsNullOrWhiteSpace(searchText))
@@ -523,6 +526,7 @@ namespace EchoPlay.App.ViewModels
         /// Offline-Modus wird vorher der Online-Zugang angefragt; bei Ablehnung kehrt die
         /// Methode ohne Aktion zurück.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bulk-Refresh aller Online-Serien: Provider-/HTTP-/Parser-Fehler einer einzelnen Serie werden uebersprungen; ein uebergreifender Fehler wird dem Nutzer als Dialog angezeigt, damit der Command sauber beendet und der Loading-State im finally zurueckgesetzt werden kann.")]
         public async Task RefreshAllOnlineSeriesAsync()
         {
             // Offline-Modus: Nutzer fragen, ob temporär online gegangen werden soll
@@ -648,6 +652,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt fehlende Serien-Cover von der Provider-URL herunter und speichert sie in der DB.
         /// Läuft im Hintergrund nach <see cref="LoadAsync"/> – bereits gecachte Cover werden übersprungen.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cache-Aufbau fuer Serien-Cover: HTTP-/IO-/DB-Fehler einer einzelnen Serie duerfen die Kachel-Ansicht nicht stoeren; Fehler werden lediglich geloggt.")]
         private async Task CacheSeriesCoversAsync(IReadOnlyList<Series> seriesList)
         {
             if (_ctx.CoverService is null)

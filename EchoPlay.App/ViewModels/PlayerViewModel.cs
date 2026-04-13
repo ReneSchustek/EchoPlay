@@ -428,6 +428,7 @@ namespace EchoPlay.App.ViewModels
         /// BitmapImage.SetSourceAsync muss auf dem UI-Thread aufgerufen werden.
         /// Wenn kein Cover vorhanden ist, wird <see cref="CoverImage"/> auf null gesetzt.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Extraktion aus ID3-Tag: TagLib-Fehler (CorruptFileException, UnsupportedFormat) oder IO-Fehler duerfen die Wiedergabe nicht stoeren – der Platzhalter bleibt stehen.")]
         private async Task LoadCoverFromId3Async(string filePath)
         {
             try

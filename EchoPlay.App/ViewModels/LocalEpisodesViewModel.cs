@@ -326,6 +326,7 @@ namespace EchoPlay.App.ViewModels
         /// bevor die nächste startet. Erzeugt einen Infinite-Scrolling-Effekt: Cover erscheinen blockweise.
         /// Bei Abbruch (Serienwechsel) wird sofort aufgehört.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Batch-Cover-Loader-Schleife: IO-/DB-/Dekodier-Fehler einzelner Episoden duerfen das Nachladen der restlichen Kacheln nicht stoppen; Fehler werden in Trace geschrieben.")]
         private async Task LoadCoversBatchedAsync(
             List<(LocalEpisodeCardViewModel Card, Episode Episode)> queue,
             CancellationToken cancellationToken)
@@ -362,6 +363,7 @@ namespace EchoPlay.App.ViewModels
         /// Maximal 8 Cover werden gleichzeitig geladen, damit der UI-Thread nicht
         /// mit hunderten PropertyChanged-Notifications gleichzeitig überflutet wird.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Parallele Cover-Lade-Tasks und UI-Thread-BitmapImage-Konvertierung: native COM-Fehler (SetSourceAsync) oder TagLib-Fehler duerfen weder die Task-Gruppe noch den UI-Thread reissen; ein Platzhalter bleibt stehen.")]
         private async Task LoadCoversThrottledAsync(
             List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue,
             CancellationToken cancellationToken)
@@ -496,6 +498,7 @@ namespace EchoPlay.App.ViewModels
         /// daher ist BitmapImage-Erstellung hier sicher.
         /// Fehler werden still ignoriert – fehlende Cover sind kein kritisches Problem.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Einzel-Cover-Loader fuer die erste Kachel-Charge: IO-/TagLib-/Dekodier-Fehler duerfen die Kachel-Darstellung nicht stoppen; der Platzhalter bleibt stehen.")]
         private async Task LoadCoverForEpisodeCardAsync(LocalEpisodeCardViewModel card, Episode episode)
         {
             try

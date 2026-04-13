@@ -107,6 +107,7 @@ namespace EchoPlay.App.Services
         /// <param name="checkFunc">Prüflogik pro Serie (CheckSingle oder CheckNewReleases).</param>
         /// <param name="cancellationToken">Abbruch-Token.</param>
         /// <returns>Ergebnisse aller erfolgreich geprüften Serien.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sequenzieller Mehr-Serien-Check: HTTP-/Provider-Fehler einer einzelnen Serie werden geloggt und uebersprungen, damit die restlichen Serien weiterhin geprueft werden. Der Aufrufer erhaelt die Liste der erfolgreichen Ergebnisse.")]
         private async Task<IReadOnlyList<OnlineEpisodeCheckResult>> CheckSeriesSequentiallyAsync(
             IReadOnlyList<CheckableSeriesInfo> subscribedSeries,
             Func<CheckableSeriesInfo, CancellationToken, Task<OnlineEpisodeCheckResult?>> checkFunc,

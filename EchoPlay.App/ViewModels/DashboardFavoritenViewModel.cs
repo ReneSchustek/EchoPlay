@@ -73,6 +73,7 @@ namespace EchoPlay.App.ViewModels
         /// Entfernen einer Kachel), damit das Top-VM abgeleitete Visibilities neu berechnen kann
         /// (z.B. <c>NoFavoritesHintVisibility</c>).
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM-interner Parent/Sub-VM-Bridge-Trigger ohne Nutzdaten: Action-Signatur bleibt semantisch klarer als ein leerer EventArgs-Wrapper, da der Handler im Parent-VM nur abgeleitete Visibilities neu berechnet.")]
         public event Action? FavoritesChanged;
 
         /// <summary>

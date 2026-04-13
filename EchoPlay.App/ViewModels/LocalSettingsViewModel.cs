@@ -64,6 +64,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn mehrere Muster-Vorschläge vorliegen oder das beste Ergebnis
         /// unter dem Konfidenz-Schwellwert liegt. Die Page zeigt dann einen Auswahl-Dialog.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste: die Page oeffnet einen ContentDialog fuer die Muster-Auswahl; Action<IReadOnlyList<...>> bleibt klarer als ein dedizierter EventArgs-Typ mit identischer Semantik.")]
         public event Action<IReadOnlyList<PatternSuggestionDisplay>>? PatternSelectionRequested;
 
         /// <summary>Gibt an, ob die lokale Bibliothek aktiv ist.</summary>
@@ -224,6 +225,7 @@ namespace EchoPlay.App.ViewModels
         /// erklärenden Statustext beantwortet, ohne den Service zu belasten.
         /// </summary>
         /// <returns>Asynchrone Ausführung.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Manueller Bibliotheks-Sync ueber die Einstellungen: IO-/DB-/TagLib-Fehler werden in 'StatusMessage' als Nutzer-Fehlermeldung gespiegelt, damit der Sync-Command nicht abbricht.")]
         public async Task SyncAsync()
         {
             if (IsSyncing)

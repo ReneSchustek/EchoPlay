@@ -21,6 +21,7 @@ namespace EchoPlay.App.ViewModels
     /// die Pass-Through-Schicht. Die Aufteilung folgt dem Muster aus dem Dashboard-Refactor
     /// (<see cref="DashboardDataLoader"/>).
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt; statisches CompositeFormat-Caching ist nicht anwendbar.")]
     internal sealed class TagManagerActions
     {
         // SafeResourceLoader statt statischem ResourceLoader, weil der statische Initializer
@@ -121,6 +122,7 @@ namespace EchoPlay.App.ViewModels
         // ── Laden ──────────────────────────────────────────────────────────────
 
         /// <summary>Lädt alle Audiodateien eines Ordners und setzt die Sub-VMs zurück.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ordner-Enumeration: IO-Fehler (UnauthorizedAccess, PathTooLong, IOException) einzelner Unterordner/Dateien werden als Nutzer-Fehlermeldung angezeigt, damit der Tag-Manager nicht abstuerzt.")]
         public async Task LoadFolderAsync(string folderPath)
         {
             _setIsLoading(true);
@@ -155,6 +157,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Lädt die Tags einer einzelnen Datei in den Editor und das Cover-Sub-VM.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Read einer einzelnen Audiodatei: TagLib-Fehler (CorruptFileException, UnsupportedFormat) oder IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, der Editor bleibt bedienbar.")]
         public async Task LoadFileTagsAsync(TagFileItemViewModel file)
         {
             _fileLoadCompletedSource = new TaskCompletionSource<bool>(
@@ -183,6 +186,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Lädt die Tags mehrerer Dateien und zeigt gemeinsame Werte an.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Read fuer Multi-Auswahl: TagLib-/IO-Fehler einer einzelnen Datei duerfen den Batch-Read der restlichen Dateien nicht abbrechen.")]
         public async Task LoadMultipleFileTagsAsync(IReadOnlyList<TagFileItemViewModel> files)
         {
             _fileLoadCompletedSource = new TaskCompletionSource<bool>(
@@ -222,6 +226,7 @@ namespace EchoPlay.App.ViewModels
         /// Speichert die aktuell angezeigten Tags. Bei Einzelauswahl werden alle Felder
         /// geschrieben; bei Mehrfachauswahl nur die vom Nutzer geänderten auf alle selektierten Dateien.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Speichern: TagLib-/IO-Fehler (gesperrte Datei, Read-Only, korruptes Format) werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reisst.")]
         public async Task SaveAsync()
         {
             // Einzelauswahl: alle Felder schreiben
@@ -296,6 +301,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Entfernt alle Tags der ausgewählten Datei nach Nutzerbestätigung.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Loeschen: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reisst.")]
         public async Task RemoveAllTagsAsync()
         {
             if (_fileListVM.SelectedFile is null)
@@ -329,6 +335,7 @@ namespace EchoPlay.App.ViewModels
         // ── Lookup ─────────────────────────────────────────────────────────────
 
         /// <summary>Führt einen manuellen Online-Lookup anhand des Titels oder Dateinamens aus.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MusicBrainz-Lookup: HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Fehlermeldung angezeigt und der Lookup-Command kehrt zurueck.")]
         public async Task LookupOnlineAsync()
         {
             if (!_fileListVM.HasSelectedFile)
@@ -368,6 +375,7 @@ namespace EchoPlay.App.ViewModels
         /// Führt einen automatischen Lookup aus dem Ordnerkontext aus. Bei eindeutigem Treffer
         /// werden die Tags direkt übernommen; ansonsten wird ein Auswahl-Dialog angefordert.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Auto-Lookup (MusicBrainz + Cover Art Archive): HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status angezeigt und der Command kehrt zurueck.")]
         public async Task AutoLookupAsync()
         {
             _autoLookupCompletedSource = new TaskCompletionSource<bool>(
@@ -475,6 +483,7 @@ namespace EchoPlay.App.ViewModels
         // ── Cover ──────────────────────────────────────────────────────────────
 
         /// <summary>Entfernt das Cover der aktuell ausgewählten Datei.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Entfernen per TagLib: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reisst.")]
         public async Task RemoveCoverAsync()
         {
             if (_fileListVM.SelectedFile is null)
@@ -525,6 +534,7 @@ namespace EchoPlay.App.ViewModels
         // ── Rename ─────────────────────────────────────────────────────────────
 
         /// <summary>Berechnet die Umbenennungs-Vorschau aus dem aktuellen Ordner und Muster.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Vorschau: TagLib-Lesefehler oder IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit der Command nicht reisst.")]
         public async Task PreviewRenameAsync()
         {
             if (string.IsNullOrEmpty(_fileListVM.CurrentFolderPath))
@@ -552,6 +562,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Führt die Umbenennung aller Dateien nach Nutzerbestätigung durch.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Ausfuehrung: IO-Fehler einzelner Dateien (File.Move, UnauthorizedAccess, PathTooLong) werden geloggt und die verbleibenden Dateien werden dennoch umbenannt.")]
         public async Task ExecuteRenameAsync()
         {
             if (string.IsNullOrEmpty(_fileListVM.CurrentFolderPath))
@@ -610,6 +621,7 @@ namespace EchoPlay.App.ViewModels
         /// Führt eine Batch-Operation mit Fortschrittsanzeige und Fehlerdialog aus.
         /// Setzt <c>IsLoading</c>, aktualisiert <c>BatchProgressText</c> und räumt im Finally auf.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Generischer Batch-Runner fuer Tag-Operationen auf mehreren Dateien: TagLib-/IO-Fehler einer einzelnen Datei duerfen den Batch nicht abbrechen; Einzelfehler werden in der Fehlerliste gesammelt und am Ende angezeigt.")]
         private async Task RunBatchAsync(
             IReadOnlyList<TagFileItemViewModel> files,
             Func<TagFileItemViewModel, Task> perFile,
@@ -682,7 +694,7 @@ namespace EchoPlay.App.ViewModels
         private static TagLookupCandidate ToCandidate(TagLookupResult result, int index) =>
             new(index, result.Title, result.Artist, result.Album, result.Year, result.TrackCount, result.Genre, result.Source);
 
-        private static IReadOnlyList<TagLookupCandidate> ToCandidates(IReadOnlyList<TagLookupResult> results)
+        private static List<TagLookupCandidate> ToCandidates(IReadOnlyList<TagLookupResult> results)
         {
             List<TagLookupCandidate> candidates = new(results.Count);
             for (int i = 0; i < results.Count; i++)

@@ -276,6 +276,7 @@ namespace EchoPlay.App.ViewModels
         /// jedes Ergebnisses und befüllt die <see cref="Results"/>-Liste.
         /// Online- und lokale Ergebnisse werden bei Bedarf zusammengeführt.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Such-Command der Suche-Seite: Provider-HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status gespiegelt, damit der Command nicht reisst.")]
         private async Task SearchAsync()
         {
             if (_isLoading || string.IsNullOrWhiteSpace(_searchText))

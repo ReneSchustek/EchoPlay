@@ -139,6 +139,7 @@ namespace EchoPlay.App.Services
         /// Live-Online-Abgleich per iTunes für die übergebene Serie. Setzt während
         /// der Prüfung den temporären Online-Status (Nutzer hat im Dialog bereits zugestimmt).
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Live-Online-Abgleich: Provider-Fehler (iTunes-Search-API, HTTP-Timeout) duerfen den Dialog-Flow nicht reissen; der StatusBar-Flag wird im finally zurueckgesetzt und die Ergebnisliste bleibt im Fehlerfall leer.")]
         private async Task<List<string>> AnalyzeLiveOnlineMissingAsync(
             Guid seriesId,
             string seriesFolderPath)
@@ -208,6 +209,7 @@ namespace EchoPlay.App.Services
         /// Online-Abgleich. Fehler werden als <see cref="SeriesMissingEpisodesResult.ErrorMessage"/>
         /// im Bericht weitergereicht, ohne die gesamte Prüfung zu stoppen.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Serie-Check fuer den Gesamtbericht: HTTP-/iTunes-Fehler oder DB-Fehler einer einzelnen Serie werden als 'ErrorMessage' im Report weitergereicht, damit die Bericht-Schleife fuer die uebrigen Serien weiterlaeuft.")]
         private async Task<SeriesMissingEpisodesResult> CheckSingleSeriesForReportAsync(
             Series series, bool onlineAvailable)
         {

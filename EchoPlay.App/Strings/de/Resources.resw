@@ -1128,4 +1128,57 @@
     <value>Das Update konnte nicht heruntergeladen werden. Bitte versuche es beim nächsten Start erneut.</value>
   </data>
 
+  <!-- Gemeinsame Buttons (programmatische Strings) -->
+  <data name="CommonCancelButton" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CommonCloseButton" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="CommonOkButton" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="CommonSaveAsTxtButton" xml:space="preserve">
+    <value>Als TXT speichern</value>
+  </data>
+  <data name="CommonTextFileFilter" xml:space="preserve">
+    <value>Textdatei</value>
+  </data>
+
+  <!-- MediathekLokalPage – Fehlende-Folgen-Dialog (programmatische Strings) -->
+  <data name="MissingEpisodesDialogTitle" xml:space="preserve">
+    <value>Fehlende Folgen ermitteln</value>
+  </data>
+  <data name="MissingEpisodesDialogContent" xml:space="preserve">
+    <value>Soll auch online (iTunes) geprüft werden, welche Folgen nach der letzten lokalen Nummer existieren?</value>
+  </data>
+  <data name="MissingEpisodesOnlineButton" xml:space="preserve">
+    <value>Online + Offline</value>
+  </data>
+  <data name="MissingEpisodesOfflineButton" xml:space="preserve">
+    <value>Nur offline</value>
+  </data>
+  <data name="MissingEpisodesAllPresent" xml:space="preserve">
+    <value>Alle Folgen dieser Serie sind lokal vorhanden.</value>
+  </data>
+  <data name="MissingEpisodesResultTitle" xml:space="preserve">
+    <value>Fehlende Folgen</value>
+  </data>
+  <data name="MissingEpisodesAllSeriesTitle" xml:space="preserve">
+    <value>Fehlende Folgen – Gesamtprüfung</value>
+  </data>
+
+  <!-- MediathekLokalPage – Ordnerstruktur-Dialog (programmatische Strings) -->
+  <data name="RestructureDialogTitle" xml:space="preserve">
+    <value>Ordnerstruktur aufbauen</value>
+  </data>
+  <data name="RestructureExecuteButton" xml:space="preserve">
+    <value>Umbauen</value>
+  </data>
+
+  <!-- SettingsPage – Datenbankpflege-Dialog (programmatische Strings) -->
+  <data name="DatabaseMaintenanceTitle" xml:space="preserve">
+    <value>Datenbankpflege</value>
+  </data>
+
 </root>

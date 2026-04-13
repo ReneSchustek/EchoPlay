@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 
 namespace EchoPlay.App.Tests.ViewModels
@@ -14,7 +15,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Episodennummer 0 (z.B. "000 - Adventskalender") = Sonderfolge
             LocalEpisodeCardViewModel card = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeA,
                 episodeNumber: 0,
                 title: "Adventskalender",
                 localTrackCount: 3,
@@ -29,7 +30,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Keine Episodennummer (kein Nummernmuster erkannt) = Sonderfolge
             LocalEpisodeCardViewModel card = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeB,
                 episodeNumber: null,
                 title: "Bonusmaterial",
                 localTrackCount: 1,
@@ -44,7 +45,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Reguläre Episodennummer > 0 = keine Sonderfolge
             LocalEpisodeCardViewModel card = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeC,
                 episodeNumber: 42,
                 title: "Der Super-Papagei",
                 localTrackCount: 5,
@@ -58,7 +59,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void EpisodeTile_NumberZero_IsSpecial()
         {
             EpisodeTileViewModel tile = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeD,
                 episodeNumber: 0,
                 title: "Sonderfolge",
                 totalDuration: null,
@@ -74,7 +75,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void EpisodeTile_RegularNumber_NotSpecial()
         {
             EpisodeTileViewModel tile = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeE,
                 episodeNumber: 229,
                 title: "Drehbuch der Täuschung",
                 totalDuration: null,

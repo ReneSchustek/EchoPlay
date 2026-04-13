@@ -44,12 +44,15 @@ namespace EchoPlay.App.Tests.ViewModels
 
             ServiceProvider provider = services.BuildServiceProvider();
 
+            FakeClock clock = new();
+
             StatusBarViewModel statusBar = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new FakeThemeService(),
-                new EchoPlay.App.Services.TaskbarProgressService());
+                new EchoPlay.App.Services.TaskbarProgressService(),
+                clock);
 
-            return new MediathekLokalViewModel(
+            MediathekLokalViewModelContext context = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 syncService ?? new FakeSyncService(),
                 playerService ?? new FakePlayerService(),
@@ -61,7 +64,10 @@ namespace EchoPlay.App.Tests.ViewModels
                 coverSearchService ?? new FakeCoverSearchService(),
                 new FakeOnlineAccessGuard(),
                 new FakeOnlineEpisodeChecker(),
-                missingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());
+                clock,
+                MissingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());
+
+            return new MediathekLokalViewModel(context);
         }
 
         [Fact]

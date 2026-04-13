@@ -143,9 +143,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.AutoLookupApplied += (_, r) => appliedResult = r;
 
             vm.AutoLookupCommand.Execute(null);
-
-            // Kurz warten: AutoLookupAsync ist async void über Command
-            await Task.Delay(200);
+            await vm.WaitForAutoLookupCompleteAsync();
 
             Assert.NotNull(appliedResult);
             Assert.Equal("Der Super-Papagei", appliedResult!.Title);
@@ -174,7 +172,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.LookupResultsReady += (_, r) => readyResults = r;
 
             vm.AutoLookupCommand.Execute(null);
-            await Task.Delay(200);
+            await vm.WaitForAutoLookupCompleteAsync();
 
             Assert.NotNull(readyResults);
         }
@@ -293,7 +291,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadFolderAsync(@"D:\test");
 
             vm.SetSelectedFiles([vm.Files[0]]);
-            await Task.Delay(100);
+            await vm.WaitForFileLoadCompleteAsync();
 
             Assert.NotNull(vm.SelectedFile);
             Assert.Equal(@"D:\test\track1.mp3", vm.SelectedFile!.FilePath);
@@ -315,7 +313,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadFolderAsync(@"D:\test");
 
             vm.SetSelectedFiles([vm.Files[0], vm.Files[1]]);
-            await Task.Delay(200);
+            await vm.WaitForFileLoadCompleteAsync();
 
             // Album und Artist sind gleich → werden angezeigt
             Assert.Equal("Gleiches Album", vm.Album);
@@ -344,7 +342,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Erst auswählen, dann Auswahl leeren
             vm.SetSelectedFiles([vm.Files[0]]);
-            await Task.Delay(100);
+            await vm.WaitForFileLoadCompleteAsync();
             vm.SetSelectedFiles([]);
 
             Assert.Null(vm.SelectedFile);

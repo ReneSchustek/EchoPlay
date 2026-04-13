@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
@@ -16,6 +17,7 @@ namespace EchoPlay.App.Tests.Fakes
     internal sealed class FakeEpisodeDataService : IEpisodeDataService
     {
         private readonly List<Episode> _episodes = [];
+        private int _nextId;
 
         /// <summary>Alle bisher gespeicherten Episoden.</summary>
         public IReadOnlyList<Episode> All => _episodes;
@@ -52,7 +54,7 @@ namespace EchoPlay.App.Tests.Fakes
         {
             // EF Core setzt die Id nach SaveChanges – hier per Reflection nachgebaut.
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
-            idProp.SetValue(episode, Guid.NewGuid());
+            idProp.SetValue(episode, TestIds.Indexed(200 + _nextId++));
             _episodes.Add(episode);
             return Task.CompletedTask;
         }
@@ -63,7 +65,7 @@ namespace EchoPlay.App.Tests.Fakes
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
             foreach (Episode episode in episodes)
             {
-                idProp.SetValue(episode, Guid.NewGuid());
+                idProp.SetValue(episode, TestIds.Indexed(200 + _nextId++));
                 _episodes.Add(episode);
             }
             return Task.CompletedTask;

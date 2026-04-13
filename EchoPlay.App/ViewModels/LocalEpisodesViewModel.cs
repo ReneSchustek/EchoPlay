@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
@@ -27,6 +28,7 @@ namespace EchoPlay.App.ViewModels
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILocalCoverLoader _coverLoader;
         private readonly EchoPlay.App.Services.CoverService? _coverService;
+        private readonly IClock _clock;
 
         /// <summary>
         /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst und
@@ -50,14 +52,17 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="scopeFactory">Für Datenbankzugriffe beim Setzen/Entfernen des Wiedergabestatus und beim Cover-Fallback.</param>
         /// <param name="coverLoader">Lädt Cover-Bilder aus dem lokalen Dateisystem (cover.jpg oder ID3-Tag).</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. In Tests <see langword="null"/>.</param>
         public LocalEpisodesViewModel(
             IServiceScopeFactory scopeFactory,
             ILocalCoverLoader coverLoader,
+            IClock clock,
             EchoPlay.App.Services.CoverService? coverService = null)
         {
             _scopeFactory = scopeFactory;
             _coverLoader  = coverLoader;
+            _clock        = clock;
             _coverService = coverService;
 
             // DispatcherQueue auf dem UI-Thread erfassen – notwendig für das Marshalling der
@@ -185,8 +190,11 @@ namespace EchoPlay.App.ViewModels
         {
             // Laufende Cover-Tasks der vorherigen Serie abbrechen – verhindert,
             // dass alte Hintergrund-Tasks Cover auf bereits ersetzte Karten setzen.
-            _coverCts?.Cancel();
-            _coverCts?.Dispose();
+            if (_coverCts is not null)
+            {
+                await _coverCts.CancelAsync();
+                _coverCts.Dispose();
+            }
             _coverCts = new CancellationTokenSource();
             CancellationToken coverToken = _coverCts.Token;
 
@@ -523,7 +531,7 @@ namespace EchoPlay.App.ViewModels
             if (existing is not null)
             {
                 existing.IsCompleted = true;
-                existing.CompletedAt = DateTime.UtcNow;
+                existing.CompletedAt = _clock.UtcNow;
                 await stateService.UpdateAsync(existing);
             }
             else
@@ -532,8 +540,8 @@ namespace EchoPlay.App.ViewModels
                 {
                     EpisodeId    = episodeId,
                     IsCompleted  = true,
-                    CompletedAt  = DateTime.UtcNow,
-                    LastPlayedAt = DateTime.UtcNow
+                    CompletedAt  = _clock.UtcNow,
+                    LastPlayedAt = _clock.UtcNow
                 };
                 await stateService.AddAsync(newState);
             }

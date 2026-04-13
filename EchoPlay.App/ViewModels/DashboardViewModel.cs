@@ -51,6 +51,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
         public DashboardViewModel(
             IServiceScopeFactory scopeFactory,
             IErrorDialogService errorDialogService,
@@ -58,12 +59,15 @@ namespace EchoPlay.App.ViewModels
             IPlayerService playerService,
             ILoggerFactory loggerFactory,
             CoverService? coverService = null,
-            ILocalizationService? localizationService = null)
+            ILocalizationService? localizationService = null,
+            IClock? clock = null)
         {
             _scopeFactory              = scopeFactory;
             _confirmationDialogService = confirmationDialogService;
             _localizationService       = localizationService;
             _logger                    = loggerFactory.CreateLogger("DashboardViewModel");
+
+            IClock resolvedClock = clock ?? new SystemClock();
 
             _dataLoader = new DashboardDataLoader(
                 scopeFactory,
@@ -72,6 +76,7 @@ namespace EchoPlay.App.ViewModels
                 playerService,
                 coverService,
                 localizationService,
+                resolvedClock,
                 _logger);
 
             // Sub-VMs initialisieren und PropertyChanged an eigene Pass-Through-Properties weiterreichen,

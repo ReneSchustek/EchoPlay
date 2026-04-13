@@ -31,6 +31,7 @@ namespace EchoPlay.App.ViewModels
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IThemeService _themeService;
         private readonly TaskbarProgressService _taskbar;
+        private readonly IClock _clock;
 
         private int _subscribedSeriesCount;
         private int _finishedEpisodesCount;
@@ -53,11 +54,13 @@ namespace EchoPlay.App.ViewModels
         /// <param name="scopeFactory">DI-Scope-Fabrik für Datenbankzugriffe.</param>
         /// <param name="themeService">Service für den Live-Themewechsel.</param>
         /// <param name="taskbar">Service für den Fortschrittsbalken in der Windows-Taskleiste.</param>
-        public StatusBarViewModel(IServiceScopeFactory scopeFactory, IThemeService themeService, TaskbarProgressService taskbar)
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
+        public StatusBarViewModel(IServiceScopeFactory scopeFactory, IThemeService themeService, TaskbarProgressService taskbar, IClock clock)
         {
             _scopeFactory   = scopeFactory;
             _themeService   = themeService;
             _taskbar        = taskbar;
+            _clock          = clock;
 
             // CommandParameter enthält den Theme-Namen bzw. den Sprachcode als string
             SwitchThemeCommand    = new ParameterizedRelayCommand(param => SwitchTheme(param as string ?? string.Empty));
@@ -444,6 +447,7 @@ namespace EchoPlay.App.ViewModels
             {
                 ProviderType.Spotify    => "Spotify",
                 ProviderType.AppleMusic => "Apple Music",
+                ProviderType.Both       => "Spotify + Apple Music",
                 _                      => string.Empty
             };
 
@@ -486,7 +490,7 @@ namespace EchoPlay.App.ViewModels
             int finished   = 0;
             int unfinished = 0;
             int newCount   = 0;
-            DateTime today = DateTime.UtcNow.Date;
+            DateTime today = _clock.UtcNow.Date;
 
             foreach (Episode episode in allEpisodes)
             {

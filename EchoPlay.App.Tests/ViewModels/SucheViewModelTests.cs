@@ -45,6 +45,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            services.AddSingleton<IClock>(new FakeClock());
+            services.AddHttpClient();
             services.AddSingleton<EchoPlay.App.Services.CoverService>();
             services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
             ServiceProvider provider = services.BuildServiceProvider();
@@ -119,9 +121,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SucheViewModel vm = BuildViewModel(results, seriesService);
             vm.SearchText = "TKKG";
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             Assert.Single(vm.Results);
             Assert.True(vm.Results[0].IsImported);
@@ -144,9 +144,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SucheViewModel vm = BuildViewModel(results);
             vm.SearchText = "Bibi";
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             Assert.Single(vm.Results);
             Assert.False(vm.Results[0].IsImported);
@@ -181,9 +179,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SucheViewModel vm = BuildViewModel(results, seriesService);
             vm.SearchText = "Fünf";
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             // Kein Import nötig – bereits vorhanden
             Assert.Single(vm.Results);
@@ -220,9 +216,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SucheViewModel vm = BuildViewModel(results);
             vm.SearchText = "TKKG";
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             Assert.Single(vm.Results);
             Assert.Equal("Spotify", vm.Results[0].SourceLabel);
@@ -240,9 +234,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SelectedScopeIndex = 2; // Lokal
             vm.SearchText = "TKKG";
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             Assert.Single(vm.Results);
             Assert.Equal("TKKG", vm.Results[0].Title);
@@ -270,9 +262,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SelectedScopeIndex = 1; // Online
             vm.SearchText = "e";       // würde "Fünf Freunde" lokal treffen – darf aber nicht erscheinen
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             // Nur das Online-Ergebnis – lokale "Fünf Freunde" bleibt ausgeschlossen
             Assert.Single(vm.Results);
@@ -297,9 +287,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SucheViewModel vm = BuildViewModel(onlineResults, scopeFactory: localFactory);
             vm.SearchText = "e"; // trifft "Fünf Freunde" lokal; Online gibt immer seine feste Liste zurück
             vm.SearchCommand.Execute(null);
-            // SearchAsync ist fire-and-forget – kurz warten dann auf Abschluss prüfen
-            await Task.Delay(50);
-            while (vm.IsLoading) await Task.Delay(10);
+            await vm.WaitForSearchCompleteAsync();
 
             // TKKG (online) + Fünf Freunde (lokal) = 2 Ergebnisse
             Assert.Equal(2, vm.Results.Count);

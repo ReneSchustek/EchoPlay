@@ -24,6 +24,7 @@ namespace EchoPlay.App.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IOnlineEpisodeChecker _onlineEpisodeChecker;
         private readonly StatusBarViewModel _statusBar;
+        private readonly IClock _clock;
 
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
@@ -31,11 +32,13 @@ namespace EchoPlay.App.Services
         public MissingEpisodesCoordinator(
             IServiceScopeFactory scopeFactory,
             IOnlineEpisodeChecker onlineEpisodeChecker,
-            StatusBarViewModel statusBar)
+            StatusBarViewModel statusBar,
+            IClock clock)
         {
             _scopeFactory          = scopeFactory;
             _onlineEpisodeChecker  = onlineEpisodeChecker;
             _statusBar             = statusBar;
+            _clock                 = clock;
         }
 
         /// <inheritdoc/>
@@ -78,7 +81,7 @@ namespace EchoPlay.App.Services
             {
                 return new MissingEpisodesReport
                 {
-                    CheckedAtUtc = DateTime.UtcNow,
+                    CheckedAtUtc = _clock.UtcNow,
                     Results      = []
                 };
             }
@@ -117,7 +120,7 @@ namespace EchoPlay.App.Services
 
                 return new MissingEpisodesReport
                 {
-                    CheckedAtUtc = DateTime.UtcNow,
+                    CheckedAtUtc = _clock.UtcNow,
                     Results      = results
                 };
             }

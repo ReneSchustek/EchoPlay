@@ -32,6 +32,7 @@ namespace EchoPlay.App.Services
         private readonly BackgroundCoverService _backgroundCoverService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger;
+        private readonly IClock _clock;
 
         /// <summary>
         /// Initialisiert den Validator mit den benötigten Abhängigkeiten.
@@ -40,16 +41,19 @@ namespace EchoPlay.App.Services
         /// <param name="backgroundCoverService">Für den synchronen Cover-Rebuild bei Cache-Clear.</param>
         /// <param name="httpClientFactory">Fabrik für den Online-Check-HttpClient (Named „OnlineCheck").</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+        /// <param name="clock">Zeitquelle für Zeitstempel.</param>
         public StartupValidator(
             IServiceScopeFactory scopeFactory,
             BackgroundCoverService backgroundCoverService,
             IHttpClientFactory httpClientFactory,
-            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory)
+            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory,
+            IClock clock)
         {
             _scopeFactory = scopeFactory;
             _backgroundCoverService = backgroundCoverService;
             _httpClientFactory = httpClientFactory;
             _logger = loggerFactory.CreateLogger("StartupValidator");
+            _clock = clock;
         }
 
         /// <inheritdoc />
@@ -72,7 +76,7 @@ namespace EchoPlay.App.Services
             AppSettings settings = await settingsService.GetAsync();
             IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync();
 
-            DateTime cutoffDate = (settings.LastAppStart ?? DateTime.UtcNow)
+            DateTime cutoffDate = (settings.LastAppStart ?? _clock.UtcNow)
                 .AddDays(-settings.NewReleaseDays);
 
             // Einmaliges Flag: alle Cache-Tabellen leeren.
@@ -303,7 +307,7 @@ namespace EchoPlay.App.Services
             // Prüfen ob ein Update nötig ist (letzte Prüfung < 24h)
             DateTime? lastCheck = await cacheService.GetLatestCheckTimeAsync();
             bool needsRefresh = lastCheck is null
-                || DateTime.UtcNow - lastCheck.Value > TimeSpan.FromHours(24);
+                || _clock.UtcNow - lastCheck.Value > TimeSpan.FromHours(24);
 
             if (!needsRefresh)
             {
@@ -342,7 +346,7 @@ namespace EchoPlay.App.Services
                     await checker.CheckNewReleasesAsync(checkable, cutoffDate);
 
                 // Ergebnisse in Cache-Einträge umwandeln und speichern
-                DateTime checkedAt = DateTime.UtcNow;
+                DateTime checkedAt = _clock.UtcNow;
                 List<CachedNewRelease> newEntries = [];
 
                 foreach (OnlineEpisodeCheckResult result in results)

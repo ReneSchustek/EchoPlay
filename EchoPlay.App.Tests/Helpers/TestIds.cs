@@ -38,6 +38,12 @@ namespace EchoPlay.App.Tests.Helpers
         public static readonly Guid ReleaseB = new("66666666-6666-6666-6666-666666666662");
 
         /// <summary>
+        /// Festes Referenzdatum, identisch mit dem Default von <c>FakeClock</c>.
+        /// Alle zeitabhängigen Test-Fixtures verwenden Offsets relativ zu diesem Datum.
+        /// </summary>
+        public static readonly DateTime ReferenceDate = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>
         /// Stellt eine deterministische GUID anhand eines numerischen Indexes bereit,
         /// nützlich, wenn Tests dynamisch eine Kollektion erzeugen.
         /// </summary>

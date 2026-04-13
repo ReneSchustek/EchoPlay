@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
@@ -45,13 +46,16 @@ namespace EchoPlay.App.Tests.Services
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new CoverService(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory()),
                 provider.GetRequiredService<IHttpClientFactory>(),
+                new FakeSpotifyCredentialStore(),
+                new BackgroundCoverServiceOptions(),
                 new FakeLoggerFactory());
 
             return new StartupValidator(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 coverService,
                 provider.GetRequiredService<IHttpClientFactory>(),
-                new FakeLoggerFactory());
+                new FakeLoggerFactory(),
+                new FakeClock());
         }
 
         [Fact]
@@ -98,8 +102,8 @@ namespace EchoPlay.App.Tests.Services
                     Series = series,
                     Title = "Alte Folge",
                     CollectionId = 1,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-5),
-                    CheckedAtUtc = DateTime.UtcNow
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 
@@ -148,8 +152,8 @@ namespace EchoPlay.App.Tests.Services
                     Series = series,
                     Title = "Sollte verschwinden",
                     CollectionId = 99,
-                    ReleaseDate = DateTime.UtcNow.AddDays(-1),
-                    CheckedAtUtc = DateTime.UtcNow
+                    ReleaseDate = TestIds.ReferenceDate.AddDays(-1),
+                    CheckedAtUtc = TestIds.ReferenceDate
                 }
             ]);
 

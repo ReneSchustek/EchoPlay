@@ -1,6 +1,7 @@
 ﻿using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {
@@ -11,15 +12,18 @@ namespace EchoPlay.Data.Tests.Infrastructure
         Justification = "Gemeinsam mit DbTestBase und TestDataBuilder als public Test-Infrastruktur gehalten.")]
     public static class InMemoryDbContextFactory
     {
+        // Monoton steigender Zähler ersetzt Guid.NewGuid für deterministische, aber kollisionsfreie Datenbanknamen.
+        private static int _databaseCounter;
+
         /// <summary>
         /// Erstellt eine frische Instanz des <see cref="EchoPlayDbContext"/> mit isoliertem Speicher.
         /// </summary>
         /// <returns>Ein einsatzbereiter Datenbankkontext.</returns>
         public static EchoPlayDbContext Create()
         {
-            // Die GUID verhindert, dass parallele Tests in denselben Speicherbereich schreiben.
+            int id = Interlocked.Increment(ref _databaseCounter);
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
-            _ = builder.UseInMemoryDatabase(Guid.NewGuid().ToString());
+            _ = builder.UseInMemoryDatabase($"echoplay-test-db-{id}");
 
             EchoPlayDbContext context = new(builder.Options);
             _ = context.Database.EnsureCreated();

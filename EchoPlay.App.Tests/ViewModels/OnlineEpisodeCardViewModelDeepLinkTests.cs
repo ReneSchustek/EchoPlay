@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using System;
 
@@ -13,7 +14,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildAppleMusicUrl_WithAlbumId_ReturnsDirectLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeA,
                 episodeNumber: 1,
                 title: "Testfolge",
                 appleMusicAlbumId: "1234567890");
@@ -27,7 +28,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildAppleMusicUrl_WithoutAlbumId_ReturnsSearchLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeB,
                 episodeNumber: 1,
                 title: "Die drei ??? und der Superpapagei");
 
@@ -41,7 +42,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildSpotifyUrl_WithAlbumId_ReturnsDirectLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeC,
                 episodeNumber: 1,
                 title: "Testfolge",
                 spotifyAlbumId: "abc123xyz");
@@ -55,7 +56,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildSpotifyUrl_WithoutAlbumId_ReturnsSearchLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeD,
                 episodeNumber: 1,
                 title: "TKKG - Das leere Grab im Moor");
 

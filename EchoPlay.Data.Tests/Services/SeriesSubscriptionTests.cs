@@ -51,7 +51,7 @@ namespace EchoPlay.Data.Tests.Services
             // Gelöschte Serien dürfen nicht zurückgegeben werden, auch wenn abonniert
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.IsSubscribed = true;
-            series.MarkAsDeleted(DateTime.UtcNow);
+            series.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
             _ = await Context.SaveChangesAsync();
             Context.ChangeTracker.Clear();
 

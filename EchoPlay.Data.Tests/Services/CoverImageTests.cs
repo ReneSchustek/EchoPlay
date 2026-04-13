@@ -1,5 +1,6 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services;
+using EchoPlay.Data.Tests.Helpers;
 using EchoPlay.Data.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,8 +16,8 @@ namespace EchoPlay.Data.Tests.Services
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
-            await service.SetCoverAsync("Series", Guid.NewGuid(), [0xFF, 0xD8]);
-            await service.SetCoverAsync("Episode", Guid.NewGuid(), [0x89, 0x50]);
+            await service.SetCoverAsync("Series", TestIds.Indexed(1), [0xFF, 0xD8]);
+            await service.SetCoverAsync("Episode", TestIds.Indexed(2), [0x89, 0x50]);
             Context.ChangeTracker.Clear();
 
             int deleted = await service.ClearAllAsync();
@@ -40,7 +41,7 @@ namespace EchoPlay.Data.Tests.Services
         public async Task SetCoverAsync_InsertAndUpdate()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = Guid.NewGuid();
+            Guid entityId = TestIds.Indexed(3);
 
             // Insert
             await service.SetCoverAsync("Series", entityId, [0x01, 0x02]);
@@ -62,7 +63,7 @@ namespace EchoPlay.Data.Tests.Services
         public async Task ExistsAsync_ReturnsTrueForExistingCover()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = Guid.NewGuid();
+            Guid entityId = TestIds.Indexed(4);
 
             await service.SetCoverAsync("Series", entityId, [0xFF, 0xD8]);
             Context.ChangeTracker.Clear();
@@ -77,7 +78,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
-            bool exists = await service.ExistsAsync("Series", Guid.NewGuid());
+            bool exists = await service.ExistsAsync("Series", TestIds.Indexed(5));
 
             Assert.False(exists);
         }
@@ -86,13 +87,13 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetUncheckedEntityIdsAsync_ReturnsUncheckedEntities()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = Guid.NewGuid();
+            Guid entityId = TestIds.Indexed(6);
 
             // Platzhalter-Eintrag ohne Bild und ohne LastChecked
             await service.SetLastCheckedAsync("Episode", entityId, DateTime.MinValue);
             Context.ChangeTracker.Clear();
 
-            DateTime threshold = DateTime.UtcNow.AddDays(-1);
+            DateTime threshold = TestIds.ReferenceDate.AddDays(-1);
             IReadOnlyList<Guid> pending = await service.GetUncheckedEntityIdsAsync("Episode", threshold, 10);
 
             Assert.Contains(entityId, pending);
@@ -102,8 +103,8 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetImageDataByEntitiesAsync_ReturnsBatchResults()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid id1 = Guid.NewGuid();
-            Guid id2 = Guid.NewGuid();
+            Guid id1 = TestIds.Indexed(7);
+            Guid id2 = TestIds.Indexed(8);
 
             await service.SetCoverAsync("Episode", id1, [0x01]);
             await service.SetCoverAsync("Episode", id2, [0x02]);
@@ -121,13 +122,13 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetImageDataByEntitiesAsync_FiltertPlatzhalterOhneBilddaten()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid mitCover = Guid.NewGuid();
-            Guid platzhalter = Guid.NewGuid();
+            Guid mitCover = TestIds.Indexed(9);
+            Guid platzhalter = TestIds.Indexed(10);
 
             // Echtes Cover
             await service.SetCoverAsync("Episode", mitCover, [0xFF, 0xD8]);
             // Platzhalter: nur LastChecked, keine Bilddaten
-            await service.SetLastCheckedAsync("Episode", platzhalter, DateTime.UtcNow);
+            await service.SetLastCheckedAsync("Episode", platzhalter, TestIds.ReferenceDate);
             Context.ChangeTracker.Clear();
 
             IReadOnlyDictionary<Guid, byte[]> result =
@@ -142,7 +143,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // SHA-256-Hash muss beim Speichern automatisch berechnet werden
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = Guid.NewGuid();
+            Guid entityId = TestIds.Indexed(11);
             byte[] imageData = [0xFF, 0xD8, 0xFF, 0xE0];
 
             await service.SetCoverAsync("Series", entityId, imageData);
@@ -165,7 +166,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Bei Update muss der Hash neu berechnet werden
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = Guid.NewGuid();
+            Guid entityId = TestIds.Indexed(12);
 
             await service.SetCoverAsync("Series", entityId, [0x01, 0x02]);
             Context.ChangeTracker.Clear();
@@ -186,7 +187,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Zwei Inserts für dieselbe Entity-Kombination: der zweite muss als Update durchgehen
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = Guid.NewGuid();
+            Guid entityId = TestIds.Indexed(13);
 
             await service.SetCoverAsync("Episode", entityId, [0x01]);
             Context.ChangeTracker.Clear();

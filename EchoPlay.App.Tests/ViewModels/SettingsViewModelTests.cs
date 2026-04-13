@@ -339,8 +339,8 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Alle Einträge aus dem Coordinator erscheinen ungefiltert
             FakeLogViewerCoordinator coordinator = new();
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Gestartet", "App", []));
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Warning, "Warnung", "Service", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Gestartet", "App", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Warning, "Warnung", "Service", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
@@ -354,8 +354,8 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Suchtext filtert Groß-/Kleinschreibungs-unabhängig
             FakeLogViewerCoordinator coordinator = new();
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Spotify gestartet", "Import", []));
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Daten gespeichert", "Data", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Spotify gestartet", "Import", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Daten gespeichert", "Data", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
@@ -370,10 +370,10 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Level-Filter: nur Einträge ab Warning sichtbar
             FakeLogViewerCoordinator coordinator = new();
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Debug,       "Debug-Meldung",   "A", []));
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Information, "Info-Meldung",    "B", []));
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Warning,     "Warnung",         "C", []));
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Error,       "Fehler",          "D", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Debug,       "Debug-Meldung",   "A", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Info-Meldung",    "B", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Warning,     "Warnung",         "C", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Error,       "Fehler",          "D", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
@@ -388,7 +388,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Exception-Nachricht muss im formatierten Eintrag sichtbar sein
             InvalidOperationException ex = new("Verbindung getrennt");
             FakeLogViewerCoordinator coordinator = new();
-            coordinator.AddLiveEntry(new LogEntry(DateTime.Now, LogLevel.Error, "Fehler beim Laden", "Net", [], ex));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Error, "Fehler beim Laden", "Net", [], ex));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);

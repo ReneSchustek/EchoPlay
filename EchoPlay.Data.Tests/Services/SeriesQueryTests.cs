@@ -27,7 +27,7 @@ namespace EchoPlay.Data.Tests.Services
 
             // Das Soft-Delete erfolgt bewusst nach dem Persistieren, da der QueryFilter
             // ausschließlich auf gespeicherte Zustände wirkt.
-            deletedSeries.MarkAsDeleted(DateTime.UtcNow);
+            deletedSeries.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
             _ = await Context.SaveChangesAsync();
 
             // Der ChangeTracker wird geleert, um sicherzustellen, dass die folgende
@@ -65,7 +65,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             SeriesDataService service = new(Context, NullLoggerFactory);
 
-            Series? result = await service.GetByIdAsync(Guid.NewGuid());
+            Series? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999997"));
 
             Assert.Null(result);
         }
@@ -115,7 +115,7 @@ namespace EchoPlay.Data.Tests.Services
             SeriesDataService service = new(Context, NullLoggerFactory);
 
             // Unbekannte ID → kein Fehler, nur Log-Warnung
-            await service.SetWatchedAsync(Guid.NewGuid(), true);
+            await service.SetWatchedAsync(new Guid("99999999-9999-9999-9999-999999999998"), true);
         }
     }
 }

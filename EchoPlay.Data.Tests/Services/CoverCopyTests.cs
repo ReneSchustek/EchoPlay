@@ -127,7 +127,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Unbekannte Serie → 0, kein Fehler
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(Guid.NewGuid());
+            int copied = await service.CopyFromMatchingEpisodesAsync(new Guid("99999999-9999-9999-9999-999999999992"));
 
             Assert.Equal(0, copied);
         }

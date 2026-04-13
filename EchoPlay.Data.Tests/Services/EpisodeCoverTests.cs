@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Tests.Services
             // Unbekannte ID wird stillschweigend ignoriert
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            await service.SetLocalCoverAsync(Guid.NewGuid(), [0x01]);
+            await service.SetLocalCoverAsync(new Guid("99999999-9999-9999-9999-999999999993"), [0x01]);
         }
     }
 }

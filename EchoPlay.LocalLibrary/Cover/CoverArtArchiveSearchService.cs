@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,7 +61,12 @@ namespace EchoPlay.LocalLibrary.Cover
                 searchResponse = await _httpClient.GetFromJsonAsync<MusicBrainzReleaseSearchResponse>(
                     url, ct).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is HttpRequestException
+                                       or TaskCanceledException
+                                       or JsonException
+                                       or NotSupportedException
+                                       or UriFormatException
+                                       or InvalidOperationException)
             {
                 // Netzwerkfehler → leere Liste, kein Absturz
                 return [];
@@ -123,7 +129,10 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 return response.IsSuccessStatusCode;
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is HttpRequestException
+                                       or TaskCanceledException
+                                       or UriFormatException
+                                       or InvalidOperationException)
             {
                 return false;
             }

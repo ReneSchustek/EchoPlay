@@ -3,6 +3,7 @@ using EchoPlay.LocalLibrary.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -127,9 +128,21 @@ namespace EchoPlay.LocalLibrary.Scanning
                     count += Directory.GetFiles(rootPath, extension, SearchOption.AllDirectories).Length;
                 }
             }
-            catch
+            catch (IOException)
             {
-                // Zugriffsrechte oder IO-Fehler – ohne Zählung läuft der Scan trotzdem
+                // IO-Fehler (inkl. PathTooLongException, DirectoryNotFoundException) – ohne Zählung läuft der Scan trotzdem
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Zugriffsrechte – ohne Zählung läuft der Scan trotzdem
+            }
+            catch (SecurityException)
+            {
+                // Zugriffsrechte – ohne Zählung läuft der Scan trotzdem
+            }
+            catch (ArgumentException)
+            {
+                // Ungültiger Pfad – ohne Zählung läuft der Scan trotzdem
             }
 
             return count;

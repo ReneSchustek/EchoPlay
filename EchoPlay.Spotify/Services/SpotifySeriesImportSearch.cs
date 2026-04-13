@@ -3,6 +3,7 @@ using EchoPlay.Core.Models.Import;
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
 using EchoPlay.Spotify.Mapping;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Spotify.Services
 {
@@ -32,6 +33,8 @@ namespace EchoPlay.Spotify.Services
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <returns>Eine Liste fachlich bewerteter Import-Serien.</returns>
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Einzelne Bewertungsfehler aus der Scoring-/Mapper-Pipeline dürfen die Gesamtsuche nicht abbrechen; der Mapper kombiniert mehrere Heuristiken und die konkreten Fehlertypen sind nicht vollständig vorhersehbar.")]
         public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:Search");

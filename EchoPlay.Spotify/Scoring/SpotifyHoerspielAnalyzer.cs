@@ -2,6 +2,8 @@ using EchoPlay.Core.Scoring;
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
 using Microsoft.Extensions.Options;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace EchoPlay.Spotify.Scoring
 {
@@ -260,7 +262,11 @@ namespace EchoPlay.Spotify.Scoring
                 {
                     tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is HttpRequestException
+                                           or TaskCanceledException
+                                           or JsonException
+                                           or InvalidOperationException
+                                           or UriFormatException)
                 {
                     // Schlägt das Laden der Tracks für ein Album fehl, wird es bei der Strukturanalyse
                     // übersprungen, um die Gesamtbewertung nicht zu blockieren.

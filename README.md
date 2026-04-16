@@ -53,7 +53,7 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 | .NET 10 / C# | Anwendungsframework |
 | WinUI 3 (Windows App SDK 1.8) | UI-Framework |
 | Windows SDK BuildTools 10.0.28000 | Manifest-Validierung, XAML-Compiler |
-| Entity Framework Core 10 | ORM mit SQLite (WAL-Modus, Soft-Delete, Migrationen mit Backup) |
+| Entity Framework Core 10 | ORM mit SQLite (WAL-Modus, Soft-Delete, Migrationen mit `VACUUM INTO`-Backup) |
 | Microsoft.Extensions.Http.Resilience | Polly-basierte Retry-/Timeout-/Circuit-Breaker-Policies für HTTP-Provider |
 | System.Security.Cryptography.ProtectedData | DPAPI-Verschlüsselung für Spotify-Credentials (CurrentUser-Scope) |
 | TagLib# | Audio-Metadaten |

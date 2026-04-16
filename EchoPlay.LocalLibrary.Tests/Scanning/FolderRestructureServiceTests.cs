@@ -119,5 +119,51 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             Assert.Equal(2, preview.Actions[1].EpisodeNumber);
             Assert.Equal(3, preview.Actions[2].EpisodeNumber);
         }
+
+        [Fact]
+        public void Execute_RemovesJournal_AfterSuccessfulRun()
+        {
+            File.WriteAllText(Path.Combine(_root, "Karl May - 001 - Eins.mp3"), string.Empty);
+            RestructurePreview preview = _service.Analyze(_root, "{number:000} - {title}");
+
+            _ = _service.Execute(preview);
+
+            Assert.False(File.Exists(Path.Combine(_root, FolderRestructureService.JournalFileName)));
+        }
+
+        [Fact]
+        public void TryRecoverPendingJournal_RollsBackMovedFiles_FromStaleJournal()
+        {
+            // Simuliert einen gecrashten Umbau: Datei wurde verschoben, Journal liegt noch.
+            string sourceFile = Path.Combine(_root, "Karl May - 001 - Eins.mp3");
+            File.WriteAllText(sourceFile, "audio");
+
+            RestructurePreview preview = _service.Analyze(_root, "{number:000} - {title}");
+
+            // Zielordner anlegen, Datei manuell verschieben, Journal liegenlassen
+            RestructureAction action = preview.Actions[0];
+            _ = Directory.CreateDirectory(action.TargetFolderPath);
+            string destination = Path.Combine(action.TargetFolderPath, action.FileName);
+            File.Move(action.SourcePath, destination);
+
+            string journalPath = Path.Combine(_root, FolderRestructureService.JournalFileName);
+            File.WriteAllText(
+                journalPath,
+                $"[{{\"Source\":{System.Text.Json.JsonSerializer.Serialize(action.SourcePath)},\"Destination\":{System.Text.Json.JsonSerializer.Serialize(destination)}}}]");
+
+            int recovered = _service.TryRecoverPendingJournal(_root);
+
+            Assert.Equal(1, recovered);
+            Assert.True(File.Exists(sourceFile));
+            Assert.False(File.Exists(destination));
+            Assert.False(File.Exists(journalPath));
+        }
+
+        [Fact]
+        public void TryRecoverPendingJournal_ReturnsZero_WhenNoJournal()
+        {
+            int recovered = _service.TryRecoverPendingJournal(_root);
+            Assert.Equal(0, recovered);
+        }
     }
 }

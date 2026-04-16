@@ -378,24 +378,18 @@ namespace EchoPlay.App.ViewModels
         // ── Statische Helfer (für Tests beibehalten) ────────────────────────────
 
         /// <summary>
-        /// Baut die Suchanfrage aus dem Ordnerkontext – delegiert an einen Helper-Coordinator.
-        /// Bleibt als statischer Shim, damit bestehende Unit-Tests weiter kompilieren.
+        /// Baut die Suchanfrage aus dem Ordnerkontext – delegiert an den statischen Core-Helper.
+        /// Bleibt als Shim, damit bestehende Unit-Tests weiter kompilieren.
         /// </summary>
         internal static string BuildAutoLookupQuery(string? folderPath)
-            => new TagLookupCoordinator(new NullLookupService()).BuildAutoLookupQuery(folderPath);
+            => TagLookupCoordinator.BuildAutoLookupQueryCore(folderPath);
 
         /// <summary>
-        /// Wählt den besten Treffer aus den Lookup-Ergebnissen – delegiert an einen Helper-Coordinator.
-        /// Bleibt als statischer Shim, damit bestehende Unit-Tests weiter kompilieren.
+        /// Wählt den besten Treffer aus den Lookup-Ergebnissen – delegiert an den statischen Core-Helper.
+        /// Bleibt als Shim, damit bestehende Unit-Tests weiter kompilieren.
         /// </summary>
         internal static TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
-            => new TagLookupCoordinator(new NullLookupService()).SelectBestMatch(results, loadedTrackCount);
-
-        private sealed class NullLookupService : ITagLookupService
-        {
-            public Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, System.Threading.CancellationToken cancellationToken = default)
-                => Task.FromResult<IReadOnlyList<TagLookupResult>>([]);
-        }
+            => TagLookupCoordinator.SelectBestMatchCore(results, loadedTrackCount);
 
         // ── Sub-VM-Verdrahtung ─────────────────────────────────────────────────
 

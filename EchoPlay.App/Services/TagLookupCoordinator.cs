@@ -1,6 +1,7 @@
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,37 +16,50 @@ namespace EchoPlay.App.Services
     /// Delegiert den eigentlichen Online-Lookup an <see cref="ITagLookupService"/>
     /// (MusicBrainz) und hält zusätzlich die reine Query-/Match-Logik, die früher
     /// als statische Methoden auf dem <c>TagManagerViewModel</c> lag.
+    /// Der Coordinator ist Singleton; die <see cref="ITagLookupService"/>-Instanz wird pro
+    /// Aufruf aus einem frischen DI-Scope aufgelöst, damit die HttpClient-Lifetime des
+    /// <c>HttpMessageHandler</c>s nicht in der Singleton-Referenz einfriert.
     /// </summary>
     public sealed class TagLookupCoordinator : ITagLookupCoordinator
     {
-        private readonly ITagLookupService _lookupService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         /// <summary>
-        /// Initialisiert den Coordinator mit dem Tag-Lookup-Service.
+        /// Initialisiert den Coordinator mit der Scope-Factory.
         /// </summary>
-        /// <param name="lookupService">MusicBrainz-Suche (oder Fake in Tests).</param>
-        public TagLookupCoordinator(ITagLookupService lookupService)
+        /// <param name="scopeFactory">Stellt pro Lookup einen frischen DI-Scope bereit.</param>
+        public TagLookupCoordinator(IServiceScopeFactory scopeFactory)
         {
-            _lookupService = lookupService;
+            ArgumentNullException.ThrowIfNull(scopeFactory);
+            _scopeFactory = scopeFactory;
         }
 
         /// <inheritdoc />
-        public Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, CancellationToken cancellationToken = default)
-            => _lookupService.SearchAsync(query, cancellationToken);
+        public async Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, CancellationToken cancellationToken = default)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ITagLookupService lookupService = scope.ServiceProvider.GetRequiredService<ITagLookupService>();
+            return await lookupService.SearchAsync(query, cancellationToken).ConfigureAwait(false);
+        }
 
         /// <inheritdoc />
-        public string BuildAutoLookupQuery(string? folderPath)
+        public string BuildAutoLookupQuery(string? folderPath) => BuildAutoLookupQueryCore(folderPath);
+
+        /// <inheritdoc />
+        public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
+            => SelectBestMatchCore(results, loadedTrackCount);
+
+        // Die beiden Helfer sind pure Funktionen und werden auch vom TagManagerViewModel
+        // als statische Shims für bestehende Unit-Tests verwendet (kein HttpClient nötig).
+        internal static string BuildAutoLookupQueryCore(string? folderPath)
         {
             if (string.IsNullOrWhiteSpace(folderPath))
             {
                 return string.Empty;
             }
 
-            // Serienname aus dem übergeordneten Ordner
             string seriesName = Path.GetFileName(Path.GetDirectoryName(folderPath)) ?? string.Empty;
 
-            // Folgentitel aus dem Ordnernamen – führende Laufnummer entfernen
-            // (z.B. "001 - Der Super-Papagei" → "Der Super-Papagei")
             string episodeFolderName = Path.GetFileName(folderPath) ?? string.Empty;
             string episodeTitle      = EpisodeFolderParser.StripLeadingSequenceNumber(episodeFolderName);
 
@@ -57,8 +71,7 @@ namespace EchoPlay.App.Services
             return $"{seriesName} {episodeTitle}";
         }
 
-        /// <inheritdoc />
-        public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
+        internal static TagLookupResult? SelectBestMatchCore(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
         {
             ArgumentNullException.ThrowIfNull(results);
             if (results.Count == 0)
@@ -66,7 +79,6 @@ namespace EchoPlay.App.Services
                 return null;
             }
 
-            // Exakter Track-Count-Treffer bevorzugen
             TagLookupResult? exactMatch = results.FirstOrDefault(
                 r => r.TrackCount.HasValue && r.TrackCount.Value == (uint)loadedTrackCount);
 

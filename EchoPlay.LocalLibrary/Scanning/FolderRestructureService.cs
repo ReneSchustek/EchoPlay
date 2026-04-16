@@ -3,6 +3,7 @@ using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
 using System.Security;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Scanning
@@ -171,12 +172,20 @@ namespace EchoPlay.LocalLibrary.Scanning
             };
         }
 
+        /// <summary>Dateiname des Journals im Serienordner – wird bei erfolgreichem Umbau gelöscht.</summary>
+        public const string JournalFileName = ".echoplay-restructure-journal.json";
+
         /// <inheritdoc />
         public int Execute(RestructurePreview preview)
         {
             ArgumentNullException.ThrowIfNull(preview);
 
+            string journalPath = Path.Combine(preview.SeriesFolderPath, JournalFileName);
             List<(string Source, string Destination)> completed = [];
+
+            // Leeres Journal vor dem ersten Move persistieren, damit ein Crash
+            // zwischen File.Move und dem Journal-Update trotzdem wiederherstellbar ist.
+            TryWriteJournal(journalPath, completed);
 
             try
             {
@@ -196,9 +205,11 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                     File.Move(action.SourcePath, destination);
                     completed.Add((action.SourcePath, destination));
+                    TryWriteJournal(journalPath, completed);
                 }
 
                 _logger.Info($"Ordnerstruktur aufgebaut: {completed.Count} Dateien verschoben in '{Path.GetFileName(preview.SeriesFolderPath)}'");
+                TryDeleteJournal(journalPath);
                 return completed.Count;
             }
             catch (Exception ex)
@@ -226,10 +237,111 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                 // Leere Ordner aufräumen, die durch den Rollback entstanden sind
                 CleanupEmptyFolders(preview);
+                TryDeleteJournal(journalPath);
 
                 throw;
             }
         }
+
+        /// <summary>
+        /// Versucht, ein liegengebliebenes Journal im Serienordner wiederzugeben – etwa nach einem
+        /// Prozess-Crash zwischen zwei <c>File.Move</c>-Operationen. Gibt die Zahl der zurückgerollten
+        /// Dateien zurück (0 wenn kein Journal existiert oder keine Einträge zu rollen sind).
+        /// </summary>
+        /// <param name="seriesFolderPath">Serienordner, der geprüft werden soll.</param>
+        /// <returns>Anzahl wiederhergestellter Dateien.</returns>
+        public int TryRecoverPendingJournal(string seriesFolderPath)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(seriesFolderPath);
+
+            string journalPath = Path.Combine(seriesFolderPath, JournalFileName);
+            if (!File.Exists(journalPath))
+            {
+                return 0;
+            }
+
+            List<JournalEntry>? entries;
+            try
+            {
+                string json = File.ReadAllText(journalPath);
+                entries = JsonSerializer.Deserialize<List<JournalEntry>>(json);
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                _logger.Warning($"Journal '{journalPath}' konnte nicht gelesen werden: {ex.Message}");
+                return 0;
+            }
+
+            if (entries is null || entries.Count == 0)
+            {
+                TryDeleteJournal(journalPath);
+                return 0;
+            }
+
+            int recovered = 0;
+            foreach (JournalEntry entry in entries)
+            {
+                try
+                {
+                    if (File.Exists(entry.Destination) && !File.Exists(entry.Source))
+                    {
+                        File.Move(entry.Destination, entry.Source);
+                        recovered++;
+                    }
+                }
+                catch (Exception ex) when (ex is IOException
+                                           or UnauthorizedAccessException
+                                           or SecurityException
+                                           or PathTooLongException
+                                           or DirectoryNotFoundException
+                                           or NotSupportedException
+                                           or ArgumentException)
+                {
+                    _logger.Error($"Journal-Recovery fehlgeschlagen für '{entry.Destination}': {ex.Message}", ex);
+                }
+            }
+
+            _logger.Info($"Journal-Recovery: {recovered} von {entries.Count} Dateien zurückgerollt in '{Path.GetFileName(seriesFolderPath)}'");
+            TryDeleteJournal(journalPath);
+            return recovered;
+        }
+
+        private void TryWriteJournal(string journalPath, List<(string Source, string Destination)> completed)
+        {
+            try
+            {
+                List<JournalEntry> entries = [];
+                foreach ((string source, string destination) in completed)
+                {
+                    entries.Add(new JournalEntry(source, destination));
+                }
+
+                string json = JsonSerializer.Serialize(entries);
+                File.WriteAllText(journalPath, json);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+            {
+                // Journal ist Best-Effort – der Umbau läuft auch ohne persistentes Journal weiter.
+                _logger.Warning($"Journal '{journalPath}' konnte nicht geschrieben werden: {ex.Message}");
+            }
+        }
+
+        private void TryDeleteJournal(string journalPath)
+        {
+            try
+            {
+                if (File.Exists(journalPath))
+                {
+                    File.Delete(journalPath);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.Warning($"Journal '{journalPath}' konnte nicht gelöscht werden: {ex.Message}");
+            }
+        }
+
+        private sealed record JournalEntry(string Source, string Destination);
 
         /// <summary>
         /// Entfernt leere Unterordner, die durch einen abgebrochenen Umbau oder Rollback entstanden sind.

@@ -1,7 +1,9 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
+using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
@@ -380,8 +382,14 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeTagLookupService? lookupService = null,
             FakeOnlineAccessGuard? onlineGuard  = null)
         {
-            ITagLookupCoordinator coordinator =
-                new TagLookupCoordinator(lookupService ?? new FakeTagLookupService());
+            FakeTagLookupService fake = lookupService ?? new FakeTagLookupService();
+
+            ServiceCollection services = new();
+            _ = services.AddScoped<ITagLookupService>(_ => fake);
+            ServiceProvider provider = services.BuildServiceProvider();
+            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+
+            ITagLookupCoordinator coordinator = new TagLookupCoordinator(scopeFactory);
 
             return new TagManagerViewModel(
                 tagService ?? new FakeTagService(),

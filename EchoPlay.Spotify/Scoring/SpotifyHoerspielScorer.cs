@@ -11,6 +11,9 @@ namespace EchoPlay.Spotify.Scoring
     /// Der Scorer enthält ausschließlich Arithmetik und Entscheidungslogik.
     /// Die eigentliche Analyse (API-Aufrufe, Heuristiken) wird an den
     /// <see cref="SpotifyHoerspielAnalyzer"/> delegiert.
+    /// Thread-Safety: Alle Felder sind <c>readonly</c> und die geteilten Abhängigkeiten
+    /// (<see cref="HoerspielDecisionCache"/>, <see cref="SpotifyHoerspielAnalyzer"/>) sind selbst
+    /// thread-safe. Instanzen dürfen parallel von mehreren Scopes genutzt werden.
     /// </summary>
     internal sealed class SpotifyHoerspielScorer : IHoerspielScorer<SpotifyArtistDto>
     {

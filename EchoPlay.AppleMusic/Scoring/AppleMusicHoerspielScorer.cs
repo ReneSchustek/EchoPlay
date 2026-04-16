@@ -11,6 +11,8 @@ namespace EchoPlay.AppleMusic.Scoring
     /// Der Scorer enthält ausschließlich Arithmetik und Entscheidungslogik.
     /// Die eigentliche Analyse wird an den <see cref="AppleMusicHoerspielAnalyzer"/> delegiert.
     /// Seit dem Wechsel auf die iTunes Search API wird zusätzlich das Genre als positiver Indikator genutzt.
+    /// Thread-Safety: Alle Felder sind <c>readonly</c>, der gemeinsame <see cref="HoerspielDecisionCache"/>
+    /// ist thread-safe. Instanzen dürfen parallel von mehreren Scopes genutzt werden.
     /// </summary>
     internal sealed class AppleMusicHoerspielScorer : IHoerspielScorer<ITunesArtistDto>
     {

@@ -15,6 +15,12 @@ namespace EchoPlay.Logger.Sinks
     /// </summary>
     public sealed class MemorySink : ILogSink, ILiveLogSink
     {
+        /// <summary>
+        /// Obergrenze der Puffergröße. Schützt vor versehentlicher Speicher-Eskalation;
+        /// 100 000 Einträge entsprechen bei ~250 Byte pro Eintrag ca. 25 MB.
+        /// </summary>
+        public const int MaxCapacity = 100_000;
+
         private readonly Queue<LogEntry> _entries;
         private readonly int _capacity;
         private readonly object _lock = new();
@@ -23,8 +29,14 @@ namespace EchoPlay.Logger.Sinks
         /// Erstellt einen neuen MemorySink mit der angegebenen Puffergröße.
         /// </summary>
         /// <param name="capacity">Maximale Anzahl der gepufferten Einträge. Standard: 100.</param>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Wird ausgelöst, wenn <paramref name="capacity"/> &lt; 1 oder &gt; <see cref="MaxCapacity"/>.
+        /// </exception>
         public MemorySink(int capacity = 100)
         {
+            ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(capacity, MaxCapacity);
+
             _capacity = capacity;
             _entries = new(capacity);
         }

@@ -87,19 +87,6 @@ namespace EchoPlay.Data.Services.Interfaces
         Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId);
 
         /// <summary>
-        /// Setzt das lokal gespeicherte Cover einer Episode.
-        /// Überschreibt immer den vorhandenen Wert – ein manuell gesetztes Cover hat
-        /// Vorrang vor automatisch ermittelten Daten.
-        /// Existiert die Episode nicht, wird der Aufruf ignoriert.
-        /// </summary>
-        /// <param name="episodeId">Die ID der Episode.</param>
-        /// <param name="coverData">
-        /// Rohe Bilddaten als Byte-Array.
-        /// <see langword="null"/> entfernt das gespeicherte Cover.
-        /// </param>
-        Task SetLocalCoverAsync(Guid episodeId, byte[]? coverData);
-
-        /// <summary>
         /// Setzt den Zeitstempel der letzten Cover-Suche.
         /// Wird nach jeder automatischen Suche gesetzt, unabhängig vom Ergebnis.
         /// Verhindert wiederholtes Durchsuchen bei Episoden ohne Treffer (Cooldown).

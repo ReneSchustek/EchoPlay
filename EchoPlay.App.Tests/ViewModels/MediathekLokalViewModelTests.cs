@@ -434,13 +434,12 @@ namespace EchoPlay.App.Tests.ViewModels
         // ── Cover-Verwaltung ─────────────────────────────────────────────────────
 
         [Fact]
-        public async Task SetLocalCoverAsync_PersistsCoverBytes()
+        public async Task SetCoverAsync_PersistsCoverBytesInCoverImagesTable()
         {
-            // Prüft die DB-Ebene direkt: SetLocalCoverAsync muss die Bytes in der Serie speichern.
-            // Der ViewModel-Weg über ApplySeriesCoverFromBytesAsync ist in Unit-Tests nicht testbar,
-            // weil BitmapImageFromBytesAsync WinUI-3-COM-Typen benötigt (InMemoryRandomAccessStream),
-            // die nur in der MSIX-Laufzeitumgebung verfügbar sind.
+            // Cover-Persistenz läuft seit Brief 240 ausschließlich über die CoverImages-Tabelle.
+            // Series.LocalCoverData wurde entfernt, der CoverImageDataService ist Single-Source-of-Truth.
             FakeSeriesDataService seriesService = new();
+            FakeCoverImageDataService coverService = new();
 
             await seriesService.AddAsync(new Series
             {
@@ -451,9 +450,11 @@ namespace EchoPlay.App.Tests.ViewModels
             Guid seriesId = seriesService.All[0].Id;
             byte[] coverBytes = [0xFF, 0xD8, 0xFF];
 
-            await seriesService.SetLocalCoverAsync(seriesId, coverBytes);
+            await coverService.SetCoverAsync(CoverEntityTypes.Series, seriesId, coverBytes);
 
-            Assert.Equal(coverBytes, seriesService.All[0].LocalCoverData);
+            CoverImage? cover = await coverService.GetByEntityAsync(CoverEntityTypes.Series, seriesId);
+            Assert.NotNull(cover);
+            Assert.Equal(coverBytes, cover!.ImageData);
         }
 
     }

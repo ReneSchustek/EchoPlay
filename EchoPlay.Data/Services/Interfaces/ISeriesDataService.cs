@@ -78,19 +78,6 @@ namespace EchoPlay.Data.Services.Interfaces
         Task SetFavoriteAsync(Guid seriesId, bool isFavorite);
 
         /// <summary>
-        /// Setzt das lokal gespeicherte Cover einer Serie.
-        /// Überschreibt immer den vorhandenen Wert – ein manuell gesetztes Cover hat
-        /// Vorrang vor automatisch ermittelten Daten.
-        /// Existiert die Serie nicht, wird der Aufruf ignoriert.
-        /// </summary>
-        /// <param name="seriesId">Die ID der Serie.</param>
-        /// <param name="coverData">
-        /// Rohe Bilddaten als Byte-Array.
-        /// <see langword="null"/> entfernt das gespeicherte Cover.
-        /// </param>
-        Task SetLocalCoverAsync(Guid seriesId, byte[]? coverData);
-
-        /// <summary>
         /// Setzt den Überwachungsstatus einer Serie.
         /// Nur überwachte Serien erscheinen im Dashboard unter Neuerscheinungen.
         /// </summary>

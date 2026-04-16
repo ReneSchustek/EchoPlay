@@ -123,19 +123,6 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SetLocalCoverAsync(Guid episodeId, byte[]? coverData)
-        {
-            Episode? episode = _episodes.FirstOrDefault(e => e.Id == episodeId);
-
-            if (episode is not null)
-            {
-                episode.LocalCoverData = coverData;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
         public Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt)
         {
             Episode? episode = _episodes.FirstOrDefault(e => e.Id == episodeId);

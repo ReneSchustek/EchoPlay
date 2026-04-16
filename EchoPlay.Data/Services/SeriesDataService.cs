@@ -197,30 +197,6 @@ namespace EchoPlay.Data.Services
             _logger.Info($"Serie '{series.Title}' (ID: {seriesId}) IsFavorite = {isFavorite}.");
         }
 
-        /// <summary>
-        /// Setzt das lokal gespeicherte Cover einer Serie dauerhaft.
-        /// Existiert die Serie nicht, wird der Aufruf mit einer Warnung ignoriert.
-        /// </summary>
-        /// <param name="seriesId">Die ID der Serie.</param>
-        /// <param name="coverData">Rohe Bilddaten oder <see langword="null"/> zum Entfernen.</param>
-        public async Task SetLocalCoverAsync(Guid seriesId, byte[]? coverData)
-        {
-            Series? series = await _context.Series
-                .AsTracking()
-                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
-
-            if (series is null)
-            {
-                _logger.Warning($"Serie '{seriesId}' nicht gefunden – Cover-Update übersprungen.");
-                return;
-            }
-
-            series.LocalCoverData = coverData;
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            _logger.Info($"Cover für Serie '{series.Title}' (ID: {seriesId}) {(coverData is null ? "gelöscht" : "gespeichert")}.");
-        }
-
         /// <inheritdoc/>
         public async Task SetWatchedAsync(Guid seriesId, bool isWatched)
         {

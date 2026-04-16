@@ -127,17 +127,5 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.CompletedTask;
         }
 
-        /// <inheritdoc/>
-        public Task SetLocalCoverAsync(Guid seriesId, byte[]? coverData)
-        {
-            Series? series = _series.FirstOrDefault(s => s.Id == seriesId);
-
-            if (series is not null)
-            {
-                series.LocalCoverData = coverData;
-            }
-
-            return Task.CompletedTask;
-        }
     }
 }

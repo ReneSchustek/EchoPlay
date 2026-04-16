@@ -372,11 +372,15 @@ namespace EchoPlay.App.ViewModels
                 await Task.Run(async () =>
                 {
                     using IServiceScope cleanupScope = _scopeFactory.CreateScope();
-                    ISeriesDataService seriesService    = cleanupScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                    IEpisodeDataService episodeService  = cleanupScope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-                    ILocalTrackDataService trackService = cleanupScope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+                    ISeriesDataService seriesService          = cleanupScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+                    IEpisodeDataService episodeService        = cleanupScope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+                    ILocalTrackDataService trackService       = cleanupScope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+                    ICoverImageDataService coverImageService  = cleanupScope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
 
                     IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+
+                    List<Guid> seriesIdsToResetCover = [];
+                    List<Guid> episodeIdsToResetCover = [];
 
                     foreach (Series series in allSeries)
                     {
@@ -391,11 +395,8 @@ namespace EchoPlay.App.ViewModels
 
                         // Online-importierte Serie: lokale Zuordnung entfernen, Metadaten behalten
                         series.LocalFolderPath = null;
-                        // Gespeichertes Cover löschen – beim nächsten Scan wird es neu eingelesen.
-                        // Ohne dieses Reset würde das alte Binärbild dauerhaft in der DB verbleiben,
-                        // selbst wenn der Nutzer ein anderes Bild auf die Festplatte legt.
-                        series.LocalCoverData = null;
                         await seriesService.UpdateAsync(series);
+                        seriesIdsToResetCover.Add(series.Id);
 
                         IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
 
@@ -403,15 +404,22 @@ namespace EchoPlay.App.ViewModels
                         {
                             episode.LocalFolderPath = null;
                             episode.LocalTrackCount = null;
-                            episode.LocalCoverData  = null;
                             // Zurück auf den Ausgangszustand – kein lokaler Abgleich mehr vorhanden
                             episode.TrackMatchKind = TrackMatchKind.NotMatched;
                             await episodeService.UpdateAsync(episode);
+
+                            episodeIdsToResetCover.Add(episode.Id);
 
                             // Leere Liste löscht alle LocalTrack-Einträge dieser Episode
                             await trackService.SaveTracksForEpisodeAsync(episode.Id, []);
                         }
                     }
+
+                    // Gespeicherte Cover löschen – beim nächsten Scan werden sie neu eingelesen.
+                    // Ohne dieses Reset würde das alte Binärbild dauerhaft in der CoverImages-Tabelle
+                    // verbleiben, selbst wenn der Nutzer ein anderes Bild auf die Festplatte legt.
+                    _ = await coverImageService.DeleteByEntitiesAsync(CoverEntityTypes.Series, seriesIdsToResetCover);
+                    _ = await coverImageService.DeleteByEntitiesAsync(CoverEntityTypes.Episode, episodeIdsToResetCover);
                 });
 
                 SyncStatusText = "Zurückgesetzt. Starte Scan …";

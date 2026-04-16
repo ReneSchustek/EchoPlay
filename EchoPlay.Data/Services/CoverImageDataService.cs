@@ -209,6 +209,26 @@ namespace EchoPlay.Data.Services
             return deleted;
         }
 
+        /// <inheritdoc/>
+        public async Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds)
+        {
+            ArgumentNullException.ThrowIfNull(entityIds);
+
+            if (entityIds.Count == 0) return 0;
+
+            int deleted = await _context.CoverImages
+                .Where(c => c.EntityType == entityType && entityIds.Contains(c.EntityId))
+                .ExecuteDeleteAsync()
+                .ConfigureAwait(false);
+
+            if (deleted > 0)
+            {
+                _logger.Debug($"{deleted} Cover-Einträge für {entityType} entfernt.");
+            }
+
+            return deleted;
+        }
+
         /// <summary>
         /// Berechnet den SHA-256-Hash der Bilddaten als Hex-String (64 Zeichen).
         /// </summary>

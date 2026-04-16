@@ -233,6 +233,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable ua = UserActionScope.BeginUserAction("ImportSeries");
             IsImporting = true;
 
             try

@@ -195,6 +195,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable ua = UserActionScope.BeginUserAction("ToggleLocalWatch");
             await _watchToggleService.ToggleAsync(seriesId, watch);
 
             LocalArtistCardViewModel? card = _artistsVM.AllArtists
@@ -215,6 +216,7 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task MarkAllAsReadAsync(Guid seriesId)
         {
+            using IDisposable ua = UserActionScope.BeginUserAction("MarkAllAsRead");
             using IServiceScope scope = _scopeFactory.CreateScope();
             IEpisodeDataService episodeService       = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
@@ -258,6 +260,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="seriesId">ID der zu entfernenden Serie.</param>
         public async Task DeleteSeriesFromLibraryAsync(Guid seriesId)
         {
+            using IDisposable ua = UserActionScope.BeginUserAction("DeleteSeriesFromLibrary");
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 "Aus Bibliothek entfernen",
                 "Die Serie und alle zugehörigen Episoden werden aus der Bibliothek entfernt. " +
@@ -282,6 +285,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="folderPath">Lokaler Ordnerpfad der Serie.</param>
         public async Task DeleteSeriesFromDiskAsync(Guid seriesId, string? folderPath)
         {
+            using IDisposable ua = UserActionScope.BeginUserAction("DeleteSeriesFromDisk");
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 "Von Festplatte löschen",
                 "Die Serie, alle Episoden und alle Audiodateien werden unwiderruflich gelöscht. " +
@@ -321,6 +325,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable ua = UserActionScope.BeginUserAction("CheckMissingEpisodes");
             LocalArtistCardViewModel? card = _artistsVM.AllArtists.FirstOrDefault(a => a.SeriesId == seriesId);
 
             MissingEpisodesMode mode = await RequestMissingEpisodesModeAsync();
@@ -347,6 +352,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable ua = UserActionScope.BeginUserAction("CheckAllSeries");
             MissingEpisodesMode mode = await RequestMissingEpisodesModeAsync();
             if (mode == MissingEpisodesMode.Cancel)
             {
@@ -386,6 +392,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable ua = UserActionScope.BeginUserAction("AnalyzeRestructure");
             LocalArtistCardViewModel? card = _artistsVM.AllArtists.FirstOrDefault(a => a.SeriesId == seriesId);
             if (card?.LocalFolderPath is null)
             {
@@ -416,6 +423,7 @@ namespace EchoPlay.App.ViewModels
                 return 0;
             }
 
+            using IDisposable ua = UserActionScope.BeginUserAction("ExecuteRestructure");
             return await _restructureCoordinator.ExecuteAsync(preview);
         }
 
@@ -474,28 +482,30 @@ namespace EchoPlay.App.ViewModels
         /// Lädt das gewählte Cover herunter und übernimmt es als Serien-Cover.
         /// Delegiert an den <see cref="IEpisodeCoverCoordinator"/>.
         /// </summary>
-        public Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit)
+        public async Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit)
         {
             if (_coverCoordinator is null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            return _coverCoordinator.ApplySelectedSeriesCoverAsync(card, hit);
+            using IDisposable ua = UserActionScope.BeginUserAction("ApplyLocalSeriesCover");
+            await _coverCoordinator.ApplySelectedSeriesCoverAsync(card, hit);
         }
 
         /// <summary>
         /// Lädt das gewählte Cover herunter und übernimmt es als Episoden-Cover.
         /// Delegiert an den <see cref="IEpisodeCoverCoordinator"/>.
         /// </summary>
-        public Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit)
+        public async Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit)
         {
             if (_coverCoordinator is null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            return _coverCoordinator.ApplySelectedEpisodeCoverAsync(card, hit);
+            using IDisposable ua = UserActionScope.BeginUserAction("ApplyLocalEpisodeCover");
+            await _coverCoordinator.ApplySelectedEpisodeCoverAsync(card, hit);
         }
     }
 }

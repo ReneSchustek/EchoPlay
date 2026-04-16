@@ -127,5 +127,19 @@ namespace EchoPlay.Data.Entities.Settings
         /// automatisch auf <see langword="false"/> zurückgesetzt.
         /// </summary>
         public bool ClearCacheOnNextStart { get; set; }
+
+        /// <summary>
+        /// Steuert, ob vor einer EF-Core-Migration ein Snapshot der Datenbankdatei angelegt wird.
+        /// Standard: <see langword="true"/>. Wer auf knappen Datenträgern arbeitet oder das Backup
+        /// extern übernimmt, kann die Funktion in den Einstellungen deaktivieren.
+        /// </summary>
+        public bool DbBackupEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Anzahl der aufzubewahrenden DB-Backups vor Migrationen. Zulässiger Bereich 1–20.
+        /// Standard: 5. Der Wert 0 wirkt wie eine Deaktivierung und kommt außerdem als
+        /// Notfall-Schalter zum Einsatz, wenn der Nutzer die Opt-Out-Option noch nicht kennt.
+        /// </summary>
+        public int DbBackupRetentionCount { get; set; } = 5;
     }
 }

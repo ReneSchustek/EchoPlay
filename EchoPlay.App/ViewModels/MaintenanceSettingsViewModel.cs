@@ -33,6 +33,8 @@ namespace EchoPlay.App.ViewModels
         private bool _isBatchLoading;
         private int _dbPurgeDays = 30;
         private bool _clearCacheOnNextStart;
+        private bool _dbBackupEnabled = true;
+        private int _dbBackupRetentionCount = 5;
         private bool _isMaintaining;
         private string _maintenanceStatusText = string.Empty;
 
@@ -86,6 +88,38 @@ namespace EchoPlay.App.ViewModels
             set
             {
                 if (SetProperty(ref _clearCacheOnNextStart, value))
+                {
+                    MarkAsChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Legt fest, ob der <see cref="EchoPlay.Data.Infrastructure.DatabaseInitializer"/> vor jeder Migration
+        /// einen Snapshot der Datenbank anlegt.
+        /// </summary>
+        public bool DbBackupEnabled
+        {
+            get => _dbBackupEnabled;
+            set
+            {
+                if (SetProperty(ref _dbBackupEnabled, value))
+                {
+                    MarkAsChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Anzahl der DB-Backups, die vor Migrationen vorgehalten werden.
+        /// Gültiger Bereich 1–20. Der Wert 0 ist äquivalent zum Opt-Out.
+        /// </summary>
+        public int DbBackupRetentionCount
+        {
+            get => _dbBackupRetentionCount;
+            set
+            {
+                if (SetProperty(ref _dbBackupRetentionCount, value))
                 {
                     MarkAsChanged();
                 }
@@ -416,8 +450,10 @@ namespace EchoPlay.App.ViewModels
             _isBatchLoading = true;
             try
             {
-                DbPurgeDays           = settings.DbPurgeDays;
-                ClearCacheOnNextStart = settings.ClearCacheOnNextStart;
+                DbPurgeDays            = settings.DbPurgeDays;
+                ClearCacheOnNextStart  = settings.ClearCacheOnNextStart;
+                DbBackupEnabled        = settings.DbBackupEnabled;
+                DbBackupRetentionCount = settings.DbBackupRetentionCount;
             }
             finally
             {
@@ -431,8 +467,10 @@ namespace EchoPlay.App.ViewModels
         {
             ArgumentNullException.ThrowIfNull(settings);
             // 0 ist erlaubt – bedeutet sofortige Bereinigung aller soft-gelöschten Einträge
-            settings.DbPurgeDays           = Math.Max(0, DbPurgeDays);
-            settings.ClearCacheOnNextStart = ClearCacheOnNextStart;
+            settings.DbPurgeDays            = Math.Max(0, DbPurgeDays);
+            settings.ClearCacheOnNextStart  = ClearCacheOnNextStart;
+            settings.DbBackupEnabled        = DbBackupEnabled;
+            settings.DbBackupRetentionCount = Math.Clamp(DbBackupRetentionCount, 1, 20);
         }
 
         /// <summary>

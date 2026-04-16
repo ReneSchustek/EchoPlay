@@ -471,6 +471,35 @@
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
+                        <!-- DB-Backup vor Migrationen -->
+                        <TextBlock
+                            x:Uid="DbBackupHeading"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Margin="0,8,0,4"/>
+
+                        <TextBlock
+                            x:Uid="DbBackupDescription"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <ToggleSwitch
+                            x:Uid="DbBackupEnabledToggle"
+                            IsOn="{x:Bind ViewModel.DbBackupEnabled, Mode=TwoWay}"/>
+
+                        <NumberBox
+                            x:Uid="DbBackupRetentionBox"
+                            Value="{x:Bind ViewModel.DbBackupRetentionCount, Mode=TwoWay}"
+                            Minimum="1"
+                            Maximum="20"
+                            SpinButtonPlacementMode="Inline"
+                            SmallChange="1"
+                            Width="200"
+                            HorizontalAlignment="Left"
+                            IsEnabled="{x:Bind ViewModel.DbBackupEnabled, Mode=OneWay}"/>
+
+                        <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
+
                         <!-- Bibliothek zurücksetzen -->
                         <TextBlock
                             x:Uid="DbResetHeading"

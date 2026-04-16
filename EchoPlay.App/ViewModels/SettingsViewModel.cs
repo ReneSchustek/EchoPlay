@@ -337,6 +337,20 @@ namespace EchoPlay.App.ViewModels
             set => MaintenanceVM.ClearCacheOnNextStart = value;
         }
 
+        /// <inheritdoc cref="MaintenanceSettingsViewModel.DbBackupEnabled"/>
+        public bool DbBackupEnabled
+        {
+            get => MaintenanceVM.DbBackupEnabled;
+            set => MaintenanceVM.DbBackupEnabled = value;
+        }
+
+        /// <inheritdoc cref="MaintenanceSettingsViewModel.DbBackupRetentionCount"/>
+        public int DbBackupRetentionCount
+        {
+            get => MaintenanceVM.DbBackupRetentionCount;
+            set => MaintenanceVM.DbBackupRetentionCount = value;
+        }
+
         /// <inheritdoc cref="MaintenanceSettingsViewModel.IsMaintaining"/>
         public bool IsMaintaining => MaintenanceVM.IsMaintaining;
 

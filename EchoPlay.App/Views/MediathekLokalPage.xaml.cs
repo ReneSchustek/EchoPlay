@@ -100,6 +100,8 @@ namespace EchoPlay.App.Views
             SizeChanged                              -= OnPageSizeChanged;
             EpisodeAccordion.GridView.SelectionChanged -= OnEpisodeSelectionChanged;
             ViewModel.Deactivate();
+            // VM disposed — Scan-Event-Subscriptions, Sub-VM-Ketten und Koordinatoren freigeben.
+            ViewModel.Dispose();
         }
 
         /// <summary>
@@ -508,11 +510,21 @@ namespace EchoPlay.App.Views
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                // Vorschau im Hintergrund erstellen
+                // Vorschau im Hintergrund erstellen.
+                // Lokale Methode statt Lambda — `+=` und `-=` müssen dieselbe Delegate-Identität haben,
+                // sonst ist das Unsubscribe ein No-Op und der Handler hängt am VM weiter.
                 RestructurePreviewDisplay? preview = null;
-                ViewModel.RestructurePreviewReady += p => preview = p;
-                await ViewModel.AnalyzeRestructureAsync(seriesId);
-                ViewModel.RestructurePreviewReady -= p => preview = p;
+                void CapturePreview(RestructurePreviewDisplay p) => preview = p;
+
+                ViewModel.RestructurePreviewReady += CapturePreview;
+                try
+                {
+                    await ViewModel.AnalyzeRestructureAsync(seriesId);
+                }
+                finally
+                {
+                    ViewModel.RestructurePreviewReady -= CapturePreview;
+                }
 
                 if (preview is null || preview.IsEmpty)
                 {

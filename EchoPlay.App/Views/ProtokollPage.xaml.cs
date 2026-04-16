@@ -48,6 +48,7 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedFrom(e);
             ViewModel.Deactivate();
+            ViewModel.Dispose();
         }
 
         /// <summary>

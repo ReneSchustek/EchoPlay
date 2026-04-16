@@ -97,6 +97,19 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
+        /// Garantiert, dass der Live-Log-Timer beim Verlassen der Seite gestoppt wird —
+        /// auch wenn der Nutzer die Live-Checkbox nicht manuell deaktiviert hat.
+        /// Ohne diesen Stopp würde der 2-Sekunden-`Tick` nach der Navigation weiterfeuern
+        /// und versuchen, auf die bereits entladene `LogRichTextBlock`-Instanz zu schreiben.
+        /// </summary>
+        /// <param name="e">Ereignisargumente der Navigation.</param>
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            _logLiveTimer?.Stop();
+        }
+
+        /// <summary>
         /// Wird ausgelöst, wenn der Benutzer ein anderes Theme auswählt.
         /// Die Änderung ist sofort sichtbar – kein Speichern nötig.
         /// Programmatische Synchronisierungen über <see cref="SyncThemeRadioButton"/> werden ignoriert.

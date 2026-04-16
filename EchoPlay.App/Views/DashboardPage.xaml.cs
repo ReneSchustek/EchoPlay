@@ -22,6 +22,7 @@ namespace EchoPlay.App.Views
     public sealed partial class DashboardPage : Page
     {
         private readonly INavigationService _navigationService;
+        private ScrollViewer? _favoritesScrollViewer;
 
         /// <summary>Gibt dem XAML-Compiler Zugriff auf das ViewModel für x:Bind.</summary>
         public DashboardViewModel ViewModel { get; }
@@ -58,13 +59,22 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Wird beim Verlassen der Seite aufgerufen. Die Pfeil-Logik der Kachelreihen
-        /// liegt im <see cref="EchoPlay.App.Controls.HorizontalTileRowControl"/>; beim Navigieren
-        /// ist nichts mehr aufzuräumen.
+        /// Meldet alle Page-Subscriptions sauber ab und disposed das ViewModel.
+        /// Die Pfeil-Logik der Kachelreihen liegt im <see cref="EchoPlay.App.Controls.HorizontalTileRowControl"/>
+        /// und bleibt dort — hier geht es um die Favoriten-Scroll-Subscription (außerhalb des Controls)
+        /// und die IDisposable-VM-Kette.
         /// </summary>
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
+
+            if (_favoritesScrollViewer is not null)
+            {
+                _favoritesScrollViewer.ViewChanged -= OnFavoritesViewChanged;
+                _favoritesScrollViewer = null;
+            }
+
+            ViewModel.Dispose();
         }
 
         /// <summary>
@@ -151,6 +161,9 @@ namespace EchoPlay.App.Views
                 return;
             }
 
+            // Referenz halten, damit OnNavigatedFrom die Subscriptions wieder lösen kann
+            // und kein Handler am toten ScrollViewer hängen bleibt.
+            _favoritesScrollViewer = scrollViewer;
             scrollViewer.ViewChanged += OnFavoritesViewChanged;
             scrollViewer.SizeChanged += (_, _) => DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
 

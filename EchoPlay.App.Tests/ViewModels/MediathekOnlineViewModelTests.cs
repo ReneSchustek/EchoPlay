@@ -149,7 +149,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_SetsCoverImage_NullWhenNoCoverData()
         {
-            // Series ohne CoverImageUrl und ohne LocalCoverData → CoverImage ist null
+            // Series ohne CoverImageUrl und ohne Eintrag in CoverImages → CoverImage ist null
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series { Title = "Ohne Cover", SpotifyArtistId = "sp_oc", IsOnlineImported = true });
 

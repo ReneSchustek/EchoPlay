@@ -222,30 +222,6 @@ namespace EchoPlay.Data.Services
             return result;
         }
 
-        /// <summary>
-        /// Setzt das lokal gespeicherte Cover einer Episode dauerhaft.
-        /// Existiert die Episode nicht, wird der Aufruf mit einer Warnung ignoriert.
-        /// </summary>
-        /// <param name="episodeId">Die ID der Episode.</param>
-        /// <param name="coverData">Rohe Bilddaten oder <see langword="null"/> zum Entfernen.</param>
-        public async Task SetLocalCoverAsync(Guid episodeId, byte[]? coverData)
-        {
-            Episode? episode = await _context.Episodes
-                .AsTracking()
-                .FirstOrDefaultAsync(e => e.Id == episodeId).ConfigureAwait(false);
-
-            if (episode is null)
-            {
-                _logger.Warning($"Episode '{episodeId}' nicht gefunden – Cover-Update übersprungen.");
-                return;
-            }
-
-            episode.LocalCoverData = coverData;
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            _logger.Info($"Cover für Episode '{episode.Title}' (ID: {episodeId}) {(coverData is null ? "gelöscht" : "gespeichert")}.");
-        }
-
         /// <inheritdoc/>
         public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt)
         {

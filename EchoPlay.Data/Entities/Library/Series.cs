@@ -51,14 +51,6 @@ namespace EchoPlay.Data.Entities.Library
         public string? LocalFolderPath { get; set; }
 
         /// <summary>
-        /// Binäre Coverdaten aus der lokalen Bibliothek.
-        /// Wird befüllt, wenn ein Coverbild im Serienordner gefunden wurde.
-        /// </summary>
-        [SuppressMessage("Performance", "CA1819:Properties should not return arrays",
-            Justification = "EF Core speichert BLOBs als byte[]; Collection<byte> würde die EF-Mapping-Konvention brechen.")]
-        public byte[]? LocalCoverData { get; set; }
-
-        /// <summary>
         /// Gibt an, ob die Serie über eine Online-Suche (Spotify/Apple Music) importiert wurde.
         /// Nur Serien mit diesem Flag erscheinen in der Online-Mediathek.
         /// Wird ausschließlich vom ImportService beim expliziten Import gesetzt –

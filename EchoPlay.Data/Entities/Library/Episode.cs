@@ -69,22 +69,12 @@ namespace EchoPlay.Data.Entities.Library
 
         /// <summary>
         /// URL zum Album-Cover beim Provider (Spotify/Apple Music).
-        /// Wird beim Import gesetzt und dient als Fallback für die Cover-Suche,
-        /// wenn <see cref="LocalCoverData"/> noch nicht geladen wurde.
+        /// Wird beim Import gesetzt und dient als Fallback, wenn in der
+        /// CoverImages-Tabelle noch kein Eintrag für die Episode existiert.
         /// </summary>
         [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
             Justification = "Entity spiegelt DB-Spalte CoverImageUrl (Spotify/Apple-Music-Cover-URL als TEXT); Uri-Umwandlung würde EF-Core-Mapping erfordern ohne fachlichen Mehrwert.")]
         public string? CoverImageUrl { get; set; }
-
-        /// <summary>
-        /// Manuell zugewiesenes oder automatisch ermitteltes Folgen-Cover als Rohdaten.
-        /// Getrennt von <c>Series.LocalCoverData</c> – das Folgen-Cover zeigt das episodenspezifische
-        /// Artwork, das Serien-Cover das übergreifende Logo der Serie.
-        /// Null wenn kein Cover vorhanden oder noch nicht geladen.
-        /// </summary>
-        [SuppressMessage("Performance", "CA1819:Properties should not return arrays",
-            Justification = "EF Core speichert BLOBs als byte[]; Collection<byte> würde die EF-Mapping-Konvention brechen.")]
-        public byte[]? LocalCoverData { get; set; }
 
         /// <summary>
         /// Zeitpunkt der letzten automatischen Cover-Suche.

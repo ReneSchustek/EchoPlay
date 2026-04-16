@@ -201,6 +201,65 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Equal(2, cover!.ImageData.Length);
             Assert.Equal(0x02, cover.ImageData[0]);
         }
+
+        [Fact]
+        public async Task DeleteByEntitiesAsync_RemovesMatchingEntries()
+        {
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid id1 = TestIds.Indexed(20);
+            Guid id2 = TestIds.Indexed(21);
+            Guid id3 = TestIds.Indexed(22);
+
+            await service.SetCoverAsync("Series", id1, [0x01]);
+            await service.SetCoverAsync("Series", id2, [0x02]);
+            await service.SetCoverAsync("Series", id3, [0x03]);
+            Context.ChangeTracker.Clear();
+
+            int deleted = await service.DeleteByEntitiesAsync("Series", [id1, id3]);
+
+            Assert.Equal(2, deleted);
+            Assert.False(await service.ExistsAsync("Series", id1));
+            Assert.True(await service.ExistsAsync("Series", id2));
+            Assert.False(await service.ExistsAsync("Series", id3));
+        }
+
+        [Fact]
+        public async Task DeleteByEntitiesAsync_EmptyList_ReturnsZero()
+        {
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+
+            int deleted = await service.DeleteByEntitiesAsync("Series", []);
+
+            Assert.Equal(0, deleted);
+        }
+
+        [Fact]
+        public async Task DeleteByEntitiesAsync_DoesNotTouchOtherEntityType()
+        {
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid sharedId = TestIds.Indexed(23);
+
+            await service.SetCoverAsync("Series", sharedId, [0x01]);
+            await service.SetCoverAsync("Episode", sharedId, [0x02]);
+            Context.ChangeTracker.Clear();
+
+            int deleted = await service.DeleteByEntitiesAsync("Series", [sharedId]);
+
+            Assert.Equal(1, deleted);
+            Assert.False(await service.ExistsAsync("Series", sharedId));
+            Assert.True(await service.ExistsAsync("Episode", sharedId));
+        }
+
+        [Fact]
+        public async Task DeleteByEntitiesAsync_UnknownIds_ReturnsZero()
+        {
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+
+            int deleted = await service.DeleteByEntitiesAsync("Series",
+                [TestIds.Indexed(900), TestIds.Indexed(901)]);
+
+            Assert.Equal(0, deleted);
+        }
     }
 }
 

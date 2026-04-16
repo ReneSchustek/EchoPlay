@@ -17,7 +17,7 @@ namespace EchoPlay.App.Services
     /// Zentrale Anlaufstelle für alle Cover-Operationen in der App-Schicht.
     /// Kapselt den Zugriff auf die CoverImages-Tabelle und die Konvertierung
     /// von Binärdaten zu BitmapImage. Kein ViewModel greift direkt auf
-    /// LocalCoverData oder ICoverImageDataService zu.
+    /// den ICoverImageDataService zu.
     /// </summary>
     public sealed class CoverService
     {

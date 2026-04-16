@@ -98,5 +98,23 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.FromResult(count);
         }
 
+        /// <inheritdoc/>
+        public Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds)
+        {
+            ArgumentNullException.ThrowIfNull(entityIds);
+
+            int deleted = 0;
+
+            foreach (Guid entityId in entityIds)
+            {
+                if (_covers.Remove((entityType, entityId)))
+                {
+                    deleted++;
+                }
+            }
+
+            return Task.FromResult(deleted);
+        }
+
     }
 }

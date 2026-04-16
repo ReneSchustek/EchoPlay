@@ -48,10 +48,6 @@ namespace EchoPlay.Data.Configurations
             _ = builder.Property(e => e.AppleMusicAlbumId)
                    .HasMaxLength(64);
 
-            // Coverbilder auf maximal 5 MB begrenzen – gleicher Schutz wie bei Series
-            _ = builder.Property(e => e.LocalCoverData)
-                   .HasMaxLength(5_242_880);
-
             // Restrict statt Cascade, da das Projekt ausschließlich Soft-Delete verwendet.
             // Physisches Löschen einer Serie darf nicht automatisch Episoden entfernen.
             _ = builder.HasOne(e => e.Series)

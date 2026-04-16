@@ -68,5 +68,15 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <returns>Anzahl der gelöschten Einträge.</returns>
         Task<int> ClearAllAsync();
 
+        /// <summary>
+        /// Entfernt Cover-Einträge für mehrere Entities in einer Query.
+        /// Wird beim Re-Init der Bibliothek aufgerufen, damit beim nächsten Scan
+        /// frische Cover von der Festplatte übernommen werden.
+        /// </summary>
+        /// <param name="entityType">"Series" oder "Episode".</param>
+        /// <param name="entityIds">IDs der Entities, deren Cover entfernt werden sollen.</param>
+        /// <returns>Anzahl der gelöschten Einträge.</returns>
+        Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds);
+
     }
 }

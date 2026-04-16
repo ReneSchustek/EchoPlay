@@ -47,11 +47,6 @@ namespace EchoPlay.Data.Configurations
             _ = builder.Property(s => s.FolderPattern)
                    .HasMaxLength(256);
 
-            // Coverbilder auf maximal 5 MB begrenzen – Schutz gegen DB-Bloat
-            // durch versehentlich überdimensionierte Bilder (z.B. unkomprimierte PNGs).
-            _ = builder.Property(s => s.LocalCoverData)
-                   .HasMaxLength(5_242_880);
-
             // Index auf Title beschleunigt die häufige ORDER BY Title-Abfrage in GetAllAsync.
             _ = builder.HasIndex(s => s.Title);
 

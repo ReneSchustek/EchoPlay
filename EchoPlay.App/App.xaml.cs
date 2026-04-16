@@ -1,6 +1,8 @@
 ﻿using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
+using EchoPlay.AppleMusic.Abstractions;
+using EchoPlay.AppleMusic.Clients;
 using EchoPlay.AppleMusic.DependencyInjection;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.TagManager.DependencyInjection;
@@ -476,6 +478,16 @@ namespace EchoPlay.App
                 client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateCheck/1.0");
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                // GitHub-API kann auf Rate-Limits (429) oder kurzzeitige 5xx reagieren.
+                // Retry mit Jitter deckt beides ab, ohne die App beim Start zu blockieren.
+                options.Retry.MaxRetryAttempts = 2;
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(15);
             });
 
             // Basis-URLs aus Konfiguration (keine Credentials — die kommen aus dem Credential-Store).
@@ -557,7 +569,12 @@ namespace EchoPlay.App
                     ["musicbrainz.org"]     = TimeSpan.FromSeconds(1),
                     ["coverartarchive.org"] = TimeSpan.FromSeconds(1),
                     ["itunes.apple.com"]    = TimeSpan.FromMilliseconds(1500),
+                    ["api.discogs.com"]     = TimeSpan.FromSeconds(1),
                 }));
+
+            // HTTP-Handler, der den IHostRateLimiter in die HttpClient-Pipeline einhängt.
+            // Muss transient sein, damit IHttpClientFactory pro Client eine eigene Instanz erzeugt.
+            _ = builder.Services.AddTransient<RateLimitMessageHandler>();
 
             // ScanEventService als Singleton – überlebt Navigation, benachrichtigt neues ViewModel nach Rückkehr
             _ = builder.Services.AddSingleton<IScanEventService, ScanEventService>();
@@ -745,7 +762,33 @@ namespace EchoPlay.App
 
             _ = builder.Services.AddTransient<StatistikViewModel>();
 
+            // Resilience-Rollout (Brief 241): Standard-Policies (Retry + Timeout + CircuitBreaker)
+            // an alle typed HttpClients aus LocalLibrary/AppleMusic/TagManager anhängen.
+            // AddHttpClient<T>() ist additiv — BaseAddress/Timeout/UserAgent aus den Extensions bleiben erhalten.
+            // Reihenfolge: ResilienceHandler zuerst (wrappt als äußerer Handler), RateLimitHandler danach
+            // (innen). Damit wartet jeder Retry-Versuch erneut am IHostRateLimiter — wir verletzen
+            // die API-Quota auch bei wiederholten Anfragen nicht.
+            // MusicBrainzLookupService ist internal; der Named Client heißt hier per Konvention wie
+            // das TClient-Interface ("ITagLookupService").
+            AttachResilience(builder.Services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(), withRateLimit: true);
+            AttachResilience(builder.Services.AddHttpClient<EchoPlay.LocalLibrary.Cover.CoverService>(), withRateLimit: false);
+            AttachResilience(builder.Services.AddHttpClient<EchoPlay.LocalLibrary.Cover.CoverArtArchiveSearchService>(), withRateLimit: true);
+            AttachResilience(builder.Services.AddHttpClient<EchoPlay.LocalLibrary.Cover.ITunesCoverSearchService>(), withRateLimit: true);
+            AttachResilience(builder.Services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerArtistCoverSearchService>(), withRateLimit: false);
+            AttachResilience(builder.Services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerAlbumCoverSearchService>(), withRateLimit: false);
+            AttachResilience(builder.Services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DiscogsCoverSearchService>(), withRateLimit: true);
+            AttachResilience(builder.Services.AddHttpClient("ITagLookupService"), withRateLimit: true);
+
             return builder.Build();
+
+            static void AttachResilience(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder clientBuilder, bool withRateLimit)
+            {
+                _ = clientBuilder.AddStandardResilienceHandler();
+                if (withRateLimit)
+                {
+                    _ = clientBuilder.AddHttpMessageHandler<RateLimitMessageHandler>();
+                }
+            }
         }
     }
 }

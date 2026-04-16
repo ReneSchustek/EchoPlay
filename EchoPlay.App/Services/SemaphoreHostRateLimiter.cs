@@ -17,6 +17,7 @@ namespace EchoPlay.App.Services
         private readonly TimeSpan _defaultInterval;
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphores = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset> _lastCalls = new();
+        private bool _disposed;
 
         /// <summary>
         /// Erstellt einen neuen Rate-Limiter mit Host-spezifischen Intervallen.
@@ -34,6 +35,8 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task WaitAsync(string host, CancellationToken ct = default)
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
             SemaphoreSlim semaphore = _semaphores.GetOrAdd(host, _ => new SemaphoreSlim(1, 1));
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
 
@@ -60,6 +63,22 @@ namespace EchoPlay.App.Services
             {
                 _ = semaphore.Release();
             }
+        }
+
+        /// <summary>
+        /// Gibt alle gehaltenen <see cref="SemaphoreSlim"/>-Handles frei. Nach
+        /// Dispose wirft <see cref="WaitAsync"/> <see cref="ObjectDisposedException"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            foreach (SemaphoreSlim semaphore in _semaphores.Values)
+            {
+                semaphore.Dispose();
+            }
+            _semaphores.Clear();
         }
     }
 }

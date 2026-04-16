@@ -57,22 +57,44 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Startet den Hintergrund-Task. Darf nur einmal aufgerufen werden.
+        /// Startet den Hintergrund-Task. Idempotent — mehrfacher Aufruf ist no-op.
         /// </summary>
         public void Start()
         {
             if (_backgroundTask is not null) return;
 
             _cts = new CancellationTokenSource();
-            _backgroundTask = RunAsync(_cts.Token);
+            // Task.Run entkoppelt von einem evtl. vorhandenen UI-SynchronizationContext und
+            // macht den Task als Referenz greifbar, damit StopAsync mit Timeout warten kann.
+            _backgroundTask = Task.Run(() => RunAsync(_cts.Token));
         }
 
         /// <summary>
-        /// Stoppt den Hintergrund-Task sauber.
+        /// Stoppt den Hintergrund-Task sauber und wartet mit Timeout auf das Ende
+        /// der laufenden Iteration. Bei Timeout wird eine Warnung geloggt.
         /// </summary>
-        public void Stop()
+        /// <param name="timeout">Maximale Wartezeit.</param>
+        public async Task StopAsync(TimeSpan timeout)
         {
-            _cts?.Cancel();
+            if (_cts is null || _backgroundTask is null) return;
+
+            await _cts.CancelAsync().ConfigureAwait(false);
+            try
+            {
+                await _backgroundTask.WaitAsync(timeout).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Erwartet: Iteration hat den CancellationToken sauber beobachtet.
+            }
+            catch (TimeoutException)
+            {
+                _logger.Warning($"BackgroundCoverService: Iteration hat Timeout ({timeout.TotalSeconds:F1}s) überschritten und wird hart abgebrochen.");
+            }
+
+            _cts.Dispose();
+            _cts = null;
+            _backgroundTask = null;
         }
 
         /// <summary>

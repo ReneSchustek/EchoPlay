@@ -48,7 +48,7 @@ namespace EchoPlay.App.Infrastructure
         /// Name der Operation (per <see cref="CallerMemberNameAttribute"/> automatisch
         /// gesetzt, wenn weggelassen).
         /// </param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Zentraler Sicherheitsnetz-Wrapper fuer 'async void'-UI-Event-Handler: jede unbehandelte Exception darf die WinUI-App nicht reissen, sondern muss geloggt und als Dialog angezeigt werden. Der zweite catch schluckt Dialogfehler, damit das Logging als letzte Sicherung greift.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sicherheitsnetz fuer async-void-UI-Handler: jede Exception wird geloggt und als Dialog angezeigt, damit die App nicht abstuerzt.")]
         public static async Task RunSafelyAsync(
             Func<Task> action,
             IErrorDialogService errorDialog,

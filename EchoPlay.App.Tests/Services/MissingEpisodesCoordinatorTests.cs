@@ -28,6 +28,8 @@ namespace EchoPlay.App.Tests.Services
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => series);
+            _ = services.AddScoped<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(
+                _ => new FakeOnlineEpisodeChecker());
             ServiceProvider provider = services.BuildServiceProvider();
 
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
@@ -42,7 +44,6 @@ namespace EchoPlay.App.Tests.Services
 
             return new MissingEpisodesCoordinator(
                 scopeFactory,
-                new FakeOnlineEpisodeChecker(),
                 statusBar,
                 new FakeClock());
         }

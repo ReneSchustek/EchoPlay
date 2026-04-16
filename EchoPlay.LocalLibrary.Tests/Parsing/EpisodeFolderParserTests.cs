@@ -124,5 +124,21 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
 
             Assert.Equal("116 Klassenfahrt", result);
         }
+
+        [Fact]
+        public void TryParse_VerarbeitetLangenInputInUnter500ms()
+        {
+            // Schutzschranke: Auch bei bewusst langen Eingaben darf der Parser nicht hängen.
+            EpisodeFolderParser parser = new("{*} - {number:000} - {title}");
+            string longInput = new string('-', 5_000) + " 001 - Titel";
+
+            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            _ = parser.TryParse(longInput, out int? _, out string? _);
+            stopwatch.Stop();
+
+            Assert.True(
+                stopwatch.ElapsedMilliseconds < 500,
+                $"TryParse benötigte {stopwatch.ElapsedMilliseconds} ms – Regex-Timeout greift nicht.");
+        }
     }
 }

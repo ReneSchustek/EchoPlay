@@ -119,6 +119,29 @@ namespace EchoPlay.Logger.Tests
             Assert.Equal(1, callCount);
         }
 
+        // ── Capacity-Validierung ─────────────────────────────────────────────────
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void Ctor_ThrowsOnNonPositiveCapacity(int capacity)
+        {
+            _ = Assert.Throws<ArgumentOutOfRangeException>(() => new MemorySink(capacity));
+        }
+
+        [Fact]
+        public void Ctor_ThrowsWhenCapacityExceedsMax()
+        {
+            _ = Assert.Throws<ArgumentOutOfRangeException>(() => new MemorySink(MemorySink.MaxCapacity + 1));
+        }
+
+        [Fact]
+        public void Ctor_AcceptsMaxCapacity()
+        {
+            MemorySink sink = new(MemorySink.MaxCapacity);
+            Assert.Empty(sink.GetEntries());
+        }
+
         [Fact]
         public async Task WriteAsync_EventCarriesCorrectEntry()
         {

@@ -138,6 +138,64 @@ namespace EchoPlay.Logger.Tests
         }
 
         /// <summary>
+        /// Parallele WriteAsync-Aufrufer verzahnen Zeilen nicht — der SemaphoreSlim serialisiert
+        /// den Datei-Zugriff, damit jede Log-Zeile vollständig und in genau einer Zeile steht.
+        /// </summary>
+        [Fact]
+        public async Task WriteAsync_SerialisiertParalleleWrites()
+        {
+            string testDir = Path.Combine(_tempDirectory, "test_parallel");
+            _ = Directory.CreateDirectory(testDir);
+            using FileSink sink = new(testDir, new DefaultLogFormatter());
+
+            const int writers = 20;
+            Task[] writes = new Task[writers];
+            for (int i = 0; i < writers; i++)
+            {
+                int idx = i;
+                writes[i] = Task.Run(() => sink.WriteAsync(new LogEntry(
+                    Timestamp: new DateTime(2026, 3, 2, 12, 0, 0, DateTimeKind.Utc).AddMilliseconds(idx),
+                    Level: LogLevel.Information,
+                    Message: $"Line-{idx:D2}",
+                    Category: "Parallel",
+                    Scopes: [])));
+            }
+
+            await Task.WhenAll(writes);
+
+            string[] logFiles = Directory.GetFiles(testDir, "*.log");
+            _ = Assert.Single(logFiles);
+
+            string[] lines = await File.ReadAllLinesAsync(logFiles[0]);
+            Assert.Equal(writers, lines.Length);
+            for (int i = 0; i < writers; i++)
+            {
+                Assert.Contains(lines, l => l.Contains($"Line-{i:D2}", StringComparison.Ordinal));
+            }
+        }
+
+        /// <summary>
+        /// Nach Dispose werden neue Writes still ignoriert — kein ObjectDisposedException beim App-Shutdown.
+        /// </summary>
+        [Fact]
+        public async Task WriteAsync_NachDispose_IstNoOp()
+        {
+            string testDir = Path.Combine(_tempDirectory, "test_disposed");
+            _ = Directory.CreateDirectory(testDir);
+            FileSink sink = new(testDir, new DefaultLogFormatter());
+            sink.Dispose();
+
+            await sink.WriteAsync(new LogEntry(
+                Timestamp: DateTime.UtcNow,
+                Level: LogLevel.Information,
+                Message: "nach-dispose",
+                Category: "Klasse",
+                Scopes: []));
+
+            Assert.Empty(Directory.GetFiles(testDir, "*.log"));
+        }
+
+        /// <summary>
         /// WriteAsync ruft den Formatter für jeden Eintrag auf.
         /// </summary>
         [Fact]

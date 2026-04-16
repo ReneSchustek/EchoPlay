@@ -8,11 +8,15 @@ namespace EchoPlay.Logger.Sinks
     /// <summary>
     /// Schreibt Log-Einträge in Dateien mit täglicher Rotation und Größenlimit.
     /// </summary>
-    public class FileSink : ILogSink
+    public sealed class FileSink : ILogSink, IDisposable
     {
         private readonly string _logDirectory;
         private readonly ILogFormatter _formatter;
         private readonly long _maxFileSizeBytes;
+        // Parallele WriteAsync-Aufrufer würden sich auf File.AppendAllText gegenseitig blockieren
+        // oder Zeilen verzahnen. Semaphore serialisiert den Datei-Zugriff prozessweit.
+        private readonly SemaphoreSlim _writeLock = new(1, 1);
+        private bool _disposed;
 
         /// <summary>
         /// Erstellt einen neuen FileSink.
@@ -69,11 +73,12 @@ namespace EchoPlay.Logger.Sinks
         {
             // Wenn der Konstruktor kein beschreibbares Verzeichnis finden konnte,
             // wird WriteAsync stillschweigend zu einem No-Op.
-            if (string.IsNullOrEmpty(_logDirectory))
+            if (string.IsNullOrEmpty(_logDirectory) || _disposed)
             {
                 return;
             }
 
+            await _writeLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 string filePath = GetCurrentFilePath();
@@ -86,6 +91,20 @@ namespace EchoPlay.Logger.Sinks
                 // Letzter Ausweg: Wenigstens in Debug-Konsole schreiben
                 System.Diagnostics.Trace.WriteLine($"FileSink: Schreiben fehlgeschlagen: {ex.Message}");
             }
+            finally
+            {
+                _ = _writeLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Gibt die Schreib-Semaphore frei.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            _writeLock.Dispose();
         }
 
         /// <summary>

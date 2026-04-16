@@ -80,7 +80,7 @@ namespace EchoPlay.App
         /// Das Theme wird vor dem ersten Rendern gesetzt, damit kein falsches Theme aufblitzt.
         /// </summary>
         /// <param name="args">Startparameter der Anwendung.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "WinUI-Entry-Point: jede unbehandelte Exception waehrend des Starts (DB-Purge-Background-Task, DI-Fehler, Theme, StartupValidator) muss gefangen werden, damit HandleStartupFailureAsync dem Nutzer einen Dialog anzeigen und die App kontrolliert beenden kann.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "WinUI-Entry-Point: Startup-Exception fuehrt via HandleStartupFailureAsync zu Dialog + kontrolliertem App-Ende statt Crash.")]
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             SplashWindow? splash = null;

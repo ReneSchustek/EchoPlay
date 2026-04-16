@@ -23,7 +23,6 @@ namespace EchoPlay.App.Services
     public sealed class MissingEpisodesCoordinator : IMissingEpisodesCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IOnlineEpisodeChecker _onlineEpisodeChecker;
         private readonly StatusBarViewModel _statusBar;
         private readonly IClock _clock;
 
@@ -32,14 +31,16 @@ namespace EchoPlay.App.Services
         /// </summary>
         public MissingEpisodesCoordinator(
             IServiceScopeFactory scopeFactory,
-            IOnlineEpisodeChecker onlineEpisodeChecker,
             StatusBarViewModel statusBar,
             IClock clock)
         {
-            _scopeFactory          = scopeFactory;
-            _onlineEpisodeChecker  = onlineEpisodeChecker;
-            _statusBar             = statusBar;
-            _clock                 = clock;
+            ArgumentNullException.ThrowIfNull(scopeFactory);
+            ArgumentNullException.ThrowIfNull(statusBar);
+            ArgumentNullException.ThrowIfNull(clock);
+
+            _scopeFactory = scopeFactory;
+            _statusBar    = statusBar;
+            _clock        = clock;
         }
 
         /// <inheritdoc/>
@@ -99,6 +100,8 @@ namespace EchoPlay.App.Services
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 ISeriesDataService seriesService = scope.ServiceProvider
                     .GetRequiredService<ISeriesDataService>();
+                IOnlineEpisodeChecker checker = scope.ServiceProvider
+                    .GetRequiredService<IOnlineEpisodeChecker>();
 
                 IReadOnlyList<Series> subscribed = await seriesService.GetSubscribedAsync();
 
@@ -115,7 +118,7 @@ namespace EchoPlay.App.Services
                     _statusBar.SetScanProgress($"Prüfe Serie {i + 1}/{localSeries.Count}: {series.Title} \u2026");
 
                     SeriesMissingEpisodesResult result = await CheckSingleSeriesForReportAsync(
-                        series, onlineAvailable);
+                        series, onlineAvailable, checker);
                     results.Add(result);
                 }
 
@@ -151,6 +154,7 @@ namespace EchoPlay.App.Services
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+                IOnlineEpisodeChecker checker = scope.ServiceProvider.GetRequiredService<IOnlineEpisodeChecker>();
                 Series? series = await seriesService.GetByIdAsync(seriesId);
 
                 if (series is null)
@@ -168,7 +172,7 @@ namespace EchoPlay.App.Services
                 };
 
                 IReadOnlyList<OnlineEpisodeCheckResult> results =
-                    await _onlineEpisodeChecker.CheckAllAsync([checkable]);
+                    await checker.CheckAllAsync([checkable]);
 
                 if (results.Count == 0)
                 {
@@ -212,7 +216,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Serie-Check fuer den Gesamtbericht: HTTP-/iTunes-Fehler oder DB-Fehler einer einzelnen Serie werden als 'ErrorMessage' im Report weitergereicht, damit die Bericht-Schleife fuer die uebrigen Serien weiterlaeuft.")]
         private async Task<SeriesMissingEpisodesResult> CheckSingleSeriesForReportAsync(
-            Series series, bool onlineAvailable)
+            Series series, bool onlineAvailable, IOnlineEpisodeChecker checker)
         {
             try
             {
@@ -241,7 +245,7 @@ namespace EchoPlay.App.Services
                     };
 
                     IReadOnlyList<OnlineEpisodeCheckResult> checkResults =
-                        await _onlineEpisodeChecker.CheckAllAsync([checkable]);
+                        await checker.CheckAllAsync([checkable]);
 
                     if (checkResults.Count > 0)
                     {

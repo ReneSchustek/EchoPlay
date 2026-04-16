@@ -10,6 +10,11 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// </summary>
     public sealed class EpisodeFolderParser
     {
+        // Defensiver Timeout gegen pathologische Eingaben; der Standardausdruck hat keine
+        // nested Quantoren, aber benutzerdefinierte Muster (z.B. über Settings) könnten
+        // Catastrophic Backtracking provozieren. 500 ms ist für einen Ordnernamen großzügig.
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
+
         private readonly Regex _pattern;
         private readonly bool _hasNumber;
         private readonly bool _hasTitle;
@@ -26,7 +31,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             ArgumentNullException.ThrowIfNull(folderPattern);
 
             string regexPattern = BuildRegex(folderPattern, out _hasNumber, out _hasTitle);
-            _pattern = new(regexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            _pattern = new(regexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexTimeout);
         }
 
         /// <summary>
@@ -41,7 +46,16 @@ namespace EchoPlay.LocalLibrary.Parsing
             number = null;
             title = null;
 
-            Match match = _pattern.Match(folderName);
+            Match match;
+            try
+            {
+                match = _pattern.Match(folderName);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Pathologische Eingabe – Parser liefert „kein Treffer" statt die App zu blockieren.
+                return false;
+            }
 
             if (!match.Success)
             {
@@ -81,7 +95,16 @@ namespace EchoPlay.LocalLibrary.Parsing
         /// </returns>
         public static string StripLeadingSequenceNumber(string name)
         {
-            return Regex.Replace(name, @"^\d{1,4}[\s\-\.]+", string.Empty).Trim();
+            ArgumentNullException.ThrowIfNull(name);
+
+            try
+            {
+                return Regex.Replace(name, @"^\d{1,4}[\s\-\.]+", string.Empty, RegexOptions.None, RegexTimeout).Trim();
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return name.Trim();
+            }
         }
 
         /// <summary>

@@ -64,5 +64,28 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.True(sw.ElapsedMilliseconds < 200);
         }
+
+        [Fact]
+        public async Task Dispose_ReleasesSemaphores_AndBlocksFurtherWaitAsync()
+        {
+            SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
+            {
+                ["disposed.host"] = TimeSpan.FromMilliseconds(100)
+            });
+
+            // Ersten Aufruf durchlaufen, damit intern ein SemaphoreSlim angelegt wird.
+            await limiter.WaitAsync("disposed.host");
+
+            limiter.Dispose();
+
+            // Ein zweiter Dispose ist idempotent und darf nicht werfen.
+            limiter.Dispose();
+
+            // Nach Dispose ist die Instanz unbenutzbar — WaitAsync muss werfen,
+            // damit Konsumenten den Shutdown-Fehler sofort bemerken statt auf einen
+            // disposeten Semaphore zu warten.
+            _ = await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => limiter.WaitAsync("disposed.host"));
+        }
     }
 }

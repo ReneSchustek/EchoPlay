@@ -26,6 +26,7 @@ namespace EchoPlay.App.Services
         private readonly IHostRateLimiter _rateLimiter;
         private readonly ILogger _logger;
         private CancellationTokenSource? _cts;
+        private Task? _runningTask;
 
         public BackgroundProviderIdService(
             IServiceScopeFactory scopeFactory,
@@ -39,25 +40,52 @@ namespace EchoPlay.App.Services
             _logger = loggerFactory.CreateLogger("BackgroundProviderIdService");
         }
 
-        /// <summary>Startet den periodischen Enrichment-Lauf.</summary>
+        /// <summary>Startet den periodischen Enrichment-Lauf. Idempotent — mehrfacher Aufruf ist no-op.</summary>
         public void Start()
         {
+            if (_runningTask is not null) return;
+
             _cts = new CancellationTokenSource();
-            _ = RunLoopAsync(_cts.Token);
+            // Task.Run entkoppelt von Aufrufer-SynchronizationContext und macht den
+            // Task als Referenz greifbar, damit StopAsync mit Timeout auf das Ende warten kann.
+            _runningTask = Task.Run(() => RunLoopAsync(_cts.Token));
         }
 
-        /// <summary>Stoppt den Hintergrund-Dienst.</summary>
-        public void Stop()
+        /// <summary>
+        /// Stoppt den Hintergrund-Dienst und wartet mit Timeout auf das Ende der laufenden Iteration.
+        /// Bei Timeout wird eine Warnung geloggt, aber nicht geworfen.
+        /// </summary>
+        /// <param name="timeout">Maximale Wartezeit.</param>
+        public async Task StopAsync(TimeSpan timeout)
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
+            if (_cts is null || _runningTask is null) return;
+
+            await _cts.CancelAsync().ConfigureAwait(false);
+            try
+            {
+                await _runningTask.WaitAsync(timeout).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Erwartet: Iteration hat den CancellationToken sauber beobachtet.
+            }
+            catch (TimeoutException)
+            {
+                _logger.Warning($"BackgroundProviderIdService: Iteration hat Timeout ({timeout.TotalSeconds:F1}s) überschritten und wird hart abgebrochen.");
+            }
+
+            _cts.Dispose();
             _cts = null;
+            _runningTask = null;
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            Stop();
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            _runningTask = null;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Enrichment-Schleife: HTTP-Fehler (Spotify/AppleMusic), DB-Concurrency-Fehler oder Provider-Timeouts duerfen die Schleife nicht beenden; Fehler werden als Error geloggt und der naechste Intervall-Zyklus faehrt fort.")]

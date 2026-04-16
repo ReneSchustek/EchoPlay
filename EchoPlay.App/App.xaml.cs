@@ -232,10 +232,26 @@ namespace EchoPlay.App
         /// </summary>
         /// <param name="sender">Das geschlossene Fenster.</param>
         /// <param name="args">Event-Argumente.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup beim Fensterschliessen: SQLite-Optimize ist optional und darf den Shutdown nicht blockieren, unabhaengig davon welche Exception der DbContext / Maintenance-Service wirft.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup beim Fensterschliessen: SQLite-Optimize und Background-Service-Stopps sind optional und duerfen den Shutdown nicht blockieren, unabhaengig davon welche Exception aus DbContext, Maintenance-Service oder Background-Iteration geworfen wird.")]
         private void OnWindowClosed(object sender, WindowEventArgs args)
         {
             _appLogger?.Info("Anwendung wird beendet");
+
+            // Hintergrund-Services graceful stoppen, bevor der Host die Singletons disposed.
+            // Jeder Service bekommt 5 Sekunden, um seine laufende Iteration zu beenden —
+            // danach wird hart abgebrochen (StopAsync loggt die Überschreitung selbst).
+            try
+            {
+                TimeSpan stopTimeout = TimeSpan.FromSeconds(5);
+                _host!.Services.GetRequiredService<BackgroundCoverService>()
+                    .StopAsync(stopTimeout).GetAwaiter().GetResult();
+                _host!.Services.GetRequiredService<BackgroundProviderIdService>()
+                    .StopAsync(stopTimeout).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _appLogger?.Warning($"Stopp der Hintergrund-Services fehlgeschlagen: {ex.Message}");
+            }
 
             // PRAGMA optimize vor dem Shutdown: SQLite aktualisiert interne Statistiken
             // basierend auf den Abfragen dieser Sitzung – verbessert den Query-Planer beim nächsten Start.

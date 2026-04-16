@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,8 +9,11 @@ namespace EchoPlay.App.Services
     /// Minimum-Intervall — der Aufrufer wartet per <see cref="WaitAsync"/> bis der
     /// nächste Aufruf erlaubt ist. Ersetzt verteilte <c>Task.Delay</c>-Aufrufe durch
     /// ein konfigurierbares, pro-Host-basiertes Rate-Limiting.
+    /// Implementierungen halten interne <c>SemaphoreSlim</c>-Handles, daher ist
+    /// <see cref="IDisposable"/> Pflicht — der DI-Container gibt die Singleton-Instanz
+    /// beim Host-Shutdown frei.
     /// </summary>
-    public interface IHostRateLimiter
+    public interface IHostRateLimiter : IDisposable
     {
         /// <summary>
         /// Wartet, bis der nächste Aufruf an den angegebenen Host erlaubt ist.

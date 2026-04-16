@@ -80,6 +80,7 @@ namespace EchoPlay.App.Views
             ViewModel.PropertyChanged    -= OnViewModelPropertyChanged;
             ViewModel.FocusSearchRequested -= OnFocusSearchRequested;
             SizeChanged                  -= OnPageSizeChanged;
+            ViewModel.Dispose();
         }
 
         /// <summary>

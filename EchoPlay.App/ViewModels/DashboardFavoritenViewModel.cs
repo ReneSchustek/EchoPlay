@@ -84,6 +84,16 @@ namespace EchoPlay.App.ViewModels
         public void SetItems(IReadOnlyList<FavoriteSeriesCardViewModel> items)
         {
             ArgumentNullException.ThrowIfNull(items);
+
+            // Alte Karten-Handler vor dem Ersetzen lösen — bei wiederholtem SetItems mit
+            // denselben Card-Instanzen (z.B. Dashboard-Reload) würden sonst Handler
+            // akkumulieren. Der CollectionChanged-Handler auf der ObservableCollection
+            // selbst wird im Setter von FavoriteSeries bereits sauber umgehängt.
+            foreach (FavoriteSeriesCardViewModel existing in _favoriteSeries)
+            {
+                existing.RemovedFromFavorites -= OnSeriesRemovedFromFavorites;
+            }
+
             foreach (FavoriteSeriesCardViewModel card in items)
             {
                 card.RemovedFromFavorites += OnSeriesRemovedFromFavorites;

@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using EchoPlay.App.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -57,19 +58,35 @@ namespace EchoPlay.App.ViewModels
         public Task SelectSeriesAsync(SeriesCardViewModel card) => _episodePipeline.SelectSeriesAsync(card);
 
         /// <inheritdoc cref="OnlineBulkRefreshActions.RemoveSeriesAsync"/>
-        public Task RemoveSeriesAsync(Guid seriesId) => _bulkRefresh.RemoveSeriesAsync(seriesId);
+        public async Task RemoveSeriesAsync(Guid seriesId)
+        {
+            using IDisposable ua = UserActionScope.BeginUserAction("RemoveOnlineSeries");
+            await _bulkRefresh.RemoveSeriesAsync(seriesId);
+        }
 
         /// <inheritdoc cref="OnlineBulkRefreshActions.ToggleWatchAsync"/>
-        public Task ToggleWatchAsync(Guid seriesId, bool watch) => _bulkRefresh.ToggleWatchAsync(seriesId, watch);
+        public async Task ToggleWatchAsync(Guid seriesId, bool watch)
+        {
+            using IDisposable ua = UserActionScope.BeginUserAction("ToggleOnlineWatch");
+            await _bulkRefresh.ToggleWatchAsync(seriesId, watch);
+        }
 
         /// <inheritdoc cref="OnlineProviderSearchActions.SearchProviderAsync"/>
-        public Task SearchProviderAsync(string searchText) => _providerSearch.SearchProviderAsync(searchText);
+        public async Task SearchProviderAsync(string searchText)
+        {
+            using IDisposable ua = UserActionScope.BeginUserAction("OnlineSearch");
+            await _providerSearch.SearchProviderAsync(searchText);
+        }
 
         /// <inheritdoc cref="OnlineProviderSearchActions.AddSelected"/>
         public void AddSelected() => _providerSearch.AddSelected();
 
         /// <inheritdoc cref="OnlineBulkRefreshActions.RefreshAllOnlineSeriesAsync"/>
-        public Task RefreshAllOnlineSeriesAsync() => _bulkRefresh.RefreshAllOnlineSeriesAsync();
+        public async Task RefreshAllOnlineSeriesAsync()
+        {
+            using IDisposable ua = UserActionScope.BeginUserAction("RefreshAllOnlineSeries");
+            await _bulkRefresh.RefreshAllOnlineSeriesAsync();
+        }
 
         /// <inheritdoc cref="OnlineEpisodePipeline.SearchEpisodeCoversAsync"/>
         public static Task<IReadOnlyList<CoverSearchHit>> SearchEpisodeCoversAsync(
@@ -79,8 +96,11 @@ namespace EchoPlay.App.ViewModels
             => OnlineEpisodePipeline.SearchEpisodeCoversAsync(coverSearchService, query, ct);
 
         /// <inheritdoc cref="OnlineEpisodePipeline.ApplySelectedEpisodeCoverAsync"/>
-        public Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)
-            => _episodePipeline.ApplySelectedEpisodeCoverAsync(card, hit);
+        public async Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)
+        {
+            using IDisposable ua = UserActionScope.BeginUserAction("ApplyOnlineEpisodeCover");
+            await _episodePipeline.ApplySelectedEpisodeCoverAsync(card, hit);
+        }
 
         /// <inheritdoc />
         public void Dispose()

@@ -866,6 +866,24 @@
   <data name="DbMaintenanceButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Jetzt bereinigen</value>
   </data>
+  <data name="DbBackupHeading.Text" xml:space="preserve">
+    <value>Backup vor Migrationen</value>
+  </data>
+  <data name="DbBackupDescription.Text" xml:space="preserve">
+    <value>Legt vor jeder EF-Core-Migration einen Snapshot der Datenbank an (VACUUM INTO). Bei zu wenig freiem Speicherplatz wird das Backup automatisch übersprungen und die Migration trotzdem ausgeführt.</value>
+  </data>
+  <data name="DbBackupEnabledToggle.Header" xml:space="preserve">
+    <value>Backup vor Migrationen erstellen</value>
+  </data>
+  <data name="DbBackupEnabledToggle.OnContent" xml:space="preserve">
+    <value>Aktiv</value>
+  </data>
+  <data name="DbBackupEnabledToggle.OffContent" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="DbBackupRetentionBox.Header" xml:space="preserve">
+    <value>Anzahl aufzubewahrender Backups (1–20)</value>
+  </data>
   <data name="DbResetHeading.Text" xml:space="preserve">
     <value>Bibliothek zurücksetzen</value>
   </data>

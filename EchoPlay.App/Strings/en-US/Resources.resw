@@ -864,6 +864,24 @@
   <data name="DbMaintenanceButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Run Cleanup</value>
   </data>
+  <data name="DbBackupHeading.Text" xml:space="preserve">
+    <value>Backup before migrations</value>
+  </data>
+  <data name="DbBackupDescription.Text" xml:space="preserve">
+    <value>Creates a snapshot of the database before every EF Core migration (VACUUM INTO). If disk space is insufficient, the backup is skipped automatically and the migration proceeds anyway.</value>
+  </data>
+  <data name="DbBackupEnabledToggle.Header" xml:space="preserve">
+    <value>Create backup before migrations</value>
+  </data>
+  <data name="DbBackupEnabledToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="DbBackupEnabledToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="DbBackupRetentionBox.Header" xml:space="preserve">
+    <value>Number of backups to keep (1–20)</value>
+  </data>
   <data name="DbResetHeading.Text" xml:space="preserve">
     <value>Reset Library</value>
   </data>

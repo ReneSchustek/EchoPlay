@@ -2,6 +2,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -34,7 +35,9 @@ namespace EchoPlay.App.Services
             new(StringComparer.OrdinalIgnoreCase)
             { "MidnightLibrary", "ForestSignal", "AmberWhiskey" };
 
-        private readonly IAppSettingsDataService _settingsService;
+        // ThemeService ist Singleton, IAppSettingsDataService ist Scoped – daher pro Zugriff
+        // einen eigenen DI-Scope öffnen, damit der DbContext nicht als Captive gehalten wird.
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -51,12 +54,13 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den ThemeService.
         /// </summary>
-        /// <param name="settingsService">Dienst zum Laden und Speichern der AppSettings.</param>
+        /// <param name="scopeFactory">Scope-Fabrik für kurzlebige <see cref="IAppSettingsDataService"/>-Zugriffe.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-        public ThemeService(IAppSettingsDataService settingsService, ILoggerFactory loggerFactory)
+        public ThemeService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(scopeFactory);
             ArgumentNullException.ThrowIfNull(loggerFactory);
-            _settingsService = settingsService;
+            _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger(nameof(ThemeService));
         }
 
@@ -68,9 +72,14 @@ namespace EchoPlay.App.Services
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task InitializeAsync()
         {
-            using LogScope scope = _logger.BeginScope(nameof(InitializeAsync));
+            using LogScope logScope = _logger.BeginScope(nameof(InitializeAsync));
 
-            AppSettings settings = await _settingsService.GetAsync();
+            AppSettings settings;
+            using (IServiceScope scope = _scopeFactory.CreateScope())
+            {
+                IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+                settings = await settingsService.GetAsync();
+            }
 
             // Unbekannte Namen (z.B. durch alte Datenbank-Einträge) auf den Default zurückfallen lassen
             string themeName = KnownThemes.Contains(settings.ActiveTheme)
@@ -242,9 +251,11 @@ namespace EchoPlay.App.Services
         {
             try
             {
-                AppSettings settings = await _settingsService.GetAsync();
+                using IServiceScope scope = _scopeFactory.CreateScope();
+                IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+                AppSettings settings = await settingsService.GetAsync();
                 settings.ActiveTheme = themeName;
-                await _settingsService.SaveAsync(settings);
+                await settingsService.SaveAsync(settings);
             }
             catch (Exception ex)
             {

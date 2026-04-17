@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core;
@@ -134,8 +135,8 @@ namespace EchoPlay.App.Services
             }
 
             return await _confirmationDialogService.ConfirmAsync(
-                "Cover überschreiben",
-                "Diese Serie hat bereits ein Cover. Soll es ersetzt werden?");
+                SafeResourceLoader.Get("EpisodeCoverOverwriteTitle"),
+                SafeResourceLoader.Get("EpisodeCoverOverwriteMessage"));
         }
 
         /// <summary>

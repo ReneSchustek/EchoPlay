@@ -208,10 +208,11 @@ namespace EchoPlay.App
             {
                 if (splash?.Content?.XamlRoot is not null)
                 {
+                    string messageFormat = EchoPlay.App.Helpers.SafeResourceLoader.Get("AppStartFailedDialogMessage");
                     ContentDialog errorDialog = new()
                     {
-                        Title = "EchoPlay konnte nicht starten",
-                        Content = $"Beim Starten der Anwendung ist ein Fehler aufgetreten:\n\n{exception.Message}\n\nDie Anwendung wird beendet.",
+                        Title = EchoPlay.App.Helpers.SafeResourceLoader.Get("AppStartFailedDialogTitle"),
+                        Content = string.Format(System.Globalization.CultureInfo.CurrentCulture, messageFormat, exception.Message),
                         CloseButtonText = "OK",
                         XamlRoot = splash.Content.XamlRoot
                     };
@@ -315,9 +316,10 @@ namespace EchoPlay.App
                 try
                 {
                     EchoPlay.App.Services.ErrorDialogService errorDialog = Services.GetRequiredService<EchoPlay.App.Services.ErrorDialogService>();
+                    string messageFormat = EchoPlay.App.Helpers.SafeResourceLoader.Get("UnexpectedErrorMessage");
                     await errorDialog.ShowAsync(
-                        "Unerwarteter Fehler",
-                        $"Die Anwendung hat einen Fehler festgestellt:\n\n{e.Message}");
+                        EchoPlay.App.Helpers.SafeResourceLoader.Get("UnexpectedErrorTitle"),
+                        string.Format(System.Globalization.CultureInfo.CurrentCulture, messageFormat, e.Message));
                 }
                 catch (System.Runtime.InteropServices.COMException)
                 {

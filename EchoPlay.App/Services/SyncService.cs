@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.Core.Models;
 using EchoPlay.Core.Scoring;
 using EchoPlay.Data.Entities.Library;
@@ -126,7 +127,7 @@ namespace EchoPlay.App.Services
                 // Bibliotheksgröße. Serien, die bereits in der DB bekannt sind, werden sofort
                 // angezeigt. Der Nutzer sieht den Großteil der Bibliothek bevor der eigentliche
                 // Scan (Episoden, ID3-Tags) auch nur gestartet hat.
-                progress?.Report(new ScanProgress { StatusText = "Serienordner werden erkannt …" });
+                progress?.Report(new ScanProgress { StatusText = SafeResourceLoader.Get("ScanStatusDetectingFolders") });
 
                 IReadOnlyList<string> seriesFolders = scanner.GetSeriesFolders(settings.LocalLibraryRootPath);
 

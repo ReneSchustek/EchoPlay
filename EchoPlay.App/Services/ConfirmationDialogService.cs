@@ -24,8 +24,8 @@ namespace EchoPlay.App.Services
             {
                 Title = title,
                 Content = message,
-                PrimaryButtonText = "Ja",
-                CloseButtonText = "Abbrechen",
+                PrimaryButtonText = SafeResourceLoader.Get("CommonYes"),
+                CloseButtonText = SafeResourceLoader.Get("CommonCancel"),
                 XamlRoot = App.MainWindow!.Content.XamlRoot
             };
 

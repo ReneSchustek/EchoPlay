@@ -1,4 +1,5 @@
 using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
@@ -262,9 +263,8 @@ namespace EchoPlay.App.ViewModels
         {
             using IDisposable ua = UserActionScope.BeginUserAction("DeleteSeriesFromLibrary");
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Aus Bibliothek entfernen",
-                "Die Serie und alle zugehörigen Episoden werden aus der Bibliothek entfernt. " +
-                "Die Dateien auf der Festplatte bleiben erhalten. Fortfahren?");
+                SafeResourceLoader.Get("SeriesRemoveFromLibraryTitle"),
+                SafeResourceLoader.Get("SeriesRemoveFromLibraryMessage"));
 
             if (!confirmed)
             {
@@ -287,9 +287,8 @@ namespace EchoPlay.App.ViewModels
         {
             using IDisposable ua = UserActionScope.BeginUserAction("DeleteSeriesFromDisk");
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Von Festplatte löschen",
-                "Die Serie, alle Episoden und alle Audiodateien werden unwiderruflich gelöscht. " +
-                "Dieser Vorgang kann nicht rückgängig gemacht werden. Fortfahren?");
+                SafeResourceLoader.Get("SeriesDeleteFromDiskTitle"),
+                SafeResourceLoader.Get("SeriesDeleteFromDiskMessage"));
 
             if (!confirmed)
             {

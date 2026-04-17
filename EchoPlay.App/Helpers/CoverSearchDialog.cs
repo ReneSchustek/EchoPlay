@@ -95,10 +95,10 @@ namespace EchoPlay.App.Helpers
             ContentDialog dialog = new()
             {
                 XamlRoot = xamlRoot,
-                Title = "Cover suchen",
+                Title = SafeResourceLoader.Get("CoverSearchDialogTitle"),
                 Content = content,
-                PrimaryButtonText = "Übernehmen",
-                CloseButtonText = "Abbrechen",
+                PrimaryButtonText = SafeResourceLoader.Get("CommonApply"),
+                CloseButtonText = SafeResourceLoader.Get("CommonCancel"),
                 IsPrimaryButtonEnabled = false
             };
 

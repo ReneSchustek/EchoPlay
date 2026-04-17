@@ -57,17 +57,17 @@ namespace EchoPlay.App.ViewModels
             Func<Task>? onImportCompleted = null)
         {
             ArgumentNullException.ThrowIfNull(importSeries);
-            _importSeries              = importSeries;
-            _importService             = importService;
-            _errorDialogService        = errorDialogService;
-            _localizationService       = localizationService;
-            _coverBrightnessAnalyzer   = coverBrightnessAnalyzer;
-            _parentViewModel           = parentViewModel;
-            _onImportCompleted         = onImportCompleted;
-            _isImported                = isAlreadyImported;
+            _importSeries = importSeries;
+            _importService = importService;
+            _errorDialogService = errorDialogService;
+            _localizationService = localizationService;
+            _coverBrightnessAnalyzer = coverBrightnessAnalyzer;
+            _parentViewModel = parentViewModel;
+            _onImportCompleted = onImportCompleted;
+            _isImported = isAlreadyImported;
 
             // Bei Album-Ergebnissen: Künstlername als Untertitel anzeigen
-            Title       = importSeries.IsAlbumResult && !string.IsNullOrEmpty(importSeries.ArtistName)
+            Title = importSeries.IsAlbumResult && !string.IsNullOrEmpty(importSeries.ArtistName)
                 ? $"{importSeries.ArtistName} – {importSeries.Title}"
                 : importSeries.Title;
             Description = importSeries.Description;
@@ -216,7 +216,7 @@ namespace EchoPlay.App.ViewModels
         public string SourceLabel => _importSeries.Source switch
         {
             "AppleMusic" => "Apple Music",
-            _            => _importSeries.Source
+            _ => _importSeries.Source
         };
 
         /// <summary>Startet den Import der Serie in die lokale Bibliothek.</summary>

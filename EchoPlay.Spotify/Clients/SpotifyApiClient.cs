@@ -177,10 +177,10 @@ namespace EchoPlay.Spotify.Clients
                     albums.Add(new SpotifyAlbumDto
                     {
                         SpotifyAlbumId = albumId,
-                        Title          = name,
-                        TotalTracks    = totalTracks,
-                        ImageUrl       = imageUrl,
-                        ArtistName     = artistName
+                        Title = name,
+                        TotalTracks = totalTracks,
+                        ImageUrl = imageUrl,
+                        ArtistName = artistName
                     });
                 }
 

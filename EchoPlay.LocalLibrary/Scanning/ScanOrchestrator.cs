@@ -36,7 +36,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         public async Task<IReadOnlyList<LocalScanResult>> ScanAsync(
             string rootPath,
             string episodeFolderPattern,
-            IProgress<ScanProgress>? progress  = null,
+            IProgress<ScanProgress>? progress = null,
             CancellationToken cancellationToken = default)
         {
             // ── Phase 1: Vorbereitung ──────────────────────────────────────────────
@@ -44,7 +44,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             // Indeterministischer Balken solange die Zählung läuft.
             progress?.Report(new ScanProgress
             {
-                Phase      = 1,
+                Phase = 1,
                 PhaseLabel = ScanPhaseLabels.Preparation,
                 StatusText = ScanPhaseLabels.Preparation
             });
@@ -63,7 +63,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 // Phase 2 sofort melden, bevor der Scanner startet
                 progress.Report(new ScanProgress
                 {
-                    Phase      = 2,
+                    Phase = 2,
                     PhaseLabel = ScanPhaseLabels.Series,
                     StatusText = ScanPhaseLabels.Series
                 });
@@ -83,15 +83,15 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                     progress.Report(new ScanProgress
                     {
-                        Phase           = phase,
-                        PhaseLabel      = label,
-                        ProcessedFiles  = p.ProcessedFiles,
+                        Phase = phase,
+                        PhaseLabel = label,
+                        ProcessedFiles = p.ProcessedFiles,
                         // Vorab-Zählung aus Phase 1 verwenden, sofern der Scanner keinen Wert liefert
-                        TotalFiles      = p.TotalFiles > 0 ? p.TotalFiles : totalFiles,
+                        TotalFiles = p.TotalFiles > 0 ? p.TotalFiles : totalFiles,
                         ProcessedSeries = p.ProcessedSeries,
-                        TotalSeries     = p.TotalSeries,
-                        StatusText      = p.StatusText,
-                        DetailText      = p.DetailText
+                        TotalSeries = p.TotalSeries,
+                        StatusText = p.StatusText,
+                        DetailText = p.DetailText
                     });
                 });
             }

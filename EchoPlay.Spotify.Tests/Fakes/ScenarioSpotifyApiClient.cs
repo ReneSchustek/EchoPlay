@@ -1,4 +1,4 @@
-﻿using EchoPlay.Spotify.Abstractions;
+using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
 
 namespace EchoPlay.Spotify.Tests.Fakes

@@ -44,9 +44,9 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nur abonnierte Serien zählen für die Info-Leiste
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG",    IsSubscribed = true  });
-            await seriesService.AddAsync(new Series { Title = "Bibi",    IsSubscribed = true  });
-            await seriesService.AddAsync(new Series { Title = "Globi",   IsSubscribed = false });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "Bibi", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "Globi", IsSubscribed = false });
 
             (StatusBarViewModel vm, _) = BuildViewModel(
                 seriesService,
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task LoadAsync_CountsFinishedEpisodes()
         {
             // Episoden mit IsCompleted=true werden als gehört gezählt
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
@@ -97,7 +97,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task LoadAsync_CountsNewEpisodes()
         {
             // "Neu" = erschienen (ReleaseDate ≤ heute), aber noch nicht gehört
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series { Title = "Die drei ???", IsSubscribed = true });
@@ -106,15 +106,15 @@ namespace EchoPlay.App.Tests.ViewModels
             // Gestern erschienen, noch nicht gehört → zählt als neu
             Episode epNeu = new()
             {
-                Title       = "Folge 1",
-                SeriesId    = seriesId,
+                Title = "Folge 1",
+                SeriesId = seriesId,
                 ReleaseDate = TestIds.ReferenceDate.AddDays(-1)
             };
             // Zukünftig → zählt nicht als neu
             Episode epKommend = new()
             {
-                Title       = "Folge 2",
-                SeriesId    = seriesId,
+                Title = "Folge 2",
+                SeriesId = seriesId,
                 ReleaseDate = TestIds.ReferenceDate.AddDays(7)
             };
 
@@ -135,7 +135,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task RefreshAsync_UpdatesAfterStatusChange()
         {
             // Nach einer Statusänderung muss RefreshAsync die Zähler aktualisieren
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
@@ -154,8 +154,8 @@ namespace EchoPlay.App.Tests.ViewModels
             // Status nachtragen und Statistik aktualisieren
             await stateService.AddAsync(new PlaybackState
             {
-                EpisodeId    = ep.Id,
-                IsCompleted  = true,
+                EpisodeId = ep.Id,
+                IsCompleted = true,
                 LastPosition = TimeSpan.Zero
             });
 

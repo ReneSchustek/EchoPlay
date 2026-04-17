@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Common;
 using EchoPlay.Logger.Models;
 using System;
 

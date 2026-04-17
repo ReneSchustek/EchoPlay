@@ -49,24 +49,24 @@ namespace EchoPlay.App.Helpers
             // Statuszeile: ProgressRing + Text
             ProgressRing progressRing = new()
             {
-                Width             = 18,
-                Height            = 18,
-                Margin            = new Thickness(0, 0, 6, 0),
-                IsActive          = false,
+                Width = 18,
+                Height = 18,
+                Margin = new Thickness(0, 0, 6, 0),
+                IsActive = false,
                 VerticalAlignment = VerticalAlignment.Center
             };
 
             TextBlock statusText = new()
             {
-                Text              = string.Empty,
+                Text = string.Empty,
                 VerticalAlignment = VerticalAlignment.Center,
-                TextWrapping      = TextWrapping.Wrap
+                TextWrapping = TextWrapping.Wrap
             };
 
             StackPanel statusRow = new()
             {
                 Orientation = Orientation.Horizontal,
-                Margin      = new Thickness(0, 4, 0, 0)
+                Margin = new Thickness(0, 4, 0, 0)
             };
             statusRow.Children.Add(progressRing);
             statusRow.Children.Add(statusText);
@@ -75,9 +75,9 @@ namespace EchoPlay.App.Helpers
             // (GridView im ContentDialog wirft COMException bei Item-Änderungen)
             VariableSizedWrapGrid resultsPanel = new()
             {
-                Orientation          = Orientation.Horizontal,
-                ItemWidth            = TileWidth,
-                ItemHeight           = TileHeight,
+                Orientation = Orientation.Horizontal,
+                ItemWidth = TileWidth,
+                ItemHeight = TileHeight,
                 MaximumRowsOrColumns = MaxTilesPerRow
             };
 
@@ -88,17 +88,17 @@ namespace EchoPlay.App.Helpers
             content.Children.Add(new ScrollViewer
             {
                 MaxHeight = 400,
-                Content   = resultsPanel,
-                Margin    = new Thickness(0, 4, 0, 0)
+                Content = resultsPanel,
+                Margin = new Thickness(0, 4, 0, 0)
             });
 
             ContentDialog dialog = new()
             {
-                XamlRoot               = xamlRoot,
-                Title                  = "Cover suchen",
-                Content                = content,
-                PrimaryButtonText      = "Übernehmen",
-                CloseButtonText        = "Abbrechen",
+                XamlRoot = xamlRoot,
+                Title = "Cover suchen",
+                Content = content,
+                PrimaryButtonText = "Übernehmen",
+                CloseButtonText = "Abbrechen",
                 IsPrimaryButtonEnabled = false
             };
 
@@ -107,13 +107,13 @@ namespace EchoPlay.App.Helpers
             int selectedIndex = -1;
 
             progressRing.IsActive = true;
-            statusText.Text       = "Suche läuft \u2026";
+            statusText.Text = "Suche läuft \u2026";
 
             // Suchfunktion
             async Task RunSearchAsync(string query)
             {
                 progressRing.IsActive = true;
-                statusText.Text       = "Suche läuft \u2026";
+                statusText.Text = "Suche läuft \u2026";
                 currentResults.Clear();
                 resultsPanel.Children.Clear();
                 selectedIndex = -1;
@@ -171,7 +171,7 @@ namespace EchoPlay.App.Helpers
                 catch (Exception)
                 {
                     progressRing.IsActive = false;
-                    statusText.Text       = "Fehler bei der Suche.";
+                    statusText.Text = "Fehler bei der Suche.";
                 }
             }
 
@@ -211,15 +211,15 @@ namespace EchoPlay.App.Helpers
         {
             TextBox queryBox = new()
             {
-                Text                = initialQuery,
-                PlaceholderText     = "Suchbegriff eingeben",
+                Text = initialQuery,
+                PlaceholderText = "Suchbegriff eingeben",
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
 
             Button searchButton = new()
             {
-                Content           = "Suchen",
-                Margin            = new Thickness(8, 0, 0, 0),
+                Content = "Suchen",
+                Margin = new Thickness(8, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Bottom
             };
 
@@ -243,21 +243,21 @@ namespace EchoPlay.App.Helpers
         {
             Image coverImage = new()
             {
-                Width   = CoverImageSize,
-                Height  = CoverImageSize,
+                Width = CoverImageSize,
+                Height = CoverImageSize,
                 Stretch = Stretch.UniformToFill,
-                Source  = new BitmapImage(new Uri(result.ThumbnailUrl))
+                Source = new BitmapImage(new Uri(result.ThumbnailUrl))
             };
 
             TextBlock label = new()
             {
-                Text                = result.ReleaseTitle,
-                MaxLines            = 2,
-                TextWrapping        = TextWrapping.Wrap,
-                TextTrimming        = TextTrimming.CharacterEllipsis,
-                FontSize            = 10,
-                Width               = CoverImageSize,
-                Margin              = new Thickness(4, 4, 4, 0),
+                Text = result.ReleaseTitle,
+                MaxLines = 2,
+                TextWrapping = TextWrapping.Wrap,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                FontSize = 10,
+                Width = CoverImageSize,
+                Margin = new Thickness(4, 4, 4, 0),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
 
@@ -268,10 +268,10 @@ namespace EchoPlay.App.Helpers
             Border tileBorder = new()
             {
                 BorderThickness = new Thickness(2),
-                BorderBrush     = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                CornerRadius    = new CornerRadius(4),
-                Padding         = new Thickness(2),
-                Child           = tile
+                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(2),
+                Child = tile
             };
 
             return tileBorder;

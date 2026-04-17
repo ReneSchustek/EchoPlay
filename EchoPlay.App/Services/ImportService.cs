@@ -128,13 +128,13 @@ namespace EchoPlay.App.Services
                     results.Add(new ImportSeries
                     {
                         SourceSeriesId = album.SpotifyAlbumId,
-                        Source         = "Spotify",
-                        Title          = album.Title,
-                        ArtistName     = album.ArtistName,
-                        CoverImageUrl  = album.ImageUrl,
-                        IsAlbumResult  = true,
-                        IsHoerspiel    = true,
-                        Score          = 50
+                        Source = "Spotify",
+                        Title = album.Title,
+                        ArtistName = album.ArtistName,
+                        CoverImageUrl = album.ImageUrl,
+                        IsAlbumResult = true,
+                        IsHoerspiel = true,
+                        Score = 50
                     });
                 }
             }
@@ -158,13 +158,13 @@ namespace EchoPlay.App.Services
                     results.Add(new ImportSeries
                     {
                         SourceSeriesId = album.CollectionId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        Source         = "AppleMusic",
-                        Title          = album.CollectionName,
-                        ArtistName     = album.ArtistName,
-                        CoverImageUrl  = null,
-                        IsAlbumResult  = true,
-                        IsHoerspiel    = true,
-                        Score          = 50
+                        Source = "AppleMusic",
+                        Title = album.CollectionName,
+                        ArtistName = album.ArtistName,
+                        CoverImageUrl = null,
+                        IsAlbumResult = true,
+                        IsHoerspiel = true,
+                        Score = 50
                     });
                 }
             }
@@ -383,9 +383,9 @@ namespace EchoPlay.App.Services
         {
             return series.Source switch
             {
-                "Spotify"    => await service.GetBySpotifyArtistIdAsync(series.SourceSeriesId),
+                "Spotify" => await service.GetBySpotifyArtistIdAsync(series.SourceSeriesId),
                 "AppleMusic" => await service.GetByAppleMusicArtistIdAsync(series.SourceSeriesId),
-                _            => null
+                _ => null
             };
         }
 
@@ -399,13 +399,13 @@ namespace EchoPlay.App.Services
         {
             return new Series
             {
-                Title              = importSeries.Title,
-                Description        = importSeries.Description,
-                CoverImageUrl      = importSeries.CoverImageUrl,
-                SpotifyArtistId    = importSeries.Source == "Spotify"    ? importSeries.SourceSeriesId : null,
+                Title = importSeries.Title,
+                Description = importSeries.Description,
+                CoverImageUrl = importSeries.CoverImageUrl,
+                SpotifyArtistId = importSeries.Source == "Spotify" ? importSeries.SourceSeriesId : null,
                 AppleMusicArtistId = importSeries.Source == "AppleMusic" ? importSeries.SourceSeriesId : null,
-                IsOnlineImported   = true,
-                IsSubscribed       = true
+                IsOnlineImported = true,
+                IsSubscribed = true
             };
         }
 
@@ -417,14 +417,14 @@ namespace EchoPlay.App.Services
         {
             return new Episode
             {
-                SeriesId         = seriesId,
-                Title            = importEpisode.Title,
-                EpisodeNumber    = importEpisode.EpisodeNumber,
-                ReleaseDate      = importEpisode.ReleaseDate,
-                Duration         = importEpisode.Duration,
-                ProviderUrl      = importEpisode.ProviderUrl,
-                CoverImageUrl    = importEpisode.CoverImageUrl,
-                SpotifyAlbumId   = importEpisode.Source == "Spotify"    ? importEpisode.SourceEpisodeId : null,
+                SeriesId = seriesId,
+                Title = importEpisode.Title,
+                EpisodeNumber = importEpisode.EpisodeNumber,
+                ReleaseDate = importEpisode.ReleaseDate,
+                Duration = importEpisode.Duration,
+                ProviderUrl = importEpisode.ProviderUrl,
+                CoverImageUrl = importEpisode.CoverImageUrl,
+                SpotifyAlbumId = importEpisode.Source == "Spotify" ? importEpisode.SourceEpisodeId : null,
                 AppleMusicAlbumId = importEpisode.Source == "AppleMusic" ? importEpisode.SourceEpisodeId : null,
             };
         }

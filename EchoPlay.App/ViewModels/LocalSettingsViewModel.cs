@@ -54,10 +54,10 @@ namespace EchoPlay.App.ViewModels
             IEpisodePatternAnalyzer patternAnalyzer,
             Action onUserEdit)
         {
-            _syncService        = syncService;
+            _syncService = syncService;
             _errorDialogService = errorDialogService;
-            _patternAnalyzer    = patternAnalyzer;
-            _onUserEdit         = onUserEdit;
+            _patternAnalyzer = patternAnalyzer;
+            _onUserEdit = onUserEdit;
         }
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            IsSyncing      = true;
+            IsSyncing = true;
             SyncStatusText = SafeResourceLoader.Get("SyncRunning", "Sync läuft …");
 
             try
@@ -299,10 +299,10 @@ namespace EchoPlay.App.ViewModels
             _isBatchLoading = true;
             try
             {
-                LocalLibraryEnabled  = settings.LocalLibraryEnabled;
+                LocalLibraryEnabled = settings.LocalLibraryEnabled;
                 LocalLibraryRootPath = settings.LocalLibraryRootPath ?? string.Empty;
                 EpisodeFolderPattern = settings.EpisodeFolderPattern;
-                AutoImportAfterScan  = settings.AutoImportAfterScan;
+                AutoImportAfterScan = settings.AutoImportAfterScan;
             }
             finally
             {
@@ -315,10 +315,10 @@ namespace EchoPlay.App.ViewModels
         public void WriteTo(AppSettings settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
-            settings.LocalLibraryEnabled  = LocalLibraryEnabled;
+            settings.LocalLibraryEnabled = LocalLibraryEnabled;
             settings.LocalLibraryRootPath = string.IsNullOrWhiteSpace(LocalLibraryRootPath) ? null : LocalLibraryRootPath;
             settings.EpisodeFolderPattern = EpisodeFolderPattern;
-            settings.AutoImportAfterScan  = AutoImportAfterScan;
+            settings.AutoImportAfterScan = AutoImportAfterScan;
         }
 
         private void MarkAsChanged()

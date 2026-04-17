@@ -1,4 +1,4 @@
-﻿using EchoPlay.Logger.Models;
+using EchoPlay.Logger.Models;
 
 namespace EchoPlay.Logger.Abstractions
 {

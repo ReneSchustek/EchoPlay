@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Logger.Scoping
+namespace EchoPlay.Logger.Scoping
 {
     /// <summary>
     /// Repräsentiert einen einzelnen Logging-Scope.

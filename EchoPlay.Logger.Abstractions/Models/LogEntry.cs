@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Logger.Models
+namespace EchoPlay.Logger.Models
 {
     /// <summary>
     /// Repräsentiert einen einzelnen, unveränderlichen Log-Eintrag.

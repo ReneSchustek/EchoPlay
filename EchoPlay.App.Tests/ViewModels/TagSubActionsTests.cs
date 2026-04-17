@@ -29,12 +29,12 @@ namespace EchoPlay.App.Tests.ViewModels
                 provider.GetRequiredService<IServiceScopeFactory>());
 
             return new TagManagerActionsContext(
-                TagService:                tagService,
-                LookupCoordinator:         coordinator,
-                FileRenameService:         new FakeFileRenameService(),
-                ErrorDialogService:        new FakeErrorDialogService(),
+                TagService: tagService,
+                LookupCoordinator: coordinator,
+                FileRenameService: new FakeFileRenameService(),
+                ErrorDialogService: new FakeErrorDialogService(),
                 ConfirmationDialogService: new FakeConfirmationDialogService(),
-                OnlineAccessGuard:         new FakeOnlineAccessGuard());
+                OnlineAccessGuard: new FakeOnlineAccessGuard());
         }
 
         private static (TagFileListViewModel fileList, TagEditorFieldsViewModel editor,

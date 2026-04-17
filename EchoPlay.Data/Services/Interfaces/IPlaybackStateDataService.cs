@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Entities.Playback;
 
 namespace EchoPlay.Data.Services.Interfaces
 {

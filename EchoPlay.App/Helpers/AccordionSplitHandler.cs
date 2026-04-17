@@ -40,10 +40,10 @@ namespace EchoPlay.App.Helpers
             Func<int> getSelectedIndex,
             Func<double> getAvailableWidth)
         {
-            _topGrid           = topGrid;
-            _bottomGrid        = bottomGrid;
-            _getItems          = getItems;
-            _getSelectedIndex  = getSelectedIndex;
+            _topGrid = topGrid;
+            _bottomGrid = bottomGrid;
+            _getItems = getItems;
+            _getSelectedIndex = getSelectedIndex;
             _getAvailableWidth = getAvailableWidth;
         }
 
@@ -67,9 +67,9 @@ namespace EchoPlay.App.Helpers
 
                 if (selectedIndex < 0 || all.Count == 0)
                 {
-                    _topGrid.ItemsSource     = all;
-                    _topGrid.SelectedItem    = null;
-                    _bottomGrid.ItemsSource  = Array.Empty<T>();
+                    _topGrid.ItemsSource = all;
+                    _topGrid.SelectedItem = null;
+                    _bottomGrid.ItemsSource = Array.Empty<T>();
                     _bottomGrid.SelectedItem = null;
                     return;
                 }
@@ -81,10 +81,10 @@ namespace EchoPlay.App.Helpers
                 (IReadOnlyList<T> top, IReadOnlyList<T> bottom) =
                     AccordionSplitHelper.Split(all, splitIndex);
 
-                _topGrid.ItemsSource     = top;
-                _bottomGrid.ItemsSource  = bottom;
+                _topGrid.ItemsSource = top;
+                _bottomGrid.ItemsSource = bottom;
                 _bottomGrid.SelectedItem = null;
-                _topGrid.SelectedItem    = all[selectedIndex];
+                _topGrid.SelectedItem = all[selectedIndex];
             }
             finally
             {

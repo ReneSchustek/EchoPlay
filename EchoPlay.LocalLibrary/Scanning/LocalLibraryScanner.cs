@@ -130,7 +130,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             // Gesamtzahl aller Audiodateien vor der Scan-Schleife ermitteln –
             // nur so ist ein deterministischer Fortschrittsbalken möglich.
-            int totalFiles     = CountSupportedFiles(rootPath);
+            int totalFiles = CountSupportedFiles(rootPath);
             int processedFiles = 0;
 
             EpisodeFolderParser parser = new(folderPattern);
@@ -206,10 +206,10 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                 episodes.Add(new LocalEpisodeScan
                 {
-                    FolderPath   = episodeFolder,
+                    FolderPath = episodeFolder,
                     ParsedNumber = number,
-                    ParsedTitle  = episodeTitle,
-                    TrackPaths   = trackPaths
+                    ParsedTitle = episodeTitle,
+                    TrackPaths = trackPaths
                 });
 
                 // Fortschritt nach jeder Episode melden – Tracks dieser Episode zählen hoch
@@ -217,8 +217,8 @@ namespace EchoPlay.LocalLibrary.Scanning
                 progress?.Report(new ScanProgress
                 {
                     ProcessedFiles = processedFiles,
-                    TotalFiles     = totalFiles,
-                    StatusText     = $"Scanne {seriesName} …"
+                    TotalFiles = totalFiles,
+                    StatusText = $"Scanne {seriesName} …"
                 });
             }
 
@@ -300,18 +300,18 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                         episodes.Add(new LocalEpisodeScan
                         {
-                            FolderPath   = seriesFolderPath,
+                            FolderPath = seriesFolderPath,
                             ParsedNumber = number,
-                            ParsedTitle  = episodeTitle,
-                            TrackPaths   = [trackPath]
+                            ParsedTitle = episodeTitle,
+                            TrackPaths = [trackPath]
                         });
 
                         processedFiles++;
                         progress?.Report(new ScanProgress
                         {
                             ProcessedFiles = processedFiles,
-                            TotalFiles     = totalFiles,
-                            StatusText     = $"Scanne {seriesName} …"
+                            TotalFiles = totalFiles,
+                            StatusText = $"Scanne {seriesName} …"
                         });
                     }
                 }
@@ -325,9 +325,9 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             return new LocalScanResult
             {
-                SeriesName       = seriesName,
+                SeriesName = seriesName,
                 SeriesFolderPath = seriesFolderPath,
-                Episodes         = episodes
+                Episodes = episodes
             };
         }
 

@@ -87,9 +87,9 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 results.Add(new CoverSearchResult(
                     ThumbnailUrl: artist.PictureMedium,
-                    FullUrl:      artist.PictureXl,
+                    FullUrl: artist.PictureXl,
                     ReleaseTitle: artistName,
-                    Source:       "Deezer (Künstler)"));
+                    Source: "Deezer (Künstler)"));
             }
 
             return results;

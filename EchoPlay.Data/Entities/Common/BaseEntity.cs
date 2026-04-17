@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Contracts;
+using EchoPlay.Data.Entities.Contracts;
 using EchoPlay.Data.Internal;
 
 namespace EchoPlay.Data.Entities.Common

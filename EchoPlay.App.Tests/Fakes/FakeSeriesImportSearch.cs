@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.Fakes
         public FakeSeriesImportSearch(IReadOnlyList<ImportSeries> results, string source = "Spotify")
         {
             _results = results;
-            _source  = source;
+            _source = source;
         }
 
         /// <inheritdoc/>

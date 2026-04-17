@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Models;
 

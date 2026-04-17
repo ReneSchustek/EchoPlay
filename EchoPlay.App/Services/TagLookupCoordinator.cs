@@ -61,7 +61,7 @@ namespace EchoPlay.App.Services
             string seriesName = Path.GetFileName(Path.GetDirectoryName(folderPath)) ?? string.Empty;
 
             string episodeFolderName = Path.GetFileName(folderPath) ?? string.Empty;
-            string episodeTitle      = EpisodeFolderParser.StripLeadingSequenceNumber(episodeFolderName);
+            string episodeTitle = EpisodeFolderParser.StripLeadingSequenceNumber(episodeFolderName);
 
             if (string.IsNullOrWhiteSpace(seriesName) || string.IsNullOrWhiteSpace(episodeTitle))
             {

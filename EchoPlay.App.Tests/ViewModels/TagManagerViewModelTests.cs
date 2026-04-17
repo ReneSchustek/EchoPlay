@@ -378,9 +378,9 @@ namespace EchoPlay.App.Tests.ViewModels
         /// gewrappt, der den übergebenen Fake-Service nutzt.
         /// </summary>
         private static TagManagerViewModel BuildViewModel(
-            FakeTagService? tagService          = null,
+            FakeTagService? tagService = null,
             FakeTagLookupService? lookupService = null,
-            FakeOnlineAccessGuard? onlineGuard  = null)
+            FakeOnlineAccessGuard? onlineGuard = null)
         {
             FakeTagLookupService fake = lookupService ?? new FakeTagLookupService();
 

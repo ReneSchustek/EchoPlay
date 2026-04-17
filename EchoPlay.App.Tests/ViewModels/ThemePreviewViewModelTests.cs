@@ -71,9 +71,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Theory]
-        [InlineData("Ruhrcoder",       "#EEEEEE", "#2F4858", "#2E6DA4")]
-        [InlineData("MidnightLibrary", "#12141D",  "#1B1E2B", "#5B4DFF")]
-        [InlineData("PaperCoffee",     "#FFFBF2",  "#FCF5E5", "#A06040")]
+        [InlineData("Ruhrcoder", "#EEEEEE", "#2F4858", "#2E6DA4")]
+        [InlineData("MidnightLibrary", "#12141D", "#1B1E2B", "#5B4DFF")]
+        [InlineData("PaperCoffee", "#FFFBF2", "#FCF5E5", "#A06040")]
         public void Theme_ColorsMatchResourceDictionary(
             string tag, string expectedBg, string expectedPane, string expectedAccent)
         {

@@ -44,16 +44,16 @@ namespace EchoPlay.App.ViewModels
             bool isSpecialEpisode = false,
             BitmapImage? coverImage = null)
         {
-            EpisodeId        = episodeId;
-            EpisodeNumber    = episodeNumber;
-            Title            = title;
-            TotalDuration    = totalDuration;
-            Progress         = playbackStatus;
-            ReleaseDate      = releaseDate;
-            ProgressPercent  = progressPercent;
+            EpisodeId = episodeId;
+            EpisodeNumber = episodeNumber;
+            Title = title;
+            TotalDuration = totalDuration;
+            Progress = playbackStatus;
+            ReleaseDate = releaseDate;
+            ProgressPercent = progressPercent;
             IsSpecialEpisode = isSpecialEpisode;
-            CoverImage       = coverImage;
-            PlayCommand      = new RelayCommand(playEpisode);
+            CoverImage = coverImage;
+            PlayCommand = new RelayCommand(playEpisode);
         }
 
         /// <summary>Datenbank-ID der Episode.</summary>
@@ -114,11 +114,11 @@ namespace EchoPlay.App.ViewModels
         public string StatusGlyph => Progress switch
         {
             // Häkchen (E8FB) für abgeschlossen
-            PlaybackStatus.Finished    => "\uE8FB",
+            PlaybackStatus.Finished => "\uE8FB",
             // Fortschritt (E916) für teilweise gehört
-            PlaybackStatus.InProgress  => "\uE916",
+            PlaybackStatus.InProgress => "\uE916",
             // Leerer Kreis (E73E) für noch nicht gespielt
-            _                          => "\uE73E"
+            _ => "\uE73E"
         };
 
         /// <summary>

@@ -38,9 +38,9 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify",    (_, _) => spotifySearch);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => spotifySearch);
             _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify",    (_, _) => spotifyEpisodeSource);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
             _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
 
             _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
@@ -49,7 +49,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddHttpClient();
             _ = services.AddSingleton<CoverService>();
             _ = services.AddSingleton<EpisodeCoverCacheService>();
-            ServiceProvider provider  = services.BuildServiceProvider();
+            ServiceProvider provider = services.BuildServiceProvider();
             ImportService importService = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
@@ -167,10 +167,10 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportSeries series = new()
             {
                 SourceSeriesId = "sp1",
-                Source         = "Spotify",
-                Title          = "TKKG",
-                IsHoerspiel    = true,
-                Score          = 80
+                Source = "Spotify",
+                Title = "TKKG",
+                IsHoerspiel = true,
+                Score = 80
             };
 
             await vm.ImportAsync(series);
@@ -195,10 +195,10 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportSeries series = new()
             {
                 SourceSeriesId = "sp1",
-                Source         = "Spotify",
-                Title          = "Die drei Fragezeichen",
-                IsHoerspiel    = true,
-                Score          = 90
+                Source = "Spotify",
+                Title = "Die drei Fragezeichen",
+                IsHoerspiel = true,
+                Score = 90
             };
 
             await vm.ImportAsync(series);
@@ -223,10 +223,10 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.ImportAsync(new ImportSeries
             {
                 SourceSeriesId = "x1",
-                Source         = "Spotify",
-                Title          = "Test",
-                IsHoerspiel    = true,
-                Score          = 50
+                Source = "Spotify",
+                Title = "Test",
+                IsHoerspiel = true,
+                Score = 50
             });
 
             Assert.False(vm.IsImporting);

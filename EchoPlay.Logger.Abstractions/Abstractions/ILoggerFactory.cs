@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Logger.Abstractions
+namespace EchoPlay.Logger.Abstractions
 {
     /// <summary>
     /// Erstellt Logger-Instanzen für verschiedene Kategorien.

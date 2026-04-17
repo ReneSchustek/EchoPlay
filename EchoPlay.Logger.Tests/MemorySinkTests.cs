@@ -159,9 +159,9 @@ namespace EchoPlay.Logger.Tests
             await sink.WriteAsync(expected);
 
             Assert.NotNull(captured);
-            Assert.Equal(expected.Message,   captured.Message);
-            Assert.Equal(expected.Level,     captured.Level);
-            Assert.Equal(expected.Category,  captured.Category);
+            Assert.Equal(expected.Message, captured.Message);
+            Assert.Equal(expected.Level, captured.Level);
+            Assert.Equal(expected.Category, captured.Category);
         }
     }
 }

@@ -23,11 +23,11 @@ namespace EchoPlay.App.Views
                 // MaintenanceStatusText enthält bei Erfolg eine Bestätigung, bei Fehler die Meldung.
                 ContentDialog resultDialog = new()
                 {
-                    XamlRoot        = XamlRoot,
-                    Title           = _resources.GetString("DatabaseMaintenanceTitle"),
-                    Content         = new TextBlock
+                    XamlRoot = XamlRoot,
+                    Title = _resources.GetString("DatabaseMaintenanceTitle"),
+                    Content = new TextBlock
                     {
-                        Text         = ViewModel.MaintenanceStatusText,
+                        Text = ViewModel.MaintenanceStatusText,
                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
                     },
                     CloseButtonText = _resources.GetString("CommonCloseButton")
@@ -80,17 +80,17 @@ namespace EchoPlay.App.Views
 
                 TextBlock contentText = new()
                 {
-                    Text        = _localizationService.Get("DbResetDialogDescription"),
+                    Text = _localizationService.Get("DbResetDialogDescription"),
                     TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
                 };
 
                 ContentDialog dialog = new()
                 {
-                    XamlRoot          = XamlRoot,
-                    Title             = $"{_localizationService.Get("DbResetDialogTitle")} ({scopeLabel})",
-                    Content           = contentText,
+                    XamlRoot = XamlRoot,
+                    Title = $"{_localizationService.Get("DbResetDialogTitle")} ({scopeLabel})",
+                    Content = contentText,
                     PrimaryButtonText = _localizationService.Get("DbResetDialogConfirm"),
-                    CloseButtonText   = _localizationService.Get("PatternDialogCancel")
+                    CloseButtonText = _localizationService.Get("PatternDialogCancel")
                 };
 
                 Helpers.ContentDialogDragHelper.MakeDraggable(dialog);

@@ -100,9 +100,9 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 results.Add(new CoverSearchResult(
                     ThumbnailUrl: $"https://coverartarchive.org/release/{mbid}/front-250",
-                    FullUrl:      $"https://coverartarchive.org/release/{mbid}/front",
+                    FullUrl: $"https://coverartarchive.org/release/{mbid}/front",
                     ReleaseTitle: releaseTitle,
-                    Source:       "Cover Art Archive"));
+                    Source: "Cover Art Archive"));
 
                 if (results.Count >= MaxResults)
                 {

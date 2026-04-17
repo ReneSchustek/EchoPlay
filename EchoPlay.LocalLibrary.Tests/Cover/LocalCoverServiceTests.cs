@@ -88,7 +88,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             // Cover/front.jpg ist das Erkennungsbild – hat Vorrang vor generischen Dateinamen
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
             await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA);
-            await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"),  JpegB);
+            await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB);
 
             byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
 
@@ -126,7 +126,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             // Cover-Unterordner wird zuerst geprüft – cover.jpg direkt im Serienordner kommt danach
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
             await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA);
-            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"),    JpegB);
+            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"), JpegB);
 
             byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
 

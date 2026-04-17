@@ -66,21 +66,21 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Lookup-Ergebnisse für die Page – weitergereicht von <see cref="TagLookupActions"/>.</summary>
         public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady
         {
-            add    => _lookupActions.LookupResultsReady += value;
+            add => _lookupActions.LookupResultsReady += value;
             remove => _lookupActions.LookupResultsReady -= value;
         }
 
         /// <inheritdoc cref="LookupResultsReady"/>
         public event EventHandler<TagLookupCandidate>? AutoLookupApplied
         {
-            add    => _lookupActions.AutoLookupApplied += value;
+            add => _lookupActions.AutoLookupApplied += value;
             remove => _lookupActions.AutoLookupApplied -= value;
         }
 
         /// <inheritdoc cref="LookupResultsReady"/>
         public event EventHandler? RenamePreviewReady
         {
-            add    => _lookupActions.RenamePreviewReady += value;
+            add => _lookupActions.RenamePreviewReady += value;
             remove => _lookupActions.RenamePreviewReady -= value;
         }
 

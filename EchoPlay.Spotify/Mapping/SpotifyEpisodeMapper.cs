@@ -1,4 +1,4 @@
-﻿using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Models.Import;
 using EchoPlay.Spotify.Dtos;
 
 namespace EchoPlay.Spotify.Mapping
@@ -31,14 +31,14 @@ namespace EchoPlay.Spotify.Mapping
             {
                 // Album-ID statt Track-ID – ein Album = eine Folge
                 SourceEpisodeId = album.SpotifyAlbumId,
-                Title           = album.Title,
-                EpisodeNumber   = EchoPlay.Core.Parsing.EpisodeNumberParser.Extract(album.Title),
-                ReleaseDate     = album.ReleaseDate,
-                Duration        = totalDuration,
-                OrderIndex      = orderIndex,
-                ProviderUrl     = $"https://open.spotify.com/album/{album.SpotifyAlbumId}",
-                CoverImageUrl   = album.ImageUrl,
-                Source          = "Spotify"
+                Title = album.Title,
+                EpisodeNumber = EchoPlay.Core.Parsing.EpisodeNumberParser.Extract(album.Title),
+                ReleaseDate = album.ReleaseDate,
+                Duration = totalDuration,
+                OrderIndex = orderIndex,
+                ProviderUrl = $"https://open.spotify.com/album/{album.SpotifyAlbumId}",
+                CoverImageUrl = album.ImageUrl,
+                Source = "Spotify"
             };
         }
 

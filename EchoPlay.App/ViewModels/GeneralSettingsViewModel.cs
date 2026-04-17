@@ -159,11 +159,11 @@ namespace EchoPlay.App.ViewModels
         {
             get => _minimumLogLevel switch
             {
-                LogLevel.Trace       => 0,
-                LogLevel.Debug       => 1,
+                LogLevel.Trace => 0,
+                LogLevel.Debug => 1,
                 LogLevel.Information => 2,
-                LogLevel.Warning     => 3,
-                _                    => 4
+                LogLevel.Warning => 3,
+                _ => 4
             };
             set => MinimumLogLevel = value switch
             {
@@ -186,13 +186,13 @@ namespace EchoPlay.App.ViewModels
             _isBatchLoading = true;
             try
             {
-                ActiveTheme      = settings.ActiveTheme;
-                ActiveLanguage   = settings.ActiveLanguage;
-                NewReleaseDays   = settings.NewReleaseDays;
-                OfflineMode      = settings.OfflineMode;
-                OnlineOnlyMode   = settings.OnlineOnlyMode;
+                ActiveTheme = settings.ActiveTheme;
+                ActiveLanguage = settings.ActiveLanguage;
+                NewReleaseDays = settings.NewReleaseDays;
+                OfflineMode = settings.OfflineMode;
+                OnlineOnlyMode = settings.OnlineOnlyMode;
                 LogRetentionDays = settings.LogRetentionDays;
-                MinimumLogLevel  = settings.MinimumLogLevel;
+                MinimumLogLevel = settings.MinimumLogLevel;
             }
             finally
             {
@@ -208,15 +208,15 @@ namespace EchoPlay.App.ViewModels
         public void WriteTo(AppSettings settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
-            settings.ActiveTheme      = ActiveTheme;
-            settings.ActiveLanguage   = ActiveLanguage;
+            settings.ActiveTheme = ActiveTheme;
+            settings.ActiveLanguage = ActiveLanguage;
             // Mindestwert 7, Maximum 365 – unter einer Woche sind Neuerscheinungen kaum sinnvoll
-            settings.NewReleaseDays   = Math.Clamp(NewReleaseDays, 7, 365);
-            settings.OfflineMode      = OfflineMode;
-            settings.OnlineOnlyMode   = OnlineOnlyMode;
+            settings.NewReleaseDays = Math.Clamp(NewReleaseDays, 7, 365);
+            settings.OfflineMode = OfflineMode;
+            settings.OnlineOnlyMode = OnlineOnlyMode;
             // Mindestwert 1 sicherstellen – 0 Tage würde alle Logs sofort löschen
             settings.LogRetentionDays = Math.Max(1, LogRetentionDays);
-            settings.MinimumLogLevel  = MinimumLogLevel;
+            settings.MinimumLogLevel = MinimumLogLevel;
         }
 
         private void MarkAsChanged()

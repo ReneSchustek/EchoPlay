@@ -79,7 +79,7 @@ namespace EchoPlay.App.ViewModels
             if (tag?.CoverImageData is not null && tag.CoverImageData.Length > 0)
             {
                 _coverImageData = tag.CoverImageData;
-                _coverMimeType  = tag.CoverMimeType;
+                _coverMimeType = tag.CoverMimeType;
 
                 BitmapImage bitmap = new();
                 using MemoryStream stream = new(tag.CoverImageData);
@@ -100,7 +100,7 @@ namespace EchoPlay.App.ViewModels
         public void SetFromFile(byte[] imageData, string mimeType)
         {
             _coverImageData = imageData;
-            _coverMimeType  = mimeType;
+            _coverMimeType = mimeType;
 
             BitmapImage bitmap = new();
             using MemoryStream stream = new(imageData);
@@ -117,8 +117,8 @@ namespace EchoPlay.App.ViewModels
         public void Clear()
         {
             _coverImageData = null;
-            _coverMimeType  = null;
-            CoverImage      = null;
+            _coverMimeType = null;
+            CoverImage = null;
         }
     }
 }

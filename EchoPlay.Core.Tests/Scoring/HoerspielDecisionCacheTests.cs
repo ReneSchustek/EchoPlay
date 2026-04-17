@@ -61,7 +61,7 @@ namespace EchoPlay.Core.Tests.Scoring
         {
             // Ein zweiter Store für dieselbe ID überschreibt den ersten Eintrag nicht
             HoerspielDecisionCache cache = BuildCache();
-            HoerspielScoreResult first  = HoerspielScoreResult.Yes("artist-1", HoerspielDecisionReason.None, 80, "Erst");
+            HoerspielScoreResult first = HoerspielScoreResult.Yes("artist-1", HoerspielDecisionReason.None, 80, "Erst");
             HoerspielScoreResult second = HoerspielScoreResult.No("artist-1", HoerspielDecisionReason.NegativeMusicGenre, 10, "Zweit");
 
             cache.Store(first);

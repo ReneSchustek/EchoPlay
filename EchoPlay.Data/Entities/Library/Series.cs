@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Library

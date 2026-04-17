@@ -39,19 +39,19 @@ namespace EchoPlay.TagManager.Services
 
             foreach ((string filePath, AudioTag tag) in files)
             {
-                string oldName     = Path.GetFileName(filePath);
-                string extension   = Path.GetExtension(filePath);
-                string directory   = Path.GetDirectoryName(filePath) ?? string.Empty;
+                string oldName = Path.GetFileName(filePath);
+                string extension = Path.GetExtension(filePath);
+                string directory = Path.GetDirectoryName(filePath) ?? string.Empty;
 
                 string resolvedBase = ResolvePattern(pattern, filePath, tag);
-                string newName      = resolvedBase + extension;
-                string newFilePath  = Path.Combine(directory, newName);
+                string newName = resolvedBase + extension;
+                string newFilePath = Path.Combine(directory, newName);
 
                 items.Add(new RenamePreviewItem
                 {
-                    OldName     = oldName,
-                    NewName     = newName,
-                    FilePath    = filePath,
+                    OldName = oldName,
+                    NewName = newName,
+                    FilePath = filePath,
                     NewFilePath = newFilePath
                 });
             }
@@ -111,10 +111,10 @@ namespace EchoPlay.TagManager.Services
             string result = pattern;
 
             // Einfache Felder – leerer String wenn Tag nicht gesetzt
-            result = result.Replace("{title}",    tag.Title  ?? string.Empty, StringComparison.Ordinal);
-            result = result.Replace("{album}",    tag.Album  ?? string.Empty, StringComparison.Ordinal);
-            result = result.Replace("{artist}",   tag.Artist ?? string.Empty, StringComparison.Ordinal);
-            result = result.Replace("{year}",     tag.Year?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, StringComparison.Ordinal);
+            result = result.Replace("{title}", tag.Title ?? string.Empty, StringComparison.Ordinal);
+            result = result.Replace("{album}", tag.Album ?? string.Empty, StringComparison.Ordinal);
+            result = result.Replace("{artist}", tag.Artist ?? string.Empty, StringComparison.Ordinal);
+            result = result.Replace("{year}", tag.Year?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, StringComparison.Ordinal);
             result = result.Replace("{filename}", Path.GetFileNameWithoutExtension(filePath), StringComparison.Ordinal);
 
             // Tracknummer: formatierten Varianten zuerst ersetzen, damit {track} nicht
@@ -122,14 +122,14 @@ namespace EchoPlay.TagManager.Services
             if (tag.TrackNumber.HasValue)
             {
                 result = result.Replace("{track:000}", tag.TrackNumber.Value.ToString("000", CultureInfo.InvariantCulture), StringComparison.Ordinal);
-                result = result.Replace("{track:00}",  tag.TrackNumber.Value.ToString("00",  CultureInfo.InvariantCulture), StringComparison.Ordinal);
-                result = result.Replace("{track}",     tag.TrackNumber.Value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+                result = result.Replace("{track:00}", tag.TrackNumber.Value.ToString("00", CultureInfo.InvariantCulture), StringComparison.Ordinal);
+                result = result.Replace("{track}", tag.TrackNumber.Value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
             }
             else
             {
                 result = result.Replace("{track:000}", string.Empty, StringComparison.Ordinal);
-                result = result.Replace("{track:00}",  string.Empty, StringComparison.Ordinal);
-                result = result.Replace("{track}",     string.Empty, StringComparison.Ordinal);
+                result = result.Replace("{track:00}", string.Empty, StringComparison.Ordinal);
+                result = result.Replace("{track}", string.Empty, StringComparison.Ordinal);
             }
 
             return SanitizeFileName(result);

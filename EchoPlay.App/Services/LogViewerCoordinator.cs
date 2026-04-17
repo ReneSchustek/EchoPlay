@@ -30,7 +30,7 @@ namespace EchoPlay.App.Services
         public LogViewerCoordinator(LoggerManager loggerManager, MemorySink? memorySink = null)
         {
             _loggerManager = loggerManager;
-            _memorySink    = memorySink;
+            _memorySink = memorySink;
         }
 
         /// <inheritdoc />
@@ -58,7 +58,7 @@ namespace EchoPlay.App.Services
 
                 foreach (string path in Directory.GetFiles(logDirectory, "*.log"))
                 {
-                    string fileName    = Path.GetFileName(path);
+                    string fileName = Path.GetFileName(path);
                     DateTime lastWrite = File.GetLastWriteTime(path);
                     result.Add(new LogFileOption(fileName, lastWrite, path));
                 }
@@ -136,13 +136,13 @@ namespace EchoPlay.App.Services
         {
             string levelTag = entry.Level switch
             {
-                LogLevel.Trace       => "TRACE",
-                LogLevel.Debug       => "DEBUG",
+                LogLevel.Trace => "TRACE",
+                LogLevel.Debug => "DEBUG",
                 LogLevel.Information => "INFO ",
-                LogLevel.Warning     => "WARN ",
-                LogLevel.Error       => "ERROR",
-                LogLevel.Fatal       => "FATAL",
-                _                    => "????? "
+                LogLevel.Warning => "WARN ",
+                LogLevel.Error => "ERROR",
+                LogLevel.Fatal => "FATAL",
+                _ => "????? "
             };
 
             string time = entry.Timestamp.ToString("HH:mm:ss", CultureInfo.InvariantCulture);

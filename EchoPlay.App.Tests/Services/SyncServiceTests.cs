@@ -64,7 +64,7 @@ namespace EchoPlay.App.Tests.Services
             // Kein Scan, wenn LocalLibraryEnabled = false
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = false,
+                LocalLibraryEnabled = false,
                 LocalLibraryRootPath = "/music"
             });
 
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.Services
             // Kein Scan, wenn kein Bibliothekspfad gesetzt ist
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = null
             });
 
@@ -113,7 +113,7 @@ namespace EchoPlay.App.Tests.Services
             // Seriennamen mit unterschiedlicher Schreibweise werden über Normalisierung gematcht
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = "/music"
             });
 
@@ -149,9 +149,9 @@ namespace EchoPlay.App.Tests.Services
             // AutoImportAfterScan muss deaktiviert sein, damit kein Eintrag angelegt wird.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled    = true,
-                LocalLibraryRootPath   = "/music",
-                AutoImportAfterScan    = false
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music",
+                AutoImportAfterScan = false
             });
 
             IReadOnlyList<LocalScanResult> scanResults =
@@ -184,7 +184,7 @@ namespace EchoPlay.App.Tests.Services
             // Lokale Episode wird aktualisiert, wenn die Episodennummer übereinstimmt
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = "/music"
             });
 
@@ -196,8 +196,8 @@ namespace EchoPlay.App.Tests.Services
             FakeEpisodeDataService episodeService = new();
             await episodeService.AddAsync(new Episode
             {
-                SeriesId      = addedSeries.Id,
-                Title         = "Folge 1",
+                SeriesId = addedSeries.Id,
+                Title = "Folge 1",
                 EpisodeNumber = 1
             });
 
@@ -236,7 +236,7 @@ namespace EchoPlay.App.Tests.Services
             // Für jede gematchte Episode werden LocalTracks gespeichert
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = "/music"
             });
 
@@ -247,8 +247,8 @@ namespace EchoPlay.App.Tests.Services
             FakeEpisodeDataService episodeService = new();
             await episodeService.AddAsync(new Episode
             {
-                SeriesId      = series.Id,
-                Title         = "Folge 1",
+                SeriesId = series.Id,
+                Title = "Folge 1",
                 EpisodeNumber = 1
             });
 
@@ -292,9 +292,9 @@ namespace EchoPlay.App.Tests.Services
             // AutoImportAfterScan deaktiviert, damit die unbekannte Serie als "unmatched" gezählt wird.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = "/music",
-                AutoImportAfterScan  = false
+                AutoImportAfterScan = false
             });
 
             FakeSeriesDataService seriesService = new();
@@ -355,7 +355,7 @@ namespace EchoPlay.App.Tests.Services
             // Episodenordner ohne erkennbare Nummer werden übersprungen
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = "/music"
             });
 

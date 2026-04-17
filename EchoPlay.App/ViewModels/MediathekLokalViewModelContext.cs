@@ -2,6 +2,7 @@ using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.LocalLibrary.Cover;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EchoPlay.App.ViewModels
@@ -28,5 +29,6 @@ namespace EchoPlay.App.ViewModels
         IPageModeGuard? PageModeGuard = null,
         IFolderRestructureCoordinator? RestructureCoordinator = null,
         IMissingEpisodesCoordinator? MissingEpisodesCoordinator = null,
-        IEpisodeCoverCoordinator? CoverCoordinator = null);
+        IEpisodeCoverCoordinator? CoverCoordinator = null,
+        ILogger? Logger = null);
 }

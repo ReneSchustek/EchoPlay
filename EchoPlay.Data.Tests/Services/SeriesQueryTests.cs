@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services;
 using EchoPlay.Data.Tests.Infrastructure;
 

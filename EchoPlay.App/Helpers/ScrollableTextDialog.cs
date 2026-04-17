@@ -41,30 +41,30 @@ namespace EchoPlay.App.Helpers
         {
             TextBlock textBlock = new()
             {
-                Text                   = content,
-                TextWrapping           = TextWrapping.Wrap,
+                Text = content,
+                TextWrapping = TextWrapping.Wrap,
                 IsTextSelectionEnabled = true
             };
 
             if (useMonospace)
             {
-                textBlock.FontFamily   = new FontFamily("Consolas");
-                textBlock.FontSize     = monospaceFontSize;
+                textBlock.FontFamily = new FontFamily("Consolas");
+                textBlock.FontSize = monospaceFontSize;
                 // Berichte mit fester Spaltenbreite sollen nicht umgebrochen werden
                 textBlock.TextWrapping = TextWrapping.NoWrap;
             }
 
             ContentDialog dialog = new()
             {
-                XamlRoot        = xamlRoot,
-                Title           = title,
-                Content         = new ScrollViewer
+                XamlRoot = xamlRoot,
+                Title = title,
+                Content = new ScrollViewer
                 {
                     MaxHeight = maxHeight,
-                    Content   = textBlock
+                    Content = textBlock
                 },
                 CloseButtonText = closeButtonText,
-                DefaultButton   = defaultButton
+                DefaultButton = defaultButton
             };
 
             if (primaryButtonText is not null)

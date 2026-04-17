@@ -42,10 +42,10 @@ namespace EchoPlay.App.Views
         {
             switch (providerTag)
             {
-                case "Spotify":    RadioSpotify.IsChecked    = true; break;
+                case "Spotify": RadioSpotify.IsChecked = true; break;
                 case "AppleMusic": RadioAppleMusic.IsChecked = true; break;
-                case "Both":       RadioBoth.IsChecked       = true; break;
-                default:           RadioNone.IsChecked       = true; break;
+                case "Both": RadioBoth.IsChecked = true; break;
+                default: RadioNone.IsChecked = true; break;
             }
         }
 

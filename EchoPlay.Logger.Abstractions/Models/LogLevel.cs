@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Logger.Models
+namespace EchoPlay.Logger.Models
 {
     /// <summary>
     /// Definiert die Wichtigkeitsstufen für Log-Einträge.

@@ -38,7 +38,7 @@ namespace EchoPlay.Spotify.Tests.Live
         ///
         /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
         /// </summary>
-        
+
         //[Fact]
         [Fact(Skip = "Manuell ausfuehren – benoetigt Internetzugang und gueltige Spotify-Credentials")]
         public async Task SpotifyApi_IsReachable_AndReturnsArtists()
@@ -58,7 +58,7 @@ namespace EchoPlay.Spotify.Tests.Live
         ///
         /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
         /// </summary>
-        
+
         //[Fact]
         [Fact(Skip = "Manuell ausfuehren – benoetigt Internetzugang und gueltige Spotify-Credentials")]
         public async Task SpotifyApi_GetArtistAlbums_ReturnsAlbums()
@@ -85,7 +85,7 @@ namespace EchoPlay.Spotify.Tests.Live
         ///
         /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
         /// </summary>
-        
+
         //[Fact]
         [Fact(Skip = "Manuell ausfuehren – benoetigt Internetzugang und gueltige Spotify-Credentials")]
         public async Task SpotifyApi_GetAlbumTracks_ReturnsTracks()

@@ -34,7 +34,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             // Der Orchestrator muss Fortschrittsmeldungen für Phase 1 (Vorbereitung)
             // und mindestens Phase 2 (Serien) liefern.
             FakeLocalLibraryScanner scanner = new();
-            ScanOrchestrator orchestrator   = new(scanner);
+            ScanOrchestrator orchestrator = new(scanner);
 
             List<ScanProgress> reported = [];
             IProgress<ScanProgress> progress = new Progress<ScanProgress>(p => reported.Add(p));
@@ -51,7 +51,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Die erste gemeldete Phase soll das Vorbereitungs-Label tragen.
             FakeLocalLibraryScanner scanner = new();
-            ScanOrchestrator orchestrator   = new(scanner);
+            ScanOrchestrator orchestrator = new(scanner);
 
             List<ScanProgress> reported = [];
             IProgress<ScanProgress> progress = new Progress<ScanProgress>(p => reported.Add(p));
@@ -69,7 +69,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Leeres Verzeichnis liefert keine Scan-Ergebnisse – kein Absturz.
             FakeLocalLibraryScanner scanner = new();
-            ScanOrchestrator orchestrator   = new(scanner);
+            ScanOrchestrator orchestrator = new(scanner);
 
             IReadOnlyList<EchoPlay.LocalLibrary.Models.LocalScanResult> results =
                 await orchestrator.ScanAsync(_root, "{number}");
@@ -82,7 +82,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Der Orchestrator muss den Scanner genau einmal aufrufen.
             FakeLocalLibraryScanner scanner = new();
-            ScanOrchestrator orchestrator   = new(scanner);
+            ScanOrchestrator orchestrator = new(scanner);
 
             _ = await orchestrator.ScanAsync(_root, "{number}");
 
@@ -94,7 +94,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Nicht existierender Pfad darf keinen Fehler werfen – leere Liste zurückgeben.
             FakeLocalLibraryScanner scanner = new();
-            ScanOrchestrator orchestrator   = new(scanner);
+            ScanOrchestrator orchestrator = new(scanner);
 
             IReadOnlyList<EchoPlay.LocalLibrary.Models.LocalScanResult> results =
                 await orchestrator.ScanAsync("/non/existent/path/xyz", "{number}");

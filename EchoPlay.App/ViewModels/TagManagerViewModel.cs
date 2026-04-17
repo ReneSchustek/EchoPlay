@@ -64,9 +64,9 @@ namespace EchoPlay.App.ViewModels
             IOnlineAccessGuard onlineAccessGuard)
         {
             FileListVM = new TagFileListViewModel();
-            EditorVM   = new TagEditorFieldsViewModel(() => HasUnsavedChanges = true);
-            CoverVM    = new TagCoverViewModel(() => HasUnsavedChanges = true);
-            RenameVM   = new TagRenameViewModel();
+            EditorVM = new TagEditorFieldsViewModel(() => HasUnsavedChanges = true);
+            CoverVM = new TagCoverViewModel(() => HasUnsavedChanges = true);
+            RenameVM = new TagRenameViewModel();
 
             TagManagerActionsContext actionsContext = new(
                 tagService, lookupCoordinator, fileRenameService,
@@ -75,51 +75,51 @@ namespace EchoPlay.App.ViewModels
             _actions = new TagManagerActions(
                 actionsContext,
                 FileListVM, EditorVM, CoverVM, RenameVM,
-                setIsLoading:         v => IsLoading = v,
-                setIsLookingUp:       v => IsLookingUp = v,
-                setAutoLookupStatus:  v => AutoLookupStatusText = v,
-                setBatchProgress:     v => BatchProgressText = v,
+                setIsLoading: v => IsLoading = v,
+                setIsLookingUp: v => IsLookingUp = v,
+                setAutoLookupStatus: v => AutoLookupStatusText = v,
+                setBatchProgress: v => BatchProgressText = v,
                 setHasUnsavedChanges: v => HasUnsavedChanges = v,
                 refreshCommandStates: RefreshCommandStates);
 
             // Sub-VM-Events an die Page weiterreichen
             _actions.LookupResultsReady += (s, e) => LookupResultsReady?.Invoke(this, e);
-            _actions.AutoLookupApplied  += (s, e) => AutoLookupApplied?.Invoke(this, e);
+            _actions.AutoLookupApplied += (s, e) => AutoLookupApplied?.Invoke(this, e);
             _actions.RenamePreviewReady += (s, e) => RenamePreviewReady?.Invoke(this, e);
 
             // PropertyChanged durchreichen, damit die XAML-Bindings auf den Top-VM-Pass-Through-Properties
             // weiterhin aktualisiert werden, obwohl der Wert in einem Sub-VM liegt.
             FileListVM.PropertyChanged += OnSubVmPropertyChanged;
-            EditorVM.PropertyChanged   += OnSubVmPropertyChanged;
-            CoverVM.PropertyChanged    += OnSubVmPropertyChanged;
-            RenameVM.PropertyChanged   += OnSubVmPropertyChanged;
+            EditorVM.PropertyChanged += OnSubVmPropertyChanged;
+            CoverVM.PropertyChanged += OnSubVmPropertyChanged;
+            RenameVM.PropertyChanged += OnSubVmPropertyChanged;
 
             // Auswahländerung in der Dateiliste → Tag-Felder neu laden
             FileListVM.SelectionChanged += OnFileSelectionChanged;
 
-            _saveCommand            = new RelayCommand(() => _ = _actions.SaveAsync());
-            _saveAllCommand         = new RelayCommand(() => _ = _actions.SaveAllAsync());
-            _removeAllTagsCommand   = new RelayCommand(() => _ = _actions.RemoveAllTagsAsync());
-            _lookupOnlineCommand    = new RelayCommand(() => _ = _actions.LookupOnlineAsync());
-            _autoLookupCommand      = new RelayCommand(() => _ = _actions.AutoLookupAsync());
-            _applyToAllCommand      = new RelayCommand(() => _ = _actions.ApplyToAllAsync());
-            _removeCoverCommand     = new RelayCommand(() => _ = _actions.RemoveCoverAsync());
-            _loadCoverCommand       = new RelayCommand(() => LoadCoverRequested?.Invoke(this, EventArgs.Empty));
+            _saveCommand = new RelayCommand(() => _ = _actions.SaveAsync());
+            _saveAllCommand = new RelayCommand(() => _ = _actions.SaveAllAsync());
+            _removeAllTagsCommand = new RelayCommand(() => _ = _actions.RemoveAllTagsAsync());
+            _lookupOnlineCommand = new RelayCommand(() => _ = _actions.LookupOnlineAsync());
+            _autoLookupCommand = new RelayCommand(() => _ = _actions.AutoLookupAsync());
+            _applyToAllCommand = new RelayCommand(() => _ = _actions.ApplyToAllAsync());
+            _removeCoverCommand = new RelayCommand(() => _ = _actions.RemoveCoverAsync());
+            _loadCoverCommand = new RelayCommand(() => LoadCoverRequested?.Invoke(this, EventArgs.Empty));
             _applyCoverToAllCommand = new RelayCommand(() => _ = _actions.ApplyCoverToAllAsync());
-            _previewRenameCommand   = new RelayCommand(() => _ = _actions.PreviewRenameAsync());
-            _executeRenameCommand   = new RelayCommand(() => _ = _actions.ExecuteRenameAsync());
+            _previewRenameCommand = new RelayCommand(() => _ = _actions.PreviewRenameAsync());
+            _executeRenameCommand = new RelayCommand(() => _ = _actions.ExecuteRenameAsync());
 
-            SaveCommand            = _saveCommand;
-            SaveAllCommand         = _saveAllCommand;
-            RemoveAllTagsCommand   = _removeAllTagsCommand;
-            LookupOnlineCommand    = _lookupOnlineCommand;
-            AutoLookupCommand      = _autoLookupCommand;
-            ApplyToAllCommand      = _applyToAllCommand;
-            RemoveCoverCommand     = _removeCoverCommand;
-            LoadCoverCommand       = _loadCoverCommand;
+            SaveCommand = _saveCommand;
+            SaveAllCommand = _saveAllCommand;
+            RemoveAllTagsCommand = _removeAllTagsCommand;
+            LookupOnlineCommand = _lookupOnlineCommand;
+            AutoLookupCommand = _autoLookupCommand;
+            ApplyToAllCommand = _applyToAllCommand;
+            RemoveCoverCommand = _removeCoverCommand;
+            LoadCoverCommand = _loadCoverCommand;
             ApplyCoverToAllCommand = _applyCoverToAllCommand;
-            PreviewRenameCommand   = _previewRenameCommand;
-            ExecuteRenameCommand   = _executeRenameCommand;
+            PreviewRenameCommand = _previewRenameCommand;
+            ExecuteRenameCommand = _executeRenameCommand;
 
             RefreshCommandStates();
         }
@@ -424,7 +424,7 @@ namespace EchoPlay.App.ViewModels
         private void RefreshCommandStates()
         {
             bool hasSelection = FileListVM.HasSelectedFile;
-            bool hasFiles     = FileListVM.HasFiles;
+            bool hasFiles = FileListVM.HasFiles;
 
             _saveCommand.SetEnabled(HasUnsavedChanges && hasSelection);
             _saveAllCommand.SetEnabled(hasFiles && HasAnyModifiedFile());

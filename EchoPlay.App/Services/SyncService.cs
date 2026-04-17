@@ -50,10 +50,10 @@ namespace EchoPlay.App.Services
             CoverService coverService)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
-            _scopeFactory     = scopeFactory;
-            _logger           = loggerFactory.CreateLogger("SyncService");
+            _scopeFactory = scopeFactory;
+            _logger = loggerFactory.CreateLogger("SyncService");
             _scanEventService = scanEventService;
-            _coverService     = coverService;
+            _coverService = coverService;
         }
 
         /// <summary>
@@ -80,23 +80,23 @@ namespace EchoPlay.App.Services
         /// <param name="cancellationToken">Optionaler Token zum Abbruch eines laufenden Scans.</param>
         /// <returns>Zusammenfassung des Sync-Ergebnisses.</returns>
         public async Task<SyncResult> SyncAsync(
-            IProgress<ScanProgress>? progress    = null,
-            bool forceImportAll                  = false,
-            IProgress<Series>? onSeriesSynced    = null,
-            CancellationToken cancellationToken  = default)
+            IProgress<ScanProgress>? progress = null,
+            bool forceImportAll = false,
+            IProgress<Series>? onSeriesSynced = null,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            ISeriesDataService seriesService        = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-            IEpisodeDataService episodeService      = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            ILocalTrackDataService trackService     = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-            ILocalLibraryScanner scanner            = scope.ServiceProvider.GetRequiredService<ILocalLibraryScanner>();
-            IScanOrchestrator orchestrator          = scope.ServiceProvider.GetRequiredService<IScanOrchestrator>();
-            ITrackMatcher trackMatcher              = scope.ServiceProvider.GetRequiredService<ITrackMatcher>();
-            IMp3MetadataReader metadataReader       = scope.ServiceProvider.GetRequiredService<IMp3MetadataReader>();
-            ILocalCoverService coverService         = scope.ServiceProvider.GetRequiredService<ILocalCoverService>();
+            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+            ILocalLibraryScanner scanner = scope.ServiceProvider.GetRequiredService<ILocalLibraryScanner>();
+            IScanOrchestrator orchestrator = scope.ServiceProvider.GetRequiredService<IScanOrchestrator>();
+            ITrackMatcher trackMatcher = scope.ServiceProvider.GetRequiredService<ITrackMatcher>();
+            IMp3MetadataReader metadataReader = scope.ServiceProvider.GetRequiredService<IMp3MetadataReader>();
+            ILocalCoverService coverService = scope.ServiceProvider.GetRequiredService<ILocalCoverService>();
 
             AppSettings settings = await settingsService.GetAsync();
 
@@ -111,199 +111,199 @@ namespace EchoPlay.App.Services
             _scanEventService.BeginScan();
             try
             {
-            IReadOnlyList<Series> dbSeries = await seriesService.GetAllAsync();
+                IReadOnlyList<Series> dbSeries = await seriesService.GetAllAsync();
 
-            // Alle bereits genutzten Ordnerpfade vorberechnen – verhindert Duplikate beim
-            // wiederholten Scan.
-            HashSet<string> usedFolderPaths = new(
-                dbSeries
-                    .Where(s => s.LocalFolderPath is not null)
-                    .Select(s => s.LocalFolderPath!),
-                StringComparer.OrdinalIgnoreCase);
+                // Alle bereits genutzten Ordnerpfade vorberechnen – verhindert Duplikate beim
+                // wiederholten Scan.
+                HashSet<string> usedFolderPaths = new(
+                    dbSeries
+                        .Where(s => s.LocalFolderPath is not null)
+                        .Select(s => s.LocalFolderPath!),
+                    StringComparer.OrdinalIgnoreCase);
 
-            // ── Phase 1: Sofortige Erkennung bekannter Serien ────────────────────
-            // Directory.GetDirectories läuft in Millisekunden – unabhängig von der
-            // Bibliotheksgröße. Serien, die bereits in der DB bekannt sind, werden sofort
-            // angezeigt. Der Nutzer sieht den Großteil der Bibliothek bevor der eigentliche
-            // Scan (Episoden, ID3-Tags) auch nur gestartet hat.
-            progress?.Report(new ScanProgress { StatusText = "Serienordner werden erkannt …" });
+                // ── Phase 1: Sofortige Erkennung bekannter Serien ────────────────────
+                // Directory.GetDirectories läuft in Millisekunden – unabhängig von der
+                // Bibliotheksgröße. Serien, die bereits in der DB bekannt sind, werden sofort
+                // angezeigt. Der Nutzer sieht den Großteil der Bibliothek bevor der eigentliche
+                // Scan (Episoden, ID3-Tags) auch nur gestartet hat.
+                progress?.Report(new ScanProgress { StatusText = "Serienordner werden erkannt …" });
 
-            IReadOnlyList<string> seriesFolders = scanner.GetSeriesFolders(settings.LocalLibraryRootPath);
+                IReadOnlyList<string> seriesFolders = scanner.GetSeriesFolders(settings.LocalLibraryRootPath);
 
-            foreach (string folder in seriesFolders)
-            {
-                Series? known = FindMatchingSeries(dbSeries, Path.GetFileName(folder));
-
-                if (known is not null)
+                foreach (string folder in seriesFolders)
                 {
-                    onSeriesSynced?.Report(known);
-                    _scanEventService.RaiseSeriesSynced(known);
-                }
-            }
+                    Series? known = FindMatchingSeries(dbSeries, Path.GetFileName(folder));
 
-            // ── Phase 2–4: Orchestrierter Scan mit Phasen-Feedback ──────────────
-            // Der ScanOrchestrator zählt zuerst alle Audiodateien (Phase 1 intern),
-            // meldet dann Serien/Folgen/Tracks-Phasen mit deterministischem Fortschritt.
-            IReadOnlyList<LocalScanResult> scanResults = await orchestrator.ScanAsync(
-                settings.LocalLibraryRootPath,
-                settings.EpisodeFolderPattern,
-                progress,
-                cancellationToken);
-
-            int seriesMatched   = 0;
-            int seriesUnmatched = 0;
-            int episodesUpdated = 0;
-            int tracksCreated   = 0;
-            int processedSeries = 0;
-
-            foreach (LocalScanResult scanResult in scanResults)
-            {
-                processedSeries++;
-
-                // Fortschrittsbalken für die DB-Sync-Phase: deterministisch über Serienanzahl
-                progress?.Report(new ScanProgress
-                {
-                    StatusText      = $"Synchronisiere \"{scanResult.SeriesName}\" …",
-                    DetailText      = $"{processedSeries} / {scanResults.Count} Serien",
-                    ProcessedSeries = processedSeries,
-                    TotalSeries     = scanResults.Count
-                });
-
-                // Fuzzy-Match: Seriennamen normalisieren, um Schreibvarianten zu ignorieren
-                Series? matchedSeries = FindMatchingSeries(dbSeries, scanResult.SeriesName);
-
-                if (matchedSeries is null)
-                {
-                    // forceImportAll überschreibt die AutoImportAfterScan-Einstellung –
-                    // wird von der Neu-Initialisierung genutzt, damit nach einem vollständigen
-                    // Reset alle Serienordner garantiert neu angelegt werden.
-                    if ((settings.AutoImportAfterScan || forceImportAll) && !usedFolderPaths.Contains(scanResult.SeriesFolderPath))
+                    if (known is not null)
                     {
-                        // Neue lokale Serie anlegen – Import gilt gleichzeitig als Abonnement,
-                        // damit die Serie im Dashboard erscheint.
-                        Series importedSeries = new()
+                        onSeriesSynced?.Report(known);
+                        _scanEventService.RaiseSeriesSynced(known);
+                    }
+                }
+
+                // ── Phase 2–4: Orchestrierter Scan mit Phasen-Feedback ──────────────
+                // Der ScanOrchestrator zählt zuerst alle Audiodateien (Phase 1 intern),
+                // meldet dann Serien/Folgen/Tracks-Phasen mit deterministischem Fortschritt.
+                IReadOnlyList<LocalScanResult> scanResults = await orchestrator.ScanAsync(
+                    settings.LocalLibraryRootPath,
+                    settings.EpisodeFolderPattern,
+                    progress,
+                    cancellationToken);
+
+                int seriesMatched = 0;
+                int seriesUnmatched = 0;
+                int episodesUpdated = 0;
+                int tracksCreated = 0;
+                int processedSeries = 0;
+
+                foreach (LocalScanResult scanResult in scanResults)
+                {
+                    processedSeries++;
+
+                    // Fortschrittsbalken für die DB-Sync-Phase: deterministisch über Serienanzahl
+                    progress?.Report(new ScanProgress
+                    {
+                        StatusText = $"Synchronisiere \"{scanResult.SeriesName}\" …",
+                        DetailText = $"{processedSeries} / {scanResults.Count} Serien",
+                        ProcessedSeries = processedSeries,
+                        TotalSeries = scanResults.Count
+                    });
+
+                    // Fuzzy-Match: Seriennamen normalisieren, um Schreibvarianten zu ignorieren
+                    Series? matchedSeries = FindMatchingSeries(dbSeries, scanResult.SeriesName);
+
+                    if (matchedSeries is null)
+                    {
+                        // forceImportAll überschreibt die AutoImportAfterScan-Einstellung –
+                        // wird von der Neu-Initialisierung genutzt, damit nach einem vollständigen
+                        // Reset alle Serienordner garantiert neu angelegt werden.
+                        if ((settings.AutoImportAfterScan || forceImportAll) && !usedFolderPaths.Contains(scanResult.SeriesFolderPath))
                         {
-                            Title           = scanResult.SeriesName,
-                            LocalFolderPath = scanResult.SeriesFolderPath,
-                            IsSubscribed    = true
-                        };
+                            // Neue lokale Serie anlegen – Import gilt gleichzeitig als Abonnement,
+                            // damit die Serie im Dashboard erscheint.
+                            Series importedSeries = new()
+                            {
+                                Title = scanResult.SeriesName,
+                                LocalFolderPath = scanResult.SeriesFolderPath,
+                                IsSubscribed = true
+                            };
 
-                        await seriesService.AddAsync(importedSeries);
-                        _ = usedFolderPaths.Add(scanResult.SeriesFolderPath);
+                            await seriesService.AddAsync(importedSeries);
+                            _ = usedFolderPaths.Add(scanResult.SeriesFolderPath);
 
-                        // Episoden für die neue lokale Serie aus den Scan-Ergebnissen anlegen.
-                        // Ordnet jeder Folge eine Nummer zu: aus dem Muster oder sequenziell.
-                        (int createdEpisodes, int createdTracks) = await ImportEpisodesAsync(
-                            importedSeries.Id,
-                            scanResult.Episodes,
-                            episodeService,
+                            // Episoden für die neue lokale Serie aus den Scan-Ergebnissen anlegen.
+                            // Ordnet jeder Folge eine Nummer zu: aus dem Muster oder sequenziell.
+                            (int createdEpisodes, int createdTracks) = await ImportEpisodesAsync(
+                                importedSeries.Id,
+                                scanResult.Episodes,
+                                episodeService,
+                                trackService,
+                                metadataReader);
+
+                            episodesUpdated += createdEpisodes;
+                            tracksCreated += createdTracks;
+                            seriesMatched++;
+
+                            // Cover-Persistenz: Cover aus dem Serienordner in CoverImages speichern
+                            byte[]? coverData = await ResolveCoverSafelyAsync(
+                                coverService, scanResult.SeriesFolderPath, coverImageUrl: null);
+
+                            if (coverData is not null && !await _coverService.HasSeriesCoverAsync(importedSeries.Id))
+                            {
+                                await _coverService.SetSeriesCoverAsync(importedSeries.Id, coverData);
+                            }
+
+                            // Neue Serie erst nach DB-Anlage melden – in Phase 1 war sie unbekannt
+                            onSeriesSynced?.Report(importedSeries);
+                            _scanEventService.RaiseSeriesSynced(importedSeries);
+
+                            _logger.Info($"Auto-Import: Neue Serie \"{scanResult.SeriesName}\" mit {createdEpisodes} Episoden angelegt");
+                        }
+                        else
+                        {
+                            seriesUnmatched++;
+                        }
+
+                        continue;
+                    }
+
+                    // Vorhandene Serie: Ordnerpfad aktualisieren und Episoden abgleichen
+                    seriesMatched++;
+                    matchedSeries.LocalFolderPath = scanResult.SeriesFolderPath;
+
+                    // Cover-Persistenz: nur auflösen wenn noch kein Cover in der CoverImages-Tabelle vorhanden ist.
+                    // Verhindert unnötige Dateisystem- und Netzwerkzugriffe bei wiederholten Scans.
+                    if (!await _coverService.HasSeriesCoverAsync(matchedSeries.Id))
+                    {
+                        byte[]? coverData = await ResolveCoverSafelyAsync(
+                            coverService, scanResult.SeriesFolderPath, matchedSeries.CoverImageUrl);
+
+                        if (coverData is not null)
+                        {
+                            await _coverService.SetSeriesCoverAsync(matchedSeries.Id, coverData);
+                        }
+                    }
+
+                    await seriesService.UpdateAsync(matchedSeries);
+
+                    // Bekannte Serie nach Pfad-Aktualisierung melden – Phase-1-Meldung reichte noch nicht,
+                    // weil der Pfad dort noch unbekannt war. Jetzt ist der Ordnerpfad gesetzt.
+                    _scanEventService.RaiseSeriesSynced(matchedSeries);
+
+                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(matchedSeries.Id);
+
+                    foreach (LocalEpisodeScan episodeScan in scanResult.Episodes)
+                    {
+                        // Episoden ohne Nummer können nicht mit DB-Episoden abgeglichen werden
+                        if (episodeScan.ParsedNumber is null)
+                        {
+                            continue;
+                        }
+
+                        // Episode über geparste Nummer suchen
+                        Episode? episode = FindEpisodeByNumber(episodes, episodeScan.ParsedNumber.Value);
+
+                        if (episode is null)
+                        {
+                            continue;
+                        }
+
+                        int onlineTrackCount = episode.LocalTrackCount ?? 0;
+                        TrackMatchKind matchKind = trackMatcher.Classify(episodeScan.TrackCount, onlineTrackCount);
+
+                        episode.LocalFolderPath = episodeScan.FolderPath;
+                        episode.LocalTrackCount = episodeScan.TrackCount;
+                        episode.TrackMatchKind = matchKind;
+
+                        await episodeService.UpdateAsync(episode);
+                        episodesUpdated++;
+
+                        int created = await CreateLocalTracksAsync(
+                            episode.Id,
+                            episodeScan.TrackPaths,
                             trackService,
                             metadataReader);
 
-                        episodesUpdated += createdEpisodes;
-                        tracksCreated   += createdTracks;
-                        seriesMatched++;
-
-                        // Cover-Persistenz: Cover aus dem Serienordner in CoverImages speichern
-                        byte[]? coverData = await ResolveCoverSafelyAsync(
-                            coverService, scanResult.SeriesFolderPath, coverImageUrl: null);
-
-                        if (coverData is not null && !await _coverService.HasSeriesCoverAsync(importedSeries.Id))
-                        {
-                            await _coverService.SetSeriesCoverAsync(importedSeries.Id, coverData);
-                        }
-
-                        // Neue Serie erst nach DB-Anlage melden – in Phase 1 war sie unbekannt
-                        onSeriesSynced?.Report(importedSeries);
-                        _scanEventService.RaiseSeriesSynced(importedSeries);
-
-                        _logger.Info($"Auto-Import: Neue Serie \"{scanResult.SeriesName}\" mit {createdEpisodes} Episoden angelegt");
+                        tracksCreated += created;
                     }
-                    else
-                    {
-                        seriesUnmatched++;
-                    }
-
-                    continue;
                 }
 
-                // Vorhandene Serie: Ordnerpfad aktualisieren und Episoden abgleichen
-                seriesMatched++;
-                matchedSeries.LocalFolderPath = scanResult.SeriesFolderPath;
+                // Cover-Abgleich: Für neue lokale Episoden prüfen ob ein Cover bereits
+                // in der DB existiert (z.B. von einer Online-Version). Wenn ja, auf die
+                // neue lokale Episode kopieren und als cover.jpg speichern.
+                await ApplyDbCoversToLocalEpisodesAsync(scope.ServiceProvider);
 
-                // Cover-Persistenz: nur auflösen wenn noch kein Cover in der CoverImages-Tabelle vorhanden ist.
-                // Verhindert unnötige Dateisystem- und Netzwerkzugriffe bei wiederholten Scans.
-                if (!await _coverService.HasSeriesCoverAsync(matchedSeries.Id))
+                SyncResult result = new()
                 {
-                    byte[]? coverData = await ResolveCoverSafelyAsync(
-                        coverService, scanResult.SeriesFolderPath, matchedSeries.CoverImageUrl);
+                    SeriesMatched = seriesMatched,
+                    SeriesUnmatched = seriesUnmatched,
+                    EpisodesUpdated = episodesUpdated,
+                    TracksCreated = tracksCreated
+                };
 
-                    if (coverData is not null)
-                    {
-                        await _coverService.SetSeriesCoverAsync(matchedSeries.Id, coverData);
-                    }
-                }
+                _logger.Info($"Sync abgeschlossen: {result}");
 
-                await seriesService.UpdateAsync(matchedSeries);
-
-                // Bekannte Serie nach Pfad-Aktualisierung melden – Phase-1-Meldung reichte noch nicht,
-                // weil der Pfad dort noch unbekannt war. Jetzt ist der Ordnerpfad gesetzt.
-                _scanEventService.RaiseSeriesSynced(matchedSeries);
-
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(matchedSeries.Id);
-
-                foreach (LocalEpisodeScan episodeScan in scanResult.Episodes)
-                {
-                    // Episoden ohne Nummer können nicht mit DB-Episoden abgeglichen werden
-                    if (episodeScan.ParsedNumber is null)
-                    {
-                        continue;
-                    }
-
-                    // Episode über geparste Nummer suchen
-                    Episode? episode = FindEpisodeByNumber(episodes, episodeScan.ParsedNumber.Value);
-
-                    if (episode is null)
-                    {
-                        continue;
-                    }
-
-                    int onlineTrackCount = episode.LocalTrackCount ?? 0;
-                    TrackMatchKind matchKind = trackMatcher.Classify(episodeScan.TrackCount, onlineTrackCount);
-
-                    episode.LocalFolderPath = episodeScan.FolderPath;
-                    episode.LocalTrackCount = episodeScan.TrackCount;
-                    episode.TrackMatchKind  = matchKind;
-
-                    await episodeService.UpdateAsync(episode);
-                    episodesUpdated++;
-
-                    int created = await CreateLocalTracksAsync(
-                        episode.Id,
-                        episodeScan.TrackPaths,
-                        trackService,
-                        metadataReader);
-
-                    tracksCreated += created;
-                }
-            }
-
-            // Cover-Abgleich: Für neue lokale Episoden prüfen ob ein Cover bereits
-            // in der DB existiert (z.B. von einer Online-Version). Wenn ja, auf die
-            // neue lokale Episode kopieren und als cover.jpg speichern.
-            await ApplyDbCoversToLocalEpisodesAsync(scope.ServiceProvider);
-
-            SyncResult result = new()
-            {
-                SeriesMatched    = seriesMatched,
-                SeriesUnmatched  = seriesUnmatched,
-                EpisodesUpdated  = episodesUpdated,
-                TracksCreated    = tracksCreated
-            };
-
-            _logger.Info($"Sync abgeschlossen: {result}");
-
-            return result;
+                return result;
             }
             finally
             {
@@ -329,7 +329,7 @@ namespace EchoPlay.App.Services
             IMp3MetadataReader metadataReader)
         {
             int episodeCount = 0;
-            int trackCount   = 0;
+            int trackCount = 0;
 
             // Sequenzielle Fallback-Nummerierung für Episoden ohne Muster-Treffer
             int sequentialIndex = 0;
@@ -341,9 +341,9 @@ namespace EchoPlay.App.Services
 
                 Episode newEpisode = new()
                 {
-                    SeriesId        = seriesId,
-                    EpisodeNumber   = episodeNumber,
-                    Title           = episodeScan.ParsedTitle ?? $"Folge {episodeNumber}",
+                    SeriesId = seriesId,
+                    EpisodeNumber = episodeNumber,
+                    Title = episodeScan.ParsedTitle ?? $"Folge {episodeNumber}",
                     LocalFolderPath = episodeScan.FolderPath,
                     LocalTrackCount = episodeScan.TrackCount
                 };
@@ -390,9 +390,9 @@ namespace EchoPlay.App.Services
 
                 for (int i = 0; i < trackPaths.Count; i++)
                 {
-                    string path       = trackPaths[i];
+                    string path = trackPaths[i];
                     TimeSpan duration = TimeSpan.Zero;
-                    int trackNumber   = i + 1;
+                    int trackNumber = i + 1;
 
                     try
                     {
@@ -412,10 +412,10 @@ namespace EchoPlay.App.Services
 
                     result.Add(new LocalTrack
                     {
-                        EpisodeId   = episodeId,
-                        FilePath    = path,
+                        EpisodeId = episodeId,
+                        FilePath = path,
                         TrackNumber = trackNumber,
-                        Duration    = duration
+                        Duration = duration
                     });
                 }
 

@@ -1,4 +1,4 @@
-﻿using EchoPlay.Spotify.Dtos;
+using EchoPlay.Spotify.Dtos;
 using EchoPlay.Spotify.Tests.Fakes;
 using EchoPlay.Spotify.Tests.TestData;
 using Xunit;

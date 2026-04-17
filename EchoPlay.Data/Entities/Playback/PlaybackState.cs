@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Internal;
 

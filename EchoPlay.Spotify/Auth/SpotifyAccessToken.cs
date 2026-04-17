@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Spotify.Auth
+namespace EchoPlay.Spotify.Auth
 {
     /// <summary>
     /// Repräsentiert ein Zugriffstoken der Spotify-Web-API.

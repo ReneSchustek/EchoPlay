@@ -32,9 +32,9 @@ namespace EchoPlay.Logger.Core
         /// <param name="options">Die Logger-Optionen – werden nach DB-Init mit gespeichertem RetentionDays aktualisiert.</param>
         public LoggerManager(LoggerFactory loggerFactory, LogCleanupService cleanupService, LoggerOptions options)
         {
-            Factory         = loggerFactory;
+            Factory = loggerFactory;
             _cleanupService = cleanupService;
-            _options        = options;
+            _options = options;
         }
 
         /// <summary>

@@ -43,12 +43,12 @@ namespace EchoPlay.App.Tests.Fakes
         public RestructurePreview Analyze(string seriesFolderPath, string folderPattern)
         {
             LastAnalyzedFolderPath = seriesFolderPath;
-            LastFolderPattern      = folderPattern;
+            LastFolderPattern = folderPattern;
 
             return _previewToReturn ?? new RestructurePreview
             {
                 SeriesFolderPath = seriesFolderPath,
-                Actions          = new List<RestructureAction>()
+                Actions = new List<RestructureAction>()
             };
         }
 

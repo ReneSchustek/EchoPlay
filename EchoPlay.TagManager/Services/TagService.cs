@@ -94,9 +94,9 @@ namespace EchoPlay.TagManager.Services
                     {
                         TagLib.Picture picture = new()
                         {
-                            Data     = new TagLib.ByteVector(imageData),
+                            Data = new TagLib.ByteVector(imageData),
                             MimeType = mimeType,
-                            Type     = TagLib.PictureType.FrontCover
+                            Type = TagLib.PictureType.FrontCover
                         };
                         file.Tag.Pictures = [picture];
                         _logger.Info($"Cover geschrieben ({mimeType}, {imageData.Length} Bytes): {filePath}");
@@ -206,8 +206,8 @@ namespace EchoPlay.TagManager.Services
         {
             // Cover: nur das erste Bild (FrontCover) übernehmen; bei mehreren Bildern
             // ist das erste üblicherweise das Albumcover.
-            byte[]? coverData   = null;
-            string? coverMime   = null;
+            byte[]? coverData = null;
+            string? coverMime = null;
 
             if (source.Pictures.Length > 0)
             {
@@ -222,21 +222,21 @@ namespace EchoPlay.TagManager.Services
 
             return new AudioTag
             {
-                Title          = NullIfEmpty(source.Title),
-                Album          = NullIfEmpty(source.Album),
+                Title = NullIfEmpty(source.Title),
+                Album = NullIfEmpty(source.Album),
                 // TagLib liefert Artist und AlbumArtist als Arrays (mehrere Künstler möglich).
                 // Wir fassen sie mit "; " zusammen, wie es in der Praxis üblich ist.
-                Artist         = NullIfEmpty(string.Join("; ", source.Performers)),
-                AlbumArtist    = NullIfEmpty(string.Join("; ", source.AlbumArtists)),
-                Comment        = NullIfEmpty(source.Comment),
-                Genre          = NullIfEmpty(string.Join("; ", source.Genres)),
-                Year           = source.Year == 0 ? null : source.Year,
-                TrackNumber    = source.Track == 0 ? null : source.Track,
-                TrackCount     = source.TrackCount == 0 ? null : source.TrackCount,
-                DiscNumber     = source.Disc == 0 ? null : source.Disc,
-                DiscCount      = source.DiscCount == 0 ? null : source.DiscCount,
+                Artist = NullIfEmpty(string.Join("; ", source.Performers)),
+                AlbumArtist = NullIfEmpty(string.Join("; ", source.AlbumArtists)),
+                Comment = NullIfEmpty(source.Comment),
+                Genre = NullIfEmpty(string.Join("; ", source.Genres)),
+                Year = source.Year == 0 ? null : source.Year,
+                TrackNumber = source.Track == 0 ? null : source.Track,
+                TrackCount = source.TrackCount == 0 ? null : source.TrackCount,
+                DiscNumber = source.Disc == 0 ? null : source.Disc,
+                DiscCount = source.DiscCount == 0 ? null : source.DiscCount,
                 CoverImageData = coverData,
-                CoverMimeType  = coverMime
+                CoverMimeType = coverMime
             };
         }
 
@@ -307,9 +307,9 @@ namespace EchoPlay.TagManager.Services
             {
                 TagLib.Picture picture = new()
                 {
-                    Data     = new TagLib.ByteVector(source.CoverImageData),
+                    Data = new TagLib.ByteVector(source.CoverImageData),
                     MimeType = source.CoverMimeType ?? "image/jpeg",
-                    Type     = TagLib.PictureType.FrontCover
+                    Type = TagLib.PictureType.FrontCover
                 };
                 target.Pictures = [picture];
             }

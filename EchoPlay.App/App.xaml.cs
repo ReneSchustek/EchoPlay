@@ -1,4 +1,4 @@
-﻿using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using EchoPlay.AppleMusic.Abstractions;
@@ -198,8 +198,8 @@ namespace EchoPlay.App
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Letzte Fehlerbehandlungsstufe beim App-Start: Logger-, Dialog- und Splash-Close-Fehler duerfen den kontrollierten Shutdown (Exit) nicht verhindern, unabhaengig vom konkreten Exception-Typ.")]
         private async Task HandleStartupFailureAsync(SplashWindow? splash, Exception exception)
         {
-            // Notfall-Logging in Trace (Logger eventuell noch nicht initialisiert)
-            System.Diagnostics.Trace.WriteLine($"[FATAL OnLaunched] {exception}");
+            // Notfall-Logging via Trace-Wrapper (Logger eventuell noch nicht initialisiert)
+            EchoPlay.Logger.Core.EmergencyTrace.Log($"[FATAL OnLaunched] {exception}");
             try { _appLogger?.Fatal($"OnLaunched fehlgeschlagen: {exception.Message}", exception); }
             catch { /* Logger-Fehler dürfen den Fehlerdialog nicht verhindern */ }
 
@@ -301,9 +301,9 @@ namespace EchoPlay.App
             }
             else
             {
-                // Fallback falls Logger noch nicht initialisiert – Trace statt Debug,
-                // da Debug.WriteLine im Release-Build entfernt wird
-                System.Diagnostics.Trace.WriteLine($"[FATAL] Nicht behandelte Exception: {e.Exception}");
+                // Fallback falls Logger noch nicht initialisiert – EmergencyTrace kapselt
+                // bewusst Trace.WriteLine, damit die Ausgabe auch im Release-Build erhalten bleibt.
+                EchoPlay.Logger.Core.EmergencyTrace.Log($"[FATAL] Nicht behandelte Exception: {e.Exception}");
             }
 
             // Nur Dialog anzeigen wenn MainWindow bereits geöffnet ist.
@@ -566,10 +566,10 @@ namespace EchoPlay.App
             _ = builder.Services.AddSingleton<IHostRateLimiter>(_ =>
                 new SemaphoreHostRateLimiter(new Dictionary<string, TimeSpan>
                 {
-                    ["musicbrainz.org"]     = TimeSpan.FromSeconds(1),
+                    ["musicbrainz.org"] = TimeSpan.FromSeconds(1),
                     ["coverartarchive.org"] = TimeSpan.FromSeconds(1),
-                    ["itunes.apple.com"]    = TimeSpan.FromMilliseconds(1500),
-                    ["api.discogs.com"]     = TimeSpan.FromSeconds(1),
+                    ["itunes.apple.com"] = TimeSpan.FromMilliseconds(1500),
+                    ["api.discogs.com"] = TimeSpan.FromSeconds(1),
                 }));
 
             // HTTP-Handler, der den IHostRateLimiter in die HttpClient-Pipeline einhängt.
@@ -709,7 +709,8 @@ namespace EchoPlay.App
                     provider.GetRequiredService<IPageModeGuard>(),
                     provider.GetRequiredService<IFolderRestructureCoordinator>(),
                     provider.GetRequiredService<IMissingEpisodesCoordinator>(),
-                    provider.GetRequiredService<IEpisodeCoverCoordinator>())));
+                    provider.GetRequiredService<IEpisodeCoverCoordinator>(),
+                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILogger>())));
             _ = builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),

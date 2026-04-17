@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Context;
+using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
 
 namespace EchoPlay.Data.Context

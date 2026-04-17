@@ -47,10 +47,10 @@ namespace EchoPlay.App.ViewModels
                 _dispatcherQueue = null;
             }
 
-            PlayCommand     = new RelayCommand(() => _playerService.Resume());
-            PauseCommand    = new RelayCommand(() => _playerService.Pause());
-            StopCommand     = new RelayCommand(() => _playerService.Stop());
-            NextCommand     = new RelayCommand(() => _playerService.SkipToNext());
+            PlayCommand = new RelayCommand(() => _playerService.Resume());
+            PauseCommand = new RelayCommand(() => _playerService.Pause());
+            StopCommand = new RelayCommand(() => _playerService.Stop());
+            NextCommand = new RelayCommand(() => _playerService.SkipToNext());
             PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
 
             _playerService.StateChanged += OnStateChanged;
@@ -214,12 +214,12 @@ namespace EchoPlay.App.ViewModels
         private void UpdateFromState()
         {
             // Fehlermeldung bei normaler Zustandsänderung zurücksetzen
-            ErrorMessage    = string.Empty;
-            TrackTitle      = _playerService.CurrentTrackTitle ?? string.Empty;
+            ErrorMessage = string.Empty;
+            TrackTitle = _playerService.CurrentTrackTitle ?? string.Empty;
             PositionSeconds = _playerService.Position.TotalSeconds;
             DurationSeconds = _playerService.Duration.TotalSeconds;
-            IsPlaying       = _playerService.IsPlaying;
-            SleepTimerText  = FormatSleepTimer(_playerService.SleepTimerRemaining);
+            IsPlaying = _playerService.IsPlaying;
+            SleepTimerText = FormatSleepTimer(_playerService.SleepTimerRemaining);
 
             // Zeitanzeige: gespielt und verbleibend
             TimeSpan position = _playerService.Position;

@@ -24,7 +24,7 @@ namespace EchoPlay.App.Tests.Fakes
             TimeSpan defaultDuration = default,
             int defaultTrackNumber = 0)
         {
-            _metadataByPath  = metadataByPath ?? [];
+            _metadataByPath = metadataByPath ?? [];
             _defaultMetadata = (defaultDuration, defaultTrackNumber);
         }
 

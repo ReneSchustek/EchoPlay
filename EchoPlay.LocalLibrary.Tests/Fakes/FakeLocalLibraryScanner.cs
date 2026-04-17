@@ -26,10 +26,10 @@ namespace EchoPlay.LocalLibrary.Tests.Fakes
         /// Erstellt den Fake mit festen Ergebnissen.
         /// </summary>
         public FakeLocalLibraryScanner(
-            IReadOnlyList<LocalScanResult>? results       = null,
-            IReadOnlyList<string>? seriesFolders          = null)
+            IReadOnlyList<LocalScanResult>? results = null,
+            IReadOnlyList<string>? seriesFolders = null)
         {
-            _results       = results       ?? [];
+            _results = results ?? [];
             _seriesFolders = seriesFolders ?? [];
         }
 
@@ -40,7 +40,7 @@ namespace EchoPlay.LocalLibrary.Tests.Fakes
         public Task<IReadOnlyList<LocalScanResult>> ScanSeriesAsync(
             string rootPath,
             string folderPattern,
-            IProgress<ScanProgress>? progress          = null,
+            IProgress<ScanProgress>? progress = null,
             IProgress<LocalScanResult>? onSeriesScanned = null,
             CancellationToken ct = default)
         {

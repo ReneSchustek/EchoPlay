@@ -74,7 +74,7 @@ namespace EchoPlay.App.Tests.Services
                 restructure.SetAnalyzeResult(new RestructurePreview
                 {
                     SeriesFolderPath = tempFolder,
-                    Actions          = new List<RestructureAction>()
+                    Actions = new List<RestructureAction>()
                 });
 
                 RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(tempFolder);
@@ -99,8 +99,8 @@ namespace EchoPlay.App.Tests.Services
                 restructure.SetAnalyzeResult(new RestructurePreview
                 {
                     SeriesFolderPath = tempFolder,
-                    FolderCount      = 2,
-                    Actions          = new List<RestructureAction>
+                    FolderCount = 2,
+                    Actions = new List<RestructureAction>
                     {
                         new()
                         {
@@ -130,8 +130,8 @@ namespace EchoPlay.App.Tests.Services
                 Assert.Equal(2, result.FolderCount);
                 Assert.Equal(2, result.Actions.Count);
                 Assert.Equal("001 - Erste.mp3", result.Actions[0].FileName);
-                Assert.Equal("001 - Erste",     result.Actions[0].TargetFolderName);
-                Assert.Equal(tempFolder,        restructure.LastAnalyzedFolderPath);
+                Assert.Equal("001 - Erste", result.Actions[0].TargetFolderName);
+                Assert.Equal(tempFolder, restructure.LastAnalyzedFolderPath);
                 Assert.Equal("{number:000} - {title}", restructure.LastFolderPattern);
             }
             finally
@@ -152,7 +152,7 @@ namespace EchoPlay.App.Tests.Services
                 RestructurePreview original = new()
                 {
                     SeriesFolderPath = tempFolder,
-                    Actions          = new List<RestructureAction>
+                    Actions = new List<RestructureAction>
                     {
                         new()
                         {

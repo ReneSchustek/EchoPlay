@@ -53,14 +53,14 @@ namespace EchoPlay.App.ViewModels
             IClock clock,
             ILogger logger)
         {
-            _scopeFactory              = scopeFactory;
-            _errorDialogService        = errorDialogService;
+            _scopeFactory = scopeFactory;
+            _errorDialogService = errorDialogService;
             _confirmationDialogService = confirmationDialogService;
-            _playerService             = playerService;
-            _coverService              = coverService;
-            _localizationService       = localizationService;
-            _clock                     = clock;
-            _logger                    = logger;
+            _playerService = playerService;
+            _coverService = coverService;
+            _localizationService = localizationService;
+            _clock = clock;
+            _logger = logger;
         }
 
         /// <summary>
@@ -74,30 +74,30 @@ namespace EchoPlay.App.ViewModels
             bool isAnnounced)
         {
             PlaybackStatus status = DetermineStatus(state);
-            double progress       = CalculateProgress(state, episode.Duration);
+            double progress = CalculateProgress(state, episode.Duration);
 
             // Episoden-Cover bevorzugen, Serien-Cover als Fallback
             BitmapImage? cover = await BuildEpisodeCoverAsync(episode)
                                  ?? await BuildSeriesCoverAsync(series);
 
             return new NewEpisodeCardViewModel(
-                episodeId:                 episode.Id,
-                seriesId:                  series.Id,
-                seriesName:                series.Title,
-                episodeTitle:              episode.Title,
-                coverImage:                cover,
-                status:                    status,
-                progressPercent:           progress,
-                hasLocalTrack:             hasLocalTrack,
-                isAnnounced:               isAnnounced,
-                scopeFactory:              _scopeFactory,
-                errorDialogService:        _errorDialogService,
+                episodeId: episode.Id,
+                seriesId: series.Id,
+                seriesName: series.Title,
+                episodeTitle: episode.Title,
+                coverImage: cover,
+                status: status,
+                progressPercent: progress,
+                hasLocalTrack: hasLocalTrack,
+                isAnnounced: isAnnounced,
+                scopeFactory: _scopeFactory,
+                errorDialogService: _errorDialogService,
                 confirmationDialogService: _confirmationDialogService,
-                playerService:             _playerService,
-                episodeNumber:             episode.EpisodeNumber,
-                releaseDate:               episode.ReleaseDate,
-                localizationService:       _localizationService,
-                clock:                     _clock);
+                playerService: _playerService,
+                episodeNumber: episode.EpisodeNumber,
+                releaseDate: episode.ReleaseDate,
+                localizationService: _localizationService,
+                clock: _clock);
         }
 
         /// <summary>
@@ -322,10 +322,10 @@ namespace EchoPlay.App.ViewModels
                                      ?? await BuildSeriesCoverAsync(series);
 
                 result.Add(new RecentSeriesCardViewModel(
-                    seriesId:         series.Id,
-                    seriesName:       series.Title,
+                    seriesId: series.Id,
+                    seriesName: series.Title,
                     lastEpisodeTitle: episode.Title,
-                    coverImage:       cover));
+                    coverImage: cover));
             }
 
             return result;
@@ -409,8 +409,8 @@ namespace EchoPlay.App.ViewModels
 
                 // Lokales Matching: Folgennummer → lokale Episode → Wiedergabestatus
                 bool hasLocalTrack = false;
-                bool isCompleted   = false;
-                Guid episodeId     = Guid.Empty;
+                bool isCompleted = false;
+                Guid episodeId = Guid.Empty;
 
                 if (entry.EpisodeNumber.HasValue)
                 {
@@ -425,7 +425,7 @@ namespace EchoPlay.App.ViewModels
                     {
                         if (ep.EpisodeNumber == entry.EpisodeNumber.Value)
                         {
-                            episodeId     = ep.Id;
+                            episodeId = ep.Id;
                             hasLocalTrack = ep.LocalTrackCount is > 0;
 
                             // In-Memory-Lookup statt DB-Abfrage
@@ -466,23 +466,23 @@ namespace EchoPlay.App.ViewModels
                 cover ??= await BuildSeriesCoverAsync(series);
 
                 NewEpisodeCardViewModel card = new(
-                    episodeId:                 episodeId != Guid.Empty ? episodeId : Guid.NewGuid(),
-                    seriesId:                  series.Id,
-                    seriesName:                series.Title,
-                    episodeTitle:              entry.Title,
-                    coverImage:                cover,
-                    status:                    PlaybackStatus.NotStarted,
-                    progressPercent:           0,
-                    hasLocalTrack:             hasLocalTrack,
-                    isAnnounced:               isAnnounced,
-                    scopeFactory:              _scopeFactory,
-                    errorDialogService:        _errorDialogService,
+                    episodeId: episodeId != Guid.Empty ? episodeId : Guid.NewGuid(),
+                    seriesId: series.Id,
+                    seriesName: series.Title,
+                    episodeTitle: entry.Title,
+                    coverImage: cover,
+                    status: PlaybackStatus.NotStarted,
+                    progressPercent: 0,
+                    hasLocalTrack: hasLocalTrack,
+                    isAnnounced: isAnnounced,
+                    scopeFactory: _scopeFactory,
+                    errorDialogService: _errorDialogService,
                     confirmationDialogService: _confirmationDialogService,
-                    playerService:             _playerService,
-                    episodeNumber:             entry.EpisodeNumber,
-                    releaseDate:               entry.ReleaseDate,
-                    localizationService:       _localizationService,
-                    clock:                     _clock);
+                    playerService: _playerService,
+                    episodeNumber: entry.EpisodeNumber,
+                    releaseDate: entry.ReleaseDate,
+                    localizationService: _localizationService,
+                    clock: _clock);
 
                 cardEntries.Add((card, entry.ReleaseDate));
             }

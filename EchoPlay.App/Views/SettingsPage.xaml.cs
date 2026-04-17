@@ -46,7 +46,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         public SettingsPage()
         {
-            ViewModel            = App.Services.GetRequiredService<SettingsViewModel>();
+            ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             _localizationService = App.Services.GetRequiredService<ILocalizationService>();
             InitializeComponent();
         }

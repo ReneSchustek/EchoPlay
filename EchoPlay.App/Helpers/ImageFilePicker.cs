@@ -47,7 +47,7 @@ namespace EchoPlay.App.Helpers
             string mimeType = file.FileType.ToUpperInvariant() switch
             {
                 ".PNG" => "image/png",
-                _      => "image/jpeg"
+                _ => "image/jpeg"
             };
 
             byte[] data = await File.ReadAllBytesAsync(file.Path);
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Helpers
             FileOpenPicker picker = new()
             {
                 SuggestedStartLocation = PickerLocationId.PicturesLibrary,
-                ViewMode               = PickerViewMode.Thumbnail
+                ViewMode = PickerViewMode.Thumbnail
             };
 
             picker.FileTypeFilter.Add(".jpg");

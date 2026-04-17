@@ -149,10 +149,10 @@ namespace EchoPlay.App.Tests.Services
             ImportSeries importSeries = new()
             {
                 SourceSeriesId = "artist-123",
-                Source         = "AppleMusic",
-                Title          = "Die drei ???",
-                IsHoerspiel    = true,
-                Score          = 80
+                Source = "AppleMusic",
+                Title = "Die drei ???",
+                IsHoerspiel = true,
+                Score = 80
             };
 
             _ = await service.ImportAsync(importSeries);
@@ -185,10 +185,10 @@ namespace EchoPlay.App.Tests.Services
             ImportSeries importSeries = new()
             {
                 SourceSeriesId = "artist-123",
-                Source         = "AppleMusic",
-                Title          = "TKKG",
-                IsHoerspiel    = true,
-                Score          = 90
+                Source = "AppleMusic",
+                Title = "TKKG",
+                IsHoerspiel = true,
+                Score = 90
             };
 
             _ = await service.ImportAsync(importSeries);
@@ -206,7 +206,7 @@ namespace EchoPlay.App.Tests.Services
 
             await seriesService.AddAsync(new Series
             {
-                Title              = "Bestehende Serie",
+                Title = "Bestehende Serie",
                 AppleMusicArtistId = "artist-existing"
             });
 
@@ -219,10 +219,10 @@ namespace EchoPlay.App.Tests.Services
             ImportSeries importSeries = new()
             {
                 SourceSeriesId = "artist-existing",
-                Source         = "AppleMusic",
-                Title          = "Bestehende Serie",
-                IsHoerspiel    = true,
-                Score          = 70
+                Source = "AppleMusic",
+                Title = "Bestehende Serie",
+                IsHoerspiel = true,
+                Score = 70
             };
 
             _ = await service.ImportAsync(importSeries);
@@ -247,10 +247,10 @@ namespace EchoPlay.App.Tests.Services
             ImportSeries importSeries = new()
             {
                 SourceSeriesId = "artist-new",
-                Source         = "AppleMusic",
-                Title          = "Neue Serie",
-                IsHoerspiel    = true,
-                Score          = 60
+                Source = "AppleMusic",
+                Title = "Neue Serie",
+                IsHoerspiel = true,
+                Score = 60
             };
 
             Guid id = await service.ImportAsync(importSeries);
@@ -268,7 +268,7 @@ namespace EchoPlay.App.Tests.Services
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "Vorhandene Serie",
+                Title = "Vorhandene Serie",
                 SpotifyArtistId = "spotify-123"
             });
 
@@ -281,10 +281,10 @@ namespace EchoPlay.App.Tests.Services
             ImportSeries series = new()
             {
                 SourceSeriesId = "spotify-123",
-                Source         = "Spotify",
-                Title          = "Vorhandene Serie",
-                IsHoerspiel    = true,
-                Score          = 75
+                Source = "Spotify",
+                Title = "Vorhandene Serie",
+                IsHoerspiel = true,
+                Score = 75
             };
 
             bool result = await service.IsAlreadyImportedAsync(series);
@@ -308,10 +308,10 @@ namespace EchoPlay.App.Tests.Services
             ImportSeries series = new()
             {
                 SourceSeriesId = "unbekannt-999",
-                Source         = "Spotify",
-                Title          = "Nicht vorhanden",
-                IsHoerspiel    = true,
-                Score          = 40
+                Source = "Spotify",
+                Title = "Nicht vorhanden",
+                IsHoerspiel = true,
+                Score = 40
             };
 
             bool result = await service.IsAlreadyImportedAsync(series);

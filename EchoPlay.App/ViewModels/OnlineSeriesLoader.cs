@@ -64,10 +64,10 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
-                ISeriesDataService        seriesService   = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                IEpisodeDataService       episodeService  = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-                IPlaybackStateDataService stateService    = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
-                IAppSettingsDataService   settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+                ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+                IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+                IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
+                IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
 
                 AppSettings settings = await settingsService.GetAsync();
                 _setHasNoProvider(settings.ActiveProvider == ProviderType.None);
@@ -123,19 +123,19 @@ namespace EchoPlay.App.ViewModels
                         await stateService.GetCountsBySeriesIdAsync(series.Id);
 
                     cards.Add(new SeriesCardViewModel(
-                        id:                        series.Id,
-                        title:                     series.Title,
-                        coverImage:                await BuildCoverImageAsync(series),
-                        totalEpisodeCount:         episodes.Count,
-                        newEpisodeCount:           notStartedCount,
-                        inProgressCount:           inProgressCount,
-                        finishedCount:             finishedCount,
-                        isSubscribed:              series.IsSubscribed,
-                        isFavorite:                series.IsFavorite,
-                        isWatched:                 series.IsWatched,
-                        scopeFactory:              _ctx.ScopeFactory,
+                        id: series.Id,
+                        title: series.Title,
+                        coverImage: await BuildCoverImageAsync(series),
+                        totalEpisodeCount: episodes.Count,
+                        newEpisodeCount: notStartedCount,
+                        inProgressCount: inProgressCount,
+                        finishedCount: finishedCount,
+                        isSubscribed: series.IsSubscribed,
+                        isFavorite: series.IsFavorite,
+                        isWatched: series.IsWatched,
+                        scopeFactory: _ctx.ScopeFactory,
                         confirmationDialogService: _ctx.ConfirmationDialogService,
-                        localizationService:       _ctx.LocalizationService));
+                        localizationService: _ctx.LocalizationService));
                 }
 
                 _seriesVM.SetAllSeries(cards);

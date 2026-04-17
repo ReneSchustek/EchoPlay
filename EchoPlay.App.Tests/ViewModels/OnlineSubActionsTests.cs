@@ -56,19 +56,19 @@ namespace EchoPlay.App.Tests.ViewModels
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
 
             return new MediathekOnlineActionsContext(
-                ScopeFactory:              provider.GetRequiredService<IServiceScopeFactory>(),
+                ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
                 ConfirmationDialogService: new FakeConfirmationDialogService(),
-                ImportService:             importService,
-                ErrorDialogService:        new FakeErrorDialogService(),
-                LocalizationService:       new FakeLocalizationService(),
-                OnlineAccessGuard:         new FakeOnlineAccessGuard(),
-                CoverCacheService:         null,
-                CoverService:              provider.GetRequiredService<CoverService>(),
-                BackgroundCoverService:    null,
-                WatchToggleService:        null,
-                HttpClientFactory:         provider.GetRequiredService<System.Net.Http.IHttpClientFactory>(),
-                CoverBrightnessAnalyzer:   null,
-                RateLimiter:               null);
+                ImportService: importService,
+                ErrorDialogService: new FakeErrorDialogService(),
+                LocalizationService: new FakeLocalizationService(),
+                OnlineAccessGuard: new FakeOnlineAccessGuard(),
+                CoverCacheService: null,
+                CoverService: provider.GetRequiredService<CoverService>(),
+                BackgroundCoverService: null,
+                WatchToggleService: null,
+                HttpClientFactory: provider.GetRequiredService<System.Net.Http.IHttpClientFactory>(),
+                CoverBrightnessAnalyzer: null,
+                RateLimiter: null);
         }
 
         // ── OnlineSeriesLoader ───────────────────────────────────────────────────

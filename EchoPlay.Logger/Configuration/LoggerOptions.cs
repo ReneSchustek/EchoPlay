@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Logger.Configuration
+namespace EchoPlay.Logger.Configuration
 {
     /// <summary>
     /// Konfigurationsoptionen für den Logger.

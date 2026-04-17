@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Logger.Configuration;
 
 namespace EchoPlay.Logger.Management

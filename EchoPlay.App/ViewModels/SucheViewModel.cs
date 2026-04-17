@@ -80,16 +80,16 @@ namespace EchoPlay.App.ViewModels
             IPageModeGuard? pageModeGuard = null,
             CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null)
         {
-            _importService             = importService;
-            _errorDialogService        = errorDialogService;
-            _localizationService       = localizationService;
-            _scopeFactory              = scopeFactory;
-            _navigationService         = navigationService;
-            _pageModeGuard             = pageModeGuard;
-            _coverBrightnessAnalyzer   = coverBrightnessAnalyzer;
+            _importService = importService;
+            _errorDialogService = errorDialogService;
+            _localizationService = localizationService;
+            _scopeFactory = scopeFactory;
+            _navigationService = navigationService;
+            _pageModeGuard = pageModeGuard;
+            _coverBrightnessAnalyzer = coverBrightnessAnalyzer;
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
-            ResetCommand  = new RelayCommand(Reset);
+            ResetCommand = new RelayCommand(Reset);
         }
 
         /// <summary>
@@ -288,7 +288,7 @@ namespace EchoPlay.App.ViewModels
                 TaskCreationOptions.RunContinuationsAsynchronously);
 
             _hasSearched = false;
-            IsLoading    = true;
+            IsLoading = true;
 
             // Onboarding-Hinweis ausblenden, sobald der Nutzer aktiv sucht
             IsOnboardingHintVisible = false;
@@ -304,7 +304,7 @@ namespace EchoPlay.App.ViewModels
                 {
                     // Parallel nach Serien (Artists) und Folgen (Alben) suchen
                     IReadOnlyList<ImportSeries> seriesResults = await _importService.SearchAsync(_searchText);
-                    IReadOnlyList<ImportSeries> albumResults  = await _importService.SearchAlbumsAsync(_searchText);
+                    IReadOnlyList<ImportSeries> albumResults = await _importService.SearchAlbumsAsync(_searchText);
 
                     // Zusammenführen und nach Relevanz sortieren:
                     // Treffer mit Suchbegriff im Titel/Künstler zuerst, dann nach Score
@@ -345,7 +345,7 @@ namespace EchoPlay.App.ViewModels
                 }
 
                 _hasSearched = true;
-                Results      = viewModels;
+                Results = viewModels;
             }
             catch (Exception ex)
             {
@@ -386,8 +386,8 @@ namespace EchoPlay.App.ViewModels
                     // SourceSeriesId = Datenbank-GUID der Serie, damit der Eintrag eindeutig identifizierbar bleibt
                     localResults.Add(new ImportSeries
                     {
-                        Title          = series.Title,
-                        Source         = "Lokal",
+                        Title = series.Title,
+                        Source = "Lokal",
                         SourceSeriesId = series.Id.ToString()
                     });
                 }
@@ -401,9 +401,9 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void Reset()
         {
-            SearchText      = string.Empty;
-            Results         = [];
-            _hasSearched    = false;
+            SearchText = string.Empty;
+            Results = [];
+            _hasSearched = false;
             ShowSuccessHint = false;
             OnPropertyChanged(nameof(EmptyStateVisibility));
         }

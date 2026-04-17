@@ -35,14 +35,14 @@ namespace EchoPlay.App.ViewModels
         /// <param name="context">Bündelt alle per DI aufgelösten Service-Abhängigkeiten.</param>
         internal MediathekLokalViewModel(MediathekLokalViewModelContext context)
         {
-            _playerService          = context.PlayerService;
-            _onlineEpisodeChecker   = context.OnlineEpisodeChecker;
-            _pageModeGuard          = context.PageModeGuard;
+            _playerService = context.PlayerService;
+            _onlineEpisodeChecker = context.OnlineEpisodeChecker;
+            _pageModeGuard = context.PageModeGuard;
 
             // Sub-VM für die Episoden-Spalte – kapselt Filter, Sortierung, Cover-Laden und
             // den Gehört-Status. Events des Sub-VMs werden an die eigenen Pass-Through-Properties
             // weitergereicht, damit bestehende XAML-Bindings unverändert funktionieren.
-            EpisodesVM = new LocalEpisodesViewModel(context.ScopeFactory, context.CoverLoader, context.Clock, context.CoverService);
+            EpisodesVM = new LocalEpisodesViewModel(context.ScopeFactory, context.CoverLoader, context.Clock, context.CoverService, context.Logger);
             EpisodesVM.PropertyChanged += OnEpisodesVmPropertyChanged;
 
             // Sub-VM für die Track-Spalte – kapselt Trackliste, PlayCommand und Tag-Manager-Sprünge.
@@ -455,7 +455,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf ScanVM.AddFolderRequested; Signatur muss identisch zum Sub-VM bleiben.")]
         public event Action? AddFolderRequested
         {
-            add    => ScanVM.AddFolderRequested += value;
+            add => ScanVM.AddFolderRequested += value;
             remove => ScanVM.AddFolderRequested -= value;
         }
 
@@ -467,7 +467,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.MissingEpisodesResolved; Titelliste wird in einem Dialog angezeigt, Signatur muss identisch zum Orchestrator bleiben.")]
         public event Action<IReadOnlyList<string>>? MissingEpisodesResolved
         {
-            add    => _actions.MissingEpisodesResolved += value;
+            add => _actions.MissingEpisodesResolved += value;
             remove => _actions.MissingEpisodesResolved -= value;
         }
 
@@ -478,7 +478,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.AllSeriesCheckCompleted; Bericht wird in einem Dialog angezeigt, Signatur muss identisch zum Orchestrator bleiben.")]
         public event Action<MissingEpisodesReport>? AllSeriesCheckCompleted
         {
-            add    => _actions.AllSeriesCheckCompleted += value;
+            add => _actions.AllSeriesCheckCompleted += value;
             remove => _actions.AllSeriesCheckCompleted -= value;
         }
 
@@ -490,7 +490,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.RestructurePreviewReady; Vorschau-Display wird in einem Dialog angezeigt, Signatur muss identisch zum Orchestrator bleiben.")]
         public event Action<RestructurePreviewDisplay>? RestructurePreviewReady
         {
-            add    => _actions.RestructurePreviewReady += value;
+            add => _actions.RestructurePreviewReady += value;
             remove => _actions.RestructurePreviewReady -= value;
         }
 
@@ -589,7 +589,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.MissingEpisodesModeRequested; Signatur Func<Task<MissingEpisodesMode>> ist noetig, damit die Page das Dialog-Ergebnis asynchron zurueckliefern kann (EventHandler<T> unterstuetzt kein await/Rueckgabewert).")]
         public event Func<Task<MissingEpisodesMode>>? MissingEpisodesModeRequested
         {
-            add    => _actions.MissingEpisodesModeRequested += value;
+            add => _actions.MissingEpisodesModeRequested += value;
             remove => _actions.MissingEpisodesModeRequested -= value;
         }
 
@@ -678,15 +678,15 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public void Dispose()
         {
-            ScanVM.PropertyChanged    -= OnScanVmPropertyChanged;
-            ScanVM.ScanStarting       -= OnScanStarting;
-            ScanVM.LibraryReloaded    -= LoadAsync;
+            ScanVM.PropertyChanged -= OnScanVmPropertyChanged;
+            ScanVM.ScanStarting -= OnScanStarting;
+            ScanVM.LibraryReloaded -= LoadAsync;
             ScanVM.Dispose();
 
-            EpisodesVM.PropertyChanged  -= OnEpisodesVmPropertyChanged;
+            EpisodesVM.PropertyChanged -= OnEpisodesVmPropertyChanged;
             EpisodesVM.Dispose();
 
-            TracksVM.PropertyChanged  -= OnTracksVmPropertyChanged;
+            TracksVM.PropertyChanged -= OnTracksVmPropertyChanged;
             ArtistsVM.PropertyChanged -= OnArtistsVmPropertyChanged;
         }
     }

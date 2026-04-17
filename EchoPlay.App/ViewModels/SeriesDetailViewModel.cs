@@ -60,10 +60,10 @@ namespace EchoPlay.App.ViewModels
             IClock clock,
             CoverService? coverService = null)
         {
-            _scopeFactory  = scopeFactory;
+            _scopeFactory = scopeFactory;
             _playerService = playerService;
-            _clock         = clock;
-            _coverService  = coverService;
+            _clock = clock;
+            _coverService = coverService;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
         }
@@ -277,22 +277,22 @@ namespace EchoPlay.App.ViewModels
         public async Task LoadAsync(Guid seriesId)
         {
             IsLoading = true;
-            Tracks    = [];
+            Tracks = [];
             SelectedEpisode = null;
             _hasLocalTracks = false;
 
             try
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
-                ISeriesDataService        seriesService   = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                IEpisodeDataService       episodeService  = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+                ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+                IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
                 IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
                 Series? series = await seriesService.GetByIdAsync(seriesId);
-                _seriesId        = seriesId;
-                SeriesTitle      = series?.Title ?? string.Empty;
+                _seriesId = seriesId;
+                SeriesTitle = series?.Title ?? string.Empty;
                 SeriesDescription = series?.Description ?? string.Empty;
-                IsFavorite       = series?.IsFavorite ?? false;
+                IsFavorite = series?.IsFavorite ?? false;
                 OnPropertyChanged(nameof(DescriptionVisibility));
 
                 IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
@@ -336,16 +336,16 @@ namespace EchoPlay.App.ViewModels
                                          ?? await BuildSeriesCoverAsync(series);
 
                     EpisodeTileViewModel tile = new(
-                        episodeId:      episode.Id,
-                        episodeNumber:  episode.EpisodeNumber,
-                        title:          episode.Title,
-                        totalDuration:  episode.Duration > TimeSpan.Zero ? episode.Duration : null,
+                        episodeId: episode.Id,
+                        episodeNumber: episode.EpisodeNumber,
+                        title: episode.Title,
+                        totalDuration: episode.Duration > TimeSpan.Zero ? episode.Duration : null,
                         playbackStatus: playbackStatus,
-                        releaseDate:      episode.ReleaseDate,
-                        playEpisode:      () => _ = PlayEpisodeAsync(capturedId),
-                        progressPercent:  progressPercent,
+                        releaseDate: episode.ReleaseDate,
+                        playEpisode: () => _ = PlayEpisodeAsync(capturedId),
+                        progressPercent: progressPercent,
                         isSpecialEpisode: episode.EpisodeNumber is null or 0,
-                        coverImage:       cover);
+                        coverImage: cover);
 
                     tiles.Add(tile);
                 }
@@ -399,10 +399,10 @@ namespace EchoPlay.App.ViewModels
             foreach (LocalTrack track in localTracks)
             {
                 rows.Add(new LocalTrackRowViewModel(
-                    trackId:    track.Id,
+                    trackId: track.Id,
                     trackNumber: trackNumber++,
-                    filePath:   track.FilePath,
-                    duration:   track.Duration,
+                    filePath: track.FilePath,
+                    duration: track.Duration,
                     requestTagManagerNavigation: _ => { }));
             }
 
@@ -520,7 +520,7 @@ namespace EchoPlay.App.ViewModels
         public async Task PlayEpisodeAsync(Guid episodeId)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
-            ILocalTrackDataService    trackService    = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
             IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
             IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episodeId);
@@ -531,7 +531,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             PlaybackState? savedState = await playbackService.GetByEpisodeIdAsync(episodeId);
-            TimeSpan resumePosition   = savedState is { IsCompleted: false } ? savedState.LastPosition : TimeSpan.Zero;
+            TimeSpan resumePosition = savedState is { IsCompleted: false } ? savedState.LastPosition : TimeSpan.Zero;
 
             List<string> paths = new(tracks.Count);
 
@@ -566,11 +566,11 @@ namespace EchoPlay.App.ViewModels
             // Schritt 2: Sortieren
             IEnumerable<EpisodeTileViewModel> sorted = _sortOrder switch
             {
-                EpisodeSortOrder.Title       => filtered.OrderBy(e => e.Title, StringComparer.CurrentCultureIgnoreCase),
+                EpisodeSortOrder.Title => filtered.OrderBy(e => e.Title, StringComparer.CurrentCultureIgnoreCase),
                 EpisodeSortOrder.ReleaseDate => filtered
                     .OrderBy(e => e.ReleaseDate.HasValue ? 0 : 1)
                     .ThenBy(e => e.ReleaseDate),
-                _                            => filtered
+                _ => filtered
                     .OrderBy(e => e.EpisodeNumber.HasValue ? 0 : 1)
                     .ThenBy(e => e.EpisodeNumber)
             };

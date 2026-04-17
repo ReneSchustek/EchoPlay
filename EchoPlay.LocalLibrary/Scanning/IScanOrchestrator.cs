@@ -41,7 +41,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         Task<IReadOnlyList<LocalScanResult>> ScanAsync(
             string rootPath,
             string episodeFolderPattern,
-            IProgress<ScanProgress>? progress           = null,
-            CancellationToken cancellationToken          = default);
+            IProgress<ScanProgress>? progress = null,
+            CancellationToken cancellationToken = default);
     }
 }

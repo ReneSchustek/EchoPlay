@@ -36,7 +36,7 @@ namespace EchoPlay.App.ViewModels
         public DashboardFavoritenViewModel(IServiceScopeFactory scopeFactory, ILogger logger)
         {
             _scopeFactory = scopeFactory;
-            _logger       = logger;
+            _logger = logger;
         }
 
         /// <summary>

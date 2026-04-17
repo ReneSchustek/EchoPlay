@@ -133,7 +133,7 @@ namespace EchoPlay.App.ViewModels
         public async Task LoadFromDatabaseAsync()
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService   = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
 
             // Nur Serien mit lokalem Ordner anzeigen
@@ -154,21 +154,21 @@ namespace EchoPlay.App.ViewModels
                     : (0, 0);
 
                 artistCards.Add(new LocalArtistCardViewModel(
-                    seriesId:          series.Id,
-                    title:             series.Title,
-                    coverImage:        null,
-                    localFolderPath:   series.LocalFolderPath,
+                    seriesId: series.Id,
+                    title: series.Title,
+                    coverImage: null,
+                    localFolderPath: series.LocalFolderPath,
                     localEpisodeCount: local,
                     totalEpisodeCount: total,
-                    isFavorite:        series.IsFavorite,
-                    isWatched:         series.IsWatched,
-                    scopeFactory:      _scopeFactory));
+                    isFavorite: series.IsFavorite,
+                    isWatched: series.IsWatched,
+                    scopeFactory: _scopeFactory));
             }
 
             // Auswahl zurücksetzen, dann Liste übernehmen
-            SelectedArtist      = null;
+            SelectedArtist = null;
             SelectedArtistIndex = -1;
-            _allArtists         = artistCards;
+            _allArtists = artistCards;
             ApplyLocalSearchFilter();
 
             // Cover progressiv im Hintergrund laden – Kacheln sind bereits sichtbar
@@ -202,15 +202,15 @@ namespace EchoPlay.App.ViewModels
                 int totalEpisodeCount = episodes.Count;
 
                 LocalArtistCardViewModel card = new(
-                    seriesId:          series.Id,
-                    title:             series.Title,
-                    coverImage:        cover,
-                    localFolderPath:   series.LocalFolderPath,
+                    seriesId: series.Id,
+                    title: series.Title,
+                    coverImage: cover,
+                    localFolderPath: series.LocalFolderPath,
                     localEpisodeCount: localEpisodeCount,
                     totalEpisodeCount: totalEpisodeCount,
-                    isFavorite:        series.IsFavorite,
-                    isWatched:         series.IsWatched,
-                    scopeFactory:      _scopeFactory);
+                    isFavorite: series.IsFavorite,
+                    isWatched: series.IsWatched,
+                    scopeFactory: _scopeFactory);
 
                 _allArtists = [.. _allArtists, card];
                 ApplyLocalSearchFilter();
@@ -235,7 +235,7 @@ namespace EchoPlay.App.ViewModels
                 a.IsSelectedInAccordion = false;
             }
 
-            SelectedArtist      = null;
+            SelectedArtist = null;
             SelectedArtistIndex = -1;
         }
 
@@ -265,9 +265,9 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Setzt die Liste komplett zurück (vor Beginn eines neuen Scans).</summary>
         public void Clear()
         {
-            _allArtists         = [];
-            Artists             = [];
-            SelectedArtist      = null;
+            _allArtists = [];
+            Artists = [];
+            SelectedArtist = null;
             SelectedArtistIndex = -1;
         }
 

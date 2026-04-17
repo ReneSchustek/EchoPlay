@@ -23,9 +23,9 @@ namespace EchoPlay.App.ViewModels
             BitmapImage? coverImage,
             int unheardCount)
         {
-            SeriesId    = seriesId;
-            SeriesName  = seriesName;
-            CoverImage  = coverImage;
+            SeriesId = seriesId;
+            SeriesName = seriesName;
+            CoverImage = coverImage;
             UnheardCount = unheardCount;
 
             // Singular/Plural korrekt

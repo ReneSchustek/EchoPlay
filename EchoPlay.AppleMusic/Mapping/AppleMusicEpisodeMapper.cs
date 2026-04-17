@@ -36,15 +36,15 @@ namespace EchoPlay.AppleMusic.Mapping
             {
                 // Collection-ID statt Track-ID – ein Album = eine Folge
                 SourceEpisodeId = album.CollectionId.ToString(CultureInfo.InvariantCulture),
-                Title           = album.CollectionName,
-                EpisodeNumber   = EpisodeNumberParser.Extract(album.CollectionName),
-                ReleaseDate     = TryParseReleaseDate(album.ReleaseDate),
-                Duration        = totalDuration,
-                OrderIndex      = orderIndex,
-                ProviderUrl     = $"https://music.apple.com/de/album/{album.CollectionId}",
+                Title = album.CollectionName,
+                EpisodeNumber = EpisodeNumberParser.Extract(album.CollectionName),
+                ReleaseDate = TryParseReleaseDate(album.ReleaseDate),
+                Duration = totalDuration,
+                OrderIndex = orderIndex,
+                ProviderUrl = $"https://music.apple.com/de/album/{album.CollectionId}",
                 // iTunes liefert 100px-Thumbnails – für höhere Auflösung "100x100" durch "600x600" ersetzen
-                CoverImageUrl   = album.ArtworkUrl100?.Replace("100x100", "600x600", StringComparison.Ordinal),
-                Source          = "AppleMusic"
+                CoverImageUrl = album.ArtworkUrl100?.Replace("100x100", "600x600", StringComparison.Ordinal),
+                Source = "AppleMusic"
             };
         }
 

@@ -28,12 +28,12 @@ namespace EchoPlay.App.Views
 
             ContentDialog dialog = new()
             {
-                XamlRoot           = XamlRoot,
-                Title              = _resources.GetString("MissingEpisodesDialogTitle"),
-                Content            = _resources.GetString("MissingEpisodesDialogContent"),
-                PrimaryButtonText  = _resources.GetString("MissingEpisodesOnlineButton"),
+                XamlRoot = XamlRoot,
+                Title = _resources.GetString("MissingEpisodesDialogTitle"),
+                Content = _resources.GetString("MissingEpisodesDialogContent"),
+                PrimaryButtonText = _resources.GetString("MissingEpisodesOnlineButton"),
                 SecondaryButtonText = _resources.GetString("MissingEpisodesOfflineButton"),
-                CloseButtonText    = _resources.GetString("CommonCancelButton")
+                CloseButtonText = _resources.GetString("CommonCancelButton")
             };
 
             try
@@ -43,9 +43,9 @@ namespace EchoPlay.App.Views
 
                 return result switch
                 {
-                    ContentDialogResult.Primary   => MissingEpisodesMode.WithOnline,
+                    ContentDialogResult.Primary => MissingEpisodesMode.WithOnline,
                     ContentDialogResult.Secondary => MissingEpisodesMode.OfflineOnly,
-                    _                             => MissingEpisodesMode.Cancel
+                    _ => MissingEpisodesMode.Cancel
                 };
             }
             catch (System.Runtime.InteropServices.COMException)

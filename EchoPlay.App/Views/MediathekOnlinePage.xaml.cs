@@ -35,7 +35,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         public MediathekOnlinePage()
         {
-            ViewModel          = App.Services.GetRequiredService<MediathekOnlineViewModel>();
+            ViewModel = App.Services.GetRequiredService<MediathekOnlineViewModel>();
             _navigationService = App.Services.GetRequiredService<INavigationService>();
             InitializeComponent();
 
@@ -63,9 +63,9 @@ namespace EchoPlay.App.Views
                     return;
                 }
 
-                ViewModel.PropertyChanged    += OnViewModelPropertyChanged;
+                ViewModel.PropertyChanged += OnViewModelPropertyChanged;
                 ViewModel.FocusSearchRequested += OnFocusSearchRequested;
-                SizeChanged                  += OnPageSizeChanged;
+                SizeChanged += OnPageSizeChanged;
 
                 await ViewModel.LoadAsync();
             });
@@ -77,9 +77,9 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            ViewModel.PropertyChanged    -= OnViewModelPropertyChanged;
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.FocusSearchRequested -= OnFocusSearchRequested;
-            SizeChanged                  -= OnPageSizeChanged;
+            SizeChanged -= OnPageSizeChanged;
             ViewModel.Dispose();
         }
 

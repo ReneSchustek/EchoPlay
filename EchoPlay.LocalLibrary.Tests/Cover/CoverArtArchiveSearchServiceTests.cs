@@ -137,9 +137,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
                 HttpStatusCode coverArtStatus)
             {
                 _musicBrainzStatus = musicBrainzStatus;
-                _musicBrainzBody   = musicBrainzBody;
-                _coverArtStatus    = coverArtStatus;
-                _throwException    = false;
+                _musicBrainzBody = musicBrainzBody;
+                _coverArtStatus = coverArtStatus;
+                _throwException = false;
             }
 
             /// <summary>Initialisiert den Handler so, dass er immer eine Exception wirft.</summary>

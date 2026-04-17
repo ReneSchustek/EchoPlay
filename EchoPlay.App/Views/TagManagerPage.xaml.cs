@@ -43,10 +43,10 @@ namespace EchoPlay.App.Views
         {
             ArgumentNullException.ThrowIfNull(e);
             base.OnNavigatedTo(e);
-            ViewModel.LookupResultsReady  += OnLookupResultsReady;
-            ViewModel.AutoLookupApplied   += OnAutoLookupApplied;
-            ViewModel.LoadCoverRequested  += OnLoadCoverRequested;
-            ViewModel.RenamePreviewReady  += OnRenamePreviewReady;
+            ViewModel.LookupResultsReady += OnLookupResultsReady;
+            ViewModel.AutoLookupApplied += OnAutoLookupApplied;
+            ViewModel.LoadCoverRequested += OnLoadCoverRequested;
+            ViewModel.RenamePreviewReady += OnRenamePreviewReady;
 
             if (e.Parameter is string folderPath && !string.IsNullOrWhiteSpace(folderPath))
             {
@@ -60,10 +60,10 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            ViewModel.LookupResultsReady  -= OnLookupResultsReady;
-            ViewModel.AutoLookupApplied   -= OnAutoLookupApplied;
-            ViewModel.LoadCoverRequested  -= OnLoadCoverRequested;
-            ViewModel.RenamePreviewReady  -= OnRenamePreviewReady;
+            ViewModel.LookupResultsReady -= OnLookupResultsReady;
+            ViewModel.AutoLookupApplied -= OnAutoLookupApplied;
+            ViewModel.LoadCoverRequested -= OnLoadCoverRequested;
+            ViewModel.RenamePreviewReady -= OnRenamePreviewReady;
             // TagManagerViewModel implementiert aktuell kein IDisposable — hält aber mehrere
             // Subscriptions auf _actions und Sub-VMs. Eigener Follow-up-Brief dokumentiert.
         }
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Views
                 FolderPicker picker = new()
                 {
                     SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                    ViewMode               = PickerViewMode.List
+                    ViewMode = PickerViewMode.List
                 };
 
                 picker.FileTypeFilter.Add("*");
@@ -113,10 +113,10 @@ namespace EchoPlay.App.Views
                 {
                     ContentDialog noResultsDialog = new()
                     {
-                        Title              = resources.GetString("TagManagerNoResultsTitle"),
-                        Content            = resources.GetString("TagManagerNoResultsMessage"),
-                        CloseButtonText    = resources.GetString("CommonOkButton"),
-                        XamlRoot           = XamlRoot
+                        Title = resources.GetString("TagManagerNoResultsTitle"),
+                        Content = resources.GetString("TagManagerNoResultsMessage"),
+                        CloseButtonText = resources.GetString("CommonOkButton"),
+                        XamlRoot = XamlRoot
                     };
                     Helpers.ContentDialogDragHelper.MakeDraggable(noResultsDialog);
                     _ = await noResultsDialog.ShowAsync();
@@ -127,18 +127,18 @@ namespace EchoPlay.App.Views
                 ListView resultList = new()
                 {
                     ItemsSource = results,
-                    Height      = 200
+                    Height = 200
                 };
 
                 resultList.ItemTemplate = (DataTemplate)Resources["LookupResultTemplate"];
 
                 ContentDialog dialog = new()
                 {
-                    Title               = resources.GetString("TagManagerLookupDialogTitle"),
-                    Content             = resultList,
-                    PrimaryButtonText   = resources.GetString("TagManagerLookupApplyButton"),
-                    CloseButtonText     = resources.GetString("TagManagerLookupCancelButton"),
-                    XamlRoot            = XamlRoot
+                    Title = resources.GetString("TagManagerLookupDialogTitle"),
+                    Content = resultList,
+                    PrimaryButtonText = resources.GetString("TagManagerLookupApplyButton"),
+                    CloseButtonText = resources.GetString("TagManagerLookupCancelButton"),
+                    XamlRoot = XamlRoot
                 };
 
                 // "Übernehmen" nur aktivieren wenn ein Eintrag ausgewählt ist
@@ -166,7 +166,7 @@ namespace EchoPlay.App.Views
         {
             // Kurze Bestätigung statt Dialog – die Tags sind bereits übernommen
             AutoLookupInfoBar.Message = $"Tags übernommen: {result.Artist} – {result.Album}";
-            AutoLookupInfoBar.IsOpen  = true;
+            AutoLookupInfoBar.IsOpen = true;
         }
 
         /// <summary>

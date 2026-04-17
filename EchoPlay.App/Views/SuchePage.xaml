@@ -54,7 +54,7 @@
 
             <!-- X-Button: Suchfeld und Ergebnisse zurücksetzen -->
             <Button
-                ToolTipService.ToolTip="Suche zurücksetzen"
+                x:Uid="SucheResetButton"
                 Command="{x:Bind ViewModel.ResetCommand}">
                 <FontIcon Glyph="&#xE711;" FontSize="14"/>
             </Button>

@@ -197,7 +197,7 @@
                             Checked="OnProviderChecked"/>
                         <RadioButton
                             x:Name="RadioBoth"
-                            Content="Beide"
+                            x:Uid="SettingsCoverProviderBoth"
                             GroupName="Provider"
                             Tag="Both"
                             Checked="OnProviderChecked"/>
@@ -210,11 +210,11 @@
 
                         <!-- Datenschutzhinweis: informiert den Nutzer, welche Daten an die Provider-APIs gesendet werden -->
                         <TextBlock
+                            x:Uid="SettingsCoverApisNote"
                             TextWrapping="Wrap"
                             Opacity="0.6"
                             Margin="0,8,0,0"
-                            Style="{ThemeResource CaptionTextBlockStyle}"
-                            Text="EchoPlay sendet die Titel und Künstlernamen deiner Hörspiele an die jeweiligen Anbieter-APIs, um Cover und Folgen-Verknüpfungen zu finden. Apple iTunes Search API wird immer befragt, weil sie anonym und kostenlos ist. Spotify wird nur angefragt, wenn du oben Credentials hinterlegt hast. Es werden keine persönlichen Daten und keine Wiedergabe-Historie übertragen."/>
+                            Style="{ThemeResource CaptionTextBlockStyle}"/>
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
@@ -256,25 +256,24 @@
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
                         <!-- Spotify-Verknüpfung -->
-                        <TextBlock Text="Spotify-Verknüpfung" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,8"/>
-                        <TextBlock TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,12"
-                                   Text="EchoPlay nutzt keine eigene Spotify-App. Wenn du Spotify als Anbieter verwenden willst, registriere eine eigene App unter developer.spotify.com und trage ClientId und ClientSecret hier ein."/>
+                        <TextBlock x:Uid="SettingsSpotifyHeading" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,8"/>
+                        <TextBlock x:Uid="SettingsSpotifyNote" TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,12"/>
 
                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                            <TextBlock Text="Status:" VerticalAlignment="Center"/>
+                            <TextBlock x:Uid="SettingsSpotifyStatusLabel" VerticalAlignment="Center"/>
                             <TextBlock Text="{x:Bind ViewModel.SpotifyStatus, Mode=OneWay}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                         </StackPanel>
 
-                        <TextBox Header="Client-ID" PlaceholderText="Client-ID eingeben"
+                        <TextBox x:Uid="SettingsSpotifyClientId"
                                  Text="{x:Bind ViewModel.SpotifyClientId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,0,8" MaxWidth="400" HorizontalAlignment="Left"/>
-                        <PasswordBox Header="Client-Secret" PlaceholderText="Client-Secret eingeben"
+                        <PasswordBox x:Uid="SettingsSpotifyClientSecret"
                                      Password="{x:Bind ViewModel.SpotifyClientSecret, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0,0,0,12" MaxWidth="400" HorizontalAlignment="Left"/>
 
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Testen und speichern" Command="{x:Bind ViewModel.TestAndSaveSpotifyCommand}"/>
-                            <Button Content="Verknüpfung entfernen" Command="{x:Bind ViewModel.RemoveSpotifyCommand}"
+                            <Button x:Uid="SettingsSpotifyTestSaveButton" Command="{x:Bind ViewModel.TestAndSaveSpotifyCommand}"/>
+                            <Button x:Uid="SettingsSpotifyRemoveButton" Command="{x:Bind ViewModel.RemoveSpotifyCommand}"
                                     Visibility="{x:Bind ViewModel.IsSpotifyLinked, Mode=OneWay}"/>
                         </StackPanel>
 

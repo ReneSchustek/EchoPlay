@@ -1199,4 +1199,103 @@
     <value>Datenbankpflege</value>
   </data>
 
+  <!-- StatusBar-Sprachumschalter -->
+  <data name="LanguageDeutsch.Text" xml:space="preserve">
+    <value>Deutsch</value>
+  </data>
+  <data name="LanguageEnglisch.Text" xml:space="preserve">
+    <value>Englisch</value>
+  </data>
+
+  <!-- MainWindow – Theme-Wechsel-Overlay -->
+  <data name="ThemeLoadingHint.Text" xml:space="preserve">
+    <value>Theme wird geladen …</value>
+  </data>
+
+  <!-- SplashWindow -->
+  <data name="SplashTagline.Text" xml:space="preserve">
+    <value>Deine Hörspielwelt</value>
+  </data>
+
+  <!-- ImportPage – Suche und Ergebnisliste -->
+  <data name="ImportSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Suchbegriff eingeben...</value>
+  </data>
+  <data name="ImportSearchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="ImportResultImportButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Importieren</value>
+  </data>
+  <data name="ImportResultAlreadyImported.Text" xml:space="preserve">
+    <value>✓ Vorhanden</value>
+  </data>
+
+  <!-- SettingsPage – Cover-APIs -->
+  <data name="SettingsCoverApisNote.Text" xml:space="preserve">
+    <value>EchoPlay sendet die Titel und Künstlernamen deiner Hörspiele an die jeweiligen Anbieter-APIs, um Cover und Folgen-Verknüpfungen zu finden. Apple iTunes Search API wird immer befragt, weil sie anonym und kostenlos ist. Spotify wird nur angefragt, wenn du oben Credentials hinterlegt hast. Es werden keine persönlichen Daten und keine Wiedergabe-Historie übertragen.</value>
+  </data>
+  <data name="SettingsCoverProviderBoth.Content" xml:space="preserve">
+    <value>Beide</value>
+  </data>
+
+  <!-- SettingsPage – Spotify-Verknüpfung -->
+  <data name="SettingsSpotifyHeading.Text" xml:space="preserve">
+    <value>Spotify-Verknüpfung</value>
+  </data>
+  <data name="SettingsSpotifyNote.Text" xml:space="preserve">
+    <value>EchoPlay nutzt keine eigene Spotify-App. Wenn du Spotify als Anbieter verwenden willst, registriere eine eigene App unter developer.spotify.com und trage ClientId und ClientSecret hier ein.</value>
+  </data>
+  <data name="SettingsSpotifyStatusLabel.Text" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="SettingsSpotifyClientId.Header" xml:space="preserve">
+    <value>Client-ID</value>
+  </data>
+  <data name="SettingsSpotifyClientId.PlaceholderText" xml:space="preserve">
+    <value>Client-ID eingeben</value>
+  </data>
+  <data name="SettingsSpotifyClientSecret.Header" xml:space="preserve">
+    <value>Client-Secret</value>
+  </data>
+  <data name="SettingsSpotifyClientSecret.PlaceholderText" xml:space="preserve">
+    <value>Client-Secret eingeben</value>
+  </data>
+  <data name="SettingsSpotifyTestSaveButton.Content" xml:space="preserve">
+    <value>Testen und speichern</value>
+  </data>
+  <data name="SettingsSpotifyRemoveButton.Content" xml:space="preserve">
+    <value>Verknüpfung entfernen</value>
+  </data>
+
+  <!-- TagManagerPage -->
+  <data name="TagManagerUnsavedMark.Text" xml:space="preserve">
+    <value>● nicht gespeichert</value>
+  </data>
+
+  <!-- MediathekLokalPage – Toolbar-ToolTips -->
+  <data name="MediathekLokalScanButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Bibliothek scannen</value>
+  </data>
+  <data name="MediathekLokalResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Neu-Initialisierung (alle lokalen Zuordnungen zurücksetzen)</value>
+  </data>
+  <data name="MediathekLokalAddFolderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ordner manuell hinzufügen</value>
+  </data>
+  <data name="MediathekLokalSeriesTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Alle Tracks dieser Serie im Tag-Manager bearbeiten</value>
+  </data>
+  <data name="MediathekLokalEpisodeTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Alle Tracks dieser Folge im Tag-Manager bearbeiten</value>
+  </data>
+  <data name="MediathekLokalTrackTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Im Tag-Manager öffnen</value>
+  </data>
+
+  <!-- SuchePage -->
+  <data name="SucheResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Suche zurücksetzen</value>
+  </data>
+
 </root>

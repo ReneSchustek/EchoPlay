@@ -1197,4 +1197,103 @@
     <value>Database maintenance</value>
   </data>
 
+  <!-- StatusBar language switcher -->
+  <data name="LanguageDeutsch.Text" xml:space="preserve">
+    <value>German</value>
+  </data>
+  <data name="LanguageEnglisch.Text" xml:space="preserve">
+    <value>English</value>
+  </data>
+
+  <!-- MainWindow – Theme switch overlay -->
+  <data name="ThemeLoadingHint.Text" xml:space="preserve">
+    <value>Loading theme …</value>
+  </data>
+
+  <!-- SplashWindow -->
+  <data name="SplashTagline.Text" xml:space="preserve">
+    <value>Your audio drama world</value>
+  </data>
+
+  <!-- ImportPage – search and result list -->
+  <data name="ImportSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Enter search term...</value>
+  </data>
+  <data name="ImportSearchButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="ImportResultImportButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="ImportResultAlreadyImported.Text" xml:space="preserve">
+    <value>✓ Available</value>
+  </data>
+
+  <!-- SettingsPage – Cover APIs -->
+  <data name="SettingsCoverApisNote.Text" xml:space="preserve">
+    <value>EchoPlay sends the titles and artist names of your audio dramas to the respective provider APIs to find covers and episode links. The Apple iTunes Search API is always queried because it is anonymous and free of charge. Spotify is only queried if you have entered credentials above. No personal data and no playback history are transmitted.</value>
+  </data>
+  <data name="SettingsCoverProviderBoth.Content" xml:space="preserve">
+    <value>Both</value>
+  </data>
+
+  <!-- SettingsPage – Spotify connection -->
+  <data name="SettingsSpotifyHeading.Text" xml:space="preserve">
+    <value>Spotify connection</value>
+  </data>
+  <data name="SettingsSpotifyNote.Text" xml:space="preserve">
+    <value>EchoPlay does not use its own Spotify app. If you want to use Spotify as a provider, register your own app at developer.spotify.com and enter ClientId and ClientSecret here.</value>
+  </data>
+  <data name="SettingsSpotifyStatusLabel.Text" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="SettingsSpotifyClientId.Header" xml:space="preserve">
+    <value>Client-ID</value>
+  </data>
+  <data name="SettingsSpotifyClientId.PlaceholderText" xml:space="preserve">
+    <value>Enter Client-ID</value>
+  </data>
+  <data name="SettingsSpotifyClientSecret.Header" xml:space="preserve">
+    <value>Client-Secret</value>
+  </data>
+  <data name="SettingsSpotifyClientSecret.PlaceholderText" xml:space="preserve">
+    <value>Enter Client-Secret</value>
+  </data>
+  <data name="SettingsSpotifyTestSaveButton.Content" xml:space="preserve">
+    <value>Test and save</value>
+  </data>
+  <data name="SettingsSpotifyRemoveButton.Content" xml:space="preserve">
+    <value>Remove connection</value>
+  </data>
+
+  <!-- TagManagerPage -->
+  <data name="TagManagerUnsavedMark.Text" xml:space="preserve">
+    <value>● not saved</value>
+  </data>
+
+  <!-- MediathekLokalPage – toolbar tooltips -->
+  <data name="MediathekLokalScanButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Scan library</value>
+  </data>
+  <data name="MediathekLokalResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Re-initialize (reset all local assignments)</value>
+  </data>
+  <data name="MediathekLokalAddFolderButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Add folder manually</value>
+  </data>
+  <data name="MediathekLokalSeriesTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Edit all tracks of this series in the tag manager</value>
+  </data>
+  <data name="MediathekLokalEpisodeTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Edit all tracks of this episode in the tag manager</value>
+  </data>
+  <data name="MediathekLokalTrackTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open in tag manager</value>
+  </data>
+
+  <!-- SuchePage -->
+  <data name="SucheResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reset search</value>
+  </data>
+
 </root>

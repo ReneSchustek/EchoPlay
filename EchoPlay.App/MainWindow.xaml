@@ -428,11 +428,11 @@
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem
-                                Text="Deutsch"
+                                x:Uid="LanguageDeutsch"
                                 Tag="de"
                                 Click="OnStatusBarLanguageClick"/>
                             <MenuFlyoutItem
-                                Text="English"
+                                x:Uid="LanguageEnglisch"
                                 Tag="en"
                                 Click="OnStatusBarLanguageClick"/>
                         </MenuFlyout>
@@ -468,7 +468,7 @@
                     Height="36"
                     HorizontalAlignment="Center"/>
                 <TextBlock
-                    Text="Theme wird geladen …"
+                    x:Uid="ThemeLoadingHint"
                     HorizontalAlignment="Center"
                     Style="{ThemeResource BodyTextBlockStyle}"/>
             </StackPanel>

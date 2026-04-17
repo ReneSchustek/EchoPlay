@@ -15,12 +15,12 @@
         <!-- Suchzeile -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
             <TextBox
-                PlaceholderText="Suchbegriff eingeben..."
+                x:Uid="ImportSearchBox"
                 Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay}"
                 Width="400"
                 KeyDown="OnSearchBoxKeyDown"/>
             <Button
-                ToolTipService.ToolTip="Suchen"
+                x:Uid="ImportSearchButton"
                 Click="OnSearchClick"
                 IsEnabled="{x:Bind ViewModel.IsSearchEnabled, Mode=OneWay}">
                 <FontIcon Glyph="&#xE721;" FontSize="16"/>
@@ -56,7 +56,7 @@
 
                         <Button
                             Grid.Column="2"
-                            ToolTipService.ToolTip="Importieren"
+                            x:Uid="ImportResultImportButton"
                             Command="{x:Bind ImportCommand}"
                             Visibility="{x:Bind ImportButtonVisibility}">
                             <FontIcon Glyph="&#xE710;" FontSize="14"/>
@@ -64,7 +64,7 @@
 
                         <TextBlock
                             Grid.Column="3"
-                            Text="✓ Vorhanden"
+                            x:Uid="ImportResultAlreadyImported"
                             VerticalAlignment="Center"
                             Foreground="{ThemeResource SystemFillColorSuccessBrush}"
                             Visibility="{x:Bind AlreadyImportedTextVisibility}"/>

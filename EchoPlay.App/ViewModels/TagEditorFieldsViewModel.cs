@@ -126,14 +126,14 @@ namespace EchoPlay.App.ViewModels
         {
             ArgumentNullException.ThrowIfNull(tag);
             // Setter umgehen, damit keine Nutzeränderung gemeldet wird.
-            _title       = tag.Title;
-            _album       = tag.Album;
-            _artist      = tag.Artist;
+            _title = tag.Title;
+            _album = tag.Album;
+            _artist = tag.Artist;
             _albumArtist = tag.AlbumArtist;
-            _year        = tag.Year?.ToString(CultureInfo.InvariantCulture);
+            _year = tag.Year?.ToString(CultureInfo.InvariantCulture);
             _trackNumber = tag.TrackNumber?.ToString(CultureInfo.InvariantCulture);
-            _trackCount  = tag.TrackCount?.ToString(CultureInfo.InvariantCulture);
-            _genre       = tag.Genre;
+            _trackCount = tag.TrackCount?.ToString(CultureInfo.InvariantCulture);
+            _genre = tag.Genre;
 
             RaiseAllFieldChanges();
         }
@@ -150,11 +150,11 @@ namespace EchoPlay.App.ViewModels
 
             AudioTag first = tags[0];
 
-            _title       = tags.All(t => t.Title == first.Title)             ? first.Title       : MixedValuePlaceholder;
-            _album       = tags.All(t => t.Album == first.Album)             ? first.Album       : MixedValuePlaceholder;
-            _artist      = tags.All(t => t.Artist == first.Artist)           ? first.Artist      : MixedValuePlaceholder;
+            _title = tags.All(t => t.Title == first.Title) ? first.Title : MixedValuePlaceholder;
+            _album = tags.All(t => t.Album == first.Album) ? first.Album : MixedValuePlaceholder;
+            _artist = tags.All(t => t.Artist == first.Artist) ? first.Artist : MixedValuePlaceholder;
             _albumArtist = tags.All(t => t.AlbumArtist == first.AlbumArtist) ? first.AlbumArtist : MixedValuePlaceholder;
-            _genre       = tags.All(t => t.Genre == first.Genre)             ? first.Genre       : MixedValuePlaceholder;
+            _genre = tags.All(t => t.Genre == first.Genre) ? first.Genre : MixedValuePlaceholder;
 
             _year = tags.All(t => t.Year == first.Year)
                 ? first.Year?.ToString(CultureInfo.InvariantCulture)
@@ -190,22 +190,22 @@ namespace EchoPlay.App.ViewModels
         public void ApplyLookupResult(TagLookupResult result)
         {
             ArgumentNullException.ThrowIfNull(result);
-            if (result.Title is not null)   Title      = result.Title;
-            if (result.Artist is not null)  Artist     = result.Artist;
-            if (result.Album is not null)   Album      = result.Album;
-            if (result.Genre is not null)   Genre      = result.Genre;
-            if (result.Year.HasValue)       Year       = result.Year.Value.ToString(CultureInfo.InvariantCulture);
+            if (result.Title is not null) Title = result.Title;
+            if (result.Artist is not null) Artist = result.Artist;
+            if (result.Album is not null) Album = result.Album;
+            if (result.Genre is not null) Genre = result.Genre;
+            if (result.Year.HasValue) Year = result.Year.Value.ToString(CultureInfo.InvariantCulture);
             if (result.TrackCount.HasValue) TrackCount = result.TrackCount.Value.ToString(CultureInfo.InvariantCulture);
 
             // Gemeinsame Tags für "Alle taggen" zwischenspeichern
             _pendingBatchTag = new AudioTag
             {
-                Album       = result.Album,
-                Artist      = result.Artist,
+                Album = result.Album,
+                Artist = result.Artist,
                 AlbumArtist = result.Artist,
-                Genre       = result.Genre,
-                Year        = result.Year,
-                TrackCount  = result.TrackCount
+                Genre = result.Genre,
+                Year = result.Year,
+                TrackCount = result.TrackCount
             };
             OnPropertyChanged(nameof(HasPendingBatchTag));
         }
@@ -219,14 +219,14 @@ namespace EchoPlay.App.ViewModels
         {
             return new AudioTag
             {
-                Title       = NullIfEmpty(_title),
-                Album       = NullIfEmpty(_album),
-                Artist      = NullIfEmpty(_artist),
+                Title = NullIfEmpty(_title),
+                Album = NullIfEmpty(_album),
+                Artist = NullIfEmpty(_artist),
                 AlbumArtist = NullIfEmpty(_albumArtist),
-                Genre       = NullIfEmpty(_genre),
-                Year        = uint.TryParse(_year, out uint year)          ? year     : null,
-                TrackNumber = uint.TryParse(_trackNumber, out uint trkNum) ? trkNum   : null,
-                TrackCount  = uint.TryParse(_trackCount, out uint trkCnt)  ? trkCnt   : null
+                Genre = NullIfEmpty(_genre),
+                Year = uint.TryParse(_year, out uint year) ? year : null,
+                TrackNumber = uint.TryParse(_trackNumber, out uint trkNum) ? trkNum : null,
+                TrackCount = uint.TryParse(_trackCount, out uint trkCnt) ? trkCnt : null
             };
         }
 
@@ -238,14 +238,14 @@ namespace EchoPlay.App.ViewModels
         {
             return new AudioTag
             {
-                Title       = _editedFields.Contains(nameof(Title))       ? NullIfEmpty(_title)       : null,
-                Album       = _editedFields.Contains(nameof(Album))       ? NullIfEmpty(_album)       : null,
-                Artist      = _editedFields.Contains(nameof(Artist))      ? NullIfEmpty(_artist)      : null,
+                Title = _editedFields.Contains(nameof(Title)) ? NullIfEmpty(_title) : null,
+                Album = _editedFields.Contains(nameof(Album)) ? NullIfEmpty(_album) : null,
+                Artist = _editedFields.Contains(nameof(Artist)) ? NullIfEmpty(_artist) : null,
                 AlbumArtist = _editedFields.Contains(nameof(AlbumArtist)) ? NullIfEmpty(_albumArtist) : null,
-                Genre       = _editedFields.Contains(nameof(Genre))       ? NullIfEmpty(_genre)       : null,
-                Year        = _editedFields.Contains(nameof(Year)) && uint.TryParse(_year, out uint y)             ? y   : null,
+                Genre = _editedFields.Contains(nameof(Genre)) ? NullIfEmpty(_genre) : null,
+                Year = _editedFields.Contains(nameof(Year)) && uint.TryParse(_year, out uint y) ? y : null,
                 TrackNumber = _editedFields.Contains(nameof(TrackNumber)) && uint.TryParse(_trackNumber, out uint n) ? n : null,
-                TrackCount  = _editedFields.Contains(nameof(TrackCount)) && uint.TryParse(_trackCount, out uint c)   ? c : null
+                TrackCount = _editedFields.Contains(nameof(TrackCount)) && uint.TryParse(_trackCount, out uint c) ? c : null
             };
         }
 
@@ -257,12 +257,12 @@ namespace EchoPlay.App.ViewModels
         {
             return new AudioTag
             {
-                Album       = NullIfEmpty(_album),
-                Artist      = NullIfEmpty(_artist),
+                Album = NullIfEmpty(_album),
+                Artist = NullIfEmpty(_artist),
                 AlbumArtist = NullIfEmpty(_albumArtist),
-                Genre       = NullIfEmpty(_genre),
-                Year        = uint.TryParse(_year, out uint year) ? year : null,
-                TrackCount  = uint.TryParse(_trackCount, out uint trkCnt) ? trkCnt : null
+                Genre = NullIfEmpty(_genre),
+                Year = uint.TryParse(_year, out uint year) ? year : null,
+                TrackCount = uint.TryParse(_trackCount, out uint trkCnt) ? trkCnt : null
             };
         }
 

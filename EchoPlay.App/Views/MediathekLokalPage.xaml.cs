@@ -41,7 +41,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         public MediathekLokalPage()
         {
-            ViewModel          = App.Services.GetRequiredService<MediathekLokalViewModel>();
+            ViewModel = App.Services.GetRequiredService<MediathekLokalViewModel>();
             _navigationService = App.Services.GetRequiredService<INavigationService>();
             InitializeComponent();
 
@@ -70,12 +70,12 @@ namespace EchoPlay.App.Views
                 }
 
                 ViewModel.NavigateToTagManagerRequested += OnNavigateToTagManagerRequested;
-                ViewModel.AddFolderRequested            += OnAddFolderRequested;
-                ViewModel.MissingEpisodesResolved       += OnMissingEpisodesResolved;
+                ViewModel.AddFolderRequested += OnAddFolderRequested;
+                ViewModel.MissingEpisodesResolved += OnMissingEpisodesResolved;
                 ViewModel.MissingEpisodesModeRequested += OnMissingEpisodesModeRequested;
-                ViewModel.AllSeriesCheckCompleted       += OnAllSeriesCheckCompleted;
-                ViewModel.PropertyChanged               += OnViewModelPropertyChanged;
-                SizeChanged                              += OnPageSizeChanged;
+                ViewModel.AllSeriesCheckCompleted += OnAllSeriesCheckCompleted;
+                ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+                SizeChanged += OnPageSizeChanged;
                 EpisodeAccordion.GridView.SelectionChanged += OnEpisodeSelectionChanged;
                 ViewModel.Activate();
                 await ViewModel.LoadAsync();
@@ -90,12 +90,12 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedFrom(e);
             ViewModel.NavigateToTagManagerRequested -= OnNavigateToTagManagerRequested;
-            ViewModel.AddFolderRequested            -= OnAddFolderRequested;
-            ViewModel.MissingEpisodesResolved       -= OnMissingEpisodesResolved;
+            ViewModel.AddFolderRequested -= OnAddFolderRequested;
+            ViewModel.MissingEpisodesResolved -= OnMissingEpisodesResolved;
             ViewModel.MissingEpisodesModeRequested -= OnMissingEpisodesModeRequested;
-            ViewModel.AllSeriesCheckCompleted       -= OnAllSeriesCheckCompleted;
-            ViewModel.PropertyChanged               -= OnViewModelPropertyChanged;
-            SizeChanged                              -= OnPageSizeChanged;
+            ViewModel.AllSeriesCheckCompleted -= OnAllSeriesCheckCompleted;
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            SizeChanged -= OnPageSizeChanged;
             EpisodeAccordion.GridView.SelectionChanged -= OnEpisodeSelectionChanged;
             ViewModel.Deactivate();
             // VM disposed — Scan-Event-Subscriptions, Sub-VM-Ketten und Koordinatoren freigeben.

@@ -177,7 +177,7 @@ namespace EchoPlay.App.ViewModels
             {
                 IReadOnlyList<TagLookupResult> results = await _ctx.LookupCoordinator.SearchAsync(query);
 
-                int loadedTrackCount   = _fileListVM.Files.Count;
+                int loadedTrackCount = _fileListVM.Files.Count;
                 TagLookupResult? match = _ctx.LookupCoordinator.SelectBestMatch(results, loadedTrackCount);
 
                 if (match is not null && match.TrackCount.HasValue
@@ -239,7 +239,7 @@ namespace EchoPlay.App.ViewModels
                 async file =>
                 {
                     AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag   = TagBatchRunner.MergeSharedIntoExisting(pendingTag, existingTag);
+                    AudioTag mergedTag = TagBatchRunner.MergeSharedIntoExisting(pendingTag, existingTag);
                     await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
                     file.IsModified = false;
                 },

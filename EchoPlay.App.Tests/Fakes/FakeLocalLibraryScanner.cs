@@ -28,7 +28,7 @@ namespace EchoPlay.App.Tests.Fakes
             IReadOnlyList<LocalScanResult> results,
             IReadOnlyList<string>? seriesFolders = null)
         {
-            _results       = results;
+            _results = results;
             // Kein seriesFolders angegeben → Pfade aus den Scan-Ergebnissen ableiten
             _seriesFolders = seriesFolders ?? [];
         }

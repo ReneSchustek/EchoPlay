@@ -58,13 +58,13 @@ namespace EchoPlay.App.ViewModels
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
         public StatusBarViewModel(IServiceScopeFactory scopeFactory, IThemeService themeService, TaskbarProgressService taskbar, IClock clock)
         {
-            _scopeFactory   = scopeFactory;
-            _themeService   = themeService;
-            _taskbar        = taskbar;
-            _clock          = clock;
+            _scopeFactory = scopeFactory;
+            _themeService = themeService;
+            _taskbar = taskbar;
+            _clock = clock;
 
             // CommandParameter enthält den Theme-Namen bzw. den Sprachcode als string
-            SwitchThemeCommand    = new ParameterizedRelayCommand(param => SwitchTheme(param as string ?? string.Empty));
+            SwitchThemeCommand = new ParameterizedRelayCommand(param => SwitchTheme(param as string ?? string.Empty));
             SwitchLanguageCommand = new ParameterizedRelayCommand(param => _ = ChangeLanguageAsync(param as string ?? string.Empty));
         }
 
@@ -366,9 +366,9 @@ namespace EchoPlay.App.ViewModels
         public void UpdateScanProgress(ScanProgress progress)
         {
             ArgumentNullException.ThrowIfNull(progress);
-            ScanProgressText  = progress.StatusText;
+            ScanProgressText = progress.StatusText;
             ScanProgressValue = progress.PercentComplete;
-            IsScanActive      = true;
+            IsScanActive = true;
 
             // Taskleisten-Fortschritt: indeterministisch solange Gesamtanzahl unbekannt (0 %)
             if (progress.PercentComplete > 0)
@@ -389,9 +389,9 @@ namespace EchoPlay.App.ViewModels
         /// <param name="text">Der anzuzeigende Fortschrittstext.</param>
         public void SetScanProgress(string text)
         {
-            ScanProgressText  = text;
+            ScanProgressText = text;
             ScanProgressValue = 0;
-            IsScanActive      = true;
+            IsScanActive = true;
             _taskbar.SetIndeterminate();
         }
 
@@ -401,9 +401,9 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public void ClearScanProgress()
         {
-            ScanProgressText  = string.Empty;
+            ScanProgressText = string.Empty;
             ScanProgressValue = 0;
-            IsScanActive      = false;
+            IsScanActive = false;
             _taskbar.Clear();
         }
 
@@ -436,21 +436,21 @@ namespace EchoPlay.App.ViewModels
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
 
-            ISeriesDataService          seriesService   = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-            IEpisodeDataService         episodeService  = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            IPlaybackStateDataService   playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
-            IAppSettingsDataService     settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
+            IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
 
             // Einstellungen laden – gibt Theme, Sprache und aktiven Provider für die Anzeige
             AppSettings settings = await settingsService.GetAsync();
-            ActiveTheme           = settings.ActiveTheme;
-            ActiveLanguage        = settings.ActiveLanguage;
+            ActiveTheme = settings.ActiveTheme;
+            ActiveLanguage = settings.ActiveLanguage;
             ActiveProviderDisplay = settings.ActiveProvider switch
             {
-                ProviderType.Spotify    => "Spotify",
+                ProviderType.Spotify => "Spotify",
                 ProviderType.AppleMusic => "Apple Music",
-                ProviderType.Both       => "Spotify + Apple Music",
-                _                      => string.Empty
+                ProviderType.Both => "Spotify + Apple Music",
+                _ => string.Empty
             };
 
             // Sichtbarkeit der Online-Mediathek: nur einblenden wenn ein Provider gewählt ist
@@ -489,9 +489,9 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(seriesIds);
 
             // Statistiken über alle Episoden berechnen
-            int finished   = 0;
+            int finished = 0;
             int unfinished = 0;
-            int newCount   = 0;
+            int newCount = 0;
             DateTime today = _clock.UtcNow.Date;
 
             foreach (Episode episode in allEpisodes)
@@ -513,9 +513,9 @@ namespace EchoPlay.App.ViewModels
                 }
             }
 
-            FinishedEpisodesCount   = finished;
+            FinishedEpisodesCount = finished;
             UnfinishedEpisodesCount = unfinished;
-            NewEpisodesCount        = newCount;
+            NewEpisodesCount = newCount;
         }
 
         // ── Theme-Wechsel ────────────────────────────────────────────────────────

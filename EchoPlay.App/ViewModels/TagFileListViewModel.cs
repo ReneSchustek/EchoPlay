@@ -97,9 +97,9 @@ namespace EchoPlay.App.ViewModels
         public void SetFiles(IReadOnlyList<TagFileItemViewModel> files, string folderPath)
         {
             CurrentFolderPath = folderPath;
-            Files             = new ObservableCollection<TagFileItemViewModel>(files);
-            SelectedFile      = null;
-            SelectedFiles     = [];
+            Files = new ObservableCollection<TagFileItemViewModel>(files);
+            SelectedFile = null;
+            SelectedFiles = [];
         }
 
         /// <summary>
@@ -108,9 +108,9 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public void Clear()
         {
-            Files             = [];
-            SelectedFile      = null;
-            SelectedFiles     = [];
+            Files = [];
+            SelectedFile = null;
+            SelectedFiles = [];
             CurrentFolderPath = null;
         }
 
@@ -124,7 +124,7 @@ namespace EchoPlay.App.ViewModels
         {
             ArgumentNullException.ThrowIfNull(selectedItems);
             SelectedFiles = selectedItems;
-            SelectedFile  = selectedItems.Count == 1 ? selectedItems[0] : null;
+            SelectedFile = selectedItems.Count == 1 ? selectedItems[0] : null;
 
             SelectionChanged?.Invoke(selectedItems);
         }

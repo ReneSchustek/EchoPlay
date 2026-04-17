@@ -19,7 +19,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="fullPath">Vollständiger Dateipfad der Audiodatei.</param>
         public PlaylistItemViewModel(int index, string fullPath)
         {
-            Index    = index;
+            Index = index;
             FullPath = fullPath;
             // Nur der Dateiname ohne Erweiterung wird angezeigt – der Pfad ist für die Playlist irrelevant.
             // Erster Buchstabe wird großgeschrieben, weil Kassetten-Rips und manche Dateinamen

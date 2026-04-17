@@ -64,10 +64,10 @@ namespace EchoPlay.App.ViewModels
             IClock? clock = null)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
-            _scopeFactory              = scopeFactory;
+            _scopeFactory = scopeFactory;
             _confirmationDialogService = confirmationDialogService;
-            _localizationService       = localizationService;
-            _logger                    = loggerFactory.CreateLogger("DashboardViewModel");
+            _localizationService = localizationService;
+            _logger = loggerFactory.CreateLogger("DashboardViewModel");
 
             IClock resolvedClock = clock ?? new SystemClock();
 
@@ -84,16 +84,16 @@ namespace EchoPlay.App.ViewModels
             // Sub-VMs initialisieren und PropertyChanged an eigene Pass-Through-Properties weiterreichen,
             // damit die XAML-Bindings auf Top-VM-Properties unverändert funktionieren.
             NeuerscheinungenVM = new DashboardNeuerscheinungenViewModel();
-            FavoritenVM        = new DashboardFavoritenViewModel(scopeFactory, _logger);
-            WeiterhoerenVM     = new DashboardWeiterhoerenViewModel();
-            InProgressVM       = new DashboardInProgressViewModel();
-            ZuletztGehoertVM   = new DashboardZuletztGehoertViewModel();
+            FavoritenVM = new DashboardFavoritenViewModel(scopeFactory, _logger);
+            WeiterhoerenVM = new DashboardWeiterhoerenViewModel();
+            InProgressVM = new DashboardInProgressViewModel();
+            ZuletztGehoertVM = new DashboardZuletztGehoertViewModel();
 
             NeuerscheinungenVM.PropertyChanged += OnSubVmPropertyChanged;
-            FavoritenVM.PropertyChanged        += OnSubVmPropertyChanged;
-            WeiterhoerenVM.PropertyChanged     += OnSubVmPropertyChanged;
-            InProgressVM.PropertyChanged       += OnSubVmPropertyChanged;
-            ZuletztGehoertVM.PropertyChanged   += OnSubVmPropertyChanged;
+            FavoritenVM.PropertyChanged += OnSubVmPropertyChanged;
+            WeiterhoerenVM.PropertyChanged += OnSubVmPropertyChanged;
+            InProgressVM.PropertyChanged += OnSubVmPropertyChanged;
+            ZuletztGehoertVM.PropertyChanged += OnSubVmPropertyChanged;
 
             // FavoritesChanged löst die Neuberechnung des NoFavoritesHint-Visibility-Flags aus,
             // wenn der Nutzer Favoriten entfernt oder umsortiert.
@@ -225,8 +225,8 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
-                ISeriesDataService seriesService       = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                IEpisodeDataService episodeService     = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+                ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+                IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
                 IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
                 // Serien immer frisch laden – IsWatched kann sich während der Session ändern
@@ -274,7 +274,7 @@ namespace EchoPlay.App.ViewModels
 
                 // Onboarding: wenn keine abonnierte Serie vorhanden ist, signalisieren wir das der Seite
                 HasSubscribedSeries = subscribedSeries.Count > 0;
-                _hasFavoriteSeries  = favoriteSeries.Count > 0;
+                _hasFavoriteSeries = favoriteSeries.Count > 0;
                 OnPropertyChanged(nameof(NoFavoritesHintVisibility));
 
                 // PlaybackStates einmal komplett laden – wird für Weiterhören, In-Progress
@@ -354,7 +354,7 @@ namespace EchoPlay.App.ViewModels
                     continue;
                 }
 
-                int completedCount   = 0;
+                int completedCount = 0;
                 int totalEpisodeCount = episodes.Count;
 
                 foreach (Episode episode in episodes)
@@ -459,10 +459,10 @@ namespace EchoPlay.App.ViewModels
         public void Dispose()
         {
             NeuerscheinungenVM.PropertyChanged -= OnSubVmPropertyChanged;
-            FavoritenVM.PropertyChanged        -= OnSubVmPropertyChanged;
-            WeiterhoerenVM.PropertyChanged     -= OnSubVmPropertyChanged;
-            InProgressVM.PropertyChanged       -= OnSubVmPropertyChanged;
-            ZuletztGehoertVM.PropertyChanged   -= OnSubVmPropertyChanged;
+            FavoritenVM.PropertyChanged -= OnSubVmPropertyChanged;
+            WeiterhoerenVM.PropertyChanged -= OnSubVmPropertyChanged;
+            InProgressVM.PropertyChanged -= OnSubVmPropertyChanged;
+            ZuletztGehoertVM.PropertyChanged -= OnSubVmPropertyChanged;
 
             FavoritenVM.FavoritesChanged -= OnFavoritesChanged;
             FavoritenVM.Dispose();

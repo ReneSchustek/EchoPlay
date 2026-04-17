@@ -25,7 +25,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         /// </summary>
         public LocalLibraryScannerTests()
         {
-            _root    = Directory.CreateTempSubdirectory("echoplay_scanner_").FullName;
+            _root = Directory.CreateTempSubdirectory("echoplay_scanner_").FullName;
             _scanner = new LocalLibraryScanner(new FakeLoggerFactory(), new FakeTagTitleReader());
         }
 
@@ -61,7 +61,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_FindsSeries_ByFolderName()
         {
             // Serienordner = direkter Unterordner des Root
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty);
 
@@ -76,7 +76,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_ParsesEpisodeNumber_FromFolderName()
         {
             // Episodennummer wird korrekt aus dem Ordnernamen extrahiert
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "042")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty);
 
@@ -90,14 +90,14 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_CollectsAllSupportedAudioFormats()
         {
             // mp3, m4a, flac, ogg werden alle erkannt – andere Dateien werden ignoriert
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
 
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "track1.mp3"),  string.Empty);
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "track2.m4a"),  string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "track1.mp3"), string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "track2.m4a"), string.Empty);
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track3.flac"), string.Empty);
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "track4.ogg"),  string.Empty);
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "cover.jpg"),   string.Empty); // ignoriert
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "track4.ogg"), string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "cover.jpg"), string.Empty); // ignoriert
 
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
@@ -109,12 +109,12 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_IgnoresNonAudioFiles()
         {
             // Nicht-Audio-Dateien (.txt, .jpg, .pdf) werden nicht als Tracks gezählt
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
 
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"),  string.Empty);
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "info.txt"),   string.Empty);
-            await File.WriteAllTextAsync(Path.Combine(episodePath, "cover.jpg"),  string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "info.txt"), string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(episodePath, "cover.jpg"), string.Empty);
 
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000}");
@@ -128,10 +128,10 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             // Ordner ohne Muster-Treffer werden trotzdem importiert – ParsedNumber bleibt null,
             // der Ordnername dient als Titel. So gehen keine Hörspiele verloren.
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
-            string matched    = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
-            string unmatched  = Directory.CreateDirectory(Path.Combine(seriesPath, "extras")).FullName;
+            string matched = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
+            string unmatched = Directory.CreateDirectory(Path.Combine(seriesPath, "extras")).FullName;
 
-            await File.WriteAllTextAsync(Path.Combine(matched, "track.mp3"),   string.Empty);
+            await File.WriteAllTextAsync(Path.Combine(matched, "track.mp3"), string.Empty);
             await File.WriteAllTextAsync(Path.Combine(unmatched, "bonus.mp3"), string.Empty);
 
             IReadOnlyList<LocalScanResult> results =
@@ -163,7 +163,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             // Mehrere Serienordner werden alle gefunden
             foreach (string series in new[] { "TKKG", "Die drei Fragezeichen", "FAMOUS FIVE" })
             {
-                string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, series)).FullName;
+                string seriesPath = Directory.CreateDirectory(Path.Combine(_root, series)).FullName;
                 string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
                 await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty);
             }
@@ -178,7 +178,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_TracksAreSortedAlphabetically()
         {
             // Tracks werden sortiert zurückgegeben – Wiedergabereihenfolge muss korrekt sein
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
 
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track03.mp3"), string.Empty);
@@ -199,9 +199,9 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Tag.Title enthält bei Hörspielen den Kapitel-Titel ("Inhaltsangabe", "Teil 1" o.Ä.),
             // nicht den Episodentitel. Der Ordnername ist daher die verlässlichere Quelle.
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Titelaus Ordner")).FullName;
-            string trackPath   = Path.Combine(episodePath, "track.mp3");
+            string trackPath = Path.Combine(episodePath, "track.mp3");
             await File.WriteAllTextAsync(trackPath, string.Empty);
 
             FakeTagTitleReader tagReader = new(
@@ -223,7 +223,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         public async Task ScanSeriesAsync_FallsBackToFolderName_WhenTagTitleIsEmpty()
         {
             // Kein Tag-Titel verfügbar → Ordnername wird verwendet
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "007 - Sherlock Holmes")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty);
 
@@ -240,7 +240,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             // Ordnernamen wie "001 - 42 Der Schatz" enthalten zwei Zahlen:
             // "001" = lokaler Sortierpräfix, "42" = eigentliche Episodennummer im Titel.
             // Nach dem Parsen landet "42 Der Schatz" als Titel – das führende "42 " wird bereinigt.
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Der Schatz")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty);
 
@@ -257,9 +257,9 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Auch wenn Tag.Title gesetzt ist, gewinnt der Ordnername –
             // "Der Schatz" aus dem Ordner ist der Episodentitel, "Teil 1" der Kapitel-Titel.
-            string seriesPath  = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Der Schatz")).FullName;
-            string trackPath   = Path.Combine(episodePath, "track.mp3");
+            string trackPath = Path.Combine(episodePath, "track.mp3");
             await File.WriteAllTextAsync(trackPath, string.Empty);
 
             FakeTagTitleReader tagReader = new(

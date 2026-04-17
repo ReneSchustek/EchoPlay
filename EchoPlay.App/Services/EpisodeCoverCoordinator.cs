@@ -40,12 +40,12 @@ namespace EchoPlay.App.Services
             IErrorDialogService errorDialogService,
             IHttpClientFactory httpClientFactory)
         {
-            _scopeFactory              = scopeFactory;
-            _coverSearchService        = coverSearchService;
-            _coverService              = coverService;
+            _scopeFactory = scopeFactory;
+            _coverSearchService = coverSearchService;
+            _coverService = coverService;
             _confirmationDialogService = confirmationDialogService;
-            _errorDialogService        = errorDialogService;
-            _httpClientFactory         = httpClientFactory;
+            _errorDialogService = errorDialogService;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <inheritdoc/>

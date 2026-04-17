@@ -76,12 +76,12 @@ namespace EchoPlay.App.ViewModels
         {
             ArgumentNullException.ThrowIfNull(seriesName);
             ArgumentNullException.ThrowIfNull(episodeTitle);
-            _clock       = clock ?? new SystemClock();
-            EpisodeId    = episodeId;
-            SeriesId     = seriesId;
-            SeriesName   = seriesName;
+            _clock = clock ?? new SystemClock();
+            EpisodeId = episodeId;
+            SeriesId = seriesId;
+            SeriesName = seriesName;
             EpisodeTitle = CleanEpisodeTitle(episodeTitle, seriesName);
-            CoverImage   = coverImage;
+            CoverImage = coverImage;
             EpisodeNumber = episodeNumber;
             _localizationService = localizationService;
 
@@ -167,18 +167,18 @@ namespace EchoPlay.App.ViewModels
                 BadgeBrush = null;
             }
 
-            _status      = status;
+            _status = status;
             _progressPercent = progressPercent;
-            HasLocalTrack    = hasLocalTrack;
-            IsAnnounced      = isAnnounced;
+            HasLocalTrack = hasLocalTrack;
+            IsAnnounced = isAnnounced;
 
-            _scopeFactory               = scopeFactory;
-            _errorDialogService         = errorDialogService;
-            _confirmationDialogService  = confirmationDialogService;
-            _playerService              = playerService;
+            _scopeFactory = scopeFactory;
+            _errorDialogService = errorDialogService;
+            _confirmationDialogService = confirmationDialogService;
+            _playerService = playerService;
 
-            PlayCommand           = new RelayCommand(() => _ = PlayAsync());
-            MarkAsPlayedCommand   = new RelayCommand(() => _ = MarkAsPlayedAsync());
+            PlayCommand = new RelayCommand(() => _ = PlayAsync());
+            MarkAsPlayedCommand = new RelayCommand(() => _ = MarkAsPlayedAsync());
             MarkAsUnplayedCommand = new RelayCommand(() => _ = MarkAsUnplayedAsync());
         }
 
@@ -326,7 +326,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             using IServiceScope scope = _scopeFactory.CreateScope();
-            ILocalTrackDataService trackService    = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
             IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
             IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(EpisodeId);
@@ -380,7 +380,7 @@ namespace EchoPlay.App.ViewModels
             {
                 PlaybackState newState = new()
                 {
-                    EpisodeId   = EpisodeId,
+                    EpisodeId = EpisodeId,
                     IsCompleted = true,
                     CompletedAt = _clock.UtcNow,
                     LastPosition = TimeSpan.Zero,
@@ -389,7 +389,7 @@ namespace EchoPlay.App.ViewModels
                 await stateService.AddAsync(newState);
             }
 
-            Status          = PlaybackStatus.Finished;
+            Status = PlaybackStatus.Finished;
             ProgressPercent = 100;
         }
 
@@ -418,7 +418,7 @@ namespace EchoPlay.App.ViewModels
                 await stateService.DeleteAsync(existing.Id);
             }
 
-            Status          = PlaybackStatus.NotStarted;
+            Status = PlaybackStatus.NotStarted;
             ProgressPercent = 0;
         }
 

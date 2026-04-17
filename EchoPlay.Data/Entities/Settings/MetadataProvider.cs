@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Data.Entities.Settings
+namespace EchoPlay.Data.Entities.Settings
 {
     /// <summary>
     /// Definiert die verfügbaren Metadaten-Anbieter für Hörspielinformationen.

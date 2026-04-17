@@ -33,10 +33,10 @@ namespace EchoPlay.App.ViewModels
             IPlayerService playerService,
             Action<string> requestTagManagerNavigation)
         {
-            _playerService               = playerService;
+            _playerService = playerService;
             _requestTagManagerNavigation = requestTagManagerNavigation;
 
-            OpenAllSeriesTracksCommand  = new RelayCommand(() => OpenAllTracksByPath(_selectedArtist?.LocalFolderPath));
+            OpenAllSeriesTracksCommand = new RelayCommand(() => OpenAllTracksByPath(_selectedArtist?.LocalFolderPath));
             OpenAllEpisodeTracksCommand = new RelayCommand(() => OpenAllTracksByPath(_selectedEpisode?.FolderPath));
 
             // PlayEpisode ist initial inaktiv – wird per SetEnabled aktiviert sobald Tracks geladen sind.
@@ -130,10 +130,10 @@ namespace EchoPlay.App.ViewModels
             foreach (LocalTrack track in tracks.OrderBy(t => t.TrackNumber))
             {
                 trackRows.Add(new LocalTrackRowViewModel(
-                    trackId:                     track.Id,
-                    trackNumber:                 track.TrackNumber,
-                    filePath:                    track.FilePath,
-                    duration:                    track.Duration,
+                    trackId: track.Id,
+                    trackNumber: track.TrackNumber,
+                    filePath: track.FilePath,
+                    duration: track.Duration,
                     requestTagManagerNavigation: _requestTagManagerNavigation));
 
                 totalDuration += track.Duration;
@@ -158,7 +158,7 @@ namespace EchoPlay.App.ViewModels
         public void Clear()
         {
             SelectedEpisode = null;
-            Tracks          = [];
+            Tracks = [];
         }
 
         /// <summary>

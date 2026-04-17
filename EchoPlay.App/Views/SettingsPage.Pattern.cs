@@ -69,17 +69,17 @@ namespace EchoPlay.App.Views
                 // Muster in Monospace-Schrift – erleichtert das Lesen der Platzhalter
                 RadioButton radio = new()
                 {
-                    Content    = suggestion.Pattern,
-                    Tag        = suggestion.Pattern,
+                    Content = suggestion.Pattern,
+                    Tag = suggestion.Pattern,
                     FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
-                    IsChecked  = firstButton is null
+                    IsChecked = firstButton is null
                 };
 
                 TextBlock descBlock = new()
                 {
-                    Text       = description,
-                    FontSize   = 12,
-                    Margin     = new Thickness(28, 0, 0, 0),
+                    Text = description,
+                    FontSize = 12,
+                    Margin = new Thickness(28, 0, 0, 0),
                     Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
                 };
 
@@ -92,11 +92,11 @@ namespace EchoPlay.App.Views
 
             ContentDialog dialog = new()
             {
-                XamlRoot          = XamlRoot,
-                Title             = _localizationService.Get("PatternDialogTitle"),
-                Content           = contentPanel,
+                XamlRoot = XamlRoot,
+                Title = _localizationService.Get("PatternDialogTitle"),
+                Content = contentPanel,
                 PrimaryButtonText = _localizationService.Get("PatternDialogApply"),
-                CloseButtonText   = _localizationService.Get("PatternDialogCancel")
+                CloseButtonText = _localizationService.Get("PatternDialogCancel")
             };
 
             Helpers.ContentDialogDragHelper.MakeDraggable(dialog);

@@ -90,7 +90,7 @@ namespace EchoPlay.App.ViewModels
                 async file =>
                 {
                     AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag   = TagBatchRunner.MergeEditedIntoExisting(editedTag, existingTag);
+                    AudioTag mergedTag = TagBatchRunner.MergeEditedIntoExisting(editedTag, existingTag);
                     await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
                     file.IsModified = false;
                 },
@@ -130,7 +130,7 @@ namespace EchoPlay.App.ViewModels
                 async file =>
                 {
                     AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag   = TagBatchRunner.MergeSharedIntoExisting(sharedTag, existingTag);
+                    AudioTag mergedTag = TagBatchRunner.MergeSharedIntoExisting(sharedTag, existingTag);
                     await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
                     file.IsModified = false;
                 },

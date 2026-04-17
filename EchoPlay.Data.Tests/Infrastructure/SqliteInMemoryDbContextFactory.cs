@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Context;
+using EchoPlay.Data.Context;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;

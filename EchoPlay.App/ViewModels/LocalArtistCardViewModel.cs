@@ -48,15 +48,15 @@ namespace EchoPlay.App.ViewModels
             bool isWatched,
             IServiceScopeFactory scopeFactory)
         {
-            SeriesId          = seriesId;
-            Title             = title;
-            _coverImage       = coverImage;
-            LocalFolderPath   = localFolderPath;
+            SeriesId = seriesId;
+            Title = title;
+            _coverImage = coverImage;
+            LocalFolderPath = localFolderPath;
             LocalEpisodeCount = localEpisodeCount;
             TotalEpisodeCount = totalEpisodeCount;
-            _isFavorite       = isFavorite;
-            _isWatched        = isWatched;
-            _scopeFactory     = scopeFactory;
+            _isFavorite = isFavorite;
+            _isWatched = isWatched;
+            _scopeFactory = scopeFactory;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
         }

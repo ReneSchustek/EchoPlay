@@ -1,4 +1,4 @@
-﻿using EchoPlay.Logger.Scoping;
+using EchoPlay.Logger.Scoping;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Logger.Abstractions

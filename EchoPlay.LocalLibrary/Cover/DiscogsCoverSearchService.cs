@@ -88,9 +88,9 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 results.Add(new CoverSearchResult(
                     ThumbnailUrl: release.Thumb,
-                    FullUrl:      release.CoverImage,
+                    FullUrl: release.CoverImage,
                     ReleaseTitle: releaseTitle,
-                    Source:       "Discogs"));
+                    Source: "Discogs"));
             }
 
             return results;

@@ -23,10 +23,10 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<ISecureSettingsDataService>(_ => fakeService);
 
-            ServiceProvider provider          = services.BuildServiceProvider();
+            ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            LoggerOptions options       = new() { EnableFileLogging = false, EnableAutoCleanup = false };
+            LoggerOptions options = new() { EnableFileLogging = false, EnableAutoCleanup = false };
             LoggerFactory loggerFactory = new([], options);
 
             SpotifyCredentialStore store = new(scopeFactory, loggerFactory);

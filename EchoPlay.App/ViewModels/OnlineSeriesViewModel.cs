@@ -225,10 +225,10 @@ namespace EchoPlay.App.ViewModels
         {
             return _statusFilter switch
             {
-                SeriesStatusFilter.Neu      => card.HasNewEpisodes,
+                SeriesStatusFilter.Neu => card.HasNewEpisodes,
                 SeriesStatusFilter.AmHoeren => card.HasInProgressEpisodes,
-                SeriesStatusFilter.Gehört   => card.AllEpisodesFinished,
-                _                           => true
+                SeriesStatusFilter.Gehört => card.AllEpisodesFinished,
+                _ => true
             };
         }
     }

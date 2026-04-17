@@ -23,10 +23,10 @@ namespace EchoPlay.App.ViewModels
             string lastEpisodeTitle,
             BitmapImage? coverImage)
         {
-            SeriesId         = seriesId;
-            SeriesName       = seriesName;
+            SeriesId = seriesId;
+            SeriesName = seriesName;
             LastEpisodeTitle = lastEpisodeTitle;
-            CoverImage       = coverImage;
+            CoverImage = coverImage;
         }
 
         /// <summary>Datenbank-ID der Serie – wird bei der Navigation zur Detailseite übergeben.</summary>

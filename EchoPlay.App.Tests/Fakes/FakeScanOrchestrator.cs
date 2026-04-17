@@ -32,8 +32,8 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<IReadOnlyList<LocalScanResult>> ScanAsync(
             string rootPath,
             string episodeFolderPattern,
-            IProgress<ScanProgress>? progress     = null,
-            CancellationToken cancellationToken    = default)
+            IProgress<ScanProgress>? progress = null,
+            CancellationToken cancellationToken = default)
         {
             // Phasen-Meldungen werden nicht simuliert – für SyncService-Tests irrelevant
             return _scanner.ScanSeriesAsync(rootPath, episodeFolderPattern, progress, onSeriesScanned: null, cancellationToken);

@@ -51,7 +51,7 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.FromResult(new MissingEpisodesReport
             {
                 CheckedAtUtc = TestIds.ReferenceDate,
-                Results      = []
+                Results = []
             });
         }
     }

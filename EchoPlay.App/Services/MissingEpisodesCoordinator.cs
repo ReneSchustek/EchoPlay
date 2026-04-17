@@ -39,8 +39,8 @@ namespace EchoPlay.App.Services
             ArgumentNullException.ThrowIfNull(clock);
 
             _scopeFactory = scopeFactory;
-            _statusBar    = statusBar;
-            _clock        = clock;
+            _statusBar = statusBar;
+            _clock = clock;
         }
 
         /// <inheritdoc/>
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Services
                 return new MissingEpisodesReport
                 {
                     CheckedAtUtc = _clock.UtcNow,
-                    Results      = []
+                    Results = []
                 };
             }
 
@@ -125,7 +125,7 @@ namespace EchoPlay.App.Services
                 return new MissingEpisodesReport
                 {
                     CheckedAtUtc = _clock.UtcNow,
-                    Results      = results
+                    Results = results
                 };
             }
             finally
@@ -164,11 +164,11 @@ namespace EchoPlay.App.Services
 
                 CheckableSeriesInfo checkable = new()
                 {
-                    SeriesId           = series.Id,
-                    Title              = series.Title,
+                    SeriesId = series.Id,
+                    Title = series.Title,
                     AppleMusicArtistId = series.AppleMusicArtistId,
-                    LocalFolderPath    = seriesFolderPath,
-                    CoverImageUrl      = series.CoverImageUrl
+                    LocalFolderPath = seriesFolderPath,
+                    CoverImageUrl = series.CoverImageUrl
                 };
 
                 IReadOnlyList<OnlineEpisodeCheckResult> results =
@@ -237,11 +237,11 @@ namespace EchoPlay.App.Services
                 {
                     CheckableSeriesInfo checkable = new()
                     {
-                        SeriesId           = series.Id,
-                        Title              = series.Title,
+                        SeriesId = series.Id,
+                        Title = series.Title,
                         AppleMusicArtistId = series.AppleMusicArtistId,
-                        LocalFolderPath    = series.LocalFolderPath,
-                        CoverImageUrl      = series.CoverImageUrl
+                        LocalFolderPath = series.LocalFolderPath,
+                        CoverImageUrl = series.CoverImageUrl
                     };
 
                     IReadOnlyList<OnlineEpisodeCheckResult> checkResults =
@@ -257,7 +257,7 @@ namespace EchoPlay.App.Services
                             onlineEpisodes.Add(new OnlineEpisodeInfo
                             {
                                 EpisodeNumber = ep.EpisodeNumber,
-                                Title         = ep.AlbumTitle
+                                Title = ep.AlbumTitle
                             });
                         }
                     }
@@ -265,21 +265,21 @@ namespace EchoPlay.App.Services
 
                 return new SeriesMissingEpisodesResult
                 {
-                    SeriesTitle         = series.Title,
-                    LocalHighestNumber  = localHighest,
+                    SeriesTitle = series.Title,
+                    LocalHighestNumber = localHighest,
                     OnlineHighestNumber = onlineHighest,
-                    LocalGaps           = gaps,
-                    OnlineEpisodes      = onlineEpisodes
+                    LocalGaps = gaps,
+                    OnlineEpisodes = onlineEpisodes
                 };
             }
             catch (Exception ex)
             {
                 return new SeriesMissingEpisodesResult
                 {
-                    SeriesTitle    = series.Title,
-                    LocalGaps      = [],
+                    SeriesTitle = series.Title,
+                    LocalGaps = [],
                     OnlineEpisodes = [],
-                    ErrorMessage   = ex.Message
+                    ErrorMessage = ex.Message
                 };
             }
         }

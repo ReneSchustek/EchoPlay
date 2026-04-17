@@ -15,9 +15,9 @@ namespace EchoPlay.App.Services
     public sealed class TaskbarProgressService
     {
         // Taskbar-Fortschrittsmodus: kein Balken, unbestimmt oder normaler Fortschritt
-        private const int TBPF_NOPROGRESS    = 0x0;
+        private const int TBPF_NOPROGRESS = 0x0;
         private const int TBPF_INDETERMINATE = 0x1;
-        private const int TBPF_NORMAL        = 0x2;
+        private const int TBPF_NORMAL = 0x2;
 
         // COM-Instanz wird beim ersten Aufruf erzeugt und danach wiederverwendet.
         // null bedeutet: Initialisierung fehlgeschlagen oder noch nicht versucht.

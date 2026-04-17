@@ -65,7 +65,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// Gibt 0 zurück wenn beide Zähler unbekannt sind – indeterministischer Balken.
         /// </summary>
         public double PercentComplete =>
-            TotalFiles   > 0 ? ProcessedFiles   / (double)TotalFiles   * 100.0 :
-            TotalSeries  > 0 ? ProcessedSeries  / (double)TotalSeries  * 100.0 : 0;
+            TotalFiles > 0 ? ProcessedFiles / (double)TotalFiles * 100.0 :
+            TotalSeries > 0 ? ProcessedSeries / (double)TotalSeries * 100.0 : 0;
     }
 }

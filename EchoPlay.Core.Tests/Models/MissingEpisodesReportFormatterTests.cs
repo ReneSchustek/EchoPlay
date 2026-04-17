@@ -26,10 +26,10 @@ namespace EchoPlay.Core.Tests.Models
             // Lokale Lücken werden als "Folge 005, Folge 042" angezeigt
             SeriesMissingEpisodesResult result = new()
             {
-                SeriesTitle        = "TKKG",
+                SeriesTitle = "TKKG",
                 LocalHighestNumber = 210,
-                LocalGaps          = [5, 42],
-                OnlineEpisodes     = []
+                LocalGaps = [5, 42],
+                OnlineEpisodes = []
             };
 
             MissingEpisodesReport report = BuildReport([result]);
@@ -47,11 +47,11 @@ namespace EchoPlay.Core.Tests.Models
             // Online verfügbare Folgen werden mit Nummer und Titel angezeigt
             SeriesMissingEpisodesResult result = new()
             {
-                SeriesTitle         = "Die drei ???",
-                LocalHighestNumber  = 229,
+                SeriesTitle = "Die drei ???",
+                LocalHighestNumber = 229,
                 OnlineHighestNumber = 231,
-                LocalGaps           = [],
-                OnlineEpisodes      =
+                LocalGaps = [],
+                OnlineEpisodes =
                 [
                     new OnlineEpisodeInfo { EpisodeNumber = 230, Title = "Folge 230" },
                     new OnlineEpisodeInfo { EpisodeNumber = 231, Title = "Folge 231" }
@@ -72,10 +72,10 @@ namespace EchoPlay.Core.Tests.Models
             // Keine Lücken, keine Online-Folgen → "Alle Folgen komplett"
             SeriesMissingEpisodesResult result = new()
             {
-                SeriesTitle        = "Bibi Blocksberg",
+                SeriesTitle = "Bibi Blocksberg",
                 LocalHighestNumber = 145,
-                LocalGaps          = [],
-                OnlineEpisodes     = []
+                LocalGaps = [],
+                OnlineEpisodes = []
             };
 
             MissingEpisodesReport report = BuildReport([result]);
@@ -90,17 +90,17 @@ namespace EchoPlay.Core.Tests.Models
             // Zusammenfassung mit Serienanzahl und Gesamtzahlen
             SeriesMissingEpisodesResult r1 = new()
             {
-                SeriesTitle        = "TKKG",
+                SeriesTitle = "TKKG",
                 LocalHighestNumber = 210,
-                LocalGaps          = [42, 87],
-                OnlineEpisodes     = [new OnlineEpisodeInfo { EpisodeNumber = 211, Title = "Folge 211" }]
+                LocalGaps = [42, 87],
+                OnlineEpisodes = [new OnlineEpisodeInfo { EpisodeNumber = 211, Title = "Folge 211" }]
             };
             SeriesMissingEpisodesResult r2 = new()
             {
-                SeriesTitle        = "Bibi",
+                SeriesTitle = "Bibi",
                 LocalHighestNumber = 145,
-                LocalGaps          = [],
-                OnlineEpisodes     = []
+                LocalGaps = [],
+                OnlineEpisodes = []
             };
 
             MissingEpisodesReport report = BuildReport([r1, r2]);
@@ -117,8 +117,8 @@ namespace EchoPlay.Core.Tests.Models
             // Fehlermeldung wird angezeigt wenn die Prüfung fehlgeschlagen ist
             SeriesMissingEpisodesResult result = new()
             {
-                SeriesTitle  = "Kaputte Serie",
-                LocalGaps    = [],
+                SeriesTitle = "Kaputte Serie",
+                LocalGaps = [],
                 OnlineEpisodes = [],
                 ErrorMessage = "Ordner nicht lesbar"
             };
@@ -183,7 +183,7 @@ namespace EchoPlay.Core.Tests.Models
             return new MissingEpisodesReport
             {
                 CheckedAtUtc = new DateTime(2026, 3, 31, 14, 0, 0, DateTimeKind.Utc),
-                Results      = results
+                Results = results
             };
         }
     }

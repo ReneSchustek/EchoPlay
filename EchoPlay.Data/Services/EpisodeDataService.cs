@@ -92,9 +92,9 @@ namespace EchoPlay.Data.Services
                 .Select(g => new EpisodeCountRow
                 {
                     SeriesId = g.Key,
-                    Total    = g.Count(),
+                    Total = g.Count(),
                     // Zählt Episoden, für die der lokale Ordner bereits gescannt wurde
-                    Local    = g.Count(e => e.LocalFolderPath != null)
+                    Local = g.Count(e => e.LocalFolderPath != null)
                 })
                 .ToListAsync().ConfigureAwait(false);
 

@@ -54,16 +54,16 @@ namespace EchoPlay.App.ViewModels
             string? appleMusicAlbumId = null,
             string? spotifyAlbumId = null)
         {
-            EpisodeId          = episodeId;
-            EpisodeNumber      = episodeNumber;
-            Title              = title;
-            ReleaseDate        = releaseDate;
-            ProviderUrl        = providerUrl;
-            AppleMusicAlbumId  = appleMusicAlbumId;
-            SpotifyAlbumId     = spotifyAlbumId;
-            _scopeFactory      = scopeFactory;
-            _clock             = clock ?? new SystemClock();
-            _isCompleted       = isCompleted;
+            EpisodeId = episodeId;
+            EpisodeNumber = episodeNumber;
+            Title = title;
+            ReleaseDate = releaseDate;
+            ProviderUrl = providerUrl;
+            AppleMusicAlbumId = appleMusicAlbumId;
+            SpotifyAlbumId = spotifyAlbumId;
+            _scopeFactory = scopeFactory;
+            _clock = clock ?? new SystemClock();
+            _isCompleted = isCompleted;
 
             OpenInBrowserCommand = new RelayCommand(OpenInBrowser);
         }
@@ -162,7 +162,7 @@ namespace EchoPlay.App.ViewModels
 
             _ = Process.Start(new ProcessStartInfo
             {
-                FileName        = ProviderUrl,
+                FileName = ProviderUrl,
                 UseShellExecute = true
             });
 
@@ -222,8 +222,8 @@ namespace EchoPlay.App.ViewModels
                 {
                     PlaybackState newState = new()
                     {
-                        EpisodeId    = EpisodeId,
-                        IsCompleted  = true,
+                        EpisodeId = EpisodeId,
+                        IsCompleted = true,
                         LastPlayedAt = _clock.UtcNow,
                         LastPosition = TimeSpan.Zero
                     };

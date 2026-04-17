@@ -1,4 +1,4 @@
-﻿using EchoPlay.Logger.Abstractions;
+using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
 
 namespace EchoPlay.Logger.Core

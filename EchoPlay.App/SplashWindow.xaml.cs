@@ -14,7 +14,7 @@ namespace EchoPlay.App
     public sealed partial class SplashWindow : Window
     {
         private const int FensterBreite = 480;
-        private const int FensterHoehe  = 300;
+        private const int FensterHoehe = 300;
 
         /// <summary>
         /// Erstellt das Splash-Fenster, zeigt die Version an und positioniert es mittig auf dem Bildschirm.
@@ -49,8 +49,8 @@ namespace EchoPlay.App
             appWindow.Resize(new SizeInt32(FensterBreite, FensterHoehe));
 
             DisplayArea displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Nearest);
-            int x = (displayArea.WorkArea.Width  - FensterBreite) / 2;
-            int y = (displayArea.WorkArea.Height - FensterHoehe)  / 2;
+            int x = (displayArea.WorkArea.Width - FensterBreite) / 2;
+            int y = (displayArea.WorkArea.Height - FensterHoehe) / 2;
             appWindow.Move(new PointInt32(x, y));
         }
 
@@ -71,8 +71,8 @@ namespace EchoPlay.App
         {
             if (AppWindowTitleBar.IsCustomizationSupported())
             {
-                AppWindow.TitleBar.ExtendsContentIntoTitleBar    = true;
-                AppWindow.TitleBar.ButtonBackgroundColor         = Colors.Transparent;
+                AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+                AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
                 AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
             }
         }

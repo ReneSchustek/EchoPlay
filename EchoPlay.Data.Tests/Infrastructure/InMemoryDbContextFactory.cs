@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Context;
+using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;

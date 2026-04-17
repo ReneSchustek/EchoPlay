@@ -30,10 +30,10 @@ namespace EchoPlay.App.Services
             ILocalizationService localizationService,
             INavigationService navigationService)
         {
-            _scopeFactory        = scopeFactory;
-            _errorDialogService  = errorDialogService;
+            _scopeFactory = scopeFactory;
+            _errorDialogService = errorDialogService;
             _localizationService = localizationService;
-            _navigationService   = navigationService;
+            _navigationService = navigationService;
         }
 
         /// <inheritdoc/>

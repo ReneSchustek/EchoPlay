@@ -1,4 +1,4 @@
-﻿namespace EchoPlay.Spotify.Dtos
+namespace EchoPlay.Spotify.Dtos
 {
     /// <summary>
     /// Repräsentiert einen einzelnen Track eines Spotify-Albums.

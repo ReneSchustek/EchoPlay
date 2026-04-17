@@ -42,14 +42,14 @@ namespace EchoPlay.App.ViewModels
             bool isCompleted = false,
             bool isSpecialEpisode = false)
         {
-            EpisodeId        = episodeId;
-            EpisodeNumber    = episodeNumber;
-            Title            = title;
-            LocalTrackCount  = localTrackCount;
-            FolderPath       = folderPath;
+            EpisodeId = episodeId;
+            EpisodeNumber = episodeNumber;
+            Title = title;
+            LocalTrackCount = localTrackCount;
+            FolderPath = folderPath;
             IsSpecialEpisode = isSpecialEpisode;
-            _coverImage      = coverImage;
-            _isCompleted    = isCompleted;
+            _coverImage = coverImage;
+            _isCompleted = isCompleted;
         }
 
         /// <summary>Datenbank-ID der Episode.</summary>

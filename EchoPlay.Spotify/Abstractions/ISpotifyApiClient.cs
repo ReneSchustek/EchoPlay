@@ -1,4 +1,4 @@
-﻿using EchoPlay.Spotify.Dtos;
+using EchoPlay.Spotify.Dtos;
 
 namespace EchoPlay.Spotify.Abstractions
 {

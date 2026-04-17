@@ -64,12 +64,12 @@ namespace EchoPlay.App.Tests.Services
                 "Hörspiel", CancellationToken.None);
 
             Assert.Equal(2, hits.Count);
-            Assert.Equal("https://thumb/1",     hits[0].ThumbnailUrl);
-            Assert.Equal("https://full/1",      hits[0].FullUrl);
-            Assert.Equal("Folge 1",             hits[0].ReleaseTitle);
-            Assert.Equal("Cover Art Archive",   hits[0].Source);
-            Assert.Equal("https://full/2",      hits[1].FullUrl);
-            Assert.Equal("iTunes",              hits[1].Source);
+            Assert.Equal("https://thumb/1", hits[0].ThumbnailUrl);
+            Assert.Equal("https://full/1", hits[0].FullUrl);
+            Assert.Equal("Folge 1", hits[0].ReleaseTitle);
+            Assert.Equal("Cover Art Archive", hits[0].Source);
+            Assert.Equal("https://full/2", hits[1].FullUrl);
+            Assert.Equal("iTunes", hits[1].Source);
         }
     }
 }

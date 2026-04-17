@@ -55,10 +55,10 @@ namespace EchoPlay.App.ViewModels
             ILogViewerCoordinator logViewerCoordinator,
             Action onUserEdit)
         {
-            _scopeFactory         = scopeFactory;
+            _scopeFactory = scopeFactory;
             _logViewerCoordinator = logViewerCoordinator;
-            _onUserEdit           = onUserEdit;
-            LogEntries            = [];
+            _onUserEdit = onUserEdit;
+            LogEntries = [];
         }
 
         // ── Datenbankpflege-Eigenschaften ───────────────────────────────────────
@@ -205,10 +205,10 @@ namespace EchoPlay.App.ViewModels
         {
             get => _logMinimumLevel switch
             {
-                LogLevel.Debug       => 0,
+                LogLevel.Debug => 0,
                 LogLevel.Information => 1,
-                LogLevel.Warning     => 2,
-                _                    => 3
+                LogLevel.Warning => 2,
+                _ => 3
             };
             set => LogMinimumLevel = value switch
             {
@@ -371,7 +371,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            IsMaintaining         = true;
+            IsMaintaining = true;
             MaintenanceStatusText = "Bereinigung läuft …";
 
             try
@@ -405,7 +405,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliothek-Reset: bulk-delete aller Serien/Episoden/Tracks und Cover-Dateien kann IO-/DB-Fehler werfen; der Command darf nicht reissen, der Status wird angezeigt und IsMaintaining im finally zurueckgesetzt.")]
         public async Task ResetLibraryAsync(int scopeIndex)
         {
-            IsMaintaining         = true;
+            IsMaintaining = true;
             MaintenanceStatusText = SafeResourceLoader.Get("ResetRunning", "Bibliothek wird zurückgesetzt …");
 
             try
@@ -450,9 +450,9 @@ namespace EchoPlay.App.ViewModels
             _isBatchLoading = true;
             try
             {
-                DbPurgeDays            = settings.DbPurgeDays;
-                ClearCacheOnNextStart  = settings.ClearCacheOnNextStart;
-                DbBackupEnabled        = settings.DbBackupEnabled;
+                DbPurgeDays = settings.DbPurgeDays;
+                ClearCacheOnNextStart = settings.ClearCacheOnNextStart;
+                DbBackupEnabled = settings.DbBackupEnabled;
                 DbBackupRetentionCount = settings.DbBackupRetentionCount;
             }
             finally
@@ -467,9 +467,9 @@ namespace EchoPlay.App.ViewModels
         {
             ArgumentNullException.ThrowIfNull(settings);
             // 0 ist erlaubt – bedeutet sofortige Bereinigung aller soft-gelöschten Einträge
-            settings.DbPurgeDays            = Math.Max(0, DbPurgeDays);
-            settings.ClearCacheOnNextStart  = ClearCacheOnNextStart;
-            settings.DbBackupEnabled        = DbBackupEnabled;
+            settings.DbPurgeDays = Math.Max(0, DbPurgeDays);
+            settings.ClearCacheOnNextStart = ClearCacheOnNextStart;
+            settings.DbBackupEnabled = DbBackupEnabled;
             settings.DbBackupRetentionCount = Math.Clamp(DbBackupRetentionCount, 1, 20);
         }
 

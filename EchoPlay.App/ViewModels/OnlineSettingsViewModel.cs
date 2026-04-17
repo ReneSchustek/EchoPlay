@@ -48,13 +48,13 @@ namespace EchoPlay.App.ViewModels
             Action onUserEdit)
         {
             _connectionTestCoordinator = connectionTestCoordinator;
-            _credentialStore           = credentialStore;
-            _optionsProvider           = optionsProvider;
-            _onUserEdit                = onUserEdit;
-            _testConnectionCommand     = new RelayCommand(() => _ = TestConnectionAsync());
+            _credentialStore = credentialStore;
+            _optionsProvider = optionsProvider;
+            _onUserEdit = onUserEdit;
+            _testConnectionCommand = new RelayCommand(() => _ = TestConnectionAsync());
 
             TestAndSaveSpotifyCommand = new RelayCommand(() => _ = TestAndSaveSpotifyAsync());
-            RemoveSpotifyCommand      = new RelayCommand(() => _ = RemoveSpotifyAsync());
+            RemoveSpotifyCommand = new RelayCommand(() => _ = RemoveSpotifyAsync());
         }
 
         /// <summary>Aktiver Metadaten-Anbieter.</summary>
@@ -82,17 +82,17 @@ namespace EchoPlay.App.ViewModels
         {
             get => _activeProvider switch
             {
-                ProviderType.Spotify    => "Spotify",
+                ProviderType.Spotify => "Spotify",
                 ProviderType.AppleMusic => "AppleMusic",
-                ProviderType.Both       => "Both",
-                _                       => string.Empty
+                ProviderType.Both => "Both",
+                _ => string.Empty
             };
             set => ActiveProvider = value switch
             {
-                "Spotify"    => ProviderType.Spotify,
+                "Spotify" => ProviderType.Spotify,
                 "AppleMusic" => ProviderType.AppleMusic,
-                "Both"       => ProviderType.Both,
-                _            => ProviderType.None
+                "Both" => ProviderType.Both,
+                _ => ProviderType.None
             };
         }
 
@@ -216,8 +216,8 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            IsTestingConnection      = true;
-            ConnectionTestSuccess    = null;
+            IsTestingConnection = true;
+            ConnectionTestSuccess = null;
             ConnectionTestResultText = null;
 
             try

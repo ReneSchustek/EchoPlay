@@ -463,9 +463,9 @@ namespace EchoPlay.App.Services
             // Anschließend nur noch CPU-/IO-Arbeit pro Episode – kein DB-Roundtrip mehr in der Schleife.
 
             int totalEpCandidates = 0;
-            int totalEpExisting   = 0;
-            int totalEpLoaded     = 0;
-            int totalEpNotFound   = 0;
+            int totalEpExisting = 0;
+            int totalEpLoaded = 0;
+            int totalEpNotFound = 0;
 
             List<Guid> allSeriesIds = [.. allSeries.Select(s => s.Id)];
             IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds);

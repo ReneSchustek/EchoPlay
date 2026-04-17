@@ -25,7 +25,7 @@ namespace EchoPlay.LocalLibrary.Tests.Fakes
             string defaultTitle = "",
             string defaultAlbum = "")
         {
-            _tagsByPath   = tagsByPath ?? [];
+            _tagsByPath = tagsByPath ?? [];
             _defaultTitle = defaultTitle;
             _defaultAlbum = defaultAlbum;
         }

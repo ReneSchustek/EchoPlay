@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Models;
@@ -127,7 +127,7 @@ namespace EchoPlay.Logger.Sinks
                 filePath = Path.Combine(_logDirectory, $"{baseName}_{counter:D3}.log");
 
                 // Datei existiert nicht oder hat noch Platz? → nutzen
-                if (!File.Exists(filePath) || new FileInfo(filePath).Length < _maxFileSizeBytes)  return filePath;
+                if (!File.Exists(filePath) || new FileInfo(filePath).Length < _maxFileSizeBytes) return filePath;
 
                 counter++;
             }

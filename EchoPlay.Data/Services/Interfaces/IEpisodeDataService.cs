@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Entities.Library;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

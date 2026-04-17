@@ -444,22 +444,22 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new NewEpisodeCardViewModel(
-                episodeId:                  TestIds.EpisodeA,
-                seriesId:                   TestIds.SeriesA,
-                seriesName:                 seriesName,
-                episodeTitle:               episodeTitle,
-                coverImage:                 null,
-                status:                     PlaybackStatus.NotStarted,
-                progressPercent:            0,
-                hasLocalTrack:              false,
-                isAnnounced:                isAnnounced,
-                scopeFactory:               provider.GetRequiredService<IServiceScopeFactory>(),
-                errorDialogService:         new FakeErrorDialogService(),
-                confirmationDialogService:  new FakeConfirmationDialogService(),
-                playerService:              new FakePlayerService(),
-                episodeNumber:              episodeNumber,
-                releaseDate:                releaseDate,
-                clock:                      new FakeClock());
+                episodeId: TestIds.EpisodeA,
+                seriesId: TestIds.SeriesA,
+                seriesName: seriesName,
+                episodeTitle: episodeTitle,
+                coverImage: null,
+                status: PlaybackStatus.NotStarted,
+                progressPercent: 0,
+                hasLocalTrack: false,
+                isAnnounced: isAnnounced,
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
+                errorDialogService: new FakeErrorDialogService(),
+                confirmationDialogService: new FakeConfirmationDialogService(),
+                playerService: new FakePlayerService(),
+                episodeNumber: episodeNumber,
+                releaseDate: releaseDate,
+                clock: new FakeClock());
         }
 
         [Fact]
@@ -473,19 +473,19 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             NewEpisodeCardViewModel card = new(
-                episodeId:                  TestIds.EpisodeB,
-                seriesId:                   TestIds.SeriesB,
-                seriesName:                 "TKKG",
-                episodeTitle:               "Folge 1",
-                coverImage:                 null,
-                status:                     PlaybackStatus.NotStarted,
-                progressPercent:            0,
-                hasLocalTrack:              false,
-                isAnnounced:                false,
-                scopeFactory:               provider.GetRequiredService<IServiceScopeFactory>(),
-                errorDialogService:         new FakeErrorDialogService(),
-                confirmationDialogService:  new FakeConfirmationDialogService(result: true),
-                playerService:              new FakePlayerService());
+                episodeId: TestIds.EpisodeB,
+                seriesId: TestIds.SeriesB,
+                seriesName: "TKKG",
+                episodeTitle: "Folge 1",
+                coverImage: null,
+                status: PlaybackStatus.NotStarted,
+                progressPercent: 0,
+                hasLocalTrack: false,
+                isAnnounced: false,
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
+                errorDialogService: new FakeErrorDialogService(),
+                confirmationDialogService: new FakeConfirmationDialogService(result: true),
+                playerService: new FakePlayerService());
 
             card.MarkAsPlayedCommand.Execute(null);
 

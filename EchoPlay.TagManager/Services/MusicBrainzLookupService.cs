@@ -34,7 +34,7 @@ namespace EchoPlay.TagManager.Services
         public MusicBrainzLookupService(HttpClient httpClient, ILoggerFactory loggerFactory)
         {
             _httpClient = httpClient;
-            _logger     = loggerFactory.CreateLogger(nameof(MusicBrainzLookupService));
+            _logger = loggerFactory.CreateLogger(nameof(MusicBrainzLookupService));
         }
 
         /// <inheritdoc />
@@ -53,7 +53,7 @@ namespace EchoPlay.TagManager.Services
                 // MusicBrainz Lucene-Syntax: release:<term> sucht im Titelfeldfeld,
                 // ohne Feldpräfix wird in allen Feldern gesucht.
                 string encodedQuery = Uri.EscapeDataString(query);
-                string requestUri   = $"ws/2/release?query={encodedQuery}&fmt=json&limit=5";
+                string requestUri = $"ws/2/release?query={encodedQuery}&fmt=json&limit=5";
 
                 _logger.Debug($"MusicBrainz-Suche: {requestUri}");
 
@@ -113,12 +113,12 @@ namespace EchoPlay.TagManager.Services
 
             return new TagLookupResult
             {
-                Title      = release.Title,
-                Artist     = artist,
-                Album      = release.Title,
-                Year       = year,
+                Title = release.Title,
+                Artist = artist,
+                Album = release.Title,
+                Year = year,
                 TrackCount = release.TrackCount == 0 ? null : release.TrackCount,
-                Source     = "MusicBrainz"
+                Source = "MusicBrainz"
             };
         }
     }

@@ -42,7 +42,7 @@ namespace EchoPlay.App.Views
                 FolderPicker picker = new()
                 {
                     SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                    ViewMode               = PickerViewMode.List
+                    ViewMode = PickerViewMode.List
                 };
 
                 picker.FileTypeFilter.Add("*");
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Views
                 FileOpenPicker picker = new()
                 {
                     SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                    ViewMode               = PickerViewMode.List
+                    ViewMode = PickerViewMode.List
                 };
 
                 // Alle unterstützten Audioformate im Dateidialog anbieten

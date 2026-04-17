@@ -90,21 +90,21 @@ namespace EchoPlay.App.ViewModels
             LocalEpisodesViewModel episodesVM,
             LocalTracksViewModel tracksVM)
         {
-            _scopeFactory              = scopeFactory;
+            _scopeFactory = scopeFactory;
             _confirmationDialogService = confirmationDialogService;
-            _statusBar                 = statusBar;
-            _coverSearchService        = coverSearchService;
-            _onlineAccessGuard         = onlineAccessGuard;
-            _watchToggleService        = watchToggleService;
-            _restructureCoordinator    = restructureCoordinator;
+            _statusBar = statusBar;
+            _coverSearchService = coverSearchService;
+            _onlineAccessGuard = onlineAccessGuard;
+            _watchToggleService = watchToggleService;
+            _restructureCoordinator = restructureCoordinator;
             _missingEpisodesCoordinator = missingEpisodesCoordinator;
-            _coverCoordinator          = coverCoordinator;
-            _clock                     = clock;
+            _coverCoordinator = coverCoordinator;
+            _clock = clock;
 
-            _scanVM     = scanVM;
-            _artistsVM  = artistsVM;
+            _scanVM = scanVM;
+            _artistsVM = artistsVM;
             _episodesVM = episodesVM;
-            _tracksVM   = tracksVM;
+            _tracksVM = tracksVM;
         }
 
         // ── Laden ────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ namespace EchoPlay.App.ViewModels
             {
                 IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
                 EchoPlay.Data.Entities.Settings.AppSettings settings = await settingsService.GetAsync();
-                _scanVM.LibraryRootPath         = settings.LocalLibraryRootPath ?? string.Empty;
+                _scanVM.LibraryRootPath = settings.LocalLibraryRootPath ?? string.Empty;
                 _scanVM.NeedsLibraryFolderSetup = string.IsNullOrWhiteSpace(settings.LocalLibraryRootPath);
             }
 
@@ -218,7 +218,7 @@ namespace EchoPlay.App.ViewModels
         {
             using IDisposable ua = UserActionScope.BeginUserAction("MarkAllAsRead");
             using IServiceScope scope = _scopeFactory.CreateScope();
-            IEpisodeDataService episodeService       = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
             IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
@@ -240,9 +240,9 @@ namespace EchoPlay.App.ViewModels
                 {
                     await playbackService.AddAsync(new PlaybackState
                     {
-                        EpisodeId    = episode.Id,
-                        IsCompleted  = true,
-                        CompletedAt  = _clock.UtcNow,
+                        EpisodeId = episode.Id,
+                        IsCompleted = true,
+                        CompletedAt = _clock.UtcNow,
                         LastPlayedAt = _clock.UtcNow
                     });
                 }

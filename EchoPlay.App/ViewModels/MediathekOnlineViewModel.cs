@@ -54,12 +54,12 @@ namespace EchoPlay.App.ViewModels
             EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService = null,
             INavigationService? navigationService = null)
         {
-            _pageModeGuard      = pageModeGuard;
-            _navigationService  = navigationService;
+            _pageModeGuard = pageModeGuard;
+            _navigationService = navigationService;
             _coverSearchService = coverSearchService;
 
-            SeriesVM         = new OnlineSeriesViewModel();
-            EpisodesVM       = new OnlineEpisodesViewModel();
+            SeriesVM = new OnlineSeriesViewModel();
+            EpisodesVM = new OnlineEpisodesViewModel();
             ProviderSearchVM = new OnlineProviderSearchViewModel();
 
             MediathekOnlineActionsContext actionsContext = new(
@@ -80,26 +80,26 @@ namespace EchoPlay.App.ViewModels
             _actions = new MediathekOnlineActions(
                 actionsContext,
                 SeriesVM, EpisodesVM, ProviderSearchVM,
-                setIsLoading:          v => IsLoading = v,
-                setLoadingStatusText:  v => LoadingStatusText = v,
-                setHasNoProvider:      v => HasNoProvider = v,
+                setIsLoading: v => IsLoading = v,
+                setLoadingStatusText: v => LoadingStatusText = v,
+                setHasNoProvider: v => HasNoProvider = v,
                 reloadAfterImportAsync: ReloadAfterImportAsync);
 
             // PropertyChanged der Sub-VMs an eigene Pass-Through-Properties weiterreichen,
             // damit die XAML-Bindings auf Top-VM-Properties unverändert funktionieren.
-            SeriesVM.PropertyChanged         += OnSubVmPropertyChanged;
-            EpisodesVM.PropertyChanged       += OnSubVmPropertyChanged;
+            SeriesVM.PropertyChanged += OnSubVmPropertyChanged;
+            EpisodesVM.PropertyChanged += OnSubVmPropertyChanged;
             ProviderSearchVM.PropertyChanged += OnSubVmPropertyChanged;
 
             // Cross-Cutting-Visibilities neu berechnen, wenn eine der beteiligten Größen wechselt
             ProviderSearchVM.PropertyChanged += OnProviderSearchPropertyChanged;
-            SeriesVM.PropertyChanged         += OnSeriesPropertyChanged;
+            SeriesVM.PropertyChanged += OnSeriesPropertyChanged;
 
             ProviderSearchCommand = new RelayCommand(() => _ = _actions.SearchProviderAsync(SeriesVM.SearchText));
-            AddSelectedCommand    = new RelayCommand(() => _actions.AddSelected());
-            RefreshCommand        = new RelayCommand(() => _ = _actions.RefreshAllOnlineSeriesAsync());
-            GoToSettingsCommand   = new RelayCommand(() => _navigationService?.NavigateTo(NavigationTarget.Settings));
-            FocusSearchCommand    = new RelayCommand(StartSearchFromEmptyState);
+            AddSelectedCommand = new RelayCommand(() => _actions.AddSelected());
+            RefreshCommand = new RelayCommand(() => _ = _actions.RefreshAllOnlineSeriesAsync());
+            GoToSettingsCommand = new RelayCommand(() => _navigationService?.NavigateTo(NavigationTarget.Settings));
+            FocusSearchCommand = new RelayCommand(StartSearchFromEmptyState);
         }
 
         // ── Sub-VMs ─────────────────────────────────────────────────────────────

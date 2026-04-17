@@ -45,13 +45,13 @@ namespace EchoPlay.App.ViewModels
         public PlayerViewModel(IPlayerService playerService, IServiceScopeFactory scopeFactory)
         {
             _playerService = playerService;
-            _scopeFactory  = scopeFactory;
+            _scopeFactory = scopeFactory;
 
             _playerService.StateChanged += OnPlayerStateChanged;
 
-            PlayPauseCommand       = new RelayCommand(() => TogglePlayPause());
-            NextCommand            = new RelayCommand(() => _playerService.SkipToNext());
-            PreviousCommand        = new RelayCommand(() => _playerService.SkipToPrevious());
+            PlayPauseCommand = new RelayCommand(() => TogglePlayPause());
+            NextCommand = new RelayCommand(() => _playerService.SkipToNext());
+            PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
             ToggleTimeDisplayCommand = new RelayCommand(() =>
             {
                 _showRemainingTime = !_showRemainingTime;
@@ -275,7 +275,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void RefreshFromPlayerService()
         {
-            IsPlaying    = _playerService.IsPlaying;
+            IsPlaying = _playerService.IsPlaying;
             CurrentTitle = _playerService.CurrentTrackTitle ?? string.Empty;
             DurationSeconds = _playerService.Duration.TotalSeconds;
 

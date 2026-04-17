@@ -105,7 +105,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 SpotifyArtistId = KnownSpotifyId
             });
 
@@ -163,7 +163,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series
             {
-                Title           = "Fünf Freunde",
+                Title = "Fünf Freunde",
                 SpotifyArtistId = "ff-002"
             });
 

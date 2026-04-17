@@ -58,20 +58,20 @@ namespace EchoPlay.App.ViewModels
             IConfirmationDialogService confirmationDialogService,
             ILocalizationService localizationService)
         {
-            Id                 = id;
-            Title              = title;
-            _coverImage        = coverImage;
-            TotalEpisodeCount  = totalEpisodeCount;
-            NewEpisodeCount    = newEpisodeCount;
-            InProgressCount    = inProgressCount;
-            FinishedCount      = finishedCount;
-            _isSubscribed      = isSubscribed;
-            _isFavorite        = isFavorite;
-            _isWatched         = isWatched;
+            Id = id;
+            Title = title;
+            _coverImage = coverImage;
+            TotalEpisodeCount = totalEpisodeCount;
+            NewEpisodeCount = newEpisodeCount;
+            InProgressCount = inProgressCount;
+            FinishedCount = finishedCount;
+            _isSubscribed = isSubscribed;
+            _isFavorite = isFavorite;
+            _isWatched = isWatched;
 
-            _scopeFactory               = scopeFactory;
-            _confirmationDialogService  = confirmationDialogService;
-            _localizationService        = localizationService;
+            _scopeFactory = scopeFactory;
+            _confirmationDialogService = confirmationDialogService;
+            _localizationService = localizationService;
 
             ToggleSubscriptionCommand = new RelayCommand(() => _ = ToggleSubscriptionAsync());
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());

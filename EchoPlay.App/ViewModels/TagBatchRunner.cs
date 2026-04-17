@@ -62,14 +62,14 @@ namespace EchoPlay.App.ViewModels
         {
             return new AudioTag
             {
-                Title       = edited.Title       ?? existing.Title,
-                Album       = edited.Album       ?? existing.Album,
-                Artist      = edited.Artist      ?? existing.Artist,
+                Title = edited.Title ?? existing.Title,
+                Album = edited.Album ?? existing.Album,
+                Artist = edited.Artist ?? existing.Artist,
                 AlbumArtist = edited.AlbumArtist ?? existing.AlbumArtist,
-                Genre       = edited.Genre       ?? existing.Genre,
-                Year        = edited.Year        ?? existing.Year,
+                Genre = edited.Genre ?? existing.Genre,
+                Year = edited.Year ?? existing.Year,
                 TrackNumber = edited.TrackNumber ?? existing.TrackNumber,
-                TrackCount  = edited.TrackCount  ?? existing.TrackCount
+                TrackCount = edited.TrackCount ?? existing.TrackCount
             };
         }
 
@@ -81,14 +81,14 @@ namespace EchoPlay.App.ViewModels
         {
             return new AudioTag
             {
-                Title       = existing.Title,
+                Title = existing.Title,
                 TrackNumber = existing.TrackNumber,
-                Album       = shared.Album       ?? existing.Album,
-                Artist      = shared.Artist      ?? existing.Artist,
+                Album = shared.Album ?? existing.Album,
+                Artist = shared.Artist ?? existing.Artist,
                 AlbumArtist = shared.AlbumArtist ?? existing.AlbumArtist,
-                Genre       = shared.Genre       ?? existing.Genre,
-                Year        = shared.Year        ?? existing.Year,
-                TrackCount  = shared.TrackCount  ?? existing.TrackCount
+                Genre = shared.Genre ?? existing.Genre,
+                Year = shared.Year ?? existing.Year,
+                TrackCount = shared.TrackCount ?? existing.TrackCount
             };
         }
     }

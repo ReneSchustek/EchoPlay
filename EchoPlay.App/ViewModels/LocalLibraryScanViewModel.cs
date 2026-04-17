@@ -71,13 +71,13 @@ namespace EchoPlay.App.ViewModels
             IScanEventService scanEventService,
             Action<Series> onSeriesSynced)
         {
-            _scopeFactory              = scopeFactory;
-            _syncService               = syncService;
-            _errorDialogService        = errorDialogService;
+            _scopeFactory = scopeFactory;
+            _syncService = syncService;
+            _errorDialogService = errorDialogService;
             _confirmationDialogService = confirmationDialogService;
-            _statusBar                 = statusBar;
-            _scanEventService          = scanEventService;
-            _onSeriesSynced            = onSeriesSynced;
+            _statusBar = statusBar;
+            _scanEventService = scanEventService;
+            _onSeriesSynced = onSeriesSynced;
 
             // DispatcherQueue auf dem UI-Thread erfassen – Events des Scan-Dienstes treffen später
             // vom Hintergrundthread ein und müssen auf den UI-Thread gemarshallt werden.
@@ -91,9 +91,9 @@ namespace EchoPlay.App.ViewModels
                 _dispatcherQueue = null;
             }
 
-            ScanCommand         = new RelayCommand(() => _ = ScanAsync());
+            ScanCommand = new RelayCommand(() => _ = ScanAsync());
             ReInitializeCommand = new RelayCommand(() => _ = ReInitializeAsync());
-            AddFolderCommand    = new RelayCommand(() => AddFolderRequested?.Invoke());
+            AddFolderCommand = new RelayCommand(() => AddFolderRequested?.Invoke());
         }
 
         // ── Bibliothek ───────────────────────────────────────────────────────────
@@ -285,11 +285,11 @@ namespace EchoPlay.App.ViewModels
             // Listen des übergeordneten ViewModels leeren – veraltete Kacheln dürfen nicht stehen bleiben.
             ScanStarting?.Invoke();
 
-            IsScanning          = true;
+            IsScanning = true;
             IsScanIndeterminate = true;
             ScanProgressPercent = 0;
-            ScanDetailText      = string.Empty;
-            SyncStatusText      = "Vorbereitung …";
+            ScanDetailText = string.Empty;
+            SyncStatusText = "Vorbereitung …";
 
             try
             {
@@ -299,14 +299,14 @@ namespace EchoPlay.App.ViewModels
                 using (IServiceScope checkScope = _scopeFactory.CreateScope())
                 {
                     ISeriesDataService checkService = checkScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                    IReadOnlyList<Series> existing  = await checkService.GetAllAsync();
+                    IReadOnlyList<Series> existing = await checkService.GetAllAsync();
                     forceImportAll = !existing.Any();
                 }
 
                 Progress<ScanProgress> progress = new(p =>
                 {
-                    SyncStatusText      = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
-                    ScanDetailText      = p.DetailText ?? string.Empty;
+                    SyncStatusText = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
+                    ScanDetailText = p.DetailText ?? string.Empty;
                     IsScanIndeterminate = p.PercentComplete <= 0;
                     ScanProgressPercent = p.PercentComplete;
                     _statusBar.UpdateScanProgress(p);
@@ -358,11 +358,11 @@ namespace EchoPlay.App.ViewModels
             // Anzeige sofort leeren – der Nutzer sieht das Reset unmittelbar, bevor der lange DB-Cleanup beginnt.
             ScanStarting?.Invoke();
 
-            IsScanning          = true;
+            IsScanning = true;
             IsScanIndeterminate = true;
             ScanProgressPercent = 0;
-            ScanDetailText      = string.Empty;
-            SyncStatusText      = "Vorbereitung …";
+            ScanDetailText = string.Empty;
+            SyncStatusText = "Vorbereitung …";
 
             try
             {
@@ -372,10 +372,10 @@ namespace EchoPlay.App.ViewModels
                 await Task.Run(async () =>
                 {
                     using IServiceScope cleanupScope = _scopeFactory.CreateScope();
-                    ISeriesDataService seriesService          = cleanupScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                    IEpisodeDataService episodeService        = cleanupScope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-                    ILocalTrackDataService trackService       = cleanupScope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-                    ICoverImageDataService coverImageService  = cleanupScope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
+                    ISeriesDataService seriesService = cleanupScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+                    IEpisodeDataService episodeService = cleanupScope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+                    ILocalTrackDataService trackService = cleanupScope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+                    ICoverImageDataService coverImageService = cleanupScope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
 
                     IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
 
@@ -427,8 +427,8 @@ namespace EchoPlay.App.ViewModels
 
                 Progress<ScanProgress> progress = new(p =>
                 {
-                    SyncStatusText      = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
-                    ScanDetailText      = p.DetailText ?? string.Empty;
+                    SyncStatusText = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
+                    ScanDetailText = p.DetailText ?? string.Empty;
                     IsScanIndeterminate = p.PercentComplete <= 0;
                     ScanProgressPercent = p.PercentComplete;
                     _statusBar.UpdateScanProgress(p);
@@ -533,7 +533,7 @@ namespace EchoPlay.App.ViewModels
 
             Series newSeries = new()
             {
-                Title           = folder.Name,
+                Title = folder.Name,
                 LocalFolderPath = folder.Path
             };
 

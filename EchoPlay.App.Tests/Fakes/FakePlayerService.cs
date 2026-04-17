@@ -71,9 +71,9 @@ namespace EchoPlay.App.Tests.Fakes
         public void SetState(string? trackTitle, bool isPlaying, double positionSeconds, double durationSeconds)
         {
             CurrentTrackTitle = trackTitle;
-            IsPlaying         = isPlaying;
-            Position          = TimeSpan.FromSeconds(positionSeconds);
-            Duration          = TimeSpan.FromSeconds(durationSeconds);
+            IsPlaying = isPlaying;
+            Position = TimeSpan.FromSeconds(positionSeconds);
+            Duration = TimeSpan.FromSeconds(durationSeconds);
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 

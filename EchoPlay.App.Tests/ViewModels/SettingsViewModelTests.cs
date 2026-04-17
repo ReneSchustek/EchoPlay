@@ -24,9 +24,9 @@ namespace EchoPlay.App.Tests.ViewModels
         /// </summary>
         private static LoggerManager BuildLoggerManager()
         {
-            LoggerOptions options       = new() { EnableFileLogging = false, EnableAutoCleanup = false };
+            LoggerOptions options = new() { EnableFileLogging = false, EnableAutoCleanup = false };
             LoggerFactory loggerFactory = new([], options);
-            LogCleanupService cleanup   = new(options);
+            LogCleanupService cleanup = new(options);
             return new LoggerManager(loggerFactory, cleanup, options);
         }
 
@@ -61,7 +61,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             _ = services.AddScoped<IDatabaseMaintenanceService>(_ => maintenanceService ?? new FakeDatabaseMaintenanceService());
 
-            ServiceProvider provider          = services.BuildServiceProvider();
+            ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
             FakeSpotifyCredentialStore resolvedCredentialStore = credentialStore ?? new FakeSpotifyCredentialStore();
@@ -89,9 +89,9 @@ namespace EchoPlay.App.Tests.ViewModels
             // Alle Felder aus der DB müssen nach LoadAsync korrekt gesetzt sein
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                ActiveTheme          = "PaperCoffee",
-                ActiveProvider       = ProviderType.Spotify,
-                LocalLibraryEnabled  = false,
+                ActiveTheme = "PaperCoffee",
+                ActiveProvider = ProviderType.Spotify,
+                LocalLibraryEnabled = false,
                 LocalLibraryRootPath = "/meine/musik",
                 EpisodeFolderPattern = "{number} - {title}"
             });
@@ -159,16 +159,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // Nach SyncAsync muss der Statustext das Ergebnis widerspiegeln.
             SyncResult syncResult = new()
             {
-                SeriesMatched   = 3,
+                SeriesMatched = 3,
                 SeriesUnmatched = 1,
                 EpisodesUpdated = 12,
-                TracksCreated   = 36
+                TracksCreated = 36
             };
 
             FakeSyncService syncService = new(syncResult);
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
             SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
@@ -188,7 +188,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSyncService syncService = new(new SyncResult());
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
             SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
@@ -209,7 +209,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // IsSyncEnabled muss nach Abschluss wieder true sein.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                LocalLibraryEnabled  = true,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
             SettingsViewModel vm = BuildViewModel(settings);
@@ -284,15 +284,15 @@ namespace EchoPlay.App.Tests.ViewModels
             // Alle relevanten Settings-Properties müssen HasUnsavedChanges auslösen
             FakeAppSettingsDataService settings = new(new AppSettings
             {
-                ActiveTheme          = "MidnightLibrary",
-                ActiveProvider       = ProviderType.AppleMusic,
-                LocalLibraryEnabled  = true,
+                ActiveTheme = "MidnightLibrary",
+                ActiveProvider = ProviderType.AppleMusic,
+                LocalLibraryEnabled = true,
                 LocalLibraryRootPath = @"C:\Musik",
                 EpisodeFolderPattern = "{number} - {title}",
-                NewReleaseDays       = 60,
-                OfflineMode          = false,
-                DbPurgeDays          = 30,
-                AutoImportAfterScan  = false
+                NewReleaseDays = 60,
+                OfflineMode = false,
+                DbPurgeDays = 30,
+                AutoImportAfterScan = false
             });
             SettingsViewModel vm = BuildViewModel(settings);
 
@@ -370,10 +370,10 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Level-Filter: nur Einträge ab Warning sichtbar
             FakeLogViewerCoordinator coordinator = new();
-            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Debug,       "Debug-Meldung",   "A", []));
-            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Info-Meldung",    "B", []));
-            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Warning,     "Warnung",         "C", []));
-            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Error,       "Fehler",          "D", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Debug, "Debug-Meldung", "A", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Info-Meldung", "B", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Warning, "Warnung", "C", []));
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Error, "Fehler", "D", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);

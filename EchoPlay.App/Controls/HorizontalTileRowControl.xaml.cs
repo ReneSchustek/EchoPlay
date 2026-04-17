@@ -99,7 +99,7 @@ namespace EchoPlay.App.Controls
             double maxOffset = TilesScrollViewer.ScrollableWidth;
             double currentOffset = TilesScrollViewer.HorizontalOffset;
 
-            LeftArrow.Visibility  = currentOffset > VisibilityTolerance ? Visibility.Visible : Visibility.Collapsed;
+            LeftArrow.Visibility = currentOffset > VisibilityTolerance ? Visibility.Visible : Visibility.Collapsed;
             RightArrow.Visibility = currentOffset < maxOffset - VisibilityTolerance ? Visibility.Visible : Visibility.Collapsed;
         }
 

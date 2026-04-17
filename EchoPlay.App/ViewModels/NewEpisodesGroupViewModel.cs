@@ -26,8 +26,8 @@ namespace EchoPlay.App.ViewModels
         public NewEpisodesGroupViewModel(string groupLabel, int sortKey, IReadOnlyList<NewEpisodeCardViewModel> episodes)
         {
             GroupLabel = groupLabel;
-            SortKey    = sortKey;
-            Episodes   = episodes;
+            SortKey = sortKey;
+            Episodes = episodes;
         }
 
         /// <summary>

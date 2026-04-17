@@ -6,6 +6,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -30,6 +31,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalCoverLoader _coverLoader;
         private readonly EchoPlay.App.Services.CoverService? _coverService;
         private readonly IClock _clock;
+        private readonly ILogger? _logger;
 
         /// <summary>
         /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst und
@@ -55,16 +57,19 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverLoader">Lädt Cover-Bilder aus dem lokalen Dateisystem (cover.jpg oder ID3-Tag).</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. In Tests <see langword="null"/>.</param>
+        /// <param name="logger">Logger für Hintergrund-Fehler wie fehlgeschlagenes Cover-Laden. In Tests <see langword="null"/>.</param>
         public LocalEpisodesViewModel(
             IServiceScopeFactory scopeFactory,
             ILocalCoverLoader coverLoader,
             IClock clock,
-            EchoPlay.App.Services.CoverService? coverService = null)
+            EchoPlay.App.Services.CoverService? coverService = null,
+            ILogger? logger = null)
         {
             _scopeFactory = scopeFactory;
-            _coverLoader  = coverLoader;
-            _clock        = clock;
+            _coverLoader = coverLoader;
+            _clock = clock;
             _coverService = coverService;
+            _logger = logger;
 
             // DispatcherQueue auf dem UI-Thread erfassen – notwendig für das Marshalling der
             // BitmapImage-Erzeugung. In Tests existiert kein WinUI-3-Dispatcher, dann bleibt das Feld null.
@@ -215,18 +220,18 @@ namespace EchoPlay.App.ViewModels
                 bool isSpecial = episode.EpisodeNumber is null or 0;
 
                 LocalEpisodeCardViewModel card = new(
-                    episodeId:        episode.Id,
-                    episodeNumber:    episode.EpisodeNumber,
-                    title:            displayTitle,
-                    localTrackCount:  episode.LocalTrackCount ?? 0,
-                    folderPath:       episode.LocalFolderPath,
+                    episodeId: episode.Id,
+                    episodeNumber: episode.EpisodeNumber,
+                    title: displayTitle,
+                    localTrackCount: episode.LocalTrackCount ?? 0,
+                    folderPath: episode.LocalFolderPath,
                     isSpecialEpisode: isSpecial);
 
                 episodeCards.Add(card);
                 coverQueue.Add((card, episode));
             }
 
-            _completedEpisodeIds  = completedIds;
+            _completedEpisodeIds = completedIds;
             _inProgressEpisodeIds = inProgressIds;
 
             // Gehört-Status auf den Karten setzen (nach dem Laden der IDs)
@@ -236,8 +241,8 @@ namespace EchoPlay.App.ViewModels
             }
 
             // Ungefilterte Gesamtliste speichern, Tab/Filter/Sortierung zurücksetzen
-            _allEpisodes        = episodeCards;
-            _episodeTabIndex    = 0;
+            _allEpisodes = episodeCards;
+            _episodeTabIndex = 0;
             _episodeFilterIndex = 0;
             OnPropertyChanged(nameof(EpisodeTabIndex));
             OnPropertyChanged(nameof(EpisodeFilterIndex));
@@ -275,10 +280,10 @@ namespace EchoPlay.App.ViewModels
             _coverCts?.Dispose();
             _coverCts = null;
 
-            _allEpisodes          = [];
-            _completedEpisodeIds  = [];
+            _allEpisodes = [];
+            _completedEpisodeIds = [];
             _inProgressEpisodeIds = [];
-            Episodes              = [];
+            Episodes = [];
             OnPropertyChanged(nameof(HasSpecialEpisodes));
             OnPropertyChanged(nameof(SpecialEpisodeCount));
         }
@@ -353,7 +358,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine($"Hintergrund-Cover-Laden fehlgeschlagen: {ex.Message}");
+                _logger?.Error("Hintergrund-Cover-Laden fehlgeschlagen", ex);
             }
         }
 
@@ -543,9 +548,9 @@ namespace EchoPlay.App.ViewModels
             {
                 PlaybackState newState = new()
                 {
-                    EpisodeId    = episodeId,
-                    IsCompleted  = true,
-                    CompletedAt  = _clock.UtcNow,
+                    EpisodeId = episodeId,
+                    IsCompleted = true,
+                    CompletedAt = _clock.UtcNow,
                     LastPlayedAt = _clock.UtcNow
                 };
                 await stateService.AddAsync(newState);

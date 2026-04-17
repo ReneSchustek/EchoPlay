@@ -43,12 +43,12 @@ namespace EchoPlay.App.ViewModels
             IConfirmationDialogService confirmationDialogService,
             ILocalizationService? localizationService = null)
         {
-            SeriesId                    = seriesId;
-            SeriesName                  = seriesName;
-            CoverImage                  = coverImage;
-            _scopeFactory               = scopeFactory;
-            _confirmationDialogService  = confirmationDialogService;
-            _localizationService        = localizationService;
+            SeriesId = seriesId;
+            SeriesName = seriesName;
+            CoverImage = coverImage;
+            _scopeFactory = scopeFactory;
+            _confirmationDialogService = confirmationDialogService;
+            _localizationService = localizationService;
 
             RemoveFromFavoritesCommand = new RelayCommand(() => _ = RemoveFromFavoritesAsync());
         }

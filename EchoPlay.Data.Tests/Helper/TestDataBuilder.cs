@@ -1,4 +1,4 @@
-﻿using EchoPlay.Data.Context;
+using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using System.Diagnostics.CodeAnalysis;

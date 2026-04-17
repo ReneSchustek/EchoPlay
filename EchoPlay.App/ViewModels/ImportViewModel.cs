@@ -46,11 +46,11 @@ namespace EchoPlay.App.ViewModels
         /// </param>
         public ImportViewModel(ImportService importService, IErrorDialogService errorDialogService, IOnlineAccessGuard onlineAccessGuard, ILocalizationService localizationService, StatusBarViewModel? statusBar = null)
         {
-            _importService       = importService;
-            _errorDialogService  = errorDialogService;
-            _onlineAccessGuard   = onlineAccessGuard;
+            _importService = importService;
+            _errorDialogService = errorDialogService;
+            _onlineAccessGuard = onlineAccessGuard;
             _localizationService = localizationService;
-            _statusBar           = statusBar;
+            _statusBar = statusBar;
         }
 
         /// <summary>Suchbegriff für die Seriensuche.</summary>
@@ -126,8 +126,8 @@ namespace EchoPlay.App.ViewModels
             if (onlineScope is null) return;
 
             IsSearching = true;
-            StatusText  = _localizationService.Get("ImportSearchInProgress");
-            Results     = [];
+            StatusText = _localizationService.Get("ImportSearchInProgress");
+            Results = [];
 
             try
             {
@@ -147,7 +147,7 @@ namespace EchoPlay.App.ViewModels
                     rows.Add(row);
                 }
 
-                Results    = rows;
+                Results = rows;
                 StatusText = found.Count == 0 ? _localizationService.Get("ImportNoResults") : string.Empty;
             }
             catch (Exception ex)
@@ -182,7 +182,7 @@ namespace EchoPlay.App.ViewModels
             if (onlineScope is null) return;
 
             IsImporting = true;
-            StatusText  = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportInProgress"), series.Title);
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportInProgress"), series.Title);
 
             try
             {

@@ -52,10 +52,10 @@ namespace EchoPlay.App.ViewModels
         public ProtokollViewModel(MemorySink? memorySink = null)
         {
             _memorySink = memorySink;
-            LogEntries  = [];
+            LogEntries = [];
 
             ToggleLiveCommand = new RelayCommand(ToggleLive);
-            ClearCommand      = new RelayCommand(() => LogEntries.Clear());
+            ClearCommand = new RelayCommand(() => LogEntries.Clear());
         }
 
         /// <summary>

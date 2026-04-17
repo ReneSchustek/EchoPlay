@@ -22,11 +22,11 @@ namespace EchoPlay.App.ViewModels
         public ImportResultViewModel(ImportSeries series, bool isAlreadyImported, ICommand importCommand)
         {
             ArgumentNullException.ThrowIfNull(series);
-            Series            = series;
-            Title             = series.Title;
-            ScoreText         = $"Score: {series.Score}";
+            Series = series;
+            Title = series.Title;
+            ScoreText = $"Score: {series.Score}";
             IsAlreadyImported = isAlreadyImported;
-            ImportCommand     = importCommand;
+            ImportCommand = importCommand;
 
             CoverImage = series.CoverImageUrl is not null
                 ? new BitmapImage(new System.Uri(series.CoverImageUrl))

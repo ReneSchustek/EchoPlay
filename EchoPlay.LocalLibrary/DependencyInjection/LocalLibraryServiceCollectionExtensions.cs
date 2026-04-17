@@ -70,10 +70,10 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
             _ = services.AddTransient<ICoverSearchService>(provider =>
             {
                 DeezerArtistCoverSearchService deezerArtists = provider.GetRequiredService<DeezerArtistCoverSearchService>();
-                CoverArtArchiveSearchService musicBrainz     = provider.GetRequiredService<CoverArtArchiveSearchService>();
-                ITunesCoverSearchService iTunes               = provider.GetRequiredService<ITunesCoverSearchService>();
-                DeezerAlbumCoverSearchService deezerAlbums    = provider.GetRequiredService<DeezerAlbumCoverSearchService>();
-                DiscogsCoverSearchService discogs             = provider.GetRequiredService<DiscogsCoverSearchService>();
+                CoverArtArchiveSearchService musicBrainz = provider.GetRequiredService<CoverArtArchiveSearchService>();
+                ITunesCoverSearchService iTunes = provider.GetRequiredService<ITunesCoverSearchService>();
+                DeezerAlbumCoverSearchService deezerAlbums = provider.GetRequiredService<DeezerAlbumCoverSearchService>();
+                DiscogsCoverSearchService discogs = provider.GetRequiredService<DiscogsCoverSearchService>();
 
                 return new CompositeCoverSearchService([deezerArtists, musicBrainz, iTunes, deezerAlbums, discogs]);
             });

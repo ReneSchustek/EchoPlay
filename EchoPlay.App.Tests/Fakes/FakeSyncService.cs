@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <param name="exception">Optional: wirft diese Exception statt ein Ergebnis zu liefern.</param>
         public FakeSyncService(SyncResult? result = null, Exception? exception = null)
         {
-            _result    = result ?? new SyncResult();
+            _result = result ?? new SyncResult();
             _exception = exception;
         }
 

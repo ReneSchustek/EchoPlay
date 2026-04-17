@@ -80,12 +80,12 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
             await seriesService.AddAsync(new Series
             {
-                Title           = "Bibi Blocksberg",
+                Title = "Bibi Blocksberg",
                 LocalFolderPath = null   // noch kein Ordner gefunden
             });
 
@@ -93,8 +93,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await episodeService.AddAsync(new Episode
             {
-                Title          = "Folge 1",
-                SeriesId       = tkkg,
+                Title = "Folge 1",
+                SeriesId = tkkg,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
             });
@@ -117,7 +117,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -125,17 +125,17 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await episodeService.AddAsync(new Episode
             {
-                Title           = "Folge 1",
-                SeriesId        = tkkg,
-                EpisodeNumber   = 1,
+                Title = "Folge 1",
+                SeriesId = tkkg,
+                EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
             });
             await episodeService.AddAsync(new Episode
             {
-                Title           = "Folge 2",
-                SeriesId        = tkkg,
-                EpisodeNumber   = 2,
+                Title = "Folge 2",
+                SeriesId = tkkg,
+                EpisodeNumber = 2,
                 LocalFolderPath = null   // noch nicht gescannt
             });
 
@@ -158,7 +158,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -166,9 +166,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await episodeService.AddAsync(new Episode
             {
-                Title           = "Folge 1",
-                SeriesId        = tkkg,
-                EpisodeNumber   = 1,
+                Title = "Folge 1",
+                SeriesId = tkkg,
+                EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
             });
@@ -202,11 +202,11 @@ namespace EchoPlay.App.Tests.ViewModels
             // ScanCommand muss den SyncService aufrufen – ohne echten Scanner
             FakeSyncService syncService = new(result: new SyncResult
             {
-                TracksCreated   = 5,
+                TracksCreated = 5,
                 EpisodesUpdated = 2
             });
 
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService, syncService: syncService);
@@ -221,12 +221,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task LoadAsync_InitialState_BothAccordionsCollapsed()
         {
             // Nach LoadAsync ohne Auswahl müssen beide Accordion-Properties Collapsed sein
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -242,12 +242,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SelectArtistAsync_EpisodesAccordion_BecomesVisible()
         {
             // Nach Auswahl einer Serie muss EpisodesAccordionVisibility Visible sein
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -264,12 +264,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SelectEpisodeAsync_TracksAccordion_BecomesVisible()
         {
             // Nach Auswahl einer Folge muss TracksAccordionVisibility Visible sein
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -277,9 +277,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await episodeService.AddAsync(new Episode
             {
-                Title           = "Folge 1",
-                SeriesId        = tkkg,
-                EpisodeNumber   = 1,
+                Title = "Folge 1",
+                SeriesId = tkkg,
+                EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 1
             });
@@ -300,13 +300,13 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // PlayEpisodeCommand muss alle Track-Pfade in aufsteigender TrackNumber-Reihenfolge
             // an den PlayerService übergeben – wichtig für die korrekte Wiedergabereihenfolge.
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
-            FakePlayerService playerService       = new();
+            FakePlayerService playerService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -314,9 +314,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await episodeService.AddAsync(new Episode
             {
-                Title           = "Folge 1",
-                SeriesId        = tkkg,
-                EpisodeNumber   = 1,
+                Title = "Folge 1",
+                SeriesId = tkkg,
+                EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
             });
@@ -354,12 +354,12 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // PlayEpisodeCommand darf nicht ausführbar sein, solange keine Tracks geladen sind.
             // Verhindert leere Wiedergabe-Aufrufe an den PlayerService.
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 
@@ -377,12 +377,12 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Bei nicht-existierendem Ordner soll eine entsprechende Meldung kommen –
             // die Dateisystem-Analyse läuft nicht, weil der Ordner fehlt.
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\NichtExistierenderPfad\TKKG"
             });
 
@@ -407,12 +407,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task ShowMissingEpisodesAsync_NullFolder_ReportsNoFolder()
         {
             // Serie ohne LocalFolderPath → Meldung statt Absturz.
-            FakeSeriesDataService seriesService   = new();
+            FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = null
             });
 
@@ -443,7 +443,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await seriesService.AddAsync(new Series
             {
-                Title           = "TKKG",
+                Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
             });
 

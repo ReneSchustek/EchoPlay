@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Fakes
             IEnumerable<PlaybackState>? states = null,
             IReadOnlyDictionary<Guid, (int Finished, int InProgress, int NotStarted)>? seriesCounts = null)
         {
-            _states       = states?.ToList() ?? [];
+            _states = states?.ToList() ?? [];
             _seriesCounts = seriesCounts ?? new Dictionary<Guid, (int, int, int)>();
         }
 

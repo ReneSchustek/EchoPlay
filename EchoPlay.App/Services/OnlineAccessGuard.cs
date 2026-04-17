@@ -30,9 +30,9 @@ namespace EchoPlay.App.Services
             IConfirmationDialogService confirmationDialog,
             StatusBarViewModel statusBar)
         {
-            _scopeFactory       = scopeFactory;
+            _scopeFactory = scopeFactory;
             _confirmationDialog = confirmationDialog;
-            _statusBar          = statusBar;
+            _statusBar = statusBar;
         }
 
         /// <inheritdoc/>
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Services
 
             // Offline-Modus aktiv → Nutzer fragen, ob die Aktion trotzdem ausgeführt werden soll
             ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
-            string title   = resources.GetString("OfflineOnlineAccessTitle");
+            string title = resources.GetString("OfflineOnlineAccessTitle");
             string message = resources.GetString("OfflineOnlineAccessMessage");
 
             bool confirmed = await _confirmationDialog.ConfirmAsync(title, message);

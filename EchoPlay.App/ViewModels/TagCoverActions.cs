@@ -86,7 +86,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             byte[] imageData = _coverVM.CoverImageData;
-            string mimeType  = _coverVM.CoverMimeType ?? "image/jpeg";
+            string mimeType = _coverVM.CoverMimeType ?? "image/jpeg";
 
             await TagBatchRunner.RunBatchAsync(
                 _fileListVM.Files,

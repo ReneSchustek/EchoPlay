@@ -82,15 +82,15 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 // iTunes liefert 100×100 als Standard – Größe im URL-String austauschen
                 string thumbnailUrl = album.ArtworkUrl100.Replace("100x100bb", "250x250bb", StringComparison.Ordinal);
-                string fullUrl      = album.ArtworkUrl100.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
+                string fullUrl = album.ArtworkUrl100.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
 
                 string albumTitle = album.CollectionName ?? title;
 
                 results.Add(new CoverSearchResult(
                     ThumbnailUrl: thumbnailUrl,
-                    FullUrl:      fullUrl,
+                    FullUrl: fullUrl,
                     ReleaseTitle: albumTitle,
-                    Source:       "iTunes"));
+                    Source: "iTunes"));
             }
 
             return results;

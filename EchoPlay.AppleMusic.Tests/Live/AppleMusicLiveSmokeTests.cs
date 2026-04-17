@@ -57,7 +57,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
         ///
         /// Zum Aktivieren den Skip-Parameter temporär entfernen.
         /// </summary>
-         
+
         //[Fact]
         [Fact(Skip = "Manuell ausführen – benötigt Internetzugang")]
         public async Task ITunesApi_LookupAlbums_ReturnsAlbums()
@@ -88,7 +88,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
         ///
         /// Zum Aktivieren den Skip-Parameter temporär entfernen.
         /// </summary>
-        
+
         //[Fact]
         [Fact(Skip = "Manuell ausführen – benötigt Internetzugang")]
         public async Task ITunesApi_LookupTracks_ReturnsTracks()

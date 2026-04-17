@@ -73,25 +73,25 @@ namespace EchoPlay.App.ViewModels
             LoggerManager loggerManager,
             StatusBarViewModel statusBar)
         {
-            _scopeFactory              = scopeFactory;
-            _themeService              = themeService;
-            _errorDialogService        = errorDialogService;
+            _scopeFactory = scopeFactory;
+            _themeService = themeService;
+            _errorDialogService = errorDialogService;
             _confirmationDialogService = confirmationDialogService;
-            _localizationService       = localizationService;
-            _loggerManager             = loggerManager;
-            _statusBar                 = statusBar;
+            _localizationService = localizationService;
+            _loggerManager = loggerManager;
+            _statusBar = statusBar;
 
             // Sub-VMs mit gemeinsamem Edit-Callback – jede Nutzeränderung setzt HasUnsavedChanges
             GeneralVM = new GeneralSettingsViewModel(OnSubVmUserEdit);
-            OnlineVM  = new OnlineSettingsViewModel(connectionTestCoordinator, credentialStore, optionsProvider, OnSubVmUserEdit);
-            LocalVM   = new LocalSettingsViewModel(syncService, errorDialogService, patternAnalyzer, OnSubVmUserEdit);
+            OnlineVM = new OnlineSettingsViewModel(connectionTestCoordinator, credentialStore, optionsProvider, OnSubVmUserEdit);
+            LocalVM = new LocalSettingsViewModel(syncService, errorDialogService, patternAnalyzer, OnSubVmUserEdit);
             MaintenanceVM = new MaintenanceSettingsViewModel(scopeFactory, logViewerCoordinator, OnSubVmUserEdit);
 
             // PropertyChanged durchreichen, damit die XAML-Bindings auf den Top-VM-Pass-Through-Properties
             // weiterhin aktualisiert werden, obwohl der Wert in einem Sub-VM liegt.
-            GeneralVM.PropertyChanged     += OnSubVmPropertyChanged;
-            OnlineVM.PropertyChanged      += OnSubVmPropertyChanged;
-            LocalVM.PropertyChanged       += OnSubVmPropertyChanged;
+            GeneralVM.PropertyChanged += OnSubVmPropertyChanged;
+            OnlineVM.PropertyChanged += OnSubVmPropertyChanged;
+            LocalVM.PropertyChanged += OnSubVmPropertyChanged;
             MaintenanceVM.PropertyChanged += OnSubVmPropertyChanged;
 
             // Pattern-Dialog-Event an die Page weiterreichen
@@ -620,9 +620,9 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public void Dispose()
         {
-            GeneralVM.PropertyChanged     -= OnSubVmPropertyChanged;
-            OnlineVM.PropertyChanged      -= OnSubVmPropertyChanged;
-            LocalVM.PropertyChanged       -= OnSubVmPropertyChanged;
+            GeneralVM.PropertyChanged -= OnSubVmPropertyChanged;
+            OnlineVM.PropertyChanged -= OnSubVmPropertyChanged;
+            LocalVM.PropertyChanged -= OnSubVmPropertyChanged;
             MaintenanceVM.PropertyChanged -= OnSubVmPropertyChanged;
             LocalVM.PatternSelectionRequested -= OnLocalVmPatternSelectionRequested;
 

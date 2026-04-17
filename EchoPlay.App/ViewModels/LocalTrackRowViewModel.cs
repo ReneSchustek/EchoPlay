@@ -32,11 +32,11 @@ namespace EchoPlay.App.ViewModels
             TimeSpan duration,
             Action<string> requestTagManagerNavigation)
         {
-            TrackId     = trackId;
+            TrackId = trackId;
             TrackNumber = trackNumber;
-            FilePath    = filePath;
-            FileName    = Path.GetFileName(filePath);
-            Duration    = duration;
+            FilePath = filePath;
+            FileName = Path.GetFileName(filePath);
+            Duration = duration;
 
             OpenInTagManagerCommand = new RelayCommand(() =>
             {

@@ -21,18 +21,18 @@ namespace EchoPlay.App.Services
         private static readonly Dictionary<NavigationTarget, Type> TargetMap =
             new()
             {
-                [NavigationTarget.Dashboard]       = typeof(DashboardPage),
+                [NavigationTarget.Dashboard] = typeof(DashboardPage),
                 [NavigationTarget.MediathekOnline] = typeof(MediathekOnlinePage),
-                [NavigationTarget.MediathekLokal]  = typeof(MediathekLokalPage),
-                [NavigationTarget.Suche]           = typeof(SuchePage),
-                [NavigationTarget.Player]          = typeof(PlayerPage),
-                [NavigationTarget.Settings]        = typeof(SettingsPage),
-                [NavigationTarget.TagManager]      = typeof(TagManagerPage),
-                [NavigationTarget.SeriesDetail]    = typeof(SeriesDetailPage),
-                [NavigationTarget.Import]          = typeof(ImportPage),
-                [NavigationTarget.Statistik]       = typeof(StatistikPage),
-                [NavigationTarget.Protokoll]       = typeof(ProtokollPage),
-                [NavigationTarget.Ueber]           = typeof(UeberPage)
+                [NavigationTarget.MediathekLokal] = typeof(MediathekLokalPage),
+                [NavigationTarget.Suche] = typeof(SuchePage),
+                [NavigationTarget.Player] = typeof(PlayerPage),
+                [NavigationTarget.Settings] = typeof(SettingsPage),
+                [NavigationTarget.TagManager] = typeof(TagManagerPage),
+                [NavigationTarget.SeriesDetail] = typeof(SeriesDetailPage),
+                [NavigationTarget.Import] = typeof(ImportPage),
+                [NavigationTarget.Statistik] = typeof(StatistikPage),
+                [NavigationTarget.Protokoll] = typeof(ProtokollPage),
+                [NavigationTarget.Ueber] = typeof(UeberPage)
             };
 
         private Frame? _frame;

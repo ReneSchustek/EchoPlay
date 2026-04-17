@@ -22,11 +22,11 @@ namespace EchoPlay.App.Services
         {
             ContentDialog dialog = new()
             {
-                Title              = title,
-                Content            = message,
-                PrimaryButtonText  = "Ja",
-                CloseButtonText    = "Abbrechen",
-                XamlRoot           = App.MainWindow!.Content.XamlRoot
+                Title = title,
+                Content = message,
+                PrimaryButtonText = "Ja",
+                CloseButtonText = "Abbrechen",
+                XamlRoot = App.MainWindow!.Content.XamlRoot
             };
 
             ContentDialogDragHelper.MakeDraggable(dialog);

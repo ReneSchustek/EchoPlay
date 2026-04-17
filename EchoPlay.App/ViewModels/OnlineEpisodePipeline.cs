@@ -100,15 +100,15 @@ namespace EchoPlay.App.ViewModels
             foreach (Episode episode in episodes)
             {
                 OnlineEpisodeCardViewModel episodeCard = new(
-                    episodeId:          episode.Id,
-                    episodeNumber:      episode.EpisodeNumber,
-                    title:              episode.Title,
-                    releaseDate:        episode.ReleaseDate,
-                    isCompleted:        _state.CompletedEpisodeIds.Contains(episode.Id),
-                    providerUrl:        episode.ProviderUrl,
-                    scopeFactory:       _ctx.ScopeFactory,
-                    appleMusicAlbumId:  episode.AppleMusicAlbumId,
-                    spotifyAlbumId:     episode.SpotifyAlbumId);
+                    episodeId: episode.Id,
+                    episodeNumber: episode.EpisodeNumber,
+                    title: episode.Title,
+                    releaseDate: episode.ReleaseDate,
+                    isCompleted: _state.CompletedEpisodeIds.Contains(episode.Id),
+                    providerUrl: episode.ProviderUrl,
+                    scopeFactory: _ctx.ScopeFactory,
+                    appleMusicAlbumId: episode.AppleMusicAlbumId,
+                    spotifyAlbumId: episode.SpotifyAlbumId);
 
                 if (coverMap.TryGetValue(episode.Id, out byte[]? coverData))
                 {

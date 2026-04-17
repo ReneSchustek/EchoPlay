@@ -342,7 +342,7 @@ namespace EchoPlay.App.Services
                 missingOnline.Add(new MissingOnlineEpisode
                 {
                     EpisodeNumber = n,
-                    AlbumTitle    = albumTitle
+                    AlbumTitle = albumTitle
                 });
             }
 

@@ -41,9 +41,9 @@ namespace EchoPlay.App
         public MainWindow()
         {
             _playerService = App.Services.GetRequiredService<PlayerService>();
-            ViewModel      = App.Services.GetRequiredService<MainWindowViewModel>();
-            MiniPlayer     = App.Services.GetRequiredService<MiniPlayerViewModel>();
-            StatusBar      = App.Services.GetRequiredService<StatusBarViewModel>();
+            ViewModel = App.Services.GetRequiredService<MainWindowViewModel>();
+            MiniPlayer = App.Services.GetRequiredService<MiniPlayerViewModel>();
+            StatusBar = App.Services.GetRequiredService<StatusBarViewModel>();
 
             InitializeComponent();
 
@@ -71,11 +71,12 @@ namespace EchoPlay.App
             // PlayPause-Icon initialisieren – Pause-Glyph, weil der Button immer pausiert/resumt
             MiniPlayer.PropertyChanged += OnMiniPlayerPropertyChanged;
 
-            // Info-Leiste beim Fensterstart befüllen – Fehler sind nicht kritisch
+            // Info-Leiste beim Fensterstart befüllen – Fehler sind nicht kritisch, aber werden geloggt.
+            EchoPlay.Logger.Abstractions.ILogger logger = App.Services.GetRequiredService<EchoPlay.Logger.Abstractions.ILogger>();
             _ = StatusBar.LoadAsync().ContinueWith(
                 t =>
                 {
-                    if (t.IsFaulted) System.Diagnostics.Trace.WriteLine($"StatusBar.LoadAsync fehlgeschlagen: {t.Exception?.Message}");
+                    if (t.IsFaulted) logger.Error("StatusBar.LoadAsync fehlgeschlagen", t.Exception);
                 },
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted,

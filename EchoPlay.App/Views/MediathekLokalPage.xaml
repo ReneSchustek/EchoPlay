@@ -151,7 +151,7 @@
             <!-- Scan: Sync-Icon statt Lupe, damit es nicht mit Suche verwechselt wird -->
             <Button
                 Grid.Column="2"
-                ToolTipService.ToolTip="Bibliothek scannen"
+                x:Uid="MediathekLokalScanButton"
                 Command="{x:Bind ViewModel.ScanCommand}"
                 IsEnabled="{x:Bind ViewModel.IsNotScanning, Mode=OneWay}">
                 <FontIcon Glyph="&#xE895;" FontSize="16"/>
@@ -160,7 +160,7 @@
             <!-- Neu-Initialisierung: löscht alle Zuordnungen und baut sie komplett neu auf -->
             <Button
                 Grid.Column="3"
-                ToolTipService.ToolTip="Neu-Initialisierung (alle lokalen Zuordnungen zurücksetzen)"
+                x:Uid="MediathekLokalResetButton"
                 Command="{x:Bind ViewModel.ReInitializeCommand}"
                 IsEnabled="{x:Bind ViewModel.IsNotScanning, Mode=OneWay}">
                 <FontIcon Glyph="&#xE777;" FontSize="16"/>
@@ -169,7 +169,7 @@
             <!-- Manuell: Ordner direkt als lokale Serie anlegen, ohne vollständigen Scan -->
             <Button
                 Grid.Column="4"
-                ToolTipService.ToolTip="Ordner manuell hinzufügen"
+                x:Uid="MediathekLokalAddFolderButton"
                 Click="OnAddFolderClick"
                 IsEnabled="{x:Bind ViewModel.IsNotScanning, Mode=OneWay}">
                 <FontIcon Glyph="&#xE8F4;" FontSize="16"/>
@@ -231,7 +231,7 @@
                     <ComboBoxItem x:Uid="LokalSortByTitle"/>
                 </ComboBox>
                 <Button Grid.Column="3"
-                        ToolTipService.ToolTip="Alle Tracks dieser Serie im Tag-Manager bearbeiten"
+                        x:Uid="MediathekLokalSeriesTagManagerButton"
                         Command="{x:Bind ViewModel.OpenAllSeriesTracksCommand}"
                         Visibility="{x:Bind ViewModel.SeriesActionsVisibility, Mode=OneWay}">
                     <FontIcon Glyph="&#xE8EC;" FontSize="14"/>
@@ -393,7 +393,7 @@
                             <Button
                                 Grid.Row="1"
                                 Grid.Column="2"
-                                ToolTipService.ToolTip="Alle Tracks dieser Folge im Tag-Manager bearbeiten"
+                                x:Uid="MediathekLokalEpisodeTagManagerButton"
                                 Command="{x:Bind ViewModel.OpenAllEpisodeTracksCommand}"
                                 Visibility="{x:Bind ViewModel.TrackActionsVisibility, Mode=OneWay}">
                                 <FontIcon Glyph="&#xE8EC;" FontSize="14"/>
@@ -447,7 +447,7 @@
                                             VerticalAlignment="Center"/>
                                         <Button
                                             Grid.Column="3"
-                                            ToolTipService.ToolTip="Im Tag-Manager öffnen"
+                                            x:Uid="MediathekLokalTrackTagManagerButton"
                                             Command="{x:Bind OpenInTagManagerCommand}"
                                             Padding="4">
                                             <FontIcon Glyph="&#xEBBE;" FontSize="14"/>

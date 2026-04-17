@@ -73,7 +73,7 @@
                                 ToolTipService.ToolTip="{x:Bind FilePath}"/>
                             <!-- Änderungsmarkierung – sichtbar wenn IsModified true -->
                             <TextBlock
-                                Text="● nicht gespeichert"
+                                x:Uid="TagManagerUnsavedMark"
                                 FontSize="10"
                                 Foreground="{ThemeResource SystemFillColorCautionBrush}"
                                 Visibility="{x:Bind IsModifiedVisibility, Mode=OneWay}"/>

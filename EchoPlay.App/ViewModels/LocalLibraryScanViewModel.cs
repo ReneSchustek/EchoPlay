@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models;
@@ -289,7 +290,7 @@ namespace EchoPlay.App.ViewModels
             IsScanIndeterminate = true;
             ScanProgressPercent = 0;
             ScanDetailText = string.Empty;
-            SyncStatusText = "Vorbereitung …";
+            SyncStatusText = SafeResourceLoader.Get("ScanStatusPreparing");
 
             try
             {
@@ -327,7 +328,7 @@ namespace EchoPlay.App.ViewModels
                 _statusBar.ClearScanProgress();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
-                await _errorDialogService.ShowAsync("Scan fehlgeschlagen", ex.Message);
+                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryScanFailedTitle"), ex.Message);
             }
             finally
             {
@@ -345,10 +346,8 @@ namespace EchoPlay.App.ViewModels
         private async Task ReInitializeAsync()
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Neu-Initialisierung",
-                "Alle lokal gescannten Serien werden vollständig entfernt und neu eingelesen. " +
-                "Online-importierte Serien behalten ihre Metadaten. " +
-                "Wiedergabestatus bleibt erhalten. Fortfahren?");
+                SafeResourceLoader.Get("LibraryReinitTitle"),
+                SafeResourceLoader.Get("LibraryReinitMessage"));
 
             if (!confirmed)
             {
@@ -362,7 +361,7 @@ namespace EchoPlay.App.ViewModels
             IsScanIndeterminate = true;
             ScanProgressPercent = 0;
             ScanDetailText = string.Empty;
-            SyncStatusText = "Vorbereitung …";
+            SyncStatusText = SafeResourceLoader.Get("ScanStatusPreparing");
 
             try
             {
@@ -422,8 +421,9 @@ namespace EchoPlay.App.ViewModels
                     _ = await coverImageService.DeleteByEntitiesAsync(CoverEntityTypes.Episode, episodeIdsToResetCover);
                 });
 
-                SyncStatusText = "Zurückgesetzt. Starte Scan …";
-                _statusBar.UpdateScanProgress(new ScanProgress { StatusText = "Zurückgesetzt. Starte Scan …" });
+                string resettingStatus = SafeResourceLoader.Get("ScanStatusResetting");
+                SyncStatusText = resettingStatus;
+                _statusBar.UpdateScanProgress(new ScanProgress { StatusText = resettingStatus });
 
                 Progress<ScanProgress> progress = new(p =>
                 {
@@ -449,7 +449,7 @@ namespace EchoPlay.App.ViewModels
                 _statusBar.ClearScanProgress();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
-                await _errorDialogService.ShowAsync("Neu-Initialisierung fehlgeschlagen", ex.Message);
+                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryReinitFailedTitle"), ex.Message);
             }
             finally
             {

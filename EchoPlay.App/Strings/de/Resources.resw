@@ -1298,4 +1298,120 @@
     <value>Suche zurücksetzen</value>
   </data>
 
+  <!-- Brief 252b C-Teil – Dialog-Buttons und Services -->
+  <data name="CommonYes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="CommonCancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="CommonApply" xml:space="preserve">
+    <value>Übernehmen</value>
+  </data>
+
+  <!-- Brief 252b – App-Start-Fehler (Notfall-Dialog) -->
+  <data name="AppStartFailedDialogTitle" xml:space="preserve">
+    <value>EchoPlay konnte nicht starten</value>
+  </data>
+  <data name="AppStartFailedDialogMessage" xml:space="preserve">
+    <value>Beim Starten der Anwendung ist ein Fehler aufgetreten:
+
+{0}
+
+Die Anwendung wird beendet.</value>
+  </data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve">
+    <value>Unerwarteter Fehler</value>
+  </data>
+  <data name="UnexpectedErrorMessage" xml:space="preserve">
+    <value>Die Anwendung hat einen Fehler festgestellt:
+
+{0}</value>
+  </data>
+
+  <!-- Brief 252b – CoverSearchDialog -->
+  <data name="CoverSearchDialogTitle" xml:space="preserve">
+    <value>Cover suchen</value>
+  </data>
+
+  <!-- Brief 252b – Import-Fehler -->
+  <data name="ImportSearchFailedTitle" xml:space="preserve">
+    <value>Suche fehlgeschlagen</value>
+  </data>
+  <data name="ImportFailedTitle" xml:space="preserve">
+    <value>Import fehlgeschlagen</value>
+  </data>
+
+  <!-- Brief 252b – Library-Scan / Neu-Initialisierung -->
+  <data name="LibraryScanFailedTitle" xml:space="preserve">
+    <value>Scan fehlgeschlagen</value>
+  </data>
+  <data name="LibraryReinitTitle" xml:space="preserve">
+    <value>Neu-Initialisierung</value>
+  </data>
+  <data name="LibraryReinitMessage" xml:space="preserve">
+    <value>Alle lokal gescannten Serien werden vollständig entfernt und neu eingelesen. Online-importierte Serien behalten ihre Metadaten. Wiedergabestatus bleibt erhalten. Fortfahren?</value>
+  </data>
+  <data name="LibraryReinitFailedTitle" xml:space="preserve">
+    <value>Neu-Initialisierung fehlgeschlagen</value>
+  </data>
+
+  <!-- Brief 252b – Scan-Status-Texte -->
+  <data name="ScanStatusPreparing" xml:space="preserve">
+    <value>Vorbereitung …</value>
+  </data>
+  <data name="ScanStatusDetectingFolders" xml:space="preserve">
+    <value>Serienordner werden erkannt …</value>
+  </data>
+  <data name="ScanStatusResetting" xml:space="preserve">
+    <value>Zurückgesetzt. Starte Scan …</value>
+  </data>
+
+  <!-- Brief 252b – Serien-Lösch-Dialoge -->
+  <data name="SeriesRemoveFromLibraryTitle" xml:space="preserve">
+    <value>Aus Bibliothek entfernen</value>
+  </data>
+  <data name="SeriesRemoveFromLibraryMessage" xml:space="preserve">
+    <value>Die Serie und alle zugehörigen Episoden werden aus der Bibliothek entfernt. Die Dateien auf der Festplatte bleiben erhalten. Fortfahren?</value>
+  </data>
+  <data name="SeriesDeleteFromDiskTitle" xml:space="preserve">
+    <value>Von Festplatte löschen</value>
+  </data>
+  <data name="SeriesDeleteFromDiskMessage" xml:space="preserve">
+    <value>Die Serie, alle Episoden und alle Audiodateien werden unwiderruflich gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden. Fortfahren?</value>
+  </data>
+
+  <!-- Brief 252b – Episode Gehört-Status -->
+  <data name="EpisodeMarkPlayedTitle" xml:space="preserve">
+    <value>Als gehört markieren?</value>
+  </data>
+  <data name="EpisodeMarkPlayedMessage" xml:space="preserve">
+    <value>Diese Episode wird als vollständig gehört gespeichert.</value>
+  </data>
+  <data name="EpisodeMarkUnplayedTitle" xml:space="preserve">
+    <value>Als ungehört markieren?</value>
+  </data>
+  <data name="EpisodeMarkUnplayedMessage" xml:space="preserve">
+    <value>Der Fortschritt dieser Episode wird gelöscht.</value>
+  </data>
+
+  <!-- Brief 252b – Cover-Überschreib-Dialog -->
+  <data name="EpisodeCoverOverwriteTitle" xml:space="preserve">
+    <value>Cover überschreiben</value>
+  </data>
+  <data name="EpisodeCoverOverwriteMessage" xml:space="preserve">
+    <value>Diese Serie hat bereits ein Cover. Soll es ersetzt werden?</value>
+  </data>
+
+  <!-- Brief 252b – Datenbankpflege-Status -->
+  <data name="MaintenanceStatusCleaning" xml:space="preserve">
+    <value>Bereinigung läuft …</value>
+  </data>
+  <data name="MaintenanceStatusCleaned" xml:space="preserve">
+    <value>Datenbank erfolgreich bereinigt.</value>
+  </data>
+  <data name="MaintenanceStatusError" xml:space="preserve">
+    <value>Fehler bei der Bereinigung: {0}</value>
+  </data>
+
 </root>

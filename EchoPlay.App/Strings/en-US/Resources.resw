@@ -1296,4 +1296,120 @@
     <value>Reset search</value>
   </data>
 
+  <!-- Brief 252b C# part – dialog buttons and services -->
+  <data name="CommonYes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="CommonCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CommonApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+
+  <!-- Brief 252b – app start failure (emergency dialog) -->
+  <data name="AppStartFailedDialogTitle" xml:space="preserve">
+    <value>EchoPlay failed to start</value>
+  </data>
+  <data name="AppStartFailedDialogMessage" xml:space="preserve">
+    <value>An error occurred while starting the application:
+
+{0}
+
+The application will close.</value>
+  </data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve">
+    <value>Unexpected error</value>
+  </data>
+  <data name="UnexpectedErrorMessage" xml:space="preserve">
+    <value>The application has encountered an error:
+
+{0}</value>
+  </data>
+
+  <!-- Brief 252b – CoverSearchDialog -->
+  <data name="CoverSearchDialogTitle" xml:space="preserve">
+    <value>Search cover</value>
+  </data>
+
+  <!-- Brief 252b – Import errors -->
+  <data name="ImportSearchFailedTitle" xml:space="preserve">
+    <value>Search failed</value>
+  </data>
+  <data name="ImportFailedTitle" xml:space="preserve">
+    <value>Import failed</value>
+  </data>
+
+  <!-- Brief 252b – Library scan / re-initialization -->
+  <data name="LibraryScanFailedTitle" xml:space="preserve">
+    <value>Scan failed</value>
+  </data>
+  <data name="LibraryReinitTitle" xml:space="preserve">
+    <value>Re-initialization</value>
+  </data>
+  <data name="LibraryReinitMessage" xml:space="preserve">
+    <value>All locally scanned series will be completely removed and re-read. Online-imported series keep their metadata. Playback state is preserved. Continue?</value>
+  </data>
+  <data name="LibraryReinitFailedTitle" xml:space="preserve">
+    <value>Re-initialization failed</value>
+  </data>
+
+  <!-- Brief 252b – Scan status texts -->
+  <data name="ScanStatusPreparing" xml:space="preserve">
+    <value>Preparing …</value>
+  </data>
+  <data name="ScanStatusDetectingFolders" xml:space="preserve">
+    <value>Detecting series folders …</value>
+  </data>
+  <data name="ScanStatusResetting" xml:space="preserve">
+    <value>Reset. Starting scan …</value>
+  </data>
+
+  <!-- Brief 252b – Series deletion dialogs -->
+  <data name="SeriesRemoveFromLibraryTitle" xml:space="preserve">
+    <value>Remove from library</value>
+  </data>
+  <data name="SeriesRemoveFromLibraryMessage" xml:space="preserve">
+    <value>The series and all associated episodes will be removed from the library. The files on disk will be preserved. Continue?</value>
+  </data>
+  <data name="SeriesDeleteFromDiskTitle" xml:space="preserve">
+    <value>Delete from disk</value>
+  </data>
+  <data name="SeriesDeleteFromDiskMessage" xml:space="preserve">
+    <value>The series, all episodes and all audio files will be deleted permanently. This operation cannot be undone. Continue?</value>
+  </data>
+
+  <!-- Brief 252b – Episode played status -->
+  <data name="EpisodeMarkPlayedTitle" xml:space="preserve">
+    <value>Mark as played?</value>
+  </data>
+  <data name="EpisodeMarkPlayedMessage" xml:space="preserve">
+    <value>This episode will be saved as completely played.</value>
+  </data>
+  <data name="EpisodeMarkUnplayedTitle" xml:space="preserve">
+    <value>Mark as unplayed?</value>
+  </data>
+  <data name="EpisodeMarkUnplayedMessage" xml:space="preserve">
+    <value>The progress of this episode will be deleted.</value>
+  </data>
+
+  <!-- Brief 252b – Cover overwrite dialog -->
+  <data name="EpisodeCoverOverwriteTitle" xml:space="preserve">
+    <value>Overwrite cover</value>
+  </data>
+  <data name="EpisodeCoverOverwriteMessage" xml:space="preserve">
+    <value>This series already has a cover. Should it be replaced?</value>
+  </data>
+
+  <!-- Brief 252b – Maintenance status -->
+  <data name="MaintenanceStatusCleaning" xml:space="preserve">
+    <value>Cleanup in progress …</value>
+  </data>
+  <data name="MaintenanceStatusCleaned" xml:space="preserve">
+    <value>Database cleaned successfully.</value>
+  </data>
+  <data name="MaintenanceStatusError" xml:space="preserve">
+    <value>Cleanup failed: {0}</value>
+  </data>
+
 </root>

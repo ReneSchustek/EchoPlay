@@ -1,4 +1,5 @@
 using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
@@ -357,8 +358,8 @@ namespace EchoPlay.App.ViewModels
         private async Task MarkAsPlayedAsync()
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Als gehört markieren?",
-                "Diese Episode wird als vollständig gehört gespeichert.");
+                SafeResourceLoader.Get("EpisodeMarkPlayedTitle"),
+                SafeResourceLoader.Get("EpisodeMarkPlayedMessage"));
 
             if (!confirmed)
             {
@@ -400,8 +401,8 @@ namespace EchoPlay.App.ViewModels
         private async Task MarkAsUnplayedAsync()
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
-                "Als ungehört markieren?",
-                "Der Fortschritt dieser Episode wird gelöscht.");
+                SafeResourceLoader.Get("EpisodeMarkUnplayedTitle"),
+                SafeResourceLoader.Get("EpisodeMarkUnplayedMessage"));
 
             if (!confirmed)
             {

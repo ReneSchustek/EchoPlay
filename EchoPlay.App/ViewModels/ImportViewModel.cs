@@ -153,7 +153,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportError"), ex.Message);
-                await _errorDialogService.ShowAsync("Suche fehlgeschlagen", ex.Message);
+                await _errorDialogService.ShowAsync(_localizationService.Get("ImportSearchFailedTitle"), ex.Message);
             }
             finally
             {
@@ -200,7 +200,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportError"), ex.Message);
-                await _errorDialogService.ShowAsync("Import fehlgeschlagen", ex.Message);
+                await _errorDialogService.ShowAsync(_localizationService.Get("ImportFailedTitle"), ex.Message);
             }
             finally
             {

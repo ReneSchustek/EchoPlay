@@ -372,7 +372,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             IsMaintaining = true;
-            MaintenanceStatusText = "Bereinigung läuft …";
+            MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaning");
 
             try
             {
@@ -383,11 +383,12 @@ namespace EchoPlay.App.ViewModels
                 await maintenance.PurgeAsync(Math.Max(0, DbPurgeDays));
                 await maintenance.VacuumAsync();
 
-                MaintenanceStatusText = "Datenbank erfolgreich bereinigt.";
+                MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaned");
             }
             catch (Exception ex)
             {
-                MaintenanceStatusText = $"Fehler bei der Bereinigung: {ex.Message}";
+                string errorFormat = SafeResourceLoader.Get("MaintenanceStatusError");
+                MaintenanceStatusText = string.Format(System.Globalization.CultureInfo.CurrentCulture, errorFormat, ex.Message);
             }
             finally
             {

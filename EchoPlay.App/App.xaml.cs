@@ -89,6 +89,12 @@ namespace EchoPlay.App
                 // Globaler Handler registrieren, bevor der Host gestartet wird.
                 this.UnhandledException += OnUnhandledException;
 
+                // Zusaetzliche Fanglinien fuer Exceptions, die WinUIs UnhandledException nicht abfaengt:
+                // - AppDomain.UnhandledException: Fehler aus Nicht-UI-Threads (Task.Run ohne await, Threadpool).
+                // - TaskScheduler.UnobservedTaskException: Tasks deren Exception nie per await konsumiert wurde.
+                AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+                TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
                 // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
                 splash = new SplashWindow();
                 splash.Activate();
@@ -240,6 +246,11 @@ namespace EchoPlay.App
         {
             _appLogger?.Info("Anwendung wird beendet");
 
+            // Globale Exception-Hooks wieder abmelden, damit nach Host-Dispose keine
+            // Fatal-Logs mehr auf bereits entsorgte Sinks zugreifen.
+            AppDomain.CurrentDomain.UnhandledException -= OnDomainUnhandledException;
+            TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+
             // Hintergrund-Services graceful stoppen, bevor der Host die Singletons disposed.
             // Jeder Service bekommt 5 Sekunden, um seine laufende Iteration zu beenden —
             // danach wird hart abgebrochen (StopAsync loggt die Überschreitung selbst).
@@ -328,6 +339,24 @@ namespace EchoPlay.App
                 }
             }
         }
+
+        /// <summary>
+        /// Behandelt Exceptions, die von Nicht-UI-Threads ausgeloest werden (<c>Task.Run</c>,
+        /// <c>Thread</c>, <c>ThreadPool</c>). WinUIs <see cref="OnUnhandledException"/> sieht diese nicht.
+        /// </summary>
+        /// <param name="sender">Quelle der Exception (typischerweise <see cref="AppDomain"/>).</param>
+        /// <param name="e">Enthaelt die Exception und das <c>IsTerminating</c>-Flag.</param>
+        private void OnDomainUnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+            => EchoPlay.App.Infrastructure.FatalExceptionHandler.HandleDomainException(_appLogger, e);
+
+        /// <summary>
+        /// Behandelt Exceptions aus <see cref="Task"/>s, deren Ergebnis nie per <c>await</c>
+        /// konsumiert wurde (z. B. <c>_ = Task.Run(...)</c> ohne Fehlerbehandlung im Body).
+        /// </summary>
+        /// <param name="sender">Der <see cref="TaskScheduler"/>, der das Event meldet.</param>
+        /// <param name="e">Enthaelt die Exception und ermoeglicht <c>SetObserved()</c>, um den Crash zu verhindern.</param>
+        private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+            => EchoPlay.App.Infrastructure.FatalExceptionHandler.HandleUnobservedTaskException(_appLogger, e);
 
         /// <summary>
         /// Prüft ob eine neuere Version auf GitHub verfügbar ist und zeigt ggf. einen Update-Dialog.

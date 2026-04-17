@@ -78,5 +78,11 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <returns>Anzahl der gelöschten Einträge.</returns>
         Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds);
 
+        /// <summary>
+        /// Liefert die Gesamtanzahl der Cover-Eintraege in der Tabelle. Fuer Self-Diagnostics beim App-Start.
+        /// Kein Blob-Load, nur ein COUNT(*).
+        /// </summary>
+        /// <returns>Anzahl der persistierten Cover-Eintraege.</returns>
+        Task<int> CountAsync();
     }
 }

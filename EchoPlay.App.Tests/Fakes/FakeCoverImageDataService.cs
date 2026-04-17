@@ -116,5 +116,7 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.FromResult(deleted);
         }
 
+        /// <inheritdoc/>
+        public Task<int> CountAsync() => Task.FromResult(_covers.Count);
     }
 }

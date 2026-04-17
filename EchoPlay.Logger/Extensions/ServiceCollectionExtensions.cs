@@ -43,6 +43,12 @@ namespace EchoPlay.Logger.Extensions
                 sinks.Add(new FileSink(options.LogDirectory, formatter, options.MaxFileSizeMb));
             }
 
+            if (options.EnableJsonSink)
+            {
+                string jsonDir = options.JsonLogDirectory ?? options.LogDirectory;
+                sinks.Add(new JsonLogSink(jsonDir, options.MaxFileSizeMb));
+            }
+
             MemorySink? memorySink = null;
 
             if (options.EnableMemorySink)

@@ -58,5 +58,17 @@ namespace EchoPlay.Logger.Configuration
         /// Nur relevant wenn <see cref="EnableMemorySink"/> aktiv ist.
         /// </summary>
         public int MemorySinkCapacity { get; set; } = 100;
+
+        /// <summary>
+        /// Aktiviert die JSON-Lines-Ausgabe (ein JSON-Objekt pro Zeile) in eine separate Datei.
+        /// Fuer strukturiertes Log-Shipping an externe Tools (z. B. Observability-Stacks).
+        /// </summary>
+        public bool EnableJsonSink { get; set; }
+
+        /// <summary>
+        /// Verzeichnis fuer JSON-Log-Dateien. Wird nur verwendet wenn <see cref="EnableJsonSink"/> aktiv ist.
+        /// Default ist das normale <see cref="LogDirectory"/>; kann fuer getrennte Rotation gesetzt werden.
+        /// </summary>
+        public string? JsonLogDirectory { get; set; }
     }
 }

@@ -229,6 +229,9 @@ namespace EchoPlay.Data.Services
             return deleted;
         }
 
+        /// <inheritdoc/>
+        public Task<int> CountAsync() => _context.CoverImages.CountAsync();
+
         /// <summary>
         /// Berechnet den SHA-256-Hash der Bilddaten als Hex-String (64 Zeichen).
         /// </summary>

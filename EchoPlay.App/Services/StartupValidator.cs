@@ -219,6 +219,25 @@ namespace EchoPlay.App.Services
             _logger.Info($"Startup-Validierung abgeschlossen: Online={isOnlineAvailable}, " +
                 $"Lokal={isLocalAvailable}, Cache={cachedReleases.Count} Einträge.");
 
+            // Self-Diagnostics-Snapshot: kompakter Health-Check, der auch beim Log-Support-Case
+            // lesbar ist. Mehrzeilig, weil JsonLogSink die Zeilen trotzdem als ein Eintrag erfasst.
+            ICoverImageDataService coverImageForSnapshot =
+                scope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
+            int coverImageCount = await coverImageForSnapshot.CountAsync();
+            _logger.Info(
+                "Health-Check-Snapshot:\n" +
+                $"  Online:             {isOnlineAvailable}\n" +
+                $"  Lokal:              {isLocalAvailable}\n" +
+                $"  AbonnierteSerien:   {subscribedSeries.Count}\n" +
+                $"  CoverCache:         {coverImageCount}\n" +
+                $"  CachedReleases:     {cachedReleases.Count}\n" +
+                $"  Provider:           {settings.ActiveProvider}\n" +
+                $"  OfflineMode:        {settings.OfflineMode}\n" +
+                $"  OnlineOnlyMode:     {settings.OnlineOnlyMode}\n" +
+                $"  NewReleaseDays:     {settings.NewReleaseDays}\n" +
+                $"  LogRetentionDays:   {settings.LogRetentionDays}\n" +
+                $"  DbPurgeDays:        {settings.DbPurgeDays}");
+
             return new StartupResult
             {
                 IsOnlineAvailable = isOnlineAvailable,

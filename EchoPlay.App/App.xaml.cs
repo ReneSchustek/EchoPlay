@@ -741,7 +741,7 @@ namespace EchoPlay.App
                     provider.GetRequiredService<IFolderRestructureCoordinator>(),
                     provider.GetRequiredService<IMissingEpisodesCoordinator>(),
                     provider.GetRequiredService<IEpisodeCoverCoordinator>(),
-                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILogger>())));
+                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("MediathekLokal"))));
             _ = builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),

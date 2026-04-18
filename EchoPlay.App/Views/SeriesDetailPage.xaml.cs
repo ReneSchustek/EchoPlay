@@ -51,6 +51,17 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
+        /// Wird beim Verlassen der Seite aufgerufen. Bricht den Priority-Cover-Load
+        /// der offenen Serie ab, damit der Hintergrund-Cover-Loop nicht unnötig
+        /// für eine nicht mehr sichtbare Serie pausiert bleibt.
+        /// </summary>
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            ViewModel.CancelPendingPriorityLoad();
+        }
+
+        /// <summary>
         /// Wird ausgelöst, wenn der Benutzer eine Episodenkachel auswählt.
         /// Lädt die zugehörigen lokalen Tracks in die rechte Spalte.
         /// </summary>

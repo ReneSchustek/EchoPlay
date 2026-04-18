@@ -66,6 +66,50 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task WaitAsync_ForegroundGoesBeforeBackground()
+        {
+            // Host-Intervall bewusst lang: der erste Background-Call setzt den Zeitstempel,
+            // der nächste Background-Call muss das volle Intervall abwarten. In dieses
+            // Zeitfenster schalten wir eine Foreground-Anfrage — sie darf sofort durch,
+            // der Background-Call hinter ihr wartet zusätzlich, bis der Foreground-Slot
+            // wieder frei ist.
+            TimeSpan interval = TimeSpan.FromMilliseconds(300);
+            SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
+            {
+                ["mixed.host"] = interval
+            });
+
+            // Erster Aufruf: setzt den letzten Aufruf-Zeitstempel sofort.
+            await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background);
+
+            // Foreground-Anfrage im Hintergrund starten; sie darf wegen des Intervalls
+            // erst nach ca. 300 ms zurückkehren, blockiert aber während ihrer Laufzeit
+            // jede Background-Anfrage.
+            Stopwatch sw = Stopwatch.StartNew();
+            Task<long> foregroundTask = Task.Run(async () =>
+            {
+                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Foreground);
+                return sw.ElapsedMilliseconds;
+            });
+
+            // Kurzer Abstand, damit der Foreground-Call seinen Slot reserviert hat.
+            await Task.Delay(30);
+
+            Task<long> backgroundTask = Task.Run(async () =>
+            {
+                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background);
+                return sw.ElapsedMilliseconds;
+            });
+
+            long foregroundMs = await foregroundTask;
+            long backgroundMs = await backgroundTask;
+            sw.Stop();
+
+            Assert.True(foregroundMs < backgroundMs,
+                $"Foreground muss vor Background zurückkehren — tatsächlich FG={foregroundMs} ms, BG={backgroundMs} ms.");
+        }
+
+        [Fact]
         public async Task Dispose_ReleasesSemaphores_AndBlocksFurtherWaitAsync()
         {
             SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>

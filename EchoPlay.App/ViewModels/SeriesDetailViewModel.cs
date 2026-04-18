@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -24,12 +25,15 @@ namespace EchoPlay.App.ViewModels
     /// die zugehörigen lokalen Tracks in die zweite Spalte.
     /// Online-Serien ohne lokale Dateien zeigen eine entsprechende Leer-Meldung.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Der einzige verwerfbare Zustand (_priorityCts) wird ueber CancelPendingPriorityLoad deterministisch freigegeben, das vom OnNavigatedFrom-Pfad der Page aufgerufen wird; ein eigener Dispose-Kontrakt im Transient-VM wuerde der bestehenden VM-Konvention widersprechen.")]
     public sealed class SeriesDetailViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPlayerService _playerService;
         private readonly CoverService? _coverService;
+        private readonly BackgroundCoverService? _backgroundCoverService;
         private readonly IClock _clock;
+        private CancellationTokenSource? _priorityCts;
 
         private string _seriesTitle = string.Empty;
         private string _seriesDescription = string.Empty;
@@ -54,16 +58,23 @@ namespace EchoPlay.App.ViewModels
         /// <param name="playerService">Der zentrale Wiedergabe-Service.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
+        /// <param name="backgroundCoverService">
+        /// Optionaler Hintergrund-Cover-Service. Wenn gesetzt, priorisiert das VM
+        /// die Folgen-Cover der geöffneten Serie und pausiert damit den laufenden
+        /// Hintergrund-Scan, bis die sichtbare Serie versorgt ist.
+        /// </param>
         public SeriesDetailViewModel(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
             IClock clock,
-            CoverService? coverService = null)
+            CoverService? coverService = null,
+            BackgroundCoverService? backgroundCoverService = null)
         {
             _scopeFactory = scopeFactory;
             _playerService = playerService;
             _clock = clock;
             _coverService = coverService;
+            _backgroundCoverService = backgroundCoverService;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
         }
@@ -271,11 +282,17 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Lädt alle Episoden der angegebenen Serie samt Wiedergabestatus.
+        /// Startet zusätzlich – sofern ein <see cref="BackgroundCoverService"/> injiziert ist –
+        /// die Priorisierung der fehlenden Folgen-Cover dieser Serie und pausiert damit
+        /// den Hintergrund-Scan, bis die sichtbare Liste versorgt ist.
         /// </summary>
         /// <param name="seriesId">ID der anzuzeigenden Serie.</param>
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task LoadAsync(Guid seriesId)
         {
+            // Priorität einer vorherigen Detailansicht sauber beenden, bevor wir neu starten.
+            CancelPendingPriorityLoad();
+
             IsLoading = true;
             Tracks = [];
             SelectedEpisode = null;
@@ -373,6 +390,46 @@ namespace EchoPlay.App.ViewModels
                 IsLoading = false;
                 OnPropertyChanged(nameof(EpisodesEmptyVisibility));
             }
+
+            // Nach dem UI-Refresh: Priorität für die sichtbaren Folgen anstoßen.
+            // Fire-and-forget — der Background-Service pausiert seinen Loop selbst,
+            // damit die sichtbare Serie das HTTP-/Dateisystem-Kontingent zuerst bekommt.
+            StartPriorityLoad(seriesId);
+        }
+
+        /// <summary>
+        /// Startet den Priority-Cover-Load für die geöffnete Serie im Hintergrund und
+        /// legt ein neues <see cref="CancellationTokenSource"/> an, damit das VM bei
+        /// Verlassen der Seite (<see cref="CancelPendingPriorityLoad"/>) sauber abbrechen kann.
+        /// </summary>
+        private void StartPriorityLoad(Guid seriesId)
+        {
+            if (_backgroundCoverService is null) return;
+
+            _priorityCts = new CancellationTokenSource();
+            CancellationToken token = _priorityCts.Token;
+            _ = _backgroundCoverService.RequestPriorityForSeriesAsync(seriesId, token);
+        }
+
+        /// <summary>
+        /// Bricht einen laufenden Priority-Cover-Load ab. Wird beim Verlassen der
+        /// Detailseite aus dem <c>OnNavigatedFrom</c>-Pfad der Page aufgerufen, damit
+        /// der Hintergrund-Loop nicht unnötig pausiert bleibt.
+        /// </summary>
+        public void CancelPendingPriorityLoad()
+        {
+            if (_priorityCts is null) return;
+
+            try
+            {
+                _priorityCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // CTS wurde bereits abgeräumt – defensiv schlucken.
+            }
+            _priorityCts.Dispose();
+            _priorityCts = null;
         }
 
         /// <summary>

@@ -37,6 +37,18 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Der beim letzten Aufruf übergebene <c>isOnlineAvailable</c>-Wert.</summary>
         public bool? LastIsOnlineAvailable { get; private set; }
 
+        /// <summary>
+        /// Alle beim Priority-Aufruf beobachteten Cancellation-Tokens. Der Test
+        /// kann darüber prüfen, ob das VM den Abbruch sauber signalisiert hat.
+        /// </summary>
+        public List<CancellationToken> PriorityTokens { get; } = [];
+
+        /// <summary>
+        /// Wenn gesetzt, wartet der Priority-Aufruf auf diesen Task, bevor er zurückkehrt.
+        /// Ermöglicht deterministische Tests, die den Abbruch beobachten wollen.
+        /// </summary>
+        public TaskCompletionSource? PriorityHold { get; set; }
+
         /// <inheritdoc/>
         public override Task<int> RunOnceAsync()
         {
@@ -50,6 +62,19 @@ namespace EchoPlay.App.Tests.Fakes
             RunSeriesCoversCallCount++;
             LastIsOnlineAvailable = isOnlineAvailable;
             return Task.FromResult(0);
+        }
+
+        /// <inheritdoc/>
+        public override async Task RequestPriorityForSeriesAsync(System.Guid seriesId, CancellationToken ct = default)
+        {
+            PriorityTokens.Add(ct);
+
+            if (PriorityHold is not null)
+            {
+                // Wartet bis der Test per PriorityHold.TrySetResult fortfahren lässt
+                // oder das Token abgebrochen wird.
+                _ = await Task.WhenAny(PriorityHold.Task, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
+            }
         }
     }
 }

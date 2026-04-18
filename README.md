@@ -106,7 +106,7 @@ Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche übe
 1. **Solution öffnen:** `EchoPlay.slnx` in Visual Studio 2022. Startprojekt ist `EchoPlay.App`.
 2. **Build-Plattform:** Immer `x64` — WinUI 3 und die Tests laufen nicht unter `AnyCPU`.
 3. **Tests ausführen:** `dotnet test -p:Platform=x64` (Solution-weit) oder pro Projekt. Live-API-Tests (Spotify, iTunes) sind per Default skipped.
-4. **Migrationen:** Nach Entity-Änderung `dotnet ef migrations add <Name> --project EchoPlay.Data --startup-project EchoPlay.App`. `.Designer.cs` muss committed werden — sonst erkennt EF die Migration nicht.
+4. **Migrationen:** Nach Entity-Änderung `dotnet ef migrations add <Name> --project EchoPlay.Data --startup-project EchoPlay.App`. `.Designer.cs` muss committed werden — sonst erkennt EF die Migration nicht. Historie und Breaking-Change-Liste in `MIGRATIONS.md`.
 5. **Warnungen = Fehler:** Das Projekt fährt mit `TreatWarningsAsErrors=true` und `AnalysisMode=All`. Neue CA-Warnungen müssen entweder gelöst oder mit Methoden-Begründung suppressed werden.
 6. **DI-Lifetimes:** ViewModels sind `Transient`, `DbContext` ist `Scoped`. ViewModels nutzen `IServiceScopeFactory` für DB-Zugriff — direkte `DbContext`-Injektion in ViewModels ist ein Captive-Dependency-Muster und wird im Review abgelehnt.
 7. **Keine Cover-BLOBs an Entities:** Cover liegen in der `CoverImages`-Tabelle, referenziert über `ICoverImageDataService`.

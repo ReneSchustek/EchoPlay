@@ -72,7 +72,10 @@ namespace EchoPlay.App
             MiniPlayer.PropertyChanged += OnMiniPlayerPropertyChanged;
 
             // Info-Leiste beim Fensterstart befüllen – Fehler sind nicht kritisch, aber werden geloggt.
-            EchoPlay.Logger.Abstractions.ILogger logger = App.Services.GetRequiredService<EchoPlay.Logger.Abstractions.ILogger>();
+            // Logger wird über die Factory erzeugt; ein Root-ILogger ist bewusst nicht im DI-Container registriert.
+            EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory =
+                App.Services.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>();
+            EchoPlay.Logger.Abstractions.ILogger logger = loggerFactory.CreateLogger("MainWindow");
             _ = StatusBar.LoadAsync().ContinueWith(
                 t =>
                 {

@@ -170,10 +170,12 @@ namespace EchoPlay.App.Services
                     subscribedSeries, cutoffDate, refreshCacheService, refreshScope.ServiceProvider);
             }
 
-            // Schritt 6: Fehlende Cover prüfen und nachladen.
-            // Läuft bei jedem Start – der Splash bleibt bis alles durch ist.
-            // Wenn alle Cover vorhanden sind, laufen nur Batch-Queries (ms).
-            // Nach Cache-Clear werden Cover aus Dateisystem + Provider-URLs geladen.
+            // Schritt 6: Nur Serien-Cover im Splash nachladen.
+            // Folgen-Cover gehören nicht auf den Start-Pfad – sie werden nach App-Start
+            // durch den periodischen BackgroundCoverService-Loop abgearbeitet.
+            // Der Splash lädt deshalb ausschliesslich fehlende Serien-Cover (lokal zuerst,
+            // dann optional Provider-URL). Kein Episoden-Scan, kein ID3-Parsing, kein
+            // Provider-Call für Folgen.
             try
             {
                 if (cacheCleared)
@@ -185,11 +187,13 @@ namespace EchoPlay.App.Services
                     onStatus?.Invoke("Prüfe Cover …");
                 }
 
-                int coverCount = await _backgroundCoverService.RunOnceAsync();
+                bool canUseProvider = isOnlineAvailable && !settings.OfflineMode;
+                int coverCount = await _backgroundCoverService
+                    .RunSeriesCoversOnceAsync(canUseProvider, cancellationToken);
 
                 if (coverCount > 0)
                 {
-                    _logger.Info($"Cover-Check: {coverCount} fehlende Cover nachgeladen.");
+                    _logger.Info($"Cover-Check (Splash): {coverCount} fehlende Serien-Cover nachgeladen.");
                 }
             }
             catch (Exception ex)

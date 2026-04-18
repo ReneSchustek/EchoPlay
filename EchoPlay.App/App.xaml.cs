@@ -153,10 +153,8 @@ namespace EchoPlay.App
                     }
                 });
 
-                // Cover-Hintergrund-Service starten – lädt fehlende lokale Episoden-Cover in die DB
-                Services.GetRequiredService<BackgroundCoverService>().Start();
-
-                // Provider-ID-Enrichment starten – ergänzt fehlende SpotifyAlbumId/AppleMusicAlbumId
+                // Provider-ID-Enrichment starten – ergänzt fehlende SpotifyAlbumId/AppleMusicAlbumId.
+                // Kein Dateisystem-Scan, kein Cover-Download – läuft nebenläufig ohne den Splash zu verlangsamen.
                 Services.GetRequiredService<BackgroundProviderIdService>().Start();
 
                 // Theme vor dem Fenster-Öffnen setzen, damit kein Flackern entsteht
@@ -188,6 +186,11 @@ namespace EchoPlay.App
                 _window.Activate();
 
                 splash.Close();
+
+                // Cover-Hintergrund-Loop erst nach sichtbarem Hauptfenster starten.
+                // Der Splash hat nur die Serien-Cover nachgeladen; Folgen-Cover, ID3-Parsing
+                // und Provider-URL-Downloads für Episoden laufen danach progressiv im Hintergrund.
+                Services.GetRequiredService<BackgroundCoverService>().Start();
             }
             catch (Exception ex)
             {

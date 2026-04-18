@@ -34,6 +34,18 @@ namespace EchoPlay.App.Services
         private readonly ILogger _logger;
         private CancellationTokenSource? _cts;
         private Task? _backgroundTask;
+        private int _priorityInFlight;
+
+        // Polling-Intervall, in dem der Hintergrund-Loop zwischen zwei Phasen prüft,
+        // ob eine Foreground-Priority-Anfrage läuft. Klein genug, damit die sichtbare
+        // UI zügig das HTTP- und Dateisystem-Kontingent übernimmt; groß genug, dass
+        // der Thread-Pool keinen Spin aufbaut.
+        private static readonly TimeSpan PriorityPollInterval = TimeSpan.FromMilliseconds(50);
+
+        // Obergrenze der parallelen lokalen Cover-Loads im Foreground-Pfad. Nur Dateisystem,
+        // kein externes Netz – vier Worker nutzen handelsübliche SSDs aus, ohne die Platte
+        // zu saturieren.
+        private const int ForegroundLocalParallelism = 4;
 
 
         /// <summary>
@@ -183,6 +195,7 @@ namespace EchoPlay.App.Services
             {
                 try
                 {
+                    await WaitWhilePriorityInFlightAsync(ct).ConfigureAwait(false);
                     int seriesLocalLoaded = await LoadMissingLocalSeriesCoversAsync(ct);
                     int episodeLocalLoaded = await LoadMissingLocalEpisodeCoversAsync(ct);
                     int copied = await CopyLocalToOnlineAsync();
@@ -232,8 +245,16 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="episodeIds">Zu prüfende Episoden – Duplikate sind erlaubt, werden entfernt.</param>
         /// <param name="onCoverReady">Callback pro Episode, die ein Cover bekommen hat. Darf <see langword="null"/> sein.</param>
+        /// <param name="priority">
+        /// Priorität der Anfrage. <see cref="CoverFetchPriority.Foreground"/> läuft parallel
+        /// zum laufenden Hintergrund-Scan, markiert den Service aber als "Priority aktiv",
+        /// sodass die nächste Loop-Iteration pausiert, bis die Queue abgearbeitet ist.
+        /// </param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cover-Queue: HTTP-/IO-/TagLib-Fehler einzelner Episoden duerfen die Queue fuer die anderen Kacheln nicht beenden; der Fehler wird als Debug geloggt und die naechste Episode wird verarbeitet.")]
-        public void EnqueueForEpisodes(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady)
+        public void EnqueueForEpisodes(
+            IReadOnlyList<Guid> episodeIds,
+            Action<Guid, byte[]>? onCoverReady,
+            CoverFetchPriority priority = CoverFetchPriority.Background)
         {
             ArgumentNullException.ThrowIfNull(episodeIds);
             if (episodeIds.Count == 0) return;
@@ -242,6 +263,11 @@ namespace EchoPlay.App.Services
 
             _ = Task.Run(async () =>
             {
+                if (priority == CoverFetchPriority.Foreground)
+                {
+                    _ = Interlocked.Increment(ref _priorityInFlight);
+                }
+
                 try
                 {
                     await ProcessEnqueuedEpisodesAsync(uniqueIds, onCoverReady);
@@ -249,6 +275,13 @@ namespace EchoPlay.App.Services
                 catch (Exception ex)
                 {
                     _logger.Warning($"EnqueueForEpisodes fehlgeschlagen: {ex.Message}");
+                }
+                finally
+                {
+                    if (priority == CoverFetchPriority.Foreground)
+                    {
+                        _ = Interlocked.Decrement(ref _priorityInFlight);
+                    }
                 }
             });
         }
@@ -314,6 +347,135 @@ namespace EchoPlay.App.Services
                 }
             }
         }
+
+        /// <summary>
+        /// Priorisiert das Laden der Folgen-Cover für die angegebene Serie. Markiert
+        /// den Service als "Foreground aktiv", sodass der Hintergrund-Loop zwischen
+        /// zwei Phasen pausiert, lädt fehlende Episoden-Cover zunächst lokal
+        /// (<see cref="ILocalCoverLoader"/>, parallelisiert) und danach über die
+        /// Provider-URL. Keine Online-Suchkette – die bleibt dem langsamen Hintergrund-Loop
+        /// vorbehalten. Wird die Priorität abgebrochen (Nutzer verlässt die Detailseite),
+        /// endet die Methode ohne Exception.
+        /// </summary>
+        /// <param name="seriesId">Serie, deren Folgen-Cover priorisiert geladen werden.</param>
+        /// <param name="ct">Abbruch-Token der aufrufenden Detail-Ansicht.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Foreground-Priority-Pfad: Einzelne TagLib-/IO-/HTTP-Fehler pro Episode werden geloggt, damit das Priorisierungs-Fenster fuer die sichtbare Serie nicht wegen einer kaputten Datei abbricht.")]
+        public virtual async Task RequestPriorityForSeriesAsync(Guid seriesId, CancellationToken ct = default)
+        {
+            if (seriesId == Guid.Empty) return;
+
+            _ = Interlocked.Increment(ref _priorityInFlight);
+
+            try
+            {
+                using IServiceScope scope = _scopeFactory.CreateScope();
+                IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+                ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+                ILocalCoverLoader coverLoader = scope.ServiceProvider.GetRequiredService<ILocalCoverLoader>();
+                ICoverImageDataService coverImageService = scope.ServiceProvider
+                    .GetRequiredService<ICoverImageDataService>();
+
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
+                if (episodes.Count == 0) return;
+
+                List<Guid> episodeIds = [.. episodes.Select(e => e.Id)];
+                IReadOnlyDictionary<Guid, byte[]> existing =
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, episodeIds);
+
+                List<Episode> missing = [.. episodes.Where(e => !existing.ContainsKey(e.Id))];
+                if (missing.Count == 0) return;
+
+                List<Guid> missingIds = [.. missing.Select(e => e.Id)];
+                IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
+                    await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds);
+
+                _logger.Info($"Priority SeriesOpen: starte {missing.Count} Folgen-Cover fuer Serie {seriesId}.");
+
+                ParallelOptions parallelOptions = new()
+                {
+                    CancellationToken = ct,
+                    MaxDegreeOfParallelism = ForegroundLocalParallelism
+                };
+
+                // Phase 1 (Foreground): lokale Quellen parallel. Keine externen HTTP-Calls
+                // – reines Dateisystem, daher Parallelismus sicher.
+                await Parallel.ForEachAsync(missing, parallelOptions, async (episode, token) =>
+                {
+                    if (string.IsNullOrEmpty(episode.LocalFolderPath)) return;
+
+                    string? firstTrackPath = firstTracks.TryGetValue(episode.Id, out LocalTrack? t) ? t.FilePath : null;
+                    try
+                    {
+                        byte[]? bytes = await coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
+                        if (bytes is not null)
+                        {
+                            await _coverService.SetEpisodeCoverAsync(episode.Id, bytes);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Debug($"Priority Lokal-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
+                    }
+                }).ConfigureAwait(false);
+
+                // Phase 2 (Foreground): Provider-URLs. HTTP, daher seriell, damit der
+                // Rate-Limiter nicht gesprengt wird; der Foreground-Slot ueberholt
+                // Background-Waits via IHostRateLimiter automatisch.
+                IReadOnlyDictionary<Guid, byte[]> stillMissing =
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, missingIds);
+
+                foreach (Episode episode in missing)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (stillMissing.ContainsKey(episode.Id)) continue;
+                    if (string.IsNullOrEmpty(episode.CoverImageUrl)) continue;
+
+                    try
+                    {
+                        byte[]? bytes = await DownloadSafeAsync(episode.CoverImageUrl);
+                        if (bytes is not null)
+                        {
+                            await _coverService.SetEpisodeCoverAsync(episode.Id, bytes, episode.CoverImageUrl);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Debug($"Priority Provider-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Erwartet: Nutzer hat die Detailseite verlassen. Kein Log-Rauschen.
+            }
+            finally
+            {
+                _ = Interlocked.Decrement(ref _priorityInFlight);
+            }
+        }
+
+        /// <summary>
+        /// Pausiert den Hintergrund-Loop, solange eine Foreground-Priorität läuft. Liest
+        /// den Counter atomar und wartet in kleinen Ticks; bei Cancel gibt die Methode
+        /// die <see cref="OperationCanceledException"/> weiter, die die Run-Schleife beendet.
+        /// </summary>
+        private async Task WaitWhilePriorityInFlightAsync(CancellationToken ct)
+        {
+            while (Volatile.Read(ref _priorityInFlight) > 0)
+            {
+                await Task.Delay(PriorityPollInterval, ct).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Gibt an, ob aktuell eine Foreground-Priority-Anfrage verarbeitet wird.
+        /// Für Tests und Telemetry.
+        /// </summary>
+        public bool IsPriorityActive => Volatile.Read(ref _priorityInFlight) > 0;
 
         /// <summary>
         /// Stellt sicher, dass alle lokalen Episoden einer Serie (nach Titel) ihre Cover

@@ -67,11 +67,12 @@ namespace EchoPlay.App.Services
         public async Task CacheCoversAsync(
             Guid seriesId,
             IReadOnlyList<ImportEpisode>? importEpisodes = null,
+            CoverFetchPriority priority = CoverFetchPriority.Background,
             CancellationToken ct = default)
         {
             try
             {
-                await CacheCoversInternalAsync(seriesId, importEpisodes, ct);
+                await CacheCoversInternalAsync(seriesId, importEpisodes, priority, ct);
             }
             catch (OperationCanceledException)
             {
@@ -90,8 +91,18 @@ namespace EchoPlay.App.Services
         private async Task CacheCoversInternalAsync(
             Guid seriesId,
             IReadOnlyList<ImportEpisode>? importEpisodes,
+            CoverFetchPriority priority,
             CancellationToken ct)
         {
+            // Priority wird vom Rate-Limiter via HTTP-Pipeline automatisch genutzt, sobald
+            // der HttpClient in einem Foreground-Scope laeuft. Aktuell wirkt der Parameter
+            // nur informativ: die Protokoll-Zeile markiert die Phase, damit operative
+            // Auswertungen Foreground-Spikes erkennen koennen.
+            if (priority == CoverFetchPriority.Foreground)
+            {
+                _logger.Debug($"Cover-Caching Serie {seriesId} mit Foreground-Prioritaet angefordert.");
+            }
+
             // ── Phase 1: Lokale Cover kopieren (Raw SQL via Data-Schicht) ────────
             int localFound;
 

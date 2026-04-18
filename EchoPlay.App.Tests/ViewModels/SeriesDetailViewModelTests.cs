@@ -6,6 +6,8 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
@@ -275,6 +277,57 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task OnNavigatedAway_CancelsPendingPriority()
+        {
+            // Arrange: VM lädt Serie mit injiziertem FakeBackgroundCoverService,
+            // der die Priority-Anfrage offenhält, bis das Token abgebrochen wird.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series { Title = "Detail" });
+            Series series = seriesService.All[0];
+
+            FakeEpisodeDataService episodeService = new();
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+
+            ServiceProvider provider = services.BuildServiceProvider();
+            Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory =
+                provider.GetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+
+            FakeBackgroundCoverService fakeBackground = new(
+                scopeFactory,
+                new TestHttpClientFactory())
+            {
+                PriorityHold = new TaskCompletionSource()
+            };
+
+            SeriesDetailViewModel vm = new(
+                scopeFactory,
+                new FakePlayerService(),
+                new FakeClock(),
+                coverService: null,
+                backgroundCoverService: fakeBackground);
+
+            // Act: Laden => Priority-Call startet; Navigate-Away => CTS wird gecancelt.
+            await vm.LoadAsync(series.Id);
+
+            _ = Assert.Single(fakeBackground.PriorityTokens);
+            CancellationToken token = fakeBackground.PriorityTokens[0];
+            Assert.False(token.IsCancellationRequested);
+
+            vm.CancelPendingPriorityLoad();
+
+            // Assert: Der vom VM übergebene Token ist jetzt abgebrochen. Wiederholter
+            // Cancel darf nicht werfen, damit Page-Lifecycles idempotent sind.
+            Assert.True(token.IsCancellationRequested);
+            vm.CancelPendingPriorityLoad();
+        }
+
+        [Fact]
         public async Task PlayEpisodeAsync_StartsFromBeginning_WhenCompleted()
         {
             // Abgeschlossene Episode wird von Anfang an gespielt
@@ -317,6 +370,15 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Position = TimeSpan.Zero bedeutet: von vorne starten
             Assert.Equal(TimeSpan.Zero, playerService.PlayCalls[0].ResumePosition);
+        }
+
+        /// <summary>
+        /// HttpClientFactory-Fake, den der <see cref="FakeBackgroundCoverService"/>
+        /// beim Konstruieren der Basisklasse erwartet.
+        /// </summary>
+        private sealed class TestHttpClientFactory : IHttpClientFactory
+        {
+            public HttpClient CreateClient(string name) => new();
         }
     }
 }

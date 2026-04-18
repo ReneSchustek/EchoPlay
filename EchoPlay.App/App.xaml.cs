@@ -21,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -452,6 +453,16 @@ namespace EchoPlay.App
             _ = builder.Configuration
                 .AddJsonFile("appsettings.json", optional: false);
 
+            // Microsoft-seitige HttpClient-/Resilience-Logs auf Warning dämpfen.
+            // EchoPlay loggt jede HTTP-Anfrage und Antwort selbst über HttpRequestLoggingHandler;
+            // die Default-Zeilen der LogicalHandler/ClientHandler und das Polly-"Handled: False"
+            // würden sonst jede Request vierfach und ohne Mehrwert im Output-Fenster ausgeben.
+            _ = builder.Logging
+                .AddFilter("System.Net.Http.HttpClient", Microsoft.Extensions.Logging.LogLevel.Warning)
+                .AddFilter("Microsoft.Extensions.Http", Microsoft.Extensions.Logging.LogLevel.Warning)
+                .AddFilter("Microsoft.Extensions.Http.Resilience", Microsoft.Extensions.Logging.LogLevel.Warning)
+                .AddFilter("Polly", Microsoft.Extensions.Logging.LogLevel.Warning);
+
             // Logger registrieren (Cleanup läuft automatisch beim Start)
             _ = builder.Services.AddEchoPlayLogger(options =>
             {
@@ -473,12 +484,12 @@ namespace EchoPlay.App
             // ihren Client ueber IHttpClientFactory, statt eigene statische Instanzen
             // zu halten. Damit greifen einheitliche Timeouts, User-Agent-Header und
             // bei Bedarf spaeter auch Polly-Resilience-Policies (siehe Brief 228).
-            _ = builder.Services.AddHttpClient("CoverDownload", client =>
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder coverDownloadBuilder = builder.Services.AddHttpClient("CoverDownload", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-CoverDownload/1.0");
-            })
-            .AddStandardResilienceHandler(options =>
+            });
+            _ = coverDownloadBuilder.AddStandardResilienceHandler(options =>
             {
                 options.Retry.MaxRetryAttempts = 3;
                 options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
@@ -486,17 +497,21 @@ namespace EchoPlay.App
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
             });
-            _ = builder.Services.AddHttpClient("OnlineCheck", client =>
+            AttachRequestLogging(coverDownloadBuilder);
+
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder onlineCheckBuilder = builder.Services.AddHttpClient("OnlineCheck", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-OnlineCheck/1.0");
             });
-            _ = builder.Services.AddHttpClient("UpdateDownload", client =>
+            AttachRequestLogging(onlineCheckBuilder);
+
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder updateDownloadBuilder = builder.Services.AddHttpClient("UpdateDownload", client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(2);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateDownload/1.0");
-            })
-            .AddStandardResilienceHandler(options =>
+            });
+            _ = updateDownloadBuilder.AddStandardResilienceHandler(options =>
             {
                 options.Retry.MaxRetryAttempts = 3;
                 options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
@@ -504,13 +519,15 @@ namespace EchoPlay.App
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
             });
-            _ = builder.Services.AddHttpClient("UpdateCheck", client =>
+            AttachRequestLogging(updateDownloadBuilder);
+
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder updateCheckBuilder = builder.Services.AddHttpClient("UpdateCheck", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateCheck/1.0");
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-            })
-            .AddStandardResilienceHandler(options =>
+            });
+            _ = updateCheckBuilder.AddStandardResilienceHandler(options =>
             {
                 // GitHub-API kann auf Rate-Limits (429) oder kurzzeitige 5xx reagieren.
                 // Retry mit Jitter deckt beides ab, ohne die App beim Start zu blockieren.
@@ -520,6 +537,7 @@ namespace EchoPlay.App
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(15);
             });
+            AttachRequestLogging(updateCheckBuilder);
 
             // Basis-URLs aus Konfiguration (keine Credentials — die kommen aus dem Credential-Store).
             SpotifyOptions baseSpotifyOptions = new()
@@ -536,11 +554,12 @@ namespace EchoPlay.App
 
             // Named HttpClient für Token-Anfragen (Client-Credentials-Flow).
             // Timeout kurz halten – ein hängender Token-Request blockiert jeden weiteren API-Call.
-            _ = builder.Services.AddHttpClient("SpotifyToken", client =>
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder spotifyTokenBuilder = builder.Services.AddHttpClient("SpotifyToken", client =>
             {
                 client.BaseAddress = new(baseSpotifyOptions.AuthBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+            AttachRequestLogging(spotifyTokenBuilder);
 
             // SpotifyTokenClient als Singleton: Der Token-Cache lebt prozessweit, parallele
             // Anforderungen werden intern per SemaphoreSlim serialisiert. Credentials werden
@@ -552,12 +571,13 @@ namespace EchoPlay.App
             _ = builder.Services.AddTransient<SpotifyAuthMessageHandler>();
 
             // Named HttpClient für Spotify-Web-API mit automatischer Authentifizierung.
-            _ = builder.Services.AddHttpClient("SpotifyApi", client =>
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder spotifyApiBuilder = builder.Services.AddHttpClient("SpotifyApi", client =>
             {
                 client.BaseAddress = new(baseSpotifyOptions.ApiBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(15);
-            })
-            .AddHttpMessageHandler<SpotifyAuthMessageHandler>();
+            });
+            _ = spotifyApiBuilder.AddHttpMessageHandler<SpotifyAuthMessageHandler>();
+            AttachRequestLogging(spotifyApiBuilder);
 
             // SpotifyApiClient manuell registrieren, damit der Named HttpClient verwendet wird.
             _ = builder.Services.AddScoped<SpotifyApiClient>(provider =>
@@ -821,6 +841,19 @@ namespace EchoPlay.App
                 {
                     _ = clientBuilder.AddHttpMessageHandler<RateLimitMessageHandler>();
                 }
+                AttachRequestLogging(clientBuilder);
+            }
+
+            // Hängt den HttpRequestLoggingHandler als innersten Handler an den HttpClient.
+            // Damit protokolliert jede einzelne Retry-Wiederholung eine eigene Request-/Response-Zeile
+            // mit Methode, URL (redigiert), Status, Dauer und Client-Name.
+            static void AttachRequestLogging(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder clientBuilder)
+            {
+                string clientName = clientBuilder.Name;
+                _ = clientBuilder.AddHttpMessageHandler(provider =>
+                    new HttpRequestLoggingHandler(
+                        provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
+                        clientName));
             }
         }
     }

@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
     /// 2. Cover aus dem Dateisystem laden (cover.jpg / ID3-Tags)
     /// 3. In CoverImages speichern
     /// </summary>
-    public sealed class BackgroundCoverService : IDisposable
+    public class BackgroundCoverService : IDisposable
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly CoverService _coverService;
@@ -99,26 +99,28 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Prüft alle Serien und Episoden auf fehlende Cover und lädt sie nach.
-        /// Wird vom StartupValidator bei jedem App-Start aufgerufen.
-        /// Wenn alle Cover vorhanden sind, läuft nur die Batch-Query (Millisekunden).
-        /// Phase 1: Lokale Dateien (cover.jpg, ID3-Tags) → in DB
-        /// Phase 2: Provider-URLs (Apple Music, Spotify) → in DB
+        /// Wird vom periodischen Hintergrund-Loop aufgerufen – nicht mehr vom Splash-Pfad.
+        /// Phase 1: Lokale Dateien (cover.jpg, ID3-Tags) für Serien und Episoden → in DB.
+        /// Phase 2: Provider-URLs (Apple Music, Spotify) für Serien und Episoden → in DB.
         /// Keine Online-Suchkette (zu langsam für den Startup).
         /// </summary>
         /// <returns>Anzahl der geladenen Cover.</returns>
-        public async Task<int> RunOnceAsync()
+        public virtual async Task<int> RunOnceAsync()
         {
             using CancellationTokenSource cts = new();
             CancellationToken ct = cts.Token;
 
             int loaded = 0;
 
-            // Phase 1: Lokale Cover aus Dateisystem (Serien + Episoden)
-            int localLoaded = await LoadMissingLocalCoversAsync(ct);
-            loaded += localLoaded;
-            _logger.Info($"RunOnce Phase 1 (lokal): {localLoaded} Cover geladen.");
+            // Phase 1a: Lokale Serien-Cover
+            int seriesLocalLoaded = await LoadMissingLocalSeriesCoversAsync(ct);
+            // Phase 1b: Lokale Episoden-Cover
+            int episodeLocalLoaded = await LoadMissingLocalEpisodeCoversAsync(ct);
+            loaded += seriesLocalLoaded + episodeLocalLoaded;
+            _logger.Info($"RunOnce Phase 1 (lokal): {seriesLocalLoaded + episodeLocalLoaded} Cover geladen " +
+                $"({seriesLocalLoaded} Serien, {episodeLocalLoaded} Episoden).");
 
-            // Phase 1b: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
+            // Phase 1c: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
             int copied = await CopyLocalToOnlineAsync();
             loaded += copied;
             _logger.Info($"RunOnce Phase 1b (lokal→online Kopie): {copied} Cover kopiert.");
@@ -127,10 +129,43 @@ namespace EchoPlay.App.Services
             int urlsUpdated = await UpdateMissingCoverUrlsAsync(ct);
             _logger.Info($"RunOnce Phase 2a (URL-Nachtrag): {urlsUpdated} URLs gesetzt.");
 
-            // Phase 2b: Fehlende Cover über Provider-URLs herunterladen
-            int providerLoaded = await DownloadMissingProviderCoversAsync(ct);
-            loaded += providerLoaded;
-            _logger.Info($"RunOnce Phase 2b (Provider-URL Download): {providerLoaded} Cover geladen.");
+            // Phase 2b: Fehlende Cover über Provider-URLs herunterladen (Serien + Episoden)
+            int seriesProviderLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
+            int episodeProviderLoaded = await DownloadMissingEpisodeProviderCoversAsync(ct);
+            loaded += seriesProviderLoaded + episodeProviderLoaded;
+            _logger.Info($"RunOnce Phase 2b (Provider-URL Download): {seriesProviderLoaded + episodeProviderLoaded} Cover geladen " +
+                $"({seriesProviderLoaded} Serien, {episodeProviderLoaded} Episoden).");
+
+            return loaded;
+        }
+
+        /// <summary>
+        /// Splash-Pfad: lädt ausschliesslich fehlende Serien-Cover (lokal + optional Provider-URL).
+        /// Kein Episoden-Scan, kein ID3-Tag-Parsing, kein Provider-Call für Folgen.
+        /// Provider-URL-Download wird übersprungen, wenn <paramref name="isOnlineAvailable"/>
+        /// <see langword="false"/> ist (Offline-Modus oder fehlgeschlagener Konnektivitäts-Check).
+        /// </summary>
+        /// <param name="isOnlineAvailable">Steuert, ob der Provider-URL-Download laufen darf.</param>
+        /// <param name="ct">Cancellation-Token des Splash-Pfades.</param>
+        /// <returns>Anzahl der geladenen Serien-Cover.</returns>
+        public virtual async Task<int> RunSeriesCoversOnceAsync(bool isOnlineAvailable, CancellationToken ct = default)
+        {
+            int loaded = 0;
+
+            int localLoaded = await LoadMissingLocalSeriesCoversAsync(ct);
+            loaded += localLoaded;
+            _logger.Info($"SplashCoverPhase Serien lokal: {localLoaded} Cover geladen.");
+
+            if (isOnlineAvailable)
+            {
+                int providerLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
+                loaded += providerLoaded;
+                _logger.Info($"SplashCoverPhase Serien Provider: {providerLoaded} Cover geladen.");
+            }
+            else
+            {
+                _logger.Info("SplashCoverPhase Serien Provider: übersprungen (offline).");
+            }
 
             return loaded;
         }
@@ -148,11 +183,15 @@ namespace EchoPlay.App.Services
             {
                 try
                 {
-                    int localLoaded = await LoadMissingLocalCoversAsync(ct);
+                    int seriesLocalLoaded = await LoadMissingLocalSeriesCoversAsync(ct);
+                    int episodeLocalLoaded = await LoadMissingLocalEpisodeCoversAsync(ct);
                     int copied = await CopyLocalToOnlineAsync();
                     int urlsUpdated = await UpdateMissingCoverUrlsAsync(ct);
-                    int providerLoaded = await DownloadMissingProviderCoversAsync(ct);
+                    int seriesProviderLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
+                    int episodeProviderLoaded = await DownloadMissingEpisodeProviderCoversAsync(ct);
 
+                    int localLoaded = seriesLocalLoaded + episodeLocalLoaded;
+                    int providerLoaded = seriesProviderLoaded + episodeProviderLoaded;
                     int total = localLoaded + copied + providerLoaded;
 
                     if (total > 0)
@@ -479,12 +518,81 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Sucht Serien und Episoden mit lokalem Ordner aber ohne Cover in CoverImages
-        /// und lädt die Cover aus dem Dateisystem (cover.jpg / ID3-Tags).
+        /// Sucht Serien mit lokalem Ordner aber ohne Cover in CoverImages
+        /// und lädt <c>cover.jpg</c> aus dem Stammordner. ID3-Fallback entfällt bewusst,
+        /// weil Serien-Cover nur als Dateien im Stammordner existieren.
         /// </summary>
-        private async Task<int> LoadMissingLocalCoversAsync(CancellationToken ct)
+        private async Task<int> LoadMissingLocalSeriesCoversAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
+            ISeriesDataService seriesService = scope.ServiceProvider
+                .GetRequiredService<ISeriesDataService>();
+            ILocalCoverLoader coverLoader = scope.ServiceProvider
+                .GetRequiredService<ILocalCoverLoader>();
+            ICoverImageDataService coverImageService = scope.ServiceProvider
+                .GetRequiredService<ICoverImageDataService>();
+
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+
+            _logger.Info($"Lokal-Check Serien: {allSeries.Count} Serien gesamt.");
+
+            List<Series> seriesWithFolder = [];
+            foreach (Series series in allSeries)
+            {
+                if (!string.IsNullOrEmpty(series.LocalFolderPath))
+                {
+                    seriesWithFolder.Add(series);
+                }
+            }
+
+            if (seriesWithFolder.Count == 0)
+            {
+                return 0;
+            }
+
+            List<Guid> seriesIds = seriesWithFolder.Select(s => s.Id).ToList();
+            IReadOnlyDictionary<Guid, byte[]> existingSeries =
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds);
+
+            int missingSeries = seriesWithFolder.Count - existingSeries.Count;
+            _logger.Info($"Lokal-Check Serien: {seriesWithFolder.Count} mit LocalFolderPath, " +
+                $"{existingSeries.Count} in DB, {missingSeries} fehlen.");
+
+            int loaded = 0;
+
+            foreach (Series series in seriesWithFolder)
+            {
+                if (ct.IsCancellationRequested) break;
+                if (existingSeries.ContainsKey(series.Id)) continue;
+
+                // firstTrackPath bewusst null – für Serien-Cover kein ID3-Fallback.
+                byte[]? coverBytes = await coverLoader.LoadAsync(series.LocalFolderPath, null);
+
+                if (coverBytes is not null)
+                {
+                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes);
+                    loaded++;
+                    _logger.Debug($"Lokal: Serien-Cover geladen \"{series.Title}\" aus {series.LocalFolderPath}");
+                }
+                else
+                {
+                    _logger.Debug($"Lokal: Kein Cover gefunden für \"{series.Title}\" in {series.LocalFolderPath}");
+                }
+            }
+
+            return loaded;
+        }
+
+        /// <summary>
+        /// Sucht Episoden mit lokalem Ordner aber ohne Cover in CoverImages und lädt die
+        /// Cover aus dem Dateisystem (cover.jpg / ID3-Tags des ersten Tracks).
+        /// Nutzt Batch-Queries, um N+1-DB-Roundtrips zu vermeiden.
+        /// </summary>
+        private async Task<int> LoadMissingLocalEpisodeCoversAsync(CancellationToken ct)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ISeriesDataService seriesService = scope.ServiceProvider
+                .GetRequiredService<ISeriesDataService>();
             IEpisodeDataService episodeService = scope.ServiceProvider
                 .GetRequiredService<IEpisodeDataService>();
             ILocalTrackDataService trackService = scope.ServiceProvider
@@ -494,76 +602,9 @@ namespace EchoPlay.App.Services
             ICoverImageDataService coverImageService = scope.ServiceProvider
                 .GetRequiredService<ICoverImageDataService>();
 
-            IReadOnlyList<Series> allSeries;
-
-            using (IServiceScope seriesScope = _scopeFactory.CreateScope())
-            {
-                ISeriesDataService seriesService = seriesScope.ServiceProvider
-                    .GetRequiredService<ISeriesDataService>();
-                allSeries = await seriesService.GetAllAsync();
-            }
-
-            int loaded = 0;
-
-            _logger.Info($"Lokal-Check: {allSeries.Count} Serien gesamt.");
-
-            // ── Serien-Cover aus Dateisystem ────────────────────────────────────────
-
-            List<Series> seriesWithFolder = [];
-
-            foreach (Series series in allSeries)
-            {
-                if (!string.IsNullOrEmpty(series.LocalFolderPath))
-                {
-                    seriesWithFolder.Add(series);
-                }
-            }
-
-            _logger.Info($"Lokal-Check Serien: {seriesWithFolder.Count} mit LocalFolderPath.");
-
-            if (seriesWithFolder.Count > 0)
-            {
-                List<Guid> seriesIds = seriesWithFolder.Select(s => s.Id).ToList();
-                IReadOnlyDictionary<Guid, byte[]> existingSeries =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds);
-
-                int missingSeries = seriesWithFolder.Count - existingSeries.Count;
-                _logger.Info($"Lokal-Check Serien: {existingSeries.Count} in DB, {missingSeries} fehlen.");
-
-                foreach (Series series in seriesWithFolder)
-                {
-                    if (ct.IsCancellationRequested) break;
-                    if (existingSeries.ContainsKey(series.Id)) continue;
-
-                    byte[]? coverBytes = await coverLoader.LoadAsync(series.LocalFolderPath, null);
-
-                    if (coverBytes is not null)
-                    {
-                        await _coverService.SetSeriesCoverAsync(series.Id, coverBytes);
-                        loaded++;
-                        _logger.Debug($"Lokal: Serien-Cover geladen \"{series.Title}\" aus {series.LocalFolderPath}");
-                    }
-                    else
-                    {
-                        _logger.Debug($"Lokal: Kein Cover gefunden für \"{series.Title}\" in {series.LocalFolderPath}");
-                    }
-                }
-            }
-
-            // ── Episoden-Cover aus Dateisystem ──────────────────────────────────────
-            //
-            // Drei Batch-Queries statt N+1:
-            // 1) Alle Episoden aller Serien in einem Roundtrip (GetBySeriesIdsAsync).
-            // 2) Alle bereits vorhandenen Episoden-Cover in einem Roundtrip (GetImageDataByEntitiesAsync).
-            // 3) Erste Tracks aller Kandidaten in einem Roundtrip (GetFirstTracksByEpisodeIdsAsync).
-            // Anschließend nur noch CPU-/IO-Arbeit pro Episode – kein DB-Roundtrip mehr in der Schleife.
-
-            int totalEpCandidates = 0;
-            int totalEpExisting = 0;
-            int totalEpLoaded = 0;
-            int totalEpNotFound = 0;
-
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
             List<Guid> allSeriesIds = [.. allSeries.Select(s => s.Id)];
+
             IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds);
 
             List<Episode> candidates = [];
@@ -578,24 +619,22 @@ namespace EchoPlay.App.Services
             if (candidates.Count == 0)
             {
                 _logger.Info("Lokal-Check Episoden: keine Kandidaten mit lokalem Ordner gefunden.");
-                return loaded;
+                return 0;
             }
-
-            totalEpCandidates = candidates.Count;
 
             List<Guid> candidateIds = [.. candidates.Select(e => e.Id)];
             IReadOnlyDictionary<Guid, byte[]> existing =
                 await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds);
 
-            totalEpExisting = existing.Count;
-
-            // Nur für die noch fehlenden Episoden den ersten Track laden – Batch-Query.
             List<Guid> missingIds = [.. candidates
                 .Where(e => !existing.ContainsKey(e.Id))
                 .Select(e => e.Id)];
 
             IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
                 await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds);
+
+            int loaded = 0;
+            int notFound = 0;
 
             foreach (Episode episode in candidates)
             {
@@ -613,38 +652,30 @@ namespace EchoPlay.App.Services
                 {
                     await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
                     loaded++;
-                    totalEpLoaded++;
                 }
                 else
                 {
-                    totalEpNotFound++;
+                    notFound++;
                 }
             }
 
-            _logger.Info($"Lokal-Check Episoden: {totalEpCandidates} mit Ordner, " +
-                $"{totalEpExisting} in DB, {totalEpLoaded} geladen, {totalEpNotFound} ohne Cover-Datei.");
+            _logger.Info($"Lokal-Check Episoden: {candidates.Count} mit Ordner, " +
+                $"{existing.Count} in DB, {loaded} geladen, {notFound} ohne Cover-Datei.");
 
             return loaded;
         }
 
         /// <summary>
-        /// Lädt fehlende Cover über Provider-URLs herunter (Apple Music, Spotify).
-        /// Nur für Serien/Episoden die eine CoverImageUrl haben aber kein Cover in der DB.
-        /// Kein Online-Suchkette – nur direkte URL-Downloads.
+        /// Lädt fehlende Serien-Cover über Provider-URLs (<see cref="Series.CoverImageUrl"/>)
+        /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
         /// </summary>
-        private async Task<int> DownloadMissingProviderCoversAsync(CancellationToken ct)
+        private async Task<int> DownloadMissingSeriesProviderCoversAsync(CancellationToken ct)
         {
-            int loaded = 0;
-
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider
                 .GetRequiredService<ISeriesDataService>();
-            IEpisodeDataService episodeService = scope.ServiceProvider
-                .GetRequiredService<IEpisodeDataService>();
             ICoverImageDataService coverImageService = scope.ServiceProvider
                 .GetRequiredService<ICoverImageDataService>();
-
-            // ── Serien ohne Cover mit Provider-URL ──────────────────────────────────
 
             IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
             List<Series> seriesNeedingCover = [];
@@ -657,39 +688,60 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info($"Provider-Check Serien: {seriesNeedingCover.Count} mit CoverImageUrl von {allSeries.Count} gesamt.");
-
-            if (seriesNeedingCover.Count > 0)
+            if (seriesNeedingCover.Count == 0)
             {
-                List<Guid> seriesIds = seriesNeedingCover.Select(s => s.Id).ToList();
-                IReadOnlyDictionary<Guid, byte[]> existingSeries =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds);
+                _logger.Info($"Provider-Check Serien: {allSeries.Count} Serien, keine mit CoverImageUrl.");
+                return 0;
+            }
 
-                int missingSeriesCount = seriesNeedingCover.Count - existingSeries.Count;
-                _logger.Info($"Provider-Check Serien: {existingSeries.Count} bereits in DB, {missingSeriesCount} fehlen.");
+            List<Guid> seriesIds = seriesNeedingCover.Select(s => s.Id).ToList();
+            IReadOnlyDictionary<Guid, byte[]> existingSeries =
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds);
 
-                foreach (Series series in seriesNeedingCover)
+            int missingSeriesCount = seriesNeedingCover.Count - existingSeries.Count;
+            _logger.Info($"Provider-Check Serien: {seriesNeedingCover.Count} mit CoverImageUrl, " +
+                $"{existingSeries.Count} bereits in DB, {missingSeriesCount} fehlen.");
+
+            int loaded = 0;
+
+            foreach (Series series in seriesNeedingCover)
+            {
+                if (ct.IsCancellationRequested) break;
+                if (existingSeries.ContainsKey(series.Id)) continue;
+
+                byte[]? coverBytes = await DownloadSafeAsync(series.CoverImageUrl!);
+
+                if (coverBytes is not null)
                 {
-                    if (ct.IsCancellationRequested) break;
-                    if (existingSeries.ContainsKey(series.Id)) continue;
-
-                    byte[]? coverBytes = await DownloadSafeAsync(series.CoverImageUrl!);
-
-                    if (coverBytes is not null)
-                    {
-                        await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
-                        loaded++;
-                        _logger.Debug($"Serien-Cover geladen: \"{series.Title}\" ({coverBytes.Length} Bytes)");
-                    }
-                    else
-                    {
-                        _logger.Warning($"Serien-Cover Download fehlgeschlagen: \"{series.Title}\" URL={series.CoverImageUrl}");
-                    }
+                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
+                    loaded++;
+                    _logger.Debug($"Serien-Cover geladen: \"{series.Title}\" ({coverBytes.Length} Bytes)");
+                }
+                else
+                {
+                    _logger.Warning($"Serien-Cover Download fehlgeschlagen: \"{series.Title}\" URL={series.CoverImageUrl}");
                 }
             }
 
-            // ── Episoden ohne Cover mit Provider-URL ────────────────────────────────
+            return loaded;
+        }
 
+        /// <summary>
+        /// Lädt fehlende Episoden-Cover über Provider-URLs (<see cref="Episode.CoverImageUrl"/>)
+        /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
+        /// </summary>
+        private async Task<int> DownloadMissingEpisodeProviderCoversAsync(CancellationToken ct)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ISeriesDataService seriesService = scope.ServiceProvider
+                .GetRequiredService<ISeriesDataService>();
+            IEpisodeDataService episodeService = scope.ServiceProvider
+                .GetRequiredService<IEpisodeDataService>();
+            ICoverImageDataService coverImageService = scope.ServiceProvider
+                .GetRequiredService<ICoverImageDataService>();
+
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            int loaded = 0;
             int totalEpisodeCandidates = 0;
             int totalEpisodeExisting = 0;
 
@@ -762,8 +814,23 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Gibt die CancellationTokenSource des Hintergrund-Loops frei. Abgeleitete Typen
+        /// können überschreiben, dürfen aber den Cleanup-Pfad der Basis (<c>base.Dispose(disposing)</c>)
+        /// nicht auslassen.
+        /// </summary>
+        /// <param name="disposing"><see langword="true"/> bei deterministischem Dispose; <see langword="false"/> beim Finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing) return;
+
             _cts?.Cancel();
             _cts?.Dispose();
+            _cts = null;
         }
     }
 }

@@ -33,6 +33,8 @@ namespace EchoPlay.App.ViewModels
 
         private PlaybackStatus _status;
         private double _progressPercent;
+        private BitmapImage? _coverImage;
+        private bool _hasEpisodeCover;
 
         /// <summary>
         /// Initialisiert das Kachel-ViewModel mit allen Stammdaten und benötigten Services.
@@ -82,7 +84,7 @@ namespace EchoPlay.App.ViewModels
             SeriesId = seriesId;
             SeriesName = seriesName;
             EpisodeTitle = CleanEpisodeTitle(episodeTitle, seriesName);
-            CoverImage = coverImage;
+            _coverImage = coverImage;
             EpisodeNumber = episodeNumber;
             _localizationService = localizationService;
 
@@ -234,8 +236,37 @@ namespace EchoPlay.App.ViewModels
         public Microsoft.UI.Xaml.Media.Brush InfoLineForeground { get; }
 
 
-        /// <summary>Cover-Bild – bevorzugt Episoden-Cover, dann Serien-Cover, oder null.</summary>
-        public BitmapImage? CoverImage { get; }
+        /// <summary>
+        /// Cover-Bild – bevorzugt Episoden-Cover, dann Serien-Cover, oder null.
+        /// Initial wird häufig das Serien-Cover gesetzt, damit die Kachel sofort sichtbar ist;
+        /// <see cref="UpdateCoverImage"/> blendet das spezifischere Episoden-Cover nach.
+        /// </summary>
+        public BitmapImage? CoverImage
+        {
+            get => _coverImage;
+            private set => SetProperty(ref _coverImage, value);
+        }
+
+        /// <summary>
+        /// Gibt an, ob bereits das spezifische Episoden-Cover (nicht das Serien-Fallback) gesetzt ist.
+        /// Wird vom Dashboard-Startpfad genutzt, um fehlende Cover für die Hintergrund-Queue zu sammeln.
+        /// </summary>
+        public bool HasEpisodeCover => _hasEpisodeCover;
+
+        /// <summary>
+        /// Tauscht das Cover-Bild gegen das echte Episoden-Cover aus.
+        /// Muss auf dem UI-Thread aufgerufen werden, da <see cref="BitmapImage"/> nur dort lebt.
+        /// </summary>
+        public void UpdateCoverImage(BitmapImage? bitmap)
+        {
+            if (bitmap is null)
+            {
+                return;
+            }
+
+            _hasEpisodeCover = true;
+            CoverImage = bitmap;
+        }
 
         /// <summary>
         /// Aktueller Wiedergabestatus der Episode.

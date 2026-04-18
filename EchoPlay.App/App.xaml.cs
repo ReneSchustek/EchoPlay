@@ -703,7 +703,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
                 provider.GetRequiredService<CoverService>(),
                 provider.GetRequiredService<ILocalizationService>(),
-                provider.GetRequiredService<IClock>()));
+                provider.GetRequiredService<IClock>(),
+                provider.GetRequiredService<BackgroundCoverService>()));
             _ = builder.Services.AddTransient<MediathekOnlineViewModel>(provider => new MediathekOnlineViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IConfirmationDialogService>(),

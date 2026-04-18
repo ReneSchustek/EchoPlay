@@ -14,6 +14,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
+using MicrosoftDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue;
+
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
@@ -39,6 +41,19 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalizationService? _localizationService;
         private readonly IClock _clock;
         private readonly ILogger _logger;
+        private readonly BackgroundCoverService? _backgroundCoverService;
+        private readonly MicrosoftDispatcherQueue? _dispatcherQueue;
+
+        // Zuordnung EpisodenId → offene Kacheln, damit der Hintergrund-Callback
+        // den passenden Kachel-Satz mit dem nachgeladenen Cover versorgen kann.
+        // Wird pro LoadAsync-Durchlauf vom Aufrufer über ResetPendingEpisodeCoverRefresh() zurückgesetzt.
+        private readonly Dictionary<Guid, List<NewEpisodeCardViewModel>> _pendingEpisodeCoverCards = [];
+
+        // Cache der Episoden-Cover-Bytes aus der DB für den aktuellen Load-Durchlauf.
+        // Wird zu Beginn von LoadAsync einmal gefüllt und in allen Build*-Schritten wiederverwendet,
+        // statt pro Kachel eine eigene Abfrage auf CoverImages auszulösen.
+        private IReadOnlyDictionary<Guid, byte[]> _episodeCoverBytesCache =
+            new Dictionary<Guid, byte[]>();
 
         /// <summary>
         /// Initialisiert den Loader mit den für Card- und Section-Building nötigen Services.
@@ -51,7 +66,9 @@ namespace EchoPlay.App.ViewModels
             CoverService? coverService,
             ILocalizationService? localizationService,
             IClock clock,
-            ILogger logger)
+            ILogger logger,
+            BackgroundCoverService? backgroundCoverService = null,
+            MicrosoftDispatcherQueue? dispatcherQueue = null)
         {
             _scopeFactory = scopeFactory;
             _errorDialogService = errorDialogService;
@@ -61,10 +78,105 @@ namespace EchoPlay.App.ViewModels
             _localizationService = localizationService;
             _clock = clock;
             _logger = logger;
+            _backgroundCoverService = backgroundCoverService;
+            _dispatcherQueue = dispatcherQueue;
+        }
+
+        /// <summary>
+        /// Setzt die für den aktuellen Load-Durchlauf gesammelten Hintergrund-Anfragen zurück
+        /// und lädt die bekannten Episoden-Cover-Bytes neu aus der DB (einmalige Batch-Query).
+        /// </summary>
+        public async Task BeginLoadSessionAsync(IReadOnlyList<Guid> relevantEpisodeIds)
+        {
+            _pendingEpisodeCoverCards.Clear();
+            _episodeCoverBytesCache = _coverService is not null && relevantEpisodeIds.Count > 0
+                ? await _coverService.GetEpisodeCoverBytesAsync(relevantEpisodeIds)
+                : new Dictionary<Guid, byte[]>();
+        }
+
+        /// <summary>
+        /// Reicht die während des Load-Durchlaufs gesammelten Kacheln an den
+        /// <see cref="BackgroundCoverService"/> weiter, damit deren Folgen-Cover progressiv
+        /// nachgeladen werden. Ohne registrierten Service (z. B. Unit-Tests) passiert nichts.
+        /// </summary>
+        public void FlushPendingEpisodeCoverRefresh()
+        {
+            if (_backgroundCoverService is null || _pendingEpisodeCoverCards.Count == 0)
+            {
+                return;
+            }
+
+            Dictionary<Guid, List<NewEpisodeCardViewModel>> snapshot = new(_pendingEpisodeCoverCards);
+            List<Guid> ids = [.. snapshot.Keys];
+            _pendingEpisodeCoverCards.Clear();
+
+            _backgroundCoverService.EnqueueForEpisodes(ids, (episodeId, bytes) =>
+            {
+                if (!snapshot.TryGetValue(episodeId, out List<NewEpisodeCardViewModel>? cards))
+                {
+                    return;
+                }
+
+                DispatchCoverUpdate(cards, bytes);
+            });
+        }
+
+        /// <summary>
+        /// Marshallt die Bitmap-Erzeugung auf den UI-Thread und aktualisiert jede registrierte Kachel.
+        /// Ohne Dispatcher (Unit-Tests) wird synchron auf einem Hintergrund-Task konvertiert,
+        /// was für Tests ausreicht (WinUI-BitmapImage ist dort ohnehin nicht wirklich nutzbar).
+        /// </summary>
+        private void DispatchCoverUpdate(IReadOnlyList<NewEpisodeCardViewModel> cards, byte[] bytes)
+        {
+            if (_dispatcherQueue is not null)
+            {
+                _ = _dispatcherQueue.TryEnqueue(async () =>
+                {
+                    BitmapImage? bitmap = await CoverService.ConvertToBitmapAsync(bytes);
+                    if (bitmap is null) return;
+
+                    foreach (NewEpisodeCardViewModel card in cards)
+                    {
+                        card.UpdateCoverImage(bitmap);
+                    }
+                });
+            }
+            else
+            {
+                _ = Task.Run(async () =>
+                {
+                    BitmapImage? bitmap = await CoverService.ConvertToBitmapAsync(bytes);
+                    if (bitmap is null) return;
+
+                    foreach (NewEpisodeCardViewModel card in cards)
+                    {
+                        card.UpdateCoverImage(bitmap);
+                    }
+                });
+            }
+        }
+
+        /// <summary>
+        /// Registriert eine Kachel, die ein spezifisches Folgen-Cover nachgereicht bekommen soll,
+        /// sobald der Hintergrund-Service es geladen hat.
+        /// </summary>
+        private void TrackPendingEpisodeCover(Guid episodeId, NewEpisodeCardViewModel card)
+        {
+            if (episodeId == Guid.Empty) return;
+
+            if (!_pendingEpisodeCoverCards.TryGetValue(episodeId, out List<NewEpisodeCardViewModel>? list))
+            {
+                list = [];
+                _pendingEpisodeCoverCards[episodeId] = list;
+            }
+            list.Add(card);
         }
 
         /// <summary>
         /// Erstellt eine neue Episodenkachel aus den übergebenen Rohdaten.
+        /// Cover-Strategie (Startpfad-optimiert): Episoden-Cover nur aus der DB,
+        /// sonst Serien-Cover als Fallback. Fehlende Folgen-Cover werden zum
+        /// Nachladen an die Hintergrund-Queue übergeben (siehe <see cref="FlushPendingEpisodeCoverRefresh"/>).
         /// </summary>
         public async Task<NewEpisodeCardViewModel> BuildCardAsync(
             Series series,
@@ -76,11 +188,10 @@ namespace EchoPlay.App.ViewModels
             PlaybackStatus status = DetermineStatus(state);
             double progress = CalculateProgress(state, episode.Duration);
 
-            // Episoden-Cover bevorzugen, Serien-Cover als Fallback
-            BitmapImage? cover = await BuildEpisodeCoverAsync(episode)
-                                 ?? await BuildSeriesCoverAsync(series);
+            (BitmapImage? cover, bool hasEpisodeCover) =
+                await ResolveCardCoverAsync(series, episode.Id);
 
-            return new NewEpisodeCardViewModel(
+            NewEpisodeCardViewModel card = new(
                 episodeId: episode.Id,
                 seriesId: series.Id,
                 seriesName: series.Title,
@@ -98,6 +209,47 @@ namespace EchoPlay.App.ViewModels
                 releaseDate: episode.ReleaseDate,
                 localizationService: _localizationService,
                 clock: _clock);
+
+            if (!hasEpisodeCover)
+            {
+                TrackPendingEpisodeCover(episode.Id, card);
+            }
+
+            return card;
+        }
+
+        /// <summary>
+        /// Ermittelt das initial anzuzeigende Cover für eine Kachel.
+        /// Rückgabewert: (Bitmap, HasEpisodeCover) — der zweite Wert zeigt an,
+        /// ob das echte Folgen-Cover geladen wurde (<see langword="true"/>) oder das Serien-Fallback.
+        /// Liest ausschließlich aus der DB (CoverImages); Dateisystem/ID3/Online-Lookup laufen
+        /// über <see cref="BackgroundCoverService.EnqueueForEpisodes"/> nach dem Rendern.
+        /// </summary>
+        private async Task<(BitmapImage? Cover, bool HasEpisodeCover)> ResolveCardCoverAsync(
+            Series series, Guid episodeId)
+        {
+            if (episodeId != Guid.Empty)
+            {
+                if (_episodeCoverBytesCache.TryGetValue(episodeId, out byte[]? bytes))
+                {
+                    BitmapImage? episodeCover = await CoverService.ConvertToBitmapAsync(bytes);
+                    if (episodeCover is not null)
+                    {
+                        return (episodeCover, true);
+                    }
+                }
+                else if (_coverService is not null)
+                {
+                    // Kachel war nicht im Pre-Load-Batch – einzelne DB-Abfrage, kein Dateisystem.
+                    BitmapImage? episodeCover = await _coverService.GetEpisodeCoverImageAsync(episodeId);
+                    if (episodeCover is not null)
+                    {
+                        return (episodeCover, true);
+                    }
+                }
+            }
+
+            return (await BuildSeriesCoverAsync(series), false);
         }
 
         /// <summary>
@@ -317,9 +469,15 @@ namespace EchoPlay.App.ViewModels
                     continue;
                 }
 
-                // Episoden-Cover der zuletzt gehörten Folge bevorzugen, Serien-Cover als Fallback
-                BitmapImage? cover = await BuildEpisodeCoverAsync(episode)
-                                     ?? await BuildSeriesCoverAsync(series);
+                // Startpfad-Strategie: Episoden-Cover nur aus dem DB-Cache,
+                // sonst Serien-Cover als Fallback. Das Nachladen aus Dateisystem/ID3/Provider
+                // übernimmt die Hintergrund-Queue, nicht der Dashboard-Startpfad.
+                BitmapImage? cover = null;
+                if (_episodeCoverBytesCache.TryGetValue(episode.Id, out byte[]? recentBytes))
+                {
+                    cover = await CoverService.ConvertToBitmapAsync(recentBytes);
+                }
+                cover ??= await BuildSeriesCoverAsync(series);
 
                 result.Add(new RecentSeriesCardViewModel(
                     seriesId: series.Id,
@@ -443,17 +601,19 @@ namespace EchoPlay.App.ViewModels
 
                 bool isAnnounced = entry.ReleaseDate.Date > today;
 
-                // Cover-Priorität: lokales Episoden-Cover → iTunes-Album-Cover → Serien-Cover.
+                // Cover-Priorität (Startpfad-optimiert):
+                // 1) Folgen-Cover aus dem DB-Cache (CoverImages),
+                // 2) iTunes-Album-Cover via URL (schon vor dem Start aufgelöst),
+                // 3) Serien-Cover.
                 // iTunes liefert pro Album eine Cover-URL (100×100), die über URL-Pattern
                 // auf höhere Auflösung skaliert werden kann (100x100bb → 600x600bb).
                 BitmapImage? cover = null;
-                if (episodeId != Guid.Empty)
+                bool hasEpisodeCover = false;
+                if (episodeId != Guid.Empty
+                    && _episodeCoverBytesCache.TryGetValue(episodeId, out byte[]? newReleaseBytes))
                 {
-                    Episode? localEp = await episodeService.GetByIdAsync(episodeId);
-                    if (localEp is not null)
-                    {
-                        cover = await BuildEpisodeCoverAsync(localEp);
-                    }
+                    cover = await CoverService.ConvertToBitmapAsync(newReleaseBytes);
+                    hasEpisodeCover = cover is not null;
                 }
 
                 // iTunes-Cover als Fallback: höhere Auflösung per URL-Pattern
@@ -465,8 +625,10 @@ namespace EchoPlay.App.ViewModels
 
                 cover ??= await BuildSeriesCoverAsync(series);
 
+                Guid cardEpisodeId = episodeId != Guid.Empty ? episodeId : Guid.NewGuid();
+
                 NewEpisodeCardViewModel card = new(
-                    episodeId: episodeId != Guid.Empty ? episodeId : Guid.NewGuid(),
+                    episodeId: cardEpisodeId,
                     seriesId: series.Id,
                     seriesName: series.Title,
                     episodeTitle: entry.Title,
@@ -483,6 +645,13 @@ namespace EchoPlay.App.ViewModels
                     releaseDate: entry.ReleaseDate,
                     localizationService: _localizationService,
                     clock: _clock);
+
+                // Nur lokal bekannte Folgen (echte EpisodeId) kommen in die Hintergrund-Queue –
+                // reine Cache-Einträge ohne lokalen Match haben keine durchsuchbare Cover-Quelle.
+                if (!hasEpisodeCover && episodeId != Guid.Empty)
+                {
+                    TrackPendingEpisodeCover(episodeId, card);
+                }
 
                 cardEntries.Add((card, entry.ReleaseDate));
             }

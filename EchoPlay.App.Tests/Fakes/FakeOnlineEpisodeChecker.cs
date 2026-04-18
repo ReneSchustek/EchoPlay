@@ -24,11 +24,15 @@ namespace EchoPlay.App.Tests.Fakes
             _results = results ?? [];
         }
 
+        /// <summary>Summe der Aufrufe aller Check-Methoden – für Assertions in Tests.</summary>
+        public int CheckCallCount { get; private set; }
+
         /// <inheritdoc/>
         public Task<IReadOnlyList<OnlineEpisodeCheckResult>> CheckAllAsync(
             IReadOnlyList<CheckableSeriesInfo> subscribedSeries,
             CancellationToken cancellationToken = default)
         {
+            CheckCallCount++;
             return Task.FromResult(_results);
         }
 
@@ -38,6 +42,7 @@ namespace EchoPlay.App.Tests.Fakes
             DateTime cutoffDate,
             CancellationToken cancellationToken = default)
         {
+            CheckCallCount++;
             return Task.FromResult(_results);
         }
     }

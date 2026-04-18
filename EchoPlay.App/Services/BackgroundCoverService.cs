@@ -181,6 +181,102 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
+        /// Lädt die Cover für die angegebenen Episoden (sofern fehlend) priorisiert im Hintergrund nach.
+        /// Wird vom Dashboard nach dem ersten Rendern aufgerufen, damit Kacheln mit Serien-Cover-Fallback
+        /// das spezifische Folgen-Cover progressiv nachbekommen. Kein Online-Such-Chain, nur:
+        /// 1) vorhandene Bytes aus CoverImages → direkter Callback,
+        /// 2) Dateisystem-Cover via <see cref="ILocalCoverLoader"/> (cover.jpg / ID3-Tag),
+        /// 3) Provider-URL-Download (falls <see cref="Episode.CoverImageUrl"/> gesetzt).
+        /// Nach jedem erfolgreichen Fund wird das Cover in CoverImages persistiert und der
+        /// Callback mit den Rohdaten (nicht mit <c>BitmapImage</c>, da auf Hintergrund-Thread)
+        /// aufgerufen.
+        /// </summary>
+        /// <param name="episodeIds">Zu prüfende Episoden – Duplikate sind erlaubt, werden entfernt.</param>
+        /// <param name="onCoverReady">Callback pro Episode, die ein Cover bekommen hat. Darf <see langword="null"/> sein.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cover-Queue: HTTP-/IO-/TagLib-Fehler einzelner Episoden duerfen die Queue fuer die anderen Kacheln nicht beenden; der Fehler wird als Debug geloggt und die naechste Episode wird verarbeitet.")]
+        public void EnqueueForEpisodes(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady)
+        {
+            ArgumentNullException.ThrowIfNull(episodeIds);
+            if (episodeIds.Count == 0) return;
+
+            List<Guid> uniqueIds = [.. episodeIds.Distinct()];
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ProcessEnqueuedEpisodesAsync(uniqueIds, onCoverReady);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning($"EnqueueForEpisodes fehlgeschlagen: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Arbeitet die Queue sequentiell ab: erst DB-Treffer, dann Dateisystem, dann Provider-URL.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Episode-Schleife in der Cover-Queue: TagLib-, IO- oder HTTP-Fehler einer Episode werden als Debug protokolliert und die Queue faehrt mit der naechsten Episode fort, damit eine kaputte Datei nicht die ganze Kachelzeile blockiert.")]
+        private async Task ProcessEnqueuedEpisodesAsync(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+            ILocalCoverLoader coverLoader = scope.ServiceProvider.GetRequiredService<ILocalCoverLoader>();
+
+            // Batch 1: bereits vorhandene Cover aus der DB (eine Abfrage)
+            IReadOnlyDictionary<Guid, byte[]> existing =
+                await _coverService.GetEpisodeCoverBytesAsync(episodeIds);
+
+            // Vorhandene Cover sofort zurückspielen – UI kann sich aktualisieren
+            foreach ((Guid episodeId, byte[] bytes) in existing)
+            {
+                onCoverReady?.Invoke(episodeId, bytes);
+            }
+
+            // Nur noch die fehlenden IDs weiterverarbeiten
+            List<Guid> missing = [.. episodeIds.Where(id => !existing.ContainsKey(id))];
+            if (missing.Count == 0) return;
+
+            // Batch 2: erste Tracks der fehlenden Episoden (für ID3-Fallback)
+            IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
+                await trackService.GetFirstTracksByEpisodeIdsAsync(missing);
+
+            foreach (Guid episodeId in missing)
+            {
+                Episode? episode = await episodeService.GetByIdAsync(episodeId);
+                if (episode is null) continue;
+
+                byte[]? loaded = null;
+
+                if (!string.IsNullOrEmpty(episode.LocalFolderPath))
+                {
+                    string? firstTrackPath = firstTracks.TryGetValue(episodeId, out LocalTrack? t) ? t.FilePath : null;
+                    try
+                    {
+                        loaded = await coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Debug($"EnqueueForEpisodes Lokal-Cover fehlgeschlagen für \"{episode.Title}\": {ex.Message}");
+                    }
+                }
+
+                if (loaded is null && !string.IsNullOrEmpty(episode.CoverImageUrl))
+                {
+                    loaded = await DownloadSafeAsync(episode.CoverImageUrl);
+                }
+
+                if (loaded is not null)
+                {
+                    await _coverService.SetEpisodeCoverAsync(episodeId, loaded, episode.CoverImageUrl);
+                    onCoverReady?.Invoke(episodeId, loaded);
+                }
+            }
+        }
+
+        /// <summary>
         /// Stellt sicher, dass alle lokalen Episoden einer Serie (nach Titel) ihre Cover
         /// in CoverImages haben. Wird synchron vor der Anzeige aufgerufen, damit der
         /// CoverCopyService danach Quellen findet.

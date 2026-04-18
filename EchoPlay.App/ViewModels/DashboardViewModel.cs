@@ -7,12 +7,14 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -53,6 +55,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
+        /// <param name="backgroundCoverService">Hintergrund-Service, der fehlende Folgen-Cover nach dem Rendern nachlädt. Nullable für Tests.</param>
         public DashboardViewModel(
             IServiceScopeFactory scopeFactory,
             IErrorDialogService errorDialogService,
@@ -61,7 +64,8 @@ namespace EchoPlay.App.ViewModels
             ILoggerFactory loggerFactory,
             CoverService? coverService = null,
             ILocalizationService? localizationService = null,
-            IClock? clock = null)
+            IClock? clock = null,
+            BackgroundCoverService? backgroundCoverService = null)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
@@ -71,6 +75,20 @@ namespace EchoPlay.App.ViewModels
 
             IClock resolvedClock = clock ?? new SystemClock();
 
+            // UI-Dispatcher einfangen, damit der Hintergrund-Cover-Callback BitmapImage-Instanzen
+            // auf dem UI-Thread erzeugen und Kacheln per PropertyChanged aktualisieren kann.
+            // In Unit-Tests ohne WinUI-Runtime bleibt der Wert null – der DataLoader fällt dann
+            // auf Task.Run zurück.
+            DispatcherQueue? dispatcherQueue;
+            try
+            {
+                dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                dispatcherQueue = null;
+            }
+
             _dataLoader = new DashboardDataLoader(
                 scopeFactory,
                 errorDialogService,
@@ -79,7 +97,9 @@ namespace EchoPlay.App.ViewModels
                 coverService,
                 localizationService,
                 resolvedClock,
-                _logger);
+                _logger,
+                backgroundCoverService,
+                dispatcherQueue);
 
             // Sub-VMs initialisieren und PropertyChanged an eigene Pass-Through-Properties weiterreichen,
             // damit die XAML-Bindings auf Top-VM-Properties unverändert funktionieren.
@@ -205,6 +225,11 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task LoadAsync()
         {
+            // Timing-Scope für Support: alle Build*-Schritte und HTTP/DB-Zeilen werden unter
+            // „UA:<id> DashboardLoad" gruppiert – über `grep UA:<id>` pro Start auffindbar.
+            using IDisposable ua = UserActionScope.BeginUserAction("DashboardLoad");
+            Stopwatch totalStopwatch = Stopwatch.StartNew();
+
             IsLoading = true;
 
             // StartupResult wurde im Splash vorgeladen – enthält den Offline-Status.
@@ -286,24 +311,42 @@ namespace EchoPlay.App.ViewModels
                     stateByEpisodeId[ps.EpisodeId] = ps;
                 }
 
+                // Vorgelagerte Batch-Query: alle potentiell sichtbaren Folgen-Cover in einer Abfrage
+                // aus CoverImages laden. Dateisystem- und ID3-Lookups landen danach in der Hintergrund-Queue.
+                List<Guid> relevantEpisodeIds = new(allStates.Count);
+                foreach (PlaybackState ps in allStates)
+                {
+                    relevantEpisodeIds.Add(ps.EpisodeId);
+                }
+                await _dataLoader.BeginLoadSessionAsync(relevantEpisodeIds);
+
+                Stopwatch sectionStopwatch = Stopwatch.StartNew();
+
                 // Weiterhören-Liste aufbauen – benötigt alle Folgen der Favoriten-Serien
                 IReadOnlyList<UnheardSeriesCardViewModel> unheardList =
                     await BuildUnheardSeriesAsync(favoriteSeries, episodeService, stateByEpisodeId);
                 WeiterhoerenVM.SetItems(unheardList);
+                _logger.Debug($"BuildUnheard dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                sectionStopwatch.Restart();
 
                 // Favoriten-Kacheln aufbauen (mit Cover und RemoveCommand) und sortieren
                 IReadOnlyList<FavoriteSeriesCardViewModel> favoriteCards =
                     await BuildFavoriteCardsAsync(favoriteSeries, positionService);
                 FavoritenVM.SetItems(favoriteCards);
+                _logger.Debug($"BuildFavorites dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                sectionStopwatch.Restart();
 
                 // In-Progress und Recent über den DataLoader bauen
                 IReadOnlyList<NewEpisodeCardViewModel> inProgress =
                     await _dataLoader.BuildInProgressEpisodesAsync(episodeService, allStates, subscribedSeries);
                 InProgressVM.SetItems(inProgress);
+                _logger.Debug($"BuildInProgress dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                sectionStopwatch.Restart();
 
                 IReadOnlyList<RecentSeriesCardViewModel> recent =
                     await _dataLoader.BuildRecentSeriesAsync(episodeService, allStates, subscribedSeries);
                 ZuletztGehoertVM.SetItems(recent);
+                _logger.Debug($"BuildRecent dauer={sectionStopwatch.ElapsedMilliseconds} ms");
             }
             finally
             {
@@ -314,10 +357,18 @@ namespace EchoPlay.App.ViewModels
             // Gecachte Daten bleiben in der DB erhalten, werden aber nicht angezeigt.
             if (!offlineMode)
             {
+                Stopwatch newReleaseStopwatch = Stopwatch.StartNew();
                 IReadOnlyList<NewEpisodesGroupViewModel> groups =
                     await _dataLoader.BuildNewReleaseGroupsAsync(subscribedSeries);
                 NeuerscheinungenVM.SetGroups(groups);
+                _logger.Debug($"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
             }
+
+            // Sichtbare Kacheln mit Serien-Cover-Fallback bekommen ihre Folgen-Cover
+            // progressiv über den BackgroundCoverService nachgeladen.
+            _dataLoader.FlushPendingEpisodeCoverRefresh();
+
+            _logger.Info($"DashboardLoad total={totalStopwatch.ElapsedMilliseconds} ms");
         }
 
         /// <summary>

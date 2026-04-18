@@ -746,5 +746,91 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains("Nr. 170", card.InfoLineText!, StringComparison.Ordinal);
             Assert.Contains("online", card.InfoLineText!, StringComparison.Ordinal);
         }
+
+        // ── Cover-Entkopplung (Brief 255) ─────────────────────────────────
+
+        [Fact]
+        public void NewEpisodeCard_InitiallyWithoutEpisodeCover_HasEpisodeCoverIsFalse()
+        {
+            // Kachel mit Serien-Cover-Fallback: HasEpisodeCover bleibt false,
+            // bis die Hintergrund-Queue das spezifische Folgen-Cover nachreicht.
+            NewEpisodeCardViewModel card = BuildCard(
+                isAnnounced: false,
+                releaseDate: TestIds.ReferenceDate.AddDays(-5),
+                episodeNumber: 42);
+
+            Assert.False(card.HasEpisodeCover);
+        }
+
+        [Fact]
+        public void UpdateCoverImage_NullBitmap_DoesNotFlipHasEpisodeCover()
+        {
+            // Null-Eingabe darf das Fallback-Cover nicht ersetzen und das Flag nicht setzen.
+            NewEpisodeCardViewModel card = BuildCard(
+                isAnnounced: false, releaseDate: TestIds.ReferenceDate.AddDays(-3));
+
+            card.UpdateCoverImage(null);
+
+            Assert.False(card.HasEpisodeCover);
+        }
+
+        [Fact]
+        public async Task LoadAsync_InProgressAndRecentEpisodes_WithoutDbCoverCompletes()
+        {
+            // Akzeptanzkriterium: In-Progress + Zuletzt-gehört werden aufgebaut, ohne
+            // synchronen Online- oder Dateisystem-Lookup. Kein CoverService registriert
+            // → Kacheln landen in der Pending-Queue (im produktiven Aufbau: Hintergrund-Service).
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakePlaybackStateDataService stateService = new();
+
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            Guid seriesId = seriesService.All[0].Id;
+
+            await episodeService.AddAsync(new Episode
+            {
+                Title = "Folge 1",
+                SeriesId = seriesId,
+                LocalTrackCount = 1,
+                LocalFolderPath = @"C:\\pfad\\ohne\\cover"
+            });
+            Guid episodeId = episodeService.All[0].Id;
+
+            await stateService.AddAsync(new PlaybackState
+            {
+                EpisodeId = episodeId,
+                LastPosition = TimeSpan.FromMinutes(5),
+                IsCompleted = false
+            });
+
+            DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
+            await vm.LoadAsync();
+
+            // Ohne CoverService-Registrierung gibt es kein Cover – die Kachel erscheint trotzdem.
+            _ = Assert.Single(vm.InProgressEpisodes);
+            Assert.False(vm.InProgressEpisodes[0].HasEpisodeCover);
+
+            _ = Assert.Single(vm.RecentSeries);
+        }
+
+        [Fact]
+        public async Task LoadAsync_OfflineMode_DoesNotTouchOnlineEpisodeChecker()
+        {
+            // Akzeptanzkriterium: Im Offline-Modus wird der iTunes-Check gar nicht erst aufgerufen.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeOnlineEpisodeChecker tracker = new();
+
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true });
+
+            AppSettings offlineSettings = new() { OfflineMode = true };
+
+            DashboardViewModel vm = BuildViewModel(seriesService, episodeService,
+                checker: tracker, appSettings: offlineSettings);
+
+            await vm.LoadAsync();
+
+            Assert.Equal(0, tracker.CheckCallCount);
+        }
     }
 }

@@ -83,3 +83,6 @@ logs/
 *.binlog
 solution_dump.txt
 
+# Aider-Tool-Artefakte
+.aider*
+

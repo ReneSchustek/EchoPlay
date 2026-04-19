@@ -184,6 +184,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 InnerHandler = inner,
             };
+            // Test-Fixture: der DelegatingHandler selbst wird getestet, deshalb kein Umweg über IHttpClientFactory.
             return new HttpClient(handler, disposeHandler: true);
         }
 

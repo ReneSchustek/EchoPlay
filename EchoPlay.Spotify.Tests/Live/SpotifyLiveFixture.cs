@@ -70,6 +70,7 @@ namespace EchoPlay.Spotify.Tests.Live
                 }
             };
 
+            // Test-Fixture: explizites Socket-Lifetime-Setup (PooledConnectionLifetime=Zero) wegen Spotify-Idle-Connection-Drops, nicht über die Factory abbildbar.
             _apiHttpClient = new HttpClient(authHandler, disposeHandler: true)
             {
                 BaseAddress = new Uri(spotifyOptions.ApiBaseUrl)

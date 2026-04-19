@@ -160,7 +160,8 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         /// </summary>
         private static LocalCoverService BuildService()
         {
-            // Test-Fixture: HttpClient bleibt ungenutzter Platzhalter — Tests ohne coverImageUrl lösen keinen Netzwerkzugriff aus.
+            // Test-Fixture – Ausnahme von der IHttpClientFactory-Pflicht: da kein Test eine coverImageUrl
+            // übergibt, bleibt der HttpClient ungenutzt und kann kein Socket-Leak verursachen.
             return new LocalCoverService(new CoverService(new HttpClient()));
         }
     }

@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -20,7 +21,8 @@ namespace EchoPlay.App.ViewModels
         private readonly ImportService _importService;
         private readonly IErrorDialogService _errorDialogService;
         private readonly ILocalizationService _localizationService;
-        private readonly CoverBrightnessAnalyzer? _coverBrightnessAnalyzer;
+        private readonly BackgroundCoverService? _backgroundCoverService;
+        private readonly CancellationToken _cancellationToken;
         private readonly SucheViewModel? _parentViewModel;
         private readonly Func<Task>? _onImportCompleted;
 
@@ -37,7 +39,14 @@ namespace EchoPlay.App.ViewModels
         /// <param name="importService">Führt den tatsächlichen Import durch.</param>
         /// <param name="errorDialogService">Zeigt Fehlermeldungen an.</param>
         /// <param name="localizationService">Für lokalisierte Fehlertexte.</param>
-        /// <param name="coverBrightnessAnalyzer">Analysiert die Cover-Helligkeit und lädt Bilder herunter.</param>
+        /// <param name="backgroundCoverService">
+        /// Lädt das Cover über die zentrale Cover-Pipeline (DB-First, dann Provider-URL über
+        /// <c>IHostRateLimiter</c> mit Foreground-Priorität). Null deaktiviert das Cover-Laden.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// Abbruch-Token, das vom Eltern-VM beim Start einer neuen Suche oder beim Verlassen
+        /// der Page abgebrochen wird. Hält verwaiste HTTP-Requests aus alten Suchläufen draußen.
+        /// </param>
         /// <param name="parentViewModel">
         /// Optionale Referenz auf das übergeordnete SucheViewModel – wird nach
         /// erfolgreichem Hinzufügen benachrichtigt, um den Erfolgshinweis zu zeigen.
@@ -52,16 +61,18 @@ namespace EchoPlay.App.ViewModels
             ImportService importService,
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
-            CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null,
+            BackgroundCoverService? backgroundCoverService = null,
             SucheViewModel? parentViewModel = null,
-            Func<Task>? onImportCompleted = null)
+            Func<Task>? onImportCompleted = null,
+            CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(importSeries);
             _importSeries = importSeries;
             _importService = importService;
             _errorDialogService = errorDialogService;
             _localizationService = localizationService;
-            _coverBrightnessAnalyzer = coverBrightnessAnalyzer;
+            _backgroundCoverService = backgroundCoverService;
+            _cancellationToken = cancellationToken;
             _parentViewModel = parentViewModel;
             _onImportCompleted = onImportCompleted;
             _isImported = isAlreadyImported;
@@ -74,14 +85,20 @@ namespace EchoPlay.App.ViewModels
             IsHoerspiel = importSeries.IsHoerspiel;
             IsAlbumResult = importSeries.IsAlbumResult;
 
-            // Cover einmal herunterladen, daraus BitmapImage erstellen UND Helligkeit analysieren
-            if (!string.IsNullOrEmpty(importSeries.CoverImageUrl))
+            // Cover einmal über die zentrale Pipeline laden, BitmapImage erstellen UND Helligkeit analysieren
+            if (_backgroundCoverService is not null && !string.IsNullOrEmpty(importSeries.CoverImageUrl))
             {
-                _ = LoadCoverAndAnalyzeAsync(importSeries.CoverImageUrl);
+                CoverLoadTask = LoadCoverAndAnalyzeAsync(importSeries.CoverImageUrl);
             }
 
             ImportCommand = new RelayCommand(() => _ = ImportAsync());
         }
+
+        /// <summary>
+        /// Task der laufenden Cover-Lade-Operation. Tests warten darauf, um determinismus
+        /// zu garantieren; Produktionscode lässt den Task fire-and-forget laufen.
+        /// </summary>
+        internal Task? CoverLoadTask { get; }
 
         /// <summary>Titel der Hörspielserie.</summary>
         public string Title { get; }
@@ -110,6 +127,16 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sichtbarkeit des Platzhalters wenn kein Cover vorhanden.</summary>
         public Visibility NoCoverVisibility =>
             _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Gibt das geladene <see cref="BitmapImage"/> frei, sobald die Trefferliste
+        /// ersetzt oder die Suche-Seite verlassen wird. Ohne diesen Schritt halten
+        /// alte Trefferkacheln ihre Cover-Bytes bis zum nächsten GC-Lauf am Heap fest.
+        /// </summary>
+        public void ClearCoverImage()
+        {
+            CoverImage = null;
+        }
 
         /// <summary>
         /// Gibt an, ob der Bereich oben links im Cover hell ist.
@@ -261,10 +288,13 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Lädt das Cover einmal herunter und nutzt die Bytes für:
+        /// Lädt das Cover einmal über die zentrale Cover-Pipeline (DB-First, dann
+        /// Provider-URL mit Foreground-Priorität) und nutzt die Bytes für:
         /// 1. BitmapImage-Erstellung (Anzeige)
         /// 2. Helligkeitsanalyse oben links (Checkbox-Rahmenfarbe)
-        /// Vermeidet doppelten Download (einmal für Anzeige, einmal für Analyse).
+        /// Vermeidet doppelten Download und sichert Rate-Limiter-Konformität gegenüber
+        /// dem direkten <c>HttpClient</c>-Aufruf, der bei vielen parallelen Treffer-
+        /// Karten den Provider drosseln würde.
         /// Die WinRT-COM-Typen für die Analyse leben in <see cref="Services.CoverBrightnessAnalyzer"/>.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse fuer eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler duerfen die Kachel nicht zerstoeren – der Platzhalter bleibt stehen.")]
@@ -272,8 +302,15 @@ namespace EchoPlay.App.ViewModels
         {
             try
             {
-                // Bytes einmal herunterladen
-                byte[] coverBytes = await _coverBrightnessAnalyzer!.DownloadAsync(coverUrl);
+                byte[]? coverBytes = await _backgroundCoverService!
+                    .RequestCoverForSearchResultAsync(
+                        _importSeries.Source,
+                        _importSeries.SourceSeriesId,
+                        coverUrl,
+                        _cancellationToken)
+                    .ConfigureAwait(true);
+
+                if (coverBytes is null || coverBytes.Length == 0) return;
 
                 // BitmapImage aus den Bytes erstellen (UI-Thread nötig)
                 Microsoft.UI.Xaml.Media.Imaging.BitmapImage image = new();
@@ -291,9 +328,13 @@ namespace EchoPlay.App.ViewModels
                     IsBrightCover = isBright.Value;
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Erwartet: Nutzer hat eine neue Suche gestartet oder die Page verlassen.
+            }
             catch (Exception)
             {
-                // Netzwerkfehler → Platzhalter + Standard-Rahmenfarbe
+                // Netzwerk-/Bild-Dekodier-Fehler → Platzhalter + Standard-Rahmenfarbe
             }
         }
     }

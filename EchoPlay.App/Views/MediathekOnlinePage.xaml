@@ -59,6 +59,19 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- Fallback-Hinweis: Spotify-Credentials fehlen, Treffer kommen von Apple Music.
+             Sitzt als Overlay in der Content-Row und weicht dem Scroll-Inhalt über
+             VerticalAlignment Top aus; verschwindet, sobald das VM die Results leert. -->
+        <InfoBar
+            Grid.Row="3"
+            x:Uid="OnlineSpotifyFallbackHint"
+            IsOpen="{x:Bind ViewModel.IsSpotifyFallbackHintVisible, Mode=OneWay}"
+            IsClosable="False"
+            Severity="Informational"
+            Margin="16,4,16,0"
+            VerticalAlignment="Top"
+            Canvas.ZIndex="10"/>
+
         <!-- Hilfe -->
         <ctrl:HelpButtonControl TipUid="HelpTipOnline"
                                 Grid.Row="0"

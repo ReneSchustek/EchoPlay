@@ -51,7 +51,24 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public async Task SelectSeriesAsync(SeriesCardViewModel card)
         {
+            ArgumentNullException.ThrowIfNull(card);
             SelectSeriesCallCount++;
+
+            // Re-Klick auf bereits ausgewählte Kachel klappt das Akkordeon wieder zu (Toggle).
+            // Laufende Cover-Downloads abbrechen, sonst landen Bytes in einem geschlossenen Panel.
+            if (card.IsSelectedInAccordion)
+            {
+                if (_episodeCoverCts is not null)
+                {
+                    await _episodeCoverCts.CancelAsync();
+                    _episodeCoverCts.Dispose();
+                    _episodeCoverCts = null;
+                }
+
+                _seriesVM.DeselectSeries();
+                _episodesVM.Clear();
+                return;
+            }
 
             // Laufende Cover-Downloads der vorherigen Serie abbrechen
             if (_episodeCoverCts is not null)

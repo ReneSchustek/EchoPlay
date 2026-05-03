@@ -141,6 +141,7 @@ namespace EchoPlay.App.Views
             Windows.Storage.Pickers.FileSavePicker picker = new();
             WinRT.Interop.InitializeWithWindow.Initialize(picker, handle);
             picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            // Lokalzeit fuer den Datei-Namen — der Anwender erkennt seinen heutigen Bericht.
             picker.SuggestedFileName = $"Fehlende-Folgen-{DateTime.Now:yyyy-MM-dd}";
             ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
             picker.FileTypeChoices.Add(resources.GetString("CommonTextFileFilter"), [".txt"]);

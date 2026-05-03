@@ -38,6 +38,8 @@ namespace EchoPlay.Logger.Management
             // Bereinigen nach Alter
             if (_options.RetentionDays > 0)
             {
+                // Lokalzeit, weil Log-Dateien lokale Zeitstempel im Namen tragen — UTC waere
+                // beim Vergleich mit File.LastWriteTime (Lokalzeit) fehleranfaellig.
                 DateTime cutoffDate = DateTime.Now.AddDays(-_options.RetentionDays);
                 logFiles = CleanupByAge(logFiles, cutoffDate);
             }

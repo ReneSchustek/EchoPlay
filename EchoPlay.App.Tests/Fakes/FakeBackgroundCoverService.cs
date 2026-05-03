@@ -76,5 +76,22 @@ namespace EchoPlay.App.Tests.Fakes
                 _ = await Task.WhenAny(PriorityHold.Task, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
             }
         }
+
+        /// <summary>
+        /// Aufzeichnung aller Such-Treffer-Cover-Anfragen, damit Tests verifizieren können,
+        /// mit welchen Argumenten und welchem CT die Trefferkarten den Service aufrufen.
+        /// </summary>
+        public List<(string Source, string SourceSeriesId, string CoverUrl, CancellationToken Ct)> SearchCoverRequests { get; } = [];
+
+        /// <summary>Bytes, die der Fake beim nächsten Aufruf zurückliefert. Null = kein Cover.</summary>
+        public byte[]? SearchCoverResponse { get; set; }
+
+        /// <inheritdoc/>
+        public override Task<byte[]?> RequestCoverForSearchResultAsync(
+            string source, string sourceSeriesId, string coverUrl, CancellationToken ct = default)
+        {
+            SearchCoverRequests.Add((source, sourceSeriesId, coverUrl, ct));
+            return Task.FromResult(SearchCoverResponse);
+        }
     }
 }

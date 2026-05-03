@@ -140,14 +140,15 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Wird ausgelöst, wenn der Nutzer eine Serien-Kachel auswählt.
-        /// Lädt die Folgen der gewählten Serie und aktualisiert den Split.
+        /// Wird ausgelöst, wenn der Nutzer eine Serien-Kachel anklickt. ItemClick statt
+        /// SelectionChanged, damit der Re-Klick auf die bereits ausgewählte Kachel
+        /// das Akkordeon zuklappt (SelectionChanged feuert bei unveränderter Auswahl nicht).
         /// </summary>
-        private async void OnArtistSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void OnArtistItemClick(object sender, ItemClickEventArgs e)
         {
             if (_splitHandler.IsUpdating) return;
 
-            if (sender is GridView { SelectedItem: LocalArtistCardViewModel artist })
+            if (e.ClickedItem is LocalArtistCardViewModel artist)
             {
                 EpisodeAccordion.GridView.SelectedItem = null;
                 await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectArtistAsync(artist));

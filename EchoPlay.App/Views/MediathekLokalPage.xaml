@@ -274,7 +274,8 @@
                 <GridView
                     x:Name="SeriesTopGrid"
                     SelectionMode="Single"
-                    SelectionChanged="OnArtistSelectionChanged"
+                    IsItemClickEnabled="True"
+                    ItemClick="OnArtistItemClick"
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
@@ -465,7 +466,8 @@
                 <GridView
                     x:Name="SeriesBottomGrid"
                     SelectionMode="Single"
-                    SelectionChanged="OnArtistSelectionChanged"
+                    IsItemClickEnabled="True"
+                    ItemClick="OnArtistItemClick"
                     ScrollViewer.VerticalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"

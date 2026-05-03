@@ -2,9 +2,11 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
@@ -25,7 +27,10 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService? seriesService = null,
             FakeEpisodeDataService? episodeService = null,
             FakePlaybackStateDataService? stateService = null,
-            ProviderType activeProvider = ProviderType.Spotify)
+            ProviderType activeProvider = ProviderType.Spotify,
+            FakeSpotifyClientCredentialsProvider? credentialsProvider = null,
+            EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? spotifySearch = null,
+            EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? appleMusicSearch = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
@@ -34,13 +39,15 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = activeProvider }));
             _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
+                "Spotify", (_, _) => spotifySearch ?? new FakeSeriesImportSearch([], "Spotify"));
             _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
+                "AppleMusic", (_, _) => appleMusicSearch ?? new FakeSeriesImportSearch([], "AppleMusic"));
             _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "Spotify", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
                 "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
+            _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
+                credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
             _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
@@ -67,7 +74,6 @@ namespace EchoPlay.App.Tests.ViewModels
                 BackgroundCoverService: null,
                 WatchToggleService: null,
                 HttpClientFactory: provider.GetRequiredService<System.Net.Http.IHttpClientFactory>(),
-                CoverBrightnessAnalyzer: null,
                 RateLimiter: null);
         }
 
@@ -148,6 +154,41 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task OnlineEpisodePipeline_SelectSeriesAsync_SameSeriesTwice_DeselectsOnSecondCall()
+        {
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
+            await seriesService.AddAsync(series);
+
+            MediathekOnlineActionsContext ctx = BuildContext(seriesService: seriesService);
+            OnlineSeriesViewModel seriesVM = new();
+            OnlineEpisodesViewModel episodesVM = new();
+            OnlineActionsState state = new();
+
+            SeriesCardViewModel card = new(
+                id: series.Id, title: series.Title, coverImage: null,
+                totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
+                isSubscribed: false, isFavorite: false, isWatched: false,
+                scopeFactory: ctx.ScopeFactory,
+                confirmationDialogService: ctx.ConfirmationDialogService,
+                localizationService: ctx.LocalizationService);
+            seriesVM.SetAllSeries([card]);
+
+            using OnlineEpisodePipeline sut = new(ctx, seriesVM, episodesVM, state);
+
+            await sut.SelectSeriesAsync(card);
+            Assert.Equal(0, seriesVM.SelectedSeriesIndex);
+            Assert.True(card.IsSelectedInAccordion);
+
+            // Re-Klick auf dieselbe Kachel → Toggle: Auswahl wird aufgehoben.
+            await sut.SelectSeriesAsync(card);
+
+            Assert.Equal(-1, seriesVM.SelectedSeriesIndex);
+            Assert.False(card.IsSelectedInAccordion);
+            Assert.Empty(episodesVM.Episodes);
+        }
+
+        [Fact]
         public async Task OnlineEpisodePipeline_SearchEpisodeCoversAsync_ReturnsEmpty_WhenServiceIsNull()
         {
             System.Collections.Generic.IReadOnlyList<EchoPlay.App.Models.CoverSearchHit> hits =
@@ -192,6 +233,76 @@ namespace EchoPlay.App.Tests.ViewModels
             sut.AddSelected();
 
             Assert.Equal(1, sut.AddSelectedCallCount);
+        }
+
+        [Fact]
+        public async Task OnlineProviderSearchActions_SearchProviderAsync_SetsFallbackHint_WhenSpotifyCredentialsMissing()
+        {
+            // Spotify aktiv ohne Credentials → Fallback auf Apple Music mit sichtbarem Hinweis.
+            FakeSeriesImportSearch appleMusicSearch = new(
+                [new ImportSeries { Title = "Apple", Source = "AppleMusic", SourceSeriesId = "am1" }],
+                "AppleMusic");
+
+            MediathekOnlineActionsContext ctx = BuildContext(
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing(),
+                appleMusicSearch: appleMusicSearch);
+            OnlineSeriesViewModel seriesVM = new();
+            OnlineEpisodesViewModel episodesVM = new();
+            OnlineProviderSearchViewModel searchVM = new();
+
+            OnlineProviderSearchActions sut = new(ctx, seriesVM, episodesVM, searchVM,
+                reloadAfterImportAsync: () => Task.CompletedTask);
+
+            await sut.SearchProviderAsync("query");
+
+            Assert.True(searchVM.IsSpotifyFallbackHintVisible);
+            Assert.False(searchVM.IsSearchingProvider);
+        }
+
+        [Fact]
+        public async Task OnlineProviderSearchActions_SearchProviderAsync_BackToBack_DiscardsOlderResults()
+        {
+            // Back-to-Back-Suche in der Online-Mediathek: die zweite Suche muss die erste
+            // verdraengen, die spaet eintreffenden Stale-Treffer duerfen die UI nicht mehr fuellen.
+            GatedSeriesImportSearch gated = new();
+            MediathekOnlineActionsContext ctx = BuildContext(spotifySearch: gated);
+            OnlineSeriesViewModel seriesVM = new();
+            OnlineEpisodesViewModel episodesVM = new();
+            OnlineProviderSearchViewModel searchVM = new()
+            {
+                SearchTypeIndex = 1 // nur Serien – Album-Suche wird so umgangen
+            };
+
+            OnlineProviderSearchActions sut = new(ctx, seriesVM, episodesVM, searchVM,
+                reloadAfterImportAsync: () => Task.CompletedTask);
+
+            Task firstSearch = sut.SearchProviderAsync("first");
+            Task secondSearch = sut.SearchProviderAsync("second");
+
+            gated.CompleteCall(0,
+                [new ImportSeries { Title = "stale", Source = "Spotify", SourceSeriesId = "s1" }]);
+            gated.CompleteCall(1,
+                [new ImportSeries { Title = "fresh", Source = "Spotify", SourceSeriesId = "f1" }]);
+
+            await Task.WhenAll(firstSearch, secondSearch);
+
+            _ = Assert.Single(searchVM.ProviderSearchResults);
+            Assert.Equal("fresh", searchVM.ProviderSearchResults[0].Title);
+            Assert.False(searchVM.IsSearchingProvider);
+        }
+
+        [Fact]
+        public void OnlineProviderSearchViewModel_ClearResults_ResetsFallbackHint()
+        {
+            // Direkt-Test auf dem Sub-VM: ClearResults muss den Fallback-Hinweis löschen.
+            OnlineProviderSearchViewModel searchVM = new()
+            {
+                IsSpotifyFallbackHintVisible = true
+            };
+
+            searchVM.ClearResults();
+
+            Assert.False(searchVM.IsSpotifyFallbackHintVisible);
         }
 
         // ── OnlineBulkRefreshActions ─────────────────────────────────────────────

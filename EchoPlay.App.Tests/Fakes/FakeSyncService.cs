@@ -2,6 +2,7 @@ using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Scanning;
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,7 +46,9 @@ namespace EchoPlay.App.Tests.Fakes
 
             if (_exception is not null)
             {
-                throw _exception;
+                // ExceptionDispatchInfo bewahrt den ursprünglichen Stacktrace beim Re-Throw,
+                // das einfache 'throw _exception;' würde ihn an dieser Zeile abschneiden.
+                ExceptionDispatchInfo.Capture(_exception).Throw();
             }
 
             return Task.FromResult(_result);

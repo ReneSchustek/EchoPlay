@@ -106,6 +106,7 @@ namespace EchoPlay.App.ViewModels
         public void Dispose()
         {
             _episodePipeline.Dispose();
+            _providerSearch.Dispose();
         }
     }
 }

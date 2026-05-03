@@ -317,6 +317,7 @@ namespace EchoPlay.App.Services
             IReadOnlyList<Series> subscribedSeries,
             DateTime cutoffDate,
             ICachedNewReleaseDataService cacheService,
+            // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
             IServiceProvider serviceProvider)
         {
             if (subscribedSeries.Count == 0)

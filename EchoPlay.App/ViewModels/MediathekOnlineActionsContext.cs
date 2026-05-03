@@ -20,6 +20,5 @@ namespace EchoPlay.App.ViewModels
         BackgroundCoverService? BackgroundCoverService,
         IWatchToggleService? WatchToggleService,
         IHttpClientFactory HttpClientFactory,
-        CoverBrightnessAnalyzer? CoverBrightnessAnalyzer,
         IHostRateLimiter? RateLimiter);
 }

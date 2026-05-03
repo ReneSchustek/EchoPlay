@@ -47,12 +47,32 @@ namespace EchoPlay.Logger.Core
         }
 
         /// <summary>
+        /// True, wenn Debug-Nachrichten den aktuellen Filter passieren würden.
+        /// Erlaubt Aufrufern in Hot-Pfaden, teure String-Komposition zu vermeiden.
+        /// </summary>
+        public bool IsDebugEnabled => LogLevel.Debug >= _options.MinimumLevel;
+
+        /// <summary>
         /// Schreibt eine Debug-Nachricht.
         /// </summary>
         /// <param name="message">Die Log-Nachricht.</param>
         public void Debug(string message)
         {
             _ = LogAsync(LogLevel.Debug, message);
+        }
+
+        /// <summary>
+        /// Lazy-Overload: Erzeugt die Nachricht nur, wenn Debug aktiv ist —
+        /// spart String-Interpolation in Hot-Pfaden.
+        /// </summary>
+        /// <param name="messageFactory">Factory für die Log-Nachricht.</param>
+        public void Debug(Func<string> messageFactory)
+        {
+            ArgumentNullException.ThrowIfNull(messageFactory);
+            if (IsDebugEnabled)
+            {
+                _ = LogAsync(LogLevel.Debug, messageFactory());
+            }
         }
 
         /// <summary>

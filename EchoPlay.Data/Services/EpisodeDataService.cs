@@ -39,7 +39,7 @@ namespace EchoPlay.Data.Services
                 .Where(episode => idSet.Contains(episode.SeriesId))
                 .ToListAsync().ConfigureAwait(false);
 
-            _logger.Debug($"{result.Count} Episode(n) für {seriesIds.Count} Serien geladen (Batch).");
+            _logger.Debug(() => $"{result.Count} Episode(n) für {seriesIds.Count} Serien geladen (Batch).");
             return result;
         }
 
@@ -49,7 +49,7 @@ namespace EchoPlay.Data.Services
         /// <param name="seriesId">Die eindeutige ID der Serie.</param>
         public async Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId)
         {
-            _logger.Debug($"Lade Episoden für Serie '{seriesId}'.");
+            _logger.Debug(() => $"Lade Episoden für Serie '{seriesId}'.");
 
             List<Episode> result = await _context.Episodes
 
@@ -58,7 +58,7 @@ namespace EchoPlay.Data.Services
                 .ThenBy(episode => episode.Title)
                 .ToListAsync().ConfigureAwait(false);
 
-            _logger.Debug($"{result.Count} Episode(n) für Serie '{seriesId}' geladen.");
+            _logger.Debug(() => $"{result.Count} Episode(n) für Serie '{seriesId}' geladen.");
 
             return result;
         }
@@ -130,7 +130,7 @@ namespace EchoPlay.Data.Services
         /// </returns>
         public async Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId)
         {
-            _logger.Debug($"Lade fehlende lokale Episoden für Serie '{seriesId}'.");
+            _logger.Debug(() => $"Lade fehlende lokale Episoden für Serie '{seriesId}'.");
 
             List<Episode> result = await _context.Episodes
 
@@ -139,7 +139,7 @@ namespace EchoPlay.Data.Services
                 .ThenBy(e => e.Title)
                 .ToListAsync().ConfigureAwait(false);
 
-            _logger.Debug($"{result.Count} fehlende Episoden für Serie '{seriesId}' gefunden.");
+            _logger.Debug(() => $"{result.Count} fehlende Episoden für Serie '{seriesId}' gefunden.");
 
             return result;
         }
@@ -151,7 +151,7 @@ namespace EchoPlay.Data.Services
         /// <param name="id">Die eindeutige Episoden-ID.</param>
         public async Task<Episode?> GetByIdAsync(Guid id)
         {
-            _logger.Debug($"Lade Episode mit ID '{id}'.");
+            _logger.Debug(() => $"Lade Episode mit ID '{id}'.");
             return await _context.Episodes.FindAsync(id).ConfigureAwait(false);
         }
 
@@ -217,7 +217,7 @@ namespace EchoPlay.Data.Services
                          && e.EpisodeNumber != null)
                 .MaxAsync(e => (int?)e.EpisodeNumber).ConfigureAwait(false);
 
-            _logger.Debug($"Höchste lokale Folgennummer für Serie '{seriesId}': {result?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "keine"}.");
+            _logger.Debug(() => $"Höchste lokale Folgennummer für Serie '{seriesId}': {result?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "keine"}.");
 
             return result;
         }

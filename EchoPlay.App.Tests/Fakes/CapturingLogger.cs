@@ -13,6 +13,8 @@ namespace EchoPlay.App.Tests.Fakes
     {
         public List<(string Level, string Message, Exception? Exception)> Entries { get; } = [];
 
+        public bool IsDebugEnabled => true;
+
         public void Trace(string message) => Entries.Add(("Trace", message, null));
         public void Debug(string message) => Entries.Add(("Debug", message, null));
         public void Info(string message) => Entries.Add(("Info", message, null));

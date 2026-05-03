@@ -53,6 +53,55 @@ namespace EchoPlay.Logger.Tests
             Assert.Empty(sink.Entries);
         }
 
+        // ===== Lazy-Overload (Brief 277) =====
+
+        [Fact]
+        public void Debug_WithFactory_DoesNotInvokeWhenDisabled()
+        {
+            CapturingSink sink = new();
+            EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Information });
+            int factoryCalls = 0;
+
+            logger.Debug(() => { factoryCalls++; return "Teure Nachricht"; });
+
+            Assert.Equal(0, factoryCalls);
+            Assert.Empty(sink.Entries);
+        }
+
+        [Fact]
+        public void Debug_WithFactory_InvokesWhenEnabled()
+        {
+            CapturingSink sink = new();
+            EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
+            int factoryCalls = 0;
+
+            logger.Debug(() => { factoryCalls++; return "Teure Nachricht"; });
+
+            Assert.Equal(1, factoryCalls);
+            _ = Assert.Single(sink.Entries);
+            Assert.Equal("Teure Nachricht", sink.Entries[0].Message);
+        }
+
+        [Fact]
+        public void Debug_WithFactory_NullFactory_Throws()
+        {
+            CapturingSink sink = new();
+            EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
+
+            _ = Assert.Throws<ArgumentNullException>(() => logger.Debug((Func<string>)null!));
+        }
+
+        [Fact]
+        public void IsDebugEnabled_ReflectsMinimumLevel()
+        {
+            CapturingSink sink = new();
+            EchoPlay.Logger.Core.Logger logDebug = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
+            EchoPlay.Logger.Core.Logger logInfo = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Information });
+
+            Assert.True(logDebug.IsDebugEnabled);
+            Assert.False(logInfo.IsDebugEnabled);
+        }
+
         /// <summary>
         /// Eine Info-Nachricht wird bei Minimum-Level Warning gefiltert.
         /// </summary>

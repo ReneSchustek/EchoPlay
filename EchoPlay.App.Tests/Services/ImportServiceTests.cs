@@ -7,6 +7,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
+using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,8 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesImportSearch spotifySearch,
             FakeSeriesImportSearch appleMusicSearch,
             FakeEpisodeImportSource spotifyEpisodeSource,
-            FakeEpisodeImportSource appleMusicEpisodeSource)
+            FakeEpisodeImportSource appleMusicEpisodeSource,
+            FakeSpotifyClientCredentialsProvider? credentialsProvider = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
@@ -43,6 +45,11 @@ namespace EchoPlay.App.Tests.Services
             _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
             _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
             _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
+
+            // ImportService prüft vor dem Spotify-Suchlauf, ob Credentials hinterlegt sind.
+            // Default für bestehende Tests: Credentials vorhanden — bestehende Erwartungshaltung bleibt.
+            _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
+                credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
 
             _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddSingleton<IClock>(new FakeClock());
@@ -80,10 +87,11 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            IReadOnlyList<ImportSeries> result = await service.SearchAsync("drei");
+            SearchOutcome result = await service.SearchAsync("drei");
 
-            _ = Assert.Single(result);
-            Assert.Equal("Spotify", result[0].Source);
+            _ = Assert.Single(result.Results);
+            Assert.Equal("Spotify", result.Results[0].Source);
+            Assert.False(result.SpotifyFallbackApplied);
         }
 
         [Fact]
@@ -109,10 +117,11 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            IReadOnlyList<ImportSeries> result = await service.SearchAsync("tkkg");
+            SearchOutcome result = await service.SearchAsync("tkkg");
 
-            _ = Assert.Single(result);
-            Assert.Equal("AppleMusic", result[0].Source);
+            _ = Assert.Single(result.Results);
+            Assert.Equal("AppleMusic", result.Results[0].Source);
+            Assert.False(result.SpotifyFallbackApplied);
         }
 
         [Fact]
@@ -128,9 +137,143 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            IReadOnlyList<ImportSeries> result = await service.SearchAsync("unbekannt");
+            SearchOutcome result = await service.SearchAsync("unbekannt");
 
-            Assert.Empty(result);
+            Assert.Empty(result.Results);
+            Assert.False(result.SpotifyFallbackApplied);
+        }
+
+        [Fact]
+        public async Task SearchAsync_FallsBackToAppleMusic_WhenSpotifyActiveWithoutCredentials()
+        {
+            // Nutzer hat Spotify als aktiven Provider gewählt, aber keine Credentials hinterlegt.
+            // Erwartung: Suche nutzt Apple Music, Flag SpotifyFallbackApplied = true.
+            IReadOnlyList<ImportSeries> spotifyResults =
+            [
+                new() { SourceSeriesId = "sp1", Source = "Spotify", Title = "Spotify-Treffer", IsHoerspiel = true, Score = 80 }
+            ];
+            IReadOnlyList<ImportSeries> appleMusicResults =
+            [
+                new() { SourceSeriesId = "am1", Source = "AppleMusic", Title = "Apple-Treffer", IsHoerspiel = true, Score = 70 }
+            ];
+
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
+            FakeSeriesDataService series = new();
+            FakeEpisodeDataService episodes = new();
+            ImportService service = BuildService(settings, series, episodes,
+                spotifySearch: new FakeSeriesImportSearch(spotifyResults, "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+
+            SearchOutcome result = await service.SearchAsync("query");
+
+            _ = Assert.Single(result.Results);
+            Assert.Equal("AppleMusic", result.Results[0].Source);
+            Assert.True(result.SpotifyFallbackApplied);
+        }
+
+        [Fact]
+        public async Task SearchAsync_NoFallback_WhenAppleMusicActiveAndCredentialsMissing()
+        {
+            // AppleMusic aktiv: Fehlende Spotify-Credentials sind irrelevant, kein Fallback-Signal.
+            IReadOnlyList<ImportSeries> appleMusicResults =
+            [
+                new() { SourceSeriesId = "am1", Source = "AppleMusic", Title = "Apple-Treffer", IsHoerspiel = true, Score = 70 }
+            ];
+
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.AppleMusic });
+            FakeSeriesDataService series = new();
+            FakeEpisodeDataService episodes = new();
+            ImportService service = BuildService(settings, series, episodes,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+
+            SearchOutcome result = await service.SearchAsync("query");
+
+            _ = Assert.Single(result.Results);
+            Assert.Equal("AppleMusic", result.Results[0].Source);
+            Assert.False(result.SpotifyFallbackApplied);
+        }
+
+        [Fact]
+        public async Task SearchAsync_NoFallback_WhenProviderIsNone()
+        {
+            // Kein aktiver Provider: leeres Ergebnis, kein Fallback-Signal.
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.None });
+            FakeSeriesDataService series = new();
+            FakeEpisodeDataService episodes = new();
+            ImportService service = BuildService(settings, series, episodes,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+
+            SearchOutcome result = await service.SearchAsync("query");
+
+            Assert.Empty(result.Results);
+            Assert.False(result.SpotifyFallbackApplied);
+        }
+
+        [Fact]
+        public async Task SearchAlbumsAsync_SetsFallbackFlag_WhenSpotifyActiveWithoutCredentials()
+        {
+            // Alben-Suche folgt derselben Fallback-Logik. Ohne registrierten AppleMusic-Client
+            // bleibt die Trefferliste leer, aber das Flag muss gesetzt sein.
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
+            FakeSeriesDataService series = new();
+            FakeEpisodeDataService episodes = new();
+            ImportService service = BuildService(settings, series, episodes,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+
+            SearchOutcome result = await service.SearchAlbumsAsync("query");
+
+            Assert.True(result.SpotifyFallbackApplied);
+        }
+
+        [Fact]
+        public async Task SearchAlbumsAsync_NoFallback_WhenSpotifyActiveWithCredentials()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
+            FakeSeriesDataService series = new();
+            FakeEpisodeDataService episodes = new();
+            ImportService service = BuildService(settings, series, episodes,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+
+            SearchOutcome result = await service.SearchAlbumsAsync("query");
+
+            Assert.False(result.SpotifyFallbackApplied);
+        }
+
+        [Fact]
+        public async Task SearchAlbumsAsync_NoFallback_WhenQueryIsEmpty()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
+            FakeSeriesDataService series = new();
+            FakeEpisodeDataService episodes = new();
+            ImportService service = BuildService(settings, series, episodes,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+
+            SearchOutcome result = await service.SearchAlbumsAsync("   ");
+
+            Assert.Empty(result.Results);
+            Assert.False(result.SpotifyFallbackApplied);
         }
 
         [Fact]
@@ -189,6 +332,83 @@ namespace EchoPlay.App.Tests.Services
                 Title = "TKKG",
                 IsHoerspiel = true,
                 Score = 90
+            };
+
+            _ = await service.ImportAsync(importSeries);
+
+            Assert.Equal(3, episodeService.All.Count);
+        }
+
+        [Fact]
+        public async Task ImportAsync_DeduplicatesEpisodes_BySourceEpisodeId()
+        {
+            // Brief 268: Provider liefert dieselbe Folge mehrfach (Compilation/Re-Release).
+            // Nach dem Import darf in der DB nur eine Episode pro SourceEpisodeId stehen.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            IReadOnlyList<ImportEpisode> importEpisodesWithDuplicates =
+            [
+                new() { SourceEpisodeId = "album-1", Title = "Folge 1: Auftakt", EpisodeNumber = 1 },
+                new() { SourceEpisodeId = "album-2", Title = "Folge 2: Spuren", EpisodeNumber = 2 },
+                new() { SourceEpisodeId = "album-1", Title = "Folge 1: Auftakt (Re-Release)", EpisodeNumber = 1 },
+                new() { SourceEpisodeId = "album-3", Title = "Folge 3: Verfolgung", EpisodeNumber = 3 },
+                new() { SourceEpisodeId = "album-2", Title = "Folge 2: Spuren (Compilation)", EpisodeNumber = 2 },
+            ];
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(importEpisodesWithDuplicates));
+
+            ImportSeries importSeries = new()
+            {
+                SourceSeriesId = "artist-scotland-yard",
+                Source = "AppleMusic",
+                Title = "Scotland Yard",
+                IsHoerspiel = true,
+                Score = 80
+            };
+
+            _ = await service.ImportAsync(importSeries);
+
+            // Drei eindeutige SourceEpisodeIds -> exakt drei Episoden, das erste Vorkommen gewinnt.
+            Assert.Equal(3, episodeService.All.Count);
+            Assert.Equal("Folge 1: Auftakt", episodeService.All[0].Title);
+            Assert.Equal("Folge 2: Spuren", episodeService.All[1].Title);
+            Assert.Equal("Folge 3: Verfolgung", episodeService.All[2].Title);
+        }
+
+        [Fact]
+        public async Task ImportAsync_PreservesAllEpisodes_WhenNoDuplicates()
+        {
+            // Konsistenzprüfung: ohne Duplikate darf der Dedup-Filter nichts entfernen.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            IReadOnlyList<ImportEpisode> importEpisodes =
+            [
+                new() { SourceEpisodeId = "album-1", Title = "Folge 1", EpisodeNumber = 1 },
+                new() { SourceEpisodeId = "album-2", Title = "Folge 2", EpisodeNumber = 2 },
+                new() { SourceEpisodeId = "album-3", Title = "Folge 3", EpisodeNumber = 3 },
+            ];
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(importEpisodes));
+
+            ImportSeries importSeries = new()
+            {
+                SourceSeriesId = "artist-clean",
+                Source = "AppleMusic",
+                Title = "Saubere Serie",
+                IsHoerspiel = true,
+                Score = 70
             };
 
             _ = await service.ImportAsync(importSeries);

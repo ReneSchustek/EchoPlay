@@ -107,6 +107,16 @@ namespace EchoPlay.App.ViewModels
         public Visibility NoCoverVisibility =>
             _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
 
+        /// <summary>
+        /// Setzt das Cover-Bild zurück. Wird beim Ersetzen der Online-Mediathek-Liste
+        /// oder beim Verlassen der Page aufgerufen, damit hunderte Kachel-Bitmaps nicht
+        /// bis zum nächsten GC-Lauf am Heap kleben (Brief 269).
+        /// </summary>
+        public void ClearCoverImage()
+        {
+            CoverImage = null;
+        }
+
         /// <summary>Gesamtanzahl der Episoden dieser Serie.</summary>
         public int TotalEpisodeCount { get; }
 

@@ -41,6 +41,16 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
+        /// Bricht laufende Cover-Loads der Trefferliste ab, damit verwaiste HTTP-Requests
+        /// nicht mehr im Hintergrund weiterlaufen, wenn der Nutzer die Seite verlässt.
+        /// </summary>
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            ViewModel.CancelPendingSearchCovers();
+            base.OnNavigatedFrom(e);
+        }
+
+        /// <summary>
         /// Navigiert zur Online-Mediathek – wird aus dem Erfolgshinweis aufgerufen.
         /// </summary>
         private void OnGoToMediathekClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

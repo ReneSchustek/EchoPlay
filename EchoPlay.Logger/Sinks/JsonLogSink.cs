@@ -130,6 +130,7 @@ namespace EchoPlay.Logger.Sinks
 
         private string GetCurrentFilePath()
         {
+            // Lokalzeit fuer Datei-Namen analog FileSink — Anwender ordnet die Datei seinem Tag zu.
             string baseName = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             string filePath = Path.Combine(_logDirectory, $"{baseName}.jsonl");
 

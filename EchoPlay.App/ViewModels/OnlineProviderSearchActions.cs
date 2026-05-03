@@ -1,6 +1,7 @@
 using EchoPlay.Core.Models.Import;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
@@ -9,13 +10,17 @@ namespace EchoPlay.App.ViewModels
     /// Sub-Actions: Provider-Suche (Serie und Album), Import-Status-Check und
     /// Batch-Import der angehakten Treffer.
     /// </summary>
-    internal sealed class OnlineProviderSearchActions
+    internal sealed class OnlineProviderSearchActions : IDisposable
     {
         private readonly MediathekOnlineActionsContext _ctx;
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineEpisodesViewModel _episodesVM;
         private readonly OnlineProviderSearchViewModel _providerSearchVM;
         private readonly Func<Task> _reloadAfterImportAsync;
+
+        // Pro Suche neu erzeugt; Cover-Loads der vorigen Trefferliste werden hier abgebrochen,
+        // damit kein verwaister HTTP-Verkehr im Hintergrund weiterläuft.
+        private CancellationTokenSource? _searchCoversCts;
 
         /// <summary>Public Call-Counter für Tests.</summary>
         public int SearchCallCount { get; private set; }
@@ -39,13 +44,19 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Startet eine Provider-Suche und befüllt das <see cref="OnlineProviderSearchViewModel"/>.
+        ///
+        /// Reset-/Abbruch-Disziplin (Brief 267): Trefferliste und Status-Hinweise werden noch
+        /// vor dem ersten <c>await</c> geleert. <see cref="StartNewCoverScope"/> macht
+        /// gleichzeitig eine eventuell laufende Vorgaenger-Suche obsolet – nach jedem Await
+        /// pruefen wir auf <see cref="CancellationToken.IsCancellationRequested"/> und
+        /// verwerfen Treffer der veralteten Suche.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Provider-Suche in der Online-Mediathek: HTTP-/Parser-/Timeout-Fehler aus Spotify/AppleMusic werden als Nutzer-Fehlermeldung angezeigt, damit der Suche-Command nicht reisst.")]
         public async Task SearchProviderAsync(string searchText)
         {
             SearchCallCount++;
 
-            if (_providerSearchVM.IsSearchingProvider || string.IsNullOrWhiteSpace(searchText))
+            if (string.IsNullOrWhiteSpace(searchText))
             {
                 return;
             }
@@ -56,17 +67,31 @@ namespace EchoPlay.App.ViewModels
 
             _providerSearchVM.IsSearchingProvider = true;
             _providerSearchVM.ProviderSearchResults = [];
+            _providerSearchVM.IsSpotifyFallbackHintVisible = false;
+
+            // Vorherige Cover-Loads abbrechen UND aeltere Provider-Suche obsolet machen –
+            // beide nutzen denselben Token-Lebenszyklus.
+            CancellationToken coverToken = StartNewCoverScope();
 
             try
             {
                 int searchTypeIndex = _providerSearchVM.SearchTypeIndex;
 
-                IReadOnlyList<ImportSeries> seriesResults = searchTypeIndex == 2
-                    ? []
+                SearchOutcome seriesOutcome = searchTypeIndex == 2
+                    ? new SearchOutcome([], SpotifyFallbackApplied: false)
                     : await _ctx.ImportService.SearchAsync(searchText);
-                IReadOnlyList<ImportSeries> albumResults = searchTypeIndex == 1
-                    ? []
+                if (coverToken.IsCancellationRequested) return;
+
+                SearchOutcome albumsOutcome = searchTypeIndex == 1
+                    ? new SearchOutcome([], SpotifyFallbackApplied: false)
                     : await _ctx.ImportService.SearchAlbumsAsync(searchText);
+                if (coverToken.IsCancellationRequested) return;
+
+                _providerSearchVM.IsSpotifyFallbackHintVisible =
+                    seriesOutcome.SpotifyFallbackApplied || albumsOutcome.SpotifyFallbackApplied;
+
+                IReadOnlyList<ImportSeries> seriesResults = seriesOutcome.Results;
+                IReadOnlyList<ImportSeries> albumResults = albumsOutcome.Results;
 
                 string searchLower = searchText.ToUpperInvariant();
                 List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
@@ -91,22 +116,33 @@ namespace EchoPlay.App.ViewModels
                 foreach (ImportSeries series in combined)
                 {
                     bool alreadyImported = await _ctx.ImportService.IsAlreadyImportedAsync(series);
+                    if (coverToken.IsCancellationRequested) return;
+
                     viewModels.Add(new SearchResultViewModel(
                         series, alreadyImported, _ctx.ImportService, _ctx.ErrorDialogService,
-                        _ctx.LocalizationService, _ctx.CoverBrightnessAnalyzer,
-                        onImportCompleted: _reloadAfterImportAsync));
+                        _ctx.LocalizationService, _ctx.BackgroundCoverService,
+                        onImportCompleted: _reloadAfterImportAsync,
+                        cancellationToken: coverToken));
                 }
 
                 _providerSearchVM.ProviderSearchResults = viewModels;
             }
             catch (Exception ex)
             {
+                // Obsolete Suche: Fehler nicht mehr anzeigen – die neue Suche bestimmt den Status.
+                if (coverToken.IsCancellationRequested) return;
+
                 await _ctx.ErrorDialogService.ShowAsync(
                     _ctx.LocalizationService.Get("OnlineSearchFailedTitle"), ex.Message);
             }
             finally
             {
-                _providerSearchVM.IsSearchingProvider = false;
+                // Loader nur zuruecksetzen, wenn diese Suche noch die aktuelle ist –
+                // sonst flackert der Spinner beim Back-to-Back-Wechsel zwischen den Suchen.
+                if (!coverToken.IsCancellationRequested)
+                {
+                    _providerSearchVM.IsSearchingProvider = false;
+                }
             }
         }
 
@@ -139,6 +175,42 @@ namespace EchoPlay.App.ViewModels
                     result.ImportCommand.Execute(null);
                 }
             }
+        }
+
+        /// <summary>
+        /// Beendet den vorherigen Cover-Scope (Cancel + Dispose) und liefert das Token
+        /// einer frischen <see cref="CancellationTokenSource"/> für die neue Suche.
+        /// </summary>
+        private CancellationToken StartNewCoverScope()
+        {
+            CancelPendingSearchCovers();
+            _searchCoversCts = new CancellationTokenSource();
+            return _searchCoversCts.Token;
+        }
+
+        /// <summary>
+        /// Bricht alle laufenden Cover-Loads der aktuellen Trefferliste ab.
+        /// Wird beim Dispose und vor dem Start einer neuen Suche aufgerufen.
+        /// </summary>
+        public void CancelPendingSearchCovers()
+        {
+            CancellationTokenSource? old = _searchCoversCts;
+            _searchCoversCts = null;
+            if (old is null) return;
+
+            try { old.Cancel(); }
+            catch (ObjectDisposedException)
+            {
+                // CTS war bereits disposed – Cancel ist dann ein No-Op, der weiter unten folgende
+                // Dispose-Aufruf ist idempotent. Bewusster Schluck ohne Logging.
+            }
+            old.Dispose();
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            CancelPendingSearchCovers();
         }
     }
 }

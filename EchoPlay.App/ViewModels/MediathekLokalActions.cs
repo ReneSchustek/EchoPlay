@@ -136,10 +136,22 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Wählt eine Serie aus und lädt deren Episoden mit lokalem Ordner in die mittlere Spalte.
         /// Die rechte Spalte wird dabei geleert. Der Orchestrator koordiniert die drei Sub-VMs.
+        /// Re-Klick auf bereits ausgewählte Kachel klappt das Akkordeon wieder zu (Toggle-Verhalten,
+        /// identisch zur Online-Mediathek und zum Schließen-Button).
         /// </summary>
         /// <param name="artist">Die ausgewählte Serie.</param>
         public async Task SelectArtistAsync(LocalArtistCardViewModel artist)
         {
+            ArgumentNullException.ThrowIfNull(artist);
+
+            if (artist.IsSelectedInAccordion)
+            {
+                _artistsVM.DeselectArtist();
+                _episodesVM.Clear();
+                _tracksVM.Clear();
+                return;
+            }
+
             _artistsVM.SelectArtist(artist);
             _tracksVM.Clear();
 

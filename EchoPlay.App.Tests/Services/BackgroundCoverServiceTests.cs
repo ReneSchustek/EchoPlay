@@ -6,6 +6,7 @@ using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -101,11 +102,109 @@ namespace EchoPlay.App.Tests.Services
             Assert.False(service.IsPriorityActive);
         }
 
+        [Fact]
+        public async Task Dispose_ReleasesServiceScope()
+        {
+            // Brief 269: Heap wuchs, weil Dispose nicht auf den Hintergrund-Task wartete
+            // und der Loop ggf. eine Service-Scope-Closure am Heap behielt. Wir prüfen
+            // hier zwei Garantien: (1) jeder vom Service erzeugte IServiceScope wird
+            // tatsächlich wieder disposed und (2) Dispose hinterlässt keinen
+            // ScopeCount > 0 (Zähler differenziert Created vs. Disposed).
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeCoverImageDataService coverImageService = new();
+            RecordingLocalCoverLoader coverLoader = new(null);
+
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<ICoverImageDataService>(_ => coverImageService);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
+            _ = services.AddScoped<ILocalCoverLoader>(_ => coverLoader);
+
+            ServiceProvider provider = services.BuildServiceProvider();
+            CountingScopeFactory scopeFactory = new(provider.GetRequiredService<IServiceScopeFactory>());
+
+            FakeLoggerFactory loggerFactory = new();
+            AppCoverService coverService = new(scopeFactory, loggerFactory);
+
+            BackgroundCoverService service = new(
+                scopeFactory,
+                coverService,
+                new FakeHttpClientFactory(),
+                new FakeSpotifyCredentialStore(),
+                new BackgroundCoverServiceOptions
+                {
+                    InitialDelay = TimeSpan.FromMinutes(5),
+                    Interval = TimeSpan.FromMinutes(30)
+                },
+                loggerFactory);
+
+            // Eine echte Iteration (RunOnceAsync) durchläuft sämtliche Scope-erzeugenden Phasen.
+            _ = await service.RunOnceAsync();
+
+            int created = scopeFactory.CreatedCount;
+            int active = scopeFactory.ActiveCount;
+            Assert.True(created > 0, "RunOnceAsync sollte mindestens einen Scope erstellen.");
+            Assert.Equal(0, active);
+
+            service.Dispose();
+
+            // Dispose darf den Zähler nicht negativ ziehen und keinen Scope offen lassen.
+            Assert.Equal(0, scopeFactory.ActiveCount);
+
+            // Zweiter Dispose-Aufruf bleibt ein No-Op (Idempotenz).
+            service.Dispose();
+        }
+
+        [Fact]
+        public async Task RequestCoverForSearchResult_RespectsRateLimiter_Foreground()
+        {
+            // Stellt sicher, dass Such-Treffer den zentralen Rate-Limiter mit Foreground-
+            // Priorität durchlaufen – sonst überlasten 20+ parallele Treffer den Provider
+            // und Cover erscheinen tröpfchenweise.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeCoverImageDataService coverImageService = new();
+            RecordingLocalCoverLoader coverLoader = new(null);
+
+            byte[] coverBytes = [0x10, 0x20, 0x30];
+            RecordingHttpMessageHandler handler = new(coverBytes);
+            RecordingHttpClientFactory httpFactory = new(handler);
+            RecordingHostRateLimiter rateLimiter = new();
+
+            BackgroundCoverService service = BuildService(
+                seriesService, episodeService, coverImageService, coverLoader,
+                httpFactory, rateLimiter);
+
+            byte[]? result = await service.RequestCoverForSearchResultAsync(
+                "Spotify", "unknown-id", "https://i.scdn.co/image/abc123", CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal(coverBytes, result);
+
+            (string Host, CoverFetchPriority Priority) recorded = Assert.Single(rateLimiter.Waits);
+            Assert.Equal("i.scdn.co", recorded.Host);
+            Assert.Equal(CoverFetchPriority.Foreground, recorded.Priority);
+            _ = Assert.Single(handler.RequestedUris);
+        }
+
         private static BackgroundCoverService BuildService(
             FakeSeriesDataService seriesService,
             FakeEpisodeDataService episodeService,
             FakeCoverImageDataService coverImageService,
             ILocalCoverLoader coverLoader)
+            => BuildService(seriesService, episodeService, coverImageService, coverLoader,
+                new FakeHttpClientFactory(), rateLimiter: null);
+
+        private static BackgroundCoverService BuildService(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            FakeCoverImageDataService coverImageService,
+            ILocalCoverLoader coverLoader,
+            IHttpClientFactory httpClientFactory,
+            IHostRateLimiter? rateLimiter)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
@@ -123,19 +222,66 @@ namespace EchoPlay.App.Tests.Services
             return new BackgroundCoverService(
                 scopeFactory,
                 coverService,
-                new FakeHttpClientFactory(),
+                httpClientFactory,
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions
                 {
                     InitialDelay = TimeSpan.FromMinutes(5),
                     Interval = TimeSpan.FromMinutes(30)
                 },
-                loggerFactory);
+                loggerFactory,
+                rateLimiter);
         }
 
         private sealed class FakeHttpClientFactory : IHttpClientFactory
         {
             public HttpClient CreateClient(string name) => new();
+        }
+
+        private sealed class CountingScopeFactory : IServiceScopeFactory
+        {
+            private readonly IServiceScopeFactory _inner;
+            private int _created;
+            private int _disposed;
+
+            public CountingScopeFactory(IServiceScopeFactory inner)
+            {
+                _inner = inner;
+            }
+
+            public int CreatedCount => Volatile.Read(ref _created);
+
+            public int ActiveCount => Volatile.Read(ref _created) - Volatile.Read(ref _disposed);
+
+            public IServiceScope CreateScope()
+            {
+                _ = Interlocked.Increment(ref _created);
+                return new CountingScope(_inner.CreateScope(), () => Interlocked.Increment(ref _disposed));
+            }
+
+            private sealed class CountingScope : IServiceScope
+            {
+                private readonly IServiceScope _inner;
+                private readonly Action _onDispose;
+                private int _disposed;
+
+                public CountingScope(IServiceScope inner, Action onDispose)
+                {
+                    _inner = inner;
+                    _onDispose = onDispose;
+                }
+
+                public IServiceProvider ServiceProvider => _inner.ServiceProvider;
+
+                public void Dispose()
+                {
+                    if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                    {
+                        _inner.Dispose();
+                        _onDispose();
+                    }
+                }
+            }
         }
 
         private sealed class RecordingLocalCoverLoader : ILocalCoverLoader
@@ -172,6 +318,59 @@ namespace EchoPlay.App.Tests.Services
                 await Task.Delay(_delay);
                 return null;
             }
+        }
+
+        private sealed class RecordingHostRateLimiter : IHostRateLimiter
+        {
+            public List<(string Host, CoverFetchPriority Priority)> Waits { get; } = [];
+
+            public Task WaitAsync(string host, CancellationToken ct = default)
+                => WaitAsync(host, CoverFetchPriority.Background, ct);
+
+            public Task WaitAsync(string host, CoverFetchPriority priority, CancellationToken ct = default)
+            {
+                Waits.Add((host, priority));
+                return Task.CompletedTask;
+            }
+
+            public void Dispose() { }
+        }
+
+        private sealed class RecordingHttpMessageHandler : HttpMessageHandler
+        {
+            private readonly byte[] _response;
+            public List<Uri> RequestedUris { get; } = [];
+
+            public RecordingHttpMessageHandler(byte[] response)
+            {
+                _response = response;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (request.RequestUri is not null)
+                {
+                    RequestedUris.Add(request.RequestUri);
+                }
+                HttpResponseMessage message = new(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent(_response)
+                };
+                return Task.FromResult(message);
+            }
+        }
+
+        private sealed class RecordingHttpClientFactory : IHttpClientFactory
+        {
+            private readonly HttpMessageHandler _handler;
+
+            public RecordingHttpClientFactory(HttpMessageHandler handler)
+            {
+                _handler = handler;
+            }
+
+            public HttpClient CreateClient(string name) => new(_handler, disposeHandler: false);
         }
     }
 }

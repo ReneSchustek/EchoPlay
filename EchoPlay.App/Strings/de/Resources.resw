@@ -469,6 +469,18 @@
   <data name="SucheFirstRunHint.Message" xml:space="preserve">
     <value>Suche nach einer Hörspielserie, um sie zu importieren und zu abonnieren.</value>
   </data>
+  <data name="SucheSpotifyFallbackHint.Title" xml:space="preserve">
+    <value>Spotify-Zugangsdaten fehlen</value>
+  </data>
+  <data name="SucheSpotifyFallbackHint.Message" xml:space="preserve">
+    <value>Treffer kommen aus Apple Music. Spotify nutzt du, sobald du unter Einstellungen → Online Zugangsdaten hinterlegst.</value>
+  </data>
+  <data name="OnlineSpotifyFallbackHint.Title" xml:space="preserve">
+    <value>Spotify-Zugangsdaten fehlen</value>
+  </data>
+  <data name="OnlineSpotifyFallbackHint.Message" xml:space="preserve">
+    <value>Treffer kommen aus Apple Music. Spotify nutzt du, sobald du unter Einstellungen → Online Zugangsdaten hinterlegst.</value>
+  </data>
   <data name="SucheSearchBox.PlaceholderText" xml:space="preserve">
     <value>Serien suchen …</value>
   </data>

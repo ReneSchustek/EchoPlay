@@ -14,6 +14,7 @@ namespace EchoPlay.App.ViewModels
     {
         private IReadOnlyList<SearchResultViewModel> _providerSearchResults = [];
         private bool _isSearchingProvider;
+        private bool _isSpotifyFallbackHintVisible;
         private int _searchTypeIndex;
 
         /// <summary>
@@ -57,10 +58,31 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Gibt an, ob Suchergebnisse vorliegen – wird von den Top-VM-Visibilities gelesen.</summary>
         public bool HasResults => _providerSearchResults.Count > 0;
 
+        /// <summary>
+        /// Signalisiert, dass die zuletzt gelaufene Provider-Suche wegen fehlender Spotify-Credentials
+        /// auf Apple Music zurückgefallen ist. UI zeigt eine InfoBar, solange der Zustand hält.
+        /// </summary>
+        public bool IsSpotifyFallbackHintVisible
+        {
+            get => _isSpotifyFallbackHintVisible;
+            set
+            {
+                if (SetProperty(ref _isSpotifyFallbackHintVisible, value))
+                {
+                    OnPropertyChanged(nameof(SpotifyFallbackHintVisibility));
+                }
+            }
+        }
+
+        /// <summary>Sichtbarkeit des Spotify-Fallback-Hinweises für die XAML-Bindung.</summary>
+        public Visibility SpotifyFallbackHintVisibility =>
+            _isSpotifyFallbackHintVisible ? Visibility.Visible : Visibility.Collapsed;
+
         /// <summary>Leert die Suchergebnisse – z.B. nach einem Import oder beim Clear des Suchfelds.</summary>
         public void ClearResults()
         {
             ProviderSearchResults = [];
+            IsSpotifyFallbackHintVisible = false;
         }
     }
 }

@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -10,37 +8,13 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Analysiert die Helligkeit eines Cover-Bildes in der oberen linken Ecke.
-    /// Separater Service statt ViewModel-Methode, damit WinRT-COM-Typen
+    /// Statische Utility-Klasse – die WinRT-COM-Typen
     /// (<see cref="BitmapDecoder"/>, <see cref="InMemoryRandomAccessStream"/>)
-    /// nicht beim Laden des ViewModels initialisiert werden – das würde in
-    /// Unit-Tests ohne WinUI-Hosting eine COM-Exception auslösen.
+    /// werden nur bei tatsächlichem Aufruf instanziiert, damit Unit-Tests ohne
+    /// WinUI-Hosting nicht beim Laden des ViewModels eine COM-Exception auslösen.
     /// </summary>
-    public class CoverBrightnessAnalyzer
+    public static class CoverBrightnessAnalyzer
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-
-        /// <summary>
-        /// Initialisiert den Analyzer mit der HTTP-Client-Fabrik.
-        /// </summary>
-        /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
-        public CoverBrightnessAnalyzer(IHttpClientFactory httpClientFactory)
-        {
-            _httpClientFactory = httpClientFactory;
-        }
-
-        /// <summary>
-        /// Lädt ein Bild von einer URL als Byte-Array herunter.
-        /// </summary>
-        /// <param name="url">Die Bild-URL.</param>
-        /// <returns>Die rohen Bilddaten.</returns>
-        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "URL stammt aus externen Cover-Quellen (Apple Music/Spotify/DB) und wird als string verwaltet.")]
-        public async Task<byte[]> DownloadAsync(string url)
-        {
-            HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-            return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute)).ConfigureAwait(false);
-        }
-
         /// <summary>
         /// Analysiert die durchschnittliche Helligkeit im Bereich oben links (30×30 px)
         /// eines bereits heruntergeladenen Cover-Bildes.

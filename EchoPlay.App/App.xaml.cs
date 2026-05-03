@@ -258,6 +258,8 @@ namespace EchoPlay.App
             // Hintergrund-Services graceful stoppen, bevor der Host die Singletons disposed.
             // Jeder Service bekommt 5 Sekunden, um seine laufende Iteration zu beenden —
             // danach wird hart abgebrochen (StopAsync loggt die Überschreitung selbst).
+            // Sync-over-async ist hier der einzige Weg, weil OnWindowClosed im Shutdown nicht
+            // async sein kann und kein UI-SynchronizationContext mehr existiert (kein Deadlock).
             try
             {
                 TimeSpan stopTimeout = TimeSpan.FromSeconds(5);
@@ -663,7 +665,6 @@ namespace EchoPlay.App
             // Eigener Service statt Teil von ImportService, damit die LocalLibrary-Assembly
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
             _ = builder.Services.AddSingleton<EpisodeCoverCacheService>();
-            _ = builder.Services.AddSingleton<CoverBrightnessAnalyzer>();
             _ = builder.Services.AddSingleton<CoverService>();
             _ = builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
             _ = builder.Services.AddSingleton<BackgroundCoverService>();
@@ -736,7 +737,6 @@ namespace EchoPlay.App
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IOnlineAccessGuard>(),
                 provider.GetRequiredService<IHttpClientFactory>(),
-                provider.GetRequiredService<CoverBrightnessAnalyzer>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<CoverService>(),
                 provider.GetRequiredService<BackgroundCoverService>(),
@@ -773,7 +773,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<INavigationService>(),
                 provider.GetRequiredService<IPageModeGuard>(),
-                provider.GetRequiredService<CoverBrightnessAnalyzer>()));
+                provider.GetRequiredService<BackgroundCoverService>()));
             _ = builder.Services.AddTransient<PlayerViewModel>();
             _ = builder.Services.AddTransient<SeriesDetailViewModel>();
             // App-Services für Settings: Verbindungstest und Log-Viewer sind nach Brief 211

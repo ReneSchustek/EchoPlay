@@ -62,10 +62,25 @@ namespace EchoPlay.AppleMusic.Clients
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
                 await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
 
-            // Lookup-Antworten enthalten den Künstler als erstes Element
+            // Brief 268: Lookup-Antworten enthalten neben den eigenen Alben gelegentlich auch
+            // Compilation-/Various-Artists-Einträge mit fremder ArtistId (z. B. Sammlungen,
+            // bei denen der gesuchte Künstler nur als Featured-Beitrag auftaucht). Ohne den
+            // strikten ArtistId-Filter würden deren Tracks als Episoden der gesuchten Serie
+            // importiert. Wir behalten daher nur Alben, deren ArtistId exakt der angefragten
+            // Lookup-ID entspricht.
             List<ITunesCollectionDto> albums = albumsResponse.Results
-                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
+                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase)
+                            && r.ArtistId == artistId)
                 .ToList();
+
+            int foreignAlbums = albumsResponse.Results
+                .Count(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase)
+                            && r.ArtistId != artistId);
+
+            if (foreignAlbums > 0)
+            {
+                _logger.Warning($"Apple-Music-Lookup für Künstler '{sourceSeriesId}' enthielt {foreignAlbums} fremde Alben (ArtistId weicht ab) – wurden ausgefiltert.");
+            }
 
             if (albums.Count == 0)
             {

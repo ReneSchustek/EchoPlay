@@ -7,6 +7,7 @@ using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -30,19 +31,30 @@ namespace EchoPlay.App.Tests.ViewModels
         private static ImportService BuildImportService(
             IReadOnlyList<ImportSeries> searchResults,
             FakeSeriesDataService seriesService,
-            ISeriesImportSearch? overrideSearch = null)
+            ISeriesImportSearch? overrideSearch = null,
+            ProviderType activeProvider = ProviderType.Spotify,
+            FakeSpotifyClientCredentialsProvider? credentialsProvider = null,
+            FakeSeriesImportSearch? appleMusicSearch = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
-                new AppSettings { ActiveProvider = ProviderType.Spotify }));
+                new AppSettings { ActiveProvider = activeProvider }));
             _ = services.AddKeyedScoped<ISeriesImportSearch>(
                 "Spotify",
                 (_, _) => overrideSearch ?? new FakeSeriesImportSearch(searchResults));
+            _ = services.AddKeyedScoped<ISeriesImportSearch>(
+                "AppleMusic",
+                (_, _) => appleMusicSearch ?? new FakeSeriesImportSearch([], "AppleMusic"));
             _ = services.AddKeyedScoped<IEpisodeImportSource>(
                 "Spotify",
                 (_, _) => new FakeEpisodeImportSource([]));
+            _ = services.AddKeyedScoped<IEpisodeImportSource>(
+                "AppleMusic",
+                (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
+                credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
 
             _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
@@ -62,10 +74,15 @@ namespace EchoPlay.App.Tests.ViewModels
             IReadOnlyList<ImportSeries> searchResults,
             FakeSeriesDataService? seriesService = null,
             ISeriesImportSearch? overrideSearch = null,
-            IServiceScopeFactory? scopeFactory = null)
+            IServiceScopeFactory? scopeFactory = null,
+            FakeSpotifyClientCredentialsProvider? credentialsProvider = null,
+            FakeSeriesImportSearch? appleMusicSearch = null)
         {
             FakeSeriesDataService series = seriesService ?? new FakeSeriesDataService();
-            ImportService importService = BuildImportService(searchResults, series, overrideSearch);
+            ImportService importService = BuildImportService(
+                searchResults, series, overrideSearch,
+                credentialsProvider: credentialsProvider,
+                appleMusicSearch: appleMusicSearch);
             return new SucheViewModel(importService, new FakeErrorDialogService(), new FakeLocalizationService(), scopeFactory);
         }
 
@@ -292,6 +309,127 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // TKKG (online) + Fünf Freunde (lokal) = 2 Ergebnisse
             Assert.Equal(2, vm.Results.Count);
+        }
+
+        [Fact]
+        public async Task SearchCommand_SetsSpotifyFallbackHintVisible_WhenCredentialsMissing()
+        {
+            // Spotify aktiv ohne Credentials → InfoBar soll sichtbar werden, Treffer kommen aus Apple Music.
+            List<ImportSeries> appleResults =
+            [
+                new ImportSeries { Title = "Apple-Treffer", Source = "AppleMusic", SourceSeriesId = "am1" }
+            ];
+
+            SucheViewModel vm = BuildViewModel(
+                searchResults: [],
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing(),
+                appleMusicSearch: new FakeSeriesImportSearch(appleResults, "AppleMusic"));
+
+            vm.SelectedScopeIndex = 1; // Online
+            vm.SearchText = "query";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            Assert.True(vm.IsSpotifyFallbackHintVisible);
+            _ = Assert.Single(vm.Results);
+        }
+
+        [Fact]
+        public async Task ResetCommand_ClearsSpotifyFallbackHint()
+        {
+            // Nach einem Fallback-Suchlauf muss Reset den Hinweis wegräumen.
+            SucheViewModel vm = BuildViewModel(
+                searchResults: [],
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing(),
+                appleMusicSearch: new FakeSeriesImportSearch(
+                    [new ImportSeries { Title = "Apple", Source = "AppleMusic", SourceSeriesId = "am1" }],
+                    "AppleMusic"));
+
+            vm.SelectedScopeIndex = 1;
+            vm.SearchText = "query";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+            Assert.True(vm.IsSpotifyFallbackHintVisible);
+
+            vm.ResetCommand.Execute(null);
+
+            Assert.False(vm.IsSpotifyFallbackHintVisible);
+        }
+
+        [Fact]
+        public async Task SearchText_WhenCleared_TriggersReset()
+        {
+            // Setzt der Nutzer den Suchtext (X-Button im AutoSuggestBox oder Tastatur) auf leer,
+            // muss der Setter selbsttaetig die Trefferliste leeren – sonst bleiben Karten stehen.
+            List<ImportSeries> results =
+            [
+                new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "tkkg-1" }
+            ];
+
+            SucheViewModel vm = BuildViewModel(results);
+            vm.SearchText = "TKKG";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            _ = Assert.Single(vm.Results);
+
+            vm.SearchText = string.Empty;
+
+            Assert.Empty(vm.Results);
+            Assert.Equal(string.Empty, vm.SearchText);
+        }
+
+        [Fact]
+        public async Task SearchAsync_ClearsResultsImmediately_BeforeAwait()
+        {
+            // Trefferliste muss noch im selben Frame nach Enter leer sein, BEVOR der HTTP-Call
+            // antwortet – sonst zeigen die Kacheln waehrend der Anfrage die alten Treffer.
+            GatedSeriesImportSearch gated = new();
+            SucheViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
+
+            // Erste Suche bis zum Ende durchziehen, damit Results echte Stale-Daten enthaelt
+            vm.SearchText = "first";
+            vm.SearchCommand.Execute(null);
+            gated.CompleteCall(0,
+                [new ImportSeries { Title = "stale", Source = "Spotify", SourceSeriesId = "s1" }]);
+            await vm.WaitForSearchCompleteAsync();
+            _ = Assert.Single(vm.Results);
+
+            // Zweite Suche starten, Gate bewusst NICHT freigeben – Results muss bereits leer sein
+            vm.SearchText = "second";
+            vm.SearchCommand.Execute(null);
+
+            Assert.Empty(vm.Results);
+            Assert.True(vm.IsLoading);
+
+            gated.CompleteCall(1, []);
+            await vm.WaitForSearchCompleteAsync();
+        }
+
+        [Fact]
+        public async Task SearchAsync_BackToBack_DiscardsOlderResults()
+        {
+            // Zwei Suchen ohne Pause: die zweite verdraengt die erste, die spaet eintreffenden
+            // Stale-Treffer der ersten duerfen die UI nicht mehr ueberschreiben.
+            GatedSeriesImportSearch gated = new();
+            SucheViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
+
+            vm.SearchText = "first";
+            vm.SearchCommand.Execute(null);
+
+            vm.SearchText = "second";
+            vm.SearchCommand.Execute(null);
+
+            // Aelteren Aufruf zuerst abschliessen – seine Treffer sind veraltet
+            gated.CompleteCall(0,
+                [new ImportSeries { Title = "stale", Source = "Spotify", SourceSeriesId = "s1" }]);
+            gated.CompleteCall(1,
+                [new ImportSeries { Title = "fresh", Source = "Spotify", SourceSeriesId = "f1" }]);
+
+            await vm.WaitForSearchCompleteAsync();
+
+            _ = Assert.Single(vm.Results);
+            Assert.Equal("fresh", vm.Results[0].Title);
         }
 
         /// <summary>

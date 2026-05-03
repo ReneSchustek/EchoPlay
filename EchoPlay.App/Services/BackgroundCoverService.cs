@@ -32,6 +32,7 @@ namespace EchoPlay.App.Services
         private readonly ISpotifyCredentialStore _credentialStore;
         private readonly BackgroundCoverServiceOptions _options;
         private readonly ILogger _logger;
+        private readonly IHostRateLimiter? _rateLimiter;
         private CancellationTokenSource? _cts;
         private Task? _backgroundTask;
         private int _priorityInFlight;
@@ -57,7 +58,8 @@ namespace EchoPlay.App.Services
             IHttpClientFactory httpClientFactory,
             ISpotifyCredentialStore credentialStore,
             BackgroundCoverServiceOptions options,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IHostRateLimiter? rateLimiter = null)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
@@ -66,6 +68,7 @@ namespace EchoPlay.App.Services
             _credentialStore = credentialStore;
             _options = options;
             _logger = loggerFactory.CreateLogger("BackgroundCoverService");
+            _rateLimiter = rateLimiter;
         }
 
         /// <summary>
@@ -973,6 +976,91 @@ namespace EchoPlay.App.Services
             }
         }
 
+        /// <summary>
+        /// Lädt das Cover für ein Such-Treffer-Element. Erst DB-First (falls die Serie
+        /// bereits in der lokalen Bibliothek existiert und dort ein Cover hinterlegt ist),
+        /// danach Provider-URL über <see cref="IHostRateLimiter"/> mit
+        /// <see cref="CoverFetchPriority.Foreground"/>. Markiert den Service als
+        /// "Foreground aktiv", sodass der Hintergrund-Loop pausiert. Persistiert das
+        /// Cover **nicht** in <c>CoverImages</c> – Such-Treffer sind noch nicht importiert.
+        /// </summary>
+        /// <param name="source">Provider-Schlüssel ("Spotify" oder "AppleMusic"). Andere Werte verhindern den DB-Lookup.</param>
+        /// <param name="sourceSeriesId">Provider-spezifische Serien-ID (Spotify-Artist-ID oder iTunes-Artist-ID).</param>
+        /// <param name="coverUrl">Cover-URL aus dem Such-Treffer.</param>
+        /// <param name="ct">Abbruch-Token der laufenden Suche.</param>
+        /// <returns>Cover-Bytes oder <see langword="null"/> bei Fehler/Abbruch ohne Daten.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "Cover-URL stammt aus DTO der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie DownloadSafeAsync).")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Such-Treffer-Cover: HTTP-/Timeout-/TLS-Fehler einer einzelnen Provider-URL werden zu null normalisiert, damit die Trefferkachel den Platzhalter behält und die anderen Treffer weiterlaufen.")]
+        public virtual async Task<byte[]?> RequestCoverForSearchResultAsync(
+            string source, string sourceSeriesId, string coverUrl, CancellationToken ct = default)
+        {
+            if (string.IsNullOrEmpty(coverUrl)) return null;
+
+            byte[]? cached = await TryGetCachedSeriesCoverAsync(source, sourceSeriesId).ConfigureAwait(false);
+            if (cached is not null) return cached;
+
+            if (!Uri.TryCreate(coverUrl, UriKind.Absolute, out Uri? uri)) return null;
+
+            _ = Interlocked.Increment(ref _priorityInFlight);
+            try
+            {
+                if (_rateLimiter is not null)
+                {
+                    await _rateLimiter.WaitAsync(uri.Host, CoverFetchPriority.Foreground, ct).ConfigureAwait(false);
+                }
+
+                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
+                byte[] data = await client.GetByteArrayAsync(uri, ct).ConfigureAwait(false);
+                return data.Length > 0 ? data : null;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug($"Such-Treffer-Cover-Download fehlgeschlagen: {ex.Message} URL={coverUrl}");
+                return null;
+            }
+            finally
+            {
+                _ = Interlocked.Decrement(ref _priorityInFlight);
+            }
+        }
+
+        /// <summary>
+        /// Findet eine bereits importierte Serie über ihre Provider-Quell-ID und liefert
+        /// deren persistiertes Cover aus <c>CoverImages</c>. Liefert <see langword="null"/>,
+        /// wenn die Serie noch nicht importiert ist oder die Quelle unbekannt ist.
+        /// </summary>
+        private async Task<byte[]?> TryGetCachedSeriesCoverAsync(string source, string sourceSeriesId)
+        {
+            if (string.IsNullOrEmpty(sourceSeriesId)) return null;
+
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ISeriesDataService seriesService = scope.ServiceProvider
+                .GetRequiredService<ISeriesDataService>();
+            ICoverImageDataService coverImageService = scope.ServiceProvider
+                .GetRequiredService<ICoverImageDataService>();
+
+            Series? series = source switch
+            {
+                "Spotify" => await seriesService.GetBySpotifyArtistIdAsync(sourceSeriesId).ConfigureAwait(false),
+                "AppleMusic" => await seriesService.GetByAppleMusicArtistIdAsync(sourceSeriesId).ConfigureAwait(false),
+                _ => null
+            };
+
+            if (series is null) return null;
+
+            CoverImage? cover = await coverImageService
+                .GetByEntityAsync(CoverEntityTypes.Series, series.Id)
+                .ConfigureAwait(false);
+
+            return cover?.ImageData is { Length: > 0 } bytes ? bytes : null;
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -981,18 +1069,37 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Gibt die CancellationTokenSource des Hintergrund-Loops frei. Abgeleitete Typen
-        /// können überschreiben, dürfen aber den Cleanup-Pfad der Basis (<c>base.Dispose(disposing)</c>)
-        /// nicht auslassen.
+        /// Gibt die CancellationTokenSource und den laufenden Hintergrund-Task frei.
+        /// Wartet kurz auf das Ende der aktuellen Iteration, damit kein Service-Scope
+        /// als Closure im Task-State-Machine hängen bleibt (Brief 269). Abgeleitete
+        /// Typen können überschreiben, dürfen aber den Cleanup-Pfad der Basis
+        /// (<c>base.Dispose(disposing)</c>) nicht auslassen.
         /// </summary>
         /// <param name="disposing"><see langword="true"/> bei deterministischem Dispose; <see langword="false"/> beim Finalizer.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Dispose-Pfad: AggregateException/ObjectDisposedException aus dem abgebrochenen Hintergrund-Task duerfen den Shutdown nicht zerlegen, weil der Service als Singleton meist im App-Exit disposed wird.")]
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;
 
-            _cts?.Cancel();
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException)
+            {
+                // Race im App-Exit: CTS wurde parallel bereits disposed – Cancel ist dann ein No-Op.
+            }
+
+            // 2 s sind ein Kompromiss: Task.Delay-Iterationen schlafen 30 min,
+            // ein laufendes RunOnceAsync braucht selten so lange — länger warten würde
+            // den App-Exit blockieren.
+            try { _ = _backgroundTask?.Wait(TimeSpan.FromSeconds(2)); }
+            catch (Exception)
+            {
+                // AggregateException (Cancel) oder Timeout im Shutdown sind erwartet – Dispose darf hier nicht werfen.
+            }
+
             _cts?.Dispose();
             _cts = null;
+            _backgroundTask = null;
         }
     }
 }

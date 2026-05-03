@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -20,7 +22,7 @@ namespace EchoPlay.App.ViewModels
     /// stellt die Ergebnisliste für die UI bereit.
     /// Der aktive Suchbereich (Online, Lokal, Beide) wird über <see cref="SelectedScopeIndex"/> gesteuert.
     /// </summary>
-    public sealed class SucheViewModel : ObservableObject
+    public sealed class SucheViewModel : ObservableObject, IDisposable
     {
         private readonly ImportService _importService;
         private readonly IErrorDialogService _errorDialogService;
@@ -35,17 +37,30 @@ namespace EchoPlay.App.ViewModels
         // Page-Mode-Guard prüft den Offline-Modus beim Betreten der Page; null in Tests
         private readonly IPageModeGuard? _pageModeGuard;
 
-        // Cover-Helligkeitsanalyse und Download – in Tests optional
-        private readonly CoverBrightnessAnalyzer? _coverBrightnessAnalyzer;
+        // Zentrale Cover-Pipeline: ersetzt den direkten Provider-URL-Download in den
+        // Trefferkarten und sorgt für DB-First-Lookup, Foreground-Priorität und Rate-Limiter.
+        private readonly BackgroundCoverService? _backgroundCoverService;
 
         private string _searchText = string.Empty;
         private bool _isLoading;
         private bool _hasSearched;
         private bool _isOnboardingHintVisible;
         private bool _showSuccessHint;
+        private bool _isSpotifyFallbackHintVisible;
         private int _selectedScopeIndex;
         private IReadOnlyList<SearchResultViewModel> _results = [];
-        private TaskCompletionSource<bool>? _searchCompletedSource;
+
+        // Liste statt Single-TCS: bei Back-to-Back-Suchen laufen mehrere Aufrufe parallel,
+        // die alle abgewartet werden müssen – der älteste verwirft seine Ergebnisse, der
+        // neueste schreibt sie. Tests warten ueber WaitForSearchCompleteAsync auf alle.
+        private readonly object _inflightSearchesLock = new();
+        private readonly List<TaskCompletionSource<bool>> _inflightSearches = [];
+
+        // Pro Suche neu erzeugt; canceln und disposen am Anfang der nächsten Suche oder
+        // beim Reset/CancelPendingSearchCovers, damit alte Cover-Loads keine HTTP-Requests
+        // für vergessene Treffer mehr starten und damit Treffer obsolet gewordener Suchen
+        // nicht mehr in die UI geschrieben werden.
+        private CancellationTokenSource? _searchCoversCts;
 
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Services.
@@ -66,10 +81,9 @@ namespace EchoPlay.App.ViewModels
         /// Optionaler Page-Mode-Guard – prüft den Offline-Modus beim Betreten der Page.
         /// In Tests kann der Parameter weggelassen werden, dann wird der Check übersprungen.
         /// </param>
-        /// <param name="coverBrightnessAnalyzer">
-        /// Optionaler Helligkeitsanalysator für Cover-Bilder. Wird an
-        /// <see cref="SearchResultViewModel"/> weitergereicht. In Tests kann der Parameter
-        /// weggelassen werden.
+        /// <param name="backgroundCoverService">
+        /// Optionale zentrale Cover-Pipeline. Wird an <see cref="SearchResultViewModel"/>
+        /// weitergereicht; bei <see langword="null"/> bleiben die Trefferkacheln ohne Cover.
         /// </param>
         public SucheViewModel(
             ImportService importService,
@@ -78,7 +92,7 @@ namespace EchoPlay.App.ViewModels
             IServiceScopeFactory? scopeFactory = null,
             INavigationService? navigationService = null,
             IPageModeGuard? pageModeGuard = null,
-            CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null)
+            BackgroundCoverService? backgroundCoverService = null)
         {
             _importService = importService;
             _errorDialogService = errorDialogService;
@@ -86,7 +100,7 @@ namespace EchoPlay.App.ViewModels
             _scopeFactory = scopeFactory;
             _navigationService = navigationService;
             _pageModeGuard = pageModeGuard;
-            _coverBrightnessAnalyzer = coverBrightnessAnalyzer;
+            _backgroundCoverService = backgroundCoverService;
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
             ResetCommand = new RelayCommand(Reset);
@@ -162,11 +176,20 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Sucheingabe des Nutzers. Wird im TwoWay-Binding mit der AutoSuggestBox verknüpft.
+        /// Beim Leerwerden (eingebauter X-Button der AutoSuggestBox oder vollstaendiges
+        /// Loeschen per Tastatur) loest der Setter automatisch <see cref="Reset"/> aus,
+        /// damit Treffer und Status-Hinweise sofort verschwinden.
         /// </summary>
         public string SearchText
         {
             get => _searchText;
-            set => SetProperty(ref _searchText, value);
+            set
+            {
+                if (SetProperty(ref _searchText, value) && string.IsNullOrWhiteSpace(value))
+                {
+                    Reset();
+                }
+            }
         }
 
         /// <summary>
@@ -221,9 +244,27 @@ namespace EchoPlay.App.ViewModels
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-        /// <summary>Wartet auf den Abschluss der laufenden Suchanfrage (für deterministische Tests).</summary>
+        /// <summary>
+        /// Wartet auf den Abschluss aller aktuell laufenden Suchanfragen (für deterministische Tests).
+        /// Snapshottet die Liste der laufenden Such-TCS, damit Back-to-Back-Suchen vollstaendig
+        /// abgewartet werden koennen – auch dann, wenn die aeltere Suche aufgrund eines Token-Cancels
+        /// kurz vor dem Abschluss steht.
+        /// </summary>
         internal Task WaitForSearchCompleteAsync()
-            => _searchCompletedSource?.Task ?? Task.CompletedTask;
+        {
+            Task[] tasks;
+            lock (_inflightSearchesLock)
+            {
+                if (_inflightSearches.Count == 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                tasks = _inflightSearches.Select(tcs => tcs.Task).ToArray();
+            }
+
+            return Task.WhenAll(tasks);
+        }
 
         /// <summary>Startet eine neue Suchanfrage mit dem aktuellen Suchtext.</summary>
         public ICommand SearchCommand { get; }
@@ -252,6 +293,26 @@ namespace EchoPlay.App.ViewModels
             _showSuccessHint ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
+        /// Signalisiert, dass die zuletzt gelaufene Suche wegen fehlender Spotify-Credentials
+        /// auf Apple Music zurückgefallen ist. UI zeigt eine InfoBar, solange der Treffer-Zustand hält.
+        /// </summary>
+        public bool IsSpotifyFallbackHintVisible
+        {
+            get => _isSpotifyFallbackHintVisible;
+            private set
+            {
+                if (SetProperty(ref _isSpotifyFallbackHintVisible, value))
+                {
+                    OnPropertyChanged(nameof(SpotifyFallbackHintVisibility));
+                }
+            }
+        }
+
+        /// <summary>Sichtbarkeit des Spotify-Fallback-Hinweises für die XAML-Bindung.</summary>
+        public Visibility SpotifyFallbackHintVisibility =>
+            _isSpotifyFallbackHintVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
         /// Wird von <see cref="SearchResultViewModel"/> nach erfolgreichem Hinzufügen aufgerufen.
         /// </summary>
         public void NotifySeriesAdded()
@@ -275,40 +336,68 @@ namespace EchoPlay.App.ViewModels
         /// Führt die Suche gemäß dem aktiven Suchbereich durch, prüft den Import-Status
         /// jedes Ergebnisses und befüllt die <see cref="Results"/>-Liste.
         /// Online- und lokale Ergebnisse werden bei Bedarf zusammengeführt.
+        ///
+        /// Reset-/Abbruch-Disziplin (Brief 267): Trefferliste und Status-Hinweise werden
+        /// noch vor dem ersten <c>await</c> geleert, damit alte Karten verschwinden bevor
+        /// der HTTP-Call startet. Der <see cref="StartNewCoverScope"/>-Token markiert
+        /// zugleich obsolete Suchen – nach jedem Await prueft der Code, ob inzwischen eine
+        /// neue Suche begonnen hat und verwirft dann die eigenen Ergebnisse.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Such-Command der Suche-Seite: Provider-HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status gespiegelt, damit der Command nicht reisst.")]
         private async Task SearchAsync()
         {
-            if (_isLoading || string.IsNullOrWhiteSpace(_searchText))
+            if (string.IsNullOrWhiteSpace(_searchText))
             {
                 return;
             }
 
-            _searchCompletedSource = new TaskCompletionSource<bool>(
+            TaskCompletionSource<bool> completedSource = new(
                 TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (_inflightSearchesLock)
+            {
+                _inflightSearches.Add(completedSource);
+            }
 
-            _hasSearched = false;
-            IsLoading = true;
+            // Cancel + neuer CTS: aktuelle Suche wird zum Inhaber des Tokens, alle aelteren
+            // Suchen sehen ab hier IsCancellationRequested == true und verwerfen ihre Treffer.
+            CancellationToken coverToken = StartNewCoverScope();
 
-            // Onboarding-Hinweis ausblenden, sobald der Nutzer aktiv sucht
-            IsOnboardingHintVisible = false;
-
+            // Sucheingabe einfrieren, damit nachtraegliche Aenderungen am Feld waehrend
+            // der laufenden Anfrage den Treffer-Build nicht verfaelschen.
+            string searchText = _searchText;
             SearchSource scope = SelectedScope;
+
+            // Sofort-Reset der Trefferansicht VOR dem ersten Await – die UI zeigt sofort
+            // Loader plus leere Liste, alte Karten verschwinden noch im selben Frame.
+            _hasSearched = false;
+            ReleaseCurrentResults();
+            Results = [];
+            ShowSuccessHint = false;
+            IsOnboardingHintVisible = false;
+            IsSpotifyFallbackHintVisible = false;
+            IsLoading = true;
 
             try
             {
                 List<SearchResultViewModel> viewModels = [];
 
-                // Online-Suche: via aktivem Provider (Spotify oder Apple Music)
                 if (scope is SearchSource.Online or SearchSource.Both)
                 {
-                    // Parallel nach Serien (Artists) und Folgen (Alben) suchen
-                    IReadOnlyList<ImportSeries> seriesResults = await _importService.SearchAsync(_searchText);
-                    IReadOnlyList<ImportSeries> albumResults = await _importService.SearchAlbumsAsync(_searchText);
+                    SearchOutcome seriesOutcome = await _importService.SearchAsync(searchText);
+                    if (coverToken.IsCancellationRequested) return;
+
+                    SearchOutcome albumsOutcome = await _importService.SearchAlbumsAsync(searchText);
+                    if (coverToken.IsCancellationRequested) return;
+
+                    IsSpotifyFallbackHintVisible =
+                        seriesOutcome.SpotifyFallbackApplied || albumsOutcome.SpotifyFallbackApplied;
+
+                    IReadOnlyList<ImportSeries> seriesResults = seriesOutcome.Results;
+                    IReadOnlyList<ImportSeries> albumResults = albumsOutcome.Results;
 
                     // Zusammenführen und nach Relevanz sortieren:
                     // Treffer mit Suchbegriff im Titel/Künstler zuerst, dann nach Score
-                    string searchLower = _searchText.ToUpperInvariant();
+                    string searchLower = searchText.ToUpperInvariant();
                     List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
                     combined.AddRange(seriesResults);
                     combined.AddRange(albumResults);
@@ -328,19 +417,27 @@ namespace EchoPlay.App.ViewModels
                         bool alreadyImported = series.IsAlbumResult
                             ? false
                             : await _importService.IsAlreadyImportedAsync(series);
-                        viewModels.Add(new SearchResultViewModel(series, alreadyImported, _importService, _errorDialogService, _localizationService, _coverBrightnessAnalyzer, this));
+                        if (coverToken.IsCancellationRequested) return;
+
+                        viewModels.Add(new SearchResultViewModel(
+                            series, alreadyImported, _importService, _errorDialogService,
+                            _localizationService, _backgroundCoverService,
+                            parentViewModel: this, cancellationToken: coverToken));
                     }
                 }
 
-                // Lokale Suche: direkt aus der Datenbank – kein Netzwerk-Aufruf erforderlich
                 if (scope is SearchSource.Local or SearchSource.Both)
                 {
-                    IReadOnlyList<ImportSeries> localResults = await SearchLocalAsync(_searchText);
+                    IReadOnlyList<ImportSeries> localResults = await SearchLocalAsync(searchText);
+                    if (coverToken.IsCancellationRequested) return;
 
                     foreach (ImportSeries series in localResults)
                     {
                         // Lokale Einträge existieren bereits in der DB – Import-Button wäre hier nicht sinnvoll
-                        viewModels.Add(new SearchResultViewModel(series, true, _importService, _errorDialogService, _localizationService, _coverBrightnessAnalyzer));
+                        viewModels.Add(new SearchResultViewModel(
+                            series, true, _importService, _errorDialogService,
+                            _localizationService, _backgroundCoverService,
+                            cancellationToken: coverToken));
                     }
                 }
 
@@ -349,13 +446,26 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
+                // Obsolete Suche: Fehler nicht mehr anzeigen – die neue Suche bestimmt den Status.
+                if (coverToken.IsCancellationRequested) return;
+
                 await _errorDialogService.ShowAsync(
                     _localizationService.Get("OnlineSearchFailedTitle"), ex.Message);
             }
             finally
             {
-                IsLoading = false;
-                _ = _searchCompletedSource?.TrySetResult(true);
+                // Loader nur zuruecksetzen, wenn diese Suche noch die aktuelle ist –
+                // sonst flackert der Spinner beim Back-to-Back-Wechsel zwischen den Suchen.
+                if (!coverToken.IsCancellationRequested)
+                {
+                    IsLoading = false;
+                }
+
+                lock (_inflightSearchesLock)
+                {
+                    _ = _inflightSearches.Remove(completedSource);
+                }
+                _ = completedSource.TrySetResult(true);
             }
         }
 
@@ -397,15 +507,77 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Setzt Suchfeld, Ergebnisliste und Statusanzeigen zurück.
+        /// Setzt Suchfeld, Ergebnisliste und Statusanzeigen zurück. Bricht laufende
+        /// Cover-Loads ab und macht zugleich eine eventuell noch laufende Suche obsolet,
+        /// damit keine HTTP-Requests fuer die geleerte Trefferliste im Hintergrund
+        /// weiterlaufen oder spaet eintreffende Treffer in die Liste geschrieben werden.
+        ///
+        /// Setzt das Such-Feld direkt, ohne den <see cref="SearchText"/>-Setter aufzurufen,
+        /// um die Reset-Schleife (Setter ruft Reset bei Leereingabe) zu vermeiden.
         /// </summary>
         private void Reset()
         {
-            SearchText = string.Empty;
+            CancelPendingSearchCovers();
+
+            if (_searchText.Length > 0)
+            {
+                _searchText = string.Empty;
+                OnPropertyChanged(nameof(SearchText));
+            }
+
+            ReleaseCurrentResults();
             Results = [];
             _hasSearched = false;
             ShowSuccessHint = false;
+            IsSpotifyFallbackHintVisible = false;
             OnPropertyChanged(nameof(EmptyStateVisibility));
+        }
+
+        // Pro Treffer ein BitmapImage; ohne Freigabe steigen die Heap-Bytes nach jeder
+        // Suche an, weil die Bindings die alten Karten noch kurz halten (Brief 269).
+        private void ReleaseCurrentResults()
+        {
+            foreach (SearchResultViewModel result in _results)
+            {
+                result.ClearCoverImage();
+            }
+        }
+
+        /// <summary>
+        /// Bricht alle laufenden Cover-Lade-Operationen der aktuellen Trefferliste ab.
+        /// Wird beim Verlassen der Page oder vor dem Start einer neuen Suche aufgerufen.
+        /// </summary>
+        public void CancelPendingSearchCovers()
+        {
+            CancellationTokenSource? old = _searchCoversCts;
+            _searchCoversCts = null;
+            if (old is null) return;
+
+            try { old.Cancel(); }
+            catch (ObjectDisposedException)
+            {
+                // CTS war bereits disposed – Cancel ist dann ein No-Op, der weiter unten folgende
+                // Dispose-Aufruf ist idempotent. Bewusster Schluck ohne Logging.
+            }
+            old.Dispose();
+        }
+
+        /// <summary>
+        /// Beendet den vorherigen Cover-Scope (Cancel + Dispose) und liefert das Token
+        /// einer frischen <see cref="CancellationTokenSource"/> für die neue Suche.
+        /// </summary>
+        private CancellationToken StartNewCoverScope()
+        {
+            CancelPendingSearchCovers();
+            _searchCoversCts = new CancellationTokenSource();
+            return _searchCoversCts.Token;
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            CancelPendingSearchCovers();
+            ReleaseCurrentResults();
         }
     }
 }

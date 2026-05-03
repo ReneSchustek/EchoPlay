@@ -44,7 +44,6 @@ namespace EchoPlay.App.ViewModels
             ILocalizationService localizationService,
             IOnlineAccessGuard onlineAccessGuard,
             IHttpClientFactory httpClientFactory,
-            CoverBrightnessAnalyzer? coverBrightnessAnalyzer = null,
             EpisodeCoverCacheService? coverCacheService = null,
             CoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null,
@@ -74,7 +73,6 @@ namespace EchoPlay.App.ViewModels
                 backgroundCoverService,
                 watchToggleService,
                 httpClientFactory,
-                coverBrightnessAnalyzer,
                 rateLimiter);
 
             _actions = new MediathekOnlineActions(
@@ -282,6 +280,12 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="OnlineProviderSearchViewModel.ProviderSearchResultsVisibility"/>
         public Visibility ProviderSearchResultsVisibility => ProviderSearchVM.ProviderSearchResultsVisibility;
 
+        /// <inheritdoc cref="OnlineProviderSearchViewModel.IsSpotifyFallbackHintVisible"/>
+        public bool IsSpotifyFallbackHintVisible => ProviderSearchVM.IsSpotifyFallbackHintVisible;
+
+        /// <inheritdoc cref="OnlineProviderSearchViewModel.SpotifyFallbackHintVisibility"/>
+        public Visibility SpotifyFallbackHintVisibility => ProviderSearchVM.SpotifyFallbackHintVisibility;
+
         // ── Öffentliche Methoden (Delegation an den Orchestrator) ──────────────
 
         /// <summary>
@@ -378,6 +382,13 @@ namespace EchoPlay.App.ViewModels
                 OnPropertyChanged(nameof(LibraryVisibility));
                 OnPropertyChanged(nameof(SearchTypeFilterVisibility));
                 OnPropertyChanged(nameof(StatusFilterVisibility));
+            }
+
+            if (e.PropertyName is nameof(OnlineProviderSearchViewModel.IsSpotifyFallbackHintVisible)
+                               or nameof(OnlineProviderSearchViewModel.SpotifyFallbackHintVisibility))
+            {
+                OnPropertyChanged(nameof(IsSpotifyFallbackHintVisible));
+                OnPropertyChanged(nameof(SpotifyFallbackHintVisibility));
             }
         }
 

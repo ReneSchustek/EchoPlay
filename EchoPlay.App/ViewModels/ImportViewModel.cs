@@ -131,7 +131,8 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                IReadOnlyList<ImportSeries> found = await _importService.SearchAsync(SearchQuery);
+                SearchOutcome outcome = await _importService.SearchAsync(SearchQuery);
+                IReadOnlyList<ImportSeries> found = outcome.Results;
 
                 List<ImportResultViewModel> rows = new(found.Count);
 

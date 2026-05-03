@@ -4,6 +4,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
+using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -45,12 +46,14 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Sucht nach Hörspielserien beim aktiven Provider laut AppSettings.
-        /// Gibt eine leere Liste zurück, wenn keine Ergebnisse gefunden werden.
+        /// Gibt ein <see cref="SearchOutcome"/> mit leerer Trefferliste zurück, wenn keine Ergebnisse gefunden werden
+        /// oder kein Provider aktiv ist. Fallback auf Apple Music, falls Spotify als aktiver Provider konfiguriert
+        /// ist, aber keine Credentials hinterlegt wurden.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
-        /// <returns>Fachlich bewertete Liste importierbarer Serien.</returns>
+        /// <returns>Trefferliste plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
         /// <exception cref="ArgumentException">Wird geworfen, wenn <paramref name="query"/> leer oder nur Leerzeichen enthält.</exception>
-        public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query)
+        public async Task<SearchOutcome> SearchAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -65,34 +68,65 @@ namespace EchoPlay.App.Services
             // Ohne aktiven Provider kann keine Online-Suche stattfinden.
             if (settings.ActiveProvider == ProviderType.None)
             {
-                return [];
+                return new SearchOutcome([], SpotifyFallbackApplied: false);
             }
 
-            // Both nutzt beim Import Apple Music (kein Spotify-Import im Both-Modus)
-            ProviderType importProvider = settings.ActiveProvider == ProviderType.Both
-                ? ProviderType.AppleMusic
-                : settings.ActiveProvider;
+            (ProviderType importProvider, bool spotifyFallbackApplied) =
+                await ResolveProviderAsync(scope, settings.ActiveProvider);
 
             // Provider-Schlüssel entspricht dem Enum-Namen ("Spotify" / "AppleMusic")
             string providerKey = importProvider.ToString();
             _logger.Debug($"Suche nach \"{query}\" via {providerKey}");
             ISeriesImportSearch search = scope.ServiceProvider.GetRequiredKeyedService<ISeriesImportSearch>(providerKey);
 
-            return await search.SearchAsync(query);
+            IReadOnlyList<ImportSeries> results = await search.SearchAsync(query);
+            return new SearchOutcome(results, spotifyFallbackApplied);
+        }
+
+        /// <summary>
+        /// Wählt den effektiven Provider für einen Suchlauf. Bildet das bestehende Both→AppleMusic-Mapping
+        /// ab und prüft zusätzlich, ob Spotify-Credentials hinterlegt sind. Fehlen sie, wird transparent
+        /// auf Apple Music umgelenkt und ein Warning geloggt — die AppSettings bleiben unverändert.
+        /// </summary>
+        private async Task<(ProviderType ResolvedProvider, bool SpotifyFallbackApplied)> ResolveProviderAsync(
+            IServiceScope scope,
+            ProviderType activeProvider)
+        {
+            ProviderType importProvider = activeProvider == ProviderType.Both
+                ? ProviderType.AppleMusic
+                : activeProvider;
+
+            if (importProvider != ProviderType.Spotify)
+            {
+                return (importProvider, SpotifyFallbackApplied: false);
+            }
+
+            ISpotifyClientCredentialsProvider credentialsProvider =
+                scope.ServiceProvider.GetRequiredService<ISpotifyClientCredentialsProvider>();
+            SpotifyClientCredentials? credentials = await credentialsProvider.GetAsync();
+
+            if (credentials is not null)
+            {
+                return (ProviderType.Spotify, SpotifyFallbackApplied: false);
+            }
+
+            _logger.Warning("Spotify-Credentials fehlen — Suche fällt auf Apple Music zurück.");
+            return (ProviderType.AppleMusic, SpotifyFallbackApplied: true);
         }
 
         /// <summary>
         /// Sucht beim aktiven Provider nach Alben (einzelnen Folgen) anhand eines Suchbegriffs.
         /// Ergänzt die Seriensuche (<see cref="SearchAsync"/>) um die Möglichkeit,
-        /// gezielt nach Folgentiteln zu suchen (z.B. "Kapatenhund").
+        /// gezielt nach Folgentiteln zu suchen (z.B. "Kapatenhund"). Teilt das Spotify→Apple-Music-Fallback-
+        /// Verhalten von <see cref="SearchAsync"/>.
         /// </summary>
         /// <param name="query">Suchbegriff – wird an die Provider-API weitergereicht.</param>
-        /// <returns>Album-Ergebnisse als <see cref="ImportSeries"/> mit <c>IsAlbumResult = true</c>.</returns>
-        public async Task<IReadOnlyList<ImportSeries>> SearchAlbumsAsync(string query)
+        /// <returns>Album-Treffer plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
+        public async Task<SearchOutcome> SearchAlbumsAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
-                return [];
+                return new SearchOutcome([], SpotifyFallbackApplied: false);
             }
 
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -101,13 +135,11 @@ namespace EchoPlay.App.Services
 
             if (settings.ActiveProvider == ProviderType.None)
             {
-                return [];
+                return new SearchOutcome([], SpotifyFallbackApplied: false);
             }
 
-            // Both nutzt beim Import Apple Music (kein Spotify-Import im Both-Modus)
-            ProviderType importProvider = settings.ActiveProvider == ProviderType.Both
-                ? ProviderType.AppleMusic
-                : settings.ActiveProvider;
+            (ProviderType importProvider, bool spotifyFallbackApplied) =
+                await ResolveProviderAsync(scope, settings.ActiveProvider);
 
             _logger.Debug($"Album-Suche nach \"{query}\" via {importProvider}");
 
@@ -118,7 +150,10 @@ namespace EchoPlay.App.Services
                 EchoPlay.Spotify.Abstractions.ISpotifyApiClient? spotifyClient =
                     scope.ServiceProvider.GetService<EchoPlay.Spotify.Abstractions.ISpotifyApiClient>();
 
-                if (spotifyClient is null) return [];
+                if (spotifyClient is null)
+                {
+                    return new SearchOutcome([], spotifyFallbackApplied);
+                }
 
                 IReadOnlyList<EchoPlay.Spotify.Dtos.SpotifyAlbumDto> albums =
                     await spotifyClient.SearchAlbumsAsync(query, 15);
@@ -143,7 +178,10 @@ namespace EchoPlay.App.Services
                 EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient? appleClient =
                     scope.ServiceProvider.GetService<EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient>();
 
-                if (appleClient is null) return [];
+                if (appleClient is null)
+                {
+                    return new SearchOutcome([], spotifyFallbackApplied);
+                }
 
                 EchoPlay.AppleMusic.Dtos.ITunesResponseDto<EchoPlay.AppleMusic.Dtos.ITunesCollectionDto> response =
                     await appleClient.SearchAlbumsAsync(query, 15);
@@ -169,7 +207,7 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            return results;
+            return new SearchOutcome(results, spotifyFallbackApplied);
         }
 
         /// <summary>
@@ -226,22 +264,28 @@ namespace EchoPlay.App.Services
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(importSeries.Source);
             IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId);
 
-            progress?.Report($"Speichere Episoden \u2026 ({episodes.Count})");
+            // Schutzgitter Brief 268: doppelte SourceEpisodeIds (Provider-Duplikate, Re-Releases,
+            // Compilation-Alben mit identischer CollectionId) werden hier idempotent verworfen,
+            // bevor der Insert l\u00e4uft. Ohne diese Stufe entst\u00fcnden bei mehrfacher Auslieferung
+            // derselben Folge mehrere Episode-Zeilen mit identischer Provider-ID.
+            List<ImportEpisode> uniqueEpisodes = DeduplicateBySourceEpisodeId(episodes, importSeries.Title);
+
+            progress?.Report($"Speichere Episoden \u2026 ({uniqueEpisodes.Count})");
 
             // Batch-Insert: ein einziger SaveChangesAsync-Aufruf statt N. Bei einer
             // Hörspielserie mit 200 Folgen ersetzt das 200 DB-Roundtrips durch einen.
-            List<Episode> mappedEpisodes = new(episodes.Count);
-            for (int i = 0; i < episodes.Count; i++)
+            List<Episode> mappedEpisodes = new(uniqueEpisodes.Count);
+            for (int i = 0; i < uniqueEpisodes.Count; i++)
             {
-                mappedEpisodes.Add(MapToEpisode(episodes[i], series.Id));
+                mappedEpisodes.Add(MapToEpisode(uniqueEpisodes[i], series.Id));
             }
 
             await episodeService.AddRangeAsync(mappedEpisodes);
 
-            _logger.Info($"Import abgeschlossen: \"{importSeries.Title}\", {episodes.Count} Episoden");
+            _logger.Info($"Import abgeschlossen: \"{importSeries.Title}\", {uniqueEpisodes.Count} Episoden");
 
             // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
-            _ = _coverCacheService.CacheCoversAsync(series.Id, episodes);
+            _ = _coverCacheService.CacheCoversAsync(series.Id, uniqueEpisodes);
 
             return series.Id;
         }
@@ -374,6 +418,41 @@ namespace EchoPlay.App.Services
             }
 
             return newCount;
+        }
+
+        /// <summary>
+        /// Filtert Episoden mit doppelter <see cref="ImportEpisode.SourceEpisodeId"/> heraus
+        /// und behält nur das erste Vorkommen. Nötig, weil iTunes-Lookups bei Compilation-/
+        /// Various-Artists-Alben dasselbe Album mehrfach liefern können – ohne diese Stufe
+        /// entstünden mehrere Episode-Zeilen mit identischer Provider-ID.
+        /// Loggt eine Warnung, wenn Duplikate verworfen wurden, damit Provider-Anomalien
+        /// im Triage-Log sichtbar bleiben.
+        /// </summary>
+        private List<ImportEpisode> DeduplicateBySourceEpisodeId(
+            IReadOnlyList<ImportEpisode> episodes,
+            string seriesTitle)
+        {
+            HashSet<string> seenIds = new(StringComparer.Ordinal);
+            List<ImportEpisode> unique = new(episodes.Count);
+            int skipped = 0;
+
+            foreach (ImportEpisode episode in episodes)
+            {
+                if (seenIds.Add(episode.SourceEpisodeId))
+                {
+                    unique.Add(episode);
+                    continue;
+                }
+
+                skipped++;
+            }
+
+            if (skipped > 0)
+            {
+                _logger.Warning($"Import: {skipped} doppelte Episoden-Treffer für \"{seriesTitle}\" verworfen.");
+            }
+
+            return unique;
         }
 
         /// <summary>

@@ -261,6 +261,47 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task SelectArtistAsync_SameSeriesTwice_DeselectsOnSecondCall()
+        {
+            // Re-Klick auf bereits ausgewählte Kachel klappt das Akkordeon wieder zu,
+            // analog zum Schließen-Button und identisch zum Online-Mediathek-Verhalten.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+            });
+
+            Guid tkkg = seriesService.All[0].Id;
+
+            await episodeService.AddAsync(new Episode
+            {
+                Title = "Folge 1",
+                SeriesId = tkkg,
+                EpisodeNumber = 1,
+                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalTrackCount = 1
+            });
+
+            MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
+            await vm.LoadAsync();
+
+            await vm.SelectArtistAsync(vm.Artists[0]);
+            Assert.Equal(0, vm.SelectedArtistIndex);
+            Assert.True(vm.Artists[0].IsSelectedInAccordion);
+
+            // Re-Klick auf dieselbe Kachel → Toggle: Auswahl wird aufgehoben.
+            await vm.SelectArtistAsync(vm.Artists[0]);
+
+            Assert.Equal(-1, vm.SelectedArtistIndex);
+            Assert.False(vm.Artists[0].IsSelectedInAccordion);
+            Assert.Equal(Visibility.Collapsed, vm.EpisodesAccordionVisibility);
+            Assert.Empty(vm.Episodes);
+        }
+
+        [Fact]
         public async Task SelectEpisodeAsync_TracksAccordion_BecomesVisible()
         {
             // Nach Auswahl einer Folge muss TracksAccordionVisibility Visible sein

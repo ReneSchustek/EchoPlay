@@ -17,10 +17,32 @@ namespace EchoPlay.Logger.Abstractions
         void Trace(string message);
 
         /// <summary>
+        /// Gibt an, ob mindestens ein Sink Debug-Nachrichten verarbeitet.
+        /// Aufrufer mit teurer Message-Komposition prüfen das Flag, um Allokationen
+        /// zu sparen — alternativ die <see cref="Debug(Func{string})"/>-Overload nutzen.
+        /// </summary>
+        bool IsDebugEnabled { get; }
+
+        /// <summary>
         /// Schreibt eine Debug-Nachricht.
         /// </summary>
         /// <param name="message">Die Log-Nachricht.</param>
         void Debug(string message);
+
+        /// <summary>
+        /// Lazy-Overload: ruft <paramref name="messageFactory"/> nur, wenn
+        /// <see cref="IsDebugEnabled"/> ist. Spart String-Interpolation und Boxing
+        /// in Hot-Pfaden, wenn das Debug-Level nicht aktiv ist.
+        /// </summary>
+        /// <param name="messageFactory">Factory zur lazy Message-Konstruktion.</param>
+        void Debug(Func<string> messageFactory)
+        {
+            ArgumentNullException.ThrowIfNull(messageFactory);
+            if (IsDebugEnabled)
+            {
+                Debug(messageFactory());
+            }
+        }
 
         /// <summary>
         /// Schreibt eine Info-Nachricht.

@@ -26,7 +26,7 @@ namespace EchoPlay.Data.Services
         /// <returns>Alle bekannten lokalen Tracks der Episode.</returns>
         public async Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId)
         {
-            _logger.Debug($"Lade lokale Tracks für Episode '{episodeId}'.");
+            _logger.Debug(() => $"Lade lokale Tracks für Episode '{episodeId}'.");
 
             List<LocalTrack> result = await _context.LocalTracks
 
@@ -34,7 +34,7 @@ namespace EchoPlay.Data.Services
                 .OrderBy(track => track.TrackNumber)
                 .ToListAsync().ConfigureAwait(false);
 
-            _logger.Debug($"{result.Count} Track(s) für Episode '{episodeId}' geladen.");
+            _logger.Debug(() => $"{result.Count} Track(s) für Episode '{episodeId}' geladen.");
 
             return result;
         }
@@ -50,7 +50,7 @@ namespace EchoPlay.Data.Services
                 return new Dictionary<Guid, LocalTrack>();
             }
 
-            _logger.Debug($"Lade erste Tracks für {episodeIds.Count} Episoden in einem Batch-Query.");
+            _logger.Debug(() => $"Lade erste Tracks für {episodeIds.Count} Episoden in einem Batch-Query.");
 
             // Alle Tracks der angefragten Episoden in einem Roundtrip laden,
             // dann clientseitig je Episode den niedrigsten Tracknummer-Eintrag wählen.
@@ -69,7 +69,7 @@ namespace EchoPlay.Data.Services
                 }
             }
 
-            _logger.Debug($"Erste Tracks für {result.Count} von {episodeIds.Count} Episoden gefunden.");
+            _logger.Debug(() => $"Erste Tracks für {result.Count} von {episodeIds.Count} Episoden gefunden.");
             return result;
         }
 
@@ -84,7 +84,7 @@ namespace EchoPlay.Data.Services
         {
             ArgumentNullException.ThrowIfNull(tracks);
 
-            _logger.Debug($"Speichere {tracks.Count} Track(s) für Episode '{episodeId}'.");
+            _logger.Debug(() => $"Speichere {tracks.Count} Track(s) für Episode '{episodeId}'.");
 
             // Vorhandene Einträge hart löschen – Scan-Ergebnisse sind keine Stammdaten
             List<LocalTrack> existing = await _context.LocalTracks

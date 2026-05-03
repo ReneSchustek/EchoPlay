@@ -12,6 +12,9 @@ namespace EchoPlay.Core.Tests.Fakes
     internal sealed class FakeLogger : ILogger
     {
         /// <inheritdoc/>
+        public bool IsDebugEnabled => false;
+
+        /// <inheritdoc/>
         public void Trace(string message) { }
 
         /// <inheritdoc/>

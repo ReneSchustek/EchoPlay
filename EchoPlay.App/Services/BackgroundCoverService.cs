@@ -334,7 +334,7 @@ namespace EchoPlay.App.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Debug($"EnqueueForEpisodes Lokal-Cover fehlgeschlagen für \"{episode.Title}\": {ex.Message}");
+                        _logger.Debug(() => $"EnqueueForEpisodes Lokal-Cover fehlgeschlagen für \"{episode.Title}\": {ex.Message}");
                     }
                 }
 
@@ -421,7 +421,7 @@ namespace EchoPlay.App.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Debug($"Priority Lokal-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
+                        _logger.Debug(() => $"Priority Lokal-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
                     }
                 }).ConfigureAwait(false);
 
@@ -447,7 +447,7 @@ namespace EchoPlay.App.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Debug($"Priority Provider-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
+                        _logger.Debug(() => $"Priority Provider-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
                     }
                 }
             }
@@ -669,7 +669,7 @@ namespace EchoPlay.App.Services
 
                     if (totalUpdated > 0)
                     {
-                        _logger.Debug($"URL-Nachtrag \"{series.Title}\": {missingUrl.Count} geprüft, URLs gesetzt.");
+                        _logger.Debug(() => $"URL-Nachtrag \"{series.Title}\": {missingUrl.Count} geprüft, URLs gesetzt.");
                     }
                 }
                 catch (Exception ex)
@@ -737,11 +737,11 @@ namespace EchoPlay.App.Services
                 {
                     await _coverService.SetSeriesCoverAsync(series.Id, coverBytes);
                     loaded++;
-                    _logger.Debug($"Lokal: Serien-Cover geladen \"{series.Title}\" aus {series.LocalFolderPath}");
+                    _logger.Debug(() => $"Lokal: Serien-Cover geladen \"{series.Title}\" aus {series.LocalFolderPath}");
                 }
                 else
                 {
-                    _logger.Debug($"Lokal: Kein Cover gefunden für \"{series.Title}\" in {series.LocalFolderPath}");
+                    _logger.Debug(() => $"Lokal: Kein Cover gefunden für \"{series.Title}\" in {series.LocalFolderPath}");
                 }
             }
 
@@ -880,7 +880,7 @@ namespace EchoPlay.App.Services
                 {
                     await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
                     loaded++;
-                    _logger.Debug($"Serien-Cover geladen: \"{series.Title}\" ({coverBytes.Length} Bytes)");
+                    _logger.Debug(() => $"Serien-Cover geladen: \"{series.Title}\" ({coverBytes.Length} Bytes)");
                 }
                 else
                 {
@@ -971,7 +971,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Debug($"Cover-Download fehlgeschlagen: {ex.Message} URL={url}");
+                _logger.Debug(() => $"Cover-Download fehlgeschlagen: {ex.Message} URL={url}");
                 return null;
             }
         }
@@ -1021,7 +1021,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Debug($"Such-Treffer-Cover-Download fehlgeschlagen: {ex.Message} URL={coverUrl}");
+                _logger.Debug(() => $"Such-Treffer-Cover-Download fehlgeschlagen: {ex.Message} URL={coverUrl}");
                 return null;
             }
             finally

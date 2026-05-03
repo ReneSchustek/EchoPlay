@@ -138,3 +138,12 @@ trim_trailing_whitespace = false
 # XAML
 [*.xaml]
 indent_size = 4
+
+# WinUI-3-Code-Behind: XAML-Event-Bindings (Click, SelectionChanged, Loaded, ...)
+# verlinken auf private Methoden über die generierten *.g.cs-Dateien.
+# Roslyn sieht diese Generated-Files bei `dotnet format` nicht zuverlässig
+# und meldet die Methoden + Pflicht-Parameter (sender, e/args) als ungenutzt.
+# IDE0051 + IDE0060 sind hier strukturell falsch — pro Datei abgeschaltet.
+[**/{*.xaml.cs,*Page.*.cs,*Window.xaml.cs,*Control.xaml.cs}]
+dotnet_diagnostic.IDE0051.severity = none
+dotnet_diagnostic.IDE0060.severity = none

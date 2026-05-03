@@ -163,7 +163,7 @@ namespace EchoPlay.App.Services
                     results.Add(new ImportSeries
                     {
                         SourceSeriesId = album.SpotifyAlbumId,
-                        Source = "Spotify",
+                        Source = ProviderKeys.Spotify,
                         Title = album.Title,
                         ArtistName = album.ArtistName,
                         CoverImageUrl = album.ImageUrl,
@@ -196,7 +196,7 @@ namespace EchoPlay.App.Services
                     results.Add(new ImportSeries
                     {
                         SourceSeriesId = album.CollectionId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        Source = "AppleMusic",
+                        Source = ProviderKeys.AppleMusic,
                         Title = album.CollectionName,
                         ArtistName = album.ArtistName,
                         CoverImageUrl = null,
@@ -301,21 +301,14 @@ namespace EchoPlay.App.Services
         public async Task<int> ReImportEpisodesAsync(Series series)
         {
             ArgumentNullException.ThrowIfNull(series);
-            // Provider-Schlüssel aus der Serie ableiten – Spotify hat Vorrang
-            string? providerKey = series.SpotifyArtistId is not null ? "Spotify"
-                                : series.AppleMusicArtistId is not null ? "AppleMusic"
-                                : null;
 
-            if (providerKey is null)
+            (string providerKey, string sourceSeriesId)? resolved = ResolveProviderForSeries(series);
+            if (resolved is null)
             {
                 _logger.Debug($"Kein Provider für Serie \"{series.Title}\" – Re-Import übersprungen");
                 return 0;
             }
-
-            // Die Artist-ID ist gleichzeitig die SourceSeriesId für den Provider
-            string sourceSeriesId = providerKey == "Spotify"
-                ? series.SpotifyArtistId!
-                : series.AppleMusicArtistId!;
+            (string providerKey, string sourceSeriesId) = resolved.Value;
 
             _logger.Info($"Re-Import gestartet: \"{series.Title}\" via {providerKey}");
 
@@ -355,15 +348,10 @@ namespace EchoPlay.App.Services
         public async Task<int> DeltaImportEpisodesAsync(Series series)
         {
             ArgumentNullException.ThrowIfNull(series);
-            string? providerKey = series.SpotifyArtistId is not null ? "Spotify"
-                                : series.AppleMusicArtistId is not null ? "AppleMusic"
-                                : null;
 
-            if (providerKey is null) return 0;
-
-            string sourceSeriesId = providerKey == "Spotify"
-                ? series.SpotifyArtistId!
-                : series.AppleMusicArtistId!;
+            (string providerKey, string sourceSeriesId)? resolved = ResolveProviderForSeries(series);
+            if (resolved is null) return 0;
+            (string providerKey, string sourceSeriesId) = resolved.Value;
 
             using IServiceScope scope = _scopeFactory.CreateScope();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
@@ -503,10 +491,23 @@ namespace EchoPlay.App.Services
                 Duration = importEpisode.Duration,
                 ProviderUrl = importEpisode.ProviderUrl,
                 CoverImageUrl = importEpisode.CoverImageUrl,
-                SpotifyAlbumId = importEpisode.Source == "Spotify" ? importEpisode.SourceEpisodeId : null,
-                AppleMusicAlbumId = importEpisode.Source == "AppleMusic" ? importEpisode.SourceEpisodeId : null,
+                SpotifyAlbumId = importEpisode.Source == ProviderKeys.Spotify ? importEpisode.SourceEpisodeId : null,
+                AppleMusicAlbumId = importEpisode.Source == ProviderKeys.AppleMusic ? importEpisode.SourceEpisodeId : null,
             };
         }
 
+        // Spotify hat Vorrang vor Apple Music, weil Spotify-IDs reicher sind (Album-IDs).
+        private static (string ProviderKey, string SourceSeriesId)? ResolveProviderForSeries(Series series)
+        {
+            if (series.SpotifyArtistId is not null)
+            {
+                return (ProviderKeys.Spotify, series.SpotifyArtistId);
+            }
+            if (series.AppleMusicArtistId is not null)
+            {
+                return (ProviderKeys.AppleMusic, series.AppleMusicArtistId);
+            }
+            return null;
+        }
     }
 }

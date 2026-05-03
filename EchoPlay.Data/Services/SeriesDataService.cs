@@ -134,23 +134,8 @@ namespace EchoPlay.Data.Services
         /// </summary>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="isSubscribed"><see langword="true"/> zum Abonnieren, <see langword="false"/> zum Abbestellen.</param>
-        public async Task SetSubscribedAsync(Guid seriesId, bool isSubscribed)
-        {
-            Series? series = await _context.Series
-                .AsTracking()
-                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
-
-            if (series is null)
-            {
-                _logger.Warning($"Serie '{seriesId}' nicht gefunden – IsSubscribed-Update übersprungen.");
-                return;
-            }
-
-            series.IsSubscribed = isSubscribed;
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            _logger.Info($"Serie '{series.Title}' (ID: {seriesId}) IsSubscribed = {isSubscribed}.");
-        }
+        public Task SetSubscribedAsync(Guid seriesId, bool isSubscribed) =>
+            SetFlagAsync(seriesId, s => s.IsSubscribed, isSubscribed, nameof(Series.IsSubscribed));
 
         /// <summary>
         /// Liefert alle favorisierten, nicht gelöschten Serien, sortiert nach Titel.
@@ -179,41 +164,33 @@ namespace EchoPlay.Data.Services
         /// </summary>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="isFavorite"><see langword="true"/> zum Favorisieren, <see langword="false"/> zum Entfernen.</param>
-        public async Task SetFavoriteAsync(Guid seriesId, bool isFavorite)
-        {
-            Series? series = await _context.Series
-                .AsTracking()
-                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
-
-            if (series is null)
-            {
-                _logger.Warning($"Serie '{seriesId}' nicht gefunden – IsFavorite-Update übersprungen.");
-                return;
-            }
-
-            series.IsFavorite = isFavorite;
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            _logger.Info($"Serie '{series.Title}' (ID: {seriesId}) IsFavorite = {isFavorite}.");
-        }
+        public Task SetFavoriteAsync(Guid seriesId, bool isFavorite) =>
+            SetFlagAsync(seriesId, s => s.IsFavorite, isFavorite, nameof(Series.IsFavorite));
 
         /// <inheritdoc/>
-        public async Task SetWatchedAsync(Guid seriesId, bool isWatched)
-        {
-            Series? series = await _context.Series
-                .AsTracking()
-                .FirstOrDefaultAsync(s => s.Id == seriesId).ConfigureAwait(false);
+        public Task SetWatchedAsync(Guid seriesId, bool isWatched) =>
+            SetFlagAsync(seriesId, s => s.IsWatched, isWatched, nameof(Series.IsWatched));
 
-            if (series is null)
+        // ExecuteUpdateAsync spart das einleitende SELECT (1 SQL-Statement statt 2);
+        // Logger gibt nur noch die ID aus, weil das Entity nicht geladen wird.
+        private async Task SetFlagAsync(
+            Guid seriesId,
+            System.Linq.Expressions.Expression<Func<Series, bool>> selector,
+            bool value,
+            string flagName)
+        {
+            int updated = await _context.Series
+                .Where(s => s.Id == seriesId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(selector, value))
+                .ConfigureAwait(false);
+
+            if (updated == 0)
             {
-                _logger.Warning($"Serie '{seriesId}' nicht gefunden – IsWatched-Update übersprungen.");
+                _logger.Warning($"Serie '{seriesId}' nicht gefunden – {flagName}-Update übersprungen.");
                 return;
             }
 
-            series.IsWatched = isWatched;
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            _logger.Info($"Serie \"{series.Title}\" – Überwachung {(isWatched ? "aktiviert" : "deaktiviert")}.");
+            _logger.Info($"Serie (ID: {seriesId}) {flagName} = {value}.");
         }
 
         /// <summary>

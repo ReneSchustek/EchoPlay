@@ -8,7 +8,7 @@ namespace EchoPlay.Logger.Sinks
 {
     /// <summary>
     /// Schreibt Log-Eintraege als JSON-Lines (ein JSON-Objekt pro Zeile) in eine Datei.
-    /// Fuer strukturiertes Log-Shipping an externe Tools. Felder: timestamp (ISO-8601 UTC),
+    /// Für strukturiertes Log-Shipping an externe Tools. Felder: timestamp (ISO-8601 UTC),
     /// level, category, scopes (Array), message, exception (falls vorhanden).
     /// </summary>
     public sealed class JsonLogSink : ILogSink, IDisposable
@@ -27,7 +27,7 @@ namespace EchoPlay.Logger.Sinks
         /// <summary>
         /// Erstellt einen neuen JsonLogSink.
         /// </summary>
-        /// <param name="logDirectory">Verzeichnis fuer JSON-Log-Dateien.</param>
+        /// <param name="logDirectory">Verzeichnis für JSON-Log-Dateien.</param>
         /// <param name="maxFileSizeMb">Maximale Dateigroesse in MB pro JSON-Log (Standard: 10).</param>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sink-Konstruktor darf bei Verzeichnis-Fehlern nicht crashen; Fallback auf AppData\\EchoPlay\\Logs-Json analog FileSink, sonst No-Op.")]
         public JsonLogSink(string logDirectory, int maxFileSizeMb = 10)
@@ -94,7 +94,7 @@ namespace EchoPlay.Logger.Sinks
 
         /// <summary>
         /// Serialisiert einen <see cref="LogEntry"/> in eine JSON-Zeile. Oeffentlich, damit Tests
-        /// den Roundtrip ohne Datei-IO pruefen koennen.
+        /// den Roundtrip ohne Datei-IO prüfen können.
         /// </summary>
         /// <param name="entry">Der Log-Eintrag.</param>
         /// <returns>JSON-Objekt als Single-Line-String.</returns>
@@ -130,7 +130,7 @@ namespace EchoPlay.Logger.Sinks
 
         private string GetCurrentFilePath()
         {
-            // Lokalzeit fuer Datei-Namen analog FileSink — Anwender ordnet die Datei seinem Tag zu.
+            // Lokalzeit für Datei-Namen analog FileSink — Anwender ordnet die Datei seinem Tag zu.
             string baseName = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             string filePath = Path.Combine(_logDirectory, $"{baseName}.jsonl");
 

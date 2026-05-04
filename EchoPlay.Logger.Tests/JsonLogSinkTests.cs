@@ -10,7 +10,7 @@ using Xunit;
 namespace EchoPlay.Logger.Tests
 {
     /// <summary>
-    /// Tests fuer den <see cref="JsonLogSink"/>. Prueft:
+    /// Tests für den <see cref="JsonLogSink"/>. Prüft:
     /// 1. Roundtrip: Serialisierter Eintrag ist valides JSON, alle Felder erhalten.
     /// 2. Scope-Flatten: <see cref="LogEntry.Scopes"/> landet als JSON-Array.
     /// 3. Exception-Serialisierung: Typ, Message, StackTrace werden erfasst.

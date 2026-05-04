@@ -18,7 +18,7 @@ namespace EchoPlay.App.Helpers
         /// <param name="key">Der Ressourcen-Schlüssel.</param>
         /// <param name="fallback">Rückfallwert für Tests oder fehlende Einträge.</param>
         /// <returns>Der lokalisierte String oder der Fallback.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Resource-Loader-Guard fuer Unit-Tests: 'Application.Current' und 'ResourceLoader.GetForViewIndependentUse' koennen im Test-Host eine native COMException werfen; der Fallback darf unabhaengig vom konkreten Fehlertyp greifen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Resource-Loader-Guard für Unit-Tests: 'Application.Current' und 'ResourceLoader.GetForViewIndependentUse' können im Test-Host eine native COMException werfen; der Fallback darf unabhängig vom konkreten Fehlertyp greifen.")]
         public static string Get(string key, string fallback = "")
         {
             try

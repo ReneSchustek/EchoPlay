@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// Fake für <see cref="BackgroundCoverService"/>, der nur die Aufrufe der
     /// Splash- bzw. Hintergrund-Phasen zählt und keinerlei DB-/Dateisystem-Arbeit ausführt.
     /// Wird in <see cref="Services.StartupValidatorTests"/> genutzt, um zu prüfen,
-    /// dass der Splash-Pfad ausschliesslich <see cref="BackgroundCoverService.RunSeriesCoversOnceAsync"/>
+    /// dass der Splash-Pfad ausschließlich <see cref="BackgroundCoverService.RunSeriesCoversOnceAsync"/>
     /// aufruft und niemals <see cref="BackgroundCoverService.RunOnceAsync"/>.
     /// </summary>
     internal sealed class FakeBackgroundCoverService : BackgroundCoverService

@@ -25,7 +25,7 @@ namespace EchoPlay.App.ViewModels
     /// die zugehörigen lokalen Tracks in die zweite Spalte.
     /// Online-Serien ohne lokale Dateien zeigen eine entsprechende Leer-Meldung.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Der einzige verwerfbare Zustand (_priorityCts) wird ueber CancelPendingPriorityLoad deterministisch freigegeben, das vom OnNavigatedFrom-Pfad der Page aufgerufen wird; ein eigener Dispose-Kontrakt im Transient-VM wuerde der bestehenden VM-Konvention widersprechen.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Der einzige verwerfbare Zustand (_priorityCts) wird über CancelPendingPriorityLoad deterministisch freigegeben, das vom OnNavigatedFrom-Pfad der Page aufgerufen wird; ein eigener Dispose-Kontrakt im Transient-VM wuerde der bestehenden VM-Konvention widersprechen.")]
     public sealed class SeriesDetailViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -658,7 +658,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="episode">Die Episode deren Cover geladen wird.</param>
         /// <returns>Das geladene Cover oder null wenn keins vorhanden.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Aufbau pro Episode: DB-/IO-/Bild-Dekodier-Fehler einer einzelnen Episode duerfen die Detailansicht nicht stoeren – 'null' fuehrt zum Serien-Fallback-Cover.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Aufbau pro Episode: DB-/IO-/Bild-Dekodier-Fehler einer einzelnen Episode dürfen die Detailansicht nicht stören – 'null' führt zum Serien-Fallback-Cover.")]
         private async Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode)
         {
             // DB-Cover über CoverService laden (CoverImages-Tabelle)
@@ -714,7 +714,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="series">Die Serie deren Cover als Fallback dient.</param>
         /// <returns>Das geladene Cover oder null.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Fallback-Serien-Cover-Aufbau: DB-/IO-/Bild-Dekodier-Fehler duerfen die Detailansicht nicht stoeren – 'null' fuehrt zum Platzhalter-Cover.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Fallback-Serien-Cover-Aufbau: DB-/IO-/Bild-Dekodier-Fehler dürfen die Detailansicht nicht stören – 'null' führt zum Platzhalter-Cover.")]
         private async Task<BitmapImage?> BuildSeriesCoverAsync(Series? series)
         {
             if (series is null)

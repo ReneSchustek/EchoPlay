@@ -27,7 +27,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// Wird geworfen, wenn der Download fehlschlägt.
         /// </exception>
         [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Internal API nimmt die URL so entgegen, wie sie in DB/DTO (Provider-URL-String) abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern, Entscheidung dokumentiert in Brief 231.")]
+            Justification = "Internal API nimmt die URL so entgegen, wie sie in DB/DTO (Provider-URL-String) abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern und ist bewusst nicht umgesetzt.")]
         public async Task<byte[]> DownloadAsync(string imageUrl)
         {
             return await _httpClient.GetByteArrayAsync(new Uri(imageUrl, UriKind.Absolute)).ConfigureAwait(false);

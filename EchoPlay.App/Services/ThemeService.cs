@@ -134,7 +134,7 @@ namespace EchoPlay.App.Services
         /// Gibt den Namen des aktuell aktiven Themes zurück.
         /// </summary>
         /// <returns>Theme-Name, z.B. "MidnightLibrary".</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Bewusst als Methode modelliert, da ThemeService kuenftig asynchron nachladen koennte (ActiveThemeName via Get-Methode bleibt stabil, Property-Umwandlung waere Breaking Change).")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Bewusst als Methode modelliert, da ThemeService kuenftig asynchron nachladen könnte (ActiveThemeName via Get-Methode bleibt stabil, Property-Umwandlung waere Breaking Change).")]
         public string GetActiveThemeName() => _activeThemeName;
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace EchoPlay.App.Services
         /// Fehler werden geloggt und unterdrückt, da die Persistenz den Betrieb nicht blockieren darf.
         /// </summary>
         /// <param name="themeName">Zu speichernder Theme-Name.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Theme-Persistenz: DbContext-, Migration- oder Concurrency-Fehler beim Schreiben der AppSettings duerfen den UI-Theme-Wechsel nicht blockieren und werden lediglich geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Theme-Persistenz: DbContext-, Migration- oder Concurrency-Fehler beim Schreiben der AppSettings dürfen den UI-Theme-Wechsel nicht blockieren und werden lediglich geloggt.")]
         private async Task PersistThemeAsync(string themeName)
         {
             try

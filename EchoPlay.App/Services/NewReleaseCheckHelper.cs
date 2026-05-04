@@ -23,7 +23,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="series">Die zu prüfende Serie.</param>
         /// <param name="serviceProvider">DI-Provider für den Zugriff auf OnlineEpisodeChecker und Cache.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuerscheinungen-Check nach Favoriten-Toggle: HTTP-Fehler (iTunes/Spotify), DB-Fehler beim Cache-Upsert oder unerwartete Parser-Probleme duerfen die Toggle-Aktion nicht blockieren – der Check wird beim naechsten App-Start wiederholt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuerscheinungen-Check nach Favoriten-Toggle: HTTP-Fehler (iTunes/Spotify), DB-Fehler beim Cache-Upsert oder unerwartete Parser-Probleme dürfen die Toggle-Aktion nicht blockieren – der Check wird beim nächsten App-Start wiederholt.")]
         public static async Task CheckAndCacheSingleSeriesAsync(
             Series series,
             // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).

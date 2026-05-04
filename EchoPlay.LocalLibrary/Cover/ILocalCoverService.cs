@@ -30,7 +30,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// </returns>
         Task<byte[]?> ResolveAsync(string seriesFolder,
             [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-                Justification = "Internal API nimmt die URL so entgegen, wie sie in der DB-Spalte Series.CoverImageUrl abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern, Entscheidung dokumentiert in Brief 231.")]
+                Justification = "Internal API nimmt die URL so entgegen, wie sie in der DB-Spalte Series.CoverImageUrl abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern und ist bewusst nicht umgesetzt.")]
             string? coverImageUrl);
     }
 }

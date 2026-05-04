@@ -264,7 +264,7 @@ namespace EchoPlay.App.Services
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(importSeries.Source);
             IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId);
 
-            // Schutzgitter Brief 268: doppelte SourceEpisodeIds (Provider-Duplikate, Re-Releases,
+            // Schutzgitter: doppelte SourceEpisodeIds (Provider-Duplikate, Re-Releases,
             // Compilation-Alben mit identischer CollectionId) werden hier idempotent verworfen,
             // bevor der Insert l\u00e4uft. Ohne diese Stufe entst\u00fcnden bei mehrfacher Auslieferung
             // derselben Folge mehrere Episode-Zeilen mit identischer Provider-ID.

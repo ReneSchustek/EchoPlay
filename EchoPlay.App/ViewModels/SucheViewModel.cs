@@ -52,7 +52,7 @@ namespace EchoPlay.App.ViewModels
 
         // Liste statt Single-TCS: bei Back-to-Back-Suchen laufen mehrere Aufrufe parallel,
         // die alle abgewartet werden müssen – der älteste verwirft seine Ergebnisse, der
-        // neueste schreibt sie. Tests warten ueber WaitForSearchCompleteAsync auf alle.
+        // neueste schreibt sie. Tests warten über WaitForSearchCompleteAsync auf alle.
         private readonly object _inflightSearchesLock = new();
         private readonly List<TaskCompletionSource<bool>> _inflightSearches = [];
 
@@ -177,7 +177,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Sucheingabe des Nutzers. Wird im TwoWay-Binding mit der AutoSuggestBox verknüpft.
         /// Beim Leerwerden (eingebauter X-Button der AutoSuggestBox oder vollstaendiges
-        /// Loeschen per Tastatur) loest der Setter automatisch <see cref="Reset"/> aus,
+        /// Löschen per Tastatur) loest der Setter automatisch <see cref="Reset"/> aus,
         /// damit Treffer und Status-Hinweise sofort verschwinden.
         /// </summary>
         public string SearchText
@@ -247,7 +247,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Wartet auf den Abschluss aller aktuell laufenden Suchanfragen (für deterministische Tests).
         /// Snapshottet die Liste der laufenden Such-TCS, damit Back-to-Back-Suchen vollstaendig
-        /// abgewartet werden koennen – auch dann, wenn die aeltere Suche aufgrund eines Token-Cancels
+        /// abgewartet werden können – auch dann, wenn die aeltere Suche aufgrund eines Token-Cancels
         /// kurz vor dem Abschluss steht.
         /// </summary>
         internal Task WaitForSearchCompleteAsync()
@@ -337,13 +337,13 @@ namespace EchoPlay.App.ViewModels
         /// jedes Ergebnisses und befüllt die <see cref="Results"/>-Liste.
         /// Online- und lokale Ergebnisse werden bei Bedarf zusammengeführt.
         ///
-        /// Reset-/Abbruch-Disziplin (Brief 267): Trefferliste und Status-Hinweise werden
+        /// Reset-/Abbruch-Disziplin: Trefferliste und Status-Hinweise werden
         /// noch vor dem ersten <c>await</c> geleert, damit alte Karten verschwinden bevor
         /// der HTTP-Call startet. Der <see cref="StartNewCoverScope"/>-Token markiert
-        /// zugleich obsolete Suchen – nach jedem Await prueft der Code, ob inzwischen eine
+        /// zugleich obsolete Suchen – nach jedem Await prüft der Code, ob inzwischen eine
         /// neue Suche begonnen hat und verwirft dann die eigenen Ergebnisse.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Such-Command der Suche-Seite: Provider-HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status gespiegelt, damit der Command nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Such-Command der Suche-Seite: Provider-HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status gespiegelt, damit der Command nicht reißt.")]
         private async Task SearchAsync()
         {
             if (string.IsNullOrWhiteSpace(_searchText))
@@ -362,7 +362,7 @@ namespace EchoPlay.App.ViewModels
             // Suchen sehen ab hier IsCancellationRequested == true und verwerfen ihre Treffer.
             CancellationToken coverToken = StartNewCoverScope();
 
-            // Sucheingabe einfrieren, damit nachtraegliche Aenderungen am Feld waehrend
+            // Sucheingabe einfrieren, damit nachtraegliche Änderungen am Feld während
             // der laufenden Anfrage den Treffer-Build nicht verfaelschen.
             string searchText = _searchText;
             SearchSource scope = SelectedScope;
@@ -509,8 +509,8 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Setzt Suchfeld, Ergebnisliste und Statusanzeigen zurück. Bricht laufende
         /// Cover-Loads ab und macht zugleich eine eventuell noch laufende Suche obsolet,
-        /// damit keine HTTP-Requests fuer die geleerte Trefferliste im Hintergrund
-        /// weiterlaufen oder spaet eintreffende Treffer in die Liste geschrieben werden.
+        /// damit keine HTTP-Requests für die geleerte Trefferliste im Hintergrund
+        /// weiterlaufen oder spät eintreffende Treffer in die Liste geschrieben werden.
         ///
         /// Setzt das Such-Feld direkt, ohne den <see cref="SearchText"/>-Setter aufzurufen,
         /// um die Reset-Schleife (Setter ruft Reset bei Leereingabe) zu vermeiden.
@@ -534,7 +534,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         // Pro Treffer ein BitmapImage; ohne Freigabe steigen die Heap-Bytes nach jeder
-        // Suche an, weil die Bindings die alten Karten noch kurz halten (Brief 269).
+        // Suche an, weil die Bindings die alten Karten noch kurz halten.
         private void ReleaseCurrentResults()
         {
             foreach (SearchResultViewModel result in _results)

@@ -155,7 +155,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Splash-Pfad: lädt ausschliesslich fehlende Serien-Cover (lokal + optional Provider-URL).
+        /// Splash-Pfad: lädt ausschließlich fehlende Serien-Cover (lokal + optional Provider-URL).
         /// Kein Episoden-Scan, kein ID3-Tag-Parsing, kein Provider-Call für Folgen.
         /// Provider-URL-Download wird übersprungen, wenn <paramref name="isOnlineAvailable"/>
         /// <see langword="false"/> ist (Offline-Modus oder fehlgeschlagener Konnektivitäts-Check).
@@ -188,7 +188,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Hauptschleife: einmaliger Durchlauf beim Start, dann periodisch.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Scan-Schleife: TagLib-, DB-, HTTP- oder IO-Fehler einer einzelnen Iteration duerfen die Cover-Schleife nicht beenden; Fehler werden als Warning geloggt und die naechste Iteration faehrt fort.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Scan-Schleife: TagLib-, DB-, HTTP- oder IO-Fehler einer einzelnen Iteration dürfen die Cover-Schleife nicht beenden; Fehler werden als Warning geloggt und die nächste Iteration fährt fort.")]
         private async Task RunAsync(CancellationToken ct)
         {
             // Kurz warten, damit die App vollständig initialisiert ist
@@ -253,7 +253,7 @@ namespace EchoPlay.App.Services
         /// zum laufenden Hintergrund-Scan, markiert den Service aber als "Priority aktiv",
         /// sodass die nächste Loop-Iteration pausiert, bis die Queue abgearbeitet ist.
         /// </param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cover-Queue: HTTP-/IO-/TagLib-Fehler einzelner Episoden duerfen die Queue fuer die anderen Kacheln nicht beenden; der Fehler wird als Debug geloggt und die naechste Episode wird verarbeitet.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cover-Queue: HTTP-/IO-/TagLib-Fehler einzelner Episoden dürfen die Queue für die anderen Kacheln nicht beenden; der Fehler wird als Debug geloggt und die nächste Episode wird verarbeitet.")]
         public void EnqueueForEpisodes(
             IReadOnlyList<Guid> episodeIds,
             Action<Guid, byte[]>? onCoverReady,
@@ -292,7 +292,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Arbeitet die Queue sequentiell ab: erst DB-Treffer, dann Dateisystem, dann Provider-URL.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Episode-Schleife in der Cover-Queue: TagLib-, IO- oder HTTP-Fehler einer Episode werden als Debug protokolliert und die Queue faehrt mit der naechsten Episode fort, damit eine kaputte Datei nicht die ganze Kachelzeile blockiert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Episode-Schleife in der Cover-Queue: TagLib-, IO- oder HTTP-Fehler einer Episode werden als Debug protokolliert und die Queue fährt mit der nächsten Episode fort, damit eine kaputte Datei nicht die ganze Kachelzeile blockiert.")]
         private async Task ProcessEnqueuedEpisodesAsync(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -362,7 +362,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="seriesId">Serie, deren Folgen-Cover priorisiert geladen werden.</param>
         /// <param name="ct">Abbruch-Token der aufrufenden Detail-Ansicht.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Foreground-Priority-Pfad: Einzelne TagLib-/IO-/HTTP-Fehler pro Episode werden geloggt, damit das Priorisierungs-Fenster fuer die sichtbare Serie nicht wegen einer kaputten Datei abbricht.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Foreground-Priority-Pfad: Einzelne TagLib-/IO-/HTTP-Fehler pro Episode werden geloggt, damit das Priorisierungs-Fenster für die sichtbare Serie nicht wegen einer kaputten Datei abbricht.")]
         public virtual async Task RequestPriorityForSeriesAsync(Guid seriesId, CancellationToken ct = default)
         {
             if (seriesId == Guid.Empty) return;
@@ -392,7 +392,7 @@ namespace EchoPlay.App.Services
                 IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
                     await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds);
 
-                _logger.Info($"Priority SeriesOpen: starte {missing.Count} Folgen-Cover fuer Serie {seriesId}.");
+                _logger.Info($"Priority SeriesOpen: starte {missing.Count} Folgen-Cover für Serie {seriesId}.");
 
                 ParallelOptions parallelOptions = new()
                 {
@@ -421,7 +421,7 @@ namespace EchoPlay.App.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Debug(() => $"Priority Lokal-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
+                        _logger.Debug(() => $"Priority Lokal-Cover fehlgeschlagen für \"{episode.Title}\": {ex.Message}");
                     }
                 }).ConfigureAwait(false);
 
@@ -447,7 +447,7 @@ namespace EchoPlay.App.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.Debug(() => $"Priority Provider-Cover fehlgeschlagen fuer \"{episode.Title}\": {ex.Message}");
+                        _logger.Debug(() => $"Priority Provider-Cover fehlgeschlagen für \"{episode.Title}\": {ex.Message}");
                     }
                 }
             }
@@ -592,7 +592,7 @@ namespace EchoPlay.App.Services
         /// fehlende <see cref="Episode.CoverImageUrl"/> auf bestehenden Episoden nach.
         /// Überspringt Serien bei denen alle Episoden bereits eine URL haben.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "URL-Nachtrag pro Serie: HTTP- oder API-Fehler (Spotify/AppleMusic) einer Serie duerfen den Batch fuer die restlichen Serien nicht abbrechen; Einzelfehler werden als Warning geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "URL-Nachtrag pro Serie: HTTP- oder API-Fehler (Spotify/AppleMusic) einer Serie dürfen den Batch für die restlichen Serien nicht abbrechen; Einzelfehler werden als Warning geloggt.")]
         private async Task<int> UpdateMissingCoverUrlsAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -1071,13 +1071,13 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Gibt die CancellationTokenSource und den laufenden Hintergrund-Task frei.
         /// Wartet kurz auf das Ende der aktuellen Iteration, damit kein Service-Scope
-        /// als Closure im Task-State-Machine hängen bleibt (Brief 269). Abgeleitete
-        /// Typen können überschreiben, dürfen aber den Cleanup-Pfad der Basis
+        /// als Closure im Task-State-Machine hängen bleibt. Abgeleitete Typen können
+        /// überschreiben, dürfen aber den Cleanup-Pfad der Basis
         /// (<c>base.Dispose(disposing)</c>) nicht auslassen.
         /// </summary>
         /// <param name="disposing"><see langword="true"/> bei deterministischem Dispose; <see langword="false"/> beim Finalizer.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
-            Justification = "Dispose-Pfad: AggregateException/ObjectDisposedException aus dem abgebrochenen Hintergrund-Task duerfen den Shutdown nicht zerlegen, weil der Service als Singleton meist im App-Exit disposed wird.")]
+            Justification = "Dispose-Pfad: AggregateException/ObjectDisposedException aus dem abgebrochenen Hintergrund-Task dürfen den Shutdown nicht zerlegen, weil der Service als Singleton meist im App-Exit disposed wird.")]
         protected virtual void Dispose(bool disposing)
         {
             if (!disposing) return;

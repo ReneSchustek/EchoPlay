@@ -62,7 +62,7 @@ namespace EchoPlay.AppleMusic.Clients
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
                 await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
 
-            // Brief 268: Lookup-Antworten enthalten neben den eigenen Alben gelegentlich auch
+            // Lookup-Antworten enthalten neben den eigenen Alben gelegentlich auch
             // Compilation-/Various-Artists-Einträge mit fremder ArtistId (z. B. Sammlungen,
             // bei denen der gesuchte Künstler nur als Featured-Beitrag auftaucht). Ohne den
             // strikten ArtistId-Filter würden deren Tracks als Episoden der gesuchten Serie

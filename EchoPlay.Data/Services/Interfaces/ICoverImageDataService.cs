@@ -36,7 +36,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData,
             [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-                Justification = "Internal API akzeptiert die URL so, wie sie in der DB-Spalte CoverImage.SourceUrl persistiert wird. Uri-Refactor würde Cascade durch Cover-Kaskade und Call-Sites erfordern, Entscheidung dokumentiert in Brief 231.")]
+                Justification = "Internal API akzeptiert die URL so, wie sie in der DB-Spalte CoverImage.SourceUrl persistiert wird. Uri-Refactor würde Cascade durch Cover-Kaskade und Call-Sites erfordern und ist bewusst nicht umgesetzt.")]
             string? sourceUrl = null);
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace EchoPlay.Data.Services.Interfaces
         Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds);
 
         /// <summary>
-        /// Liefert die Gesamtanzahl der Cover-Eintraege in der Tabelle. Fuer Self-Diagnostics beim App-Start.
+        /// Liefert die Gesamtanzahl der Cover-Eintraege in der Tabelle. Für Self-Diagnostics beim App-Start.
         /// Kein Blob-Load, nur ein COUNT(*).
         /// </summary>
         /// <returns>Anzahl der persistierten Cover-Eintraege.</returns>

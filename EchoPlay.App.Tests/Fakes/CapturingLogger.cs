@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Test-Fake für <see cref="ILogger"/>, der jeden Aufruf mit Level, Nachricht
-    /// und Exception erfasst. Fuer Tests, die den Log-Pfad pruefen muessen.
+    /// und Exception erfasst. Für Tests, die den Log-Pfad prüfen müssen.
     /// </summary>
     internal sealed class CapturingLogger : ILogger
     {

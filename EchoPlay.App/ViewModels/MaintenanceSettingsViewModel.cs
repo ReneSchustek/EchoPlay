@@ -363,7 +363,7 @@ namespace EchoPlay.App.ViewModels
         /// Läuft bereits eine Wartung, wird der Aufruf ignoriert.
         /// </summary>
         /// <returns>Asynchrone Ausführung.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DB-Wartung (Purge/VACUUM): SQLite-Locks, Migration-Fehler oder IO-Fehler waehrend Vacuum werden als Nutzer-Status angezeigt; der Command darf nicht reissen, das IsMaintaining-Flag wird im finally zurueckgesetzt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DB-Wartung (Purge/VACUUM): SQLite-Locks, Migration-Fehler oder IO-Fehler während Vacuum werden als Nutzer-Status angezeigt; der Command darf nicht reißen, das IsMaintaining-Flag wird im finally zurückgesetzt.")]
         public async Task RunMaintenanceAsync()
         {
             if (_isMaintaining)
@@ -403,7 +403,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="scopeIndex">0 = Online, 1 = Lokal, 2 = Alle.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliothek-Reset: bulk-delete aller Serien/Episoden/Tracks und Cover-Dateien kann IO-/DB-Fehler werfen; der Command darf nicht reissen, der Status wird angezeigt und IsMaintaining im finally zurueckgesetzt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliothek-Reset: bulk-delete aller Serien/Episoden/Tracks und Cover-Dateien kann IO-/DB-Fehler werfen; der Command darf nicht reißen, der Status wird angezeigt und IsMaintaining im finally zurückgesetzt.")]
         public async Task ResetLibraryAsync(int scopeIndex)
         {
             IsMaintaining = true;

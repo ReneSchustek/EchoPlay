@@ -8,7 +8,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Infrastructure
 {
     /// <summary>
-    /// Deckt den Fatal-Log-Pfad fuer globale Exception-Hooks ab
+    /// Deckt den Fatal-Log-Pfad für globale Exception-Hooks ab
     /// (<see cref="AppDomain.UnhandledException"/> und <see cref="TaskScheduler.UnobservedTaskException"/>).
     /// Der Pfad mit <see langword="null"/>-Logger (EmergencyTrace-Fallback) wird ebenfalls geprueft,
     /// ohne <c>Trace.Listeners</c> zu koppeln — Kriterium ist, dass kein Crash auftritt.

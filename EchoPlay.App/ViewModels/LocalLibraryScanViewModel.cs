@@ -275,7 +275,7 @@ namespace EchoPlay.App.ViewModels
         /// nach Abschluss meldet das Sub-VM über <see cref="LibraryReloaded"/>, damit das
         /// übergeordnete ViewModel Episodenzähler und Cover konsistent neu lädt.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliotheks-Scan vom Command: IO-/DB-/TagLib-Fehler der vielen gescannten Ordner werden geloggt und der Nutzer sieht die Fehlermeldung in 'StatusMessage', damit ein einzelner defekter Ordner den Scan-Command nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliotheks-Scan vom Command: IO-/DB-/TagLib-Fehler der vielen gescannten Ordner werden geloggt und der Nutzer sieht die Fehlermeldung in 'StatusMessage', damit ein einzelner defekter Ordner den Scan-Command nicht reißt.")]
         private async Task ScanAsync()
         {
             if (IsScanning)
@@ -342,7 +342,7 @@ namespace EchoPlay.App.ViewModels
         /// Online-importierte Serien behalten ihre Metadaten – nur der lokale Pfad und
         /// die Track-Zuordnungen werden gelöscht. Wiedergabestatus bleibt in jedem Fall erhalten.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuinitialisierung vom Command: DB-/IO-Fehler beim Leeren und Neuanlegen der Bibliothek duerfen den Command nicht reissen; Fehler werden als Status angezeigt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuinitialisierung vom Command: DB-/IO-Fehler beim Leeren und Neuanlegen der Bibliothek dürfen den Command nicht reißen; Fehler werden als Status angezeigt.")]
         private async Task ReInitializeAsync()
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(

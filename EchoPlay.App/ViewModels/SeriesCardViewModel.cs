@@ -110,7 +110,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Setzt das Cover-Bild zurück. Wird beim Ersetzen der Online-Mediathek-Liste
         /// oder beim Verlassen der Page aufgerufen, damit hunderte Kachel-Bitmaps nicht
-        /// bis zum nächsten GC-Lauf am Heap kleben (Brief 269).
+        /// bis zum nächsten GC-Lauf am Heap kleben.
         /// </summary>
         public void ClearCoverImage()
         {

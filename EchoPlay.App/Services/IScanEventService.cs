@@ -23,7 +23,7 @@ namespace EchoPlay.App.Services
         /// Handler laufen auf dem UI-Thread, wenn <see cref="SyncService"/> <c>Progress&lt;T&gt;</c>
         /// für die Benachrichtigung verwendet.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Event transportiert ausschliesslich die synchronisierte 'Series'-Entity; Action<Series> bleibt semantisch klarer als ein kuenstlicher EventArgs-Wrapper und vermeidet invasive Umstellung aller Subscriber und Progress<Series>-Integrationen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Event transportiert ausschließlich die synchronisierte 'Series'-Entity; Action<Series> bleibt semantisch klarer als ein kuenstlicher EventArgs-Wrapper und vermeidet invasive Umstellung aller Subscriber und Progress<Series>-Integrationen.")]
         event Action<Series>? SeriesSynced;
 
         /// <summary>

@@ -45,13 +45,13 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Startet eine Provider-Suche und befüllt das <see cref="OnlineProviderSearchViewModel"/>.
         ///
-        /// Reset-/Abbruch-Disziplin (Brief 267): Trefferliste und Status-Hinweise werden noch
+        /// Reset-/Abbruch-Disziplin: Trefferliste und Status-Hinweise werden noch
         /// vor dem ersten <c>await</c> geleert. <see cref="StartNewCoverScope"/> macht
-        /// gleichzeitig eine eventuell laufende Vorgaenger-Suche obsolet – nach jedem Await
-        /// pruefen wir auf <see cref="CancellationToken.IsCancellationRequested"/> und
+        /// gleichzeitig eine eventuell laufende Vorgänger-Suche obsolet – nach jedem Await
+        /// prüfen wir auf <see cref="CancellationToken.IsCancellationRequested"/> und
         /// verwerfen Treffer der veralteten Suche.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Provider-Suche in der Online-Mediathek: HTTP-/Parser-/Timeout-Fehler aus Spotify/AppleMusic werden als Nutzer-Fehlermeldung angezeigt, damit der Suche-Command nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Provider-Suche in der Online-Mediathek: HTTP-/Parser-/Timeout-Fehler aus Spotify/AppleMusic werden als Nutzer-Fehlermeldung angezeigt, damit der Suche-Command nicht reißt.")]
         public async Task SearchProviderAsync(string searchText)
         {
             SearchCallCount++;

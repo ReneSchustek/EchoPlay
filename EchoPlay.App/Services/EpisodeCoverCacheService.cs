@@ -63,7 +63,7 @@ namespace EchoPlay.App.Services
         /// Phase 3: Online-Suchkette (CompositeCoverSearchService).
         /// Nach der Suche wird <c>CoverLastChecked</c> gesetzt – egal ob Treffer oder nicht.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Public Entry-Point fuer Cover-Caching: HTTP-, IO- oder DB-Fehler aus den drei Such-Phasen (Provider-URL, lokale DB, Online-Kette) duerfen den Import/Scan nicht abbrechen; Abbrueche werden separat ueber OperationCanceledException behandelt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Public Entry-Point für Cover-Caching: HTTP-, IO- oder DB-Fehler aus den drei Such-Phasen (Provider-URL, lokale DB, Online-Kette) dürfen den Import/Scan nicht abbrechen; Abbrueche werden separat über OperationCanceledException behandelt.")]
         public async Task CacheCoversAsync(
             Guid seriesId,
             IReadOnlyList<ImportEpisode>? importEpisodes = null,
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Interne Implementierung des Cover-Cachings ohne Fehlerbehandlung.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne Cover-Caching-Phase: HTTP-Fehler (Provider-URL-Download), DB-Fehler oder Parsing-Probleme einzelner Folgen duerfen die Schleife nicht verlassen; jede Episode wird unabhaengig behandelt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne Cover-Caching-Phase: HTTP-Fehler (Provider-URL-Download), DB-Fehler oder Parsing-Probleme einzelner Folgen dürfen die Schleife nicht verlassen; jede Episode wird unabhängig behandelt.")]
         private async Task CacheCoversInternalAsync(
             Guid seriesId,
             IReadOnlyList<ImportEpisode>? importEpisodes,
@@ -95,9 +95,9 @@ namespace EchoPlay.App.Services
             CancellationToken ct)
         {
             // Priority wird vom Rate-Limiter via HTTP-Pipeline automatisch genutzt, sobald
-            // der HttpClient in einem Foreground-Scope laeuft. Aktuell wirkt der Parameter
+            // der HttpClient in einem Foreground-Scope läuft. Aktuell wirkt der Parameter
             // nur informativ: die Protokoll-Zeile markiert die Phase, damit operative
-            // Auswertungen Foreground-Spikes erkennen koennen.
+            // Auswertungen Foreground-Spikes erkennen können.
             if (priority == CoverFetchPriority.Foreground)
             {
                 _logger.Debug($"Cover-Caching Serie {seriesId} mit Foreground-Prioritaet angefordert.");
@@ -388,7 +388,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt ein Bild von einer URL. Null bei Fehler.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, TLS-, Redirect- oder Timeout-Fehler beim Laden einzelner Cover-URLs werden zu 'null' normalisiert; der Aufrufer ueberspringt diese Episode und faehrt mit der naechsten fort.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, TLS-, Redirect- oder Timeout-Fehler beim Laden einzelner Cover-URLs werden zu 'null' normalisiert; der Aufrufer ueberspringt diese Episode und fährt mit der nächsten fort.")]
         private async Task<byte[]?> DownloadSafeAsync(string url)
         {
             try

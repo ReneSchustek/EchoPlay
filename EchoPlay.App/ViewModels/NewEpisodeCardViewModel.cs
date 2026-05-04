@@ -270,8 +270,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Setzt Episoden-Cover und Episoden-Cover-Flag zurück, damit Dashboard-Refreshs
-        /// die ausgetauschten Karten nicht bis zum nächsten GC-Lauf am Heap halten
-        /// (Brief 269).
+        /// die ausgetauschten Karten nicht bis zum nächsten GC-Lauf am Heap halten.
         /// </summary>
         public void ClearCoverImage()
         {

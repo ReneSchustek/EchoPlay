@@ -46,7 +46,7 @@ namespace EchoPlay.App.Services
         /// die Version übersprungen hat, oder ein Fehler auftritt.
         /// </summary>
         /// <returns>Update-Informationen oder null.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "GitHub-Release-Check: HttpRequestException, TaskCanceledException, JsonException oder unerwartete HTTP-Codes (Rate-Limit, 5xx) duerfen die App nicht stoeren – null signalisiert 'kein Update-Check moeglich'.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "GitHub-Release-Check: HttpRequestException, TaskCanceledException, JsonException oder unerwartete HTTP-Codes (Rate-Limit, 5xx) dürfen die App nicht stören – null signalisiert 'kein Update-Check möglich'.")]
         public async Task<UpdateInfo?> CheckForUpdateAsync()
         {
             try

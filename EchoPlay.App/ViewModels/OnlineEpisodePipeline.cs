@@ -164,7 +164,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt fehlende Episoden-Cover im Hintergrund herunter und aktualisiert die Kacheln
         /// progressiv. Wird abgebrochen, wenn der Nutzer eine andere Serie wählt.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Nachlade-Task fuer fehlende Episoden-Cover im Hintergrund: HTTP-/Provider-/Cache-Fehler duerfen die UI nicht stoeren; Fehler werden geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Nachlade-Task für fehlende Episoden-Cover im Hintergrund: HTTP-/Provider-/Cache-Fehler dürfen die UI nicht stören; Fehler werden geloggt.")]
         private async Task RefreshMissingEpisodeCoversAsync(
             Guid seriesId,
             List<OnlineEpisodeCardViewModel> episodeCards,

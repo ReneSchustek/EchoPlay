@@ -45,7 +45,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Berechnet die Umbenennungs-Vorschau aus dem aktuellen Ordner und Muster.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Vorschau: TagLib-Lesefehler oder IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit der Command nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Vorschau: TagLib-Lesefehler oder IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit der Command nicht reißt.")]
         public async Task PreviewRenameAsync()
         {
             PreviewRenameCallCount++;

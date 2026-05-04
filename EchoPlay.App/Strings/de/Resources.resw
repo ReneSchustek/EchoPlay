@@ -1310,7 +1310,7 @@
     <value>Suche zurücksetzen</value>
   </data>
 
-  <!-- Brief 252b C-Teil – Dialog-Buttons und Services -->
+  <!-- Dialog-Buttons und Services -->
   <data name="CommonYes" xml:space="preserve">
     <value>Ja</value>
   </data>
@@ -1321,7 +1321,7 @@
     <value>Übernehmen</value>
   </data>
 
-  <!-- Brief 252b – App-Start-Fehler (Notfall-Dialog) -->
+  <!-- App-Start-Fehler (Notfall-Dialog) -->
   <data name="AppStartFailedDialogTitle" xml:space="preserve">
     <value>EchoPlay konnte nicht starten</value>
   </data>
@@ -1363,7 +1363,7 @@ Die Anwendung wird beendet.</value>
     <value>Suchen</value>
   </data>
 
-  <!-- Brief 252b – Import-Fehler -->
+  <!-- Import-Fehler -->
   <data name="ImportSearchFailedTitle" xml:space="preserve">
     <value>Suche fehlgeschlagen</value>
   </data>
@@ -1371,7 +1371,7 @@ Die Anwendung wird beendet.</value>
     <value>Import fehlgeschlagen</value>
   </data>
 
-  <!-- Brief 252b – Library-Scan / Neu-Initialisierung -->
+  <!-- Library-Scan / Neu-Initialisierung -->
   <data name="LibraryScanFailedTitle" xml:space="preserve">
     <value>Scan fehlgeschlagen</value>
   </data>
@@ -1385,7 +1385,7 @@ Die Anwendung wird beendet.</value>
     <value>Neu-Initialisierung fehlgeschlagen</value>
   </data>
 
-  <!-- Brief 252b – Scan-Status-Texte -->
+  <!-- Scan-Status-Texte -->
   <data name="ScanStatusPreparing" xml:space="preserve">
     <value>Vorbereitung …</value>
   </data>
@@ -1396,7 +1396,7 @@ Die Anwendung wird beendet.</value>
     <value>Zurückgesetzt. Starte Scan …</value>
   </data>
 
-  <!-- Brief 252b – Serien-Lösch-Dialoge -->
+  <!-- Serien-Lösch-Dialoge -->
   <data name="SeriesRemoveFromLibraryTitle" xml:space="preserve">
     <value>Aus Bibliothek entfernen</value>
   </data>
@@ -1410,7 +1410,7 @@ Die Anwendung wird beendet.</value>
     <value>Die Serie, alle Episoden und alle Audiodateien werden unwiderruflich gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden. Fortfahren?</value>
   </data>
 
-  <!-- Brief 252b – Episode Gehört-Status -->
+  <!-- Episode Gehört-Status -->
   <data name="EpisodeMarkPlayedTitle" xml:space="preserve">
     <value>Als gehört markieren?</value>
   </data>
@@ -1424,7 +1424,7 @@ Die Anwendung wird beendet.</value>
     <value>Der Fortschritt dieser Episode wird gelöscht.</value>
   </data>
 
-  <!-- Brief 252b – Cover-Überschreib-Dialog -->
+  <!-- Cover-Überschreib-Dialog -->
   <data name="EpisodeCoverOverwriteTitle" xml:space="preserve">
     <value>Cover überschreiben</value>
   </data>
@@ -1432,7 +1432,7 @@ Die Anwendung wird beendet.</value>
     <value>Diese Serie hat bereits ein Cover. Soll es ersetzt werden?</value>
   </data>
 
-  <!-- Brief 252b – Datenbankpflege-Status -->
+  <!-- Datenbankpflege-Status -->
   <data name="MaintenanceStatusCleaning" xml:space="preserve">
     <value>Bereinigung läuft …</value>
   </data>

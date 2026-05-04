@@ -52,7 +52,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Startup-Validierung: Cover-Rebuild nach Cache-Clear kann aus DB, TagLib oder IO unterschiedlichste Fehler werfen; einzelne Schritt-Fehler werden geloggt, das Flag wird zurueckgesetzt und der Start faehrt fort, damit sich die App nicht unbrauchbar macht.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Startup-Validierung: Cover-Rebuild nach Cache-Clear kann aus DB, TagLib oder IO unterschiedlichste Fehler werfen; einzelne Schritt-Fehler werden geloggt, das Flag wird zurückgesetzt und der Start fährt fort, damit sich die App nicht unbrauchbar macht.")]
         public async Task<StartupResult> ValidateAsync(
             Action<string>? onStatus = null,
             CancellationToken cancellationToken = default)
@@ -173,7 +173,7 @@ namespace EchoPlay.App.Services
             // Schritt 6: Nur Serien-Cover im Splash nachladen.
             // Folgen-Cover gehören nicht auf den Start-Pfad – sie werden nach App-Start
             // durch den periodischen BackgroundCoverService-Loop abgearbeitet.
-            // Der Splash lädt deshalb ausschliesslich fehlende Serien-Cover (lokal zuerst,
+            // Der Splash lädt deshalb ausschließlich fehlende Serien-Cover (lokal zuerst,
             // dann optional Provider-URL). Kein Episoden-Scan, kein ID3-Parsing, kein
             // Provider-Call für Folgen.
             try
@@ -312,7 +312,7 @@ namespace EchoPlay.App.Services
         /// Identische Logik wie bisher in DashboardViewModel.RefreshNewReleaseCacheAsync,
         /// aber hier zentral im Startup ausgeführt.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuerscheinungen-Cache-Refresh pro Serie: HTTP-Fehler (Spotify/AppleMusic) oder DB-Fehler einer einzelnen Serie duerfen den Cache-Rebuild fuer die restlichen Serien nicht abbrechen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuerscheinungen-Cache-Refresh pro Serie: HTTP-Fehler (Spotify/AppleMusic) oder DB-Fehler einer einzelnen Serie dürfen den Cache-Rebuild für die restlichen Serien nicht abbrechen.")]
         private async Task RefreshNewReleaseCacheAsync(
             IReadOnlyList<Series> subscribedSeries,
             DateTime cutoffDate,

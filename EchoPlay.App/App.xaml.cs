@@ -81,7 +81,7 @@ namespace EchoPlay.App
         /// Das Theme wird vor dem ersten Rendern gesetzt, damit kein falsches Theme aufblitzt.
         /// </summary>
         /// <param name="args">Startparameter der Anwendung.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "WinUI-Entry-Point: Startup-Exception fuehrt via HandleStartupFailureAsync zu Dialog + kontrolliertem App-Ende statt Crash.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "WinUI-Entry-Point: Startup-Exception führt via HandleStartupFailureAsync zu Dialog + kontrolliertem App-Ende statt Crash.")]
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
             SplashWindow? splash = null;
@@ -90,7 +90,7 @@ namespace EchoPlay.App
                 // Globaler Handler registrieren, bevor der Host gestartet wird.
                 this.UnhandledException += OnUnhandledException;
 
-                // Zusaetzliche Fanglinien fuer Exceptions, die WinUIs UnhandledException nicht abfaengt:
+                // Zusaetzliche Fanglinien für Exceptions, die WinUIs UnhandledException nicht abfaengt:
                 // - AppDomain.UnhandledException: Fehler aus Nicht-UI-Threads (Task.Run ohne await, Threadpool).
                 // - TaskScheduler.UnobservedTaskException: Tasks deren Exception nie per await konsumiert wurde.
                 AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
@@ -205,7 +205,7 @@ namespace EchoPlay.App
         /// </summary>
         /// <param name="splash">Das Splash-Fenster, sofern bereits erzeugt.</param>
         /// <param name="exception">Die während <see cref="OnLaunched"/> geworfene Exception.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Letzte Fehlerbehandlungsstufe beim App-Start: Logger-, Dialog- und Splash-Close-Fehler duerfen den kontrollierten Shutdown (Exit) nicht verhindern, unabhaengig vom konkreten Exception-Typ.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Letzte Fehlerbehandlungsstufe beim App-Start: Logger-, Dialog- und Splash-Close-Fehler dürfen den kontrollierten Shutdown (Exit) nicht verhindern, unabhängig vom konkreten Exception-Typ.")]
         private async Task HandleStartupFailureAsync(SplashWindow? splash, Exception exception)
         {
             // Notfall-Logging via Trace-Wrapper (Logger eventuell noch nicht initialisiert)
@@ -234,7 +234,7 @@ namespace EchoPlay.App
                 // Dialog konnte nicht angezeigt werden – Logging bleibt als Diagnose-Quelle
             }
 
-            try { splash?.Close(); } catch { /* Schliessen darf das Exit nicht blockieren */ }
+            try { splash?.Close(); } catch { /* Schließen darf das Exit nicht blockieren */ }
 
             Exit();
         }
@@ -245,7 +245,7 @@ namespace EchoPlay.App
         /// </summary>
         /// <param name="sender">Das geschlossene Fenster.</param>
         /// <param name="args">Event-Argumente.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup beim Fensterschliessen: SQLite-Optimize und Background-Service-Stopps sind optional und duerfen den Shutdown nicht blockieren, unabhaengig davon welche Exception aus DbContext, Maintenance-Service oder Background-Iteration geworfen wird.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup beim Fensterschließen: SQLite-Optimize und Background-Service-Stopps sind optional und dürfen den Shutdown nicht blockieren, unabhängig davon welche Exception aus DbContext, Maintenance-Service oder Background-Iteration geworfen wird.")]
         private void OnWindowClosed(object sender, WindowEventArgs args)
         {
             _appLogger?.Info("Anwendung wird beendet");
@@ -361,7 +361,7 @@ namespace EchoPlay.App
         /// <c>Thread</c>, <c>ThreadPool</c>). WinUIs <see cref="OnUnhandledException"/> sieht diese nicht.
         /// </summary>
         /// <param name="sender">Quelle der Exception (typischerweise <see cref="AppDomain"/>).</param>
-        /// <param name="e">Enthaelt die Exception und das <c>IsTerminating</c>-Flag.</param>
+        /// <param name="e">Enthält die Exception und das <c>IsTerminating</c>-Flag.</param>
         private void OnDomainUnhandledException(object sender, System.UnhandledExceptionEventArgs e)
             => EchoPlay.App.Infrastructure.FatalExceptionHandler.HandleDomainException(_appLogger, e);
 
@@ -370,7 +370,7 @@ namespace EchoPlay.App
         /// konsumiert wurde (z. B. <c>_ = Task.Run(...)</c> ohne Fehlerbehandlung im Body).
         /// </summary>
         /// <param name="sender">Der <see cref="TaskScheduler"/>, der das Event meldet.</param>
-        /// <param name="e">Enthaelt die Exception und ermoeglicht <c>SetObserved()</c>, um den Crash zu verhindern.</param>
+        /// <param name="e">Enthält die Exception und ermoeglicht <c>SetObserved()</c>, um den Crash zu verhindern.</param>
         private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
             => EchoPlay.App.Infrastructure.FatalExceptionHandler.HandleUnobservedTaskException(_appLogger, e);
 
@@ -379,7 +379,7 @@ namespace EchoPlay.App
         /// Wird nach dem Splash aufgerufen, bevor das Hauptfenster geöffnet wird.
         /// </summary>
         /// <param name="splash">Das aktive Splash-Fenster für den XamlRoot des Dialogs.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Update-Check ist nicht kritischer Pfad: GitHub-HTTP-Fehler, JSON-Parse-Fehler oder Dialog-Probleme duerfen den App-Start nicht blockieren.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Update-Check ist nicht kritischer Pfad: GitHub-HTTP-Fehler, JSON-Parse-Fehler oder Dialog-Probleme dürfen den App-Start nicht blockieren.")]
         private async Task CheckForUpdateAsync(SplashWindow splash)
         {
             try
@@ -496,9 +496,9 @@ namespace EchoPlay.App
             });
 
             // Zentrale Named-HttpClients. Alle App-seitigen HTTP-Konsumenten holen sich
-            // ihren Client ueber IHttpClientFactory, statt eigene statische Instanzen
+            // ihren Client über IHttpClientFactory, statt eigene statische Instanzen
             // zu halten. Damit greifen einheitliche Timeouts, User-Agent-Header und
-            // bei Bedarf spaeter auch Polly-Resilience-Policies (siehe Brief 228).
+            // einheitliche Polly-Resilience-Policies an einer Stelle.
             Microsoft.Extensions.DependencyInjection.IHttpClientBuilder coverDownloadBuilder = builder.Services.AddHttpClient("CoverDownload", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(15);
@@ -786,9 +786,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<BackgroundCoverService>()));
             _ = builder.Services.AddTransient<PlayerViewModel>();
             _ = builder.Services.AddTransient<SeriesDetailViewModel>();
-            // App-Services für Settings: Verbindungstest und Log-Viewer sind nach Brief 211
-            // als eigenständige Coordinators implementiert, damit das SettingsViewModel
-            // stateless Logik nicht mehr selbst trägt.
+            // App-Services für Settings: Verbindungstest und Log-Viewer sind als eigenständige
+            // Coordinators implementiert, damit das SettingsViewModel stateless Logik nicht selbst trägt.
             _ = builder.Services.AddSingleton<IConnectionTestCoordinator, ConnectionTestCoordinator>();
             _ = builder.Services.AddSingleton<ILogViewerCoordinator>(provider => new LogViewerCoordinator(
                 provider.GetRequiredService<LoggerManager>(),
@@ -828,7 +827,7 @@ namespace EchoPlay.App
 
             _ = builder.Services.AddTransient<StatistikViewModel>();
 
-            // Resilience-Rollout (Brief 241): Standard-Policies (Retry + Timeout + CircuitBreaker)
+            // Resilience-Rollout: Standard-Policies (Retry + Timeout + CircuitBreaker)
             // an alle typed HttpClients aus LocalLibrary/AppleMusic/TagManager anhängen.
             // AddHttpClient<T>() ist additiv — BaseAddress/Timeout/UserAgent aus den Extensions bleiben erhalten.
             // Reihenfolge: ResilienceHandler zuerst (wrappt als äußerer Handler), RateLimitHandler danach

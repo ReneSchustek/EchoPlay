@@ -7,10 +7,10 @@ using System.Diagnostics.CodeAnalysis;
 // und nicht im eigenen Code auflösbar.
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.ViewModels",
-    Justification = "WinUI-3-XAML-Databinding benoetigt public ViewModels.")]
+    Justification = "WinUI-3-XAML-Databinding benötigt public ViewModels.")]
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.Views",
-    Justification = "WinUI-3-XAML-Code-Behind (x:Class) benoetigt public View-Klassen.")]
+    Justification = "WinUI-3-XAML-Code-Behind (x:Class) benötigt public View-Klassen.")]
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.Controls",
     Justification = "WinUI-3-XAML-Code-Behind (x:Class) und DependencyProperty-Binding benoetigen public Control-Klassen.")]
@@ -31,7 +31,7 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "Services werden von public ViewModels und Views in Konstruktor- und Property-Signaturen referenziert; inconsistent accessibility verhindert internal.")]
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.Helpers",
-    Justification = "Helper-Klassen werden aus public Views/Controls/ViewModels verwendet und muessen daher public bleiben.")]
+    Justification = "Helper-Klassen werden aus public Views/Controls/ViewModels verwendet und müssen daher public bleiben.")]
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.Infrastructure",
     Justification = "ObservableObject-Basisklasse und RelayCommand werden in public ViewModel- und Property-Signaturen verwendet; inconsistent accessibility verhindert internal.")]

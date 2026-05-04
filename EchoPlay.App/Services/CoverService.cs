@@ -121,7 +121,7 @@ namespace EchoPlay.App.Services
         /// Konvertiert Binärdaten in ein BitmapImage für die UI.
         /// Null bei fehlerhaften Daten (korruptes Bild).
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bild-Dekodierung via BitmapImage.SetSourceAsync: kaputte oder zugeschnittene Cover-Rohdaten liefern native WIC/COM-Fehler; fuer die UI reicht 'null' (Fallback-Cover).")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bild-Dekodierung via BitmapImage.SetSourceAsync: kaputte oder zugeschnittene Cover-Rohdaten liefern native WIC/COM-Fehler; für die UI reicht 'null' (Fallback-Cover).")]
         public static async Task<BitmapImage?> ConvertToBitmapAsync(byte[] imageData)
         {
             try

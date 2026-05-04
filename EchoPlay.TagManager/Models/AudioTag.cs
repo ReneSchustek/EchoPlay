@@ -51,7 +51,7 @@ namespace EchoPlay.TagManager.Models
         /// <see langword="null"/> bedeutet, dass kein Cover vorhanden ist oder beim
         /// Schreiben das vorhandene Cover nicht überschrieben werden soll.
         /// </summary>
-        [SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "DTO-Eigenschaft fuer TagLib-Interop: TagLib.ByteVector erwartet byte[] direkt, und das Array wird sowohl gelesen als auch beim Schreiben weitergereicht.")]
+        [SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "DTO-Eigenschaft für TagLib-Interop: TagLib.ByteVector erwartet byte[] direkt, und das Array wird sowohl gelesen als auch beim Schreiben weitergereicht.")]
         public byte[]? CoverImageData { get; set; }
 
         /// <summary>

@@ -103,7 +103,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Führt einen manuellen Online-Lookup anhand des Titels oder Dateinamens aus.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MusicBrainz-Lookup: HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Fehlermeldung angezeigt und der Lookup-Command kehrt zurueck.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MusicBrainz-Lookup: HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Fehlermeldung angezeigt und der Lookup-Command kehrt zurück.")]
         public async Task LookupOnlineAsync()
         {
             LookupOnlineCallCount++;
@@ -145,7 +145,7 @@ namespace EchoPlay.App.ViewModels
         /// Führt einen automatischen Lookup aus dem Ordnerkontext aus. Bei eindeutigem Treffer
         /// werden die Tags direkt übernommen; ansonsten wird ein Auswahl-Dialog angefordert.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Auto-Lookup (MusicBrainz + Cover Art Archive): HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status angezeigt und der Command kehrt zurueck.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Auto-Lookup (MusicBrainz + Cover Art Archive): HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status angezeigt und der Command kehrt zurück.")]
         public async Task AutoLookupAsync()
         {
             AutoLookupCallCount++;

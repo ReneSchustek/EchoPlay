@@ -41,6 +41,6 @@ namespace EchoPlay.App.Services
         Protokoll,
 
         /// <summary>Über-Seite (Version, Autoren, Lizenz).</summary>
-        Ueber
+        Über
     }
 }

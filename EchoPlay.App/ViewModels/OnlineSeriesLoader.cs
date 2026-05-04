@@ -55,7 +55,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt alle online-importierten Serien, füllt <see cref="OnlineSeriesViewModel"/>
         /// und startet das Hintergrund-Cover-Caching.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Mediathek-Ladevorgang iteriert ueber abonnierte Serien: Import-/Provider-/DB-Fehler einer einzelnen Serie duerfen die Kachel-Erstellung der restlichen Serien nicht abbrechen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Mediathek-Ladevorgang iteriert über abonnierte Serien: Import-/Provider-/DB-Fehler einer einzelnen Serie dürfen die Kachel-Erstellung der restlichen Serien nicht abbrechen.")]
         public async Task LoadAsync()
         {
             LoadCallCount++;
@@ -154,7 +154,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Lädt fehlende Serien-Cover von der Provider-URL herunter und speichert sie in der DB.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cache-Aufbau fuer Serien-Cover: HTTP-/IO-/DB-Fehler einer einzelnen Serie duerfen die Kachel-Ansicht nicht stoeren; Fehler werden lediglich geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cache-Aufbau für Serien-Cover: HTTP-/IO-/DB-Fehler einer einzelnen Serie dürfen die Kachel-Ansicht nicht stören; Fehler werden lediglich geloggt.")]
         private async Task CacheSeriesCoversAsync(IReadOnlyList<Series> seriesList)
         {
             CacheCallCount++;

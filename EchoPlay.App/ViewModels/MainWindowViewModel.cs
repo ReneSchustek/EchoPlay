@@ -71,7 +71,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt die AppSettings und aktualisiert die Sichtbarkeits-Properties.
         /// Wird einmalig beim Laden des Fensters aufgerufen.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Initiales Laden der NavigationView-Sichtbarkeiten: DB-Fehler beim Laden der AppSettings duerfen das MainWindow nicht blockieren – Defaultwerte werden beibehalten und der Fehler lediglich geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Initiales Laden der NavigationView-Sichtbarkeiten: DB-Fehler beim Laden der AppSettings dürfen das MainWindow nicht blockieren – Defaultwerte werden beibehalten und der Fehler lediglich geloggt.")]
         public async Task LoadAsync()
         {
             try
@@ -120,7 +120,7 @@ namespace EchoPlay.App.ViewModels
                 "Suche" => NavigationTarget.Suche,
                 "Player" => NavigationTarget.Player,
                 "Statistik" => NavigationTarget.Statistik,
-                "Ueber" => NavigationTarget.Ueber,
+                "Über" => NavigationTarget.Über,
                 _ => null
             };
 

@@ -19,7 +19,7 @@ namespace EchoPlay.App.ViewModels
         /// Führt eine Batch-Operation mit Fortschrittsanzeige und Fehlerdialog aus.
         /// Setzt <c>IsLoading</c>, aktualisiert <c>BatchProgressText</c> und räumt im Finally auf.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Generischer Batch-Runner fuer Tag-Operationen auf mehreren Dateien: TagLib-/IO-Fehler einer einzelnen Datei duerfen den Batch nicht abbrechen; Einzelfehler werden in der Fehlerliste gesammelt und am Ende angezeigt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Generischer Batch-Runner für Tag-Operationen auf mehreren Dateien: TagLib-/IO-Fehler einer einzelnen Datei dürfen den Batch nicht abbrechen; Einzelfehler werden in der Fehlerliste gesammelt und am Ende angezeigt.")]
         public static async Task RunBatchAsync(
             IReadOnlyList<TagFileItemViewModel> files,
             Func<TagFileItemViewModel, Task> perFile,

@@ -41,7 +41,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Entfernt das Cover der aktuell ausgewählten Datei.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Entfernen per TagLib: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Entfernen per TagLib: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task RemoveCoverAsync()
         {
             RemoveCoverCallCount++;

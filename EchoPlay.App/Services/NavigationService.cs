@@ -32,7 +32,7 @@ namespace EchoPlay.App.Services
                 [NavigationTarget.Import] = typeof(ImportPage),
                 [NavigationTarget.Statistik] = typeof(StatistikPage),
                 [NavigationTarget.Protokoll] = typeof(ProtokollPage),
-                [NavigationTarget.Ueber] = typeof(UeberPage)
+                [NavigationTarget.Über] = typeof(UeberPage)
             };
 
         private Frame? _frame;

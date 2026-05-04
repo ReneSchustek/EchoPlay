@@ -376,7 +376,7 @@ namespace EchoPlay.App.Services
         /// <param name="trackService">Datenbankzugriff für Tracks.</param>
         /// <param name="metadataReader">Liest Audiodatei-Metadaten (synchron, TagLib#).</param>
         /// <returns>Anzahl der angelegten Tracks.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TagLib-/IO-/DB-Fehler einzelner Audio-Dateien (korrupte Tags, gesperrte Dateien, Pfad-zu-lang) duerfen die Track-Anlage fuer die restlichen Dateien nicht abbrechen; Einzelfehler werden geloggt und uebersprungen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TagLib-/IO-/DB-Fehler einzelner Audio-Dateien (korrupte Tags, gesperrte Dateien, Pfad-zu-lang) dürfen die Track-Anlage für die restlichen Dateien nicht abbrechen; Einzelfehler werden geloggt und übersprungen.")]
         private async Task<int> CreateLocalTracksAsync(
             Guid episodeId,
             IReadOnlyList<string> trackPaths,
@@ -472,7 +472,7 @@ namespace EchoPlay.App.Services
         /// Fehler werden geloggt, aber nicht weitergegeben – ein fehlendes Cover
         /// darf den Scan-Vorgang nie unterbrechen.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Aufloesung pro Ordner: IO-/HTTP-/Bild-Dekodier-Fehler duerfen den Scan-Vorgang nicht stoppen; ein fehlendes Cover wird zu 'null', damit die Episode ohne Cover angelegt wird.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Aufloesung pro Ordner: IO-/HTTP-/Bild-Dekodier-Fehler dürfen den Scan-Vorgang nicht stoppen; ein fehlendes Cover wird zu 'null', damit die Episode ohne Cover angelegt wird.")]
         private async Task<byte[]?> ResolveCoverSafelyAsync(
             EchoPlay.LocalLibrary.Cover.ILocalCoverService coverService,
             string folderPath,
@@ -495,7 +495,7 @@ namespace EchoPlay.App.Services
         /// Nutzt den CoverCopyService (Nummer + Schlagwort-Match).
         /// Schreibt übernommene Cover zusätzlich als cover.jpg in den Episodenordner.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Optionaler Cover-Copy-Schritt nach Scan: DB-/IO-Fehler beim Uebernehmen von Covern aus anderen Episoden oder beim Schreiben von cover.jpg duerfen den Scan-Abschluss nicht blockieren.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Optionaler Cover-Copy-Schritt nach Scan: DB-/IO-Fehler beim Uebernehmen von Covern aus anderen Episoden oder beim Schreiben von cover.jpg dürfen den Scan-Abschluss nicht blockieren.")]
         // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         private async Task ApplyDbCoversToLocalEpisodesAsync(IServiceProvider serviceProvider)
         {

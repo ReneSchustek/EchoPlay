@@ -115,7 +115,7 @@ namespace EchoPlay.App.ViewModels
         /// Offline-Modus wird vorher der Online-Zugang angefragt; bei Ablehnung kehrt die
         /// Methode ohne Aktion zurück.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bulk-Refresh: Einzelserien-Fehler werden uebersprungen, uebergreifende Fehler landen als Dialog; Loading-State im finally geklaert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bulk-Refresh: Einzelserien-Fehler werden übersprungen, uebergreifende Fehler landen als Dialog; Loading-State im finally geklaert.")]
         public async Task RefreshAllOnlineSeriesAsync()
         {
             RefreshAllCallCount++;

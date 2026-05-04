@@ -297,7 +297,7 @@ namespace EchoPlay.App.ViewModels
         /// Karten den Provider drosseln würde.
         /// Die WinRT-COM-Typen für die Analyse leben in <see cref="Services.CoverBrightnessAnalyzer"/>.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse fuer eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler duerfen die Kachel nicht zerstoeren – der Platzhalter bleibt stehen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse für eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler dürfen die Kachel nicht zerstören – der Platzhalter bleibt stehen.")]
         private async Task LoadCoverAndAnalyzeAsync(string coverUrl)
         {
             try

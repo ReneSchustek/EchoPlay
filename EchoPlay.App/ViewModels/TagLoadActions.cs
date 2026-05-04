@@ -57,7 +57,7 @@ namespace EchoPlay.App.ViewModels
             => _fileLoadCompletedSource?.Task ?? Task.CompletedTask;
 
         /// <summary>Lädt alle Audiodateien eines Ordners und setzt die Sub-VMs zurück.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ordner-Enumeration: IO-Fehler (UnauthorizedAccess, PathTooLong, IOException) einzelner Unterordner/Dateien werden als Nutzer-Fehlermeldung angezeigt, damit der Tag-Manager nicht abstuerzt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ordner-Enumeration: IO-Fehler (UnauthorizedAccess, PathTooLong, IOException) einzelner Unterordner/Dateien werden als Nutzer-Fehlermeldung angezeigt, damit der Tag-Manager nicht abstürzt.")]
         public async Task LoadFolderAsync(string folderPath)
         {
             LoadFolderCallCount++;
@@ -125,7 +125,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Lädt die Tags mehrerer Dateien und zeigt gemeinsame Werte an.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Read fuer Multi-Auswahl: TagLib-/IO-Fehler einer einzelnen Datei duerfen den Batch-Read der restlichen Dateien nicht abbrechen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Read für Multi-Auswahl: TagLib-/IO-Fehler einer einzelnen Datei dürfen den Batch-Read der restlichen Dateien nicht abbrechen.")]
         public async Task LoadMultipleFileTagsAsync(IReadOnlyList<TagFileItemViewModel> files)
         {
             LoadMultipleFileTagsCallCount++;

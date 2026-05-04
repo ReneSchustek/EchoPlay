@@ -117,7 +117,7 @@ namespace EchoPlay.App.Services
         /// <param name="trackPaths">Absolute Dateipfade der Audiotracks, in Reihenfolge.</param>
         /// <param name="startIndex">Index des ersten Tracks (0-basiert).</param>
         /// <param name="resumePosition">Position, ab der fortgesetzt werden soll.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Einstieg: kaputte/fehlende Audio-Dateien, Codec-Fehler oder MediaFoundation-COM-Fehler werden als Nutzer-Fehlermeldung ueber 'ErrorOccurred' signalisiert, ohne die App zu reissen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Einstieg: kaputte/fehlende Audio-Dateien, Codec-Fehler oder MediaFoundation-COM-Fehler werden als Nutzer-Fehlermeldung über 'ErrorOccurred' signalisiert, ohne die App zu reißen.")]
         public void Play(Guid episodeId, IReadOnlyList<string> trackPaths, int startIndex = 0, TimeSpan resumePosition = default)
         {
             ArgumentNullException.ThrowIfNull(trackPaths);
@@ -183,7 +183,7 @@ namespace EchoPlay.App.Services
         /// laufen auf einem Hintergrund-Thread, weil <c>MediaPlayer.Pause()</c> den UI-Thread
         /// deadlocken kann wenn die Pipeline gleichzeitig UI-Benachrichtigungen sendet.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Media-Pipeline-Stop auf Hintergrund-Thread: MediaPlayer.Pause / Playlist.Items.Clear koennen bei gleichzeitigen Pipeline-Events native Fehler werfen, die aber den logischen Stop (State-Reset, State-Persistenz) nicht verhindern duerfen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Media-Pipeline-Stop auf Hintergrund-Thread: MediaPlayer.Pause / Playlist.Items.Clear können bei gleichzeitigen Pipeline-Events native Fehler werfen, die aber den logischen Stop (State-Reset, State-Persistenz) nicht verhindern dürfen.")]
         public void Stop()
         {
             _logger.Info("Wiedergabe gestoppt – Position wird gespeichert.");
@@ -243,7 +243,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Setzt eine pausierte Wiedergabe fort.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Wrapper: native/COM-Fehler beim Fortsetzen (Codec/Stream-Probleme) werden als Nutzer-Fehlermeldung ueber 'ErrorOccurred' signalisiert, ohne die App zu reissen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Wrapper: native/COM-Fehler beim Fortsetzen (Codec/Stream-Probleme) werden als Nutzer-Fehlermeldung über 'ErrorOccurred' signalisiert, ohne die App zu reißen.")]
         public void Resume()
         {
             try
@@ -301,7 +301,7 @@ namespace EchoPlay.App.Services
         /// Gibt alle Ressourcen frei und speichert die aktuelle Position asynchron.
         /// Wird vom DI-Container aufgerufen, wenn der Host per <c>DisposeAsync</c> entsorgt wird.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Shutdown-Pfad: DB-/IO-Fehler beim Sichern der letzten Abspielposition (SavePlaybackStateSnapshotAsync) duerfen den Host-Dispose nicht blockieren – die App beendet sich, der Verlust wird lediglich geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Shutdown-Pfad: DB-/IO-Fehler beim Sichern der letzten Abspielposition (SavePlaybackStateSnapshotAsync) dürfen den Host-Dispose nicht blockieren – die App beendet sich, der Verlust wird lediglich geloggt.")]
         public async ValueTask DisposeAsync()
         {
             if (_disposed)
@@ -441,7 +441,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="episodeId">Die Episode, für die gespeichert wird.</param>
         /// <param name="position">Die aktuelle Abspielposition.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Persistenz der Abspielposition im Hintergrund: DbContext-/Concurrency-/Migration-Fehler duerfen die Wiedergabe nicht stoeren – bei Scheitern wird der Verlust geloggt und der naechste Autosave-Tick versucht es erneut.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Persistenz der Abspielposition im Hintergrund: DbContext-/Concurrency-/Migration-Fehler dürfen die Wiedergabe nicht stören – bei Scheitern wird der Verlust geloggt und der nächste Autosave-Tick versucht es erneut.")]
         private async System.Threading.Tasks.Task SavePlaybackStateForEpisodeAsync(Guid episodeId, TimeSpan position)
         {
             if (episodeId == Guid.Empty)

@@ -202,7 +202,7 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await validator.ValidateAsync();
 
-            // Splash darf ausschliesslich die Serien-Phase anstossen.
+            // Splash darf ausschließlich die Serien-Phase anstossen.
             Assert.Equal(1, fakeCover.RunSeriesCoversCallCount);
             Assert.Equal(0, fakeCover.RunOnceCallCount);
         }

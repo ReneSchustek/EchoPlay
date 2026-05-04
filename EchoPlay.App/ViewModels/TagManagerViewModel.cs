@@ -150,7 +150,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn der Auto-Lookup einen eindeutigen Treffer gefunden hat.
         /// Die Page zeigt eine Bestätigungs-InfoBar.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<TagLookupCandidate> liefert den eindeutigen Auto-Lookup-Treffer direkt an die Page fuer die InfoBar; ein zusaetzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<TagLookupCandidate> liefert den eindeutigen Auto-Lookup-Treffer direkt an die Page für die InfoBar; ein zusaetzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
         public event EventHandler<TagLookupCandidate>? AutoLookupApplied;
 
         /// <summary>Wird ausgelöst, wenn der Nutzer ein Cover per Datei-Picker laden möchte.</summary>

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 namespace EchoPlay.Spotify.Tests.Live
 {
     /// <summary>
-    /// Gemeinsame Test-Infrastruktur fuer alle Spotify-Live-Smoke-Tests.
+    /// Gemeinsame Test-Infrastruktur für alle Spotify-Live-Smoke-Tests.
     ///
     /// Die Fixture erstellt manuell eine vollstaendige HTTP-Pipeline
     /// mit Token-Handling und stellt den API-Client allen Tests bereit.
@@ -17,7 +17,7 @@ namespace EchoPlay.Spotify.Tests.Live
     /// Der bewusste Verzicht auf IHttpClientFactory vermeidet
     /// Connection-Pool-Probleme, die in Test-Kontexten ohne Host auftreten.
     /// </summary>
-    [SuppressMessage("Design", "CA1515:Consider making public types internal", Justification = "xUnit-Test-Infrastruktur muss public sein fuer den Test-Runner (IClassFixture<T>).")]
+    [SuppressMessage("Design", "CA1515:Consider making public types internal", Justification = "xUnit-Test-Infrastruktur muss public sein für den Test-Runner (IClassFixture<T>).")]
     public sealed class SpotifyLiveFixture : IDisposable
     {
         private readonly HttpClient _tokenHttpClient;
@@ -46,7 +46,7 @@ namespace EchoPlay.Spotify.Tests.Live
             EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory =
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions());
 
-            // HttpClient fuer Token-Anfragen (Client-Credentials-Flow)
+            // HttpClient für Token-Anfragen (Client-Credentials-Flow)
             _tokenHttpClient = new HttpClient
             {
                 BaseAddress = new Uri(spotifyOptions.AuthBaseUrl)
@@ -60,8 +60,8 @@ namespace EchoPlay.Spotify.Tests.Live
 
             // Auth-Handler mit eigenem InnerHandler.
             // PooledConnectionLifetime = Zero verhindert, dass abgelaufene
-            // Verbindungen wiederverwendet werden – Spotify schliesst
-            // Idle-Connections aggressiv, was sonst zu SocketExceptions fuehrt.
+            // Verbindungen wiederverwendet werden – Spotify schließt
+            // Idle-Connections aggressiv, was sonst zu SocketExceptions führt.
             SpotifyAuthMessageHandler authHandler = new(tokenClient)
             {
                 InnerHandler = new SocketsHttpHandler

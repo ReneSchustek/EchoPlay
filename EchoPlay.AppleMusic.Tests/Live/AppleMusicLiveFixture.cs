@@ -10,7 +10,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
     /// Im Gegensatz zu Spotify ist keine Authentifizierung erforderlich,
     /// da die iTunes Search API kostenfrei und öffentlich zugänglich ist.
     /// </summary>
-    [SuppressMessage("Design", "CA1515:Consider making public types internal", Justification = "xUnit-Test-Infrastruktur muss public sein fuer den Test-Runner (IClassFixture<T>).")]
+    [SuppressMessage("Design", "CA1515:Consider making public types internal", Justification = "xUnit-Test-Infrastruktur muss public sein für den Test-Runner (IClassFixture<T>).")]
     public sealed class AppleMusicLiveFixture : IDisposable
     {
         private readonly HttpClient _httpClient;

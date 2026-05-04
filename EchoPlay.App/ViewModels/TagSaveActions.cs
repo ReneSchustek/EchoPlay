@@ -54,7 +54,7 @@ namespace EchoPlay.App.ViewModels
         /// Speichert die aktuell angezeigten Tags. Bei Einzelauswahl werden alle Felder
         /// geschrieben; bei Mehrfachauswahl nur die vom Nutzer geänderten auf alle selektierten Dateien.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Speichern: TagLib-/IO-Fehler (gesperrte Datei, Read-Only, korruptes Format) werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Speichern: TagLib-/IO-Fehler (gesperrte Datei, Read-Only, korruptes Format) werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task SaveAsync()
         {
             SaveCallCount++;
@@ -141,7 +141,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Entfernt alle Tags der ausgewählten Datei nach Nutzerbestätigung.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Loeschen: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reisst.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Löschen: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task RemoveAllTagsAsync()
         {
             RemoveAllTagsCallCount++;

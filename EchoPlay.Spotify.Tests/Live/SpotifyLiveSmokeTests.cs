@@ -5,14 +5,14 @@ using Xunit;
 namespace EchoPlay.Spotify.Tests.Live
 {
     /// <summary>
-    /// Technischer Smoke-Test fuer die Spotify-Web-API.
+    /// Technischer Smoke-Test für die Spotify-Web-API.
     ///
     /// Die Tests sind bewusst deaktiviert, da:
     /// - sie echte Netzwerkzugriffe benoetigen
-    /// - Firewall, Proxy oder VPN den Zugriff verhindern koennen
+    /// - Firewall, Proxy oder VPN den Zugriff verhindern können
     /// - dies keinen Rueckschluss auf die Codequalitaet zulaesst
     ///
-    /// Die Tests dienen ausschliesslich der manuellen Verifikation
+    /// Die Tests dienen ausschließlich der manuellen Verifikation
     /// in einer kontrollierten Umgebung.
     ///
     /// Credentials werden aus User Secrets geladen:
@@ -34,13 +34,13 @@ namespace EchoPlay.Spotify.Tests.Live
         }
 
         /// <summary>
-        /// Fuehrt eine reale Kuenstler-Suche gegen Spotify aus.
+        /// Führt eine reale Kuenstler-Suche gegen Spotify aus.
         ///
         /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
         /// </summary>
 
         //[Fact]
-        [Fact(Skip = "Manuell ausfuehren – benoetigt Internetzugang und gueltige Spotify-Credentials")]
+        [Fact(Skip = "Manuell ausfuehren – benötigt Internetzugang und gueltige Spotify-Credentials")]
         public async Task SpotifyApi_IsReachable_AndReturnsArtists()
         {
             // ACT
@@ -54,13 +54,13 @@ namespace EchoPlay.Spotify.Tests.Live
         }
 
         /// <summary>
-        /// Prueft, ob Alben eines bekannten Kuenstlers geladen werden koennen.
+        /// Prüft, ob Alben eines bekannten Kuenstlers geladen werden können.
         ///
         /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
         /// </summary>
 
         //[Fact]
-        [Fact(Skip = "Manuell ausfuehren – benoetigt Internetzugang und gueltige Spotify-Credentials")]
+        [Fact(Skip = "Manuell ausfuehren – benötigt Internetzugang und gueltige Spotify-Credentials")]
         public async Task SpotifyApi_GetArtistAlbums_ReturnsAlbums()
         {
             // ARRANGE – Kuenstler suchen, um eine gueltige Artist-ID zu erhalten
@@ -81,13 +81,13 @@ namespace EchoPlay.Spotify.Tests.Live
         }
 
         /// <summary>
-        /// Prueft, ob Tracks eines bekannten Albums geladen werden koennen.
+        /// Prüft, ob Tracks eines bekannten Albums geladen werden können.
         ///
         /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
         /// </summary>
 
         //[Fact]
-        [Fact(Skip = "Manuell ausfuehren – benoetigt Internetzugang und gueltige Spotify-Credentials")]
+        [Fact(Skip = "Manuell ausfuehren – benötigt Internetzugang und gueltige Spotify-Credentials")]
         public async Task SpotifyApi_GetAlbumTracks_ReturnsTracks()
         {
             // ARRANGE – Kuenstler und Album suchen

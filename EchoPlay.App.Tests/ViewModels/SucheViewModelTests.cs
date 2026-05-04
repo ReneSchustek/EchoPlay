@@ -383,11 +383,11 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SearchAsync_ClearsResultsImmediately_BeforeAwait()
         {
             // Trefferliste muss noch im selben Frame nach Enter leer sein, BEVOR der HTTP-Call
-            // antwortet – sonst zeigen die Kacheln waehrend der Anfrage die alten Treffer.
+            // antwortet – sonst zeigen die Kacheln während der Anfrage die alten Treffer.
             GatedSeriesImportSearch gated = new();
             SucheViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
 
-            // Erste Suche bis zum Ende durchziehen, damit Results echte Stale-Daten enthaelt
+            // Erste Suche bis zum Ende durchziehen, damit Results echte Stale-Daten enthält
             vm.SearchText = "first";
             vm.SearchCommand.Execute(null);
             gated.CompleteCall(0,
@@ -409,8 +409,8 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SearchAsync_BackToBack_DiscardsOlderResults()
         {
-            // Zwei Suchen ohne Pause: die zweite verdraengt die erste, die spaet eintreffenden
-            // Stale-Treffer der ersten duerfen die UI nicht mehr ueberschreiben.
+            // Zwei Suchen ohne Pause: die zweite verdraengt die erste, die spät eintreffenden
+            // Stale-Treffer der ersten dürfen die UI nicht mehr ueberschreiben.
             GatedSeriesImportSearch gated = new();
             SucheViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
 

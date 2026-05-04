@@ -48,7 +48,7 @@ namespace EchoPlay.App.Infrastructure
         /// Name der Operation (per <see cref="CallerMemberNameAttribute"/> automatisch
         /// gesetzt, wenn weggelassen).
         /// </param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sicherheitsnetz fuer async-void-UI-Handler: jede Exception wird geloggt und als Dialog angezeigt, damit die App nicht abstuerzt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sicherheitsnetz für async-void-UI-Handler: jede Exception wird geloggt und als Dialog angezeigt, damit die App nicht abstürzt.")]
         public static async Task RunSafelyAsync(
             Func<Task> action,
             IErrorDialogService errorDialog,

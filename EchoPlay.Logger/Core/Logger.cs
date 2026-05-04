@@ -129,10 +129,10 @@ namespace EchoPlay.Logger.Core
                 return;
             }
 
-            // Lokalzeit ist hier gewollt: Log-Einträge werden vom Anwender im Log-Viewer
-            // gelesen, der Server-Begriff UTC würde Diagnose-Zeitstempel unleserlich machen.
+            // UTC-Quelle hält Timestamps stabil über DST-Wechsel und Multi-Region-Container.
+            // Display-Formatter (DefaultLogFormatter, LogViewerCoordinator, ProtokollViewModel) konvertieren beim Rendern auf Lokalzeit.
             LogEntry entry = new(
-                Timestamp: DateTime.Now,
+                Timestamp: DateTime.UtcNow,
                 Level: level,
                 Message: message,
                 Category: _category,

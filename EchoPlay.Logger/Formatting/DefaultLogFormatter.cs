@@ -23,7 +23,9 @@ namespace EchoPlay.Logger.Formatting
             // Exception auf neuer Zeile mit Einrückung für bessere Lesbarkeit im Log
             string exceptionPart = entry.Exception != null ? $"\n   Exception: {entry.Exception}" : string.Empty;
 
-            return $"{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{entry.Level}] [{entry.Category}]{scopesPart}: {entry.Message}{exceptionPart}";
+            // Timestamp ist UTC (siehe LogEntry-Doc); Lokalzeit für den Anwender beim Rendern.
+            DateTime localTimestamp = entry.Timestamp.ToLocalTime();
+            return $"{localTimestamp:yyyy-MM-dd HH:mm:ss.fff} [{entry.Level}] [{entry.Category}]{scopesPart}: {entry.Message}{exceptionPart}";
         }
     }
 }

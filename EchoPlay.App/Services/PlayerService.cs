@@ -16,7 +16,7 @@ namespace EchoPlay.App.Services
     /// Kapselt <see cref="MediaPlayer"/> und <see cref="MediaPlaybackList"/> und stellt
     /// eine stabile, ereignisbasierte API für den MiniPlayer und die Episodenliste bereit.
     /// </summary>
-    public sealed class PlayerService : IPlayerService, IDisposable
+    public sealed class PlayerService : IPlayerService, IAsyncDisposable, IDisposable
     {
         // Auto-Save alle 30 Sekunden während aktiver Wiedergabe (500 ms × 60 Ticks)
         private const int AutoSaveIntervalTicks = 60;
@@ -36,6 +36,7 @@ namespace EchoPlay.App.Services
         private Guid _currentEpisodeId;
         private TimeSpan? _sleepTimerRemaining;
         private int _autoSaveTick;
+        private bool _disposed;
 
         /// <summary>
         /// Initialisiert den PlayerService und konfiguriert die Wiedergabeliste.
@@ -297,28 +298,47 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Gibt alle Ressourcen frei und speichert die aktuelle Position.
+        /// Gibt alle Ressourcen frei und speichert die aktuelle Position asynchron.
+        /// Wird vom DI-Container aufgerufen, wenn der Host per <c>DisposeAsync</c> entsorgt wird.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Shutdown-Pfad: DB-/IO-Fehler beim Sichern der letzten Abspielposition (SavePlaybackStateSnapshotAsync) duerfen den Host-Dispose nicht blockieren – die App beendet sich, der Verlust wird lediglich geloggt.")]
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
+            if (_disposed)
+            {
+                return;
+            }
+            _disposed = true;
+
             _positionTimer.Stop();
 
-            // Position beim App-Beenden sichern, damit der Nutzer beim nächsten Start weiterhören kann.
-            // Task.Run vermeidet Deadlock falls Dispose() vom UI-Thread aufgerufen wird.
             try
             {
-                System.Threading.Tasks.Task.Run(() => SavePlaybackStateSnapshotAsync()).GetAwaiter().GetResult();
+                await SavePlaybackStateSnapshotAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                // App beendet sich sowieso – aber der Verlust der Position soll nachvollziehbar sein.
                 _logger.Error("Abspielposition konnte beim App-Ende nicht gespeichert werden.", ex);
             }
 
             _saveLock.Dispose();
             _positionTimer.Dispose();
             _player.Dispose();
+        }
+
+        /// <summary>
+        /// Sync-Fallback für DI-Container und Tests, die ohne Async-Dispose-Pfad arbeiten.
+        /// Delegiert auf <see cref="DisposeAsync"/>, damit die Save-Logik nur an einer Stelle gepflegt wird.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            // Sync-Fallback im Dispose-Pfad – kein UI-Sync-Context vorhanden, daher kein Deadlock-Risiko.
+            DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
 
         private void OnPositionTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)

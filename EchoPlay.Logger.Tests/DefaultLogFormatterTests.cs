@@ -9,8 +9,12 @@ namespace EchoPlay.Logger.Tests
     /// </summary>
     public sealed class DefaultLogFormatterTests
     {
-        /// <summary>Fester Zeitstempel für deterministische Vergleiche.</summary>
-        private static readonly DateTime TestZeitstempel = new(2026, 3, 2, 14, 30, 45, 123);
+        /// <summary>
+        /// Fester Lokal-Zeitstempel für deterministische Vergleiche.
+        /// Local-Kind, damit die ToLocalTime-Konvertierung im Formatter zur No-Op wird und
+        /// die formatierten Strings unabhängig von der Test-Umgebungs-Zeitzone bleiben.
+        /// </summary>
+        private static readonly DateTime TestZeitstempel = new(2026, 3, 2, 14, 30, 45, 123, DateTimeKind.Local);
 
         /// <summary>
         /// Format ohne Scopes und ohne Exception entspricht dem exakten Grundformat.
@@ -39,7 +43,7 @@ namespace EchoPlay.Logger.Tests
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
-                Timestamp: new DateTime(2026, 1, 7, 9, 5, 3, 7),
+                Timestamp: new DateTime(2026, 1, 7, 9, 5, 3, 7, DateTimeKind.Local),
                 Level: LogLevel.Information,
                 Message: "Meldung",
                 Category: "Klasse",

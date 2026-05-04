@@ -1339,9 +1339,26 @@ The application will close.</value>
 {0}</value>
   </data>
 
-  <!-- Brief 252b – CoverSearchDialog -->
   <data name="CoverSearchDialogTitle" xml:space="preserve">
     <value>Search cover</value>
+  </data>
+  <data name="CoverSearchSearching" xml:space="preserve">
+    <value>Searching …</value>
+  </data>
+  <data name="CoverSearchNoResultsFormat" xml:space="preserve">
+    <value>No matches for "{0}".</value>
+  </data>
+  <data name="CoverSearchHitsFoundFormat" xml:space="preserve">
+    <value>{0} matches found.</value>
+  </data>
+  <data name="CoverSearchFailed" xml:space="preserve">
+    <value>Search failed.</value>
+  </data>
+  <data name="CoverSearchQueryPlaceholder" xml:space="preserve">
+    <value>Enter search term</value>
+  </data>
+  <data name="CoverSearchButton" xml:space="preserve">
+    <value>Search</value>
   </data>
 
   <!-- Brief 252b – Import errors -->

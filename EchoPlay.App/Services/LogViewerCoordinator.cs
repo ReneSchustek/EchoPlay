@@ -145,7 +145,8 @@ namespace EchoPlay.App.Services
                 _ => "????? "
             };
 
-            string time = entry.Timestamp.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            // LogEntry.Timestamp ist UTC; Lokalzeit für den Anwender im Log-Viewer.
+            string time = entry.Timestamp.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
             string line = $"{time} [{levelTag}] {entry.Category}: {entry.Message}";
 
             if (entry.Exception is not null)

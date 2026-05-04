@@ -295,7 +295,17 @@ namespace EchoPlay.App
             // weil PlayerService nach LoggerManager registriert wurde.
             // Ohne diesen Dispose würde der 500-ms-Timer nach dem Schließen des Fensters
             // weiter feuern und einen Crash im UI-Thread verursachen.
-            _host?.Dispose();
+            // DisposeAsync läuft den Async-Dispose-Pfad: PlayerService.DisposeAsync sichert
+            // die Abspielposition ohne Sync-over-Async-Knoten in der Service-Logik.
+            // IHost selbst deklariert nur IDisposable — die konkrete Host-Implementierung implementiert IAsyncDisposable.
+            if (_host is IAsyncDisposable asyncHost)
+            {
+                asyncHost.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
+            else
+            {
+                _host?.Dispose();
+            }
 
             // Sicherheits-Dispose: greift, falls der LoggerManager nicht über den DI-Container
             // freigegeben wird (z.B. bei nicht-standard Registrierung).

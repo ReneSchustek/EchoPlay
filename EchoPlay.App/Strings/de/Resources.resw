@@ -1341,9 +1341,26 @@ Die Anwendung wird beendet.</value>
 {0}</value>
   </data>
 
-  <!-- Brief 252b – CoverSearchDialog -->
   <data name="CoverSearchDialogTitle" xml:space="preserve">
     <value>Cover suchen</value>
+  </data>
+  <data name="CoverSearchSearching" xml:space="preserve">
+    <value>Suche läuft …</value>
+  </data>
+  <data name="CoverSearchNoResultsFormat" xml:space="preserve">
+    <value>Keine Treffer für „{0}“.</value>
+  </data>
+  <data name="CoverSearchHitsFoundFormat" xml:space="preserve">
+    <value>{0} Treffer gefunden.</value>
+  </data>
+  <data name="CoverSearchFailed" xml:space="preserve">
+    <value>Fehler bei der Suche.</value>
+  </data>
+  <data name="CoverSearchQueryPlaceholder" xml:space="preserve">
+    <value>Suchbegriff eingeben</value>
+  </data>
+  <data name="CoverSearchButton" xml:space="preserve">
+    <value>Suchen</value>
   </data>
 
   <!-- Brief 252b – Import-Fehler -->

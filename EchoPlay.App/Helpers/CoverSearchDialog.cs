@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,7 +38,8 @@ namespace EchoPlay.App.Helpers
         /// <param name="searchFunc">Suchfunktion – meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.</param>
         /// <param name="xamlRoot">XamlRoot für den ContentDialog – kommt von der aufrufenden Page.</param>
         /// <returns>Das ausgewählte Cover oder null bei Abbruch.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne TriggerSearchAsync-Wrapper-Funktion faengt alle Fehler der externen Cover-Suche (HTTP/iTunes/CoverArtArchive-Provider) ab und zeigt lediglich eine neutrale Statusmeldung, damit der Dialog offen bleibt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne TriggerSearchAsync-Wrapper-Funktion fängt alle Fehler der externen Cover-Suche (HTTP/iTunes/CoverArtArchive-Provider) ab und zeigt lediglich eine neutrale Statusmeldung, damit der Dialog offen bleibt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt.")]
         public static async Task<CoverSearchHit?> ShowAsync(
             string initialQuery,
             Func<string, CancellationToken, Task<IReadOnlyList<CoverSearchHit>>> searchFunc,
@@ -106,32 +108,44 @@ namespace EchoPlay.App.Helpers
             List<CoverSearchHit> currentResults = [];
             int selectedIndex = -1;
 
+            // Schließt der Anwender den Dialog während einer laufenden Suche, bricht die
+            // Cover-Suche (HTTP-Request) über das Token früh ab – sonst läuft sie ungesehen weiter.
+            using CancellationTokenSource dialogCts = new();
+            dialog.Closing += (_, _) => dialogCts.Cancel();
+
+            string searchingText = SafeResourceLoader.Get("CoverSearchSearching");
             progressRing.IsActive = true;
-            statusText.Text = "Suche läuft \u2026";
+            statusText.Text = searchingText;
 
             // Suchfunktion
             async Task RunSearchAsync(string query)
             {
                 progressRing.IsActive = true;
-                statusText.Text = "Suche läuft \u2026";
+                statusText.Text = searchingText;
                 currentResults.Clear();
                 resultsPanel.Children.Clear();
                 selectedIndex = -1;
                 dialog.IsPrimaryButtonEnabled = false;
 
                 IReadOnlyList<CoverSearchHit> results =
-                    await searchFunc(query.Trim(), CancellationToken.None);
+                    await searchFunc(query.Trim(), dialogCts.Token);
 
                 progressRing.IsActive = false;
 
                 if (results.Count == 0)
                 {
-                    statusText.Text = $"Keine Treffer für \u201e{query.Trim()}\u201c.";
+                    statusText.Text = string.Format(
+                        CultureInfo.CurrentCulture,
+                        SafeResourceLoader.Get("CoverSearchNoResultsFormat"),
+                        query.Trim());
                     return;
                 }
 
                 currentResults.AddRange(results);
-                statusText.Text = $"{results.Count} Treffer gefunden.";
+                statusText.Text = string.Format(
+                    CultureInfo.CurrentCulture,
+                    SafeResourceLoader.Get("CoverSearchHitsFoundFormat"),
+                    results.Count);
 
                 for (int i = 0; i < results.Count; i++)
                 {
@@ -168,10 +182,15 @@ namespace EchoPlay.App.Helpers
                 {
                     await RunSearchAsync(queryBox.Text);
                 }
+                catch (OperationCanceledException)
+                {
+                    // Dialog wurde geschlossen — kein Fehlerzustand, einfach abbrechen.
+                    progressRing.IsActive = false;
+                }
                 catch (Exception)
                 {
                     progressRing.IsActive = false;
-                    statusText.Text = "Fehler bei der Suche.";
+                    statusText.Text = SafeResourceLoader.Get("CoverSearchFailed");
                 }
             }
 
@@ -212,13 +231,13 @@ namespace EchoPlay.App.Helpers
             TextBox queryBox = new()
             {
                 Text = initialQuery,
-                PlaceholderText = "Suchbegriff eingeben",
+                PlaceholderText = SafeResourceLoader.Get("CoverSearchQueryPlaceholder"),
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
 
             Button searchButton = new()
             {
-                Content = "Suchen",
+                Content = SafeResourceLoader.Get("CoverSearchButton"),
                 Margin = new Thickness(8, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Bottom
             };

@@ -205,7 +205,8 @@ namespace EchoPlay.App.ViewModels
         /// Live-Protokoll irrelevant.
         /// </summary>
         private static LogEntryViewModel Map(LogEntry entry) =>
-            new(entry.Timestamp.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
+            // LogEntry.Timestamp ist UTC; Lokalzeit für die Live-Anzeige.
+            new(entry.Timestamp.ToLocalTime().ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
                 entry.Level,
                 entry.Category,
                 entry.Message);

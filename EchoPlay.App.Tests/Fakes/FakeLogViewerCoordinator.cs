@@ -83,7 +83,8 @@ namespace EchoPlay.App.Tests.Fakes
 
         private static string Format(LogEntry entry)
         {
-            string time = entry.Timestamp.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            // Spiegelt die Konvertierung des produktiven LogViewerCoordinator (UTC -> Lokalzeit).
+            string time = entry.Timestamp.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
             string line = $"{time} [{entry.Level}] {entry.Category}: {entry.Message}";
             if (entry.Exception is not null)
             {

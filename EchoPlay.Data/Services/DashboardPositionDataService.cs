@@ -22,22 +22,27 @@ namespace EchoPlay.Data.Services
             loggerFactory.CreateLogger("DashboardPositionDataService");
 
         /// <inheritdoc />
-        public async Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section)
+        /// <param name="section">Parameter section.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section, CancellationToken cancellationToken = default)
         {
-            _logger.Debug($"Lade Dashboard-Positionen für Bereich '{section}'.");
+            _logger.Debug(() => $"Lade Dashboard-Positionen für Bereich '{section}'.");
 
             List<DashboardPosition> result = await _context.DashboardPositions
 
                 .Where(dp => dp.Section == section)
                 .OrderBy(dp => dp.Position)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.Debug($"{result.Count} Position(en) für '{section}' geladen.");
+            _logger.Debug(() => $"{result.Count} Position(en) für '{section}' geladen.");
             return result;
         }
 
         /// <inheritdoc />
-        public async Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds)
+        /// <param name="section">Parameter section.</param>
+        /// <param name="seriesIds">Parameter seriesIds.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(seriesIds);
 
@@ -48,7 +53,7 @@ namespace EchoPlay.Data.Services
             List<DashboardPosition> existing = await _context.DashboardPositions
                 .AsTracking()
                 .Where(dp => dp.Section == section)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             _context.DashboardPositions.RemoveRange(existing);
 
@@ -67,7 +72,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
             {

@@ -13,6 +13,7 @@ namespace EchoPlay.App.Services
     /// Prüft den Offline-Modus über <see cref="IAppSettingsDataService"/>, zeigt bei Bedarf
     /// einen Bestätigungsdialog und schaltet die <see cref="StatusBarViewModel"/> temporär auf "Online".
     /// </summary>
+
     public sealed class OnlineAccessGuard : IOnlineAccessGuard
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -25,6 +26,7 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">DI-Scope-Fabrik für den Zugriff auf AppSettings.</param>
         /// <param name="confirmationDialog">Service für Ja/Abbrechen-Dialoge.</param>
         /// <param name="statusBar">StatusBar-ViewModel für die temporäre Online-Anzeige.</param>
+
         public OnlineAccessGuard(
             IServiceScopeFactory scopeFactory,
             IConfirmationDialogService confirmationDialog,
@@ -36,10 +38,12 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        public async Task<IDisposable?> RequestOnlineAccessAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<IDisposable?> RequestOnlineAccessAsync(CancellationToken cancellationToken = default)
         {
             // Im Online-Modus: kein Dialog, kein temporärer Status nötig
-            bool isOffline = await IsOfflineModeActiveAsync();
+            bool isOffline = await IsOfflineModeActiveAsync(cancellationToken);
             if (!isOffline)
             {
                 return NoOpDisposable.Instance;
@@ -50,7 +54,7 @@ namespace EchoPlay.App.Services
             string title = resources.GetString("OfflineOnlineAccessTitle");
             string message = resources.GetString("OfflineOnlineAccessMessage");
 
-            bool confirmed = await _confirmationDialog.ConfirmAsync(title, message);
+            bool confirmed = await _confirmationDialog.ConfirmAsync(title, message, cancellationToken);
             if (!confirmed)
             {
                 return null;
@@ -65,12 +69,14 @@ namespace EchoPlay.App.Services
         /// Liest den aktuellen Offline-Modus aus den AppSettings.
         /// Eigener Scope, weil der Guard als Singleton registriert ist.
         /// </summary>
-        private async Task<bool> IsOfflineModeActiveAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        private async Task<bool> IsOfflineModeActiveAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService = scope.ServiceProvider
                 .GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
             return settings.OfflineMode;
         }
 
@@ -78,6 +84,7 @@ namespace EchoPlay.App.Services
         /// Setzt den temporären Online-Status beim Dispose zurück auf Offline.
         /// Das using-Pattern garantiert, dass der Status auch bei Exceptions zurückgesetzt wird.
         /// </summary>
+
         private sealed class TemporaryOnlineScope : IDisposable
         {
             private readonly StatusBarViewModel _statusBar;
@@ -97,6 +104,7 @@ namespace EchoPlay.App.Services
         /// No-Op-Disposable für den Online-Modus – Dispose tut nichts.
         /// Singleton, da zustandslos.
         /// </summary>
+
         private sealed class NoOpDisposable : IDisposable
         {
             public static readonly NoOpDisposable Instance = new();

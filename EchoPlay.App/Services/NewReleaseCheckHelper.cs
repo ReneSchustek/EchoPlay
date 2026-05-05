@@ -16,6 +16,7 @@ namespace EchoPlay.App.Services
     /// Wird aufgerufen, wenn der Nutzer die Überwachung für eine Serie aktiviert,
     /// damit die Ergebnisse sofort im Cache liegen und beim nächsten Dashboard-Besuch angezeigt werden.
     /// </summary>
+
     internal static class NewReleaseCheckHelper
     {
         /// <summary>
@@ -23,11 +24,13 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="series">Die zu prüfende Serie.</param>
         /// <param name="serviceProvider">DI-Provider für den Zugriff auf OnlineEpisodeChecker und Cache.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuerscheinungen-Check nach Favoriten-Toggle: HTTP-Fehler (iTunes/Spotify), DB-Fehler beim Cache-Upsert oder unerwartete Parser-Probleme dürfen die Toggle-Aktion nicht blockieren – der Check wird beim nächsten App-Start wiederholt.")]
         public static async Task CheckAndCacheSingleSeriesAsync(
             Series series,
             // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -35,7 +38,7 @@ namespace EchoPlay.App.Services
 
                 IAppSettingsDataService settingsService =
                     serviceProvider.GetRequiredService<IAppSettingsDataService>();
-                AppSettings settings = await settingsService.GetAsync();
+                AppSettings settings = await settingsService.GetAsync(cancellationToken);
 
                 // Im Offline-Modus keine API-Calls
                 if (settings.OfflineMode)
@@ -59,7 +62,7 @@ namespace EchoPlay.App.Services
                     serviceProvider.GetRequiredService<IOnlineEpisodeChecker>();
 
                 IReadOnlyList<OnlineEpisodeCheckResult> results =
-                    await checker.CheckNewReleasesAsync([checkable], cutoffDate);
+                    await checker.CheckNewReleasesAsync([checkable], cutoffDate, cancellationToken);
 
                 // Ergebnisse in den Cache schreiben
                 DateTime checkedAt = clock.UtcNow;
@@ -86,7 +89,7 @@ namespace EchoPlay.App.Services
                 {
                     ICachedNewReleaseDataService cacheService =
                         serviceProvider.GetRequiredService<ICachedNewReleaseDataService>();
-                    await cacheService.UpsertRangeAsync(newEntries);
+                    await cacheService.UpsertRangeAsync(newEntries, cancellationToken);
                 }
             }
             catch (Exception)

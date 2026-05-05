@@ -15,6 +15,7 @@ namespace EchoPlay.App.Services
     /// Nutzt pro Aufruf einen eigenen <see cref="IServiceScope"/>, damit der
     /// Scoped-API-Client (Spotify-Token-Handling) sauber erzeugt und wieder freigegeben wird.
     /// </summary>
+
     public sealed class ConnectionTestCoordinator : IConnectionTestCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -23,12 +24,16 @@ namespace EchoPlay.App.Services
         /// Initialisiert den Coordinator mit der DI-Scope-Fabrik.
         /// </summary>
         /// <param name="scopeFactory">Für scoped API-Client-Auflösung.</param>
+
         public ConnectionTestCoordinator(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }
 
         /// <inheritdoc />
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="provider">Parameter <c>provider</c>.</param>
         public async Task<ConnectionTestResult> TestAsync(ProviderType provider, CancellationToken cancellationToken = default)
         {
             if (provider == ProviderType.None)

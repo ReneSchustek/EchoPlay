@@ -5,6 +5,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Konfigurierbare Optionen für den Hintergrund-Cover-Dienst.
     /// </summary>
+
     public sealed class BackgroundCoverServiceOptions
     {
         /// <summary>Intervall zwischen aufeinanderfolgenden Durchläufen.</summary>

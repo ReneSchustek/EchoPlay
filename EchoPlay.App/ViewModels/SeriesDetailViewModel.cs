@@ -305,17 +305,17 @@ namespace EchoPlay.App.ViewModels
                 IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
                 IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-                Series? series = await seriesService.GetByIdAsync(seriesId);
+                Series? series = await seriesService.GetByIdAsync(seriesId, CancellationToken.None);
                 _seriesId = seriesId;
                 SeriesTitle = series?.Title ?? string.Empty;
                 SeriesDescription = series?.Description ?? string.Empty;
                 IsFavorite = series?.IsFavorite ?? false;
                 OnPropertyChanged(nameof(DescriptionVisibility));
 
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId, CancellationToken.None);
 
                 // Alle PlaybackStates in einem Query laden – verhindert N+1
-                IReadOnlyList<PlaybackState> allStates = await playbackService.GetAllAsync();
+                IReadOnlyList<PlaybackState> allStates = await playbackService.GetAllAsync(CancellationToken.None);
 
                 Dictionary<Guid, PlaybackState> stateById = new(allStates.Count);
                 foreach (PlaybackState state in allStates)
@@ -447,7 +447,7 @@ namespace EchoPlay.App.ViewModels
             using IServiceScope scope = _scopeFactory.CreateScope();
             ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
 
-            IReadOnlyList<LocalTrack> localTracks = await trackService.GetByEpisodeIdAsync(episode.EpisodeId);
+            IReadOnlyList<LocalTrack> localTracks = await trackService.GetByEpisodeIdAsync(episode.EpisodeId, CancellationToken.None);
             _hasLocalTracks = localTracks.Count > 0;
 
             List<LocalTrackRowViewModel> rows = new(localTracks.Count);
@@ -477,6 +477,7 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public Task PlaySelectedEpisodeAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesPlaySelectedEpisode");
             if (_selectedEpisode is null)
             {
                 return Task.CompletedTask;
@@ -497,12 +498,14 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesToggleFavorite");
+
             bool newValue = !_isFavorite;
 
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
 
-            await seriesService.SetFavoriteAsync(_seriesId, newValue);
+            await seriesService.SetFavoriteAsync(_seriesId, newValue, CancellationToken.None);
             IsFavorite = newValue;
         }
 
@@ -516,17 +519,18 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task MarkAsPlayedAsync(Guid episodeId)
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesMarkPlayed");
             using IServiceScope scope = _scopeFactory.CreateScope();
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId);
+            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
 
             if (existing is not null)
             {
                 existing.IsCompleted = true;
                 existing.CompletedAt = _clock.UtcNow;
-                await stateService.UpdateAsync(existing);
+                await stateService.UpdateAsync(existing, CancellationToken.None);
             }
             else
             {
@@ -537,7 +541,7 @@ namespace EchoPlay.App.ViewModels
                     CompletedAt = _clock.UtcNow,
                     LastPlayedAt = _clock.UtcNow
                 };
-                await stateService.AddAsync(newState);
+                await stateService.AddAsync(newState, CancellationToken.None);
             }
 
             await LoadAsync(_seriesId);
@@ -551,15 +555,16 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task MarkAsUnplayedAsync(Guid episodeId)
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesMarkUnplayed");
             using IServiceScope scope = _scopeFactory.CreateScope();
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId);
+            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
 
             if (existing is not null)
             {
-                await stateService.DeleteAsync(existing.Id);
+                await stateService.DeleteAsync(existing.Id, CancellationToken.None);
             }
 
             await LoadAsync(_seriesId);
@@ -576,18 +581,19 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task PlayEpisodeAsync(Guid episodeId)
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesPlayEpisode");
             using IServiceScope scope = _scopeFactory.CreateScope();
             ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
             IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episodeId);
+            IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
 
             if (tracks.Count == 0)
             {
                 return;
             }
 
-            PlaybackState? savedState = await playbackService.GetByEpisodeIdAsync(episodeId);
+            PlaybackState? savedState = await playbackService.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
             TimeSpan resumePosition = savedState is { IsCompleted: false } ? savedState.LastPosition : TimeSpan.Zero;
 
             List<string> paths = new(tracks.Count);
@@ -658,55 +664,8 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="episode">Die Episode deren Cover geladen wird.</param>
         /// <returns>Das geladene Cover oder null wenn keins vorhanden.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Aufbau pro Episode: DB-/IO-/Bild-Dekodier-Fehler einer einzelnen Episode dürfen die Detailansicht nicht stören – 'null' führt zum Serien-Fallback-Cover.")]
-        private async Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode)
-        {
-            // DB-Cover über CoverService laden (CoverImages-Tabelle)
-            if (_coverService is not null)
-            {
-                BitmapImage? dbCover = await _coverService.GetEpisodeCoverImageAsync(episode.Id);
-                if (dbCover is not null)
-                {
-                    return dbCover;
-                }
-            }
-
-            // Dateisystem-Cover über den CoverLoader (cover.jpg oder ID3-Tag)
-            if (episode.LocalFolderPath is not null)
-            {
-                try
-                {
-                    using IServiceScope scope = _scopeFactory.CreateScope();
-                    EchoPlay.LocalLibrary.Cover.ILocalCoverLoader coverLoader =
-                        scope.ServiceProvider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>();
-
-                    // ID3-Fallback nur wenn kein cover.jpg vorhanden – spart DB-Abfrage
-                    string? firstTrackPath = null;
-                    if (!File.Exists(Path.Combine(episode.LocalFolderPath, Core.CoverConstants.CoverFileName)))
-                    {
-                        ILocalTrackDataService trackService =
-                            scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-                        IReadOnlyList<LocalTrack> tracks =
-                            await trackService.GetByEpisodeIdAsync(episode.Id);
-                        firstTrackPath = tracks.OrderBy(t => t.TrackNumber).FirstOrDefault()?.FilePath;
-                    }
-
-                    byte[]? coverBytes = await coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
-                    if (coverBytes is not null)
-                    {
-                        return await CoverService.ConvertToBitmapAsync(coverBytes);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Cover-Laden darf die Ansicht nicht blockieren –
-                    // korrupte Bilder oder fehlende Dateien sind kein Abbruchgrund.
-                    // Kein Logger im ViewModel verfügbar (bewusste Entscheidung: schlanke VMs).
-                }
-            }
-
-            return null;
-        }
+        private Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode) =>
+            CoverFactory.BuildEpisodeCoverAsync(episode);
 
         /// <summary>
         /// Erstellt ein Cover-Bild aus den Seriendaten als Fallback.
@@ -714,48 +673,13 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="series">Die Serie deren Cover als Fallback dient.</param>
         /// <returns>Das geladene Cover oder null.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Fallback-Serien-Cover-Aufbau: DB-/IO-/Bild-Dekodier-Fehler dürfen die Detailansicht nicht stören – 'null' führt zum Platzhalter-Cover.")]
-        private async Task<BitmapImage?> BuildSeriesCoverAsync(Series? series)
-        {
-            if (series is null)
-            {
-                return null;
-            }
+        private Task<BitmapImage?> BuildSeriesCoverAsync(Series? series) =>
+            CoverFactory.BuildSeriesCoverAsync(series);
 
-            // DB-Cover über CoverService laden (CoverImages-Tabelle)
-            if (_coverService is not null)
-            {
-                BitmapImage? dbCover = await _coverService.GetSeriesCoverImageAsync(series.Id);
-                if (dbCover is not null)
-                {
-                    return dbCover;
-                }
-            }
-
-            if (series.LocalFolderPath is not null)
-            {
-                string coverPath = Path.Combine(series.LocalFolderPath, Core.CoverConstants.CoverFileName);
-                if (File.Exists(coverPath))
-                {
-                    try
-                    {
-                        byte[] bytes = await File.ReadAllBytesAsync(coverPath);
-                        return await CoverService.ConvertToBitmapAsync(bytes);
-                    }
-                    catch
-                    {
-                        // Datei-Zugriffsfehler still ignorieren
-                    }
-                }
-            }
-
-            if (series.CoverImageUrl is not null)
-            {
-                return new BitmapImage(new Uri(series.CoverImageUrl));
-            }
-
-            return null;
-        }
-
+        // Lazy-Init der Factory: instanziiert einmalig pro VM-Instanz,
+        // teilt die bereits vorhandenen Dependencies (scopeFactory, coverService).
+        private ICoverViewModelFactory CoverFactory =>
+            _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService);
+        private ICoverViewModelFactory? _coverFactory;
     }
 }

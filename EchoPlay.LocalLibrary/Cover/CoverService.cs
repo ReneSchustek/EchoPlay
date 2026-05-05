@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using EchoPlay.Core.Security;
 
 namespace EchoPlay.LocalLibrary.Cover
 {
@@ -42,6 +43,13 @@ namespace EchoPlay.LocalLibrary.Cover
         public static async Task SaveToDirectoryAsync(string folderPath, byte[] data)
         {
             string targetPath = Path.Combine(folderPath, Core.CoverConstants.CoverFileName);
+
+            // Defense-in-Depth: Cover muss innerhalb des vorgegebenen Ordners landen.
+            // Schutz gegen Symlink-Escape und Manipulation der CoverFileName-Konstante.
+            if (!SecurePathHelper.IsPathInside(targetPath, folderPath))
+            {
+                return;
+            }
 
             // Vorhandene Cover nicht überschreiben – der Nutzer könnte sie manuell angepasst haben
             if (File.Exists(targetPath))

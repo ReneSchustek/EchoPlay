@@ -14,6 +14,7 @@ namespace EchoPlay.App.Services
     /// Dies ist die einzige Stelle der Anwendung, die die konkreten Page-Typen kennt –
     /// ViewModels und andere Services bleiben dadurch frei von WinUI-Page-Referenzen.
     /// </remarks>
+
     public sealed class NavigationService : INavigationService
     {
         // Mapping logischer Ziele auf Page-Typen. Zentral an einer Stelle,
@@ -45,12 +46,17 @@ namespace EchoPlay.App.Services
         /// Wird einmalig in <see cref="MainWindow"/> nach <c>InitializeComponent()</c> aufgerufen.
         /// </summary>
         /// <param name="frame">Der ContentFrame des Hauptfensters.</param>
+
         public void Initialize(Frame frame)
         {
             _frame = frame;
         }
 
         /// <inheritdoc/>
+
+
+        /// <param name="target">Parameter <c>target</c>.</param>
+        /// <param name="parameter">Parameter <c>parameter</c>.</param>
         public void NavigateTo(NavigationTarget target, object? parameter = null)
         {
             Frame frame = _frame

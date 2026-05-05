@@ -256,104 +256,20 @@ namespace EchoPlay.App.ViewModels
         /// Erstellt ein Cover-Bild für eine Serie.
         /// Priorität: DB-Cover (CoverService) → cover.jpg im Serienordner → URL-Cover → null.
         /// </summary>
-        public async Task<BitmapImage?> BuildSeriesCoverAsync(Series series)
-        {
-            // DB-Cover über CoverService laden (CoverImages-Tabelle)
-            if (_coverService is not null)
-            {
-                BitmapImage? dbCover = await _coverService.GetSeriesCoverImageAsync(series.Id);
-                if (dbCover is not null)
-                {
-                    return dbCover;
-                }
-            }
-
-            // Dateisystem-Fallback: cover.jpg im Serienordner, angelegt vom lokalen Scanner.
-            // Ohne diesen Fallback bleiben Favoriten- und Weiterhören-Kacheln ohne Cover,
-            // weil diese Sektionen keine Episode als Kontext haben.
-            if (series.LocalFolderPath is not null)
-            {
-                string coverPath = System.IO.Path.Combine(series.LocalFolderPath, Core.CoverConstants.CoverFileName);
-                if (System.IO.File.Exists(coverPath))
-                {
-                    try
-                    {
-                        byte[] coverBytes = await System.IO.File.ReadAllBytesAsync(coverPath);
-                        return await CoverService.ConvertToBitmapAsync(coverBytes);
-                    }
-                    catch (System.IO.IOException)
-                    {
-                        // Datei-Zugriffsfehler (gesperrt, gelöscht) – Serien-Cover bleibt leer
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        // Kein Leserecht – Serien-Cover bleibt leer
-                    }
-                }
-            }
-
-            // URL-Cover als letzter Fallback (z.B. von Spotify oder Apple Music)
-            if (series.CoverImageUrl is not null)
-            {
-                return new BitmapImage(new Uri(series.CoverImageUrl));
-            }
-
-            return null;
-        }
+        public Task<BitmapImage?> BuildSeriesCoverAsync(Series series) =>
+            CoverFactory.BuildSeriesCoverAsync(series);
 
         /// <summary>
         /// Erstellt ein Cover-Bild für eine Episode.
         /// Priorität: DB-Cover → cover.jpg im Ordner → ID3-Tag des ersten Tracks → null.
         /// </summary>
-        public async Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode)
-        {
-            // DB-Cover über CoverService laden (CoverImages-Tabelle)
-            if (_coverService is not null)
-            {
-                BitmapImage? dbCover = await _coverService.GetEpisodeCoverImageAsync(episode.Id);
-                if (dbCover is not null)
-                {
-                    return dbCover;
-                }
-            }
+        public Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode) =>
+            CoverFactory.BuildEpisodeCoverAsync(episode);
 
-            // Dateisystem-Cover über den CoverLoader (cover.jpg oder ID3-Tag)
-            if (episode.LocalFolderPath is not null)
-            {
-                try
-                {
-                    using IServiceScope scope = _scopeFactory.CreateScope();
-                    EchoPlay.LocalLibrary.Cover.ILocalCoverLoader coverLoader =
-                        scope.ServiceProvider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>();
-
-                    // Ersten Track für ID3-Fallback ermitteln
-                    string? firstTrackPath = null;
-                    if (!System.IO.File.Exists(System.IO.Path.Combine(episode.LocalFolderPath, Core.CoverConstants.CoverFileName)))
-                    {
-                        ILocalTrackDataService trackService =
-                            scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-                        IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id);
-                        firstTrackPath = tracks.OrderBy(t => t.TrackNumber).FirstOrDefault()?.FilePath;
-                    }
-
-                    byte[]? coverBytes = await coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
-                    if (coverBytes is not null)
-                    {
-                        return await CoverService.ConvertToBitmapAsync(coverBytes);
-                    }
-                }
-                catch (System.IO.IOException ex)
-                {
-                    _logger.Debug($"Cover-Laden fehlgeschlagen: {ex.Message}");
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    _logger.Debug($"Cover-Laden ohne Zugriff: {ex.Message}");
-                }
-            }
-
-            return null;
-        }
+        // Lazy-Init der Factory: instanziiert beim ersten Cover-Aufruf, gemeinsam fuer Loader.
+        private ICoverViewModelFactory CoverFactory =>
+            _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService);
+        private ICoverViewModelFactory? _coverFactory;
 
         /// <summary>
         /// Ermittelt aktuell laufende Episoden anhand der Wiedergabestände.
@@ -433,7 +349,7 @@ namespace EchoPlay.App.ViewModels
                 _ = uniqueIds.Add(state.EpisodeId);
             }
 
-            return await episodeService.GetByIdsAsync([.. uniqueIds]);
+            return await episodeService.GetByIdsAsync([.. uniqueIds], CancellationToken.None);
         }
 
         /// <summary>
@@ -534,7 +450,7 @@ namespace EchoPlay.App.ViewModels
                 ICachedNewReleaseDataService cacheService =
                     scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
 
-                IReadOnlyList<CachedNewRelease> cached = await cacheService.GetAllAsync();
+                IReadOnlyList<CachedNewRelease> cached = await cacheService.GetAllAsync(CancellationToken.None);
                 if (cached.Count == 0)
                 {
                     return [];
@@ -573,7 +489,7 @@ namespace EchoPlay.App.ViewModels
 
             // Episoden und PlaybackStates einmal pro Serie laden (vermeidet N+1-Abfragen).
             Dictionary<Guid, IReadOnlyList<Episode>> episodesBySeries = [];
-            IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
+            IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync(CancellationToken.None);
             Dictionary<Guid, PlaybackState> stateByEpisodeId = new(allStates.Count);
             foreach (PlaybackState ps in allStates)
             {
@@ -603,7 +519,7 @@ namespace EchoPlay.App.ViewModels
                     // Episodenliste pro Serie nur einmal laden
                     if (!episodesBySeries.TryGetValue(series.Id, out IReadOnlyList<Episode>? localEpisodes))
                     {
-                        localEpisodes = await episodeService.GetBySeriesIdAsync(series.Id);
+                        localEpisodes = await episodeService.GetBySeriesIdAsync(series.Id, CancellationToken.None);
                         episodesBySeries[series.Id] = localEpisodes;
                     }
 

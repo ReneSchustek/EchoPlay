@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Fakes
         private readonly Dictionary<(string EntityType, Guid EntityId), CoverImage> _covers = [];
 
         /// <inheritdoc/>
-        public Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId)
+        public Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
             _ = _covers.TryGetValue((entityType, entityId), out CoverImage? cover);
             return Task.FromResult(cover);
@@ -27,7 +27,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <inheritdoc/>
         public Task<IReadOnlyDictionary<Guid, byte[]>> GetImageDataByEntitiesAsync(
-            string entityType, IReadOnlyList<Guid> entityIds)
+            string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default)
         {
             Dictionary<Guid, byte[]> result = new();
 
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null)
+        public Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             CoverImage cover = new()
             {
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt)
+        public Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {
             if (_covers.TryGetValue((entityType, entityId), out CoverImage? cover))
             {
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
-            string entityType, DateTime cooldownThreshold, int limit)
+            string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default)
         {
             List<Guid> result = _covers
                 .Where(kv => kv.Key.EntityType == entityType
@@ -84,14 +84,14 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<bool> ExistsAsync(string entityType, Guid entityId)
+        public Task<bool> ExistsAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
             bool exists = _covers.ContainsKey((entityType, entityId));
             return Task.FromResult(exists);
         }
 
         /// <inheritdoc/>
-        public Task<int> ClearAllAsync()
+        public Task<int> ClearAllAsync(CancellationToken cancellationToken = default)
         {
             int count = _covers.Count;
             _covers.Clear();
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds)
+        public Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(entityIds);
 
@@ -117,6 +117,6 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<int> CountAsync() => Task.FromResult(_covers.Count);
+        public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(_covers.Count);
     }
 }

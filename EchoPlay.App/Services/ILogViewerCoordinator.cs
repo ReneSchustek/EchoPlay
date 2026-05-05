@@ -1,6 +1,7 @@
 using EchoPlay.App.Models;
 using EchoPlay.Logger.Models;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -11,6 +12,7 @@ namespace EchoPlay.App.Services
     /// Die Auswahl-State (aktuell gewählte Datei, Suchtext, Level) bleibt im ViewModel – der
     /// Coordinator bietet reine, testbare Operationen ohne eigenen Zustand.
     /// </summary>
+
     public interface ILogViewerCoordinator
     {
         /// <summary>
@@ -25,7 +27,8 @@ namespace EchoPlay.App.Services
         /// die Live-Option (<see cref="LogFileOption.FilePath"/> ist <see langword="null"/>).
         /// </summary>
         /// <returns>Liste der Auswahl-Optionen.</returns>
-        Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liest den Inhalt einer Log-Datei zeilenweise ein.
@@ -33,7 +36,8 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="filePath">Absoluter Pfad der Log-Datei.</param>
         /// <returns>Alle Zeilen der Datei.</returns>
-        Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Baut die gefilterte Live-Ansicht aus dem MemorySink-Puffer.

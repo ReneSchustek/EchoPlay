@@ -3,26 +3,31 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Enthält die Statistiken eines abgeschlossenen Bibliothek-Sync-Vorgangs.
     /// </summary>
+
     public sealed class SyncResult
     {
         /// <summary>
         /// Lokale Serienordner, die einer Datenbank-Serie zugeordnet wurden.
         /// </summary>
+
         public int SeriesMatched { get; init; }
 
         /// <summary>
         /// Lokale Serienordner ohne Datenbank-Treffer – kein Fehler, nur gezählt.
         /// </summary>
+
         public int SeriesUnmatched { get; init; }
 
         /// <summary>
         /// Episoden, bei denen lokale Daten (Pfad, Trackanzahl, Matchart) aktualisiert wurden.
         /// </summary>
+
         public int EpisodesUpdated { get; init; }
 
         /// <summary>
         /// Neu angelegte <see cref="EchoPlay.Data.Entities.Library.LocalTrack"/>-Einträge.
         /// </summary>
+
         public int TracksCreated { get; init; }
 
         /// <summary>
@@ -31,6 +36,7 @@ namespace EchoPlay.App.Services
         /// erscheint ein Hinweis – das ist der häufigste Grund für "0 Ergebnisse" nach einem Erst-Scan.
         /// </summary>
         /// <returns>Formatierter Ergebnis-Text für die UI-Anzeige.</returns>
+
         public override string ToString()
         {
             string basis =

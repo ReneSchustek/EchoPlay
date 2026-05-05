@@ -24,6 +24,7 @@ namespace EchoPlay.App.Services
     /// 2. Cover aus dem Dateisystem laden (cover.jpg / ID3-Tags)
     /// 3. In CoverImages speichern
     /// </summary>
+
     public class BackgroundCoverService : IDisposable
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -52,6 +53,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Background-Cover-Service.
         /// </summary>
+
         public BackgroundCoverService(
             IServiceScopeFactory scopeFactory,
             CoverService coverService,
@@ -74,6 +76,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Startet den Hintergrund-Task. Idempotent — mehrfacher Aufruf ist no-op.
         /// </summary>
+
         public void Start()
         {
             if (_backgroundTask is not null) return;
@@ -89,14 +92,16 @@ namespace EchoPlay.App.Services
         /// der laufenden Iteration. Bei Timeout wird eine Warnung geloggt.
         /// </summary>
         /// <param name="timeout">Maximale Wartezeit.</param>
-        public async Task StopAsync(TimeSpan timeout)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task StopAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (_cts is null || _backgroundTask is null) return;
 
             await _cts.CancelAsync().ConfigureAwait(false);
             try
             {
-                await _backgroundTask.WaitAsync(timeout).ConfigureAwait(false);
+                await _backgroundTask.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -120,9 +125,13 @@ namespace EchoPlay.App.Services
         /// Keine Online-Suchkette (zu langsam für den Startup).
         /// </summary>
         /// <returns>Anzahl der geladenen Cover.</returns>
-        public virtual async Task<int> RunOnceAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public virtual async Task<int> RunOnceAsync(CancellationToken cancellationToken = default)
         {
-            using CancellationTokenSource cts = new();
+            // Eigene CTS, die mit dem externen Token verkettet ist — Aufrufer kann den Lauf
+            // abbrechen, ohne dass der interne Loop seinen eigenen Schutz verliert.
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             CancellationToken ct = cts.Token;
 
             int loaded = 0;
@@ -136,7 +145,7 @@ namespace EchoPlay.App.Services
                 $"({seriesLocalLoaded} Serien, {episodeLocalLoaded} Episoden).");
 
             // Phase 1c: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
-            int copied = await CopyLocalToOnlineAsync();
+            int copied = await CopyLocalToOnlineAsync(cancellationToken);
             loaded += copied;
             _logger.Info($"RunOnce Phase 1b (lokal→online Kopie): {copied} Cover kopiert.");
 
@@ -163,6 +172,7 @@ namespace EchoPlay.App.Services
         /// <param name="isOnlineAvailable">Steuert, ob der Provider-URL-Download laufen darf.</param>
         /// <param name="ct">Cancellation-Token des Splash-Pfades.</param>
         /// <returns>Anzahl der geladenen Serien-Cover.</returns>
+
         public virtual async Task<int> RunSeriesCoversOnceAsync(bool isOnlineAvailable, CancellationToken ct = default)
         {
             int loaded = 0;
@@ -201,7 +211,7 @@ namespace EchoPlay.App.Services
                     await WaitWhilePriorityInFlightAsync(ct).ConfigureAwait(false);
                     int seriesLocalLoaded = await LoadMissingLocalSeriesCoversAsync(ct);
                     int episodeLocalLoaded = await LoadMissingLocalEpisodeCoversAsync(ct);
-                    int copied = await CopyLocalToOnlineAsync();
+                    int copied = await CopyLocalToOnlineAsync(ct);
                     int urlsUpdated = await UpdateMissingCoverUrlsAsync(ct);
                     int seriesProviderLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
                     int episodeProviderLoaded = await DownloadMissingEpisodeProviderCoversAsync(ct);
@@ -292,8 +302,11 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Arbeitet die Queue sequentiell ab: erst DB-Treffer, dann Dateisystem, dann Provider-URL.
         /// </summary>
+        /// <param name="episodeIds">IDs der Episoden, fuer die ein Cover nachgeladen werden soll.</param>
+        /// <param name="onCoverReady">Callback fuer jedes gefundene Cover (EpisodenId + Bytes).</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Episode-Schleife in der Cover-Queue: TagLib-, IO- oder HTTP-Fehler einer Episode werden als Debug protokolliert und die Queue fährt mit der nächsten Episode fort, damit eine kaputte Datei nicht die ganze Kachelzeile blockiert.")]
-        private async Task ProcessEnqueuedEpisodesAsync(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady)
+        private async Task ProcessEnqueuedEpisodesAsync(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
@@ -302,7 +315,7 @@ namespace EchoPlay.App.Services
 
             // Batch 1: bereits vorhandene Cover aus der DB (eine Abfrage)
             IReadOnlyDictionary<Guid, byte[]> existing =
-                await _coverService.GetEpisodeCoverBytesAsync(episodeIds);
+                await _coverService.GetEpisodeCoverBytesAsync(episodeIds, cancellationToken);
 
             // Vorhandene Cover sofort zurückspielen – UI kann sich aktualisieren
             foreach ((Guid episodeId, byte[] bytes) in existing)
@@ -316,11 +329,11 @@ namespace EchoPlay.App.Services
 
             // Batch 2: erste Tracks der fehlenden Episoden (für ID3-Fallback)
             IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
-                await trackService.GetFirstTracksByEpisodeIdsAsync(missing);
+                await trackService.GetFirstTracksByEpisodeIdsAsync(missing, cancellationToken);
 
             foreach (Guid episodeId in missing)
             {
-                Episode? episode = await episodeService.GetByIdAsync(episodeId);
+                Episode? episode = await episodeService.GetByIdAsync(episodeId, cancellationToken);
                 if (episode is null) continue;
 
                 byte[]? loaded = null;
@@ -340,12 +353,12 @@ namespace EchoPlay.App.Services
 
                 if (loaded is null && !string.IsNullOrEmpty(episode.CoverImageUrl))
                 {
-                    loaded = await DownloadSafeAsync(episode.CoverImageUrl);
+                    loaded = await DownloadSafeAsync(episode.CoverImageUrl, cancellationToken);
                 }
 
                 if (loaded is not null)
                 {
-                    await _coverService.SetEpisodeCoverAsync(episodeId, loaded, episode.CoverImageUrl);
+                    await _coverService.SetEpisodeCoverAsync(episodeId, loaded, episode.CoverImageUrl, cancellationToken);
                     onCoverReady?.Invoke(episodeId, loaded);
                 }
             }
@@ -378,19 +391,19 @@ namespace EchoPlay.App.Services
                 ICoverImageDataService coverImageService = scope.ServiceProvider
                     .GetRequiredService<ICoverImageDataService>();
 
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId, ct);
                 if (episodes.Count == 0) return;
 
                 List<Guid> episodeIds = [.. episodes.Select(e => e.Id)];
                 IReadOnlyDictionary<Guid, byte[]> existing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, episodeIds);
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, episodeIds, ct);
 
                 List<Episode> missing = [.. episodes.Where(e => !existing.ContainsKey(e.Id))];
                 if (missing.Count == 0) return;
 
                 List<Guid> missingIds = [.. missing.Select(e => e.Id)];
                 IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
-                    await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds);
+                    await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds, ct);
 
                 _logger.Info($"Priority SeriesOpen: starte {missing.Count} Folgen-Cover für Serie {seriesId}.");
 
@@ -412,7 +425,7 @@ namespace EchoPlay.App.Services
                         byte[]? bytes = await coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
                         if (bytes is not null)
                         {
-                            await _coverService.SetEpisodeCoverAsync(episode.Id, bytes);
+                            await _coverService.SetEpisodeCoverAsync(episode.Id, bytes, cancellationToken: token);
                         }
                     }
                     catch (OperationCanceledException)
@@ -429,7 +442,7 @@ namespace EchoPlay.App.Services
                 // Rate-Limiter nicht gesprengt wird; der Foreground-Slot ueberholt
                 // Background-Waits via IHostRateLimiter automatisch.
                 IReadOnlyDictionary<Guid, byte[]> stillMissing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, missingIds);
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, missingIds, ct);
 
                 foreach (Episode episode in missing)
                 {
@@ -439,10 +452,10 @@ namespace EchoPlay.App.Services
 
                     try
                     {
-                        byte[]? bytes = await DownloadSafeAsync(episode.CoverImageUrl);
+                        byte[]? bytes = await DownloadSafeAsync(episode.CoverImageUrl, ct);
                         if (bytes is not null)
                         {
-                            await _coverService.SetEpisodeCoverAsync(episode.Id, bytes, episode.CoverImageUrl);
+                            await _coverService.SetEpisodeCoverAsync(episode.Id, bytes, episode.CoverImageUrl, ct);
                         }
                     }
                     catch (Exception ex)
@@ -466,6 +479,8 @@ namespace EchoPlay.App.Services
         /// den Counter atomar und wartet in kleinen Ticks; bei Cancel gibt die Methode
         /// die <see cref="OperationCanceledException"/> weiter, die die Run-Schleife beendet.
         /// </summary>
+
+        /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task WaitWhilePriorityInFlightAsync(CancellationToken ct)
         {
             while (Volatile.Read(ref _priorityInFlight) > 0)
@@ -487,7 +502,9 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="seriesTitle">Titel der Serie (z.B. "Fünf Freunde").</param>
         /// <returns>Anzahl der neu geladenen Cover.</returns>
-        public async Task<int> EnsureLocalCoversForSeriesAsync(string seriesTitle)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<int> EnsureLocalCoversForSeriesAsync(string seriesTitle, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider
@@ -502,7 +519,7 @@ namespace EchoPlay.App.Services
                 .GetRequiredService<ICoverImageDataService>();
 
             // Alle Serien mit gleichem Titel finden (lokal + online)
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(CancellationToken.None);
             int loaded = 0;
 
             foreach (Series series in allSeries)
@@ -510,7 +527,7 @@ namespace EchoPlay.App.Services
                 if (!string.Equals(series.Title, seriesTitle, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, CancellationToken.None);
 
                 List<Episode> candidates = [];
 
@@ -526,14 +543,14 @@ namespace EchoPlay.App.Services
 
                 List<Guid> candidateIds = candidates.Select(e => e.Id).ToList();
                 IReadOnlyDictionary<Guid, byte[]> existing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds);
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, CancellationToken.None);
 
                 foreach (Episode episode in candidates)
                 {
                     if (existing.ContainsKey(episode.Id)) continue;
 
                     string? firstTrackPath = null;
-                    IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id);
+                    IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id, CancellationToken.None);
 
                     if (tracks.Count > 0)
                     {
@@ -545,7 +562,7 @@ namespace EchoPlay.App.Services
 
                     if (coverBytes is not null)
                     {
-                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
+                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, cancellationToken: cancellationToken);
                         loaded++;
                     }
                 }
@@ -565,7 +582,9 @@ namespace EchoPlay.App.Services
         /// Nur Episoden ohne vorhandenes Cover werden befüllt.
         /// Schnell genug für den Splash (eine SQL-Query pro Online-Serie).
         /// </summary>
-        public async Task<int> CopyLocalToOnlineAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<int> CopyLocalToOnlineAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider
@@ -573,14 +592,14 @@ namespace EchoPlay.App.Services
             ICoverCopyService coverCopy = scope.ServiceProvider
                 .GetRequiredService<ICoverCopyService>();
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(cancellationToken);
             int totalCopied = 0;
 
             foreach (Series series in allSeries)
             {
                 if (!series.IsOnlineImported) continue;
 
-                int copied = await coverCopy.CopyFromMatchingEpisodesAsync(series.Id);
+                int copied = await coverCopy.CopyFromMatchingEpisodesAsync(series.Id, cancellationToken);
                 totalCopied += copied;
             }
 
@@ -601,7 +620,7 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider
                 .GetRequiredService<IEpisodeDataService>();
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
             int totalUpdated = 0;
 
             foreach (Series series in allSeries)
@@ -613,18 +632,18 @@ namespace EchoPlay.App.Services
                 // Spotify nur nutzen wenn Credentials vorhanden sind – ohne gültige
                 // Client-ID/Secret schlägt der Token-Request fehl.
                 string? providerKey = series.SpotifyArtistId is not null && _credentialStore.HasCredentials
-                    ? "Spotify"
-                    : series.AppleMusicArtistId is not null ? "AppleMusic"
+                    ? ProviderKeys.Spotify
+                    : series.AppleMusicArtistId is not null ? ProviderKeys.AppleMusic
                     : null;
 
                 if (providerKey is null) continue;
 
-                string sourceSeriesId = providerKey == "Spotify"
+                string sourceSeriesId = providerKey == ProviderKeys.Spotify
                     ? series.SpotifyArtistId!
                     : series.AppleMusicArtistId!;
 
                 // Prüfen ob Episoden ohne CoverImageUrl existieren
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, ct);
 
                 List<Episode> missingUrl = [];
                 foreach (Episode episode in episodes)
@@ -662,7 +681,7 @@ namespace EchoPlay.App.Services
                         if (titleToUrl.TryGetValue(episode.Title, out string? coverUrl))
                         {
                             episode.CoverImageUrl = coverUrl;
-                            await episodeService.UpdateAsync(episode);
+                            await episodeService.UpdateAsync(episode, ct);
                             totalUpdated++;
                         }
                     }
@@ -687,6 +706,8 @@ namespace EchoPlay.App.Services
         /// und lädt <c>cover.jpg</c> aus dem Stammordner. ID3-Fallback entfällt bewusst,
         /// weil Serien-Cover nur als Dateien im Stammordner existieren.
         /// </summary>
+
+        /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> LoadMissingLocalSeriesCoversAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -697,7 +718,7 @@ namespace EchoPlay.App.Services
             ICoverImageDataService coverImageService = scope.ServiceProvider
                 .GetRequiredService<ICoverImageDataService>();
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
 
             _logger.Info($"Lokal-Check Serien: {allSeries.Count} Serien gesamt.");
 
@@ -717,7 +738,7 @@ namespace EchoPlay.App.Services
 
             List<Guid> seriesIds = seriesWithFolder.Select(s => s.Id).ToList();
             IReadOnlyDictionary<Guid, byte[]> existingSeries =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds);
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds, ct);
 
             int missingSeries = seriesWithFolder.Count - existingSeries.Count;
             _logger.Info($"Lokal-Check Serien: {seriesWithFolder.Count} mit LocalFolderPath, " +
@@ -735,7 +756,7 @@ namespace EchoPlay.App.Services
 
                 if (coverBytes is not null)
                 {
-                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes);
+                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, cancellationToken: ct);
                     loaded++;
                     _logger.Debug(() => $"Lokal: Serien-Cover geladen \"{series.Title}\" aus {series.LocalFolderPath}");
                 }
@@ -753,6 +774,8 @@ namespace EchoPlay.App.Services
         /// Cover aus dem Dateisystem (cover.jpg / ID3-Tags des ersten Tracks).
         /// Nutzt Batch-Queries, um N+1-DB-Roundtrips zu vermeiden.
         /// </summary>
+
+        /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> LoadMissingLocalEpisodeCoversAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -767,10 +790,10 @@ namespace EchoPlay.App.Services
             ICoverImageDataService coverImageService = scope.ServiceProvider
                 .GetRequiredService<ICoverImageDataService>();
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
             List<Guid> allSeriesIds = [.. allSeries.Select(s => s.Id)];
 
-            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds);
+            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds, ct);
 
             List<Episode> candidates = [];
             foreach (Episode episode in allEpisodes)
@@ -789,14 +812,14 @@ namespace EchoPlay.App.Services
 
             List<Guid> candidateIds = [.. candidates.Select(e => e.Id)];
             IReadOnlyDictionary<Guid, byte[]> existing =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds);
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, ct);
 
             List<Guid> missingIds = [.. candidates
                 .Where(e => !existing.ContainsKey(e.Id))
                 .Select(e => e.Id)];
 
             IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
-                await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds);
+                await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds, ct);
 
             int loaded = 0;
             int notFound = 0;
@@ -815,7 +838,7 @@ namespace EchoPlay.App.Services
 
                 if (coverBytes is not null)
                 {
-                    await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
+                    await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, cancellationToken: ct);
                     loaded++;
                 }
                 else
@@ -834,6 +857,8 @@ namespace EchoPlay.App.Services
         /// Lädt fehlende Serien-Cover über Provider-URLs (<see cref="Series.CoverImageUrl"/>)
         /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
         /// </summary>
+
+        /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> DownloadMissingSeriesProviderCoversAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -842,7 +867,7 @@ namespace EchoPlay.App.Services
             ICoverImageDataService coverImageService = scope.ServiceProvider
                 .GetRequiredService<ICoverImageDataService>();
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
             List<Series> seriesNeedingCover = [];
 
             foreach (Series series in allSeries)
@@ -861,7 +886,7 @@ namespace EchoPlay.App.Services
 
             List<Guid> seriesIds = seriesNeedingCover.Select(s => s.Id).ToList();
             IReadOnlyDictionary<Guid, byte[]> existingSeries =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds);
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds, ct);
 
             int missingSeriesCount = seriesNeedingCover.Count - existingSeries.Count;
             _logger.Info($"Provider-Check Serien: {seriesNeedingCover.Count} mit CoverImageUrl, " +
@@ -874,11 +899,11 @@ namespace EchoPlay.App.Services
                 if (ct.IsCancellationRequested) break;
                 if (existingSeries.ContainsKey(series.Id)) continue;
 
-                byte[]? coverBytes = await DownloadSafeAsync(series.CoverImageUrl!);
+                byte[]? coverBytes = await DownloadSafeAsync(series.CoverImageUrl!, cancellationToken: ct);
 
                 if (coverBytes is not null)
                 {
-                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
+                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl, ct);
                     loaded++;
                     _logger.Debug(() => $"Serien-Cover geladen: \"{series.Title}\" ({coverBytes.Length} Bytes)");
                 }
@@ -895,6 +920,8 @@ namespace EchoPlay.App.Services
         /// Lädt fehlende Episoden-Cover über Provider-URLs (<see cref="Episode.CoverImageUrl"/>)
         /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
         /// </summary>
+
+        /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> DownloadMissingEpisodeProviderCoversAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -905,7 +932,7 @@ namespace EchoPlay.App.Services
             ICoverImageDataService coverImageService = scope.ServiceProvider
                 .GetRequiredService<ICoverImageDataService>();
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
             int loaded = 0;
             int totalEpisodeCandidates = 0;
             int totalEpisodeExisting = 0;
@@ -914,7 +941,7 @@ namespace EchoPlay.App.Services
             {
                 if (ct.IsCancellationRequested) break;
 
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, ct);
 
                 List<Episode> candidates = [];
 
@@ -932,7 +959,7 @@ namespace EchoPlay.App.Services
 
                 List<Guid> candidateIds = candidates.Select(e => e.Id).ToList();
                 IReadOnlyDictionary<Guid, byte[]> existing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds);
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, ct);
 
                 totalEpisodeExisting += existing.Count;
 
@@ -941,11 +968,11 @@ namespace EchoPlay.App.Services
                     if (ct.IsCancellationRequested) break;
                     if (existing.ContainsKey(episode.Id)) continue;
 
-                    byte[]? coverBytes = await DownloadSafeAsync(episode.CoverImageUrl!);
+                    byte[]? coverBytes = await DownloadSafeAsync(episode.CoverImageUrl!, cancellationToken: ct);
 
                     if (coverBytes is not null)
                     {
-                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, episode.CoverImageUrl);
+                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, episode.CoverImageUrl, ct);
                         loaded++;
                     }
                 }
@@ -960,13 +987,15 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt Bilddaten von einer URL. Null bei Fehler.
         /// </summary>
+        /// <param name="url">Absolute Cover-URL.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, Timeout-, TLS- oder Redirect-Fehler beim Laden einzelner Cover-URLs werden alle zu 'null' normalisiert, damit der Aufrufer die Episode ueberspringen und mit anderen weitermachen kann.")]
-        private async Task<byte[]?> DownloadSafeAsync(string url)
+        private async Task<byte[]?> DownloadSafeAsync(string url, CancellationToken cancellationToken = default)
         {
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                byte[] data = await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute)).ConfigureAwait(false);
+                byte[] data = await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute), cancellationToken).ConfigureAwait(false);
                 return data.Length > 0 ? data : null;
             }
             catch (Exception ex)
@@ -984,7 +1013,7 @@ namespace EchoPlay.App.Services
         /// "Foreground aktiv", sodass der Hintergrund-Loop pausiert. Persistiert das
         /// Cover **nicht** in <c>CoverImages</c> – Such-Treffer sind noch nicht importiert.
         /// </summary>
-        /// <param name="source">Provider-Schlüssel ("Spotify" oder "AppleMusic"). Andere Werte verhindern den DB-Lookup.</param>
+        /// <param name="source">Provider-Schlüssel aus <see cref="ProviderKeys"/>. Andere Werte verhindern den DB-Lookup.</param>
         /// <param name="sourceSeriesId">Provider-spezifische Serien-ID (Spotify-Artist-ID oder iTunes-Artist-ID).</param>
         /// <param name="coverUrl">Cover-URL aus dem Such-Treffer.</param>
         /// <param name="ct">Abbruch-Token der laufenden Suche.</param>
@@ -998,7 +1027,7 @@ namespace EchoPlay.App.Services
         {
             if (string.IsNullOrEmpty(coverUrl)) return null;
 
-            byte[]? cached = await TryGetCachedSeriesCoverAsync(source, sourceSeriesId).ConfigureAwait(false);
+            byte[]? cached = await TryGetCachedSeriesCoverAsync(source, sourceSeriesId, ct).ConfigureAwait(false);
             if (cached is not null) return cached;
 
             if (!Uri.TryCreate(coverUrl, UriKind.Absolute, out Uri? uri)) return null;
@@ -1035,7 +1064,12 @@ namespace EchoPlay.App.Services
         /// deren persistiertes Cover aus <c>CoverImages</c>. Liefert <see langword="null"/>,
         /// wenn die Serie noch nicht importiert ist oder die Quelle unbekannt ist.
         /// </summary>
-        private async Task<byte[]?> TryGetCachedSeriesCoverAsync(string source, string sourceSeriesId)
+
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="source">Parameter <c>source</c>.</param>
+        /// <param name="sourceSeriesId">Parameter <c>sourceSeriesId</c>.</param>
+        private async Task<byte[]?> TryGetCachedSeriesCoverAsync(string source, string sourceSeriesId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(sourceSeriesId)) return null;
 
@@ -1047,15 +1081,15 @@ namespace EchoPlay.App.Services
 
             Series? series = source switch
             {
-                "Spotify" => await seriesService.GetBySpotifyArtistIdAsync(sourceSeriesId).ConfigureAwait(false),
-                "AppleMusic" => await seriesService.GetByAppleMusicArtistIdAsync(sourceSeriesId).ConfigureAwait(false),
+                ProviderKeys.Spotify => await seriesService.GetBySpotifyArtistIdAsync(sourceSeriesId, cancellationToken).ConfigureAwait(false),
+                ProviderKeys.AppleMusic => await seriesService.GetByAppleMusicArtistIdAsync(sourceSeriesId, cancellationToken).ConfigureAwait(false),
                 _ => null
             };
 
             if (series is null) return null;
 
             CoverImage? cover = await coverImageService
-                .GetByEntityAsync(CoverEntityTypes.Series, series.Id)
+                .GetByEntityAsync(CoverEntityTypes.Series, series.Id, cancellationToken)
                 .ConfigureAwait(false);
 
             return cover?.ImageData is { Length: > 0 } bytes ? bytes : null;

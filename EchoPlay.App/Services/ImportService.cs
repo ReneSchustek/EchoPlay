@@ -21,6 +21,7 @@ namespace EchoPlay.App.Services
     ///
     /// Provider-Auswahl: Keyed-Services mit "Spotify" bzw. "AppleMusic" als Schlüssel.
     /// </summary>
+
     public sealed class ImportService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -33,6 +34,7 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Fabrik für DI-Scopes.</param>
         /// <param name="coverCacheService">Service zum Herunterladen und Cachen von Episoden-Covern.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+
         public ImportService(
             IServiceScopeFactory scopeFactory,
             EpisodeCoverCacheService coverCacheService,
@@ -52,8 +54,9 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <returns>Trefferliste plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <exception cref="ArgumentException">Wird geworfen, wenn <paramref name="query"/> leer oder nur Leerzeichen enthält.</exception>
-        public async Task<SearchOutcome> SearchAsync(string query)
+        public async Task<SearchOutcome> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -63,7 +66,7 @@ namespace EchoPlay.App.Services
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
 
             // Ohne aktiven Provider kann keine Online-Suche stattfinden.
             if (settings.ActiveProvider == ProviderType.None)
@@ -76,10 +79,10 @@ namespace EchoPlay.App.Services
 
             // Provider-Schlüssel entspricht dem Enum-Namen ("Spotify" / "AppleMusic")
             string providerKey = importProvider.ToString();
-            _logger.Debug($"Suche nach \"{query}\" via {providerKey}");
+            _logger.Debug(() => $"Suche nach \"{query}\" via {providerKey}");
             ISeriesImportSearch search = scope.ServiceProvider.GetRequiredKeyedService<ISeriesImportSearch>(providerKey);
 
-            IReadOnlyList<ImportSeries> results = await search.SearchAsync(query);
+            IReadOnlyList<ImportSeries> results = await search.SearchAsync(query, cancellationToken);
             return new SearchOutcome(results, spotifyFallbackApplied);
         }
 
@@ -88,6 +91,9 @@ namespace EchoPlay.App.Services
         /// ab und prüft zusätzlich, ob Spotify-Credentials hinterlegt sind. Fehlen sie, wird transparent
         /// auf Apple Music umgelenkt und ein Warning geloggt — die AppSettings bleiben unverändert.
         /// </summary>
+        /// <param name="scope">DI-Scope fuer den Credential-Store-Lookup.</param>
+        /// <param name="activeProvider">Vom Nutzer gewaehlter Provider aus den AppSettings.</param>
+        /// <returns>Tuple aus effektivem Provider und Hinweis-Flag, ob ein Spotify→Apple-Music-Fallback gegriffen hat.</returns>
         private async Task<(ProviderType ResolvedProvider, bool SpotifyFallbackApplied)> ResolveProviderAsync(
             IServiceScope scope,
             ProviderType activeProvider)
@@ -103,7 +109,7 @@ namespace EchoPlay.App.Services
 
             ISpotifyClientCredentialsProvider credentialsProvider =
                 scope.ServiceProvider.GetRequiredService<ISpotifyClientCredentialsProvider>();
-            SpotifyClientCredentials? credentials = await credentialsProvider.GetAsync();
+            SpotifyClientCredentials? credentials = await credentialsProvider.GetAsync(CancellationToken.None);
 
             if (credentials is not null)
             {
@@ -122,7 +128,9 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="query">Suchbegriff – wird an die Provider-API weitergereicht.</param>
         /// <returns>Album-Treffer plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
-        public async Task<SearchOutcome> SearchAlbumsAsync(string query)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<SearchOutcome> SearchAlbumsAsync(string query, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -131,7 +139,7 @@ namespace EchoPlay.App.Services
 
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
 
             if (settings.ActiveProvider == ProviderType.None)
             {
@@ -141,7 +149,7 @@ namespace EchoPlay.App.Services
             (ProviderType importProvider, bool spotifyFallbackApplied) =
                 await ResolveProviderAsync(scope, settings.ActiveProvider);
 
-            _logger.Debug($"Album-Suche nach \"{query}\" via {importProvider}");
+            _logger.Debug(() => $"Album-Suche nach \"{query}\" via {importProvider}");
 
             List<ImportSeries> results = [];
 
@@ -156,7 +164,7 @@ namespace EchoPlay.App.Services
                 }
 
                 IReadOnlyList<EchoPlay.Spotify.Dtos.SpotifyAlbumDto> albums =
-                    await spotifyClient.SearchAlbumsAsync(query, 15);
+                    await spotifyClient.SearchAlbumsAsync(query, 15, cancellationToken);
 
                 foreach (EchoPlay.Spotify.Dtos.SpotifyAlbumDto album in albums)
                 {
@@ -184,7 +192,7 @@ namespace EchoPlay.App.Services
                 }
 
                 EchoPlay.AppleMusic.Dtos.ITunesResponseDto<EchoPlay.AppleMusic.Dtos.ITunesCollectionDto> response =
-                    await appleClient.SearchAlbumsAsync(query, 15);
+                    await appleClient.SearchAlbumsAsync(query, 15, cancellationToken);
 
                 foreach (EchoPlay.AppleMusic.Dtos.ITunesCollectionDto album in response.Results)
                 {
@@ -215,13 +223,15 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="series">Die zu prüfende ImportSerie.</param>
         /// <returns>True wenn die Serie bereits importiert wurde.</returns>
-        public async Task<bool> IsAlreadyImportedAsync(ImportSeries series)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<bool> IsAlreadyImportedAsync(ImportSeries series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
 
-            return await FindExistingSeriesAsync(seriesService, series) is not null;
+            return await FindExistingSeriesAsync(seriesService, series, cancellationToken) is not null;
         }
 
         /// <summary>
@@ -236,20 +246,23 @@ namespace EchoPlay.App.Services
         /// <see langword="null"/> wenn kein Fortschritt gemeldet werden soll.
         /// </param>
         /// <returns>Die ID der neuen oder bereits vorhandenen Serie.</returns>
-        public async Task<Guid> ImportAsync(ImportSeries importSeries, IProgress<string>? progress = null)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<Guid> ImportAsync(ImportSeries importSeries, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(importSeries);
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.Import);
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
 
             // Früh abbrechen, falls bereits importiert
-            Series? existing = await FindExistingSeriesAsync(seriesService, importSeries);
+            Series? existing = await FindExistingSeriesAsync(seriesService, importSeries, cancellationToken);
 
             if (existing is not null)
             {
-                _logger.Debug($"Import übersprungen – bereits vorhanden: \"{importSeries.Title}\" ({importSeries.Source})");
+                _logger.Debug(() => $"Import übersprungen – bereits vorhanden: \"{importSeries.Title}\" ({importSeries.Source})");
                 return existing.Id;
             }
 
@@ -257,12 +270,12 @@ namespace EchoPlay.App.Services
 
             // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt
             Series series = MapToSeries(importSeries);
-            await seriesService.AddAsync(series);
+            await seriesService.AddAsync(series, cancellationToken);
 
             // Episoden laden – bei großen Serien (>100 Episoden) kann dieser HTTP-Aufruf mehrere Sekunden dauern
             progress?.Report($"Lade Episoden für \"{importSeries.Title}\" \u2026");
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(importSeries.Source);
-            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId);
+            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId, cancellationToken);
 
             // Schutzgitter: doppelte SourceEpisodeIds (Provider-Duplikate, Re-Releases,
             // Compilation-Alben mit identischer CollectionId) werden hier idempotent verworfen,
@@ -280,12 +293,12 @@ namespace EchoPlay.App.Services
                 mappedEpisodes.Add(MapToEpisode(uniqueEpisodes[i], series.Id));
             }
 
-            await episodeService.AddRangeAsync(mappedEpisodes);
+            await episodeService.AddRangeAsync(mappedEpisodes, cancellationToken);
 
             _logger.Info($"Import abgeschlossen: \"{importSeries.Title}\", {uniqueEpisodes.Count} Episoden");
 
             // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
-            _ = _coverCacheService.CacheCoversAsync(series.Id, uniqueEpisodes);
+            _ = _coverCacheService.CacheCoversAsync(series.Id, uniqueEpisodes, ct: cancellationToken);
 
             return series.Id;
         }
@@ -298,14 +311,16 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="series">Die bestehende Serie mit gesetzter SpotifyArtistId oder AppleMusicArtistId.</param>
         /// <returns>Anzahl der neu angelegten Episoden. 0 wenn kein Provider zugeordnet oder keine Episoden gefunden.</returns>
-        public async Task<int> ReImportEpisodesAsync(Series series)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<int> ReImportEpisodesAsync(Series series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
 
             (string providerKey, string sourceSeriesId)? resolved = ResolveProviderForSeries(series);
             if (resolved is null)
             {
-                _logger.Debug($"Kein Provider für Serie \"{series.Title}\" – Re-Import übersprungen");
+                _logger.Debug(() => $"Kein Provider für Serie \"{series.Title}\" – Re-Import übersprungen");
                 return 0;
             }
             (string providerKey, string sourceSeriesId) = resolved.Value;
@@ -316,7 +331,7 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
-            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(sourceSeriesId);
+            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(sourceSeriesId, cancellationToken);
 
             // Batch-Insert: ein einziger SaveChangesAsync-Aufruf statt N (analog ImportAsync).
             // Bei einer Serie mit 200 Folgen ersetzt das 200 DB-Roundtrips durch einen.
@@ -326,7 +341,7 @@ namespace EchoPlay.App.Services
                 mappedEpisodes.Add(MapToEpisode(importEpisode, series.Id));
             }
 
-            await episodeService.AddRangeAsync(mappedEpisodes);
+            await episodeService.AddRangeAsync(mappedEpisodes, cancellationToken);
             int count = mappedEpisodes.Count;
 
             _logger.Info($"Re-Import abgeschlossen: \"{series.Title}\", {count} Episoden nachgeladen");
@@ -334,7 +349,7 @@ namespace EchoPlay.App.Services
             // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
             if (count > 0)
             {
-                _ = _coverCacheService.CacheCoversAsync(series.Id, episodes);
+                _ = _coverCacheService.CacheCoversAsync(series.Id, episodes, ct: cancellationToken);
             }
 
             return count;
@@ -347,7 +362,9 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="series">Die bestehende Serie mit gesetzter Provider-ID.</param>
         /// <returns>Anzahl der neu importierten Episoden. 0 wenn keine neuen gefunden.</returns>
-        public async Task<int> DeltaImportEpisodesAsync(Series series)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<int> DeltaImportEpisodesAsync(Series series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
 
@@ -361,7 +378,7 @@ namespace EchoPlay.App.Services
 
             // Bestehende Episoden in ein Title-Lookup ziehen – ein einmaliger DB-Roundtrip,
             // statt der Schleife pro Treffer ein neues FirstOrDefault auf die Liste loszuwerfen.
-            IReadOnlyList<Episode> existingEpisodes = await episodeService.GetBySeriesIdAsync(series.Id);
+            IReadOnlyList<Episode> existingEpisodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
             Dictionary<string, Episode> existingByTitle = new(existingEpisodes.Count, StringComparer.OrdinalIgnoreCase);
 
             foreach (Episode existing in existingEpisodes)
@@ -371,7 +388,7 @@ namespace EchoPlay.App.Services
                 _ = existingByTitle.TryAdd(existing.Title, existing);
             }
 
-            IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(sourceSeriesId);
+            IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(sourceSeriesId, cancellationToken);
 
             // Add- und Update-Pfad getrennt sammeln; jeder Pfad löst genau einen DB-Roundtrip aus.
             List<Episode> newEpisodes = [];
@@ -399,12 +416,12 @@ namespace EchoPlay.App.Services
 
             if (newEpisodes.Count > 0)
             {
-                await episodeService.AddRangeAsync(newEpisodes);
+                await episodeService.AddRangeAsync(newEpisodes, cancellationToken);
             }
 
             if (updatedEpisodes.Count > 0)
             {
-                await episodeService.UpdateRangeAsync(updatedEpisodes);
+                await episodeService.UpdateRangeAsync(updatedEpisodes, cancellationToken);
             }
 
             int newCount = newEpisodes.Count;
@@ -414,7 +431,7 @@ namespace EchoPlay.App.Services
                 _logger.Info($"Delta-Import: {newCount} neue Episoden für \"{series.Title}\"");
 
                 // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
-                _ = _coverCacheService.CacheCoversAsync(series.Id, providerEpisodes);
+                _ = _coverCacheService.CacheCoversAsync(series.Id, providerEpisodes, ct: cancellationToken);
             }
 
             return newCount;
@@ -428,6 +445,7 @@ namespace EchoPlay.App.Services
         /// Loggt eine Warnung, wenn Duplikate verworfen wurden, damit Provider-Anomalien
         /// im Triage-Log sichtbar bleiben.
         /// </summary>
+
         private List<ImportEpisode> DeduplicateBySourceEpisodeId(
             IReadOnlyList<ImportEpisode> episodes,
             string seriesTitle)
@@ -458,12 +476,17 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Sucht eine bestehende Serie anhand der externen ID und Quelle.
         /// </summary>
-        private static async Task<Series?> FindExistingSeriesAsync(ISeriesDataService service, ImportSeries series)
+
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="service">Parameter <c>service</c>.</param>
+        /// <param name="series">Parameter <c>series</c>.</param>
+        private static async Task<Series?> FindExistingSeriesAsync(ISeriesDataService service, ImportSeries series, CancellationToken cancellationToken = default)
         {
             return series.Source switch
             {
-                "Spotify" => await service.GetBySpotifyArtistIdAsync(series.SourceSeriesId),
-                "AppleMusic" => await service.GetByAppleMusicArtistIdAsync(series.SourceSeriesId),
+                ProviderKeys.Spotify => await service.GetBySpotifyArtistIdAsync(series.SourceSeriesId, cancellationToken),
+                ProviderKeys.AppleMusic => await service.GetByAppleMusicArtistIdAsync(series.SourceSeriesId, cancellationToken),
                 _ => null
             };
         }
@@ -474,6 +497,8 @@ namespace EchoPlay.App.Services
         /// Import und Abonnement sind dasselbe Konzept – jede importierte Serie ist direkt abonniert
         /// und erscheint sofort im Dashboard und in der Mediathek.
         /// </summary>
+
+        /// <param name="importSeries">Parameter <c>importSeries</c>.</param>
         private static Series MapToSeries(ImportSeries importSeries)
         {
             return new Series
@@ -481,8 +506,8 @@ namespace EchoPlay.App.Services
                 Title = importSeries.Title,
                 Description = importSeries.Description,
                 CoverImageUrl = importSeries.CoverImageUrl,
-                SpotifyArtistId = importSeries.Source == "Spotify" ? importSeries.SourceSeriesId : null,
-                AppleMusicArtistId = importSeries.Source == "AppleMusic" ? importSeries.SourceSeriesId : null,
+                SpotifyArtistId = importSeries.Source == ProviderKeys.Spotify ? importSeries.SourceSeriesId : null,
+                AppleMusicArtistId = importSeries.Source == ProviderKeys.AppleMusic ? importSeries.SourceSeriesId : null,
                 IsOnlineImported = true,
                 IsSubscribed = true
             };
@@ -492,6 +517,10 @@ namespace EchoPlay.App.Services
         /// Erstellt eine <see cref="Episode"/>-Entität aus einem <see cref="ImportEpisode"/>-Modell.
         /// Setzt die provider-spezifische Album-ID anhand der Source-Bezeichnung.
         /// </summary>
+
+
+        /// <param name="importEpisode">Parameter <c>importEpisode</c>.</param>
+        /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         private static Episode MapToEpisode(ImportEpisode importEpisode, Guid seriesId)
         {
             return new Episode

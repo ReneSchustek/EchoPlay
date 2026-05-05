@@ -57,7 +57,7 @@ namespace EchoPlay.AppleMusic.Clients
 
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:AppleMusic:{sourceSeriesId}");
 
-            _logger.Debug($"Apple-Music-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");
+            _logger.Debug(() => $"Apple-Music-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");
 
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
                 await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
@@ -84,7 +84,7 @@ namespace EchoPlay.AppleMusic.Clients
 
             if (albums.Count == 0)
             {
-                _logger.Debug($"Keine Alben für Künstler '{sourceSeriesId}' gefunden.");
+                _logger.Debug(() => $"Keine Alben für Künstler '{sourceSeriesId}' gefunden.");
                 return [];
             }
 

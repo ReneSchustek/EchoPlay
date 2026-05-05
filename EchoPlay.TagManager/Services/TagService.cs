@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using EchoPlay.Core.Logging;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -33,7 +34,7 @@ namespace EchoPlay.TagManager.Services
         /// <inheritdoc />
         public async Task<AudioTag> ReadAsync(string filePath)
         {
-            _logger.Debug($"Lese Tags: {filePath}");
+            _logger.Debug(() => $"Lese Tags: {filePath}");
 
             return await Task.Run(() =>
             {
@@ -42,12 +43,12 @@ namespace EchoPlay.TagManager.Services
                     using TagLib.File file = OpenFile(filePath);
 
                     AudioTag tag = MapToAudioTag(file.Tag);
-                    _logger.Debug($"Tags gelesen – Format: {file.MimeType}, Titel: {tag.Title ?? "(kein)"}");
+                    _logger.Debug(() => $"Tags gelesen – Format: {file.MimeType}, Titel: {tag.Title ?? "(kein)"}");
                     return tag;
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Lesen der Tags: {filePath}", ex);
+                    _logger.Error($"Fehler beim Lesen der Tags: {PathRedactor.Redact(filePath)}", ex);
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -65,11 +66,11 @@ namespace EchoPlay.TagManager.Services
                     ApplyAudioTag(file.Tag, tag);
                     file.Save();
 
-                    _logger.Info($"Tags geschrieben: {filePath}");
+                    _logger.Info($"Tags geschrieben: {PathRedactor.Redact(filePath)}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Schreiben der Tags: {filePath}", ex);
+                    _logger.Error($"Fehler beim Schreiben der Tags: {PathRedactor.Redact(filePath)}", ex);
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -88,7 +89,7 @@ namespace EchoPlay.TagManager.Services
                     {
                         // Null bedeutet: vorhandenes Cover entfernen
                         file.Tag.Pictures = [];
-                        _logger.Info($"Cover entfernt: {filePath}");
+                        _logger.Info($"Cover entfernt: {PathRedactor.Redact(filePath)}");
                     }
                     else
                     {
@@ -99,14 +100,14 @@ namespace EchoPlay.TagManager.Services
                             Type = TagLib.PictureType.FrontCover
                         };
                         file.Tag.Pictures = [picture];
-                        _logger.Info($"Cover geschrieben ({mimeType}, {imageData.Length} Bytes): {filePath}");
+                        _logger.Info($"Cover geschrieben ({mimeType}, {imageData.Length} Bytes): {PathRedactor.Redact(filePath)}");
                     }
 
                     file.Save();
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Schreiben des Covers: {filePath}", ex);
+                    _logger.Error($"Fehler beim Schreiben des Covers: {PathRedactor.Redact(filePath)}", ex);
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -124,11 +125,11 @@ namespace EchoPlay.TagManager.Services
                     file.Tag.Clear();
                     file.Save();
 
-                    _logger.Info($"Alle Tags entfernt: {filePath}");
+                    _logger.Info($"Alle Tags entfernt: {PathRedactor.Redact(filePath)}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Entfernen aller Tags: {filePath}", ex);
+                    _logger.Error($"Fehler beim Entfernen aller Tags: {PathRedactor.Redact(filePath)}", ex);
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -149,7 +150,7 @@ namespace EchoPlay.TagManager.Services
                 .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
-            _logger.Debug($"ReadFolderAsync: {files.Length} unterstützte Dateien in {folderPath}");
+            _logger.Debug(() => $"ReadFolderAsync: {files.Length} unterstützte Dateien in {folderPath}");
 
             List<(string, AudioTag)> results = new(files.Length);
 

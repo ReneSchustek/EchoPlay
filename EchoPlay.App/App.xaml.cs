@@ -99,81 +99,17 @@ namespace EchoPlay.App
                 // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
                 splash = new SplashWindow();
                 splash.Activate();
+                SplashLifetimeController splashLifetime = new();
 
-                _host ??= CreateHost();
+                await InitializeHostAndDatabaseAsync();
+                int dbPurgeDays = await RefreshAppSettingsAsync();
+                SchedulePurgeInBackground(dbPurgeDays);
 
-                // LoggerManager initialisieren – Cleanup läuft beim Dispose (App-Ende)
-                _loggerManager = Services.GetRequiredService<LoggerManager>();
-                _appLogger = _loggerManager.Factory.CreateLogger("App");
+                // Hintergrunddienste vor dem Fenster anstossen.
+                ThemeService themeService = await StartBackgroundServicesAsync();
 
-                _appLogger.Info("Anwendung gestartet");
-
-                // Migrationen einmalig beim Start anwenden – kein Datenbankzugriff ohne aktuelles Schema.
-                // Eigener Scope, weil DatabaseInitializer Scoped ist (DbContext-Lifetime).
-                using (IServiceScope dbScope = Services.CreateScope())
-                {
-                    DatabaseInitializer dbInit = dbScope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
-                    await dbInit.InitializeAsync();
-                }
-
-                // Log-Konfiguration und DbPurgeDays aus AppSettings laden.
-                // AddEchoPlayLogger läuft vor dem DB-Zugriff, daher werden die gespeicherten Werte erst jetzt gesetzt.
-                // LastAppStart wird bei jedem Start aktualisiert – dient als Referenz für den
-                // Neuerscheinungen-Filter (nur Folgen der letzten 60 Tage ab LastAppStart).
-                int dbPurgeDays;
-                using (IServiceScope settingsScope = Services.CreateScope())
-                {
-                    EchoPlay.Data.Services.Interfaces.IAppSettingsDataService settingsService =
-                        settingsScope.ServiceProvider.GetRequiredService<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>();
-                    EchoPlay.Data.Entities.Settings.AppSettings appSettings = await settingsService.GetAsync();
-                    _loggerManager.UpdateRetentionDays(appSettings.LogRetentionDays);
-                    _loggerManager.UpdateMinimumLevel(appSettings.MinimumLogLevel);
-                    dbPurgeDays = appSettings.DbPurgeDays;
-
-                    IClock clock = Services.GetRequiredService<IClock>();
-                    appSettings.LastAppStart = clock.UtcNow;
-                    await settingsService.SaveAsync(appSettings);
-                }
-
-                // Datenbankpflege im Hintergrund – kein kritischer Pfad, darf den Start nicht verzögern.
-                // Eigener Scope im Task stellt sicher, dass DbContext nicht vorzeitig freigegeben wird.
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        using IServiceScope purgeScope = Services.CreateScope();
-                        IDatabaseMaintenanceService maintenance =
-                            purgeScope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
-                        await maintenance.PurgeAsync(dbPurgeDays);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Purge-Fehler beeinflussen die App-Funktion nicht – wird beim nächsten Start erneut versucht
-                        _appLogger?.Warning($"DB-Purge fehlgeschlagen: {ex.Message}");
-                    }
-                });
-
-                // Provider-ID-Enrichment starten – ergänzt fehlende SpotifyAlbumId/AppleMusicAlbumId.
-                // Kein Dateisystem-Scan, kein Cover-Download – läuft nebenläufig ohne den Splash zu verlangsamen.
-                Services.GetRequiredService<BackgroundProviderIdService>().Start();
-
-                // Theme vor dem Fenster-Öffnen setzen, damit kein Flackern entsteht
-                ThemeService themeService = Services.GetRequiredService<ThemeService>();
-                await themeService.InitializeAsync();
-
-                // Startup-Validierung: Online-Check, Lokal-Check, Cache-Bereinigung, Neuerscheinungen-Refresh.
-                // Läuft komplett im Splash, damit das Dashboard sofort aktuelle Daten anzeigen kann.
-                // Der Statustext wird direkt im Splash-Fenster angezeigt.
-                IStartupValidator startupValidator = Services.GetRequiredService<IStartupValidator>();
-                StartupResult startupResult = await startupValidator.ValidateAsync(
-                    status => splash.SetStatus(status));
-                _startupResult = startupResult;
-
-                _appLogger.Info($"Startup-Validierung abgeschlossen: Online={startupResult.IsOnlineAvailable}, Lokal={startupResult.IsLocalLibraryAvailable}");
-
-                // Update-Check: prüft ob eine neuere Version auf GitHub verfügbar ist.
-                // Läuft nach dem Splash, vor dem Hauptfenster – blockiert maximal 5 Sekunden.
-                await CheckForUpdateAsync(splash);
+                // Startup-Validierung + Update-Check.
+                _startupResult = await RunStartupValidationAsync(splash);
 
                 MainWindow = _window = new MainWindow();
                 _window.Closed += OnWindowClosed;
@@ -185,6 +121,8 @@ namespace EchoPlay.App
 
                 _window.Activate();
 
+                // Mindestanzeigedauer einhalten, damit der Splash bei warmem Cache nicht aufflackert.
+                await splashLifetime.WaitForMinimumDurationAsync();
                 splash.Close();
 
                 // Cover-Hintergrund-Loop erst nach sichtbarem Hauptfenster starten.
@@ -196,6 +134,116 @@ namespace EchoPlay.App
             {
                 await HandleStartupFailureAsync(splash, ex);
             }
+        }
+
+        /// <summary>
+        /// Erstellt den Host (falls noch nicht vorhanden), initialisiert den Logger
+        /// und applied DB-Migrationen mit dem VACUUM-INTO-Backup. Ausgelagerte Phase
+        /// aus <see cref="OnLaunched"/>.
+        /// </summary>
+        private async Task InitializeHostAndDatabaseAsync()
+        {
+            _host ??= CreateHost();
+
+            // LoggerManager initialisieren – Cleanup laeuft beim Dispose (App-Ende)
+            _loggerManager = Services.GetRequiredService<LoggerManager>();
+            _appLogger = _loggerManager.Factory.CreateLogger("App");
+            _appLogger.Info("Anwendung gestartet");
+
+            // Migrationen einmalig beim Start anwenden – kein Datenbankzugriff ohne aktuelles Schema.
+            // Eigener Scope, weil DatabaseInitializer Scoped ist (DbContext-Lifetime).
+            using IServiceScope dbScope = Services.CreateScope();
+            DatabaseInitializer dbInit = dbScope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+            await dbInit.InitializeAsync();
+        }
+
+        /// <summary>
+        /// Liest die persistierten AppSettings, applied Logger-Retention und MinLevel,
+        /// und schreibt LastAppStart zurueck. Liefert die DbPurgeDays fuer den
+        /// nachfolgenden Wartungs-Task. Ausgelagerte Phase aus <see cref="OnLaunched"/>.
+        /// </summary>
+        /// <returns>Die konfigurierte DB-Purge-Aufbewahrungsdauer in Tagen.</returns>
+        private async Task<int> RefreshAppSettingsAsync()
+        {
+            using IServiceScope settingsScope = Services.CreateScope();
+            EchoPlay.Data.Services.Interfaces.IAppSettingsDataService settingsService =
+                settingsScope.ServiceProvider.GetRequiredService<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>();
+            EchoPlay.Data.Entities.Settings.AppSettings appSettings = await settingsService.GetAsync();
+
+            _loggerManager?.UpdateRetentionDays(appSettings.LogRetentionDays);
+            _loggerManager?.UpdateMinimumLevel(appSettings.MinimumLogLevel);
+
+            IClock clock = Services.GetRequiredService<IClock>();
+            appSettings.LastAppStart = clock.UtcNow;
+            await settingsService.SaveAsync(appSettings);
+
+            return appSettings.DbPurgeDays;
+        }
+
+        /// <summary>
+        /// Plant den DB-Wartungs-Task im Hintergrund. Kein kritischer Pfad — darf den
+        /// Start nicht verzoegern. Fehler werden geloggt, aber nicht durchgereicht.
+        /// </summary>
+        /// <param name="dbPurgeDays">Aufbewahrungsdauer fuer Soft-Delete-Eintraege.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Hintergrund-Purge: SQLite-Locks oder IO-Fehler waehrend VACUUM duerfen den App-Start nicht stoeren — wird beim naechsten Start erneut versucht.")]
+        private void SchedulePurgeInBackground(int dbPurgeDays)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using IServiceScope purgeScope = Services.CreateScope();
+                    IDatabaseMaintenanceService maintenance =
+                        purgeScope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
+                    await maintenance.PurgeAsync(dbPurgeDays);
+                }
+                catch (Exception ex)
+                {
+                    _appLogger?.Warning($"DB-Purge fehlgeschlagen: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Startet die Hintergrund-Services, die vor dem Hauptfenster laufen sollen,
+        /// und initialisiert das Theme. Ausgelagerte Phase aus <see cref="OnLaunched"/>
+        /// fuer bessere Stepdown-Lesbarkeit (ein Verantwortungsbereich pro Methode).
+        /// </summary>
+        /// <returns>Der initialisierte Theme-Service fuer spaeteres SyncRequestedTheme nach Window.Activate.</returns>
+        private async Task<ThemeService> StartBackgroundServicesAsync()
+        {
+            // Provider-ID-Enrichment: ergänzt fehlende SpotifyAlbumId/AppleMusicAlbumId.
+            // Kein Dateisystem-Scan, kein Cover-Download – läuft nebenläufig ohne den Splash zu verlangsamen.
+            Services.GetRequiredService<BackgroundProviderIdService>().Start();
+
+            // Theme vor dem Fenster-Öffnen setzen, damit kein Flackern entsteht.
+            ThemeService themeService = Services.GetRequiredService<ThemeService>();
+            await themeService.InitializeAsync();
+            return themeService;
+        }
+
+        /// <summary>
+        /// Fuehrt die Startup-Validierung (Online/Lokal/Cache/Neuerscheinungen) und den
+        /// Update-Check aus. Statustext laeuft in den Splash. Ausgelagerte Phase aus
+        /// <see cref="OnLaunched"/>.
+        /// </summary>
+        /// <param name="splash">Das aktive Splash-Fenster fuer Statustext-Updates.</param>
+        /// <returns>Das Validation-Ergebnis fuer das Dashboard-VM.</returns>
+        private async Task<StartupResult> RunStartupValidationAsync(SplashWindow splash)
+        {
+            // Startup-Validierung: Online-Check, Lokal-Check, Cache-Bereinigung, Neuerscheinungen-Refresh.
+            // Laeuft komplett im Splash, damit das Dashboard sofort aktuelle Daten anzeigen kann.
+            IStartupValidator startupValidator = Services.GetRequiredService<IStartupValidator>();
+            StartupResult result = await startupValidator.ValidateAsync(status => splash.SetStatus(status));
+
+            _appLogger?.Info($"Startup-Validierung abgeschlossen: Online={result.IsOnlineAvailable}, Lokal={result.IsLocalLibraryAvailable}");
+
+            // Update-Check: prueft, ob eine neuere Version auf GitHub verfuegbar ist.
+            // Laeuft nach der Validierung, blockiert maximal 5 Sekunden (RequestTimeout in UpdateCheckService).
+            await CheckForUpdateAsync(splash);
+
+            return result;
         }
 
         /// <summary>
@@ -425,7 +473,8 @@ namespace EchoPlay.App
                     UpdateDownloadService downloadService = Services.GetRequiredService<UpdateDownloadService>();
                     bool success = await downloadService.DownloadAndInstallAsync(
                         update.DownloadUrl,
-                        update.Version);
+                        update.Version,
+                        update.FileSizeBytes);
 
                     if (success)
                     {
@@ -721,6 +770,10 @@ namespace EchoPlay.App
             // Update-Services: prüft auf neue Versionen und lädt die Setup-Datei herunter.
             _ = builder.Services.AddSingleton<UpdateCheckService>();
             _ = builder.Services.AddSingleton<UpdateDownloadService>();
+
+            // Zentrales Picker-Setup für FolderPicker/FileOpen/FileSave; entfernt Boilerplate
+            // aus den Pages und kapselt die WinUI3-Window-Handle-Initialisierung.
+            _ = builder.Services.AddSingleton<IFilePickerService, FilePickerService>();
 
             // StatusBarViewModel als Singleton – Statistiken müssen App-weit konsistent sein.
             _ = builder.Services.AddSingleton<StatusBarViewModel>();

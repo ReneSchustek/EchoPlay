@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 
@@ -42,8 +43,8 @@ namespace EchoPlay.App.Views
         {
             switch (providerTag)
             {
-                case "Spotify": RadioSpotify.IsChecked = true; break;
-                case "AppleMusic": RadioAppleMusic.IsChecked = true; break;
+                case ProviderKeys.Spotify: RadioSpotify.IsChecked = true; break;
+                case ProviderKeys.AppleMusic: RadioAppleMusic.IsChecked = true; break;
                 case "Both": RadioBoth.IsChecked = true; break;
                 default: RadioNone.IsChecked = true; break;
             }

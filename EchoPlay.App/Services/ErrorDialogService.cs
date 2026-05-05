@@ -10,6 +10,7 @@ namespace EchoPlay.App.Services
     /// Kapselt die Abhängigkeit zu <see cref="ContentDialog"/> und
     /// <see cref="App.MainWindow"/>, damit ViewModels plattformunabhängig bleiben.
     /// </summary>
+
     public sealed class ErrorDialogService : IErrorDialogService
     {
         /// <summary>
@@ -20,7 +21,9 @@ namespace EchoPlay.App.Services
         /// <param name="title">Titel des Dialogs.</param>
         /// <param name="message">Fehlermeldung für den Benutzer.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task ShowAsync(string title, string message)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task ShowAsync(string title, string message, CancellationToken cancellationToken = default)
         {
             ContentDialog dialog = new()
             {

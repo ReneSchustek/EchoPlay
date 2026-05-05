@@ -58,11 +58,11 @@ namespace EchoPlay.Spotify.Scoring
             // Cache-Prüfung: bereits bewertete Künstler nicht erneut analysieren
             if (_cache.TryGet(source.SpotifyArtistId, out HoerspielScoreResult? cached) && cached != null)
             {
-                _logger.Debug($"Cache-Treffer für '{source.Name}'");
+                _logger.Debug(() => $"Cache-Treffer für '{source.Name}'");
                 return cached;
             }
 
-            _logger.Debug($"Starte Analyse für '{source.Name}'");
+            _logger.Debug(() => $"Starte Analyse für '{source.Name}'");
 
             SpotifyHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery, cancellationToken).ConfigureAwait(false);
 
@@ -87,7 +87,7 @@ namespace EchoPlay.Spotify.Scoring
             // Harte Ablehnung bei negativem Musik-Genre
             if (analysis.HasNegativeMusicGenre)
             {
-                _logger.Debug($"Hard-Reject: negatives Musik-Genre erkannt");
+                _logger.Debug(() => $"Hard-Reject: negatives Musik-Genre erkannt");
                 return HoerspielScoreResult.No(
                     artistId,
                     HoerspielDecisionReason.NegativeMusicGenre,
@@ -98,7 +98,7 @@ namespace EchoPlay.Spotify.Scoring
             // Harte Akzeptanz bei bekannter Hörspielserie
             if (analysis.IsKnownSeries)
             {
-                _logger.Debug($"Hard-Accept: bekannte Hörspielserie");
+                _logger.Debug(() => $"Hard-Accept: bekannte Hörspielserie");
                 return HoerspielScoreResult.Yes(
                     artistId,
                     HoerspielDecisionReason.KnownSeriesName,

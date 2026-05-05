@@ -52,7 +52,7 @@ namespace EchoPlay.Spotify.Clients
 
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("API:Spotify:SearchArtists");
 
-            _logger.Debug($"Spotify-Künstlersuche gestartet: {requestUri}");
+            _logger.Debug(() => $"Spotify-Künstlersuche gestartet: {requestUri}");
 
             try
             {
@@ -132,7 +132,7 @@ namespace EchoPlay.Spotify.Clients
                 $"search?q={Uri.EscapeDataString(query)}&type=album&limit={limit}";
 
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("API:Spotify:SearchAlbums");
-            _logger.Debug($"Spotify-Albumsuche gestartet: {requestUri}");
+            _logger.Debug(() => $"Spotify-Albumsuche gestartet: {requestUri}");
 
             try
             {
@@ -213,7 +213,7 @@ namespace EchoPlay.Spotify.Clients
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetArtistAlbums");
 
-            _logger.Debug($"Spotify-Alben laden für Künstler '{artistId}' (max. {limit}).");
+            _logger.Debug(() => $"Spotify-Alben laden für Künstler '{artistId}' (max. {limit}).");
 
             // Spotify liefert maximal 50 Alben pro Seite – bei Serien mit >50 Folgen
             // (z.B. Die drei ??? mit 230+) muss über mehrere Seiten iteriert werden.
@@ -312,7 +312,7 @@ namespace EchoPlay.Spotify.Clients
 
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetAlbumTracks");
 
-            _logger.Debug($"Spotify-Tracks laden für Album '{albumId}'.");
+            _logger.Debug(() => $"Spotify-Tracks laden für Album '{albumId}'.");
 
             try
             {

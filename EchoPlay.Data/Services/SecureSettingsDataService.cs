@@ -18,21 +18,26 @@ namespace EchoPlay.Data.Services
         private readonly ILogger _logger = loggerFactory.CreateLogger("SecureSettingsDataService");
 
         /// <inheritdoc/>
-        public async Task<byte[]?> GetAsync(string key)
+        /// <param name="key">Parameter key.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<byte[]?> GetAsync(string key, CancellationToken cancellationToken = default)
         {
             SecureSetting? setting = await _context.SecureSettings
-                .FirstOrDefaultAsync(s => s.Key == key)
+                .FirstOrDefaultAsync(s => s.Key == key, cancellationToken)
                 .ConfigureAwait(false);
 
             return setting?.EncryptedValue;
         }
 
         /// <inheritdoc/>
-        public async Task SaveAsync(string key, byte[] encryptedValue)
+        /// <param name="key">Parameter key.</param>
+        /// <param name="encryptedValue">Parameter encryptedValue.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SaveAsync(string key, byte[] encryptedValue, CancellationToken cancellationToken = default)
         {
             SecureSetting? existing = await _context.SecureSettings
                 .AsTracking()
-                .FirstOrDefaultAsync(s => s.Key == key)
+                .FirstOrDefaultAsync(s => s.Key == key, cancellationToken)
                 .ConfigureAwait(false);
 
             if (existing is not null)
@@ -48,22 +53,24 @@ namespace EchoPlay.Data.Services
                 });
             }
 
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"Verschlüsselter Wert für '{key}' gespeichert.");
         }
 
         /// <inheritdoc/>
-        public async Task DeleteAsync(string key)
+        /// <param name="key">Parameter key.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
             SecureSetting? existing = await _context.SecureSettings
                 .AsTracking()
-                .FirstOrDefaultAsync(s => s.Key == key)
+                .FirstOrDefaultAsync(s => s.Key == key, cancellationToken)
                 .ConfigureAwait(false);
 
             if (existing is not null)
             {
                 _ = _context.SecureSettings.Remove(existing);
-                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 _logger.Info($"Verschlüsselter Wert für '{key}' gelöscht.");
             }
         }

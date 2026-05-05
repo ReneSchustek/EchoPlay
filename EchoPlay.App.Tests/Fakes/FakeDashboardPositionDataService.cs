@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.Fakes
         private readonly Dictionary<string, List<DashboardPosition>> _positions = [];
 
         /// <inheritdoc />
-        public Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section)
+        public Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section, CancellationToken cancellationToken = default)
         {
             if (_positions.TryGetValue(section, out List<DashboardPosition>? list))
             {
@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc />
-        public Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds)
+        public Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             List<DashboardPosition> list = [];
 

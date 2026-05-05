@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.Fakes
     internal sealed class FakeLocalCoverService : ILocalCoverService
     {
         /// <inheritdoc/>
-        public Task<byte[]?> ResolveAsync(string seriesFolder, string? coverImageUrl)
+        public Task<byte[]?> ResolveAsync(string seriesFolder, string? coverImageUrl, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<byte[]?>(null);
         }

@@ -13,6 +13,7 @@ namespace EchoPlay.App.Services
     /// DPAPI ist an den Windows-Benutzer gebunden — die Daten sind nur auf derselben
     /// Maschine und mit demselben Benutzerkonto entschlüsselbar.
     /// </summary>
+
     public sealed class SpotifyCredentialStore : ISpotifyCredentialStore
     {
         private const string KeyClientId = "Spotify:ClientId";
@@ -27,6 +28,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Erstellt einen neuen Credential-Store.
         /// </summary>
+
         public SpotifyCredentialStore(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory)
@@ -46,14 +48,14 @@ namespace EchoPlay.App.Services
         public void AcknowledgeCorruptionNotice() => _lastLoadFailedDueToCorruption = false;
 
         /// <inheritdoc/>
-        public async Task<(string ClientId, string ClientSecret)?> GetAsync()
+        public async Task<(string ClientId, string ClientSecret)?> GetAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISecureSettingsDataService service = scope.ServiceProvider
                 .GetRequiredService<ISecureSettingsDataService>();
 
-            byte[]? encryptedId = await service.GetAsync(KeyClientId);
-            byte[]? encryptedSecret = await service.GetAsync(KeyClientSecret);
+            byte[]? encryptedId = await service.GetAsync(KeyClientId, CancellationToken.None);
+            byte[]? encryptedSecret = await service.GetAsync(KeyClientSecret, CancellationToken.None);
 
             if (encryptedId is null || encryptedSecret is null)
             {
@@ -73,8 +75,8 @@ namespace EchoPlay.App.Services
                 // löschen wir die korrupten Records und erzwingen eine Neu-Eingabe durch den Nutzer.
                 _logger.Warning($"Spotify-Credentials konnten nicht entschlüsselt werden ({ex.Message}). Korrupte Records werden entfernt.");
 
-                await service.DeleteAsync(KeyClientId).ConfigureAwait(false);
-                await service.DeleteAsync(KeyClientSecret).ConfigureAwait(false);
+                await service.DeleteAsync(KeyClientId, CancellationToken.None).ConfigureAwait(false);
+                await service.DeleteAsync(KeyClientSecret, CancellationToken.None).ConfigureAwait(false);
 
                 _hasCredentials = false;
                 _lastLoadFailedDueToCorruption = true;
@@ -83,7 +85,12 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        public async Task SaveAsync(string clientId, string clientSecret)
+
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="clientId">Parameter <c>clientId</c>.</param>
+        /// <param name="clientSecret">Parameter <c>clientSecret</c>.</param>
+        public async Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default)
         {
             byte[] encryptedId = Encrypt(clientId);
             byte[] encryptedSecret = Encrypt(clientSecret);
@@ -92,8 +99,8 @@ namespace EchoPlay.App.Services
             ISecureSettingsDataService service = scope.ServiceProvider
                 .GetRequiredService<ISecureSettingsDataService>();
 
-            await service.SaveAsync(KeyClientId, encryptedId);
-            await service.SaveAsync(KeyClientSecret, encryptedSecret);
+            await service.SaveAsync(KeyClientId, encryptedId, cancellationToken);
+            await service.SaveAsync(KeyClientSecret, encryptedSecret, cancellationToken);
 
             _hasCredentials = true;
             _lastLoadFailedDueToCorruption = false;
@@ -101,14 +108,16 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        public async Task ClearAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task ClearAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISecureSettingsDataService service = scope.ServiceProvider
                 .GetRequiredService<ISecureSettingsDataService>();
 
-            await service.DeleteAsync(KeyClientId);
-            await service.DeleteAsync(KeyClientSecret);
+            await service.DeleteAsync(KeyClientId, cancellationToken);
+            await service.DeleteAsync(KeyClientSecret, cancellationToken);
 
             _hasCredentials = false;
             _lastLoadFailedDueToCorruption = false;
@@ -116,13 +125,15 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        public async Task InitializeAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISecureSettingsDataService service = scope.ServiceProvider
                 .GetRequiredService<ISecureSettingsDataService>();
 
-            byte[]? encryptedId = await service.GetAsync(KeyClientId);
+            byte[]? encryptedId = await service.GetAsync(KeyClientId, cancellationToken);
             _hasCredentials = encryptedId is not null;
         }
 

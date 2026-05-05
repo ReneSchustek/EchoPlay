@@ -13,6 +13,7 @@ namespace EchoPlay.App.Services
     /// CoverImages-Tabelle, das optionale Schreiben von <c>cover.jpg</c> und das
     /// abschließende Update der Card-Bitmap. Aus dem MediathekLokalViewModel ausgelagert.
     /// </summary>
+
     public interface IEpisodeCoverCoordinator
     {
         /// <summary>
@@ -27,23 +28,39 @@ namespace EchoPlay.App.Services
         /// Übernimmt rohe Bytes als Serien-Cover. Fragt vor dem Überschreiben nach,
         /// wenn die Karte bereits ein Cover hat.
         /// </summary>
-        Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="card">Parameter <c>card</c>.</param>
+        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Übernimmt rohe Bytes als Episoden-Cover. Fragt vor dem Überschreiben nach.
         /// </summary>
-        Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes);
+
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="card">Parameter <c>card</c>.</param>
+        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Lädt das Cover-Bild zum gewählten <see cref="CoverSearchHit"/> herunter
         /// und übernimmt es als Serien-Cover. Bei Download-Fehler erscheint ein Hinweisdialog.
         /// </summary>
-        Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit);
+
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="card">Parameter <c>card</c>.</param>
+        /// <param name="hit">Parameter <c>hit</c>.</param>
+        Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Lädt das Cover-Bild zum gewählten <see cref="CoverSearchHit"/> herunter
         /// und übernimmt es als Episoden-Cover. Bei Download-Fehler erscheint ein Hinweisdialog.
         /// </summary>
-        Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit);
+
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="card">Parameter <c>card</c>.</param>
+        /// <param name="hit">Parameter <c>hit</c>.</param>
+        Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default);
     }
 }

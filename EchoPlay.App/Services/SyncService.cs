@@ -28,6 +28,7 @@ namespace EchoPlay.App.Services
     /// Alle Abhängigkeiten werden intern über einen eigenen DI-Scope aufgelöst,
     /// damit dieser Service selbst Singleton-kompatibel ist.
     /// </summary>
+
     public sealed class SyncService : ISyncService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -44,6 +45,7 @@ namespace EchoPlay.App.Services
         /// Singleton-Dienst zur navigationsübergreifenden Benachrichtigung über Scan-Ereignisse.
         /// </param>
         /// <param name="coverService">Singleton-Dienst für Cover-Operationen über die CoverImages-Tabelle.</param>
+
         public SyncService(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
@@ -80,6 +82,7 @@ namespace EchoPlay.App.Services
         /// </param>
         /// <param name="cancellationToken">Optionaler Token zum Abbruch eines laufenden Scans.</param>
         /// <returns>Zusammenfassung des Sync-Ergebnisses.</returns>
+
         public async Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
             bool forceImportAll = false,
@@ -87,6 +90,7 @@ namespace EchoPlay.App.Services
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.Sync);
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
@@ -99,7 +103,7 @@ namespace EchoPlay.App.Services
             IMp3MetadataReader metadataReader = scope.ServiceProvider.GetRequiredService<IMp3MetadataReader>();
             ILocalCoverService coverService = scope.ServiceProvider.GetRequiredService<ILocalCoverService>();
 
-            AppSettings settings = await settingsService.GetAsync();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
 
             // Kein aktiver Bibliothekspfad – Sync nicht möglich
             if (!settings.LocalLibraryEnabled || string.IsNullOrWhiteSpace(settings.LocalLibraryRootPath))
@@ -112,7 +116,7 @@ namespace EchoPlay.App.Services
             _scanEventService.BeginScan();
             try
             {
-                IReadOnlyList<Series> dbSeries = await seriesService.GetAllAsync();
+                IReadOnlyList<Series> dbSeries = await seriesService.GetAllAsync(cancellationToken);
 
                 // Alle bereits genutzten Ordnerpfade vorberechnen – verhindert Duplikate beim
                 // wiederholten Scan.
@@ -189,7 +193,7 @@ namespace EchoPlay.App.Services
                                 IsSubscribed = true
                             };
 
-                            await seriesService.AddAsync(importedSeries);
+                            await seriesService.AddAsync(importedSeries, cancellationToken);
                             _ = usedFolderPaths.Add(scanResult.SeriesFolderPath);
 
                             // Episoden für die neue lokale Serie aus den Scan-Ergebnissen anlegen.
@@ -206,12 +210,11 @@ namespace EchoPlay.App.Services
                             seriesMatched++;
 
                             // Cover-Persistenz: Cover aus dem Serienordner in CoverImages speichern
-                            byte[]? coverData = await ResolveCoverSafelyAsync(
-                                coverService, scanResult.SeriesFolderPath, coverImageUrl: null);
+                            byte[]? coverData = await ResolveCoverSafelyAsync(coverService, scanResult.SeriesFolderPath, coverImageUrl: null, cancellationToken: cancellationToken);
 
-                            if (coverData is not null && !await _coverService.HasSeriesCoverAsync(importedSeries.Id))
+                            if (coverData is not null && !await _coverService.HasSeriesCoverAsync(importedSeries.Id, cancellationToken))
                             {
-                                await _coverService.SetSeriesCoverAsync(importedSeries.Id, coverData);
+                                await _coverService.SetSeriesCoverAsync(importedSeries.Id, coverData, cancellationToken: cancellationToken);
                             }
 
                             // Neue Serie erst nach DB-Anlage melden – in Phase 1 war sie unbekannt
@@ -234,24 +237,23 @@ namespace EchoPlay.App.Services
 
                     // Cover-Persistenz: nur auflösen wenn noch kein Cover in der CoverImages-Tabelle vorhanden ist.
                     // Verhindert unnötige Dateisystem- und Netzwerkzugriffe bei wiederholten Scans.
-                    if (!await _coverService.HasSeriesCoverAsync(matchedSeries.Id))
+                    if (!await _coverService.HasSeriesCoverAsync(matchedSeries.Id, cancellationToken))
                     {
-                        byte[]? coverData = await ResolveCoverSafelyAsync(
-                            coverService, scanResult.SeriesFolderPath, matchedSeries.CoverImageUrl);
+                        byte[]? coverData = await ResolveCoverSafelyAsync(coverService, scanResult.SeriesFolderPath, matchedSeries.CoverImageUrl, cancellationToken);
 
                         if (coverData is not null)
                         {
-                            await _coverService.SetSeriesCoverAsync(matchedSeries.Id, coverData);
+                            await _coverService.SetSeriesCoverAsync(matchedSeries.Id, coverData, cancellationToken: cancellationToken);
                         }
                     }
 
-                    await seriesService.UpdateAsync(matchedSeries);
+                    await seriesService.UpdateAsync(matchedSeries, cancellationToken);
 
                     // Bekannte Serie nach Pfad-Aktualisierung melden – Phase-1-Meldung reichte noch nicht,
                     // weil der Pfad dort noch unbekannt war. Jetzt ist der Ordnerpfad gesetzt.
                     _scanEventService.RaiseSeriesSynced(matchedSeries);
 
-                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(matchedSeries.Id);
+                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(matchedSeries.Id, cancellationToken);
 
                     foreach (LocalEpisodeScan episodeScan in scanResult.Episodes)
                     {
@@ -276,14 +278,10 @@ namespace EchoPlay.App.Services
                         episode.LocalTrackCount = episodeScan.TrackCount;
                         episode.TrackMatchKind = matchKind;
 
-                        await episodeService.UpdateAsync(episode);
+                        await episodeService.UpdateAsync(episode, cancellationToken);
                         episodesUpdated++;
 
-                        int created = await CreateLocalTracksAsync(
-                            episode.Id,
-                            episodeScan.TrackPaths,
-                            trackService,
-                            metadataReader);
+                        int created = await CreateLocalTracksAsync(episode.Id, episodeScan.TrackPaths, trackService, metadataReader, cancellationToken);
 
                         tracksCreated += created;
                     }
@@ -292,7 +290,7 @@ namespace EchoPlay.App.Services
                 // Cover-Abgleich: Für neue lokale Episoden prüfen ob ein Cover bereits
                 // in der DB existiert (z.B. von einer Online-Version). Wenn ja, auf die
                 // neue lokale Episode kopieren und als cover.jpg speichern.
-                await ApplyDbCoversToLocalEpisodesAsync(scope.ServiceProvider);
+                await ApplyDbCoversToLocalEpisodesAsync(scope.ServiceProvider, cancellationToken);
 
                 SyncResult result = new()
                 {
@@ -354,7 +352,7 @@ namespace EchoPlay.App.Services
             // Batch-Insert: ein einziger SaveChangesAsync-Aufruf für alle Episoden.
             // Tracks werden anschließend pro Episode in einem eigenen Batch geschrieben,
             // weil SaveTracksForEpisodeAsync die Track-Liste der Episode konsistent austauscht.
-            await episodeService.AddRangeAsync(newEpisodes);
+            await episodeService.AddRangeAsync(newEpisodes, CancellationToken.None);
 
             int trackCount = 0;
             for (int i = 0; i < episodeScans.Count; i++)
@@ -382,13 +380,14 @@ namespace EchoPlay.App.Services
         /// <param name="trackPaths">Sortierte Liste der Audiodatei-Pfade.</param>
         /// <param name="trackService">Datenbankzugriff für Tracks.</param>
         /// <param name="metadataReader">Liest Audiodatei-Metadaten (synchron, TagLib#).</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Anzahl der angelegten Tracks.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TagLib-/IO-/DB-Fehler einzelner Audio-Dateien (korrupte Tags, gesperrte Dateien, Pfad-zu-lang) dürfen die Track-Anlage für die restlichen Dateien nicht abbrechen; Einzelfehler werden geloggt und übersprungen.")]
         private async Task<int> CreateLocalTracksAsync(
             Guid episodeId,
             IReadOnlyList<string> trackPaths,
             ILocalTrackDataService trackService,
-            IMp3MetadataReader metadataReader)
+            IMp3MetadataReader metadataReader, CancellationToken cancellationToken = default)
         {
             // Alle synchronen TagLib-Reads in einem Rutsch auf den Threadpool –
             // verhindert UI-Freeze bei großen Folgen mit vielen Tracks.
@@ -430,7 +429,7 @@ namespace EchoPlay.App.Services
                 return result;
             });
 
-            await trackService.SaveTracksForEpisodeAsync(episodeId, tracks);
+            await trackService.SaveTracksForEpisodeAsync(episodeId, tracks, cancellationToken);
             return tracks.Count;
         }
 
@@ -440,6 +439,7 @@ namespace EchoPlay.App.Services
         /// <param name="series">Alle DB-Serien.</param>
         /// <param name="folderName">Name des lokalen Serienordners.</param>
         /// <returns>Die passende Serie oder null.</returns>
+
         private static Series? FindMatchingSeries(IReadOnlyList<Series> series, string folderName)
         {
             string normalizedFolder = HoerspielTextNormalizer.Normalize(folderName);
@@ -461,6 +461,7 @@ namespace EchoPlay.App.Services
         /// <param name="episodes">Alle Episoden der Serie.</param>
         /// <param name="number">Die gesuchte Episodennummer.</param>
         /// <returns>Die passende Episode oder null.</returns>
+
         private static Episode? FindEpisodeByNumber(IReadOnlyList<Episode> episodes, int number)
         {
             foreach (Episode episode in episodes)
@@ -483,11 +484,11 @@ namespace EchoPlay.App.Services
         private async Task<byte[]?> ResolveCoverSafelyAsync(
             EchoPlay.LocalLibrary.Cover.ILocalCoverService coverService,
             string folderPath,
-            string? coverImageUrl)
+            string? coverImageUrl, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await coverService.ResolveAsync(folderPath, coverImageUrl);
+                return await coverService.ResolveAsync(folderPath, coverImageUrl, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -504,7 +505,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Optionaler Cover-Copy-Schritt nach Scan: DB-/IO-Fehler beim Uebernehmen von Covern aus anderen Episoden oder beim Schreiben von cover.jpg dürfen den Scan-Abschluss nicht blockieren.")]
         // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
-        private async Task ApplyDbCoversToLocalEpisodesAsync(IServiceProvider serviceProvider)
+        private async Task ApplyDbCoversToLocalEpisodesAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -514,7 +515,7 @@ namespace EchoPlay.App.Services
                 ICoverImageDataService coverImageService = serviceProvider
                     .GetRequiredService<ICoverImageDataService>();
 
-                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
+                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(cancellationToken);
                 int totalCopied = 0;
 
                 // CoverCopyService für lokale Serien aufrufen – kopiert Cover
@@ -523,7 +524,7 @@ namespace EchoPlay.App.Services
                 {
                     if (string.IsNullOrEmpty(series.LocalFolderPath)) continue;
 
-                    int copied = await coverCopy.CopyFromMatchingEpisodesAsync(series.Id);
+                    int copied = await coverCopy.CopyFromMatchingEpisodesAsync(series.Id, cancellationToken);
                     totalCopied += copied;
                 }
 
@@ -537,7 +538,7 @@ namespace EchoPlay.App.Services
                 {
                     if (string.IsNullOrEmpty(series.LocalFolderPath)) continue;
 
-                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
+                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
 
                     List<Episode> localEpisodes = [];
                     foreach (Episode episode in episodes)
@@ -553,7 +554,7 @@ namespace EchoPlay.App.Services
                     List<Guid> ids = localEpisodes.Select(e => e.Id).ToList();
                     IReadOnlyDictionary<Guid, byte[]> covers =
                         await coverImageService.GetImageDataByEntitiesAsync(
-                            CoverEntityTypes.Episode, ids);
+                            CoverEntityTypes.Episode, ids, cancellationToken);
 
                     foreach (Episode episode in localEpisodes)
                     {
@@ -566,11 +567,11 @@ namespace EchoPlay.App.Services
 
                         try
                         {
-                            await File.WriteAllBytesAsync(coverPath, coverData);
+                            await File.WriteAllBytesAsync(coverPath, coverData, cancellationToken);
                         }
                         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                         {
-                            _logger.Debug($"Cover-Datei konnte nicht geschrieben werden: {coverPath} – {ex.Message}");
+                            _logger.Debug(() => $"Cover-Datei konnte nicht geschrieben werden: {coverPath} – {ex.Message}");
                         }
                     }
                 }

@@ -9,7 +9,7 @@ namespace EchoPlay.Core.Tests.Scoring
     public sealed class HoerspielTextNormalizerTests
     {
         [Fact]
-        public void Normalize_ConvertsToLowercase()
+        public void Normalize_UppercaseInput_ConvertsToLowercase()
         {
             // Großbuchstaben müssen in Kleinbuchstaben umgewandelt werden
             string result = HoerspielTextNormalizer.Normalize("TKKG");
@@ -18,7 +18,7 @@ namespace EchoPlay.Core.Tests.Scoring
         }
 
         [Fact]
-        public void Normalize_ReplacesUmlautAe()
+        public void Normalize_InputContainsUmlautA_ReplacesWithAe()
         {
             // ä → ae (Standard-ASCII-Schreibweise)
             string result = HoerspielTextNormalizer.Normalize("Ärger");
@@ -63,7 +63,7 @@ namespace EchoPlay.Core.Tests.Scoring
         }
 
         [Fact]
-        public void Normalize_PreservesDigits()
+        public void Normalize_InputContainsDigits_PreservesDigits()
         {
             // Ziffern bleiben erhalten
             string result = HoerspielTextNormalizer.Normalize("TKKG Folge 42");

@@ -76,5 +76,91 @@ namespace EchoPlay.Logger.Abstractions
         /// <param name="name">Name des Scopes.</param>
         /// <returns>Ein Scope-Objekt für die Verwendung mit using.</returns>
         LogScope BeginScope(string name);
+
+        // ── Message-Template-Overloads (strukturiertes Logging) ────────────────
+        // Default-Implementierung rendert per string.Format und delegiert an die
+        // bestehende Plain-Message-Version. Strukturierte Sinks koennen die
+        // Methoden ueberschreiben und Template + Args als Properties exponieren,
+        // damit Filter wie {UserId} oder {SeriesId} moeglich werden.
+
+        /// <summary>
+        /// Schreibt eine Info-Nachricht mit Message-Template.
+        /// Beispiel: <c>logger.Info("User {UserId} hat Serie {SeriesId} importiert", userId, seriesId);</c>
+        /// </summary>
+        /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
+        /// <param name="args">Werte, die in der Reihenfolge der Platzhalter eingesetzt werden.</param>
+        void Info(string template, params object?[] args)
+        {
+            ArgumentNullException.ThrowIfNull(template);
+            Info(FormatTemplate(template, args));
+        }
+
+        /// <summary>
+        /// Schreibt eine Warnung mit Message-Template.
+        /// </summary>
+        /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
+        /// <param name="args">Werte fuer die Platzhalter.</param>
+        void Warning(string template, params object?[] args)
+        {
+            ArgumentNullException.ThrowIfNull(template);
+            Warning(FormatTemplate(template, args));
+        }
+
+        /// <summary>
+        /// Schreibt einen Fehler mit Message-Template.
+        /// </summary>
+        /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
+        /// <param name="exception">Optionale Exception.</param>
+        /// <param name="args">Werte fuer die Platzhalter.</param>
+        void Error(string template, Exception? exception, params object?[] args)
+        {
+            ArgumentNullException.ThrowIfNull(template);
+            Error(FormatTemplate(template, args), exception);
+        }
+
+        /// <summary>
+        /// Schreibt eine Debug-Nachricht mit Message-Template (lazy: rendert nur bei aktivem Debug-Level).
+        /// </summary>
+        /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
+        /// <param name="args">Werte fuer die Platzhalter.</param>
+        void Debug(string template, params object?[] args)
+        {
+            ArgumentNullException.ThrowIfNull(template);
+            if (IsDebugEnabled)
+            {
+                Debug(FormatTemplate(template, args));
+            }
+        }
+
+        /// <summary>
+        /// Rendert ein Message-Template wie Microsoft.Extensions.Logging:
+        /// Platzhalter <c>{Name}</c> werden in Reihenfolge mit <paramref name="args"/> ersetzt.
+        /// Bei zu wenigen Args bleibt der Platzhalter als Literal stehen.
+        /// </summary>
+        private static string FormatTemplate(string template, object?[] args)
+        {
+            if (args is null || args.Length == 0)
+            {
+                return template;
+            }
+
+            string result = template;
+            int argIndex = 0;
+            int searchStart = 0;
+            while (argIndex < args.Length && searchStart < result.Length)
+            {
+                int open = result.IndexOf('{', searchStart);
+                if (open < 0) break;
+
+                int close = result.IndexOf('}', open + 1);
+                if (close < 0) break;
+
+                string replacement = args[argIndex]?.ToString() ?? "(null)";
+                result = string.Concat(result.AsSpan(0, open), replacement, result.AsSpan(close + 1));
+                searchStart = open + replacement.Length;
+                argIndex++;
+            }
+            return result;
+        }
     }
 }

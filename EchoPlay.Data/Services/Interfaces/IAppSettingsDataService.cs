@@ -15,12 +15,14 @@ namespace EchoPlay.Data.Services.Interfaces
         /// persistiert und zurückgegeben.
         /// </summary>
         /// <returns>Die aktuellen <see cref="AppSettings"/>.</returns>
-        Task<AppSettings> GetAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<AppSettings> GetAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Speichert die übergebenen Einstellungen dauerhaft.
         /// </summary>
         /// <param name="settings">Die zu persistierenden Einstellungen.</param>
-        Task SaveAsync(AppSettings settings);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default);
     }
 }

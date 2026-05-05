@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -137,16 +138,16 @@ namespace EchoPlay.App.Views
         /// </summary>
         private static async Task SaveReportAsTxtAsync(string reportText)
         {
-            nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            Windows.Storage.Pickers.FileSavePicker picker = new();
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, handle);
-            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            // Lokalzeit für den Datei-Namen — der Anwender erkennt seinen heutigen Bericht.
-            picker.SuggestedFileName = $"Fehlende-Folgen-{DateTime.Now:yyyy-MM-dd}";
             ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
-            picker.FileTypeChoices.Add(resources.GetString("CommonTextFileFilter"), [".txt"]);
+            EchoPlay.App.Services.IFilePickerService picker =
+                App.Services.GetRequiredService<EchoPlay.App.Services.IFilePickerService>();
 
-            Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync();
+            // Lokalzeit für den Datei-Namen — der Anwender erkennt seinen heutigen Bericht.
+            Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync(
+                suggestedFileName: $"Fehlende-Folgen-{DateTime.Now:yyyy-MM-dd}",
+                fileTypeDescription: resources.GetString("CommonTextFileFilter"),
+                fileTypeFilters: [".txt"],
+                startLocation: Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary);
 
             if (file is not null)
             {

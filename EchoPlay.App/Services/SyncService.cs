@@ -329,8 +329,9 @@ namespace EchoPlay.App.Services
             ILocalTrackDataService trackService,
             IMp3MetadataReader metadataReader)
         {
-            int episodeCount = 0;
-            int trackCount = 0;
+            // Episoden vorab vollständig bauen – BaseEntity setzt die Guid bereits im Konstruktor,
+            // wir brauchen also keine generierten Ids aus SaveChanges.
+            List<Episode> newEpisodes = new(episodeScans.Count);
 
             // Sequenzielle Fallback-Nummerierung für Episoden ohne Muster-Treffer
             int sequentialIndex = 0;
@@ -340,28 +341,34 @@ namespace EchoPlay.App.Services
                 sequentialIndex++;
                 int episodeNumber = episodeScan.ParsedNumber ?? sequentialIndex;
 
-                Episode newEpisode = new()
+                newEpisodes.Add(new Episode
                 {
                     SeriesId = seriesId,
                     EpisodeNumber = episodeNumber,
                     Title = episodeScan.ParsedTitle ?? $"Folge {episodeNumber}",
                     LocalFolderPath = episodeScan.FolderPath,
                     LocalTrackCount = episodeScan.TrackCount
-                };
+                });
+            }
 
-                await episodeService.AddAsync(newEpisode);
-                episodeCount++;
+            // Batch-Insert: ein einziger SaveChangesAsync-Aufruf für alle Episoden.
+            // Tracks werden anschließend pro Episode in einem eigenen Batch geschrieben,
+            // weil SaveTracksForEpisodeAsync die Track-Liste der Episode konsistent austauscht.
+            await episodeService.AddRangeAsync(newEpisodes);
 
+            int trackCount = 0;
+            for (int i = 0; i < episodeScans.Count; i++)
+            {
                 int created = await CreateLocalTracksAsync(
-                    newEpisode.Id,
-                    episodeScan.TrackPaths,
+                    newEpisodes[i].Id,
+                    episodeScans[i].TrackPaths,
                     trackService,
                     metadataReader);
 
                 trackCount += created;
             }
 
-            return (episodeCount, trackCount);
+            return (newEpisodes.Count, trackCount);
         }
 
         /// <summary>

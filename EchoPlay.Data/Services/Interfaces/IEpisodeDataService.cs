@@ -45,6 +45,19 @@ namespace EchoPlay.Data.Services.Interfaces
         Task<Episode?> GetByIdAsync(Guid id);
 
         /// <summary>
+        /// Liefert mehrere Episoden anhand ihrer IDs in einer einzigen Datenbankabfrage
+        /// (<c>WHERE Id IN (...)</c>) und mappt das Ergebnis auf ein Dictionary.
+        /// Ersetzt den N+1-Zugriff im Dashboard-Aufbau: eine Abfrage pro
+        /// Wiedergabestand wird zu einer Abfrage pro Batch.
+        /// </summary>
+        /// <param name="ids">IDs der zu ladenden Episoden. Duplikate werden toleriert.</param>
+        /// <returns>
+        /// Dictionary von Episoden-ID auf <see cref="Episode"/>. Nicht gefundene IDs fehlen
+        /// im Dictionary; bei leerer Eingabe wird ein leeres Dictionary geliefert.
+        /// </returns>
+        Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids);
+
+        /// <summary>
         /// Fügt eine neue Episode dauerhaft hinzu.
         /// </summary>
         Task AddAsync(Episode episode);
@@ -61,6 +74,14 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Aktualisiert eine bestehende Episode.
         /// </summary>
         Task UpdateAsync(Episode episode);
+
+        /// <summary>
+        /// Aktualisiert mehrere bestehende Episoden in einem einzigen <c>SaveChangesAsync</c>-Aufruf.
+        /// Wird beim Delta-Reimport genutzt, wenn nur Cover-URLs nachgezogen werden müssen, ohne
+        /// pro Episode einen eigenen Roundtrip auszulösen.
+        /// </summary>
+        /// <param name="episodes">Die zu aktualisierenden Episoden.</param>
+        Task UpdateRangeAsync(IReadOnlyList<Episode> episodes);
 
         /// <summary>
         /// Liefert alle Episoden einer Serie, für die noch kein lokaler Ordner zugeordnet wurde.

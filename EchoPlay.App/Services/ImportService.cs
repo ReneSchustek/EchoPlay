@@ -318,14 +318,16 @@ namespace EchoPlay.App.Services
 
             IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(sourceSeriesId);
 
-            int count = 0;
-
+            // Batch-Insert: ein einziger SaveChangesAsync-Aufruf statt N (analog ImportAsync).
+            // Bei einer Serie mit 200 Folgen ersetzt das 200 DB-Roundtrips durch einen.
+            List<Episode> mappedEpisodes = new(episodes.Count);
             foreach (ImportEpisode importEpisode in episodes)
             {
-                Episode episode = MapToEpisode(importEpisode, series.Id);
-                await episodeService.AddAsync(episode);
-                count++;
+                mappedEpisodes.Add(MapToEpisode(importEpisode, series.Id));
             }
+
+            await episodeService.AddRangeAsync(mappedEpisodes);
+            int count = mappedEpisodes.Count;
 
             _logger.Info($"Re-Import abgeschlossen: \"{series.Title}\", {count} Episoden nachgeladen");
 
@@ -357,45 +359,55 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
-            // Bestehende Episoden-Titel sammeln – dient als Duplikaterkennung
+            // Bestehende Episoden in ein Title-Lookup ziehen – ein einmaliger DB-Roundtrip,
+            // statt der Schleife pro Treffer ein neues FirstOrDefault auf die Liste loszuwerfen.
             IReadOnlyList<Episode> existingEpisodes = await episodeService.GetBySeriesIdAsync(series.Id);
-            HashSet<string> existingTitles = new(existingEpisodes.Count, StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, Episode> existingByTitle = new(existingEpisodes.Count, StringComparer.OrdinalIgnoreCase);
 
             foreach (Episode existing in existingEpisodes)
             {
-                _ = existingTitles.Add(existing.Title);
+                // Doppelte Titel: ersten Treffer behalten – das spätere Update bevorzugt damit deterministisch
+                // die Episode mit der niedrigsten EpisodeNumber bzw. dem ältesten Datensatz.
+                _ = existingByTitle.TryAdd(existing.Title, existing);
             }
 
             IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(sourceSeriesId);
 
-            int newCount = 0;
+            // Add- und Update-Pfad getrennt sammeln; jeder Pfad löst genau einen DB-Roundtrip aus.
+            List<Episode> newEpisodes = [];
+            List<Episode> updatedEpisodes = [];
 
             foreach (ImportEpisode importEpisode in providerEpisodes)
             {
                 // Titel-basierter Vergleich – robuster als Nummernvergleich,
                 // da Online-Episoden nicht immer eine konsistente Folgennummer haben
-                if (existingTitles.Contains(importEpisode.Title))
+                if (existingByTitle.TryGetValue(importEpisode.Title, out Episode? existing))
                 {
                     // Bestehende Episode: CoverImageUrl nachtragen falls noch nicht gesetzt
-                    if (!string.IsNullOrEmpty(importEpisode.CoverImageUrl))
+                    if (!string.IsNullOrEmpty(importEpisode.CoverImageUrl)
+                        && string.IsNullOrEmpty(existing.CoverImageUrl))
                     {
-                        Episode? existing = existingEpisodes
-                            .FirstOrDefault(e => string.Equals(e.Title, importEpisode.Title, StringComparison.OrdinalIgnoreCase));
-
-                        if (existing is not null && string.IsNullOrEmpty(existing.CoverImageUrl))
-                        {
-                            existing.CoverImageUrl = importEpisode.CoverImageUrl;
-                            await episodeService.UpdateAsync(existing);
-                        }
+                        existing.CoverImageUrl = importEpisode.CoverImageUrl;
+                        updatedEpisodes.Add(existing);
                     }
 
                     continue;
                 }
 
-                Episode episode = MapToEpisode(importEpisode, series.Id);
-                await episodeService.AddAsync(episode);
-                newCount++;
+                newEpisodes.Add(MapToEpisode(importEpisode, series.Id));
             }
+
+            if (newEpisodes.Count > 0)
+            {
+                await episodeService.AddRangeAsync(newEpisodes);
+            }
+
+            if (updatedEpisodes.Count > 0)
+            {
+                await episodeService.UpdateRangeAsync(updatedEpisodes);
+            }
+
+            int newCount = newEpisodes.Count;
 
             if (newCount > 0)
             {

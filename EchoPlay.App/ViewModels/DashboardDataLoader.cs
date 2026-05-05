@@ -386,6 +386,10 @@ namespace EchoPlay.App.ViewModels
 
             List<NewEpisodeCardViewModel> result = [];
 
+            // Batch-Lookup: alle benötigten Episoden in einem Roundtrip statt einer pro State.
+            IReadOnlyDictionary<Guid, Episode> episodes =
+                await LoadEpisodesByIdsAsync(episodeService, activeStates);
+
             foreach (PlaybackState state in activeStates)
             {
                 if (result.Count >= MaxInProgressEpisodes)
@@ -393,8 +397,7 @@ namespace EchoPlay.App.ViewModels
                     break;
                 }
 
-                Episode? episode = await episodeService.GetByIdAsync(state.EpisodeId);
-                if (episode is null)
+                if (!episodes.TryGetValue(state.EpisodeId, out Episode? episode))
                 {
                     continue;
                 }
@@ -409,6 +412,28 @@ namespace EchoPlay.App.ViewModels
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Lädt alle <see cref="Episode"/>-Datensätze, deren IDs in den übergebenen Wiedergabeständen vorkommen,
+        /// in einer einzigen <c>WHERE Id IN (...)</c>-Abfrage.
+        /// </summary>
+        private static async Task<IReadOnlyDictionary<Guid, Episode>> LoadEpisodesByIdsAsync(
+            IEpisodeDataService episodeService,
+            List<PlaybackState> states)
+        {
+            if (states.Count == 0)
+            {
+                return new Dictionary<Guid, Episode>(0);
+            }
+
+            HashSet<Guid> uniqueIds = new(states.Count);
+            foreach (PlaybackState state in states)
+            {
+                _ = uniqueIds.Add(state.EpisodeId);
+            }
+
+            return await episodeService.GetByIdsAsync([.. uniqueIds]);
         }
 
         /// <summary>
@@ -444,6 +469,10 @@ namespace EchoPlay.App.ViewModels
             HashSet<Guid> seenSeriesIds = [];
             List<RecentSeriesCardViewModel> result = [];
 
+            // Batch-Lookup: alle benötigten Episoden in einem Roundtrip statt einer pro State.
+            IReadOnlyDictionary<Guid, Episode> episodes =
+                await LoadEpisodesByIdsAsync(episodeService, activeStates);
+
             foreach (PlaybackState state in activeStates)
             {
                 if (result.Count >= MaxRecentSeries)
@@ -451,8 +480,7 @@ namespace EchoPlay.App.ViewModels
                     break;
                 }
 
-                Episode? episode = await episodeService.GetByIdAsync(state.EpisodeId);
-                if (episode is null)
+                if (!episodes.TryGetValue(state.EpisodeId, out Episode? episode))
                 {
                     continue;
                 }

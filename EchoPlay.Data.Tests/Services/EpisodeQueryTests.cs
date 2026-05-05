@@ -144,6 +144,98 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
+        public async Task GetByIdsAsync_Single_ReturnsOneEntry()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
+            Context.ChangeTracker.Clear();
+
+            EpisodeDataService service = new(Context, NullLoggerFactory);
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([episode.Id]);
+
+            _ = Assert.Single(result);
+            Assert.True(result.ContainsKey(episode.Id));
+            Assert.Equal("Folge 1", result[episode.Id].Title);
+        }
+
+        [Fact]
+        public async Task GetByIdsAsync_Multiple_ReturnsAllRequestedEpisodes()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode1 = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
+            Episode episode2 = await DataBuilder.PersistEpisodeAsync(series, "Folge 2");
+            Episode episode3 = await DataBuilder.PersistEpisodeAsync(series, "Folge 3");
+            Context.ChangeTracker.Clear();
+
+            EpisodeDataService service = new(Context, NullLoggerFactory);
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync(
+                [episode1.Id, episode2.Id, episode3.Id]);
+
+            Assert.Equal(3, result.Count);
+            Assert.True(result.ContainsKey(episode1.Id));
+            Assert.True(result.ContainsKey(episode2.Id));
+            Assert.True(result.ContainsKey(episode3.Id));
+        }
+
+        [Fact]
+        public async Task GetByIdsAsync_EmptyInput_ReturnsEmptyDictionary()
+        {
+            EpisodeDataService service = new(Context, NullLoggerFactory);
+
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([]);
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetByIdsAsync_NotFoundIds_AreOmittedFromDictionary()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
+            Context.ChangeTracker.Clear();
+
+            EpisodeDataService service = new(Context, NullLoggerFactory);
+            Guid missingId = new("99999999-9999-9999-9999-999999999991");
+
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([episode.Id, missingId]);
+
+            _ = Assert.Single(result);
+            Assert.True(result.ContainsKey(episode.Id));
+            Assert.False(result.ContainsKey(missingId));
+        }
+
+        [Fact]
+        public async Task UpdateRangeAsync_PersistsAllChanges()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode ep1 = await DataBuilder.PersistEpisodeAsync(series, "Alt 1");
+            Episode ep2 = await DataBuilder.PersistEpisodeAsync(series, "Alt 2");
+            Context.ChangeTracker.Clear();
+
+            EpisodeDataService service = new(Context, NullLoggerFactory);
+            Episode? loaded1 = await service.GetByIdAsync(ep1.Id);
+            Episode? loaded2 = await service.GetByIdAsync(ep2.Id);
+            loaded1!.CoverImageUrl = "https://example.org/cover1.jpg";
+            loaded2!.CoverImageUrl = "https://example.org/cover2.jpg";
+
+            await service.UpdateRangeAsync([loaded1, loaded2]);
+            Context.ChangeTracker.Clear();
+
+            Episode? reloaded1 = await service.GetByIdAsync(ep1.Id);
+            Episode? reloaded2 = await service.GetByIdAsync(ep2.Id);
+            Assert.Equal("https://example.org/cover1.jpg", reloaded1!.CoverImageUrl);
+            Assert.Equal("https://example.org/cover2.jpg", reloaded2!.CoverImageUrl);
+        }
+
+        [Fact]
+        public async Task UpdateRangeAsync_EmptyInput_DoesNotThrow()
+        {
+            EpisodeDataService service = new(Context, NullLoggerFactory);
+
+            await service.UpdateRangeAsync([]);
+        }
+
+        [Fact]
         public async Task SetCoverLastCheckedAsync_SetsTimestamp()
         {
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");

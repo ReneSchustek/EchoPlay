@@ -242,7 +242,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public string SourceLabel => _importSeries.Source switch
         {
-            "AppleMusic" => "Apple Music",
+            ProviderKeys.AppleMusic => "Apple Music",
             _ => _importSeries.Source
         };
 

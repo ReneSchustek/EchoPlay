@@ -46,7 +46,7 @@ namespace EchoPlay.Spotify.Scoring
             string searchQuery,
             CancellationToken cancellationToken = default)
         {
-            _logger.Debug($"Hörspiel-Analyse für Künstler '{source.Name}' (ID: {source.SpotifyArtistId}) gestartet.");
+            _logger.Debug(() => $"Hörspiel-Analyse für Künstler '{source.Name}' (ID: {source.SpotifyArtistId}) gestartet.");
 
             bool hasNegativeMusicGenre = HasNegativeMusicGenre(source.Genres);
             bool isKnownSeries = IsKnownSeries(source.Name);
@@ -100,7 +100,7 @@ namespace EchoPlay.Spotify.Scoring
                 ? string.Join("; ", debugParts)
                 : "Keine Indikatoren gefunden";
 
-            _logger.Debug($"Hörspiel-Analyse für '{source.Name}' abgeschlossen: {debugInfo}");
+            _logger.Debug(() => $"Hörspiel-Analyse für '{source.Name}' abgeschlossen: {debugInfo}");
 
             return new SpotifyHoerspielAnalysis
             {

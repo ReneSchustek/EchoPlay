@@ -342,7 +342,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ImportAsync_DeduplicatesEpisodes_BySourceEpisodeId()
         {
-            // Brief 268: Provider liefert dieselbe Folge mehrfach (Compilation/Re-Release).
+            // Provider liefern bei Compilation/Re-Release dieselbe Folge mehrfach.
             // Nach dem Import darf in der DB nur eine Episode pro SourceEpisodeId stehen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
@@ -515,7 +515,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ReImportEpisodesAsync_PersistsAllEpisodes_ViaSingleAddRangeCall()
         {
-            // Brief 273: Re-Import nutzt einen Batch-Insert statt N AddAsync-Aufrufe.
+            // Re-Import muss einen Batch-Insert auslösen statt N einzelne AddAsync-Aufrufe (N+1 vermeiden).
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
@@ -552,7 +552,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task DeltaImportEpisodesAsync_AddsOnlyNewEpisodes_ViaSingleAddRangeCall()
         {
-            // Brief 273: Delta-Import sammelt neue Episoden und löst einen einzigen AddRangeAsync aus.
+            // Delta-Import muss neue Episoden sammeln und in einem einzigen AddRangeAsync persistieren.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
@@ -599,8 +599,8 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task DeltaImportEpisodesAsync_UpdatesExistingCoverInBatch()
         {
-            // Brief 273: Bestehende Episoden ohne Cover bekommen die Provider-CoverUrl
-            // in einem einzigen UpdateRangeAsync-Aufruf, nicht pro Treffer.
+            // Bestehende Episoden ohne Cover sollen die Provider-CoverUrl in einem einzigen
+            // UpdateRangeAsync-Aufruf bekommen, nicht pro Treffer (Batch statt N+1).
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());

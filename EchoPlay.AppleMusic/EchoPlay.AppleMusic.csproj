@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EchoPlay.Core\EchoPlay.Core.csproj" />
-    <ProjectReference Include="..\EchoPlay.Logger\EchoPlay.Logger.csproj" />
+    <ProjectReference Include="..\EchoPlay.Logger.Abstractions\EchoPlay.Logger.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

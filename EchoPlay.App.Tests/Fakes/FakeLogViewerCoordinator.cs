@@ -4,6 +4,7 @@ using EchoPlay.Logger.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -34,7 +35,7 @@ namespace EchoPlay.App.Tests.Fakes
         public void AddLiveEntry(LogEntry entry) => _liveEntries.Add(entry);
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync()
+        public Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync(CancellationToken cancellationToken = default)
         {
             // Live-Option zuerst – identisches Verhalten wie in der echten Implementierung
             List<LogFileOption> result = [new LogFileOption("Aktuell (Live)", DateTime.MaxValue, null), .. FileOptions];
@@ -42,7 +43,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath)
+        public Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath, CancellationToken cancellationToken = default)
         {
             if (FileContents.TryGetValue(filePath, out IReadOnlyList<string>? lines))
             {

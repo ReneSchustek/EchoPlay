@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -7,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using WinRT.Interop;
 
 namespace EchoPlay.App.Views
 {
@@ -25,9 +25,15 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Initialisiert die Seite und bezieht das ViewModel aus dem DI-Container.
         /// </summary>
+        private readonly IFilePickerService _filePickerService;
+
+        /// <summary>
+        /// Initialisiert die Seite und bezieht ViewModel und Picker-Service aus dem DI-Container.
+        /// </summary>
         public PlayerPage()
         {
             ViewModel = App.Services.GetRequiredService<PlayerViewModel>();
+            _filePickerService = App.Services.GetRequiredService<IFilePickerService>();
             InitializeComponent();
         }
 
@@ -39,18 +45,7 @@ namespace EchoPlay.App.Views
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                FolderPicker picker = new()
-                {
-                    SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                    ViewMode = PickerViewMode.List
-                };
-
-                picker.FileTypeFilter.Add("*");
-
-                // WinUI 3 ohne UWP: Der Picker braucht das Fenster-Handle für den Dialog
-                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
-
-                StorageFolder? folder = await picker.PickSingleFolderAsync();
+                StorageFolder? folder = await _filePickerService.PickFolderAsync(PickerLocationId.MusicLibrary);
 
                 if (folder is null)
                 {
@@ -70,21 +65,9 @@ namespace EchoPlay.App.Views
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                FileOpenPicker picker = new()
-                {
-                    SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                    ViewMode = PickerViewMode.List
-                };
-
-                // Alle unterstützten Audioformate im Dateidialog anbieten
-                foreach (string ext in EchoPlay.Core.AudioExtensions.Supported)
-                {
-                    picker.FileTypeFilter.Add(ext);
-                }
-
-                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
-
-                IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
+                IReadOnlyList<StorageFile> files = await _filePickerService.PickFilesAsync(
+                    EchoPlay.Core.AudioExtensions.Supported,
+                    PickerLocationId.MusicLibrary);
 
                 if (files.Count == 0)
                 {

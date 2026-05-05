@@ -1,3 +1,4 @@
+using EchoPlay.Core.Security;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -75,11 +76,20 @@ namespace EchoPlay.TagManager.Services
                     continue;
                 }
 
+                // Defense-in-Depth gegen Pattern-/Tag-basierte Pfad-Escapes:
+                // Ein bösartiger Tag-Wert (z. B. ".." als Album) könnte sonst aus dem Quellordner ausbrechen.
+                string sourceDirectory = Path.GetDirectoryName(item.FilePath) ?? string.Empty;
+                if (!SecurePathHelper.IsPathInside(item.NewFilePath, sourceDirectory))
+                {
+                    _logger.Warning($"Umbenennung abgelehnt für \"{item.OldName}\": Zielpfad liegt außerhalb des Quellordners.");
+                    continue;
+                }
+
                 try
                 {
                     // File.Move ist auf demselben Laufwerk atomar – kein Zwischenkopieren nötig
                     await Task.Run(() => File.Move(item.FilePath, item.NewFilePath, overwrite: false)).ConfigureAwait(false);
-                    _logger.Debug($"Umbenannt: \"{item.OldName}\" → \"{item.NewName}\"");
+                    _logger.Debug(() => $"Umbenannt: \"{item.OldName}\" → \"{item.NewName}\"");
                     successCount++;
                 }
                 catch (IOException ex)

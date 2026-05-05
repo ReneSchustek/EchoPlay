@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -8,6 +9,7 @@ namespace EchoPlay.App.Services
     /// Zeigt einen Bestätigungsdialog und schaltet die StatusBar temporär auf "Online",
     /// solange die Aktion läuft. Im Online-Modus wird die Aktion ohne Dialog durchgelassen.
     /// </summary>
+
     public interface IOnlineAccessGuard
     {
         /// <summary>
@@ -20,6 +22,7 @@ namespace EchoPlay.App.Services
         /// <see langword="null"/>, wenn der Nutzer den Dialog abgelehnt hat – die Aktion soll abgebrochen werden.
         /// Im Online-Modus wird ein No-Op-Disposable zurückgegeben (kein Dialog).
         /// </returns>
-        Task<IDisposable?> RequestOnlineAccessAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IDisposable?> RequestOnlineAccessAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -43,7 +43,7 @@ namespace EchoPlay.LocalLibrary.Cover
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]?> ResolveAsync(string seriesFolder, string? coverImageUrl)
+        public async Task<byte[]?> ResolveAsync(string seriesFolder, string? coverImageUrl, System.Threading.CancellationToken cancellationToken = default)
         {
             // ── Schritt 1: Cover-Unterordner ──────────────────────────────────────
             // Manche Serien haben einen "Cover"-Unterordner mit front.jpg / cover.jpg.

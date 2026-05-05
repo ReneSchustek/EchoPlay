@@ -12,6 +12,13 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// Retention-Cleanup und das Fallback auf Defaults, wenn die Backup-Spalten
     /// noch nicht existieren.
     /// </summary>
+    /// <remarks>
+    /// <c>Guid.NewGuid()</c> als Verzeichnis-Suffix ist hier bewusst: xUnit ruft Tests parallel
+    /// in derselben Klasse auf, und die SQLite-Backup-Pfade brauchen physische Isolation.
+    /// Eine feste Konstante würde unter Parallelität Datei-Locks und falsche Negativ-Funde
+    /// erzeugen. Die NewGuid-Nutzung ist auf die Verzeichnis-Eindeutigkeit beschränkt und
+    /// hat keine semantische Wirkung auf die Testausgabe.
+    /// </remarks>
     public sealed class DatabaseInitializerBackupTests : IDisposable
     {
         private readonly string _tempRoot;

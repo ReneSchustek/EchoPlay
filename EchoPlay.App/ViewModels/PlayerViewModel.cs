@@ -399,6 +399,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("PlayerPlayItem");
             List<string> paths = new(PlaylistItems.Count);
 
             foreach (PlaylistItemViewModel playlistItem in PlaylistItems)
@@ -412,6 +413,7 @@ namespace EchoPlay.App.ViewModels
 
         private void TogglePlayPause()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("PlayerTogglePlayPause");
             if (_playerService.IsPlaying)
             {
                 _playerService.Pause();

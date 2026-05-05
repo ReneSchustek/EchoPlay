@@ -43,6 +43,13 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Wiedergabestände und lokale Track-Zuordnungen.
         /// Einstellungen (<see cref="EchoPlay.Data.Entities.Settings.AppSettings"/>) bleiben erhalten.
         /// </summary>
+        /// <remarks>
+        /// Diese Methode führt einen Hard-Delete durch und umgeht den globalen
+        /// Soft-Delete-Filter (<c>IgnoreQueryFilters</c> + <c>ExecuteDeleteAsync</c>).
+        /// Begründung: „Bibliothek leeren" ist ein expliziter Nutzer-Befehl mit der Erwartung,
+        /// dass die Tabellen anschließend leer sind. Soft-Delete-Reste würden beim
+        /// nächsten Import den Eindeutigkeits-Hash blockieren und neue Treffer verwerfen.
+        /// </remarks>
         Task ClearLibraryAsync();
 
         /// <summary>
@@ -50,6 +57,12 @@ namespace EchoPlay.Data.Services.Interfaces
         /// (Episoden, PlaybackStates, LocalTracks).
         /// Lokale Serien und Einstellungen bleiben erhalten.
         /// </summary>
+        /// <remarks>
+        /// Hard-Delete analog zu <see cref="ClearLibraryAsync"/>: Soft-Delete-Bypass ist
+        /// notwendig, weil ein erneuter Online-Import sonst über soft-gelöschte Datensätze
+        /// stolpert. Nur online-importierte Serien sind betroffen — lokale Bibliothek bleibt
+        /// unberührt.
+        /// </remarks>
         Task ClearOnlineLibraryAsync();
 
         /// <summary>
@@ -58,6 +71,11 @@ namespace EchoPlay.Data.Services.Interfaces
         /// und entfernt rein lokale Serien (nicht online-importiert).
         /// Online-importierte Serien und Einstellungen bleiben erhalten.
         /// </summary>
+        /// <remarks>
+        /// Hard-Delete für rein lokale Serien (Soft-Delete-Bypass): nach „Lokale Bibliothek
+        /// trennen" muss der nächste Scan dieselben Pfade wieder neu anlegen können — Soft-Delete-
+        /// Reste würden den Re-Scan blockieren.
+        /// </remarks>
         Task ClearLocalLibraryAsync();
     }
 }

@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -8,6 +9,7 @@ namespace EchoPlay.App.Services
     /// und navigiert über den <see cref="INavigationService"/> zurück.
     /// Vermeidet duplizierten Offline-/Nur-Online-Check in den Mediathek- und Suche-ViewModels.
     /// </summary>
+
     public interface IPageModeGuard
     {
         /// <summary>
@@ -19,7 +21,8 @@ namespace EchoPlay.App.Services
         /// <see langword="false"/>, wenn der Offline-Modus aktiv ist – in diesem Fall hat
         /// der Guard bereits einen Hinweisdialog gezeigt und die Rücknavigation ausgelöst.
         /// </returns>
-        Task<bool> EnsureOnlineAccessAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<bool> EnsureOnlineAccessAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stellt sicher, dass die aufrufende Page lokale Inhalte anzeigen darf.
@@ -30,6 +33,7 @@ namespace EchoPlay.App.Services
         /// <see langword="false"/>, wenn der Nur-Online-Modus aktiv ist – in diesem Fall hat
         /// der Guard bereits einen Hinweisdialog gezeigt und die Rücknavigation ausgelöst.
         /// </returns>
-        Task<bool> EnsureLocalAccessAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<bool> EnsureLocalAccessAsync(CancellationToken cancellationToken = default);
     }
 }

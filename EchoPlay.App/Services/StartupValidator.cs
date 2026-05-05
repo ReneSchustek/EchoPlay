@@ -20,6 +20,7 @@ namespace EchoPlay.App.Services
     /// Die Ergebnisse werden im <see cref="StartupResult"/> zusammengefasst, damit das Dashboard
     /// direkt auf aktuelle, bereinigte Daten zugreifen kann – ohne eigene Checks.
     /// </summary>
+
     public sealed class StartupValidator : IStartupValidator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -36,6 +37,7 @@ namespace EchoPlay.App.Services
         /// <param name="httpClientFactory">Fabrik für den Online-Check-HttpClient (Named „OnlineCheck").</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="clock">Zeitquelle für Zeitstempel.</param>
+
         public StartupValidator(
             IServiceScopeFactory scopeFactory,
             BackgroundCoverService backgroundCoverService,
@@ -69,8 +71,8 @@ namespace EchoPlay.App.Services
             ICachedNewReleaseDataService cacheService =
                 scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
 
-            AppSettings settings = await settingsService.GetAsync();
-            IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
+            IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync(cancellationToken);
 
             DateTime cutoffDate = (settings.LastAppStart ?? _clock.UtcNow)
                 .AddDays(-settings.NewReleaseDays);
@@ -85,11 +87,11 @@ namespace EchoPlay.App.Services
             {
                 onStatus?.Invoke("Leere Cache …");
 
-                await cacheService.ClearAllAsync();
+                await cacheService.ClearAllAsync(cancellationToken);
 
                 ICoverImageDataService coverImageService =
                     scope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
-                _ = await coverImageService.ClearAllAsync();
+                _ = await coverImageService.ClearAllAsync(cancellationToken);
 
                 _logger.Info("Cache geleert (Neuerscheinungen + Cover) – Neuaufbau läuft.");
             }
@@ -141,7 +143,7 @@ namespace EchoPlay.App.Services
 
             if (unwatchedSeriesIds.Count > 0)
             {
-                int cleaned = await cacheService.RemoveBySeriesIdsAsync(unwatchedSeriesIds);
+                int cleaned = await cacheService.RemoveBySeriesIdsAsync(unwatchedSeriesIds, cancellationToken);
                 if (cleaned > 0)
                 {
                     _logger.Info($"{cleaned} Cache-Einträge für nicht-überwachte Serien entfernt.");
@@ -149,10 +151,10 @@ namespace EchoPlay.App.Services
             }
 
             // Schritt 4: Abgelaufene Einträge bereinigen
-            int expired = await cacheService.RemoveOlderThanAsync(cutoffDate);
+            int expired = await cacheService.RemoveOlderThanAsync(cutoffDate, cancellationToken);
             if (expired > 0)
             {
-                _logger.Debug($"{expired} abgelaufene Cache-Einträge entfernt.");
+                _logger.Debug(() => $"{expired} abgelaufene Cache-Einträge entfernt.");
             }
 
             // Schritt 5: Neuerscheinungen-Refresh (nur wenn online verfügbar).
@@ -166,8 +168,7 @@ namespace EchoPlay.App.Services
                 ICachedNewReleaseDataService refreshCacheService = refreshScope.ServiceProvider
                     .GetRequiredService<ICachedNewReleaseDataService>();
 
-                await RefreshNewReleaseCacheAsync(
-                    subscribedSeries, cutoffDate, refreshCacheService, refreshScope.ServiceProvider);
+                await RefreshNewReleaseCacheAsync(subscribedSeries, cutoffDate, refreshCacheService, refreshScope.ServiceProvider, cancellationToken);
             }
 
             // Schritt 6: Nur Serien-Cover im Splash nachladen.
@@ -210,15 +211,15 @@ namespace EchoPlay.App.Services
                 using IServiceScope resetScope = _scopeFactory.CreateScope();
                 IAppSettingsDataService resetService = resetScope.ServiceProvider
                     .GetRequiredService<IAppSettingsDataService>();
-                AppSettings current = await resetService.GetAsync();
+                AppSettings current = await resetService.GetAsync(cancellationToken);
                 current.ClearCacheOnNextStart = false;
-                await resetService.SaveAsync(current);
+                await resetService.SaveAsync(current, cancellationToken);
                 _logger.Info("Cache-Clear-Flag zurückgesetzt – Neuaufbau abgeschlossen.");
             }
 
             // Schritt 8: Bereinigte Cache-Einträge laden
             onStatus?.Invoke("Bereite Dashboard vor …");
-            IReadOnlyList<CachedNewRelease> cachedReleases = await cacheService.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> cachedReleases = await cacheService.GetAllAsync(cancellationToken);
 
             _logger.Info($"Startup-Validierung abgeschlossen: Online={isOnlineAvailable}, " +
                 $"Lokal={isLocalAvailable}, Cache={cachedReleases.Count} Einträge.");
@@ -227,7 +228,7 @@ namespace EchoPlay.App.Services
             // lesbar ist. Mehrzeilig, weil JsonLogSink die Zeilen trotzdem als ein Eintrag erfasst.
             ICoverImageDataService coverImageForSnapshot =
                 scope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
-            int coverImageCount = await coverImageForSnapshot.CountAsync();
+            int coverImageCount = await coverImageForSnapshot.CountAsync(cancellationToken);
             _logger.Info(
                 "Health-Check-Snapshot:\n" +
                 $"  Online:             {isOnlineAvailable}\n" +
@@ -259,6 +260,8 @@ namespace EchoPlay.App.Services
         /// Prüft die Online-Konnektivität per HTTP-HEAD-Request auf die iTunes-API.
         /// Leichtgewichtig: kein Body, nur Verbindungsaufbau und Antwort.
         /// </summary>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
         private async Task<bool> CheckOnlineConnectivityAsync(CancellationToken cancellationToken)
         {
             try
@@ -275,7 +278,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
             {
-                _logger.Debug($"Online-Check fehlgeschlagen: {ex.Message}");
+                _logger.Debug(() => $"Online-Check fehlgeschlagen: {ex.Message}");
                 return false;
             }
         }
@@ -287,6 +290,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="path">Pfad zum lokalen Bibliotheksverzeichnis.</param>
         /// <returns><see langword="true"/> wenn das Verzeichnis erreichbar und lesbar ist.</returns>
+
         private bool CheckLocalLibraryAccess(string path)
         {
             try
@@ -302,7 +306,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                _logger.Debug($"Lokales Verzeichnis nicht lesbar: {ex.Message}");
+                _logger.Debug(() => $"Lokales Verzeichnis nicht lesbar: {ex.Message}");
                 return false;
             }
         }
@@ -318,7 +322,8 @@ namespace EchoPlay.App.Services
             DateTime cutoffDate,
             ICachedNewReleaseDataService cacheService,
             // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            CancellationToken cancellationToken = default)
         {
             if (subscribedSeries.Count == 0)
             {
@@ -326,7 +331,7 @@ namespace EchoPlay.App.Services
             }
 
             // Prüfen ob ein Update nötig ist (letzte Prüfung < 24h)
-            DateTime? lastCheck = await cacheService.GetLatestCheckTimeAsync();
+            DateTime? lastCheck = await cacheService.GetLatestCheckTimeAsync(cancellationToken);
             bool needsRefresh = lastCheck is null
                 || _clock.UtcNow - lastCheck.Value > TimeSpan.FromHours(24);
 
@@ -364,7 +369,7 @@ namespace EchoPlay.App.Services
                     serviceProvider.GetRequiredService<IOnlineEpisodeChecker>();
 
                 IReadOnlyList<OnlineEpisodeCheckResult> results =
-                    await checker.CheckNewReleasesAsync(checkable, cutoffDate);
+                    await checker.CheckNewReleasesAsync(checkable, cutoffDate, cancellationToken);
 
                 // Ergebnisse in Cache-Einträge umwandeln und speichern
                 DateTime checkedAt = _clock.UtcNow;
@@ -389,7 +394,7 @@ namespace EchoPlay.App.Services
 
                 if (newEntries.Count > 0)
                 {
-                    await cacheService.UpsertRangeAsync(newEntries);
+                    await cacheService.UpsertRangeAsync(newEntries, cancellationToken);
                 }
 
                 _logger.Info($"Neuerscheinungen-Cache aktualisiert: {newEntries.Count} Einträge aus {results.Count} Serien.");

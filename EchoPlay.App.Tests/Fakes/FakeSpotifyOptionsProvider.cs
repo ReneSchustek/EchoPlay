@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.Spotify.Configuration;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -21,9 +22,9 @@ namespace EchoPlay.App.Tests.Fakes
         public bool IsAvailable => _credentialStore.HasCredentials;
 
         /// <inheritdoc/>
-        public async Task<SpotifyOptions?> GetAsync()
+        public async Task<SpotifyOptions?> GetAsync(CancellationToken cancellationToken = default)
         {
-            (string ClientId, string ClientSecret)? credentials = await _credentialStore.GetAsync();
+            (string ClientId, string ClientSecret)? credentials = await _credentialStore.GetAsync(cancellationToken);
 
             if (credentials is null)
             {

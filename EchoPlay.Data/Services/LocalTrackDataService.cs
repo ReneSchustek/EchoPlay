@@ -24,7 +24,8 @@ namespace EchoPlay.Data.Services
         /// </summary>
         /// <param name="episodeId">ID der Episode.</param>
         /// <returns>Alle bekannten lokalen Tracks der Episode.</returns>
-        public async Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
             _logger.Debug(() => $"Lade lokale Tracks für Episode '{episodeId}'.");
 
@@ -32,7 +33,7 @@ namespace EchoPlay.Data.Services
 
                 .Where(track => track.EpisodeId == episodeId)
                 .OrderBy(track => track.TrackNumber)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Debug(() => $"{result.Count} Track(s) für Episode '{episodeId}' geladen.");
 
@@ -41,7 +42,7 @@ namespace EchoPlay.Data.Services
 
         /// <inheritdoc/>
         public async Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(
-            IReadOnlyList<Guid> episodeIds)
+            IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episodeIds);
 
@@ -58,7 +59,7 @@ namespace EchoPlay.Data.Services
             // Variante ist hier schneller, weil die Track-Anzahl pro Episode klein ist.
             List<LocalTrack> allTracks = await _context.LocalTracks
                 .Where(track => episodeIds.Contains(track.EpisodeId))
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             Dictionary<Guid, LocalTrack> result = new(episodeIds.Count);
             foreach (LocalTrack track in allTracks.OrderBy(t => t.TrackNumber))
@@ -80,7 +81,8 @@ namespace EchoPlay.Data.Services
         /// </summary>
         /// <param name="episodeId">ID der Episode.</param>
         /// <param name="tracks">Die neuen Tracks. Die <see cref="LocalTrack.EpisodeId"/> muss bereits gesetzt sein.</param>
-        public async Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(tracks);
 
@@ -90,12 +92,12 @@ namespace EchoPlay.Data.Services
             List<LocalTrack> existing = await _context.LocalTracks
                 .AsTracking()
                 .Where(track => track.EpisodeId == episodeId)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             _context.LocalTracks.RemoveRange(existing);
             _context.LocalTracks.AddRange(tracks);
 
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Info($"{tracks.Count} Track(s) für Episode '{episodeId}' gespeichert ({existing.Count} vorherige entfernt).");
         }

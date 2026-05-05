@@ -294,7 +294,7 @@ namespace EchoPlay.App.ViewModels
                     string posText = positionBySeriesId.TryGetValue(s.Id, out int p)
                         ? p.ToString(System.Globalization.CultureInfo.InvariantCulture)
                         : "keine";
-                    _logger.Debug($"Favorit: '{s.Title}' – Position={posText}");
+                    _logger.Debug(() => $"Favorit: '{s.Title}' – Position={posText}");
                 }
 
                 // Onboarding: wenn keine abonnierte Serie vorhanden ist, signalisieren wir das der Seite
@@ -326,27 +326,27 @@ namespace EchoPlay.App.ViewModels
                 IReadOnlyList<UnheardSeriesCardViewModel> unheardList =
                     await BuildUnheardSeriesAsync(favoriteSeries, episodeService, stateByEpisodeId);
                 WeiterhoerenVM.SetItems(unheardList);
-                _logger.Debug($"BuildUnheard dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                _logger.Debug(() => $"BuildUnheard dauer={sectionStopwatch.ElapsedMilliseconds} ms");
                 sectionStopwatch.Restart();
 
                 // Favoriten-Kacheln aufbauen (mit Cover und RemoveCommand) und sortieren
                 IReadOnlyList<FavoriteSeriesCardViewModel> favoriteCards =
                     await BuildFavoriteCardsAsync(favoriteSeries, positionService);
                 FavoritenVM.SetItems(favoriteCards);
-                _logger.Debug($"BuildFavorites dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                _logger.Debug(() => $"BuildFavorites dauer={sectionStopwatch.ElapsedMilliseconds} ms");
                 sectionStopwatch.Restart();
 
                 // In-Progress und Recent über den DataLoader bauen
                 IReadOnlyList<NewEpisodeCardViewModel> inProgress =
                     await _dataLoader.BuildInProgressEpisodesAsync(episodeService, allStates, subscribedSeries);
                 InProgressVM.SetItems(inProgress);
-                _logger.Debug($"BuildInProgress dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                _logger.Debug(() => $"BuildInProgress dauer={sectionStopwatch.ElapsedMilliseconds} ms");
                 sectionStopwatch.Restart();
 
                 IReadOnlyList<RecentSeriesCardViewModel> recent =
                     await _dataLoader.BuildRecentSeriesAsync(episodeService, allStates, subscribedSeries);
                 ZuletztGehoertVM.SetItems(recent);
-                _logger.Debug($"BuildRecent dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                _logger.Debug(() => $"BuildRecent dauer={sectionStopwatch.ElapsedMilliseconds} ms");
             }
             finally
             {
@@ -361,7 +361,7 @@ namespace EchoPlay.App.ViewModels
                 IReadOnlyList<NewEpisodesGroupViewModel> groups =
                     await _dataLoader.BuildNewReleaseGroupsAsync(subscribedSeries);
                 NeuerscheinungenVM.SetGroups(groups);
-                _logger.Debug($"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
+                _logger.Debug(() => $"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
             }
 
             // Sichtbare Kacheln mit Serien-Cover-Fallback bekommen ihre Folgen-Cover

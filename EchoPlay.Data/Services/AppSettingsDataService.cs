@@ -26,12 +26,13 @@ namespace EchoPlay.Data.Services
         /// Gibt immer einen gültigen Wert zurück – niemals null.
         /// </summary>
         /// <returns>Die aktuellen <see cref="AppSettings"/>.</returns>
-        public async Task<AppSettings> GetAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<AppSettings> GetAsync(CancellationToken cancellationToken = default)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("DB:AppSettings:Get");
 
             AppSettings? settings = await _context.AppSettings
-                .FirstOrDefaultAsync().ConfigureAwait(false);
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             if (settings is not null)
             {
@@ -44,7 +45,7 @@ namespace EchoPlay.Data.Services
 
             AppSettings defaultSettings = new();
             _ = _context.AppSettings.Add(defaultSettings);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Info("Standardkonfiguration gespeichert.");
 
@@ -56,12 +57,13 @@ namespace EchoPlay.Data.Services
         /// Die Entität muss aus dem aktuellen DbContext stammen oder bereits getrackt sein.
         /// </summary>
         /// <param name="settings">Die zu persistierenden Einstellungen.</param>
-        public async Task SaveAsync(AppSettings settings)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("DB:AppSettings:Save");
 
             _ = _context.AppSettings.Update(settings);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info("Einstellungen gespeichert.");
         }
     }

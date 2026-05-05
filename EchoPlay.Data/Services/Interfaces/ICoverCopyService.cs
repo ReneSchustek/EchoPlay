@@ -17,6 +17,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="targetSeriesId">ID der Serie, deren Episoden Cover erhalten sollen.</param>
         /// <returns>Anzahl der kopierten Cover.</returns>
-        Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId, CancellationToken cancellationToken = default);
     }
 }

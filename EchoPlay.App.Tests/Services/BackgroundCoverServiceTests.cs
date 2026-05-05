@@ -105,11 +105,10 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task Dispose_ReleasesServiceScope()
         {
-            // Brief 269: Heap wuchs, weil Dispose nicht auf den Hintergrund-Task wartete
-            // und der Loop ggf. eine Service-Scope-Closure am Heap behielt. Wir prüfen
-            // hier zwei Garantien: (1) jeder vom Service erzeugte IServiceScope wird
-            // tatsächlich wieder disposed und (2) Dispose hinterlässt keinen
-            // ScopeCount > 0 (Zähler differenziert Created vs. Disposed).
+            // Memory-Leak-Schutz: Wenn Dispose nicht auf den Hintergrund-Task wartet,
+            // kann der Loop eine Service-Scope-Closure am Heap behalten. Zwei Garantien:
+            // (1) jeder vom Service erzeugte IServiceScope wird wieder disposed,
+            // (2) Dispose hinterlässt keinen ScopeCount > 0 (Zähler differenziert Created vs. Disposed).
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeCoverImageDataService coverImageService = new();

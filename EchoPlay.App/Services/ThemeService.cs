@@ -19,11 +19,13 @@ namespace EchoPlay.App.Services
     /// kein erneutes XAML-Parsen auslöst und zuverlässig funktioniert.
     /// Muss vom UI-Thread aufgerufen werden.
     /// </summary>
+
     public sealed class ThemeService : IThemeService
     {
         /// <summary>
         /// Alle bekannten Theme-Namen – entsprechen den Dateinamen in EchoPlay.App/Themes/.
         /// </summary>
+
         private static readonly IReadOnlyList<string> KnownThemes =
             ["Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey"];
 
@@ -31,6 +33,7 @@ namespace EchoPlay.App.Services
         /// Themes mit fester dunkler Palette – ThemeService setzt RequestedTheme auf Dark,
         /// damit WinUI die richtige ThemeDictionary-Sektion auswählt.
         /// </summary>
+
         private static readonly HashSet<string> DarkThemes =
             new(StringComparer.OrdinalIgnoreCase)
             { "MidnightLibrary", "ForestSignal", "AmberWhiskey" };
@@ -45,6 +48,7 @@ namespace EchoPlay.App.Services
         /// App.xaml lädt alle sechs Themes vorab – wir halten die Instanzen hier,
         /// damit beim Wechsel kein erneutes XAML-Parsen nötig ist.
         /// </summary>
+
         private readonly Dictionary<string, ResourceDictionary> _cache =
             new(StringComparer.OrdinalIgnoreCase);
 
@@ -56,6 +60,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Scope-Fabrik für kurzlebige <see cref="IAppSettingsDataService"/>-Zugriffe.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+
         public ThemeService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
@@ -70,7 +75,9 @@ namespace EchoPlay.App.Services
         /// Muss einmalig beim App-Start vom UI-Thread aufgerufen werden, bevor das Fenster sichtbar wird.
         /// </summary>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task InitializeAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             using LogScope logScope = _logger.BeginScope(nameof(InitializeAsync));
 
@@ -78,7 +85,7 @@ namespace EchoPlay.App.Services
             using (IServiceScope scope = _scopeFactory.CreateScope())
             {
                 IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-                settings = await settingsService.GetAsync();
+                settings = await settingsService.GetAsync(cancellationToken);
             }
 
             // Unbekannte Namen (z.B. durch alte Datenbank-Einträge) auf den Default zurückfallen lassen
@@ -101,6 +108,7 @@ namespace EchoPlay.App.Services
         /// Unbekannte Namen werden ignoriert und geloggt.
         /// </summary>
         /// <param name="themeName">Name des gewünschten Themes. Gültig: "Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey".</param>
+
         public void ApplyTheme(string themeName)
         {
             if (!KnownThemes.Contains(themeName))
@@ -142,6 +150,7 @@ namespace EchoPlay.App.Services
         /// Muss nach der Fenstererstellung aufgerufen werden, da <c>InitializeAsync</c> vor dem Erstellen von
         /// <see cref="App.MainWindow"/> läuft und <c>Content</c> dort noch <see langword="null"/> ist.
         /// </summary>
+
         public void SyncRequestedTheme()
         {
             if (App.MainWindow?.Content is FrameworkElement root)
@@ -157,6 +166,7 @@ namespace EchoPlay.App.Services
         /// und speichert ihre Instanzen im Cache.
         /// App.xaml lädt alle sechs Themes vorab – dieser Cache verhindert späteres XAML-Parsen.
         /// </summary>
+
         private void CachePreloadedDictionaries()
         {
             IList<ResourceDictionary> merged = Application.Current.Resources.MergedDictionaries;
@@ -187,6 +197,7 @@ namespace EchoPlay.App.Services
         /// Verwendet die gecachte Instanz, falls vorhanden – andernfalls wird ein neues Dictionary erzeugt.
         /// </summary>
         /// <param name="themeName">Name des Themes.</param>
+
         private void LoadAndApplyTheme(string themeName)
         {
             // Gecachte Instanz wiederverwenden – die ResourceDictionary wurde beim App-Start bereits geparst.
@@ -224,6 +235,7 @@ namespace EchoPlay.App.Services
         /// Entfernt alle bekannten Theme-Dictionaries aus den MergedDictionaries.
         /// Wird beim Start aufgerufen, da App.xaml alle sechs Paletten vorlädt.
         /// </summary>
+
         private static void RemoveAllThemeDictionaries()
         {
             IList<ResourceDictionary> merged = Application.Current.Resources.MergedDictionaries;
@@ -246,16 +258,17 @@ namespace EchoPlay.App.Services
         /// Fehler werden geloggt und unterdrückt, da die Persistenz den Betrieb nicht blockieren darf.
         /// </summary>
         /// <param name="themeName">Zu speichernder Theme-Name.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Theme-Persistenz: DbContext-, Migration- oder Concurrency-Fehler beim Schreiben der AppSettings dürfen den UI-Theme-Wechsel nicht blockieren und werden lediglich geloggt.")]
-        private async Task PersistThemeAsync(string themeName)
+        private async Task PersistThemeAsync(string themeName, CancellationToken cancellationToken = default)
         {
             try
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-                AppSettings settings = await settingsService.GetAsync();
+                AppSettings settings = await settingsService.GetAsync(cancellationToken);
                 settings.ActiveTheme = themeName;
-                await settingsService.SaveAsync(settings);
+                await settingsService.SaveAsync(settings, cancellationToken);
             }
             catch (Exception ex)
             {

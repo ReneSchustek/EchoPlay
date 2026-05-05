@@ -13,32 +13,37 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Wird für Statistiken verwendet, z.B. Anzahl gehörter und offener Folgen.
         /// </summary>
         /// <returns>Eine schreibgeschützte Liste aller <see cref="PlaybackState"/>-Entitäten.</returns>
-        Task<IReadOnlyList<PlaybackState>> GetAllAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<PlaybackState>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Lädt den Fortschritt für eine spezifische Episode.
         /// </summary>
         /// <param name="episodeId">Eindeutige ID der Episode.</param>
         /// <returns>Der Status oder null.</returns>
-        Task<PlaybackState?> GetByEpisodeIdAsync(Guid episodeId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<PlaybackState?> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Erstellt einen neuen Datensatz für den Wiedergabestatus.
         /// </summary>
         /// <param name="playbackState">Das zu speichernde Objekt.</param>
-        Task AddAsync(PlaybackState playbackState);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task AddAsync(PlaybackState playbackState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Aktualisiert einen bestehenden Status.
         /// </summary>
         /// <param name="playbackState">Das Objekt mit den neuen Werten.</param>
-        Task UpdateAsync(PlaybackState playbackState);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task UpdateAsync(PlaybackState playbackState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Entfernt einen Status-Eintrag logisch.
         /// </summary>
         /// <param name="id">ID des Eintrags.</param>
-        Task DeleteAsync(Guid id);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Berechnet aggregierte Wiedergabe-Zähler für alle Episoden einer Serie in einer einzigen DB-Abfrage.
@@ -50,7 +55,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Tuple mit der Anzahl abgeschlossener, laufender und nicht gestarteter Episoden.
         /// Gibt (0, 0, 0) zurück, wenn keine Episoden oder kein Wiedergabestatus vorhanden sind.
         /// </returns>
-        Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert die Episode-IDs aller abgeschlossenen Wiedergabestände für die angegebenen Episoden.
@@ -61,7 +67,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// HashSet mit den IDs aller Episoden, deren PlaybackState <c>IsCompleted == true</c> hat.
         /// Episoden ohne PlaybackState oder mit <c>IsCompleted == false</c> fehlen im Set.
         /// </returns>
-        Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert die zuletzt aktiven Wiedergabestände als schmale Projektion für Dashboard-Ansichten.
@@ -73,6 +80,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Liste der jüngsten aktiven Wiedergabestände (IsCompleted oder LastPosition &gt; 0),
         /// absteigend nach Aktivitätszeitpunkt.
         /// </returns>
-        Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows, CancellationToken cancellationToken = default);
     }
 }

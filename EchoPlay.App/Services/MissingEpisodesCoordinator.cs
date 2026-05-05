@@ -20,6 +20,7 @@ namespace EchoPlay.App.Services
     /// Singleton: nutzt eigene DI-Scopes für die DataServices, hält keinen UI-State.
     /// Aktualisiert die <see cref="StatusBarViewModel"/> während längerer Prüfungen.
     /// </summary>
+
     public sealed class MissingEpisodesCoordinator : IMissingEpisodesCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -29,6 +30,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
         /// </summary>
+
         public MissingEpisodesCoordinator(
             IServiceScopeFactory scopeFactory,
             StatusBarViewModel statusBar,
@@ -47,7 +49,7 @@ namespace EchoPlay.App.Services
         public async Task<IReadOnlyList<string>> CheckSingleSeriesAsync(
             Guid seriesId,
             string? seriesFolderPath,
-            MissingEpisodesMode mode)
+            MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
             if (mode == MissingEpisodesMode.Cancel)
             {
@@ -65,7 +67,7 @@ namespace EchoPlay.App.Services
             // Phase 2: Online-Abgleich nur wenn gewünscht
             if (mode == MissingEpisodesMode.WithOnline)
             {
-                List<string> onlineMessages = await AnalyzeLiveOnlineMissingAsync(seriesId, seriesFolderPath);
+                List<string> onlineMessages = await AnalyzeLiveOnlineMissingAsync(seriesId, seriesFolderPath, cancellationToken);
                 if (onlineMessages.Count > 0)
                 {
                     result.Add(string.Empty);
@@ -77,7 +79,10 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        public async Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="mode">Parameter <c>mode</c>.</param>
+        public async Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
             if (mode == MissingEpisodesMode.Cancel)
             {
@@ -103,7 +108,7 @@ namespace EchoPlay.App.Services
                 IOnlineEpisodeChecker checker = scope.ServiceProvider
                     .GetRequiredService<IOnlineEpisodeChecker>();
 
-                IReadOnlyList<Series> subscribed = await seriesService.GetSubscribedAsync();
+                IReadOnlyList<Series> subscribed = await seriesService.GetSubscribedAsync(cancellationToken);
 
                 List<Series> localSeries = subscribed
                     .Where(s => !string.IsNullOrWhiteSpace(s.LocalFolderPath))
@@ -117,8 +122,7 @@ namespace EchoPlay.App.Services
                     Series series = localSeries[i];
                     _statusBar.SetScanProgress($"Prüfe Serie {i + 1}/{localSeries.Count}: {series.Title} \u2026");
 
-                    SeriesMissingEpisodesResult result = await CheckSingleSeriesForReportAsync(
-                        series, onlineAvailable, checker);
+                    SeriesMissingEpisodesResult result = await CheckSingleSeriesForReportAsync(series, onlineAvailable, checker, cancellationToken);
                     results.Add(result);
                 }
 
@@ -146,7 +150,7 @@ namespace EchoPlay.App.Services
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Live-Online-Abgleich: Provider-Fehler (iTunes-Search-API, HTTP-Timeout) dürfen den Dialog-Flow nicht reißen; der StatusBar-Flag wird im finally zurückgesetzt und die Ergebnisliste bleibt im Fehlerfall leer.")]
         private async Task<List<string>> AnalyzeLiveOnlineMissingAsync(
             Guid seriesId,
-            string seriesFolderPath)
+            string seriesFolderPath, CancellationToken cancellationToken = default)
         {
             _statusBar.IsTemporarilyOnline = true;
 
@@ -155,7 +159,7 @@ namespace EchoPlay.App.Services
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
                 IOnlineEpisodeChecker checker = scope.ServiceProvider.GetRequiredService<IOnlineEpisodeChecker>();
-                Series? series = await seriesService.GetByIdAsync(seriesId);
+                Series? series = await seriesService.GetByIdAsync(seriesId, cancellationToken);
 
                 if (series is null)
                 {
@@ -172,7 +176,7 @@ namespace EchoPlay.App.Services
                 };
 
                 IReadOnlyList<OnlineEpisodeCheckResult> results =
-                    await checker.CheckAllAsync([checkable]);
+                    await checker.CheckAllAsync([checkable], cancellationToken);
 
                 if (results.Count == 0)
                 {
@@ -216,7 +220,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Serie-Check für den Gesamtbericht: HTTP-/iTunes-Fehler oder DB-Fehler einer einzelnen Serie werden als 'ErrorMessage' im Report weitergereicht, damit die Bericht-Schleife für die übrigen Serien weiterläuft.")]
         private async Task<SeriesMissingEpisodesResult> CheckSingleSeriesForReportAsync(
-            Series series, bool onlineAvailable, IOnlineEpisodeChecker checker)
+            Series series, bool onlineAvailable, IOnlineEpisodeChecker checker, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -245,7 +249,7 @@ namespace EchoPlay.App.Services
                     };
 
                     IReadOnlyList<OnlineEpisodeCheckResult> checkResults =
-                        await checker.CheckAllAsync([checkable]);
+                        await checker.CheckAllAsync([checkable], cancellationToken);
 
                     if (checkResults.Count > 0)
                     {
@@ -289,6 +293,7 @@ namespace EchoPlay.App.Services
         /// die höchste gefundene Nummer. Strukturierte Variante für den Gesamtbericht.
         /// Läuft im Thread-Pool – darf keine UI-Elemente anfassen.
         /// </summary>
+        /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners.</param>
         private static (List<int> Gaps, int MaxNumber) AnalyzeMissingEpisodesForReport(string seriesFolderPath)
         {
             string[] subfolders;
@@ -359,6 +364,8 @@ namespace EchoPlay.App.Services
         /// Analysiert den Serienordner auf fehlende Folgen und gibt Anzeige-Meldungen zurück.
         /// Wird für die Einzelserien-Prüfung verwendet (formatierter Text für den Dialog).
         /// </summary>
+
+        /// <param name="seriesFolderPath">Parameter <c>seriesFolderPath</c>.</param>
         private static List<string> AnalyzeMissingEpisodes(string seriesFolderPath)
         {
             string[] subfolders;
@@ -461,6 +468,8 @@ namespace EchoPlay.App.Services
         /// Episodenordner erfolgreich nummeriert. Liefert <see langword="null"/>
         /// wenn keine Übereinstimmung gefunden wurde.
         /// </summary>
+
+        /// <param name="episodeFolderNames">Parameter <c>episodeFolderNames</c>.</param>
         private static EpisodeFolderParser? SelectBestParser(List<string> episodeFolderNames)
         {
             EpisodeFolderParser[] candidateParsers =

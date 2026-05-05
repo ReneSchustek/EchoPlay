@@ -1155,6 +1155,12 @@
   <data name="UpdateDownloadFailedMessage" xml:space="preserve">
     <value>The update could not be downloaded. Please try again at next startup.</value>
   </data>
+  <data name="CoverDownloadFailedTitle" xml:space="preserve">
+    <value>Download failed</value>
+  </data>
+  <data name="CoverDownloadFailedMessage" xml:space="preserve">
+    <value>The cover could not be downloaded. Please try again later.</value>
+  </data>
 
   <!-- Common buttons (programmatic strings) -->
   <data name="CommonCancelButton" xml:space="preserve">

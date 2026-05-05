@@ -7,6 +7,7 @@ namespace EchoPlay.App.Services
     /// Serie versorgt ist. Background ist die Standard-Stufe für den periodischen
     /// Cover-Scan und das vom Dashboard angestoßene Nachladen von Kachel-Covern.
     /// </summary>
+
     public enum CoverFetchPriority
     {
         /// <summary>Periodischer Hintergrund-Scan – wird von Foreground-Anfragen überholt.</summary>

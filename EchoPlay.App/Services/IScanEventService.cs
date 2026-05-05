@@ -10,6 +10,7 @@ namespace EchoPlay.App.Services
     /// Problem ohne diesen Service: Der Scan-Callback war ein Closure auf das alte ViewModel –
     /// nach Navigation entstand ein neues ViewModel, das keine Callbacks mehr erhielt.
     /// </summary>
+
     public interface IScanEventService
     {
         /// <summary>

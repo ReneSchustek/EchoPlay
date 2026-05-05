@@ -121,6 +121,8 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("ImportSearch");
+
             // Offline-Modus: Nutzer fragen, ob trotzdem ins Internet gegangen werden soll
             using IDisposable? onlineScope = await _onlineAccessGuard.RequestOnlineAccessAsync();
             if (onlineScope is null) return;
@@ -177,6 +179,8 @@ namespace EchoPlay.App.ViewModels
             {
                 return;
             }
+
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("ImportSeries");
 
             // Offline-Modus: Nutzer fragen, ob trotzdem ins Internet gegangen werden soll
             using IDisposable? onlineScope = await _onlineAccessGuard.RequestOnlineAccessAsync();

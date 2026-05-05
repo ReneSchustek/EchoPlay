@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -6,6 +7,7 @@ namespace EchoPlay.App.Services
     /// Definiert den Vertrag für das Anzeigen von Fehler-Dialogen.
     /// Kapselt die WinUI-3-ContentDialog-Logik und entkoppelt sie von den ViewModels.
     /// </summary>
+
     public interface IErrorDialogService
     {
         /// <summary>
@@ -15,6 +17,7 @@ namespace EchoPlay.App.Services
         /// <param name="title">Titel des Dialogs.</param>
         /// <param name="message">Fehlermeldung für den Benutzer.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        Task ShowAsync(string title, string message);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task ShowAsync(string title, string message, CancellationToken cancellationToken = default);
     }
 }

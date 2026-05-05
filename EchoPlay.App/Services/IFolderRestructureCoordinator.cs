@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -10,6 +11,7 @@ namespace EchoPlay.App.Services
     /// und das Mapping auf das App-Display-Modell <see cref="RestructurePreviewDisplay"/>.
     /// Hält keinen UI-State – das ViewModel kennt nur die zwei Methoden hier.
     /// </summary>
+
     public interface IFolderRestructureCoordinator
     {
         /// <summary>
@@ -18,13 +20,15 @@ namespace EchoPlay.App.Services
         /// nicht existiert oder keine verschiebbaren Dateien gefunden wurden.
         /// </summary>
         /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners.</param>
-        Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Führt den zuvor analysierten Restrukturierungs-Vorgang aus und liefert
         /// die Anzahl tatsächlich verschobener Dateien.
         /// </summary>
         /// <param name="preview">Die App-Display-Vorschau, die <see cref="AnalyzeAsync"/> erzeugt hat.</param>
-        Task<int> ExecuteAsync(RestructurePreviewDisplay preview);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<int> ExecuteAsync(RestructurePreviewDisplay preview, CancellationToken cancellationToken = default);
     }
 }

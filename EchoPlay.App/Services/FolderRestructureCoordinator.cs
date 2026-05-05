@@ -15,6 +15,7 @@ namespace EchoPlay.App.Services
     /// Singleton: nutzt pro Aufruf eigene DI-Scopes für AppSettings und den
     /// LocalLibrary-Restructure-Service, weil beide als Scoped registriert sind.
     /// </summary>
+
     public sealed class FolderRestructureCoordinator : IFolderRestructureCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -22,20 +23,25 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Koordinator mit der Scope-Fabrik der Anwendung.
         /// </summary>
+
+        /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
         public FolderRestructureCoordinator(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }
 
         /// <inheritdoc/>
-        public async Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="seriesFolderPath">Parameter <c>seriesFolderPath</c>.</param>
+        public async Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(seriesFolderPath) || !Directory.Exists(seriesFolderPath))
             {
                 return null;
             }
 
-            string folderPattern = await LoadFolderPatternAsync();
+            string folderPattern = await LoadFolderPatternAsync(cancellationToken);
 
             // Dateisystem-Zugriff in den Thread-Pool – Analyze öffnet IO und kann blockieren.
             RestructurePreview preview = await Task.Run(() =>
@@ -56,7 +62,10 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        public async Task<int> ExecuteAsync(RestructurePreviewDisplay preview)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="preview">Parameter <c>preview</c>.</param>
+        public async Task<int> ExecuteAsync(RestructurePreviewDisplay preview, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(preview);
             RestructurePreview original = preview.Original;
@@ -74,12 +83,14 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt das aktuelle Ordnermuster aus den AppSettings.
         /// </summary>
-        private async Task<string> LoadFolderPatternAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        private async Task<string> LoadFolderPatternAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService =
                 scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            AppSettings appSettings = await settingsService.GetAsync();
+            AppSettings appSettings = await settingsService.GetAsync(cancellationToken);
             return appSettings.EpisodeFolderPattern;
         }
     }

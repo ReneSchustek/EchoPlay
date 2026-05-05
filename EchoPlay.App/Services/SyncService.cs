@@ -203,7 +203,8 @@ namespace EchoPlay.App.Services
                                 scanResult.Episodes,
                                 episodeService,
                                 trackService,
-                                metadataReader);
+                                metadataReader,
+                                cancellationToken);
 
                             episodesUpdated += createdEpisodes;
                             tracksCreated += createdTracks;
@@ -319,13 +320,15 @@ namespace EchoPlay.App.Services
         /// <param name="episodeService">Datenbankzugriff für Episoden.</param>
         /// <param name="trackService">Datenbankzugriff für Tracks.</param>
         /// <param name="metadataReader">Liest Audiodatei-Metadaten für Dauer und Tracknummer.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Tuple mit der Anzahl angelegter Episoden und Tracks.</returns>
         private async Task<(int Episodes, int Tracks)> ImportEpisodesAsync(
             Guid seriesId,
             IReadOnlyList<LocalEpisodeScan> episodeScans,
             IEpisodeDataService episodeService,
             ILocalTrackDataService trackService,
-            IMp3MetadataReader metadataReader)
+            IMp3MetadataReader metadataReader,
+            CancellationToken cancellationToken)
         {
             // Episoden vorab vollständig bauen – BaseEntity setzt die Guid bereits im Konstruktor,
             // wir brauchen also keine generierten Ids aus SaveChanges.
@@ -352,7 +355,7 @@ namespace EchoPlay.App.Services
             // Batch-Insert: ein einziger SaveChangesAsync-Aufruf für alle Episoden.
             // Tracks werden anschließend pro Episode in einem eigenen Batch geschrieben,
             // weil SaveTracksForEpisodeAsync die Track-Liste der Episode konsistent austauscht.
-            await episodeService.AddRangeAsync(newEpisodes, CancellationToken.None);
+            await episodeService.AddRangeAsync(newEpisodes, cancellationToken);
 
             int trackCount = 0;
             for (int i = 0; i < episodeScans.Count; i++)
@@ -361,7 +364,8 @@ namespace EchoPlay.App.Services
                     newEpisodes[i].Id,
                     episodeScans[i].TrackPaths,
                     trackService,
-                    metadataReader);
+                    metadataReader,
+                    cancellationToken);
 
                 trackCount += created;
             }

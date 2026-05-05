@@ -519,7 +519,7 @@ namespace EchoPlay.App.Services
                 .GetRequiredService<ICoverImageDataService>();
 
             // Alle Serien mit gleichem Titel finden (lokal + online)
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(CancellationToken.None);
+            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(cancellationToken);
             int loaded = 0;
 
             foreach (Series series in allSeries)
@@ -527,7 +527,7 @@ namespace EchoPlay.App.Services
                 if (!string.Equals(series.Title, seriesTitle, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, CancellationToken.None);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
 
                 List<Episode> candidates = [];
 
@@ -543,14 +543,14 @@ namespace EchoPlay.App.Services
 
                 List<Guid> candidateIds = candidates.Select(e => e.Id).ToList();
                 IReadOnlyDictionary<Guid, byte[]> existing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, CancellationToken.None);
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, cancellationToken);
 
                 foreach (Episode episode in candidates)
                 {
                     if (existing.ContainsKey(episode.Id)) continue;
 
                     string? firstTrackPath = null;
-                    IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id, CancellationToken.None);
+                    IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id, cancellationToken);
 
                     if (tracks.Count > 0)
                     {

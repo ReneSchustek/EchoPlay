@@ -54,8 +54,8 @@ namespace EchoPlay.App.Services
             ISecureSettingsDataService service = scope.ServiceProvider
                 .GetRequiredService<ISecureSettingsDataService>();
 
-            byte[]? encryptedId = await service.GetAsync(KeyClientId, CancellationToken.None);
-            byte[]? encryptedSecret = await service.GetAsync(KeyClientSecret, CancellationToken.None);
+            byte[]? encryptedId = await service.GetAsync(KeyClientId, cancellationToken);
+            byte[]? encryptedSecret = await service.GetAsync(KeyClientSecret, cancellationToken);
 
             if (encryptedId is null || encryptedSecret is null)
             {
@@ -75,8 +75,8 @@ namespace EchoPlay.App.Services
                 // löschen wir die korrupten Records und erzwingen eine Neu-Eingabe durch den Nutzer.
                 _logger.Warning($"Spotify-Credentials konnten nicht entschlüsselt werden ({ex.Message}). Korrupte Records werden entfernt.");
 
-                await service.DeleteAsync(KeyClientId, CancellationToken.None).ConfigureAwait(false);
-                await service.DeleteAsync(KeyClientSecret, CancellationToken.None).ConfigureAwait(false);
+                await service.DeleteAsync(KeyClientId, cancellationToken).ConfigureAwait(false);
+                await service.DeleteAsync(KeyClientSecret, cancellationToken).ConfigureAwait(false);
 
                 _hasCredentials = false;
                 _lastLoadFailedDueToCorruption = true;

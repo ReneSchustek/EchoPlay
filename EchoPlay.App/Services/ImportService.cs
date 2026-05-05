@@ -75,7 +75,7 @@ namespace EchoPlay.App.Services
             }
 
             (ProviderType importProvider, bool spotifyFallbackApplied) =
-                await ResolveProviderAsync(scope, settings.ActiveProvider);
+                await ResolveProviderAsync(scope, settings.ActiveProvider, cancellationToken);
 
             // Provider-Schlüssel entspricht dem Enum-Namen ("Spotify" / "AppleMusic")
             string providerKey = importProvider.ToString();
@@ -93,10 +93,12 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scope">DI-Scope fuer den Credential-Store-Lookup.</param>
         /// <param name="activeProvider">Vom Nutzer gewaehlter Provider aus den AppSettings.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Tuple aus effektivem Provider und Hinweis-Flag, ob ein Spotify→Apple-Music-Fallback gegriffen hat.</returns>
         private async Task<(ProviderType ResolvedProvider, bool SpotifyFallbackApplied)> ResolveProviderAsync(
             IServiceScope scope,
-            ProviderType activeProvider)
+            ProviderType activeProvider,
+            CancellationToken cancellationToken)
         {
             ProviderType importProvider = activeProvider == ProviderType.Both
                 ? ProviderType.AppleMusic
@@ -109,7 +111,7 @@ namespace EchoPlay.App.Services
 
             ISpotifyClientCredentialsProvider credentialsProvider =
                 scope.ServiceProvider.GetRequiredService<ISpotifyClientCredentialsProvider>();
-            SpotifyClientCredentials? credentials = await credentialsProvider.GetAsync(CancellationToken.None);
+            SpotifyClientCredentials? credentials = await credentialsProvider.GetAsync(cancellationToken);
 
             if (credentials is not null)
             {
@@ -147,7 +149,7 @@ namespace EchoPlay.App.Services
             }
 
             (ProviderType importProvider, bool spotifyFallbackApplied) =
-                await ResolveProviderAsync(scope, settings.ActiveProvider);
+                await ResolveProviderAsync(scope, settings.ActiveProvider, cancellationToken);
 
             _logger.Debug(() => $"Album-Suche nach \"{query}\" via {importProvider}");
 

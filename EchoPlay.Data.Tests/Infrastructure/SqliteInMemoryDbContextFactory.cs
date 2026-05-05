@@ -18,6 +18,18 @@ namespace EchoPlay.Data.Tests.Infrastructure
         /// <returns>Ein konfigurierter <see cref="EchoPlayDbContext"/>.</returns>
         public static EchoPlayDbContext Create()
         {
+            return Create(interceptor: null);
+        }
+
+        /// <summary>
+        /// Erstellt eine SQLite-In-Memory-Datenbank mit angehängtem Command-Interceptor.
+        /// Wird für Akzeptanztests genutzt, die die Anzahl ausgeführter SELECTs prüfen.
+        /// </summary>
+        /// <param name="interceptor">
+        /// Optionaler Interceptor; <c>null</c> entspricht <see cref="Create()"/>.
+        /// </param>
+        public static EchoPlayDbContext Create(CountingCommandInterceptor? interceptor)
+        {
             // SQLite benötigt eine offene Verbindung, damit die In-Memory-DB nicht sofort gelöscht wird.
             SqliteConnection connection = new("DataSource=:memory:");
             connection.Open();
@@ -25,6 +37,11 @@ namespace EchoPlay.Data.Tests.Infrastructure
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
             _ = builder.UseSqlite(connection)
                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
+            if (interceptor is not null)
+            {
+                _ = builder.AddInterceptors(interceptor);
+            }
 
             EchoPlayDbContext context = new(builder.Options);
             _ = context.Database.EnsureCreated();

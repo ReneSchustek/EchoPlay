@@ -3,6 +3,7 @@ using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Data.Services.Projections;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -87,41 +88,85 @@ namespace EchoPlay.Data.Services
         }
 
         /// <summary>
-        /// Berechnet aggregierte Wiedergabe-Zähler für alle Episoden einer Serie.
-        /// Nutzt einen Join zwischen Episodes und PlaybackStates, um in einer einzigen Datenbankabfrage
-        /// alle Zähler zu ermitteln – ersetzt das N+1-Muster aus dem alten LoadAsync.
+        /// Berechnet aggregierte Wiedergabe-Zähler für alle Episoden einer Serie vollständig serverseitig.
+        /// Ein einziges SELECT mit Left-Join Episode → PlaybackState liefert Total-, Finished- und
+        /// InProgress-Counts ohne Entity-Materialisierung; die Soft-Delete-Filter beider Entitäten
+        /// werden automatisch durch die globalen Query-Filter angewendet.
         /// </summary>
         /// <param name="seriesId">ID der Serie, deren Episoden ausgewertet werden.</param>
         /// <returns>
         /// Tuple (Finished, InProgress, NotStarted). Gibt (0, 0, 0) zurück,
-        /// wenn für die Serie keine Episoden existieren.
+        /// wenn für die Serie keine (aktiven) Episoden existieren.
         /// </returns>
         public async Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId)
         {
             _logger.Debug($"Lade aggregierte Wiedergabezähler für Serie '{seriesId}'.");
 
-            // Episode-IDs der Serie laden (nur IDs, keine Blobs)
-            List<Guid> episodeIds = await _context.Episodes
-
+            // Left-Join Episode → PlaybackState mit DefaultIfEmpty; Episoden ohne State liefern p == null
+            // und zählen damit in „Total", aber nicht in Finished/InProgress.
+            // Equality-Vergleich auf TimeSpan.Zero ist serverseitig übersetzbar (TEXT-Repräsentation
+            // '00:00:00' im SQLite-Schema), Ordering-Vergleiche wären es nicht.
+            PlaybackCountRow? row = await _context.Episodes
                 .Where(e => e.SeriesId == seriesId)
-                .Select(e => e.Id)
+                .GroupJoin(
+                    _context.PlaybackStates,
+                    e => e.Id,
+                    p => p.EpisodeId,
+                    (e, ps) => new { Episode = e, States = ps })
+                .SelectMany(x => x.States.DefaultIfEmpty(), (x, p) => new { p })
+                .GroupBy(_ => 1)
+                .Select(g => new PlaybackCountRow
+                {
+                    Total = g.Count(),
+                    Finished = g.Count(x => x.p != null && x.p.IsCompleted),
+                    InProgress = g.Count(x => x.p != null && !x.p.IsCompleted && x.p.LastPosition != TimeSpan.Zero)
+                })
+                .FirstOrDefaultAsync().ConfigureAwait(false);
+
+            if (row is null)
+            {
+                return (0, 0, 0);
+            }
+
+            int notStarted = row.Total - row.Finished - row.InProgress;
+            return (row.Finished, row.InProgress, notStarted);
+        }
+
+        /// <summary>
+        /// Liefert die N zuletzt aktiven Wiedergabestände als schmale Projektion.
+        /// Filterung („IsCompleted oder LastPosition &gt; 0") und Sortierung erfolgen serverseitig –
+        /// in Verbindung mit dem Index auf <c>LastPlayedAt</c> ein Index-Scan + Limit statt Tablescan.
+        /// </summary>
+        /// <param name="maxRows">Maximale Anzahl Zeilen. Werte ≤ 0 liefern eine leere Liste.</param>
+        public async Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows)
+        {
+            if (maxRows <= 0)
+            {
+                return [];
+            }
+
+            _logger.Debug($"Lade {maxRows} jüngste aktive Wiedergabestände.");
+
+            return await _context.PlaybackStates
+                .Where(p => p.IsCompleted || p.LastPosition != TimeSpan.Zero)
+                .OrderByDescending(p => p.LastPlayedAt ?? p.UpdatedAt ?? p.CreatedAt)
+                .Take(maxRows)
+                .Select(p => new RecentPlaybackRow(
+                    p.Id,
+                    p.EpisodeId,
+                    p.IsCompleted,
+                    p.LastPosition,
+                    p.LastPlayedAt ?? p.UpdatedAt ?? p.CreatedAt))
                 .ToListAsync().ConfigureAwait(false);
+        }
 
-            if (episodeIds.Count == 0) return (0, 0, 0);
-
-            // PlaybackStates einmal laden und im Speicher zählen.
-            // TimeSpan-Vergleich kann SQLite nicht in einem JOIN übersetzen,
-            // daher Client-Evaluation – bei <500 States pro Serie kein Problem.
-            List<PlaybackState> states = await _context.PlaybackStates
-
-                .Where(p => episodeIds.Contains(p.EpisodeId))
-                .ToListAsync().ConfigureAwait(false);
-
-            int finished = states.Count(s => s.IsCompleted);
-            int inProgress = states.Count(s => !s.IsCompleted && s.LastPosition > TimeSpan.Zero);
-            int notStarted = episodeIds.Count - finished - inProgress;
-
-            return (finished, inProgress, notStarted);
+        // Server-seitige Aggregations-Projektion. Bewusst privat – kein API-Vertrag,
+        // sondern reines Mapping-Ziel der GROUP-BY-Query.
+        private sealed class PlaybackCountRow
+        {
+            public int Total { get; set; }
+            public int Finished { get; set; }
+            public int InProgress { get; set; }
         }
 
         /// <inheritdoc />

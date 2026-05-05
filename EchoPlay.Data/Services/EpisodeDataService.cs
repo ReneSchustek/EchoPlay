@@ -155,6 +155,34 @@ namespace EchoPlay.Data.Services
             return await _context.Episodes.FindAsync(id).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
+        public async Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            // Leere Eingabe → leeres Dictionary; ein SQL-IN über null Elemente wäre ungültig
+            if (ids.Count == 0)
+            {
+                return new Dictionary<Guid, Episode>(0);
+            }
+
+            // Doppel-IDs ignorieren – das Set vermeidet redundante Parameter im IN-Filter
+            HashSet<Guid> idSet = new(ids);
+
+            List<Episode> rows = await _context.Episodes
+                .Where(e => idSet.Contains(e.Id))
+                .ToListAsync().ConfigureAwait(false);
+
+            Dictionary<Guid, Episode> result = new(rows.Count);
+            foreach (Episode episode in rows)
+            {
+                result[episode.Id] = episode;
+            }
+
+            _logger.Debug(() => $"{result.Count} von {idSet.Count} angeforderten Episoden im Batch geladen.");
+            return result;
+        }
+
         /// <summary>
         /// Fügt eine neue Episode dauerhaft hinzu.
         /// </summary>
@@ -195,6 +223,21 @@ namespace EchoPlay.Data.Services
             _ = _context.Episodes.Update(episode);
             _ = await _context.SaveChangesAsync().ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) aktualisiert.");
+        }
+
+        /// <inheritdoc/>
+        public async Task UpdateRangeAsync(IReadOnlyList<Episode> episodes)
+        {
+            ArgumentNullException.ThrowIfNull(episodes);
+
+            if (episodes.Count == 0)
+            {
+                return;
+            }
+
+            _context.Episodes.UpdateRange(episodes);
+            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _logger.Info($"{episodes.Count} Episoden in einem Batch-Update aktualisiert.");
         }
 
         /// <summary>

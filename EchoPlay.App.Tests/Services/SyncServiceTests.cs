@@ -350,6 +350,63 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task SyncAsync_AutoImport_TenEpisodes_TriggersSingleAddRangeCall()
+        {
+            // Brief 273: Auto-Import einer neuen lokalen Serie mit 10 Folgen muss einen
+            // einzigen AddRangeAsync-Aufruf für alle Episoden absetzen, danach pro Episode
+            // einen Track-Batch (das bleibt bewusst pro Episode, weil Tracks pro Folge variieren).
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music",
+                AutoImportAfterScan = true
+            });
+
+            FakeEpisodeDataService episodeService = new();
+            FakeLocalTrackDataService trackService = new();
+
+            const int episodeCount = 10;
+            List<LocalEpisodeScan> episodes = new(episodeCount);
+            for (int i = 0; i < episodeCount; i++)
+            {
+                episodes.Add(new LocalEpisodeScan
+                {
+                    FolderPath = $"/music/Neue Serie/{i + 1:000}",
+                    ParsedNumber = i + 1,
+                    TrackPaths = [$"/music/Neue Serie/{i + 1:000}/track1.mp3", $"/music/Neue Serie/{i + 1:000}/track2.mp3"]
+                });
+            }
+
+            IReadOnlyList<LocalScanResult> scanResults =
+            [
+                new LocalScanResult
+                {
+                    SeriesName       = "Neue Serie",
+                    SeriesFolderPath = "/music/Neue Serie",
+                    Episodes         = episodes
+                }
+            ];
+
+            SyncService service = BuildService(settings,
+                seriesService: new FakeSeriesDataService(),
+                episodeService: episodeService,
+                trackService: trackService,
+                scanner: new FakeLocalLibraryScanner(scanResults),
+                trackMatcher: new FakeTrackMatcher(),
+                metadataReader: new FakeMp3MetadataReader());
+
+            SyncResult result = await service.SyncAsync();
+
+            Assert.Equal(1, result.SeriesMatched);
+            Assert.Equal(episodeCount, result.EpisodesUpdated);
+            // Genau ein AddRangeAsync für alle Episoden, kein einzelnes AddAsync.
+            Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
+            Assert.Equal(0, episodeService.AddAsyncCallCount);
+            // Track-Batches: pro Episode genau ein SaveTracksForEpisodeAsync-Aufruf.
+            Assert.Equal(episodeCount, trackService.SavedTracks.Count);
+        }
+
+        [Fact]
         public async Task SyncAsync_SkipsEpisodeScan_WhenParsedNumberNull()
         {
             // Episodenordner ohne erkennbare Nummer werden übersprungen

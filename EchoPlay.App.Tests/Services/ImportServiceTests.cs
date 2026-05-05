@@ -513,6 +513,143 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task ReImportEpisodesAsync_PersistsAllEpisodes_ViaSingleAddRangeCall()
+        {
+            // Brief 273: Re-Import nutzt einen Batch-Insert statt N AddAsync-Aufrufe.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                AppleMusicArtistId = "artist-tkkg"
+            });
+
+            Series existingSeries = seriesService.All[0];
+
+            IReadOnlyList<ImportEpisode> providerEpisodes =
+            [
+                new() { SourceEpisodeId = "ep1", Title = "Folge 1", EpisodeNumber = 1 },
+                new() { SourceEpisodeId = "ep2", Title = "Folge 2", EpisodeNumber = 2 },
+                new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3 },
+            ];
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
+
+            int count = await service.ReImportEpisodesAsync(existingSeries);
+
+            Assert.Equal(3, count);
+            Assert.Equal(3, episodeService.All.Count);
+            Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
+            Assert.Equal(0, episodeService.AddAsyncCallCount);
+        }
+
+        [Fact]
+        public async Task DeltaImportEpisodesAsync_AddsOnlyNewEpisodes_ViaSingleAddRangeCall()
+        {
+            // Brief 273: Delta-Import sammelt neue Episoden und löst einen einzigen AddRangeAsync aus.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                AppleMusicArtistId = "artist-tkkg"
+            });
+
+            Series existingSeries = seriesService.All[0];
+
+            // Drei bestehende Episoden – Titel-Lookup wird sie ausfiltern.
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 });
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 3", EpisodeNumber = 3 });
+
+            // Provider liefert dieselben drei Folgen + zwei neue.
+            IReadOnlyList<ImportEpisode> providerEpisodes =
+            [
+                new() { SourceEpisodeId = "ep1", Title = "Folge 1", EpisodeNumber = 1 },
+                new() { SourceEpisodeId = "ep2", Title = "Folge 2", EpisodeNumber = 2 },
+                new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3 },
+                new() { SourceEpisodeId = "ep4", Title = "Folge 4", EpisodeNumber = 4 },
+                new() { SourceEpisodeId = "ep5", Title = "Folge 5", EpisodeNumber = 5 },
+            ];
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
+
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries);
+
+            Assert.Equal(2, newCount);
+            Assert.Equal(5, episodeService.All.Count);
+            // Nur ein einziger Batch-Insert für die zwei neuen Folgen.
+            Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
+            // 3 vorhandene Episoden hatten kein Cover-Update – kein UpdateRangeAsync.
+            Assert.Equal(0, episodeService.UpdateRangeAsyncCallCount);
+        }
+
+        [Fact]
+        public async Task DeltaImportEpisodesAsync_UpdatesExistingCoverInBatch()
+        {
+            // Brief 273: Bestehende Episoden ohne Cover bekommen die Provider-CoverUrl
+            // in einem einzigen UpdateRangeAsync-Aufruf, nicht pro Treffer.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                AppleMusicArtistId = "artist-tkkg"
+            });
+            Series existingSeries = seriesService.All[0];
+
+            // Zwei vorhandene Folgen ohne Cover, eine mit bereits gesetztem Cover.
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 });
+            await episodeService.AddAsync(new Episode
+            {
+                SeriesId = existingSeries.Id,
+                Title = "Folge 3",
+                EpisodeNumber = 3,
+                CoverImageUrl = "https://example.org/already.jpg"
+            });
+
+            IReadOnlyList<ImportEpisode> providerEpisodes =
+            [
+                new() { SourceEpisodeId = "ep1", Title = "Folge 1", EpisodeNumber = 1, CoverImageUrl = "https://example.org/cover1.jpg" },
+                new() { SourceEpisodeId = "ep2", Title = "Folge 2", EpisodeNumber = 2, CoverImageUrl = "https://example.org/cover2.jpg" },
+                new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3, CoverImageUrl = "https://example.org/different.jpg" },
+            ];
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
+
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries);
+
+            Assert.Equal(0, newCount);
+            // Ein einziger Batch-Update für die zwei nachzutragenden Cover.
+            Assert.Equal(1, episodeService.UpdateRangeAsyncCallCount);
+            Assert.Equal(0, episodeService.UpdateAsyncCallCount);
+            Assert.Equal(0, episodeService.AddRangeAsyncCallCount);
+            Assert.Equal("https://example.org/cover1.jpg", episodeService.All[0].CoverImageUrl);
+            Assert.Equal("https://example.org/cover2.jpg", episodeService.All[1].CoverImageUrl);
+            // Bestehendes Cover darf nicht überschrieben werden.
+            Assert.Equal("https://example.org/already.jpg", episodeService.All[2].CoverImageUrl);
+        }
+
+        [Fact]
         public async Task IsAlreadyImportedAsync_ReturnsFalse_WhenSeriesNotFound()
         {
             // Unbekannte SourceSeriesId darf nicht als "bereits vorhanden" erkannt werden

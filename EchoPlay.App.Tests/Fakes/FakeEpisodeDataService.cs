@@ -22,6 +22,24 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Alle bisher gespeicherten Episoden.</summary>
         public IReadOnlyList<Episode> All => _episodes;
 
+        /// <summary>Zähler für Aufrufe von <see cref="GetByIdAsync"/> – Brief 273 N+1-Detektion.</summary>
+        public int GetByIdAsyncCallCount { get; private set; }
+
+        /// <summary>Zähler für Aufrufe von <see cref="GetByIdsAsync"/> – Brief 273 Batch-Verifikation.</summary>
+        public int GetByIdsAsyncCallCount { get; private set; }
+
+        /// <summary>Zähler für Aufrufe von <see cref="AddAsync"/> – Brief 273 N+1-Detektion.</summary>
+        public int AddAsyncCallCount { get; private set; }
+
+        /// <summary>Zähler für Aufrufe von <see cref="AddRangeAsync"/> – Brief 273 Batch-Verifikation.</summary>
+        public int AddRangeAsyncCallCount { get; private set; }
+
+        /// <summary>Zähler für Aufrufe von <see cref="UpdateAsync"/> – Brief 273 N+1-Detektion.</summary>
+        public int UpdateAsyncCallCount { get; private set; }
+
+        /// <summary>Zähler für Aufrufe von <see cref="UpdateRangeAsync"/> – Brief 273 Batch-Verifikation.</summary>
+        public int UpdateRangeAsyncCallCount { get; private set; }
+
         /// <inheritdoc/>
         public Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId)
         {
@@ -45,13 +63,27 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task<Episode?> GetByIdAsync(Guid id)
         {
+            GetByIdAsyncCallCount++;
             Episode? result = _episodes.FirstOrDefault(e => e.Id == id);
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
+        public Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids)
+        {
+            GetByIdsAsyncCallCount++;
+            HashSet<Guid> idSet = new(ids);
+            Dictionary<Guid, Episode> result = _episodes
+                .Where(e => idSet.Contains(e.Id))
+                .ToDictionary(e => e.Id);
+            IReadOnlyDictionary<Guid, Episode> readOnly = result;
+            return Task.FromResult(readOnly);
+        }
+
+        /// <inheritdoc/>
         public Task AddAsync(Episode episode)
         {
+            AddAsyncCallCount++;
             // EF Core setzt die Id nach SaveChanges – hier per Reflection nachgebaut.
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
             idProp.SetValue(episode, TestIds.Indexed(200 + _nextId++));
@@ -62,10 +94,15 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task AddRangeAsync(IReadOnlyList<Episode> episodes)
         {
+            AddRangeAsyncCallCount++;
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
             foreach (Episode episode in episodes)
             {
-                idProp.SetValue(episode, TestIds.Indexed(200 + _nextId++));
+                // BaseEntity-Konstruktor liefert bereits eine Guid; nur überschreiben, wenn noch leer.
+                if (episode.Id == Guid.Empty)
+                {
+                    idProp.SetValue(episode, TestIds.Indexed(200 + _nextId++));
+                }
                 _episodes.Add(episode);
             }
             return Task.CompletedTask;
@@ -74,6 +111,14 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task UpdateAsync(Episode episode)
         {
+            UpdateAsyncCallCount++;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task UpdateRangeAsync(IReadOnlyList<Episode> episodes)
+        {
+            UpdateRangeAsyncCallCount++;
             return Task.CompletedTask;
         }
 

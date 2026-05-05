@@ -814,6 +814,47 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task LoadAsync_TwentyInProgressStates_TriggerSingleGetByIdsAsyncCallPerSection()
+        {
+            // Brief 273: Bei 20 In-Progress-States darf der Dashboard-Aufbau pro Sektion
+            // (In-Progress, Recent) genau einen GetByIdsAsync-Aufruf auslösen, kein GetByIdAsync.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakePlaybackStateDataService stateService = new();
+
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            Guid seriesId = seriesService.All[0].Id;
+
+            const int stateCount = 20;
+            for (int i = 0; i < stateCount; i++)
+            {
+                await episodeService.AddAsync(new Episode
+                {
+                    Title = $"Folge {i + 1}",
+                    SeriesId = seriesId,
+                    EpisodeNumber = i + 1,
+                    LocalTrackCount = 1,
+                    LocalFolderPath = $@"C:\\folge{i + 1}"
+                });
+                Guid episodeId = episodeService.All[i].Id;
+
+                await stateService.AddAsync(new PlaybackState
+                {
+                    EpisodeId = episodeId,
+                    LastPosition = TimeSpan.FromMinutes(5 + i),
+                    IsCompleted = false
+                });
+            }
+
+            DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
+            await vm.LoadAsync();
+
+            // Genau 2 Aufrufe von GetByIdsAsync (In-Progress + Recent), keiner von GetByIdAsync.
+            Assert.Equal(2, episodeService.GetByIdsAsyncCallCount);
+            Assert.Equal(0, episodeService.GetByIdAsyncCallCount);
+        }
+
+        [Fact]
         public async Task LoadAsync_OfflineMode_DoesNotTouchOnlineEpisodeChecker()
         {
             // Akzeptanzkriterium: Im Offline-Modus wird der iTunes-Check gar nicht erst aufgerufen.

@@ -25,6 +25,23 @@ namespace EchoPlay.Data.Services
         private readonly EchoPlayDbContext _context = context;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger = loggerFactory.CreateLogger("PlaybackStateDataService");
 
+        // Compiled Query für die "Zuletzt gehört"-Liste: einmaliger Translate-Schritt beim
+        // Static-Init, danach reine Parameter-Substitution. Globale Soft-Delete-Filter werden
+        // auch in CompileAsyncQuery angewendet (EF Core 10) – kein zusätzlicher WHERE-Klauselzwang.
+        private static readonly Func<EchoPlayDbContext, int, IAsyncEnumerable<RecentPlaybackRow>>
+            GetRecentActiveCompiled = EF.CompileAsyncQuery(
+                (EchoPlayDbContext ctx, int maxRows) =>
+                    ctx.PlaybackStates
+                       .Where(state => state.IsCompleted || state.LastPosition != TimeSpan.Zero)
+                       .OrderByDescending(state => state.LastPlayedAt ?? state.UpdatedAt ?? state.CreatedAt)
+                       .Take(maxRows)
+                       .Select(state => new RecentPlaybackRow(
+                           state.Id,
+                           state.EpisodeId,
+                           state.IsCompleted,
+                           state.LastPosition,
+                           state.LastPlayedAt ?? state.UpdatedAt ?? state.CreatedAt)));
+
         /// <summary>
         /// Liefert alle aktiven (nicht gelöschten) Wiedergabestände als flache Liste.
         /// Der globale Query-Filter des DbContext schließt logisch gelöschte Einträge automatisch aus.
@@ -147,17 +164,14 @@ namespace EchoPlay.Data.Services
 
             _logger.Debug($"Lade {maxRows} jüngste aktive Wiedergabestände.");
 
-            return await _context.PlaybackStates
-                .Where(p => p.IsCompleted || p.LastPosition != TimeSpan.Zero)
-                .OrderByDescending(p => p.LastPlayedAt ?? p.UpdatedAt ?? p.CreatedAt)
-                .Take(maxRows)
-                .Select(p => new RecentPlaybackRow(
-                    p.Id,
-                    p.EpisodeId,
-                    p.IsCompleted,
-                    p.LastPosition,
-                    p.LastPlayedAt ?? p.UpdatedAt ?? p.CreatedAt))
-                .ToListAsync().ConfigureAwait(false);
+            // Compiled Query: Expression-Tree wurde einmalig beim Static-Init übersetzt;
+            // hier nur noch Parameter-Bindung und Streaming-Materialisierung.
+            List<RecentPlaybackRow> rows = [];
+            await foreach (RecentPlaybackRow row in GetRecentActiveCompiled(_context, maxRows).ConfigureAwait(false))
+            {
+                rows.Add(row);
+            }
+            return rows;
         }
 
         // Server-seitige Aggregations-Projektion. Bewusst privat – kein API-Vertrag,

@@ -311,5 +311,71 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Empty(rows);
             Assert.Equal(0, _interceptor.SelectCount);
         }
+
+        /// <summary>
+        /// Verifiziert die Soft-Delete-Filter-Wirkung in der compiled-Query-Variante:
+        /// nachträglich gelöschte States verschwinden bei einem erneuten Aufruf, das
+        /// einmal erzeugte Delegate liefert kein veraltetes Ergebnis.
+        /// </summary>
+        [Fact]
+        public async Task GetRecentActive_SoftDeleteAfterFirstCall_DoesNotLeakInSecondCall()
+        {
+            Series series = await _builder.PersistSeriesAsync("Serie");
+            Episode episode = await _builder.PersistEpisodeAsync(series, "Episode");
+
+            PlaybackState state = new()
+            {
+                EpisodeId = episode.Id,
+                LastPosition = TimeSpan.FromMinutes(5),
+                LastPlayedAt = DateTime.UtcNow
+            };
+            _ = _context.PlaybackStates.Add(state);
+            _ = await _context.SaveChangesAsync();
+
+            PlaybackStateDataService service = new(_context, NullLoggerFactory);
+
+            IReadOnlyList<RecentPlaybackRow> beforeDelete = await service.GetRecentActiveAsync(maxRows: 10);
+            _ = Assert.Single(beforeDelete);
+
+            state.MarkAsDeleted(EntityClock.Current.UtcNow);
+            _ = _context.PlaybackStates.Update(state);
+            _ = await _context.SaveChangesAsync();
+
+            IReadOnlyList<RecentPlaybackRow> afterDelete = await service.GetRecentActiveAsync(maxRows: 10);
+            Assert.Empty(afterDelete);
+        }
+
+        /// <summary>
+        /// Sichert ab, dass die compiled Query bei wiederholten Aufrufen mit unterschiedlichen
+        /// <c>maxRows</c>-Werten unabhängig korrekt limitiert – das Delegate cached keine Parameter.
+        /// </summary>
+        [Fact]
+        public async Task GetRecentActive_RepeatedCallsWithDifferentLimits_ReturnIndependentResults()
+        {
+            Series series = await _builder.PersistSeriesAsync("Serie");
+            DateTime now = DateTime.UtcNow;
+
+            for (int i = 0; i < 4; i++)
+            {
+                Episode episode = await _builder.PersistEpisodeAsync(series, $"Folge {i}");
+                PlaybackState state = new()
+                {
+                    EpisodeId = episode.Id,
+                    LastPosition = TimeSpan.FromMinutes(1 + i),
+                    LastPlayedAt = now.AddMinutes(-i)
+                };
+                _ = _context.PlaybackStates.Add(state);
+            }
+
+            _ = await _context.SaveChangesAsync();
+
+            PlaybackStateDataService service = new(_context, NullLoggerFactory);
+
+            IReadOnlyList<RecentPlaybackRow> two = await service.GetRecentActiveAsync(maxRows: 2);
+            IReadOnlyList<RecentPlaybackRow> four = await service.GetRecentActiveAsync(maxRows: 4);
+
+            Assert.Equal(2, two.Count);
+            Assert.Equal(4, four.Count);
+        }
     }
 }

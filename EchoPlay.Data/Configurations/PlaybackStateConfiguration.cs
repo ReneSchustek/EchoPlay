@@ -41,6 +41,10 @@ namespace EchoPlay.Data.Configurations
             _ = builder.HasIndex(p => new { p.IsCompleted, p.EpisodeId })
                    .HasFilter("IsDeleted = 0");
 
+            // Dashboard "Zuletzt gehört" sortiert nach LastPlayedAt – Index spart Full-Table-Scan + Sort.
+            _ = builder.HasIndex(p => p.LastPlayedAt)
+                   .HasFilter("IsDeleted = 0 AND LastPlayedAt IS NOT NULL");
+
             // Purge-Index für DatabaseMaintenanceService
             _ = builder.HasIndex(p => new { p.IsDeleted, p.DeletedAt })
                    .HasFilter("IsDeleted = 1");

@@ -1,6 +1,6 @@
 # EchoPlay — Datenbank-Migrationen
 
-Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-04-18, 35 Migrationen.
+Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-05-05, 36 Migrationen.
 
 Jede Migration erzeugt drei Artefakte (Pflicht, siehe `memory.md` § EF-Core-Migration-Disziplin): `<Timestamp>_<Name>.cs`, `<Timestamp>_<Name>.Designer.cs`, aktualisierter `EchoPlayDbContextModelSnapshot.cs`. Der Pfad lautet `EchoPlay.Data/Migrations/`.
 
@@ -55,6 +55,7 @@ Seit Brief 238 (Migration 34) legt `DatabaseInitializer.TryCreateBackupAsync` au
 | 33 | 2026-04-13 | AddSourceHashSecureSettingsProviderIds | **Breaking:** SHA-256 + DPAPI + ProviderIds |
 | 34 | 2026-04-16 | AddDbBackupSettings | Backup-Konfiguration in AppSettings |
 | 35 | 2026-04-16 | MigrateLocalCoverDataToCoverImages | **Breaking:** BLOB-Spalten entfernen, Daten ausgelagert |
+| 36 | 2026-05-05 | AddSortIndexesAndSoftDeleteFilters | Sortier-Indizes (`PlaybackStates.LastPlayedAt`, `Episodes.ReleaseDate`) plus `IsDeleted = 0`-Filter auf den UNIQUE-Indizes von `CoverImages` und `SecureSettings` |
 
 ## Prüf-Reflex vor jedem Migrations-Commit
 

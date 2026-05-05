@@ -1,4 +1,6 @@
 using EchoPlay.Data.Context;
+using EchoPlay.Data.Entities.Library;
+using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Infrastructure;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +119,93 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
             IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync();
             Assert.Contains(applied, id => id.Contains("AddSourceHashSecureSettingsProviderIds", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task InitializeAsync_Creates_Brief_274_Indexes_With_Filters()
+        {
+            // Verifiziert, dass die Migration AddSortIndexesAndSoftDeleteFilters
+            // exakt die vier neuen Indizes mit ihren WHERE-Klauseln in sqlite_master schreibt.
+            DatabaseInitializer initializer = new(_context!);
+
+            await initializer.InitializeAsync();
+
+            using SqliteCommand cmd = _connection!.CreateCommand();
+            cmd.CommandText = """
+                SELECT name, sql FROM sqlite_master
+                WHERE type = 'index' AND name IN (
+                    'IX_PlaybackStates_LastPlayedAt',
+                    'IX_Episodes_ReleaseDate',
+                    'IX_CoverImages_EntityType_EntityId',
+                    'IX_SecureSettings_Key');
+                """;
+
+            Dictionary<string, string> indexes = new(StringComparer.Ordinal);
+            using (SqliteDataReader reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    indexes[reader.GetString(0)] = reader.GetString(1);
+                }
+            }
+
+            Assert.Contains("IsDeleted = 0 AND LastPlayedAt IS NOT NULL",
+                indexes["IX_PlaybackStates_LastPlayedAt"], StringComparison.Ordinal);
+            Assert.Contains("IsDeleted = 0 AND ReleaseDate IS NOT NULL",
+                indexes["IX_Episodes_ReleaseDate"], StringComparison.Ordinal);
+            Assert.Contains("UNIQUE", indexes["IX_CoverImages_EntityType_EntityId"], StringComparison.Ordinal);
+            Assert.Contains("IsDeleted = 0", indexes["IX_CoverImages_EntityType_EntityId"], StringComparison.Ordinal);
+            Assert.Contains("UNIQUE", indexes["IX_SecureSettings_Key"], StringComparison.Ordinal);
+            Assert.Contains("IsDeleted = 0", indexes["IX_SecureSettings_Key"], StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_With_Existing_Fixtures_Stays_Stable()
+        {
+            // Spiegelt die Pflicht aus Brief 274 wider: Migration darf eine DB
+            // mit bestehenden Daten (Episode + PlaybackState + CoverImage) nicht zerlegen.
+            // EnsureCreated würde nur das aktuelle Modell anlegen – wir nutzen den
+            // produktiven Initializer-Pfad, der die volle Migrationskette abspielt.
+            DatabaseInitializer initializer = new(_context!);
+            await initializer.InitializeAsync();
+
+            Series series = new() { Title = "Brief274-Fixture" };
+            _ = _context!.Series.Add(series);
+            _ = await _context.SaveChangesAsync();
+
+            Episode episode = new()
+            {
+                SeriesId = series.Id,
+                Title = "Folge 1",
+                ReleaseDate = new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc)
+            };
+            _ = _context.Episodes.Add(episode);
+            _ = await _context.SaveChangesAsync();
+
+            PlaybackState state = new()
+            {
+                EpisodeId = episode.Id,
+                LastPosition = TimeSpan.FromMinutes(5),
+                LastPlayedAt = new DateTime(2026, 4, 2, 0, 0, 0, DateTimeKind.Utc)
+            };
+            _ = _context.PlaybackStates.Add(state);
+
+            CoverImage cover = new()
+            {
+                EntityType = "Series",
+                EntityId = series.Id,
+                ImageData = [0x01, 0x02, 0x03]
+            };
+            _ = _context.CoverImages.Add(cover);
+            _ = await _context.SaveChangesAsync();
+
+            // Zweiter InitializeAsync-Aufruf darf an bestehenden Daten nicht scheitern.
+            await initializer.InitializeAsync();
+
+            Assert.Empty(await _context.Database.GetPendingMigrationsAsync());
+            Assert.Equal(1, await _context.Episodes.CountAsync());
+            Assert.Equal(1, await _context.PlaybackStates.CountAsync());
+            Assert.Equal(1, await _context.CoverImages.CountAsync());
         }
     }
 }

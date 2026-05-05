@@ -42,9 +42,10 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.Property(c => c.LastChecked);
 
-            // Ein Cover pro Entity – Duplikate verhindern
+            // Ein Cover pro aktiver Entity – Soft-deleted Einträge zählen nicht mit, sonst blockierten sie den Reinsert.
             _ = builder.HasIndex(c => new { c.EntityType, c.EntityId })
-                   .IsUnique();
+                   .IsUnique()
+                   .HasFilter("IsDeleted = 0");
 
             // Background-Worker: "alle Entities ohne/mit abgelaufenem Check"
             _ = builder.HasIndex(c => new { c.EntityType, c.LastChecked });

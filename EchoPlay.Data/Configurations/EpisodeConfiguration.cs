@@ -62,6 +62,10 @@ namespace EchoPlay.Data.Configurations
             _ = builder.HasIndex(e => new { e.SeriesId, e.LocalFolderPath })
                    .HasFilter("IsDeleted = 0");
 
+            // Dashboard "Neuerscheinungen" + zukünftige Sortier-Pfade lesen nach ReleaseDate.
+            _ = builder.HasIndex(e => e.ReleaseDate)
+                   .HasFilter("IsDeleted = 0 AND ReleaseDate IS NOT NULL");
+
             // Metadaten-Lookup: Spotify sucht Episoden über die AlbumId, um Duplikate zu vermeiden.
             _ = builder.HasIndex(e => e.SpotifyAlbumId)
                    .HasFilter("SpotifyAlbumId IS NOT NULL");

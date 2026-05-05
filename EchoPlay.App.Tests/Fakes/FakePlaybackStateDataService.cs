@@ -1,5 +1,6 @@
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Data.Services.Projections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -89,6 +90,29 @@ namespace EchoPlay.App.Tests.Fakes
                     : (0, 0, 0);
 
             return Task.FromResult(counts);
+        }
+
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows)
+        {
+            if (maxRows <= 0)
+            {
+                return Task.FromResult<IReadOnlyList<RecentPlaybackRow>>([]);
+            }
+
+            IReadOnlyList<RecentPlaybackRow> rows = _states
+                .Where(s => s.IsCompleted || s.LastPosition != TimeSpan.Zero)
+                .OrderByDescending(s => s.LastPlayedAt ?? s.UpdatedAt ?? s.CreatedAt)
+                .Take(maxRows)
+                .Select(s => new RecentPlaybackRow(
+                    s.Id,
+                    s.EpisodeId,
+                    s.IsCompleted,
+                    s.LastPosition,
+                    s.LastPlayedAt ?? s.UpdatedAt ?? s.CreatedAt))
+                .ToList();
+
+            return Task.FromResult(rows);
         }
     }
 }

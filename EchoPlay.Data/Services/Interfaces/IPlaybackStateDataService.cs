@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Services.Projections;
 
 namespace EchoPlay.Data.Services.Interfaces
 {
@@ -61,5 +62,17 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Episoden ohne PlaybackState oder mit <c>IsCompleted == false</c> fehlen im Set.
         /// </returns>
         Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds);
+
+        /// <summary>
+        /// Liefert die zuletzt aktiven Wiedergabestände als schmale Projektion für Dashboard-Ansichten.
+        /// Server-seitig sortiert (DESC nach LastPlayedAt/UpdatedAt/CreatedAt) und auf <paramref name="maxRows"/>
+        /// begrenzt – verhindert das Materialisieren der gesamten Tabelle für „Zuletzt gehört".
+        /// </summary>
+        /// <param name="maxRows">Maximale Anzahl zurückgegebener Zeilen. Werte ≤ 0 liefern eine leere Liste.</param>
+        /// <returns>
+        /// Liste der jüngsten aktiven Wiedergabestände (IsCompleted oder LastPosition &gt; 0),
+        /// absteigend nach Aktivitätszeitpunkt.
+        /// </returns>
+        Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows);
     }
 }

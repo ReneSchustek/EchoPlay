@@ -22,8 +22,10 @@ namespace EchoPlay.Data.Configurations
                    .IsRequired()
                    .HasMaxLength(64);
 
+            // UNIQUE schliesst Soft-Delete-Einträge aus, damit nach DeleteAsync ein Re-Insert für denselben Key möglich bleibt.
             _ = builder.HasIndex(s => s.Key)
-                   .IsUnique();
+                   .IsUnique()
+                   .HasFilter("IsDeleted = 0");
         }
     }
 }

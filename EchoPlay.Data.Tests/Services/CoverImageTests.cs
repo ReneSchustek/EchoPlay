@@ -260,6 +260,39 @@ namespace EchoPlay.Data.Tests.Services
 
             Assert.Equal(0, deleted);
         }
+
+        [Fact]
+        public async Task SetCoverAsync_AfterSoftDelete_AllowsReinsert()
+        {
+            // Ohne HasFilter("IsDeleted = 0") auf dem UNIQUE-Index würde der soft-deleted
+            // Eintrag den UNIQUE-Slot blockieren und der zweite SetCover-Aufruf bricht ab.
+            CoverImageDataService service = new(Context, NullLoggerFactory);
+            Guid entityId = TestIds.Indexed(50);
+
+            await service.SetCoverAsync("Series", entityId, [0xAA, 0xBB]);
+            Context.ChangeTracker.Clear();
+
+            CoverImage? existing = await Context.CoverImages
+                .IgnoreQueryFilters()
+                .AsTracking()
+                .FirstAsync(c => c.EntityType == "Series" && c.EntityId == entityId);
+            existing.MarkAsDeleted(TestIds.ReferenceDate);
+            _ = await Context.SaveChangesAsync();
+            Context.ChangeTracker.Clear();
+
+            await service.SetCoverAsync("Series", entityId, [0xCC, 0xDD, 0xEE]);
+            Context.ChangeTracker.Clear();
+
+            CoverImage? reinserted = await service.GetByEntityAsync("Series", entityId);
+            Assert.NotNull(reinserted);
+            Assert.Equal(3, reinserted!.ImageData.Length);
+            Assert.False(reinserted.IsDeleted);
+
+            int totalIncludingDeleted = await Context.CoverImages
+                .IgnoreQueryFilters()
+                .CountAsync(c => c.EntityType == "Series" && c.EntityId == entityId);
+            Assert.Equal(2, totalIncludingDeleted);
+        }
     }
 }
 

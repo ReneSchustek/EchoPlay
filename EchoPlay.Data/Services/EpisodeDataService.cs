@@ -25,6 +25,23 @@ namespace EchoPlay.Data.Services
         private readonly EchoPlayDbContext _context = context;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger = loggerFactory.CreateLogger("EpisodeDataService");
 
+        // Compiled Query für die Hot-Aggregation: Expression-Tree wird einmal beim Static-Init
+        // zu SQL übersetzt und für alle weiteren Aufrufe wiederverwendet. Spart pro Aufruf den
+        // Translation-Overhead, den EF Core sonst je Dashboard-Refresh × Serien-Anzahl bezahlt.
+        // Globale Soft-Delete-Filter werden auch in CompileAsyncQuery angewendet (EF Core 10).
+        private static readonly Func<EchoPlayDbContext, IReadOnlyList<Guid>, IAsyncEnumerable<EpisodeCountRow>>
+            GetEpisodeCountsCompiled = EF.CompileAsyncQuery(
+                (EchoPlayDbContext ctx, IReadOnlyList<Guid> ids) =>
+                    ctx.Episodes
+                       .Where(episode => ids.Contains(episode.SeriesId))
+                       .GroupBy(episode => episode.SeriesId)
+                       .Select(group => new EpisodeCountRow
+                       {
+                           SeriesId = group.Key,
+                           Total = group.Count(),
+                           Local = group.Count(episode => episode.LocalFolderPath != null)
+                       }));
+
         /// <inheritdoc/>
         public async Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
         {
@@ -84,23 +101,11 @@ namespace EchoPlay.Data.Services
                 return new Dictionary<Guid, (int Total, int Local)>(0);
             }
 
-            // Hilfsprojekt für den EF-Core-GroupBy – anonyme Typen benötigen kein Objekt-Mapping
-            List<EpisodeCountRow> rows = await _context.Episodes
+            // Compiled Query: Expression-Tree wurde einmalig beim Static-Init übersetzt.
+            // Materialisierung erfolgt streamend – Dictionary-Aufbau ohne Zwischen-List.
+            Dictionary<Guid, (int Total, int Local)> result = [];
 
-                .Where(e => seriesIds.Contains(e.SeriesId))
-                .GroupBy(e => e.SeriesId)
-                .Select(g => new EpisodeCountRow
-                {
-                    SeriesId = g.Key,
-                    Total = g.Count(),
-                    // Zählt Episoden, für die der lokale Ordner bereits gescannt wurde
-                    Local = g.Count(e => e.LocalFolderPath != null)
-                })
-                .ToListAsync().ConfigureAwait(false);
-
-            Dictionary<Guid, (int Total, int Local)> result = new(rows.Count);
-
-            foreach (EpisodeCountRow row in rows)
+            await foreach (EpisodeCountRow row in GetEpisodeCountsCompiled(_context, seriesIds).ConfigureAwait(false))
             {
                 result[row.SeriesId] = (row.Total, row.Local);
             }

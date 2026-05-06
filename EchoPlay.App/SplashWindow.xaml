@@ -12,7 +12,7 @@
             Spacing="16">
 
             <Image
-                Source="ms-appx:///Assets/logo.png"
+                x:Name="LogoImage"
                 Width="100"
                 Height="100"
                 HorizontalAlignment="Center"

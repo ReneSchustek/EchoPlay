@@ -97,7 +97,10 @@ namespace EchoPlay.App
                 TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
                 // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
+                // Logo aus Embedded-Resource laden, bevor das Fenster aktiviert wird — sonst
+                // flackert der Splash kurz ohne Logo (BitmapImage.SetSourceAsync ist asynchron).
                 splash = new SplashWindow();
+                await splash.LoadEmbeddedLogoAsync();
                 splash.Activate();
                 SplashLifetimeController splashLifetime = new();
 

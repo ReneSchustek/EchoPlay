@@ -177,8 +177,8 @@ namespace EchoPlay.App.Services
         /// installiert dann ohne Integritätsprüfung (Backwards-Compat mit alten Releases).
         /// </summary>
         /// <param name="releaseBody">Markdown-Body des GitHub-Releases.</param>
-        /// <returns>Hex-String in Lower-Case (64 Zeichen) oder leer.</returns>
-        private static string ExtractSha256(string releaseBody)
+        /// <returns>Hex-String (64 Zeichen, beliebige Groß-/Kleinschreibung) oder leer. Der Vergleich im Updater nutzt <c>Convert.FromHexString</c> und ist daher case-insensitive — eine Normalisierung an dieser Stelle wäre Overhead und würde CA1308 auslösen.</returns>
+        internal static string ExtractSha256(string releaseBody)
         {
             if (string.IsNullOrEmpty(releaseBody))
             {
@@ -186,7 +186,7 @@ namespace EchoPlay.App.Services
             }
 
             Match match = Sha256Pattern().Match(releaseBody);
-            return match.Success ? match.Groups[1].Value.ToLowerInvariant() : string.Empty;
+            return match.Success ? match.Groups[1].Value : string.Empty;
         }
 
         // ── GitHub-API-DTOs ─────────────────────────────────────────────────────

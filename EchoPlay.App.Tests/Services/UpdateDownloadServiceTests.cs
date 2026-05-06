@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using EchoPlay.App.Services;
@@ -13,8 +14,9 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Verifiziert die Sicherheits-Vorprüfungen des Update-Downloads:
-    /// Versions-Whitelist gegen Path-Traversal und ContentLength-Vergleich
-    /// gegen das im Release-Asset gemeldete Größenlimit.
+    /// Versions-Whitelist gegen Path-Traversal, ContentLength-Vergleich
+    /// gegen das im Release-Asset gemeldete Größenlimit und SHA-256-Hash-Pin
+    /// gegen Inhalts-Manipulation.
     /// </summary>
     public sealed class UpdateDownloadServiceTests
     {
@@ -32,7 +34,8 @@ namespace EchoPlay.App.Tests.Services
             bool result = await service.DownloadAndInstallAsync(
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
-                expectedFileSize: 100);
+                expectedFileSize: 100,
+                expectedSha256: string.Empty);
 
             Assert.False(result);
             Assert.Equal(0, handler.RequestCount);
@@ -54,7 +57,8 @@ namespace EchoPlay.App.Tests.Services
             bool result = await service.DownloadAndInstallAsync(
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
-                expectedFileSize: 999_999); // Mismatch erzwingt Abbruch nach Download
+                expectedFileSize: 999_999, // Mismatch erzwingt Abbruch nach Download
+                expectedSha256: string.Empty);
 
             Assert.False(result);
             Assert.Equal(1, handler.RequestCount);
@@ -69,7 +73,8 @@ namespace EchoPlay.App.Tests.Services
             bool result = await service.DownloadAndInstallAsync(
                 downloadUrl: "https://example.org/setup.exe",
                 version: "1.0.0",
-                expectedFileSize: 999); // Erwartet 999 Bytes, geliefert wurden 5
+                expectedFileSize: 999, // Erwartet 999 Bytes, geliefert wurden 5
+                expectedSha256: string.Empty);
 
             Assert.False(result);
             Assert.Equal(1, handler.RequestCount);
@@ -88,7 +93,8 @@ namespace EchoPlay.App.Tests.Services
             bool result = await service.DownloadAndInstallAsync(
                 downloadUrl: "https://example.org/setup.exe",
                 version: "1.0.0",
-                expectedFileSize: 0);
+                expectedFileSize: 0,
+                expectedSha256: string.Empty);
 
             Assert.False(result);
         }
@@ -106,9 +112,122 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: "1.0.0",
                 expectedFileSize: 1,
+                expectedSha256: string.Empty,
                 cancellationToken: cts.Token);
 
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task DownloadAndInstallAsync_HashMismatch_DeletesFileAndReturnsFalse()
+        {
+            // Payload-Hash ist für die korrekte Datei berechenbar; wir reichen aber einen
+            // erwarteten Hash durch, der definitiv abweicht (alle Nullen).
+            byte[] payload = [1, 2, 3, 4, 5];
+            string version = "1.0.1"; // eigene Version, damit andere Tests die Datei nicht stören
+            (UpdateDownloadService service, RecordingHandler handler) = BuildService(payload, contentLength: payload.Length);
+
+            string wrongHash = new('0', 64);
+
+            bool result = await service.DownloadAndInstallAsync(
+                downloadUrl: "https://example.org/setup.exe",
+                version: version,
+                expectedFileSize: payload.Length,
+                expectedSha256: wrongHash);
+
+            Assert.False(result);
+            Assert.Equal(1, handler.RequestCount);
+
+            string expectedTempPath = Path.Combine(Path.GetTempPath(), $"EchoPlay-Setup-{version}.exe");
+            Assert.False(File.Exists(expectedTempPath));
+        }
+
+        [Fact]
+        public async Task DownloadAndInstallAsync_InvalidHexHash_DeletesFileAndReturnsFalse()
+        {
+            byte[] payload = [9, 9, 9];
+            string version = "1.0.2";
+            (UpdateDownloadService service, _) = BuildService(payload, contentLength: payload.Length);
+
+            // 64 Zeichen, aber 'z' ist kein Hex — Convert.FromHexString muss werfen.
+            string invalidHash = new('z', 64);
+
+            bool result = await service.DownloadAndInstallAsync(
+                downloadUrl: "https://example.org/setup.exe",
+                version: version,
+                expectedFileSize: payload.Length,
+                expectedSha256: invalidHash);
+
+            Assert.False(result);
+
+            string expectedTempPath = Path.Combine(Path.GetTempPath(), $"EchoPlay-Setup-{version}.exe");
+            Assert.False(File.Exists(expectedTempPath));
+        }
+
+        [Fact]
+        public async Task DownloadAndInstallAsync_HashWrongLength_DeletesFileAndReturnsFalse()
+        {
+            byte[] payload = [42];
+            string version = "1.0.3";
+            (UpdateDownloadService service, _) = BuildService(payload, contentLength: payload.Length);
+
+            // 32 Hex-Zeichen = 16 Bytes — gültiges Hex, aber falsche Länge für SHA-256 (32 Bytes).
+            string shortHash = new('a', 32);
+
+            bool result = await service.DownloadAndInstallAsync(
+                downloadUrl: "https://example.org/setup.exe",
+                version: version,
+                expectedFileSize: payload.Length,
+                expectedSha256: shortHash);
+
+            Assert.False(result);
+
+            string expectedTempPath = Path.Combine(Path.GetTempPath(), $"EchoPlay-Setup-{version}.exe");
+            Assert.False(File.Exists(expectedTempPath));
+        }
+
+        [Fact]
+        public async Task DownloadAndInstallAsync_HashMatch_PassesHashCheck()
+        {
+            // Sauberer Hash-Match-Pfad: Hash matcht, ContentLength matcht. Der Service kommt
+            // bis zum Process.Start mit der heruntergeladenen Datei. Echtes Setup ist es nicht,
+            // also wirft Process.Start eine Win32Exception, die im Service-eigenen catch-Block
+            // auf false gemappt wird. Der Test prüft daher indirekt: der Hash-Check hat
+            // **nicht** abgebrochen (sonst wäre die TryDelete-Phase aktiv geworden und der
+            // Pfad zu Process.Start nie erreicht). Das wäre nicht testbar ohne Hash-Match.
+            byte[] payload = [1, 2, 3, 4, 5];
+            string version = "1.0.4";
+            string correctHash = Convert.ToHexString(SHA256.HashData(payload));
+            (UpdateDownloadService service, _) = BuildService(payload, contentLength: payload.Length);
+
+            // Wir verifizieren nur, dass kein Throw nach außen dringt — ein expliziter
+            // „passed hash check"-Returnwert ist im aktuellen API-Vertrag nicht vorgesehen.
+            bool result = await service.DownloadAndInstallAsync(
+                downloadUrl: "https://example.org/setup.exe",
+                version: version,
+                expectedFileSize: payload.Length,
+                expectedSha256: correctHash);
+
+            // Process.Start mit Dummy-payload schlägt fehl → false. Aber der Pfad bis dorthin
+            // ist nur erreichbar, wenn ContentLength- UND Hash-Check beide grün waren.
+            Assert.False(result);
+
+            // Die Datei wurde im Hash-Match-Pfad NICHT gelöscht (TryDelete läuft erst bei
+            // Mismatch). Sie kann zwar durch den fehlgeschlagenen Process.Start verändert
+            // sein, aber existieren tut sie noch — das entspricht der dokumentierten
+            // Aufräum-Semantik (Cleanup nur bei Mismatch).
+            string tempPath = Path.Combine(Path.GetTempPath(), $"EchoPlay-Setup-{version}.exe");
+            try
+            {
+                Assert.True(File.Exists(tempPath));
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+            }
         }
 
         // ── Test-Helfer ──────────────────────────────────────────────────────────

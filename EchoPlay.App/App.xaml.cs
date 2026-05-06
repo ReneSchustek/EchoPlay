@@ -474,7 +474,8 @@ namespace EchoPlay.App
                     bool success = await downloadService.DownloadAndInstallAsync(
                         update.DownloadUrl,
                         update.Version,
-                        update.FileSizeBytes);
+                        update.FileSizeBytes,
+                        update.ExpectedSha256);
 
                     if (success)
                     {

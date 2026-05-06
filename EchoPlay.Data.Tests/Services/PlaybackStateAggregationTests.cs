@@ -13,12 +13,16 @@ namespace EchoPlay.Data.Tests.Services
     /// <summary>
     /// Verifiziert die serverseitigen Aggregationen des <see cref="PlaybackStateDataService"/>.
     /// Geprüft werden Korrektheit der Zähler, Soft-Delete-Filter, Sortierung
-    /// sowie die Single-Query-Eigenschaft (Akzeptanz aus Brief 275).
+    /// und die Single-Query-Eigenschaft (Counts dürfen kein N+1 auslösen).
     /// </summary>
     public sealed class PlaybackStateAggregationTests : IDisposable
     {
         private static readonly EchoPlay.Logger.Abstractions.ILoggerFactory NullLoggerFactory =
             new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions());
+
+        // Feste Referenz-Zeit fuer deterministische Tests; Aggregations-Sortierung
+        // braucht keine echte Wallclock-Zeit, nur konsistente relative Differenzen.
+        private static readonly DateTime FixedNow = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
 
         private readonly CountingCommandInterceptor _interceptor;
         private readonly EchoPlayDbContext _context;
@@ -163,7 +167,7 @@ namespace EchoPlay.Data.Tests.Services
             Episode olderEpisode = await _builder.PersistEpisodeAsync(series, "Älter");
             Episode newerEpisode = await _builder.PersistEpisodeAsync(series, "Neuer");
 
-            DateTime now = DateTime.UtcNow;
+            DateTime now = FixedNow;
 
             PlaybackState olderState = new()
             {
@@ -196,7 +200,7 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetRecentActive_HonoursMaxRows()
         {
             Series series = await _builder.PersistSeriesAsync("Serie");
-            DateTime now = DateTime.UtcNow;
+            DateTime now = FixedNow;
 
             for (int i = 0; i < 5; i++)
             {
@@ -231,7 +235,7 @@ namespace EchoPlay.Data.Tests.Services
             Episode completedEpisode = await _builder.PersistEpisodeAsync(series, "Completed");
             Episode inProgressEpisode = await _builder.PersistEpisodeAsync(series, "InProgress");
 
-            DateTime now = DateTime.UtcNow;
+            DateTime now = FixedNow;
 
             // Darf NICHT erscheinen.
             PlaybackState emptyState = new()
@@ -280,7 +284,7 @@ namespace EchoPlay.Data.Tests.Services
             {
                 EpisodeId = episode.Id,
                 LastPosition = TimeSpan.FromMinutes(5),
-                LastPlayedAt = DateTime.UtcNow
+                LastPlayedAt = FixedNow
             };
             _ = _context.PlaybackStates.Add(state);
             _ = await _context.SaveChangesAsync();
@@ -327,7 +331,7 @@ namespace EchoPlay.Data.Tests.Services
             {
                 EpisodeId = episode.Id,
                 LastPosition = TimeSpan.FromMinutes(5),
-                LastPlayedAt = DateTime.UtcNow
+                LastPlayedAt = FixedNow
             };
             _ = _context.PlaybackStates.Add(state);
             _ = await _context.SaveChangesAsync();
@@ -353,7 +357,7 @@ namespace EchoPlay.Data.Tests.Services
         public async Task GetRecentActive_RepeatedCallsWithDifferentLimits_ReturnIndependentResults()
         {
             Series series = await _builder.PersistSeriesAsync("Serie");
-            DateTime now = DateTime.UtcNow;
+            DateTime now = FixedNow;
 
             for (int i = 0; i < 4; i++)
             {

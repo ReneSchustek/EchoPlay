@@ -352,9 +352,9 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task SyncAsync_AutoImport_TenEpisodes_TriggersSingleAddRangeCall()
         {
-            // Brief 273: Auto-Import einer neuen lokalen Serie mit 10 Folgen muss einen
-            // einzigen AddRangeAsync-Aufruf für alle Episoden absetzen, danach pro Episode
-            // einen Track-Batch (das bleibt bewusst pro Episode, weil Tracks pro Folge variieren).
+            // Auto-Import einer neuen lokalen Serie mit 10 Folgen muss einen einzigen
+            // AddRangeAsync-Aufruf für alle Episoden absetzen, danach pro Episode einen
+            // Track-Batch (das bleibt bewusst pro Episode, weil Tracks pro Folge variieren).
             FakeAppSettingsDataService settings = new(new AppSettings
             {
                 LocalLibraryEnabled = true,

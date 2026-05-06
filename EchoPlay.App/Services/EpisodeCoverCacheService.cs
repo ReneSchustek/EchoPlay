@@ -19,6 +19,7 @@ namespace EchoPlay.App.Services
     /// Episoden ohne Treffer erhalten einen Cooldown-Zeitstempel (7 Tage),
     /// damit nicht bei jedem Öffnen der Folgenübersicht erneut gesucht wird.
     /// </summary>
+
     public sealed class EpisodeCoverCacheService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -30,6 +31,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Cooldown in Tagen: Erfolglose Cover-Suchen werden erst nach Ablauf dieser Frist wiederholt.
         /// </summary>
+
         private const int CooldownDays = 7;
 
         /// <summary>
@@ -40,6 +42,7 @@ namespace EchoPlay.App.Services
         /// <param name="coverService">Singleton-Dienst für Cover-Operationen über die CoverImages-Tabelle.</param>
         /// <param name="clock">Zeitquelle für Cooldown-Berechnung.</param>
         /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
+
         public EpisodeCoverCacheService(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
@@ -100,7 +103,7 @@ namespace EchoPlay.App.Services
             // Auswertungen Foreground-Spikes erkennen können.
             if (priority == CoverFetchPriority.Foreground)
             {
-                _logger.Debug($"Cover-Caching Serie {seriesId} mit Foreground-Prioritaet angefordert.");
+                _logger.Debug(() => $"Cover-Caching Serie {seriesId} mit Foreground-Prioritaet angefordert.");
             }
 
             // ── Phase 1: Lokale Cover kopieren (Raw SQL via Data-Schicht) ────────
@@ -110,7 +113,7 @@ namespace EchoPlay.App.Services
             {
                 ICoverCopyService coverCopy = copyScope.ServiceProvider
                     .GetRequiredService<ICoverCopyService>();
-                localFound = await coverCopy.CopyFromMatchingEpisodesAsync(seriesId);
+                localFound = await coverCopy.CopyFromMatchingEpisodesAsync(seriesId, ct);
             }
 
             // ── Episoden ohne Cover ermitteln (mit Cooldown-Filter) ─────────────
@@ -119,10 +122,10 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
 
-            Series? series = await seriesService.GetByIdAsync(seriesId);
+            Series? series = await seriesService.GetByIdAsync(seriesId, ct);
             string seriesName = series?.Title ?? string.Empty;
 
-            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId);
+            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId, ct);
             DateTime cooldownThreshold = _clock.UtcNow.AddDays(-CooldownDays);
 
             // Batch-Prüfung: welche Episoden haben bereits ein Cover in der CoverImages-Tabelle?
@@ -130,7 +133,7 @@ namespace EchoPlay.App.Services
             foreach (Episode ep in episodes) episodeIds.Add(ep.Id);
 
             IReadOnlyDictionary<Guid, byte[]> existingCovers =
-                await _coverService.GetEpisodeCoverBytesAsync(episodeIds);
+                await _coverService.GetEpisodeCoverBytesAsync(episodeIds, ct);
 
             List<Episode> needsCheck = [];
 
@@ -196,11 +199,11 @@ namespace EchoPlay.App.Services
 
                 try
                 {
-                    byte[]? coverBytes = await DownloadSafeAsync(providerUrl);
+                    byte[]? coverBytes = await DownloadSafeAsync(providerUrl, ct);
 
                     if (coverBytes is not null)
                     {
-                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
+                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, cancellationToken: ct);
                         downloaded++;
                     }
                 }
@@ -215,13 +218,13 @@ namespace EchoPlay.App.Services
             ct.ThrowIfCancellationRequested();
 
             // Erneut prüfen welche Episoden noch kein Cover haben (via CoverImages-Tabelle)
-            IReadOnlyList<Episode> afterDownload = await episodeService.GetBySeriesIdAsync(seriesId);
+            IReadOnlyList<Episode> afterDownload = await episodeService.GetBySeriesIdAsync(seriesId, ct);
 
             List<Guid> afterDownloadIds = new(afterDownload.Count);
             foreach (Episode ep in afterDownload) afterDownloadIds.Add(ep.Id);
 
             IReadOnlyDictionary<Guid, byte[]> coversAfterDownload =
-                await _coverService.GetEpisodeCoverBytesAsync(afterDownloadIds);
+                await _coverService.GetEpisodeCoverBytesAsync(afterDownloadIds, ct);
 
             List<Episode> stillMissing = [];
 
@@ -242,12 +245,11 @@ namespace EchoPlay.App.Services
 
                 try
                 {
-                    byte[]? coverBytes = await SearchCoverOnlineAsync(
-                        seriesName, episode.Title, episode.EpisodeNumber);
+                    byte[]? coverBytes = await SearchCoverOnlineAsync(seriesName, episode.Title, episode.EpisodeNumber, ct);
 
                     if (coverBytes is not null)
                     {
-                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes);
+                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, cancellationToken: ct);
                         onlineFound++;
                     }
 
@@ -255,7 +257,7 @@ namespace EchoPlay.App.Services
                     using IServiceScope writeScope = _scopeFactory.CreateScope();
                     IEpisodeDataService writeService = writeScope.ServiceProvider
                         .GetRequiredService<IEpisodeDataService>();
-                    await writeService.SetCoverLastCheckedAsync(episode.Id, _clock.UtcNow);
+                    await writeService.SetCoverLastCheckedAsync(episode.Id, _clock.UtcNow, ct);
 
                     // Rate-Limiting nur bei Online-Suche (HTTP-Requests gegen externe APIs)
                     await Task.Delay(200, ct).ConfigureAwait(false);
@@ -275,7 +277,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Cover-Suche (CompositeCoverSearchService): HTTP-, Rate-Limit- oder Parser-Fehler der externen Quellen (iTunes/Cover Art Archive/MusicBrainz) werden zu 'null' normalisiert, sodass die aufrufende Folge 'kein Cover' bekommt.")]
         private async Task<byte[]?> SearchCoverOnlineAsync(
-            string seriesName, string title, int? episodeNumber)
+            string seriesName, string title, int? episodeNumber, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(seriesName)) return null;
 
@@ -309,7 +311,7 @@ namespace EchoPlay.App.Services
             {
                 try
                 {
-                    IReadOnlyList<CoverSearchResult> results = await coverSearch.SearchAsync(query);
+                    IReadOnlyList<CoverSearchResult> results = await coverSearch.SearchAsync(query, cancellationToken);
 
                     // Ergebnisse nach Relevanz filtern – verhindert irrelevante Cover
                     // (z.B. „Mimi Rutherford" bei Suche nach „Die drei ??? Kids")
@@ -318,7 +320,7 @@ namespace EchoPlay.App.Services
 
                     if (best is not null)
                     {
-                        byte[]? bytes = await DownloadSafeAsync(best.FullUrl);
+                        byte[]? bytes = await DownloadSafeAsync(best.FullUrl, cancellationToken);
                         if (bytes is not null) return bytes;
                     }
                 }
@@ -334,6 +336,10 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Extrahiert den kurzen Folgentitel ohne Seriennamen-Präfix und Folgennummer.
         /// </summary>
+
+
+        /// <param name="fullTitle">Parameter <c>fullTitle</c>.</param>
+        /// <param name="seriesName">Parameter <c>seriesName</c>.</param>
         private static string ExtractShortTitle(string fullTitle, string seriesName)
         {
             string title = fullTitle;
@@ -360,6 +366,7 @@ namespace EchoPlay.App.Services
         /// Wählt das relevanteste Suchergebnis anhand des <see cref="CoverRelevanceScorer"/>.
         /// Ergebnisse unter der Mindest-Schwelle werden verworfen.
         /// </summary>
+
         private static CoverSearchResult? FindBestMatch(
             IReadOnlyList<CoverSearchResult> results,
             string seriesName,
@@ -388,13 +395,15 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt ein Bild von einer URL. Null bei Fehler.
         /// </summary>
+        /// <param name="url">Absolute Cover-URL.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, TLS-, Redirect- oder Timeout-Fehler beim Laden einzelner Cover-URLs werden zu 'null' normalisiert; der Aufrufer ueberspringt diese Episode und fährt mit der nächsten fort.")]
-        private async Task<byte[]?> DownloadSafeAsync(string url)
+        private async Task<byte[]?> DownloadSafeAsync(string url, CancellationToken cancellationToken = default)
         {
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute)).ConfigureAwait(false);
+                return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception)
             {

@@ -44,6 +44,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Entfernen per TagLib: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task RemoveCoverAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagRemoveCover");
             RemoveCoverCallCount++;
 
             if (_fileListVM.SelectedFile is null)
@@ -66,6 +67,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Schreibt das aktuelle Cover auf alle Dateien im Ordner nach Nutzerbestätigung.</summary>
         public async Task ApplyCoverToAllAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagApplyCoverAll");
             ApplyCoverToAllCallCount++;
 
             if (_coverVM.CoverImageData is null || _fileListVM.Files.Count == 0)

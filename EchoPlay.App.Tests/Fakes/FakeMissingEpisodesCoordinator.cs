@@ -26,7 +26,7 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<IReadOnlyList<string>> CheckSingleSeriesAsync(
             Guid seriesId,
             string? seriesFolderPath,
-            MissingEpisodesMode mode)
+            MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
             SingleCalls.Add((seriesId, seriesFolderPath, mode));
 
@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode)
+        public Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
             AllCalls.Add(mode);
             return Task.FromResult(new MissingEpisodesReport

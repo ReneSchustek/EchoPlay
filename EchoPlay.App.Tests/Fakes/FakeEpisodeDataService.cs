@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -22,26 +23,26 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Alle bisher gespeicherten Episoden.</summary>
         public IReadOnlyList<Episode> All => _episodes;
 
-        /// <summary>Zähler für Aufrufe von <see cref="GetByIdAsync"/> – Brief 273 N+1-Detektion.</summary>
+        /// <summary>Zähler für Aufrufe von <see cref="GetByIdAsync"/> für N+1-Detektion in Tests.</summary>
         public int GetByIdAsyncCallCount { get; private set; }
 
-        /// <summary>Zähler für Aufrufe von <see cref="GetByIdsAsync"/> – Brief 273 Batch-Verifikation.</summary>
+        /// <summary>Zähler für Aufrufe von <see cref="GetByIdsAsync"/> für Batch-Verifikation (Single-Roundtrip statt N Aufrufe).</summary>
         public int GetByIdsAsyncCallCount { get; private set; }
 
-        /// <summary>Zähler für Aufrufe von <see cref="AddAsync"/> – Brief 273 N+1-Detektion.</summary>
+        /// <summary>Zähler für Aufrufe von <see cref="AddAsync"/> für N+1-Detektion in Tests.</summary>
         public int AddAsyncCallCount { get; private set; }
 
-        /// <summary>Zähler für Aufrufe von <see cref="AddRangeAsync"/> – Brief 273 Batch-Verifikation.</summary>
+        /// <summary>Zähler für Aufrufe von <see cref="AddRangeAsync"/> für Batch-Verifikation (Single-Roundtrip statt N Aufrufe).</summary>
         public int AddRangeAsyncCallCount { get; private set; }
 
-        /// <summary>Zähler für Aufrufe von <see cref="UpdateAsync"/> – Brief 273 N+1-Detektion.</summary>
+        /// <summary>Zähler für Aufrufe von <see cref="UpdateAsync"/> für N+1-Detektion in Tests.</summary>
         public int UpdateAsyncCallCount { get; private set; }
 
-        /// <summary>Zähler für Aufrufe von <see cref="UpdateRangeAsync"/> – Brief 273 Batch-Verifikation.</summary>
+        /// <summary>Zähler für Aufrufe von <see cref="UpdateRangeAsync"/> für Batch-Verifikation (Single-Roundtrip statt N Aufrufe).</summary>
         public int UpdateRangeAsyncCallCount { get; private set; }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId)
+        public Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             IReadOnlyList<Episode> result = _episodes
                 .Where(e => e.SeriesId == seriesId)
@@ -51,7 +52,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
+        public Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             HashSet<Guid> idSet = new(seriesIds);
             IReadOnlyList<Episode> result = _episodes
@@ -61,7 +62,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<Episode?> GetByIdAsync(Guid id)
+        public Task<Episode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             GetByIdAsyncCallCount++;
             Episode? result = _episodes.FirstOrDefault(e => e.Id == id);
@@ -69,7 +70,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids)
+        public Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
         {
             GetByIdsAsyncCallCount++;
             HashSet<Guid> idSet = new(ids);
@@ -81,7 +82,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task AddAsync(Episode episode)
+        public Task AddAsync(Episode episode, CancellationToken cancellationToken = default)
         {
             AddAsyncCallCount++;
             // EF Core setzt die Id nach SaveChanges – hier per Reflection nachgebaut.
@@ -92,7 +93,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task AddRangeAsync(IReadOnlyList<Episode> episodes)
+        public Task AddRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default)
         {
             AddRangeAsyncCallCount++;
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
@@ -109,14 +110,14 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task UpdateAsync(Episode episode)
+        public Task UpdateAsync(Episode episode, CancellationToken cancellationToken = default)
         {
             UpdateAsyncCallCount++;
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task UpdateRangeAsync(IReadOnlyList<Episode> episodes)
+        public Task UpdateRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default)
         {
             UpdateRangeAsyncCallCount++;
             return Task.CompletedTask;
@@ -124,7 +125,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <inheritdoc/>
         public Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(
-            IReadOnlyList<Guid> seriesIds)
+            IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             Dictionary<Guid, (int Total, int Local)> result = new();
 
@@ -140,7 +141,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId)
+        public Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             IReadOnlyList<Episode> result = _episodes
                 .Where(e => e.SeriesId == seriesId && e.LocalFolderPath is null)
@@ -151,7 +152,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId)
+        public Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             int? result = _episodes
                 .Where(e => e.SeriesId == seriesId && e.LocalFolderPath is not null && e.EpisodeNumber is not null)
@@ -161,14 +162,14 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task DeleteAsync(Guid id)
+        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             _ = _episodes.RemoveAll(e => e.Id == id);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt)
+        public Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {
             Episode? episode = _episodes.FirstOrDefault(e => e.Id == episodeId);
 

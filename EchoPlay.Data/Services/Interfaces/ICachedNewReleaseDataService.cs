@@ -14,14 +14,16 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Sortiert nach <see cref="CachedNewRelease.ReleaseDate"/> absteigend (neueste zuerst).
         /// </summary>
         /// <returns>Alle nicht-gelöschten Cache-Einträge inkl. Series-Navigation.</returns>
-        Task<IReadOnlyList<CachedNewRelease>> GetAllAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<CachedNewRelease>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert alle gecachten Neuerscheinungen einer bestimmten Serie.
         /// </summary>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <returns>Cache-Einträge der Serie, sortiert nach ReleaseDate absteigend.</returns>
-        Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert den Zeitpunkt der letzten iTunes-Prüfung über alle Einträge hinweg.
@@ -31,7 +33,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Der jüngste <see cref="CachedNewRelease.CheckedAtUtc"/>-Wert,
         /// oder <c>null</c> wenn der Cache leer ist.
         /// </returns>
-        Task<DateTime?> GetLatestCheckTimeAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<DateTime?> GetLatestCheckTimeAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Fügt neue Einträge hinzu oder aktualisiert bestehende (Upsert per CollectionId).
@@ -39,7 +42,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// überschrieben, damit Titeländerungen und Cover-Updates aus iTunes übernommen werden.
         /// </summary>
         /// <param name="entries">Die einzufügenden oder zu aktualisierenden Einträge.</param>
-        Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Entfernt alle Einträge, deren <see cref="CachedNewRelease.ReleaseDate"/>
@@ -48,7 +52,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="cutoff">Ältestes erlaubtes Veröffentlichungsdatum.</param>
         /// <returns>Anzahl der entfernten Einträge.</returns>
-        Task<int> RemoveOlderThanAsync(DateTime cutoff);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<int> RemoveOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Entfernt alle Cache-Einträge, die zu den angegebenen Serien gehören.
@@ -56,13 +61,15 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="seriesIds">Die IDs der Serien, deren Cache-Einträge entfernt werden sollen.</param>
         /// <returns>Anzahl der entfernten Einträge.</returns>
-        Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Leert den gesamten Cache. Wird aufgerufen, wenn sich das Zeitfenster
         /// (<see cref="Data.Entities.Settings.AppSettings.NewReleaseDays"/>) vergrößert hat
         /// und ältere Episoden nachgeladen werden müssen.
         /// </summary>
-        Task ClearAllAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task ClearAllAsync(CancellationToken cancellationToken = default);
     }
 }

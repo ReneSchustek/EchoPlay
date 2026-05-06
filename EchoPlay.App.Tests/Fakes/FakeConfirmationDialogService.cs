@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -30,7 +31,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<bool> ConfirmAsync(string title, string message)
+        public Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default)
         {
             CallCount++;
             return Task.FromResult(_result);

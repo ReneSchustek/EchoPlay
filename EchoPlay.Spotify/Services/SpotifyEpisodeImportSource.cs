@@ -36,7 +36,7 @@ namespace EchoPlay.Spotify.Services
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:{sourceSeriesId}");
 
-            _logger.Debug($"Spotify-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");
+            _logger.Debug(() => $"Spotify-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");
 
             // Kein künstliches Limit – alle Alben laden, auch bei Serien mit 200+ Folgen.
             // Die Pagination im ApiClient iteriert seitenweise (je 50) bis alle geladen sind.

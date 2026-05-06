@@ -55,7 +55,7 @@ namespace EchoPlay.TagManager.Services
                 string encodedQuery = Uri.EscapeDataString(query);
                 string requestUri = $"ws/2/release?query={encodedQuery}&fmt=json&limit=5";
 
-                _logger.Debug($"MusicBrainz-Suche: {requestUri}");
+                _logger.Debug(() => $"MusicBrainz-Suche: {requestUri}");
 
                 using HttpResponseMessage response = await _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken).ConfigureAwait(false);
                 _ = response.EnsureSuccessStatusCode();

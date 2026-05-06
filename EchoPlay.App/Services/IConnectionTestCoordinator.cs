@@ -11,6 +11,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <param name="Success">Ob der Test erfolgreich war.</param>
     /// <param name="ErrorDetail">Rohe Fehlermeldung im Fehlerfall, sonst <see langword="null"/>.</param>
+
     public sealed record ConnectionTestResult(bool Success, string? ErrorDetail);
 
     /// <summary>
@@ -19,6 +20,7 @@ namespace EchoPlay.App.Services
     /// Lokalisierung der Erfolgs-/Fehlermeldung bleibt bewusst außerhalb, damit der Coordinator
     /// frei von WinUI-Resource-Abhängigkeiten testbar ist.
     /// </summary>
+
     public interface IConnectionTestCoordinator
     {
         /// <summary>

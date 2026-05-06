@@ -17,6 +17,7 @@ namespace EchoPlay.App.Services
     /// Ist kein MemorySink registriert, bleibt die Live-Ansicht leer – die Datei-Funktionen
     /// arbeiten davon unabhängig weiter.
     /// </summary>
+
     public sealed class LogViewerCoordinator : ILogViewerCoordinator
     {
         private readonly LoggerManager _loggerManager;
@@ -27,6 +28,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="loggerManager">Für das Log-Verzeichnis.</param>
         /// <param name="memorySink">Optionaler In-Memory-Puffer für die Live-Ansicht.</param>
+
         public LogViewerCoordinator(LoggerManager loggerManager, MemorySink? memorySink = null)
         {
             _loggerManager = loggerManager;
@@ -37,7 +39,8 @@ namespace EchoPlay.App.Services
         public bool IsLiveViewAvailable => _memorySink is not null;
 
         /// <inheritdoc />
-        public async Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync(CancellationToken cancellationToken = default)
         {
             // Relativen Pfad in absoluten umwandeln, da AppContext.BaseDirectory je nach Start-Kontext variiert
             string logDirectory = _loggerManager.LogDirectory;
@@ -74,11 +77,14 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        public async Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="filePath">Parameter <c>filePath</c>.</param>
+        public async Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath, CancellationToken cancellationToken = default)
         {
             try
             {
-                string[] lines = await File.ReadAllLinesAsync(filePath, System.Text.Encoding.UTF8);
+                string[] lines = await File.ReadAllLinesAsync(filePath, System.Text.Encoding.UTF8, cancellationToken);
                 return lines;
             }
             catch (IOException)
@@ -93,6 +99,10 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
+
+
+        /// <param name="searchText">Parameter <c>searchText</c>.</param>
+        /// <param name="minimumLevel">Parameter <c>minimumLevel</c>.</param>
         public IReadOnlyList<string> BuildFilteredLiveEntries(string searchText, LogLevel minimumLevel)
         {
             if (_memorySink is null)
@@ -132,6 +142,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="entry">Der zu formatierende Eintrag.</param>
         /// <returns>Formatierter Ein-Zeiler.</returns>
+
         private static string FormatLogEntry(LogEntry entry)
         {
             string levelTag = entry.Level switch

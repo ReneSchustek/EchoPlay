@@ -160,7 +160,7 @@ namespace EchoPlay.App.ViewModels
                 foreach (FavoriteSeriesCardViewModel card in _favoriteSeries)
                 {
                     seriesIds.Add(card.SeriesId);
-                    _logger.Debug($"'{card.SeriesName}' → Position {seriesIds.Count - 1}");
+                    _logger.Debug(() => $"'{card.SeriesName}' → Position {seriesIds.Count - 1}");
                 }
 
                 using IServiceScope scope = _scopeFactory.CreateScope();

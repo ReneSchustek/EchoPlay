@@ -8,13 +8,15 @@ using System.Globalization;
 namespace EchoPlay.Data.Tests.Migrations
 {
     /// <summary>
-    /// Regressions-Tests für die Migration <c>MigrateLocalCoverDataToCoverImages</c> (Brief 240).
+    /// Regressions-Tests für die Migration <c>MigrateLocalCoverDataToCoverImages</c>.
     /// Verifiziert, dass bestehende <c>LocalCoverData</c>-BLOBs verlustfrei in die
     /// <c>CoverImages</c>-Tabelle übernommen werden, bevor die Spalten entfernt werden.
     /// </summary>
     public sealed class LocalCoverDataMigrationTests : IAsyncLifetime, IDisposable
     {
         private const string PreviousMigration = "20260416121304_AddDbBackupSettings";
+        private static readonly string FixedNow = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture);
+        private static readonly Guid FixedCoverId = new("11111111-2222-3333-4444-aaaaaaaaaaaa");
 
         private SqliteConnection? _connection;
         private EchoPlayDbContext? _context;
@@ -146,7 +148,7 @@ namespace EchoPlay.Data.Tests.Migrations
             _ = cmd.Parameters.AddWithValue("$id", id.ToString());
             _ = cmd.Parameters.AddWithValue("$title", title);
             _ = cmd.Parameters.AddWithValue("$cover", (object?)coverData ?? DBNull.Value);
-            _ = cmd.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            _ = cmd.Parameters.AddWithValue("$now", FixedNow);
             _ = await cmd.ExecuteNonQueryAsync();
         }
 
@@ -163,7 +165,7 @@ namespace EchoPlay.Data.Tests.Migrations
             _ = cmd.Parameters.AddWithValue("$duration", "00:30:00");
             _ = cmd.Parameters.AddWithValue("$seriesId", seriesId.ToString());
             _ = cmd.Parameters.AddWithValue("$cover", coverData);
-            _ = cmd.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            _ = cmd.Parameters.AddWithValue("$now", FixedNow);
             _ = await cmd.ExecuteNonQueryAsync();
         }
 
@@ -174,11 +176,11 @@ namespace EchoPlay.Data.Tests.Migrations
                 INSERT INTO CoverImages (Id, EntityType, EntityId, ImageData, CreatedAt, IsDeleted)
                 VALUES ($id, $type, $entityId, $bytes, $now, 0);
                 """;
-            _ = cmd.Parameters.AddWithValue("$id", Guid.NewGuid().ToString());
+            _ = cmd.Parameters.AddWithValue("$id", FixedCoverId.ToString());
             _ = cmd.Parameters.AddWithValue("$type", entityType);
             _ = cmd.Parameters.AddWithValue("$entityId", entityId.ToString());
             _ = cmd.Parameters.AddWithValue("$bytes", imageData);
-            _ = cmd.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+            _ = cmd.Parameters.AddWithValue("$now", FixedNow);
             _ = await cmd.ExecuteNonQueryAsync();
         }
 

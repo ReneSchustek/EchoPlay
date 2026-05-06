@@ -25,13 +25,13 @@ namespace EchoPlay.App.Tests.Fakes
         public int SaveCallCount { get; private set; }
 
         /// <inheritdoc/>
-        public Task<AppSettings> GetAsync()
+        public Task<AppSettings> GetAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_settings);
         }
 
         /// <inheritdoc/>
-        public Task SaveAsync(AppSettings settings)
+        public Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
         {
             _settings = settings;
             SaveCallCount++;

@@ -15,6 +15,11 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class DashboardFavoritenViewModelTests
     {
+        // Stabile Test-Id fuer Card-Identitaet — Reflection-Tests sollen idempotent
+        // reproduzierbar sein. Determinismus statt Guid.NewGuid().
+        private static readonly Guid TestSeriesId = new("00000000-0000-0000-0000-cafebabe0001");
+
+
         [Fact]
         public void SetItems_CalledTwiceWithSameCards_DoesNotAccumulateHandlers()
         {
@@ -61,7 +66,7 @@ namespace EchoPlay.App.Tests.ViewModels
         private static FavoriteSeriesCardViewModel CreateCard()
         {
             return new FavoriteSeriesCardViewModel(
-                seriesId: Guid.NewGuid(),
+                seriesId: TestSeriesId,
                 seriesName: "Testserie",
                 coverImage: null,
                 scopeFactory: new NoopServiceScopeFactory(),

@@ -74,10 +74,10 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
             await initializer.InitializeAsync();
 
-            // Reflektion der Schema-Änderungen aus den drei Migrationen, die heute hinzugefügt wurden:
-            // - SourceHash auf CoverImages (Brief 227)
-            // - SecureSettings-Tabelle (Brief 229)
-            // - SpotifyAlbumId/AppleMusicAlbumId auf Episodes (Brief 230)
+            // Reflektiert die Schema-Erweiterungen aus dem Sicherheits-/Provider-Block:
+            // - SourceHash-Spalte auf CoverImages (Cover-Integrity per SHA-256)
+            // - SecureSettings-Tabelle (DPAPI-Blob für Spotify-Credentials)
+            // - SpotifyAlbumId/AppleMusicAlbumId auf Episodes (strukturierte Provider-Refs)
             using SqliteCommand cmd = _connection!.CreateCommand();
 
             cmd.CommandText = "SELECT name FROM pragma_table_info('CoverImages') WHERE name = 'SourceHash';";
@@ -162,10 +162,9 @@ namespace EchoPlay.Data.Tests.Infrastructure
         [Fact]
         public async Task InitializeAsync_With_Existing_Fixtures_Stays_Stable()
         {
-            // Spiegelt die Pflicht aus Brief 274 wider: Migration darf eine DB
-            // mit bestehenden Daten (Episode + PlaybackState + CoverImage) nicht zerlegen.
-            // EnsureCreated würde nur das aktuelle Modell anlegen – wir nutzen den
-            // produktiven Initializer-Pfad, der die volle Migrationskette abspielt.
+            // Migration darf eine DB mit bestehenden Daten (Episode + PlaybackState + CoverImage)
+            // nicht zerlegen. EnsureCreated würde nur das aktuelle Modell anlegen – wir nutzen
+            // bewusst den produktiven Initializer-Pfad, der die volle Migrationskette abspielt.
             DatabaseInitializer initializer = new(_context!);
             await initializer.InitializeAsync();
 

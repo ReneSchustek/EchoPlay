@@ -1157,6 +1157,12 @@
   <data name="UpdateDownloadFailedMessage" xml:space="preserve">
     <value>Das Update konnte nicht heruntergeladen werden. Bitte versuche es beim nächsten Start erneut.</value>
   </data>
+  <data name="CoverDownloadFailedTitle" xml:space="preserve">
+    <value>Download fehlgeschlagen</value>
+  </data>
+  <data name="CoverDownloadFailedMessage" xml:space="preserve">
+    <value>Das Cover konnte nicht heruntergeladen werden. Bitte versuche es später erneut.</value>
+  </data>
 
   <!-- Gemeinsame Buttons (programmatische Strings) -->
   <data name="CommonCancelButton" xml:space="preserve">

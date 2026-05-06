@@ -22,11 +22,13 @@ namespace EchoPlay.Data.Services
         private readonly ILogger _logger = loggerFactory.CreateLogger("CoverCopyService");
 
         /// <inheritdoc/>
-        public async Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId)
+        /// <param name="targetSeriesId">Parameter targetSeriesId.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId, CancellationToken cancellationToken = default)
         {
             Series? targetSeries = await _context.Series
 
-                .FirstOrDefaultAsync(s => s.Id == targetSeriesId)
+                .FirstOrDefaultAsync(s => s.Id == targetSeriesId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (targetSeries is null) return 0;
@@ -38,7 +40,7 @@ namespace EchoPlay.Data.Services
 
                 .AnyAsync(e => e.SeriesId == targetSeriesId
                     && !_context.CoverImages.Any(ci =>
-                        ci.EntityType == CoverEntityTypes.Episode && ci.EntityId == e.Id))
+                        ci.EntityType == CoverEntityTypes.Episode && ci.EntityId == e.Id), cancellationToken)
                 .ConfigureAwait(false);
 
             if (!hasMissing) return 0;
@@ -68,7 +70,7 @@ namespace EchoPlay.Data.Services
                     AND NOT EXISTS (
                         SELECT 1 FROM CoverImages x
                         WHERE x.EntityType = 'Episode' AND x.EntityId = tgt.Id)
-                """).ConfigureAwait(false);
+                """, cancellationToken).ConfigureAwait(false);
 
             total += byExact;
 
@@ -93,7 +95,7 @@ namespace EchoPlay.Data.Services
                     AND NOT EXISTS (
                         SELECT 1 FROM CoverImages x
                         WHERE x.EntityType = 'Episode' AND x.EntityId = tgt.Id)
-                """).ConfigureAwait(false);
+                """, cancellationToken).ConfigureAwait(false);
 
             total += byNumber;
 
@@ -127,7 +129,7 @@ namespace EchoPlay.Data.Services
                     AND NOT EXISTS (
                         SELECT 1 FROM CoverImages x
                         WHERE x.EntityType = 'Episode' AND x.EntityId = tgt.Id)
-                """).ConfigureAwait(false);
+                """, cancellationToken).ConfigureAwait(false);
 
             total += byKeyword;
 

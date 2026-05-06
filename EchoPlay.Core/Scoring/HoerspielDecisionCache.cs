@@ -35,7 +35,7 @@ namespace EchoPlay.Core.Scoring
 
             if (found)
             {
-                _logger.Debug($"Cache-Treffer für Künstler '{artistId}'.");
+                _logger.Debug(() => $"Cache-Treffer für Künstler '{artistId}'.");
             }
 
             return found;
@@ -56,11 +56,11 @@ namespace EchoPlay.Core.Scoring
 
             if (wasAdded)
             {
-                _logger.Debug($"Bewertung für Künstler '{result.ArtistId}' im Cache gespeichert.");
+                _logger.Debug(() => $"Bewertung für Künstler '{result.ArtistId}' im Cache gespeichert.");
             }
             else
             {
-                _logger.Debug($"Bewertung für Künstler '{result.ArtistId}' bereits im Cache – übersprungen.");
+                _logger.Debug(() => $"Bewertung für Künstler '{result.ArtistId}' bereits im Cache – übersprungen.");
             }
         }
     }

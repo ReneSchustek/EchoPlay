@@ -48,7 +48,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
         }
 
         /// <summary>
-        /// Brief 268: Lookup-Antworten der iTunes API können neben den eigenen Alben auch
+        /// Lookup-Antworten der iTunes API können neben den eigenen Alben auch
         /// fremde Compilation-/Various-Artists-Einträge mit abweichender ArtistId enthalten.
         /// Diese dürfen nicht als Episoden der gesuchten Serie importiert werden.
         /// </summary>

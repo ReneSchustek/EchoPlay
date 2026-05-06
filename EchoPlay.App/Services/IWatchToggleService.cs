@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -8,6 +9,7 @@ namespace EchoPlay.App.Services
     /// hält den Cache der gemerkten Neuerscheinungen konsistent.
     /// Bündelt eine Logik, die sonst in beiden Mediathek-Pages dupliziert wäre.
     /// </summary>
+
     public interface IWatchToggleService
     {
         /// <summary>
@@ -18,6 +20,7 @@ namespace EchoPlay.App.Services
         /// <param name="seriesId">ID der Serie, deren Watch-Status geändert werden soll.</param>
         /// <param name="watch">Neuer Status: <see langword="true"/> aktiviert die Überwachung.</param>
         /// <returns>Asynchrone Ausführung.</returns>
-        Task ToggleAsync(Guid seriesId, bool watch);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task ToggleAsync(Guid seriesId, bool watch, CancellationToken cancellationToken = default);
     }
 }

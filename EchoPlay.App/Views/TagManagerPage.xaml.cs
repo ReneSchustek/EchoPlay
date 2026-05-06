@@ -1,5 +1,6 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
+using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -24,12 +25,15 @@ namespace EchoPlay.App.Views
         /// <summary>Gibt dem XAML-Compiler Zugriff auf das ViewModel für x:Bind.</summary>
         public TagManagerViewModel ViewModel { get; }
 
+        private readonly IFilePickerService _filePickerService;
+
         /// <summary>
-        /// Initialisiert die Seite und bezieht das ViewModel aus dem DI-Container.
+        /// Initialisiert die Seite und bezieht ViewModel und Picker-Service aus dem DI-Container.
         /// </summary>
         public TagManagerPage()
         {
             ViewModel = App.Services.GetRequiredService<TagManagerViewModel>();
+            _filePickerService = App.Services.GetRequiredService<IFilePickerService>();
             InitializeComponent();
         }
 
@@ -76,17 +80,7 @@ namespace EchoPlay.App.Views
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                FolderPicker picker = new()
-                {
-                    SuggestedStartLocation = PickerLocationId.MusicLibrary,
-                    ViewMode = PickerViewMode.List
-                };
-
-                picker.FileTypeFilter.Add("*");
-
-                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
-
-                Windows.Storage.StorageFolder? folder = await picker.PickSingleFolderAsync();
+                Windows.Storage.StorageFolder? folder = await _filePickerService.PickFolderAsync(PickerLocationId.MusicLibrary);
 
                 if (folder is null)
                 {

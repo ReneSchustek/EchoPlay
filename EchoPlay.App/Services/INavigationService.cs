@@ -7,6 +7,7 @@ namespace EchoPlay.App.Services
     /// und jede Seite weiß nur, welches logische Ziel sie ansteuern will –
     /// nicht welche Page-Klasse tatsächlich dahintersteht.
     /// </summary>
+
     public interface INavigationService
     {
         /// <summary>Gibt an, ob ein Rückwärts-Sprung möglich ist.</summary>

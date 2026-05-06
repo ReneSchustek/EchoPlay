@@ -105,7 +105,7 @@ namespace EchoPlay.AppleMusic.Clients
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:iTunes:GET");
 
-            _logger.Debug($"iTunes-API-Anfrage: GET {relativeUrl}");
+            _logger.Debug(() => $"iTunes-API-Anfrage: GET {relativeUrl}");
 
             try
             {
@@ -127,7 +127,7 @@ namespace EchoPlay.AppleMusic.Clients
                     throw new InvalidOperationException($"iTunes-API-Response konnte nicht deserialisiert werden: {relativeUrl}");
                 }
 
-                _logger.Debug($"iTunes-API-Antwort erhalten: {relativeUrl}");
+                _logger.Debug(() => $"iTunes-API-Antwort erhalten: {relativeUrl}");
 
                 return result;
             }

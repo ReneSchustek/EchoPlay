@@ -1,3 +1,4 @@
+using EchoPlay.Core.Logging;
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.LocalLibrary.Models;
@@ -124,7 +125,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             if (!Directory.Exists(rootPath))
             {
-                _logger.Warning($"Wurzelverzeichnis existiert nicht: {rootPath}");
+                _logger.Warning($"Wurzelverzeichnis existiert nicht: {PathRedactor.Redact(rootPath)}");
                 return [];
             }
 
@@ -158,7 +159,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 }
             }
 
-            _logger.Info($"Scan abgeschlossen: {results.Count} Serien gefunden in {rootPath}");
+            _logger.Info($"Scan abgeschlossen: {results.Count} Serien gefunden in {PathRedactor.Redact(rootPath)}");
 
             return results;
         }
@@ -196,7 +197,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 // Ordner ohne Audiodateien überspringen – leer bedeutet keine Folge
                 if (trackPaths.Count == 0)
                 {
-                    _logger.Debug($"Episodenordner ohne Audiodateien übersprungen: {folderName}");
+                    _logger.Debug(() => $"Episodenordner ohne Audiodateien übersprungen: {folderName}");
                     continue;
                 }
 
@@ -232,7 +233,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                 if (flatTracks.Count > 0)
                 {
-                    _logger.Debug($"Flache Serie erkannt: {seriesName} – {flatTracks.Count} Audiodateien direkt im Ordner");
+                    _logger.Debug(() => $"Flache Serie erkannt: {seriesName} – {flatTracks.Count} Audiodateien direkt im Ordner");
 
                     // Mehrere Parser-Muster probieren – Dateinamen folgen anderen Konventionen
                     // als Ordnernamen (z.B. "Karl May - 001 - Durch die Wüste")
@@ -271,7 +272,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                                     : fileNameWithoutExt;
                                 matched = true;
 
-                                _logger.Debug($"Kassetten-Rip erkannt: '{fileNameWithoutExt}' → Kassette {cassetteNumberStr}{side}, Episode {number}");
+                                _logger.Debug(() => $"Kassetten-Rip erkannt: '{fileNameWithoutExt}' → Kassette {cassetteNumberStr}{side}, Episode {number}");
                             }
                         }
 
@@ -293,7 +294,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                             // Kein Muster erkannt – Dateiname als Titel verwenden, ohne Nummer.
                             // So gehen keine Dateien verloren (z.B. "Astrid Lindgren - Immer dieser Michel")
                             title = fileNameWithoutExt;
-                            _logger.Debug($"Flache Serie – kein Muster-Treffer: '{fileNameWithoutExt}' – Dateiname als Titel");
+                            _logger.Debug(() => $"Flache Serie – kein Muster-Treffer: '{fileNameWithoutExt}' – Dateiname als Titel");
                         }
 
                         string? episodeTitle = ResolveEpisodeTitle([trackPath], title);
@@ -319,7 +320,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             if (episodes.Count == 0)
             {
-                _logger.Debug($"Keine Episodenordner erkannt in: {seriesName}");
+                _logger.Debug(() => $"Keine Episodenordner erkannt in: {seriesName}");
                 return null;
             }
 
@@ -390,7 +391,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                                        or TagLib.CorruptFileException
                                        or TagLib.UnsupportedFormatException)
             {
-                _logger.Warning($"ID3-Tags nicht lesbar, Ordnername wird verwendet: {filePath} – {ex.Message}");
+                _logger.Warning($"ID3-Tags nicht lesbar, Ordnername wird verwendet: {PathRedactor.Redact(filePath)} – {ex.Message}");
                 return null;
             }
         }
@@ -441,12 +442,12 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (IOException ex)
             {
-                _logger.Warning($"Audiodateien konnten nicht gelesen werden in: {folderPath} – {ex.Message}");
+                _logger.Warning($"Audiodateien konnten nicht gelesen werden in: {PathRedactor.Redact(folderPath)} – {ex.Message}");
                 return [];
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.Warning($"Zugriff verweigert für: {folderPath} – {ex.Message}");
+                _logger.Warning($"Zugriff verweigert für: {PathRedactor.Redact(folderPath)} – {ex.Message}");
                 return [];
             }
         }
@@ -465,12 +466,12 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (IOException ex)
             {
-                _logger.Warning($"Unterordner konnten nicht gelesen werden: {path} – {ex.Message}");
+                _logger.Warning($"Unterordner konnten nicht gelesen werden: {PathRedactor.Redact(path)} – {ex.Message}");
                 return [];
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.Warning($"Zugriff verweigert für: {path} – {ex.Message}");
+                _logger.Warning($"Zugriff verweigert für: {PathRedactor.Redact(path)} – {ex.Message}");
                 return [];
             }
         }

@@ -28,7 +28,7 @@ namespace EchoPlay.App.Tests.Fakes
         public Dictionary<Guid, IReadOnlyList<LocalTrack>> SavedTracks { get; } = [];
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId)
+        public Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
             if (_tracksByEpisode.TryGetValue(episodeId, out IReadOnlyList<LocalTrack>? tracks))
             {
@@ -39,7 +39,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds)
+        public Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             Dictionary<Guid, LocalTrack> result = [];
             foreach (Guid episodeId in episodeIds)
@@ -58,7 +58,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks)
+        public Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks, CancellationToken cancellationToken = default)
         {
             SavedTracks[episodeId] = tracks;
             _tracksByEpisode[episodeId] = tracks;

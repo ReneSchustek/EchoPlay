@@ -14,7 +14,9 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Liefert alle Episoden einer bestimmten Serie.
         /// Die Episoden werden standardmäßig nach Episodennummer und anschließend nach Titel sortiert.
         /// </summary>
-        Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="seriesId">Parameter seriesId.</param>
+        Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert Episodenzähler für mehrere Serien in einer einzigen Datenbankabfrage.
@@ -28,7 +30,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <c>Local</c> = Episoden mit mindestens einem gescannten lokalen Ordner.
         /// Serien ohne Episoden tauchen nicht im Dictionary auf – der Aufrufer bekommt (0, 0).
         /// </returns>
-        Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(IReadOnlyList<Guid> seriesIds);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert alle Episoden mehrerer Serien in einer einzigen Datenbankabfrage.
@@ -37,12 +40,15 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="seriesIds">IDs der Serien, deren Episoden geladen werden sollen.</param>
         /// <returns>Alle Episoden der angegebenen Serien, unsortiert.</returns>
-        Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert eine Episode anhand ihrer eindeutigen ID.
         /// </summary>
-        Task<Episode?> GetByIdAsync(Guid id);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="id">Parameter id.</param>
+        Task<Episode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert mehrere Episoden anhand ihrer IDs in einer einzigen Datenbankabfrage
@@ -55,12 +61,15 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Dictionary von Episoden-ID auf <see cref="Episode"/>. Nicht gefundene IDs fehlen
         /// im Dictionary; bei leerer Eingabe wird ein leeres Dictionary geliefert.
         /// </returns>
-        Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Fügt eine neue Episode dauerhaft hinzu.
         /// </summary>
-        Task AddAsync(Episode episode);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="episode">Parameter episode.</param>
+        Task AddAsync(Episode episode, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Fügt mehrere neue Episoden in einem einzigen <c>SaveChangesAsync</c>-Aufruf hinzu.
@@ -68,12 +77,15 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Serien (200+ Episoden = 200+ DB-Roundtrips → 1 Roundtrip).
         /// </summary>
         /// <param name="episodes">Die zu persistierenden Episoden.</param>
-        Task AddRangeAsync(IReadOnlyList<Episode> episodes);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task AddRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Aktualisiert eine bestehende Episode.
         /// </summary>
-        Task UpdateAsync(Episode episode);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="episode">Parameter episode.</param>
+        Task UpdateAsync(Episode episode, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Aktualisiert mehrere bestehende Episoden in einem einzigen <c>SaveChangesAsync</c>-Aufruf.
@@ -81,7 +93,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// pro Episode einen eigenen Roundtrip auszulösen.
         /// </summary>
         /// <param name="episodes">Die zu aktualisierenden Episoden.</param>
-        Task UpdateRangeAsync(IReadOnlyList<Episode> episodes);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task UpdateRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert alle Episoden einer Serie, für die noch kein lokaler Ordner zugeordnet wurde.
@@ -93,7 +106,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Episoden ohne <c>LocalFolderPath</c>, sortiert nach Episodennummer und Titel.
         /// Gibt eine leere Liste zurück, wenn alle Episoden lokal vorhanden sind.
         /// </returns>
-        Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Ermittelt die höchste Episodennummer aller lokal vorhandenen Episoden einer Serie.
@@ -105,7 +119,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Die höchste Episodennummer mit zugeordnetem lokalen Ordner,
         /// oder <see langword="null"/> wenn keine lokale Episode existiert.
         /// </returns>
-        Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Setzt den Zeitstempel der letzten Cover-Suche.
@@ -114,11 +129,14 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="episodeId">Die ID der Episode.</param>
         /// <param name="checkedAt">Zeitpunkt der Prüfung (UTC).</param>
-        Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Markiert eine Episode als gelöscht (Soft-Delete).
         /// </summary>
-        Task DeleteAsync(Guid id);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="id">Parameter id.</param>
+        Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

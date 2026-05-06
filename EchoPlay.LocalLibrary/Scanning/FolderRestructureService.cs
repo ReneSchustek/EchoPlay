@@ -1,3 +1,4 @@
+using EchoPlay.Core.Logging;
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Parsing;
@@ -199,7 +200,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                     // Prüfen ob die Zieldatei bereits existiert – Kollision vermeiden
                     if (File.Exists(destination))
                     {
-                        _logger.Warning($"Zieldatei existiert bereits, übersprungen: {destination}");
+                        _logger.Warning($"Zieldatei existiert bereits, übersprungen: {PathRedactor.Redact(destination)}");
                         continue;
                     }
 
@@ -231,7 +232,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                                                        or NotSupportedException
                                                        or ArgumentException)
                     {
-                        _logger.Error($"Rollback fehlgeschlagen für '{source}': {rollbackEx.Message}", rollbackEx);
+                        _logger.Error($"Rollback fehlgeschlagen für '{PathRedactor.Redact(source)}': {rollbackEx.Message}", rollbackEx);
                     }
                 }
 
@@ -268,7 +269,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
             {
-                _logger.Warning($"Journal '{journalPath}' konnte nicht gelesen werden: {ex.Message}");
+                _logger.Warning($"Journal '{PathRedactor.Redact(journalPath)}' konnte nicht gelesen werden: {ex.Message}");
                 return 0;
             }
 
@@ -322,7 +323,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
             {
                 // Journal ist Best-Effort – der Umbau läuft auch ohne persistentes Journal weiter.
-                _logger.Warning($"Journal '{journalPath}' konnte nicht geschrieben werden: {ex.Message}");
+                _logger.Warning($"Journal '{PathRedactor.Redact(journalPath)}' konnte nicht geschrieben werden: {ex.Message}");
             }
         }
 
@@ -337,7 +338,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                _logger.Warning($"Journal '{journalPath}' konnte nicht gelöscht werden: {ex.Message}");
+                _logger.Warning($"Journal '{PathRedactor.Redact(journalPath)}' konnte nicht gelöscht werden: {ex.Message}");
             }
         }
 

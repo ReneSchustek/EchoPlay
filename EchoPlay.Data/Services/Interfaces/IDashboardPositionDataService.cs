@@ -17,7 +17,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Positionen des Bereichs, sortiert nach <see cref="DashboardPosition.Position"/>.
         /// Leere Liste wenn keine benutzerdefinierte Sortierung für den Bereich existiert.
         /// </returns>
-        Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Speichert die Sortierreihenfolge für einen Dashboard-Bereich.
@@ -26,9 +27,10 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="section">Der Dashboard-Bereich.</param>
         /// <param name="seriesIds">
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// Die Serien-IDs in der gewünschten Reihenfolge.
         /// Index 0 = Position 0 (ganz oben), Index 1 = Position 1, usw.
         /// </param>
-        Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds);
+        Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);
     }
 }

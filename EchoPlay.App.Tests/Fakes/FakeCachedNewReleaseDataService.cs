@@ -25,7 +25,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc />
-        public Task<IReadOnlyList<CachedNewRelease>> GetAllAsync()
+        public Task<IReadOnlyList<CachedNewRelease>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             IReadOnlyList<CachedNewRelease> result = _entries
                 .OrderByDescending(c => c.ReleaseDate)
@@ -35,7 +35,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc />
-        public Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId)
+        public Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             IReadOnlyList<CachedNewRelease> result = _entries
                 .Where(c => c.SeriesId == seriesId)
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc />
-        public Task<DateTime?> GetLatestCheckTimeAsync()
+        public Task<DateTime?> GetLatestCheckTimeAsync(CancellationToken cancellationToken = default)
         {
             DateTime? latest = _entries.Count > 0
                 ? _entries.Max(c => c.CheckedAtUtc)
@@ -56,7 +56,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc />
-        public Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries)
+        public Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries, CancellationToken cancellationToken = default)
         {
             foreach (CachedNewRelease entry in entries)
             {
@@ -79,21 +79,21 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc />
-        public Task<int> RemoveOlderThanAsync(DateTime cutoff)
+        public Task<int> RemoveOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default)
         {
             int removed = _entries.RemoveAll(c => c.ReleaseDate < cutoff);
             return Task.FromResult(removed);
         }
 
         /// <inheritdoc />
-        public Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
+        public Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             int removed = _entries.RemoveAll(c => seriesIds.Contains(c.SeriesId));
             return Task.FromResult(removed);
         }
 
         /// <inheritdoc />
-        public Task ClearAllAsync()
+        public Task ClearAllAsync(CancellationToken cancellationToken = default)
         {
             _entries.Clear();
             return Task.CompletedTask;

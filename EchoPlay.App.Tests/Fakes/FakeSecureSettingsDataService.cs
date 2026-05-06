@@ -12,19 +12,19 @@ namespace EchoPlay.App.Tests.Fakes
     {
         private readonly Dictionary<string, byte[]> _store = new();
 
-        public Task<byte[]?> GetAsync(string key)
+        public Task<byte[]?> GetAsync(string key, CancellationToken cancellationToken = default)
         {
             _ = _store.TryGetValue(key, out byte[]? value);
             return Task.FromResult(value);
         }
 
-        public Task SaveAsync(string key, byte[] encryptedValue)
+        public Task SaveAsync(string key, byte[] encryptedValue, CancellationToken cancellationToken = default)
         {
             _store[key] = encryptedValue;
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(string key)
+        public Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {
             _ = _store.Remove(key);
             return Task.CompletedTask;

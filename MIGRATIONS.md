@@ -6,7 +6,7 @@ Jede Migration erzeugt drei Artefakte (Pflicht, siehe `memory.md` § EF-Core-Mig
 
 ## Backup vor Migration
 
-Seit Brief 238 (Migration 34) legt `DatabaseInitializer.TryCreateBackupAsync` automatisch einen VACUUM-INTO-Snapshot in `db-backups/` an, bevor pending Migrationen ausgeführt werden. Opt-Out und Retention sind über `AppSettings.DbBackupEnabled` und `AppSettings.DbBackupRetentionCount` konfigurierbar. Rollback-Pfad: `runbook.md` §2 und §4.
+Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.TryCreateBackupAsync` automatisch einen VACUUM-INTO-Snapshot in `db-backups/` an, bevor pending Migrationen ausgeführt werden. Opt-Out und Retention sind über `AppSettings.DbBackupEnabled` und `AppSettings.DbBackupRetentionCount` konfigurierbar. Rollback-Pfad: `runbook.md` §2 und §4.
 
 ## Breaking Changes für Major-Upgrades
 

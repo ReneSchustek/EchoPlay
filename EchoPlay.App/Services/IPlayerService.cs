@@ -7,6 +7,7 @@ namespace EchoPlay.App.Services
     /// Definiert den Vertrag für den zentralen Wiedergabe-Service.
     /// Ermöglicht die Entkopplung von ViewModels und Tests von der konkreten <see cref="PlayerService"/>-Implementierung.
     /// </summary>
+
     public interface IPlayerService
     {
         /// <summary>

@@ -23,35 +23,35 @@ namespace EchoPlay.App.Tests.Fakes
         public IReadOnlyList<Series> All => _series;
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Series>> GetAllAsync()
+        public Task<IReadOnlyList<Series>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             IReadOnlyList<Series> result = _series.OrderBy(s => s.Title).ToList();
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task<Series?> GetByIdAsync(Guid id)
+        public Task<Series?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             Series? result = _series.FirstOrDefault(s => s.Id == id);
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task<Series?> GetBySpotifyArtistIdAsync(string spotifyArtistId)
+        public Task<Series?> GetBySpotifyArtistIdAsync(string spotifyArtistId, CancellationToken cancellationToken = default)
         {
             Series? result = _series.FirstOrDefault(s => s.SpotifyArtistId == spotifyArtistId);
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task<Series?> GetByAppleMusicArtistIdAsync(string appleMusicArtistId)
+        public Task<Series?> GetByAppleMusicArtistIdAsync(string appleMusicArtistId, CancellationToken cancellationToken = default)
         {
             Series? result = _series.FirstOrDefault(s => s.AppleMusicArtistId == appleMusicArtistId);
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task AddAsync(Series series)
+        public Task AddAsync(Series series, CancellationToken cancellationToken = default)
         {
             // EF Core setzt die Id nach SaveChanges via store-generated value.
             // Im Fake übernehmen wir das per Reflection, da Id protected set hat.
@@ -62,27 +62,27 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task UpdateAsync(Series series)
+        public Task UpdateAsync(Series series, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task DeleteAsync(Guid id)
+        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             _ = _series.RemoveAll(s => s.Id == id);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Series>> GetSubscribedAsync()
+        public Task<IReadOnlyList<Series>> GetSubscribedAsync(CancellationToken cancellationToken = default)
         {
             IReadOnlyList<Series> result = _series.Where(s => s.IsSubscribed).OrderBy(s => s.Title).ToList();
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task SetSubscribedAsync(Guid seriesId, bool isSubscribed)
+        public Task SetSubscribedAsync(Guid seriesId, bool isSubscribed, CancellationToken cancellationToken = default)
         {
             Series? series = _series.FirstOrDefault(s => s.Id == seriesId);
 
@@ -95,14 +95,14 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Series>> GetFavoritesAsync()
+        public Task<IReadOnlyList<Series>> GetFavoritesAsync(CancellationToken cancellationToken = default)
         {
             IReadOnlyList<Series> result = _series.Where(s => s.IsFavorite).OrderBy(s => s.Title).ToList();
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task SetFavoriteAsync(Guid seriesId, bool isFavorite)
+        public Task SetFavoriteAsync(Guid seriesId, bool isFavorite, CancellationToken cancellationToken = default)
         {
             Series? series = _series.FirstOrDefault(s => s.Id == seriesId);
 
@@ -115,7 +115,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SetWatchedAsync(Guid seriesId, bool isWatched)
+        public Task SetWatchedAsync(Guid seriesId, bool isWatched, CancellationToken cancellationToken = default)
         {
             Series? series = _series.FirstOrDefault(s => s.Id == seriesId);
 

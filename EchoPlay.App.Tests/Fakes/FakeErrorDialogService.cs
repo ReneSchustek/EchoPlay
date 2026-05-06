@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -14,7 +15,7 @@ namespace EchoPlay.App.Tests.Fakes
         public List<(string Title, string Message)> ShownDialogs { get; } = [];
 
         /// <inheritdoc/>
-        public Task ShowAsync(string title, string message)
+        public Task ShowAsync(string title, string message, CancellationToken cancellationToken = default)
         {
             ShownDialogs.Add((title, message));
             return Task.CompletedTask;

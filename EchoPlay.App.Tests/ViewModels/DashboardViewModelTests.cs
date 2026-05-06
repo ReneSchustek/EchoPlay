@@ -747,7 +747,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains("online", card.InfoLineText!, StringComparison.Ordinal);
         }
 
-        // ── Cover-Entkopplung (Brief 255) ─────────────────────────────────
+        // ── Cover-Entkopplung: Folgen-Cover laden im Hintergrund ─────────
 
         [Fact]
         public void NewEpisodeCard_InitiallyWithoutEpisodeCover_HasEpisodeCoverIsFalse()
@@ -816,7 +816,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_TwentyInProgressStates_TriggerSingleGetByIdsAsyncCallPerSection()
         {
-            // Brief 273: Bei 20 In-Progress-States darf der Dashboard-Aufbau pro Sektion
+            // N+1-Detektion: Bei 20 In-Progress-States darf der Dashboard-Aufbau pro Sektion
             // (In-Progress, Recent) genau einen GetByIdsAsync-Aufruf auslösen, kein GetByIdAsync.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();

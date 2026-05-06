@@ -7,7 +7,7 @@ using Microsoft.Extensions.Http.Resilience;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Integrationstests für die HttpClient-Resilience-Pipeline, die in Brief 241 ausgerollt wurde.
+    /// Integrationstests für die HttpClient-Resilience-Pipeline.
     /// Prüft das Zusammenspiel von <see cref="AddStandardResilienceHandler"/>
     /// und <see cref="RateLimitMessageHandler"/> mit einem stubbed Primary-Handler.
     /// </summary>

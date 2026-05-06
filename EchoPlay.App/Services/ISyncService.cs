@@ -10,6 +10,7 @@ namespace EchoPlay.App.Services
     /// Definiert den Vertrag für den lokalen Bibliothek-Sync.
     /// Ermöglicht die Entkopplung von ViewModels und Tests von der konkreten <see cref="SyncService"/>-Implementierung.
     /// </summary>
+
     public interface ISyncService
     {
         /// <summary>

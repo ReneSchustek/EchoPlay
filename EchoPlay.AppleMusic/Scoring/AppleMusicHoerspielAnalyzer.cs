@@ -44,7 +44,7 @@ namespace EchoPlay.AppleMusic.Scoring
             ITunesArtistDto source,
             string searchQuery)
         {
-            _logger.Debug($"Hörspiel-Analyse für Künstler '{source.ArtistName}' (ID: {source.ArtistId}) gestartet.");
+            _logger.Debug(() => $"Hörspiel-Analyse für Künstler '{source.ArtistName}' (ID: {source.ArtistId}) gestartet.");
 
             string artistName = source.ArtistName;
             bool isKnownSeries = IsKnownSeries(artistName);
@@ -99,7 +99,7 @@ namespace EchoPlay.AppleMusic.Scoring
                 ? string.Join("; ", debugParts)
                 : "Keine Indikatoren gefunden";
 
-            _logger.Debug($"Hörspiel-Analyse für '{artistName}' abgeschlossen: {debugInfo}");
+            _logger.Debug(() => $"Hörspiel-Analyse für '{artistName}' abgeschlossen: {debugInfo}");
 
             return new AppleMusicHoerspielAnalysis
             {

@@ -1,6 +1,7 @@
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
@@ -18,9 +19,11 @@ namespace EchoPlay.App.Services
     /// Prüft beim App-Start über die GitHub Releases API, ob eine neuere Version verfügbar ist.
     /// Berücksichtigt den Offline-Modus und die vom Nutzer übersprungene Version.
     /// </summary>
+
     public sealed partial class UpdateCheckService
     {
         /// <summary>GitHub-Repository im Format "owner/repo".</summary>
+
         private const string GitHubRepo = "ReneSchustek/EchoPlay";
 
         /// <summary>Maximale Wartezeit für die GitHub-API-Abfrage.</summary>
@@ -28,16 +31,21 @@ namespace EchoPlay.App.Services
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Service mit der ScopeFactory für DB-Zugriffe.
         /// </summary>
         /// <param name="scopeFactory">Für scoped AppSettings-Abfrage.</param>
         /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
-        public UpdateCheckService(IServiceScopeFactory scopeFactory, IHttpClientFactory httpClientFactory)
+        /// <param name="loggerFactory">Logger-Fabrik fuer Job-Scopes und Diagnose.</param>
+
+        public UpdateCheckService(IServiceScopeFactory scopeFactory, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _httpClientFactory = httpClientFactory;
+            _logger = loggerFactory.CreateLogger(nameof(UpdateCheckService));
         }
 
         /// <summary>
@@ -46,23 +54,28 @@ namespace EchoPlay.App.Services
         /// die Version übersprungen hat, oder ein Fehler auftritt.
         /// </summary>
         /// <returns>Update-Informationen oder null.</returns>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "GitHub-Release-Check: HttpRequestException, TaskCanceledException, JsonException oder unerwartete HTTP-Codes (Rate-Limit, 5xx) dürfen die App nicht stören – null signalisiert 'kein Update-Check möglich'.")]
-        public async Task<UpdateInfo?> CheckForUpdateAsync()
+        public async Task<UpdateInfo?> CheckForUpdateAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 // Offline-Modus: kein Update-Check
+                using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.UpdateCheck);
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IAppSettingsDataService settingsService = scope.ServiceProvider
                     .GetRequiredService<IAppSettingsDataService>();
-                AppSettings settings = await settingsService.GetAsync();
+                AppSettings settings = await settingsService.GetAsync(cancellationToken);
 
                 if (settings.OfflineMode)
                 {
                     return null;
                 }
 
-                using CancellationTokenSource cts = new(RequestTimeout);
+                // Externes Token + internes Timeout per Linked-CTS verbinden,
+                // damit App-Shutdown den Update-Check zuverlaessig abbricht.
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(RequestTimeout);
                 string url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";
 
                 HttpClient client = _httpClientFactory.CreateClient("UpdateCheck");
@@ -123,19 +136,26 @@ namespace EchoPlay.App.Services
         /// Speichert eine Version als übersprungen in den Einstellungen.
         /// </summary>
         /// <param name="version">Die zu überspringende Versionsnummer.</param>
-        public async Task SkipVersionAsync(string version)
+        /// <param name="cancellationToken">Abbruch-Token (z. B. App-Shutdown).</param>
+
+        public async Task SkipVersionAsync(string version, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService = scope.ServiceProvider
                 .GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
             settings.SkippedUpdateVersion = version;
-            await settingsService.SaveAsync(settings);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            await settingsService.SaveAsync(settings, cancellationToken);
         }
 
         /// <summary>
         /// Ermittelt die aktuelle App-Version aus den Assembly-Metadaten.
         /// </summary>
+
         private static Version? GetCurrentVersion()
         {
             return Assembly.GetExecutingAssembly().GetName().Version;

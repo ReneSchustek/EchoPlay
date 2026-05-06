@@ -15,7 +15,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Debug-Nachricht wird bei Minimum-Level Trace weitergeleitet.
         /// </summary>
         [Fact]
-        public void Debug_BeiMinimumTrace_WirdWeitergeleitet()
+        public void Debug_MinimumLevelIsTrace_ForwardsToSink()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Trace });
@@ -53,7 +53,7 @@ namespace EchoPlay.Logger.Tests
             Assert.Empty(sink.Entries);
         }
 
-        // ===== Lazy-Overload (Brief 277) =====
+        // ===== Lazy-Overload: Func<string>-Variante allokiert Message nur, wenn Level aktiv =====
 
         [Fact]
         public void Debug_WithFactory_DoesNotInvokeWhenDisabled()
@@ -92,7 +92,7 @@ namespace EchoPlay.Logger.Tests
         }
 
         [Fact]
-        public void IsDebugEnabled_ReflectsMinimumLevel()
+        public void IsDebugEnabled_VariesWithMinimumLevel_DebugVsInformation()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logDebug = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });

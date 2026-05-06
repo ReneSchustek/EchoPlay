@@ -8,6 +8,7 @@ namespace EchoPlay.App.Services
     /// Zeigt Bestätigungs-Dialoge über den WinUI-3-ContentDialog an.
     /// Gibt <c>true</c> zurück, wenn der Benutzer auf die primäre Schaltfläche geklickt hat.
     /// </summary>
+
     public sealed class ConfirmationDialogService : IConfirmationDialogService
     {
         /// <summary>
@@ -18,7 +19,9 @@ namespace EchoPlay.App.Services
         /// <param name="title">Titel des Dialogs.</param>
         /// <param name="message">Die Frage oder Erklärung für den Benutzer.</param>
         /// <returns><c>true</c>, wenn der Benutzer „Ja" gewählt hat; sonst <c>false</c>.</returns>
-        public async Task<bool> ConfirmAsync(string title, string message)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default)
         {
             ContentDialog dialog = new()
             {

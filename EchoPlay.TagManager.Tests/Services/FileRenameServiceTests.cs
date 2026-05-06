@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.TagManager.Models;
 using EchoPlay.TagManager.Services;
 using EchoPlay.TagManager.Tests.Fakes;
@@ -150,9 +151,9 @@ namespace EchoPlay.TagManager.Tests.Services
             AudioTag tag = new()
             {
                 TrackNumber = 7,
-                Title       = "Das Geheimnis der Pyramide",
-                Album       = "Die drei ???",
-                Year        = 1982
+                Title = "Das Geheimnis der Pyramide",
+                Album = "Die drei ???",
+                Year = 1982
             };
             IReadOnlyList<RenamePreviewItem> preview = service.BuildPreview(
                 [(@"C:\audio\007.mp3", tag)],
@@ -210,7 +211,7 @@ namespace EchoPlay.TagManager.Tests.Services
                 [(@"C:\audio\file.flac", tag)],
                 "{title}");
 
-            Assert.EndsWith(".flac", preview[0].NewName);
+            Assert.EndsWith(".flac", preview[0].NewName, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -224,7 +225,7 @@ namespace EchoPlay.TagManager.Tests.Services
                 "{title}");
 
             // Verzeichnis bleibt gleich, nur der Dateiname ändert sich
-            Assert.Equal(@"C:\audio\alt.mp3",        preview[0].FilePath);
+            Assert.Equal(@"C:\audio\alt.mp3", preview[0].FilePath);
             Assert.Equal(@"C:\audio\Neuer Titel.mp3", preview[0].NewFilePath);
         }
 
@@ -280,8 +281,8 @@ namespace EchoPlay.TagManager.Tests.Services
         public async Task RenameAsync_SkipsLockedFileAndContinuesWithRest()
         {
             // Zwei Dateien: die erste wird gesperrt (FileShare.None), die zweite soll trotzdem umbenannt werden
-            string lockedPath  = AudioTestFileFactory.CreateTempMp3();
-            string normalPath  = AudioTestFileFactory.CreateTempMp3();
+            string lockedPath = AudioTestFileFactory.CreateTempMp3();
+            string normalPath = AudioTestFileFactory.CreateTempMp3();
             string expectedPath = Path.Combine(
                 Path.GetDirectoryName(normalPath)!,
                 "Normal.mp3");

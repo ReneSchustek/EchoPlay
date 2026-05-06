@@ -23,43 +23,49 @@ namespace EchoPlay.Data.Services
             loggerFactory.CreateLogger("CachedNewReleaseDataService");
 
         /// <inheritdoc />
-        public async Task<IReadOnlyList<CachedNewRelease>> GetAllAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<CachedNewRelease>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             List<CachedNewRelease> result = await _context.CachedNewReleases
 
                 .Include(c => c.Series)
                 .OrderByDescending(c => c.ReleaseDate)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.Debug($"{result.Count} gecachte Neuerscheinung(en) geladen.");
+            _logger.Debug(() => $"{result.Count} gecachte Neuerscheinung(en) geladen.");
             return result;
         }
 
         /// <inheritdoc />
-        public async Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId)
+        /// <param name="seriesId">Parameter seriesId.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             List<CachedNewRelease> result = await _context.CachedNewReleases
 
                 .Where(c => c.SeriesId == seriesId)
                 .OrderByDescending(c => c.ReleaseDate)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             return result;
         }
 
         /// <inheritdoc />
-        public async Task<DateTime?> GetLatestCheckTimeAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<DateTime?> GetLatestCheckTimeAsync(CancellationToken cancellationToken = default)
         {
             // Max auf leerer Menge gibt null zurück (nullable DateTime)
             DateTime? latest = await _context.CachedNewReleases
 
-                .MaxAsync(c => (DateTime?)c.CheckedAtUtc).ConfigureAwait(false);
+                .MaxAsync(c => (DateTime?)c.CheckedAtUtc, cancellationToken).ConfigureAwait(false);
 
             return latest;
         }
 
         /// <inheritdoc />
-        public async Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries)
+        /// <param name="entries">Parameter entries.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(entries);
 
@@ -83,7 +89,7 @@ namespace EchoPlay.Data.Services
                 .AsTracking()
                 .IgnoreQueryFilters()
                 .Where(c => collectionIds.Contains(c.CollectionId))
-                .ToDictionaryAsync(c => c.CollectionId).ConfigureAwait(false);
+                .ToDictionaryAsync(c => c.CollectionId, cancellationToken).ConfigureAwait(false);
 
             int insertCount = 0;
             int updateCount = 0;
@@ -122,7 +128,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
             {
@@ -136,7 +142,9 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        public async Task<int> RemoveOlderThanAsync(DateTime cutoff)
+        /// <param name="cutoff">Parameter cutoff.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<int> RemoveOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default)
         {
             // Einträge mit ReleaseDate vor dem Cutoff UND in der Vergangenheit entfernen.
             // Ankündigungen (Zukunft) bleiben erhalten, auch wenn sie rechnerisch
@@ -147,7 +155,7 @@ namespace EchoPlay.Data.Services
             List<CachedNewRelease> expired = await _context.CachedNewReleases
                 .AsTracking()
                 .Where(c => c.ReleaseDate < cutoff && c.ReleaseDate < now)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             if (expired.Count == 0)
             {
@@ -157,14 +165,16 @@ namespace EchoPlay.Data.Services
             // Physisches Löschen: Cache-Einträge sind keine fachlichen Daten,
             // sondern API-Ergebnisse – Soft-Delete wäre hier unnötig.
             _context.CachedNewReleases.RemoveRange(expired);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Info($"{expired.Count} abgelaufene Neuerscheinung(en) aus dem Cache entfernt (Cutoff: {cutoff:yyyy-MM-dd}).");
             return expired.Count;
         }
 
         /// <inheritdoc />
-        public async Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
+        /// <param name="seriesIds">Parameter seriesIds.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(seriesIds);
 
@@ -176,7 +186,7 @@ namespace EchoPlay.Data.Services
             // Physisches Löschen: Cache-Einträge sind API-Ergebnisse, kein Soft-Delete nötig.
             int deleted = await _context.CachedNewReleases
                 .Where(c => seriesIds.Contains(c.SeriesId))
-                .ExecuteDeleteAsync().ConfigureAwait(false);
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
             if (deleted > 0)
             {
@@ -187,11 +197,12 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        public async Task ClearAllAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task ClearAllAsync(CancellationToken cancellationToken = default)
         {
             // ExecuteDeleteAsync: ein SQL-DELETE statt Laden + Entfernen aller Entities.
             // Effizienter, da die Einträge nicht erst in den Speicher geladen werden.
-            int deleted = await _context.CachedNewReleases.ExecuteDeleteAsync().ConfigureAwait(false);
+            int deleted = await _context.CachedNewReleases.ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
             if (deleted > 0)
             {

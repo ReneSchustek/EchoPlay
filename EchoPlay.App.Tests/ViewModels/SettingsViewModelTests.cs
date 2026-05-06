@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="SettingsViewModel"/> (Top-VM nach Brief 211).
+    /// Tests für die Top-Fassade <see cref="SettingsViewModel"/>.
     /// Prüft Load/Save/Theme/Sync gegen die vier Sub-VMs über die Pass-Through-Properties.
     /// </summary>
     public sealed class SettingsViewModelTests

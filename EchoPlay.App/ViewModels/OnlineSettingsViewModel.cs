@@ -82,15 +82,15 @@ namespace EchoPlay.App.ViewModels
         {
             get => _activeProvider switch
             {
-                ProviderType.Spotify => "Spotify",
-                ProviderType.AppleMusic => "AppleMusic",
+                ProviderType.Spotify => ProviderKeys.Spotify,
+                ProviderType.AppleMusic => ProviderKeys.AppleMusic,
                 ProviderType.Both => "Both",
                 _ => string.Empty
             };
             set => ActiveProvider = value switch
             {
-                "Spotify" => ProviderType.Spotify,
-                "AppleMusic" => ProviderType.AppleMusic,
+                ProviderKeys.Spotify => ProviderType.Spotify,
+                ProviderKeys.AppleMusic => ProviderType.AppleMusic,
                 "Both" => ProviderType.Both,
                 _ => ProviderType.None
             };

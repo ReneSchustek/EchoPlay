@@ -11,6 +11,7 @@
     <Project Path="EchoPlay.Logger/EchoPlay.Logger.csproj" Id="6c32147f-397e-4d0a-97a6-4e768d34cd11" />
     <Project Path="EchoPlay.Logger.Abstractions/EchoPlay.Logger.Abstractions.csproj" />
     <Project Path="EchoPlay.Spotify/EchoPlay.Spotify.csproj" Id="0a9be2c6-4bb8-4bbb-9157-55281de4940b" />
+    <Project Path="EchoPlay.TagManager/EchoPlay.TagManager.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="EchoPlay.App.Tests/EchoPlay.App.Tests.csproj" Id="ce891dfa-cbd9-4eab-bce4-d98f6f868010" />
@@ -20,5 +21,6 @@
     <Project Path="EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj" Id="854d1105-4cf1-462a-b339-5f2863d47d21" />
     <Project Path="EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj" Id="f1dc3c07-2e26-47fa-975a-06a0624d0945" />
     <Project Path="EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj" Id="344a913a-211e-4046-931e-28cc75f7813a" />
+    <Project Path="EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj" />
   </Folder>
 </Solution>

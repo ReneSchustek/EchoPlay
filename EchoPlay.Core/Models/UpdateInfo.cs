@@ -10,11 +10,13 @@ namespace EchoPlay.Core.Models
     /// <param name="ReleaseNotes">Beschreibungstext des GitHub-Releases (Markdown).</param>
     /// <param name="DownloadUrl">Direkte Download-URL der Setup-Datei (.exe).</param>
     /// <param name="FileSizeBytes">Dateigröße der Setup-Datei in Bytes (0 wenn unbekannt).</param>
+    /// <param name="ExpectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Leer wenn der Release-Body keinen Hash enthält — dann wird die Integritätsprüfung übersprungen.</param>
     [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "DTO spiegelt GitHub-Release-JSON; Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
     [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt GitHub-Release-JSON; Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
     public sealed record UpdateInfo(
         string Version,
         string ReleaseNotes,
         string DownloadUrl,
-        long FileSizeBytes);
+        long FileSizeBytes,
+        string ExpectedSha256);
 }

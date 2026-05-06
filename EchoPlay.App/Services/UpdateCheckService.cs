@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,6 +29,11 @@ namespace EchoPlay.App.Services
 
         /// <summary>Maximale Wartezeit für die GitHub-API-Abfrage.</summary>
         private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
+
+        // Erkennt im Release-Body Zeilen wie `SHA256: <hex>`, `SHA-256 = <hex>`, case-insensitive.
+        // Pflicht: 64-Hex-Zeichen, Wortgrenze danach. Mehrzeilig, damit `^` jede Zeilenmitte trifft.
+        [GeneratedRegex(@"^\s*SHA-?256\s*[:=]\s*([0-9a-fA-F]{64})\b", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
+        private static partial Regex Sha256Pattern();
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServiceScopeFactory _scopeFactory;
@@ -119,11 +125,14 @@ namespace EchoPlay.App.Services
                     return null;
                 }
 
+                string releaseBody = release.Body ?? string.Empty;
+
                 return new UpdateInfo(
                     Version: remoteVersion,
-                    ReleaseNotes: release.Body ?? string.Empty,
+                    ReleaseNotes: releaseBody,
                     DownloadUrl: setupAsset.BrowserDownloadUrl,
-                    FileSizeBytes: setupAsset.Size);
+                    FileSizeBytes: setupAsset.Size,
+                    ExpectedSha256: ExtractSha256(releaseBody));
             }
             catch
             {
@@ -159,6 +168,25 @@ namespace EchoPlay.App.Services
         private static Version? GetCurrentVersion()
         {
             return Assembly.GetExecutingAssembly().GetName().Version;
+        }
+
+        /// <summary>
+        /// Extrahiert den SHA-256-Hash der Setup-Datei aus dem Release-Body.
+        /// Erwartete Konvention: eine Zeile <c>SHA256: &lt;64-hex&gt;</c> oder <c>SHA-256 = &lt;64-hex&gt;</c>.
+        /// Liefert leeren String, wenn kein Hash gefunden wurde — der Updater
+        /// installiert dann ohne Integritätsprüfung (Backwards-Compat mit alten Releases).
+        /// </summary>
+        /// <param name="releaseBody">Markdown-Body des GitHub-Releases.</param>
+        /// <returns>Hex-String in Lower-Case (64 Zeichen) oder leer.</returns>
+        private static string ExtractSha256(string releaseBody)
+        {
+            if (string.IsNullOrEmpty(releaseBody))
+            {
+                return string.Empty;
+            }
+
+            Match match = Sha256Pattern().Match(releaseBody);
+            return match.Success ? match.Groups[1].Value.ToLowerInvariant() : string.Empty;
         }
 
         // ── GitHub-API-DTOs ─────────────────────────────────────────────────────

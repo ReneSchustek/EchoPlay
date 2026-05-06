@@ -47,7 +47,7 @@ namespace EchoPlay.TagManager.Tests.Services
 
             IReadOnlyList<TagLookupResult> results = await service.SearchAsync("TKKG 200");
 
-            Assert.Single(results);
+            _ = Assert.Single(results);
             Assert.Equal("TKKG 200", results[0].Title);
             Assert.Equal("TKKG", results[0].Artist);
             Assert.Equal(2023u, results[0].Year);
@@ -73,7 +73,7 @@ namespace EchoPlay.TagManager.Tests.Services
             // MusicBrainz liefert 503 (Service Unavailable) → HttpRequestException
             MusicBrainzLookupService service = CreateService("{}", HttpStatusCode.ServiceUnavailable);
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => service.SearchAsync("Irgendwas"));
+            _ = await Assert.ThrowsAsync<HttpRequestException>(() => service.SearchAsync("Irgendwas"));
         }
     }
 }

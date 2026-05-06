@@ -20,6 +20,7 @@ namespace EchoPlay.App.Services
     /// Aufruf aus einem frischen DI-Scope aufgelöst, damit die HttpClient-Lifetime des
     /// <c>HttpMessageHandler</c>s nicht in der Singleton-Referenz einfriert.
     /// </summary>
+
     public sealed class TagLookupCoordinator : ITagLookupCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -28,6 +29,7 @@ namespace EchoPlay.App.Services
         /// Initialisiert den Coordinator mit der Scope-Factory.
         /// </summary>
         /// <param name="scopeFactory">Stellt pro Lookup einen frischen DI-Scope bereit.</param>
+
         public TagLookupCoordinator(IServiceScopeFactory scopeFactory)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
@@ -35,6 +37,9 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        /// <param name="query">Parameter <c>query</c>.</param>
         public async Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -43,9 +48,15 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
+
+        /// <param name="folderPath">Parameter <c>folderPath</c>.</param>
         public string BuildAutoLookupQuery(string? folderPath) => BuildAutoLookupQueryCore(folderPath);
 
         /// <inheritdoc />
+
+
+        /// <param name="results">Parameter <c>results</c>.</param>
+        /// <param name="loadedTrackCount">Parameter <c>loadedTrackCount</c>.</param>
         public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
             => SelectBestMatchCore(results, loadedTrackCount);
 

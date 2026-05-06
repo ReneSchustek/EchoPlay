@@ -106,6 +106,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MusicBrainz-Lookup: HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Fehlermeldung angezeigt und der Lookup-Command kehrt zurück.")]
         public async Task LookupOnlineAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagLookupOnline");
             LookupOnlineCallCount++;
 
             if (!_fileListVM.HasSelectedFile)
@@ -148,6 +149,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Auto-Lookup (MusicBrainz + Cover Art Archive): HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status angezeigt und der Command kehrt zurück.")]
         public async Task AutoLookupAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagAutoLookup");
             AutoLookupCallCount++;
 
             _autoLookupCompletedSource = new TaskCompletionSource<bool>(
@@ -214,6 +216,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Wendet die zwischengespeicherten Lookup-Tags auf alle Dateien im Ordner an.</summary>
         public async Task ApplyToAllAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagApplyAll");
             ApplyToAllCallCount++;
 
             AudioTag? pendingTag = _editorVM.PendingBatchTag;

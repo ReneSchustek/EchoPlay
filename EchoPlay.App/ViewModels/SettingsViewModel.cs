@@ -485,6 +485,8 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SettingsSave");
+
             GeneralVM.WriteTo(_loadedSettings);
             OnlineVM.WriteTo(_loadedSettings);
             LocalVM.WriteTo(_loadedSettings);
@@ -537,6 +539,8 @@ namespace EchoPlay.App.ViewModels
             {
                 return;
             }
+
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SettingsLanguageChange");
 
             // Sub-VM-Werte in Entität schreiben, dann Sprache überschreiben
             GeneralVM.WriteTo(_loadedSettings);

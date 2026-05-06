@@ -22,6 +22,7 @@ namespace EchoPlay.App.Services
     /// 4. Lokale Ordner scannen und höchste Nummer bestimmen
     /// 5. Differenz berechnen + angekündigte Folgen erkennen
     /// </remarks>
+
     internal sealed class OnlineEpisodeChecker : IOnlineEpisodeChecker
     {
         /// <summary>
@@ -41,6 +42,7 @@ namespace EchoPlay.App.Services
         /// Parser-Kandidaten für lokale Ordnernamen – gleiche Muster wie in der
         /// Fehlende-Folgen-Analyse (<see cref="EpisodeFolderParser"/>).
         /// </summary>
+
         private static readonly EpisodeFolderParser[] FolderParsers =
         [
             new("{number:000} - {title}"),
@@ -65,6 +67,7 @@ namespace EchoPlay.App.Services
         /// <param name="seriesDataService">Datenzugriff für Serien (zum Speichern der Apple Music Artist ID).</param>
         /// <param name="loggerFactory">Logger-Factory für diagnostische Ausgaben.</param>
         /// <param name="clock">Zeitquelle für Zeitstempel.</param>
+
         public OnlineEpisodeChecker(
             IAppleMusicSearchClient appleMusicClient,
             ISeriesDataService seriesDataService,
@@ -158,6 +161,7 @@ namespace EchoPlay.App.Services
         /// <param name="cutoffDate">Ältestes erlaubtes Veröffentlichungsdatum (UTC).</param>
         /// <param name="ct">Abbruchtoken für die API-Aufrufe.</param>
         /// <returns>Prüfergebnis mit befüllten NewReleaseEpisodes, oder null wenn keine Artist-ID ermittelbar.</returns>
+
         private async Task<OnlineEpisodeCheckResult?> CheckNewReleasesForSeriesAsync(
             CheckableSeriesInfo series,
             DateTime cutoffDate,
@@ -168,7 +172,7 @@ namespace EchoPlay.App.Services
 
             if (artistId is null)
             {
-                _logger.Debug($"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
+                _logger.Debug(() => $"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
                 return null;
             }
 
@@ -269,6 +273,7 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die zu prüfende Serie.</param>
         /// <param name="ct">Abbruchtoken für die API-Aufrufe.</param>
         /// <returns>Das Prüfergebnis, oder null wenn keine Artist ID ermittelt werden konnte.</returns>
+
         private async Task<OnlineEpisodeCheckResult?> CheckSingleSeriesAsync(
             CheckableSeriesInfo series, CancellationToken ct = default)
         {
@@ -277,7 +282,7 @@ namespace EchoPlay.App.Services
 
             if (artistId is null)
             {
-                _logger.Debug($"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
+                _logger.Debug(() => $"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
                 return null;
             }
 
@@ -367,6 +372,7 @@ namespace EchoPlay.App.Services
         /// Prüft zuerst, ob die ID bereits bekannt ist. Falls nicht, wird per Namenssuche
         /// bei iTunes gesucht und die gefundene ID in der Datenbank gespeichert.
         /// </summary>
+
         private async Task<long?> ResolveArtistIdAsync(
             CheckableSeriesInfo series, CancellationToken ct = default)
         {
@@ -378,7 +384,7 @@ namespace EchoPlay.App.Services
             }
 
             // Per Namenssuche bei iTunes nach dem Künstler suchen
-            _logger.Debug($"Suche iTunes-Artist-ID für '{series.Title}' per Namenssuche...");
+            _logger.Debug(() => $"Suche iTunes-Artist-ID für '{series.Title}' per Namenssuche...");
 
             ITunesResponseDto<ITunesArtistDto> searchResponse = await _appleMusicClient
                 .SearchArtistsAsync(series.Title, limit: 5, ct);
@@ -394,13 +400,13 @@ namespace EchoPlay.App.Services
             }
 
             // Gefundene ID in der Datenbank persistieren, damit beim nächsten Check kein Suchaufruf nötig ist
-            Data.Entities.Library.Series? dbSeries = await _seriesDataService.GetByIdAsync(series.SeriesId);
+            Data.Entities.Library.Series? dbSeries = await _seriesDataService.GetByIdAsync(series.SeriesId, ct);
 
             if (dbSeries is not null)
             {
                 dbSeries.AppleMusicArtistId = bestMatch.ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                await _seriesDataService.UpdateAsync(dbSeries);
-                _logger.Debug($"iTunes-Artist-ID {bestMatch.ArtistId} für '{series.Title}' gespeichert.");
+                await _seriesDataService.UpdateAsync(dbSeries, ct);
+                _logger.Debug(() => $"iTunes-Artist-ID {bestMatch.ArtistId} für '{series.Title}' gespeichert.");
             }
 
             return bestMatch.ArtistId;
@@ -409,6 +415,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Delegiert die Folgennummer-Extraktion an den zentralen Parser in Core.
         /// </summary>
+
+        /// <param name="albumName">Parameter <c>albumName</c>.</param>
         internal static int? ExtractEpisodeNumber(string albumName)
         {
             return EchoPlay.Core.Parsing.EpisodeNumberParser.Extract(albumName);
@@ -421,6 +429,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="localFolderPath">Pfad zum Serienordner, oder null wenn nicht lokal vorhanden.</param>
         /// <returns>Die höchste gefundene Nummer, oder 0 wenn kein Ordner vorhanden oder keine Nummern erkannt.</returns>
+
         internal static int GetLocalHighestEpisodeNumber(string? localFolderPath)
         {
             if (string.IsNullOrWhiteSpace(localFolderPath) || !Directory.Exists(localFolderPath))
@@ -500,6 +509,10 @@ namespace EchoPlay.App.Services
         /// Versucht ein iTunes-Releasedatum zu parsen.
         /// iTunes liefert Daten im ISO-8601-Format (z.B. "2026-04-15T07:00:00Z").
         /// </summary>
+
+
+        /// <param name="dateString">Parameter <c>dateString</c>.</param>
+        /// <param name="result">Parameter <c>result</c>.</param>
         private static bool TryParseReleaseDate(string? dateString, out DateTime result)
         {
             result = default;

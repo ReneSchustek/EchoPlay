@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -7,6 +8,7 @@ namespace EchoPlay.App.Services
     /// Der Hot-Path (<see cref="HasCredentials"/>) prüft nur einen In-Memory-Cache
     /// und verursacht keinen DB-Roundtrip.
     /// </summary>
+
     public interface ISpotifyCredentialStore
     {
         /// <summary>Ob Credentials im Store vorhanden sind (gecachter Wert, kein DB-Zugriff).</summary>
@@ -25,15 +27,21 @@ namespace EchoPlay.App.Services
         void AcknowledgeCorruptionNotice();
 
         /// <summary>Liest ClientId und ClientSecret aus dem Store. Null wenn keine vorhanden.</summary>
-        Task<(string ClientId, string ClientSecret)?> GetAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<(string ClientId, string ClientSecret)?> GetAsync(CancellationToken cancellationToken = default);
 
         /// <summary>Verschlüsselt und speichert die Credentials.</summary>
-        Task SaveAsync(string clientId, string clientSecret);
+        /// <param name="clientId">Spotify Client-ID.</param>
+        /// <param name="clientSecret">Spotify Client-Secret.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default);
 
         /// <summary>Löscht die gespeicherten Credentials.</summary>
-        Task ClearAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task ClearAsync(CancellationToken cancellationToken = default);
 
         /// <summary>Initialisiert den In-Memory-Cache beim App-Start.</summary>
-        Task InitializeAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task InitializeAsync(CancellationToken cancellationToken = default);
     }
 }

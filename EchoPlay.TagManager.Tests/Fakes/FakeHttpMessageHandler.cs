@@ -19,7 +19,7 @@ namespace EchoPlay.TagManager.Tests.Fakes
         /// <param name="statusCode">HTTP-Statuscode der Antwort. Standard: 200 OK.</param>
         public FakeHttpMessageHandler(string responseContent, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
-            _statusCode      = statusCode;
+            _statusCode = statusCode;
             _responseContent = responseContent;
         }
 

@@ -22,6 +22,7 @@ namespace EchoPlay.App.Services
     /// Methode + URL); bekannte sensible Query-Parameter (Token, Keys, Secrets)
     /// werden in der geloggten URL durch <c>***</c> ersetzt.
     /// </remarks>
+
     public sealed class HttpRequestLoggingHandler : DelegatingHandler
     {
         private static readonly HttpRequestOptionsKey<int> AttemptCountKey =
@@ -54,6 +55,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="loggerFactory">Zentraler Logger-Factory aus dem DI-Container.</param>
         /// <param name="clientName">Logischer Name des HttpClients (Named- oder Typed-Client).</param>
+
         public HttpRequestLoggingHandler(ILoggerFactory loggerFactory, string clientName)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -161,6 +163,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="uri">Ziel-URI der Anfrage; <see langword="null"/> bei Handler-Tests.</param>
         /// <returns>Für Logs geeignete URL-Repräsentation.</returns>
+
         internal static string RedactUrl(Uri? uri)
         {
             if (uri is null)

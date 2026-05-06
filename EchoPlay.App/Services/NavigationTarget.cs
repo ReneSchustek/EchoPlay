@@ -5,6 +5,7 @@ namespace EchoPlay.App.Services
     /// ViewModels nennen nur diese Enum-Werte und kennen keine Page-Typen –
     /// so bleiben sie frei von WinUI-Abhängigkeiten und testbar.
     /// </summary>
+
     public enum NavigationTarget
     {
         /// <summary>Startseite mit Neuerscheinungen, Favoriten, Weiterhören.</summary>

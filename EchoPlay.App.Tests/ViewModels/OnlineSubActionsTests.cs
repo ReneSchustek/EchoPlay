@@ -21,6 +21,11 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class OnlineSubActionsTests
     {
+        // Stabile Test-IDs fuer "unbekannte" Series-IDs in Negativ-Tests.
+        // Deterministisch statt Guid.NewGuid(): unabhaengig vom Lauf reproduzierbar.
+        private static readonly Guid UnknownSeriesId = new("00000000-0000-0000-0000-deadbeef0001");
+        private static readonly Guid UnknownRemoveId = new("00000000-0000-0000-0000-deadbeef0002");
+
         // ── Gemeinsames Setup ────────────────────────────────────────────────────
 
         private static MediathekOnlineActionsContext BuildContext(
@@ -318,7 +323,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 setIsLoading: _ => { }, setLoadingStatusText: _ => { },
                 reloadAfterRefreshAsync: () => Task.CompletedTask);
 
-            await sut.ToggleWatchAsync(Guid.NewGuid(), watch: true);
+            await sut.ToggleWatchAsync(UnknownSeriesId, watch: true);
 
             Assert.Equal(1, sut.ToggleWatchCallCount);
         }
@@ -334,7 +339,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 setIsLoading: _ => { }, setLoadingStatusText: _ => { },
                 reloadAfterRefreshAsync: () => Task.CompletedTask);
 
-            await sut.RemoveSeriesAsync(Guid.NewGuid());
+            await sut.RemoveSeriesAsync(UnknownRemoveId);
 
             Assert.Equal(1, sut.RemoveSeriesCallCount);
         }

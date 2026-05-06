@@ -15,6 +15,7 @@ namespace EchoPlay.App.Services
     /// In der Resilience-Pipeline innerhalb des <c>StandardResilienceHandler</c>
     /// registrieren — so wird jeder Retry-Versuch erneut gedrosselt.
     /// </remarks>
+
     public sealed class RateLimitMessageHandler : DelegatingHandler
     {
         private readonly IHostRateLimiter _rateLimiter;
@@ -23,6 +24,7 @@ namespace EchoPlay.App.Services
         /// Erstellt den Handler mit dem zentralen <paramref name="rateLimiter"/>.
         /// </summary>
         /// <param name="rateLimiter">Host-basierter Rate-Limiter, typischerweise als Singleton registriert.</param>
+
         public RateLimitMessageHandler(IHostRateLimiter rateLimiter)
         {
             _rateLimiter = rateLimiter;

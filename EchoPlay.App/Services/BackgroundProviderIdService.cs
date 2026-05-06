@@ -17,6 +17,7 @@ namespace EchoPlay.App.Services
     /// für bestehende Serien und Episoden nachträglich über die jeweilige Provider-API ergänzt.
     /// Läuft einmal beim App-Start und danach stündlich. Fehler blockieren nicht andere Serien.
     /// </summary>
+
     internal sealed class BackgroundProviderIdService : IDisposable
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
@@ -41,6 +42,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>Startet den periodischen Enrichment-Lauf. Idempotent — mehrfacher Aufruf ist no-op.</summary>
+
         public void Start()
         {
             if (_runningTask is not null) return;
@@ -56,14 +58,16 @@ namespace EchoPlay.App.Services
         /// Bei Timeout wird eine Warnung geloggt, aber nicht geworfen.
         /// </summary>
         /// <param name="timeout">Maximale Wartezeit.</param>
-        public async Task StopAsync(TimeSpan timeout)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+
+        public async Task StopAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (_cts is null || _runningTask is null) return;
 
             await _cts.CancelAsync().ConfigureAwait(false);
             try
             {
-                await _runningTask.WaitAsync(timeout).ConfigureAwait(false);
+                await _runningTask.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -114,11 +118,13 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>Ein einzelner Enrichment-Durchlauf.</summary>
+
+        /// <param name="ct">Parameter <c>ct</c>.</param>
         public async Task RunOnceAsync(CancellationToken ct = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            AppSettings settings = await settingsService.GetAsync();
+            AppSettings settings = await settingsService.GetAsync(ct);
 
             ProviderType provider = settings.ActiveProvider;
             if (provider == ProviderType.None)
@@ -128,7 +134,7 @@ namespace EchoPlay.App.Services
 
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync();
+            IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync(ct);
 
             // Apple-Music-IDs ergänzen (iTunes Search API, ohne Credentials)
             if (provider.Includes(ProviderType.AppleMusic))
@@ -155,7 +161,7 @@ namespace EchoPlay.App.Services
                 if (ct.IsCancellationRequested) break;
 
                 // Episoden ohne AppleMusicAlbumId, aber mit ProviderUrl (iTunes-Import)
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(s.Id);
+                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(s.Id, ct);
                 List<Episode> missing = episodes
                     .Where(e => e.AppleMusicAlbumId is null && e.ProviderUrl is not null)
                     .ToList();
@@ -169,7 +175,7 @@ namespace EchoPlay.App.Services
                     if (collectionId is not null)
                     {
                         episode.AppleMusicAlbumId = collectionId;
-                        await episodeService.UpdateAsync(episode);
+                        await episodeService.UpdateAsync(episode, ct);
                         enrichedEpisodes++;
                     }
                 }
@@ -185,6 +191,8 @@ namespace EchoPlay.App.Services
         /// Extrahiert die CollectionId aus einer iTunes-URL.
         /// Format: https://music.apple.com/de/album/.../{CollectionId} oder .../id{CollectionId}
         /// </summary>
+
+        /// <param name="url">Parameter <c>url</c>.</param>
         internal static string? ExtractITunesCollectionId(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;

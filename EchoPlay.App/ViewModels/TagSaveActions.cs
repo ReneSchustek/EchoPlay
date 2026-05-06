@@ -57,6 +57,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Speichern: TagLib-/IO-Fehler (gesperrte Datei, Read-Only, korruptes Format) werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task SaveAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagSave");
             SaveCallCount++;
 
             // Einzelauswahl: alle Felder schreiben
@@ -103,6 +104,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Speichert alle modifizierten Dateien auf einmal nach Nutzerbestätigung.</summary>
         public async Task SaveAllAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagSaveAll");
             SaveAllCallCount++;
 
             List<TagFileItemViewModel> modifiedFiles = _fileListVM.Files.Where(f => f.IsModified).ToList();
@@ -144,6 +146,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Löschen: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task RemoveAllTagsAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagRemoveAll");
             RemoveAllTagsCallCount++;
 
             if (_fileListVM.SelectedFile is null)

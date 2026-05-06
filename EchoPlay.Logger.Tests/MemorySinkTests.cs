@@ -15,7 +15,7 @@ namespace EchoPlay.Logger.Tests
         // ── Ringpuffer ────────────────────────────────────────────────────────────
 
         [Fact]
-        public async Task WriteAsync_FillsBuffer()
+        public async Task WriteAsync_BufferNotFull_AppendsAllEntries()
         {
             MemorySink sink = new(capacity: 3);
 
@@ -27,7 +27,7 @@ namespace EchoPlay.Logger.Tests
         }
 
         [Fact]
-        public async Task WriteAsync_DroppsOldestWhenFull()
+        public async Task WriteAsync_BufferAtCapacity_DropsOldestEntry()
         {
             MemorySink sink = new(capacity: 2);
 
@@ -124,19 +124,19 @@ namespace EchoPlay.Logger.Tests
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public void Ctor_ThrowsOnNonPositiveCapacity(int capacity)
+        public void Constructor_NonPositiveCapacity_ThrowsArgumentOutOfRange(int capacity)
         {
             _ = Assert.Throws<ArgumentOutOfRangeException>(() => new MemorySink(capacity));
         }
 
         [Fact]
-        public void Ctor_ThrowsWhenCapacityExceedsMax()
+        public void Constructor_CapacityExceedsMax_ThrowsArgumentOutOfRange()
         {
             _ = Assert.Throws<ArgumentOutOfRangeException>(() => new MemorySink(MemorySink.MaxCapacity + 1));
         }
 
         [Fact]
-        public void Ctor_AcceptsMaxCapacity()
+        public void Constructor_CapacityWithinLimit_AcceptsValue()
         {
             MemorySink sink = new(MemorySink.MaxCapacity);
             Assert.Empty(sink.GetEntries());

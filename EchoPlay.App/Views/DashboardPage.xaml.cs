@@ -23,6 +23,7 @@ namespace EchoPlay.App.Views
     {
         private readonly INavigationService _navigationService;
         private ScrollViewer? _favoritesScrollViewer;
+        private long _favoritesScrollableWidthCallbackToken;
 
         /// <summary>Gibt dem XAML-Compiler Zugriff auf das ViewModel für x:Bind.</summary>
         public DashboardViewModel ViewModel { get; }
@@ -71,6 +72,10 @@ namespace EchoPlay.App.Views
             if (_favoritesScrollViewer is not null)
             {
                 _favoritesScrollViewer.ViewChanged -= OnFavoritesViewChanged;
+                _favoritesScrollViewer.SizeChanged -= OnFavoritesScrollViewerSizeChanged;
+                _favoritesScrollViewer.UnregisterPropertyChangedCallback(
+                    ScrollViewer.ScrollableWidthProperty,
+                    _favoritesScrollableWidthCallbackToken);
                 _favoritesScrollViewer = null;
             }
 
@@ -165,13 +170,38 @@ namespace EchoPlay.App.Views
             // und kein Handler am toten ScrollViewer hängen bleibt.
             _favoritesScrollViewer = scrollViewer;
             scrollViewer.ViewChanged += OnFavoritesViewChanged;
-            scrollViewer.SizeChanged += (_, _) => DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
+            scrollViewer.SizeChanged += OnFavoritesScrollViewerSizeChanged;
 
-            _ = scrollViewer.RegisterPropertyChangedCallback(
+            _favoritesScrollableWidthCallbackToken = scrollViewer.RegisterPropertyChangedCallback(
                 ScrollViewer.ScrollableWidthProperty,
-                (_, _) => UpdateFavoritesArrowVisibility(scrollViewer));
+                OnFavoritesScrollableWidthChanged);
 
             _ = DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
+        }
+
+        /// <summary>
+        /// Reagiert auf Größenänderungen des Favoriten-ScrollViewers (Window-Resize),
+        /// damit die Pfeil-Sichtbarkeit nachgeführt wird. Benannt statt Lambda,
+        /// damit OnNavigatedFrom die Subscription sicher abmelden kann.
+        /// </summary>
+        private void OnFavoritesScrollViewerSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_favoritesScrollViewer is { } scrollViewer)
+            {
+                _ = DispatcherQueue.TryEnqueue(() => UpdateFavoritesArrowVisibility(scrollViewer));
+            }
+        }
+
+        /// <summary>
+        /// Reagiert auf Änderungen der ScrollableWidth (z. B. neu geladene Items),
+        /// damit die Pfeile sofort eingeblendet werden, sobald horizontaler Platz fehlt.
+        /// </summary>
+        private void OnFavoritesScrollableWidthChanged(DependencyObject sender, DependencyProperty dp)
+        {
+            if (sender is ScrollViewer scrollViewer)
+            {
+                UpdateFavoritesArrowVisibility(scrollViewer);
+            }
         }
 
         /// <summary>

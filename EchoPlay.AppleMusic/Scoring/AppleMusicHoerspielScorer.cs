@@ -59,11 +59,11 @@ namespace EchoPlay.AppleMusic.Scoring
             // Cache-Prüfung: bereits bewertete Künstler nicht erneut analysieren
             if (_cache.TryGet(artistId, out HoerspielScoreResult? cached) && cached != null)
             {
-                _logger.Debug($"Cache-Treffer für '{source.ArtistName}'");
+                _logger.Debug(() => $"Cache-Treffer für '{source.ArtistName}'");
                 return cached;
             }
 
-            _logger.Debug($"Starte Analyse für '{source.ArtistName}'");
+            _logger.Debug(() => $"Starte Analyse für '{source.ArtistName}'");
 
             AppleMusicHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery).ConfigureAwait(false);
 
@@ -88,7 +88,7 @@ namespace EchoPlay.AppleMusic.Scoring
             // Harte Akzeptanz bei bekannter Hörspielserie
             if (analysis.IsKnownSeries)
             {
-                _logger.Debug($"Hard-Accept: bekannte Hörspielserie");
+                _logger.Debug(() => $"Hard-Accept: bekannte Hörspielserie");
                 return HoerspielScoreResult.Yes(
                     artistId,
                     HoerspielDecisionReason.KnownSeriesName,

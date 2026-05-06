@@ -57,7 +57,7 @@ namespace EchoPlay.AppleMusic.Clients
 
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("Import:AppleMusic:Search");
 
-            _logger.Debug($"Apple-Music-Seriensuche gestartet: '{query}'.");
+            _logger.Debug(() => $"Apple-Music-Seriensuche gestartet: '{query}'.");
 
             ITunesResponseDto<ITunesArtistDto> response =
                 await _searchClient.SearchArtistsAsync(query, ct: cancellationToken).ConfigureAwait(false);

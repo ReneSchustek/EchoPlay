@@ -13,7 +13,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="episodeId">ID der Episode.</param>
         /// <returns>Alle bekannten lokalen Tracks der Episode.</returns>
-        Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Lädt für mehrere Episoden gleichzeitig den jeweils ersten Track (nach Tracknummer)
@@ -24,7 +25,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <returns>
         /// Dictionary von Episoden-ID zum ersten Track. Episoden ohne Tracks fehlen im Dictionary.
         /// </returns>
-        Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<IReadOnlyDictionary<Guid, LocalTrack>> GetFirstTracksByEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Ersetzt alle lokalen Tracks einer Episode durch die übergebene Liste.
@@ -33,6 +35,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="episodeId">ID der Episode.</param>
         /// <param name="tracks">Die neuen Tracks. Die <see cref="LocalTrack.EpisodeId"/> muss bereits gesetzt sein.</param>
-        Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task SaveTracksForEpisodeAsync(Guid episodeId, IReadOnlyList<LocalTrack> tracks, CancellationToken cancellationToken = default);
     }
 }

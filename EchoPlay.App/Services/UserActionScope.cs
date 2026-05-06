@@ -14,12 +14,14 @@ namespace EchoPlay.App.Services
     /// Die ID ist die ersten 8 Hex-Zeichen einer neuen Guid – kollisionsarm genug, um Support-Grep
     /// über mehrere Tages-Logs eindeutig zu halten, ohne die Log-Zeilen zu überlasten.
     /// </remarks>
+
     public static class UserActionScope
     {
         /// <summary>
         /// Liefert die ID für den nächsten User-Action-Scope. In Tests ersetzbar, damit
         /// Assertions auf den Scope-Namen deterministisch bleiben.
         /// </summary>
+
         internal static Func<string> IdGenerator { get; set; } = () => Guid.NewGuid().ToString("N")[..8];
 
         /// <summary>

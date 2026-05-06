@@ -38,40 +38,40 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<PlaybackState>> GetAllAsync()
+        public Task<IReadOnlyList<PlaybackState>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<PlaybackState>>(_states.ToList());
         }
 
         /// <inheritdoc/>
-        public Task<PlaybackState?> GetByEpisodeIdAsync(Guid episodeId)
+        public Task<PlaybackState?> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
             PlaybackState? result = _states.FirstOrDefault(s => s.EpisodeId == episodeId);
             return Task.FromResult(result);
         }
 
         /// <inheritdoc/>
-        public Task AddAsync(PlaybackState playbackState)
+        public Task AddAsync(PlaybackState playbackState, CancellationToken cancellationToken = default)
         {
             _states.Add(playbackState);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task UpdateAsync(PlaybackState playbackState)
+        public Task UpdateAsync(PlaybackState playbackState, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task DeleteAsync(Guid id)
+        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             _ = _states.RemoveAll(s => s.Id == id);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds)
+        public Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             HashSet<Guid> completed = _states
                 .Where(s => episodeIds.Contains(s.EpisodeId) && s.IsCompleted)
@@ -82,7 +82,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId)
+        public Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             (int Finished, int InProgress, int NotStarted) counts =
                 _seriesCounts.TryGetValue(seriesId, out (int F, int I, int N) configured)
@@ -93,7 +93,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows)
+        public Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows, CancellationToken cancellationToken = default)
         {
             if (maxRows <= 0)
             {

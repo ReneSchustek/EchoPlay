@@ -30,7 +30,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IDisposable?> RequestOnlineAccessAsync()
+        public Task<IDisposable?> RequestOnlineAccessAsync(CancellationToken cancellationToken = default)
         {
             CallCount++;
 

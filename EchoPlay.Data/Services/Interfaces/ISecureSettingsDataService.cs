@@ -10,12 +10,19 @@ namespace EchoPlay.Data.Services.Interfaces
     public interface ISecureSettingsDataService
     {
         /// <summary>Liest den verschlüsselten Wert für den Schlüssel. Null wenn nicht vorhanden.</summary>
-        Task<byte[]?> GetAsync(string key);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="key">Parameter key.</param>
+        Task<byte[]?> GetAsync(string key, CancellationToken cancellationToken = default);
 
         /// <summary>Speichert oder aktualisiert den verschlüsselten Wert.</summary>
-        Task SaveAsync(string key, byte[] encryptedValue);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="key">Parameter key.</param>
+        /// <param name="encryptedValue">Parameter encryptedValue.</param>
+        Task SaveAsync(string key, byte[] encryptedValue, CancellationToken cancellationToken = default);
 
         /// <summary>Löscht den Eintrag für den Schlüssel.</summary>
-        Task DeleteAsync(string key);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="key">Parameter key.</param>
+        Task DeleteAsync(string key, CancellationToken cancellationToken = default);
     }
 }

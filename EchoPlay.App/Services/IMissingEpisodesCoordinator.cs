@@ -2,6 +2,7 @@ using EchoPlay.App.Models;
 using EchoPlay.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -12,6 +13,7 @@ namespace EchoPlay.App.Services
     /// per iTunes und die Status-Bar-Aktualisierung – das ViewModel sieht nur zwei
     /// Eintrittspunkte und reicht den Modus aus dem UI-Dialog durch.
     /// </summary>
+
     public interface IMissingEpisodesCoordinator
     {
         /// <summary>
@@ -22,16 +24,18 @@ namespace EchoPlay.App.Services
         /// <param name="seriesId">ID der Serie (für den iTunes-Abgleich).</param>
         /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners – darf <see langword="null"/> sein.</param>
         /// <param name="mode">Vom Nutzer im Drei-Optionen-Dialog gewählter Prüfmodus.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task<IReadOnlyList<string>> CheckSingleSeriesAsync(
             Guid seriesId,
             string? seriesFolderPath,
-            MissingEpisodesMode mode);
+            MissingEpisodesMode mode, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Prüft alle abonnierten Serien mit lokalem Ordner. Liefert einen strukturierten
         /// Bericht für die Anzeige im Gesamtprüf-Dialog.
         /// </summary>
         /// <param name="mode">Modus aus dem Drei-Optionen-Dialog.</param>
-        Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode);
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode, CancellationToken cancellationToken = default);
     }
 }

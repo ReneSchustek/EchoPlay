@@ -26,7 +26,7 @@ namespace EchoPlay.App.Views
             if (_logLiveTimer is null)
             {
                 _logLiveTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-                _logLiveTimer.Tick += (_, _) => RefreshLogView();
+                _logLiveTimer.Tick += OnLogLiveTick;
             }
 
             _logLiveTimer.Start();
@@ -37,6 +37,16 @@ namespace EchoPlay.App.Views
         private void OnLiveViewUnchecked(object sender, RoutedEventArgs e)
         {
             _logLiveTimer?.Stop();
+        }
+
+        /// <summary>
+        /// Tick-Handler des Live-Timers. Benannt (statt Lambda), damit
+        /// <c>OnNavigatedFrom</c> die Subscription wieder aufheben kann
+        /// und die Page beim Verlassen GC-frei wird.
+        /// </summary>
+        private void OnLogLiveTick(object? sender, object e)
+        {
+            RefreshLogView();
         }
 
         /// <summary>

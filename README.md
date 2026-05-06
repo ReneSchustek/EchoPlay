@@ -76,6 +76,7 @@ EchoPlay.Logger.Abstractions  → ILogger/ILoggerFactory-Interfaces (Domänen re
 EchoPlay.TagManager           → Audio-Tag-Editor (TagLib#, MusicBrainz-Lookup)
 EchoPlay.Core                 → Fachkern, Heuristiken, Scoring-Interfaces
 EchoPlay.*.Tests              → Unit-, Integrations- und Smoke-Tests
+EchoPlay.Setup                → Inno-Setup-Skripte für den Windows-Installer
 ```
 
 ---
@@ -126,3 +127,7 @@ Alle Tests laufen ohne externe Abhängigkeiten. Smoke-Tests gegen echte APIs sin
 ## Lizenz
 
 Privates Projekt, keine öffentliche Lizenz.
+
+---
+
+**Stand 2026-05-05** — 36 Migrationen, 830 Tests grün, .NET 10 / WinUI 3.

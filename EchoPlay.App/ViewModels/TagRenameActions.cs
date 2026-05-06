@@ -48,6 +48,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Vorschau: TagLib-Lesefehler oder IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit der Command nicht reißt.")]
         public async Task PreviewRenameAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagRenamePreview");
             PreviewRenameCallCount++;
 
             if (string.IsNullOrEmpty(_fileListVM.CurrentFolderPath))
@@ -78,6 +79,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Ausfuehrung: IO-Fehler einzelner Dateien (File.Move, UnauthorizedAccess, PathTooLong) werden geloggt und die verbleibenden Dateien werden dennoch umbenannt.")]
         public async Task ExecuteRenameAsync()
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagRenameExecute");
             ExecuteRenameCallCount++;
 
             if (string.IsNullOrEmpty(_fileListVM.CurrentFolderPath))

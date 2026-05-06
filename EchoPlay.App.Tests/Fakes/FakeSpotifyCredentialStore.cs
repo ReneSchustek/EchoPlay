@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
@@ -33,7 +34,7 @@ namespace EchoPlay.App.Tests.Fakes
         public void AcknowledgeCorruptionNotice() => LastLoadFailedDueToCorruption = false;
 
         /// <inheritdoc/>
-        public Task<(string ClientId, string ClientSecret)?> GetAsync()
+        public Task<(string ClientId, string ClientSecret)?> GetAsync(CancellationToken cancellationToken = default)
         {
             if (SimulateCryptographicFailure)
             {
@@ -46,7 +47,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SaveAsync(string clientId, string clientSecret)
+        public Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default)
         {
             _credentials = (clientId, clientSecret);
             LastLoadFailedDueToCorruption = false;
@@ -55,7 +56,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task ClearAsync()
+        public Task ClearAsync(CancellationToken cancellationToken = default)
         {
             _credentials = null;
             LastLoadFailedDueToCorruption = false;
@@ -64,7 +65,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task InitializeAsync()
+        public Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

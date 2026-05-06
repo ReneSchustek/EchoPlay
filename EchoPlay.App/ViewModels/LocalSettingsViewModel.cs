@@ -233,6 +233,8 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("LocalLibrarySync");
+
             // Vor dem Start prüfen – SyncService würde sonst lautlos ein leeres SyncResult zurückgeben
             if (!LocalLibraryEnabled)
             {

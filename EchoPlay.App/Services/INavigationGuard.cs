@@ -8,6 +8,7 @@ namespace EchoPlay.App.Services
     /// prüft beim Navigationsanfrage, ob das aktuelle Page-ViewModel dieses Interface
     /// implementiert, und ruft <see cref="CanLeaveAsync"/> auf.
     /// </summary>
+
     public interface INavigationGuard
     {
         /// <summary>

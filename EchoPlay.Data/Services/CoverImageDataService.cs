@@ -25,17 +25,20 @@ namespace EchoPlay.Data.Services
         private readonly ILogger _logger = loggerFactory.CreateLogger("CoverImageDataService");
 
         /// <inheritdoc/>
-        public async Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId)
+        /// <param name="entityType">Parameter entityType.</param>
+        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
             return await _context.CoverImages
 
-                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
+                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
                 .ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<IReadOnlyDictionary<Guid, byte[]>> GetImageDataByEntitiesAsync(
-            string entityType, IReadOnlyList<Guid> entityIds)
+            string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(entityIds);
 
@@ -45,7 +48,7 @@ namespace EchoPlay.Data.Services
             List<CoverImage> covers = await _context.CoverImages
 
                 .Where(c => c.EntityType == entityType && entityIds.Contains(c.EntityId))
-                .ToListAsync()
+                .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             // Platzhalter-Einträge (ImageData leer, nur LastChecked) ausfiltern,
@@ -64,7 +67,12 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        public async Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null)
+        /// <param name="entityType">Parameter entityType.</param>
+        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="imageData">Parameter imageData.</param>
+        /// <param name="sourceUrl">Parameter sourceUrl.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             // Upsert per SQL: INSERT OR REPLACE vermeidet Race Conditions zwischen
             // parallelen Scopes (z.B. RunOnceAsync im Splash + Start im Hintergrund).
@@ -73,7 +81,7 @@ namespace EchoPlay.Data.Services
 
             CoverImage? existing = await _context.CoverImages
                 .AsTracking()
-                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
+                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (existing is not null)
@@ -99,8 +107,8 @@ namespace EchoPlay.Data.Services
                         LastChecked = now
                     };
                     _ = _context.CoverImages.Add(cover);
-                    _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-                    _logger.Debug($"Cover gespeichert: {entityType} {entityId}");
+                    _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.Debug(() => $"Cover gespeichert: {entityType} {entityId}");
                     return;
                 }
                 catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
@@ -111,7 +119,7 @@ namespace EchoPlay.Data.Services
 
                     CoverImage? retry = await _context.CoverImages
                         .AsTracking()
-                        .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
+                        .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
                         .ConfigureAwait(false);
 
                     if (retry is not null)
@@ -124,22 +132,26 @@ namespace EchoPlay.Data.Services
                 }
             }
 
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
-            _logger.Debug($"Cover gespeichert: {entityType} {entityId}");
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            _logger.Debug(() => $"Cover gespeichert: {entityType} {entityId}");
         }
 
         /// <inheritdoc/>
-        public async Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt)
+        /// <param name="entityType">Parameter entityType.</param>
+        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="checkedAt">Parameter checkedAt.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {
             CoverImage? existing = await _context.CoverImages
                 .AsTracking()
-                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId)
+                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (existing is not null)
             {
                 existing.LastChecked = checkedAt;
-                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -153,13 +165,13 @@ namespace EchoPlay.Data.Services
                     LastChecked = checkedAt
                 };
                 _ = _context.CoverImages.Add(placeholder);
-                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
         /// <inheritdoc/>
         public async Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
-            string entityType, DateTime cooldownThreshold, int limit)
+            string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default)
         {
             // Entities die entweder noch nie geprüft wurden (kein Eintrag in CoverImages)
             // oder deren LastChecked abgelaufen ist UND kein Cover haben
@@ -174,14 +186,17 @@ namespace EchoPlay.Data.Services
                     && (c.LastChecked == null || c.LastChecked < cooldownThreshold))
                 .Select(c => c.EntityId)
                 .Take(limit)
-                .ToListAsync()
+                .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             return expired;
         }
 
         /// <inheritdoc/>
-        public async Task<bool> ExistsAsync(string entityType, Guid entityId)
+        /// <param name="entityType">Parameter entityType.</param>
+        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<bool> ExistsAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
             // Existenz-Check ohne Blob-Zugriff: prüft nur ob ein Eintrag mit Daten existiert.
             // ImageData.Length im Predicate kann je nach EF-Core-Version/Provider zu
@@ -190,16 +205,17 @@ namespace EchoPlay.Data.Services
 
                 .Where(c => c.EntityType == entityType && c.EntityId == entityId)
                 .Select(c => (int?)c.ImageData.Length)
-                .FirstOrDefaultAsync()
+                .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             return length is > 0;
         }
 
         /// <inheritdoc/>
-        public async Task<int> ClearAllAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<int> ClearAllAsync(CancellationToken cancellationToken = default)
         {
-            int deleted = await _context.CoverImages.ExecuteDeleteAsync().ConfigureAwait(false);
+            int deleted = await _context.CoverImages.ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
             if (deleted > 0)
             {
@@ -210,7 +226,10 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        public async Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds)
+        /// <param name="entityType">Parameter entityType.</param>
+        /// <param name="entityIds">Parameter entityIds.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(entityIds);
 
@@ -218,23 +237,25 @@ namespace EchoPlay.Data.Services
 
             int deleted = await _context.CoverImages
                 .Where(c => c.EntityType == entityType && entityIds.Contains(c.EntityId))
-                .ExecuteDeleteAsync()
+                .ExecuteDeleteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             if (deleted > 0)
             {
-                _logger.Debug($"{deleted} Cover-Einträge für {entityType} entfernt.");
+                _logger.Debug(() => $"{deleted} Cover-Einträge für {entityType} entfernt.");
             }
 
             return deleted;
         }
 
         /// <inheritdoc/>
-        public Task<int> CountAsync() => _context.CoverImages.CountAsync();
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public Task<int> CountAsync(CancellationToken cancellationToken = default) => _context.CoverImages.CountAsync(cancellationToken);
 
         /// <summary>
         /// Berechnet den SHA-256-Hash der Bilddaten als Hex-String (64 Zeichen).
         /// </summary>
+        /// <param name="data">Parameter data.</param>
         private static string ComputeHash(byte[] data)
         {
             Span<byte> hash = stackalloc byte[32];

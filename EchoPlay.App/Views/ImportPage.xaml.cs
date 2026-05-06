@@ -4,6 +4,7 @@ using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 
 namespace EchoPlay.App.Views
@@ -57,6 +58,15 @@ namespace EchoPlay.App.Views
         private void OnImportSucceeded(object? sender, EventArgs e)
         {
             _ = _navigationService.GoBack();
+        }
+
+        /// <summary>
+        /// Hebt die ViewModel-Subscription auf, damit die Page beim Verlassen GC-frei wird.
+        /// </summary>
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            ViewModel.ImportSucceeded -= OnImportSucceeded;
         }
     }
 }

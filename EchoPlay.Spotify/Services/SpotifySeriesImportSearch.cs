@@ -40,7 +40,7 @@ namespace EchoPlay.Spotify.Services
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:Search");
 
-            _logger.Debug($"Spotify-Seriensuche gestartet: '{query}'.");
+            _logger.Debug(() => $"Spotify-Seriensuche gestartet: '{query}'.");
 
             IReadOnlyList<SpotifyArtistDto> artists = await _apiClient.SearchArtistsAsync(query, limit: 10, cancellationToken).ConfigureAwait(false);
 

@@ -16,6 +16,7 @@ namespace EchoPlay.Data.Services
         private readonly EchoPlayDbContext _context = context;
 
         /// <inheritdoc/>
+        /// <param name="retentionDays">Parameter retentionDays.</param>
         public async Task PurgeAsync(int retentionDays)
         {
             DateTime cutoff = EntityClock.Current.UtcNow.AddDays(-retentionDays);

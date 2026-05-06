@@ -12,6 +12,7 @@ namespace EchoPlay.App.Services
     /// und die Auswahl des besten Treffers anhand der Track-Anzahl. So bleibt der
     /// Tag-Editor-Zustand frei von Lookup-Logik und ist unabhängig testbar.
     /// </summary>
+
     public interface ITagLookupCoordinator
     {
         /// <summary>

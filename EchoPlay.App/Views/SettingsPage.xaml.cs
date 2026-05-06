@@ -105,7 +105,12 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            _logLiveTimer?.Stop();
+            if (_logLiveTimer is not null)
+            {
+                _logLiveTimer.Stop();
+                _logLiveTimer.Tick -= OnLogLiveTick;
+                _logLiveTimer = null;
+            }
         }
 
         /// <summary>

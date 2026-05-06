@@ -47,11 +47,11 @@ namespace EchoPlay.App.ViewModels
                 _dispatcherQueue = null;
             }
 
-            PlayCommand = new RelayCommand(() => _playerService.Resume());
-            PauseCommand = new RelayCommand(() => _playerService.Pause());
-            StopCommand = new RelayCommand(() => _playerService.Stop());
-            NextCommand = new RelayCommand(() => _playerService.SkipToNext());
-            PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
+            PlayCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerPlay", () => _playerService.Resume()));
+            PauseCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerPause", () => _playerService.Pause()));
+            StopCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerStop", () => _playerService.Stop()));
+            NextCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerNext", () => _playerService.SkipToNext()));
+            PreviousCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerPrevious", () => _playerService.SkipToPrevious()));
 
             _playerService.StateChanged += OnStateChanged;
             _playerService.ErrorOccurred += OnErrorOccurred;
@@ -182,6 +182,14 @@ namespace EchoPlay.App.ViewModels
         {
             _playerService.StateChanged -= OnStateChanged;
             _playerService.ErrorOccurred -= OnErrorOccurred;
+        }
+
+        // Hilfs-Methode: alle MiniPlayer-Befehle muessen sich auf einer Korrelations-ID
+        // im Log ablegen. Vermeidet Code-Duplikation in den fuenf RelayCommand-Lambdas.
+        private static void InvokeWithScope(string actionName, Action action)
+        {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction(actionName);
+            action();
         }
 
         private void OnStateChanged(object? sender, EventArgs e)

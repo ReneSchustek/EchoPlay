@@ -50,8 +50,9 @@ namespace EchoPlay.App.Tests.Fakes
         public TaskCompletionSource? PriorityHold { get; set; }
 
         /// <inheritdoc/>
-        public override Task<int> RunOnceAsync()
+        public override Task<int> RunOnceAsync(System.Threading.CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             RunOnceCallCount++;
             return Task.FromResult(0);
         }

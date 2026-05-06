@@ -371,6 +371,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("DbMaintenance");
             IsMaintaining = true;
             MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaning");
 
@@ -406,6 +407,7 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliothek-Reset: bulk-delete aller Serien/Episoden/Tracks und Cover-Dateien kann IO-/DB-Fehler werfen; der Command darf nicht reißen, der Status wird angezeigt und IsMaintaining im finally zurückgesetzt.")]
         public async Task ResetLibraryAsync(int scopeIndex)
         {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("LibraryReset");
             IsMaintaining = true;
             MaintenanceStatusText = SafeResourceLoader.Get("ResetRunning", "Bibliothek wird zurückgesetzt …");
 

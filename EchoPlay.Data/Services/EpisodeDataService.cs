@@ -43,7 +43,9 @@ namespace EchoPlay.Data.Services
                        }));
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds)
+        /// <param name="seriesIds">Parameter seriesIds.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(seriesIds);
 
@@ -54,7 +56,7 @@ namespace EchoPlay.Data.Services
             List<Episode> result = await _context.Episodes
 
                 .Where(episode => idSet.Contains(episode.SeriesId))
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Debug(() => $"{result.Count} Episode(n) für {seriesIds.Count} Serien geladen (Batch).");
             return result;
@@ -64,7 +66,8 @@ namespace EchoPlay.Data.Services
         /// Liefert alle nicht logisch gelöschten Episoden einer Serie sortiert nach Episodennummer und Titel.
         /// </summary>
         /// <param name="seriesId">Die eindeutige ID der Serie.</param>
-        public async Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             _logger.Debug(() => $"Lade Episoden für Serie '{seriesId}'.");
 
@@ -73,7 +76,7 @@ namespace EchoPlay.Data.Services
                 .Where(episode => episode.SeriesId == seriesId)
                 .OrderBy(episode => episode.EpisodeNumber)
                 .ThenBy(episode => episode.Title)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Debug(() => $"{result.Count} Episode(n) für Serie '{seriesId}' geladen.");
 
@@ -90,8 +93,9 @@ namespace EchoPlay.Data.Services
         /// Dictionary von SeriesId auf Episodenzähler.
         /// Serien ohne Episoden fehlen im Dictionary; der Aufrufer behandelt fehlende Einträge als (0, 0).
         /// </returns>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(
-            IReadOnlyList<Guid> seriesIds)
+            IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(seriesIds);
 
@@ -133,7 +137,8 @@ namespace EchoPlay.Data.Services
         /// Episoden ohne <c>LocalFolderPath</c>, sortiert nach Episodennummer und Titel.
         /// Leere Liste wenn alle Episoden lokal gefunden wurden.
         /// </returns>
-        public async Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             _logger.Debug(() => $"Lade fehlende lokale Episoden für Serie '{seriesId}'.");
 
@@ -142,7 +147,7 @@ namespace EchoPlay.Data.Services
                 .Where(e => e.SeriesId == seriesId && e.LocalFolderPath == null)
                 .OrderBy(e => e.EpisodeNumber)
                 .ThenBy(e => e.Title)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Debug(() => $"{result.Count} fehlende Episoden für Serie '{seriesId}' gefunden.");
 
@@ -154,14 +159,17 @@ namespace EchoPlay.Data.Services
         /// Der Zugriff erfolgt über <see cref="DbSet{TEntity}.FindAsync(object[])"/>, da es sich um einen Primary-Key-Zugriff handelt.
         /// </summary>
         /// <param name="id">Die eindeutige Episoden-ID.</param>
-        public async Task<Episode?> GetByIdAsync(Guid id)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<Episode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             _logger.Debug(() => $"Lade Episode mit ID '{id}'.");
-            return await _context.Episodes.FindAsync(id).ConfigureAwait(false);
+            return await _context.Episodes.FindAsync([id], cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids)
+        /// <param name="ids">Parameter ids.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
@@ -176,7 +184,7 @@ namespace EchoPlay.Data.Services
 
             List<Episode> rows = await _context.Episodes
                 .Where(e => idSet.Contains(e.Id))
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             Dictionary<Guid, Episode> result = new(rows.Count);
             foreach (Episode episode in rows)
@@ -192,17 +200,20 @@ namespace EchoPlay.Data.Services
         /// Fügt eine neue Episode dauerhaft hinzu.
         /// </summary>
         /// <param name="episode">Die zu persistierende Episode.</param>
-        public async Task AddAsync(Episode episode)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task AddAsync(Episode episode, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episode);
 
             _ = _context.Episodes.Add(episode);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) hinzugefügt.");
         }
 
         /// <inheritdoc/>
-        public async Task AddRangeAsync(IReadOnlyList<Episode> episodes)
+        /// <param name="episodes">Parameter episodes.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task AddRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episodes);
 
@@ -212,7 +223,7 @@ namespace EchoPlay.Data.Services
             }
 
             _context.Episodes.AddRange(episodes);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"{episodes.Count} Episoden in einem Batch-Insert hinzugefügt.");
         }
 
@@ -221,17 +232,20 @@ namespace EchoPlay.Data.Services
         /// Es wird davon ausgegangen, dass die Entität bereits aus dem aktuellen DbContext stammt.
         /// </summary>
         /// <param name="episode">Die zu aktualisierende Episode.</param>
-        public async Task UpdateAsync(Episode episode)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task UpdateAsync(Episode episode, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episode);
 
             _ = _context.Episodes.Update(episode);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) aktualisiert.");
         }
 
         /// <inheritdoc/>
-        public async Task UpdateRangeAsync(IReadOnlyList<Episode> episodes)
+        /// <param name="episodes">Parameter episodes.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task UpdateRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episodes);
 
@@ -241,7 +255,7 @@ namespace EchoPlay.Data.Services
             }
 
             _context.Episodes.UpdateRange(episodes);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"{episodes.Count} Episoden in einem Batch-Update aktualisiert.");
         }
 
@@ -255,7 +269,8 @@ namespace EchoPlay.Data.Services
         /// Die höchste Episodennummer mit zugeordnetem lokalen Ordner,
         /// oder <see langword="null"/> wenn keine passende Episode existiert.
         /// </returns>
-        public async Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             // MAX über eine leere Menge liefert in SQL NULL – EF Core bildet das auf int? ab
             int? result = await _context.Episodes
@@ -263,7 +278,7 @@ namespace EchoPlay.Data.Services
                 .Where(e => e.SeriesId == seriesId
                          && e.LocalFolderPath != null
                          && e.EpisodeNumber != null)
-                .MaxAsync(e => (int?)e.EpisodeNumber).ConfigureAwait(false);
+                .MaxAsync(e => (int?)e.EpisodeNumber, cancellationToken).ConfigureAwait(false);
 
             _logger.Debug(() => $"Höchste lokale Folgennummer für Serie '{seriesId}': {result?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "keine"}.");
 
@@ -271,11 +286,14 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt)
+        /// <param name="episodeId">Parameter episodeId.</param>
+        /// <param name="checkedAt">Parameter checkedAt.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {
             Episode? episode = await _context.Episodes
                 .AsTracking()
-                .FirstOrDefaultAsync(e => e.Id == episodeId).ConfigureAwait(false);
+                .FirstOrDefaultAsync(e => e.Id == episodeId, cancellationToken).ConfigureAwait(false);
 
             if (episode is null)
             {
@@ -284,7 +302,7 @@ namespace EchoPlay.Data.Services
             }
 
             episode.CoverLastChecked = checkedAt;
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -293,13 +311,14 @@ namespace EchoPlay.Data.Services
         /// Eine gelöschte Episode darf keine aktiven Wiedergabestände behalten, während die übergeordnete Serie unverändert bestehen bleibt.
         /// </summary>
         /// <param name="id">Die eindeutige ID der zu löschenden Episode.</param>
-        public async Task DeleteAsync(Guid id)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"DB:Episode:Delete:{id}");
 
             Episode? episode = await _context.Episodes
                 .AsTracking()
-                .FirstOrDefaultAsync(e => e.Id == id).ConfigureAwait(false);
+                .FirstOrDefaultAsync(e => e.Id == id, cancellationToken).ConfigureAwait(false);
 
             if (episode == null)
             {
@@ -315,7 +334,7 @@ namespace EchoPlay.Data.Services
                 await _context.PlaybackStates
                     .AsTracking()
                     .Where(state => state.EpisodeId == id)
-                    .ToListAsync().ConfigureAwait(false);
+                    .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (PlaybackState playbackState in playbackStates)
             {
@@ -323,7 +342,7 @@ namespace EchoPlay.Data.Services
                 playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
             }
 
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"Episode '{episode.Title}' (ID: {id}) und {playbackStates.Count} PlaybackState(s) als gelöscht markiert.");
         }
     }

@@ -9,6 +9,7 @@ namespace EchoPlay.App.Services
     /// Prüft Online-Konnektivität, lokale Bibliothek, bereinigt den Cache
     /// und lädt Neuerscheinungen vor, damit das Dashboard sofort aktuelle Daten zeigen kann.
     /// </summary>
+
     public interface IStartupValidator
     {
         /// <summary>

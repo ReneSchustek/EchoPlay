@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Fakes
         public int CallCount { get; private set; }
 
         /// <inheritdoc/>
-        public Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId)
+        public Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId, CancellationToken cancellationToken = default)
         {
             CallCount++;
             return Task.FromResult(0);

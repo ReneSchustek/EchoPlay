@@ -46,10 +46,11 @@ namespace EchoPlay.Data.Services
         /// Liefert alle aktiven (nicht gelöschten) Wiedergabestände als flache Liste.
         /// Der globale Query-Filter des DbContext schließt logisch gelöschte Einträge automatisch aus.
         /// </summary>
-        public async Task<IReadOnlyList<PlaybackState>> GetAllAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<PlaybackState>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             _logger.Debug("Lade alle Wiedergabestände.");
-            return await _context.PlaybackStates.ToListAsync().ConfigureAwait(false);
+            return await _context.PlaybackStates.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -58,18 +59,20 @@ namespace EchoPlay.Data.Services
         /// Da die EpisodeId ein fachlicher Suchschlüssel ist, wird hier FirstOrDefaultAsync verwendet.
         /// </summary>
         /// <param name="episodeId">Die eindeutige ID der Episode.</param>
-        public async Task<PlaybackState?> GetByEpisodeIdAsync(Guid episodeId)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<PlaybackState?> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
-            _logger.Debug($"Lade PlaybackState für Episode '{episodeId}'.");
+            _logger.Debug(() => $"Lade PlaybackState für Episode '{episodeId}'.");
             return await _context.PlaybackStates
-                .FirstOrDefaultAsync(state => state.EpisodeId == episodeId).ConfigureAwait(false);
+                .FirstOrDefaultAsync(state => state.EpisodeId == episodeId, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Fügt einen neuen Wiedergabestatus dauerhaft hinzu.
         /// </summary>
         /// <param name="playbackState">Der zu persistierende Wiedergabestatus.</param>
-        public async Task AddAsync(PlaybackState playbackState)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task AddAsync(PlaybackState playbackState, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(playbackState);
 
@@ -77,7 +80,7 @@ namespace EchoPlay.Data.Services
 
             try
             {
-                _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
             {
@@ -95,12 +98,13 @@ namespace EchoPlay.Data.Services
         /// Es wird davon ausgegangen, dass die Entität bereits aus dem aktuellen DbContext stammt.
         /// </summary>
         /// <param name="playbackState">Der zu aktualisierende Wiedergabestatus.</param>
-        public async Task UpdateAsync(PlaybackState playbackState)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task UpdateAsync(PlaybackState playbackState, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(playbackState);
 
             _ = _context.PlaybackStates.Update(playbackState);
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' aktualisiert.");
         }
 
@@ -115,9 +119,10 @@ namespace EchoPlay.Data.Services
         /// Tuple (Finished, InProgress, NotStarted). Gibt (0, 0, 0) zurück,
         /// wenn für die Serie keine (aktiven) Episoden existieren.
         /// </returns>
-        public async Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<(int Finished, int InProgress, int NotStarted)> GetCountsBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
-            _logger.Debug($"Lade aggregierte Wiedergabezähler für Serie '{seriesId}'.");
+            _logger.Debug(() => $"Lade aggregierte Wiedergabezähler für Serie '{seriesId}'.");
 
             // Left-Join Episode → PlaybackState mit DefaultIfEmpty; Episoden ohne State liefern p == null
             // und zählen damit in „Total", aber nicht in Finished/InProgress.
@@ -138,7 +143,7 @@ namespace EchoPlay.Data.Services
                     Finished = g.Count(x => x.p != null && x.p.IsCompleted),
                     InProgress = g.Count(x => x.p != null && !x.p.IsCompleted && x.p.LastPosition != TimeSpan.Zero)
                 })
-                .FirstOrDefaultAsync().ConfigureAwait(false);
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             if (row is null)
             {
@@ -155,14 +160,15 @@ namespace EchoPlay.Data.Services
         /// in Verbindung mit dem Index auf <c>LastPlayedAt</c> ein Index-Scan + Limit statt Tablescan.
         /// </summary>
         /// <param name="maxRows">Maximale Anzahl Zeilen. Werte ≤ 0 liefern eine leere Liste.</param>
-        public async Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<IReadOnlyList<RecentPlaybackRow>> GetRecentActiveAsync(int maxRows, CancellationToken cancellationToken = default)
         {
             if (maxRows <= 0)
             {
                 return [];
             }
 
-            _logger.Debug($"Lade {maxRows} jüngste aktive Wiedergabestände.");
+            _logger.Debug(() => $"Lade {maxRows} jüngste aktive Wiedergabestände.");
 
             // Compiled Query: Expression-Tree wurde einmalig beim Static-Init übersetzt;
             // hier nur noch Parameter-Bindung und Streaming-Materialisierung.
@@ -184,7 +190,9 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        public async Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds)
+        /// <param name="episodeIds">Parameter episodeIds.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episodeIds);
 
@@ -197,7 +205,7 @@ namespace EchoPlay.Data.Services
             List<Guid> completedIds = await _context.PlaybackStates
                 .Where(p => episodeIds.Contains(p.EpisodeId) && p.IsCompleted)
                 .Select(p => p.EpisodeId)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             return completedIds.ToHashSet();
         }
@@ -208,11 +216,12 @@ namespace EchoPlay.Data.Services
         /// Ein PlaybackState besitzt keine abhängigen Kindelemente und kann isoliert logisch gelöscht werden, ohne andere Entitäten zu beeinflussen.
         /// </summary>
         /// <param name="id">Die eindeutige ID des zu löschenden Wiedergabestatus.</param>
-        public async Task DeleteAsync(Guid id)
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             PlaybackState? playbackState = await _context.PlaybackStates
                 .AsTracking()
-                .FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
+                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken).ConfigureAwait(false);
 
             if (playbackState == null)
             {
@@ -224,7 +233,7 @@ namespace EchoPlay.Data.Services
             // Der Wiedergabestatus wird ausschließlich über die definierte Domänenoperation logisch gelöscht.
             playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
 
-            _ = await _context.SaveChangesAsync().ConfigureAwait(false);
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info($"PlaybackState (ID: {id}) als gelöscht markiert.");
         }
     }

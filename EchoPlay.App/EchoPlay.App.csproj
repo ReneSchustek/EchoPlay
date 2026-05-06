@@ -56,6 +56,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Splash-Logo zusätzlich als Embedded Resource: SplashWindow lädt es per
+         Assembly.GetManifestResourceStream, unabhängig vom Datei-Layout. Content-Eintrag
+         oben bleibt bestehen, damit ms-appx:///Assets/logo.png in regulären Pages
+         (UeberPage) weiter funktioniert. LogicalName fixiert den Resource-Namen. -->
+    <EmbeddedResource Include="Assets\logo.png" LogicalName="EchoPlay.App.Assets.logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 

@@ -40,7 +40,7 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 - **Cover-System** – 5 Online-Anbieter, lokaler Fallback, DB-Cache.
 - **6 Themes** – Ruhrcoder, ModernClassic, PaperCoffee, MidnightLibrary, ForestSignal, AmberWhiskey.
 - **Lokalisierung** – Deutsch und Englisch, zur Laufzeit umschaltbar.
-- **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases.
+- **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases. Heruntergeladene Setup-Dateien werden gegen einen SHA-256-Hash aus dem Release-Body verifiziert.
 - **Statistik** – Sammlungsübersicht, Hörfortschritt, Kennzahlen.
 - **Kontexthilfe** – TeachingTips auf jeder Seite für neue Nutzer.
 

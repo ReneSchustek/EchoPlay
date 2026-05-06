@@ -193,7 +193,7 @@ namespace EchoPlay.TagManager.Tests.Services
         {
             int folderId = Interlocked.Increment(ref _folderCounter);
             string folder = Path.Combine(Path.GetTempPath(), $"echoplay_test_{folderId:D6}");
-            Directory.CreateDirectory(folder);
+            _ = Directory.CreateDirectory(folder);
             try
             {
                 TagService service = CreateService();
@@ -223,7 +223,7 @@ namespace EchoPlay.TagManager.Tests.Services
                 TagService service = CreateService();
 
                 // TagLib# kann .xyz-Dateien nicht lesen → InvalidOperationException
-                await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReadAsync(path));
+                _ = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReadAsync(path));
             }
             finally
             {

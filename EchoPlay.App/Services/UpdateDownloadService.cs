@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,6 +51,7 @@ namespace EchoPlay.App.Services
         /// <param name="downloadUrl">Direkte Download-URL der Setup-Datei.</param>
         /// <param name="version">Versionsnummer für den Dateinamen (muss <c>^\d+(\.\d+){0,3}$</c> matchen).</param>
         /// <param name="expectedFileSize">Erwartete Größe der Setup-Datei in Bytes laut Release-Asset (0 = Vergleich überspringen).</param>
+        /// <param name="expectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Leer = ohne Integritätsprüfung installieren (Backwards-Compat mit Releases ohne Hash im Body).</param>
         /// <param name="onProgress">Fortschritts-Callback (0.0–1.0). Null wenn kein Fortschritt gewünscht.</param>
         /// <param name="cancellationToken">Abbruch-Token für den Download.</param>
         /// <returns>True wenn der Installer gestartet wurde, false bei Fehler.</returns>
@@ -61,6 +63,7 @@ namespace EchoPlay.App.Services
             string downloadUrl,
             string version,
             long expectedFileSize,
+            string expectedSha256,
             Action<double>? onProgress = null,
             CancellationToken cancellationToken = default)
         {
@@ -128,6 +131,16 @@ namespace EchoPlay.App.Services
                     return false;
                 }
 
+                // SHA-256-Hash-Pin: zweite Verteidigungslinie gegen Inhalts-Manipulation
+                // (kompromittierter GitHub-Account, MITM mit aufgebrochenem TLS, CDN-Vergiftung).
+                // Hash und Datei kommen aus derselben Quelle — schützt nicht gegen vollen
+                // Account-Compromise, aber gegen alle anderen Angriffsszenarien auf dem Transport.
+                if (!await VerifyFileHashAsync(tempPath, expectedSha256, cancellationToken).ConfigureAwait(false))
+                {
+                    TryDelete(tempPath);
+                    return false;
+                }
+
                 // Installer starten – die App beendet sich danach
                 _ = Process.Start(new ProcessStartInfo
                 {
@@ -143,6 +156,56 @@ namespace EchoPlay.App.Services
                 _logger.Warning($"Update-Download fehlgeschlagen: {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Verifiziert den SHA-256-Hash der heruntergeladenen Setup-Datei gegen den
+        /// im GitHub-Release-Body gepflegten Erwartungswert. Vergleich läuft Timing-Safe
+        /// über <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>.
+        /// </summary>
+        /// <param name="filePath">Vollständiger Pfad zur fertig heruntergeladenen Setup-Datei.</param>
+        /// <param name="expectedSha256">Erwarteter Hex-Hash (64 Zeichen). Leer = Prüfung überspringen.</param>
+        /// <param name="cancellationToken">Abbruch-Token für die Hash-Berechnung.</param>
+        /// <returns>True bei Match oder leerem Erwartungswert; false bei Mismatch oder ungültigem Hex.</returns>
+        private async Task<bool> VerifyFileHashAsync(string filePath, string expectedSha256, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                // Backwards-Compat: alte Releases ohne Hash im Body — Warning, aber Installation läuft weiter.
+                _logger.Warning("Kein SHA-256-Hash im Release-Body gepflegt — Update wird ohne Integritätsprüfung installiert.");
+                return true;
+            }
+
+            byte[] expectedBytes;
+            try
+            {
+                expectedBytes = Convert.FromHexString(expectedSha256);
+            }
+            catch (FormatException ex)
+            {
+                _logger.Warning($"SHA-256 im Release-Body ist kein gültiges Hex — Update abgelehnt: {ex.Message}");
+                return false;
+            }
+
+            if (expectedBytes.Length != 32)
+            {
+                _logger.Warning($"SHA-256 im Release-Body hat falsche Länge ({expectedBytes.Length} Bytes statt 32) — Update abgelehnt.");
+                return false;
+            }
+
+            byte[] actualBytes;
+            await using (FileStream verifyStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                actualBytes = await SHA256.HashDataAsync(verifyStream, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (!CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes))
+            {
+                _logger.Warning($"SHA-256 der Setup-Datei stimmt nicht mit dem Release-Body überein — erwartet {Convert.ToHexString(expectedBytes)}, berechnet {Convert.ToHexString(actualBytes)}. Datei wird gelöscht.");
+                return false;
+            }
+
+            return true;
         }
 
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",

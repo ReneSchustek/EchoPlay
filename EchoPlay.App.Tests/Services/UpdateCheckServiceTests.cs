@@ -91,6 +91,68 @@ namespace EchoPlay.App.Tests.Services
                 async () => await service.SkipVersionAsync("1.2.3", cts.Token));
         }
 
+        // ── Hash-Extraktor (SHA-256-Hash-Pin aus Release-Body) ────────────────────
+
+        [Fact]
+        public void ExtractSha256_StandardLine_ReturnsHash()
+        {
+            string body = "## Release Notes\n\nFeature X.\n\nSHA256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n\n— ENDE —";
+
+            string hash = UpdateCheckService.ExtractSha256(body);
+
+            Assert.Equal("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", hash);
+        }
+
+        [Fact]
+        public void ExtractSha256_HyphenAndEqualsSignAndUpperCase_ReturnsHashAsWritten()
+        {
+            string body = "Setup-Datei:\nSHA-256 = ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890";
+
+            string hash = UpdateCheckService.ExtractSha256(body);
+
+            // Groß-/Kleinschreibung wird nicht normalisiert — der Vergleich im Updater
+            // läuft über Convert.FromHexString und ist case-insensitive.
+            Assert.Equal("ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890", hash);
+        }
+
+        [Fact]
+        public void ExtractSha256_NoHashInBody_ReturnsEmpty()
+        {
+            string body = "## Release\n\nFeature X.\nNur Release-Notes, kein Hash gepflegt.";
+
+            string hash = UpdateCheckService.ExtractSha256(body);
+
+            Assert.Equal(string.Empty, hash);
+        }
+
+        [Fact]
+        public void ExtractSha256_EmptyBody_ReturnsEmpty()
+        {
+            Assert.Equal(string.Empty, UpdateCheckService.ExtractSha256(string.Empty));
+        }
+
+        [Fact]
+        public void ExtractSha256_HashTooShort_ReturnsEmpty()
+        {
+            // 60 Hex-Zeichen statt 64 — Pattern matcht nicht, weil \b nach genau 64 erwartet wird.
+            string body = "SHA256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd";
+
+            string hash = UpdateCheckService.ExtractSha256(body);
+
+            Assert.Equal(string.Empty, hash);
+        }
+
+        [Fact]
+        public void ExtractSha256_NonHexChars_ReturnsEmpty()
+        {
+            // 'g'..'z' sind keine Hex-Zeichen — Pattern lehnt ab.
+            string body = "SHA256: gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg";
+
+            string hash = UpdateCheckService.ExtractSha256(body);
+
+            Assert.Equal(string.Empty, hash);
+        }
+
         // ── Test-Helfer ──────────────────────────────────────────────────────────
 
         private static (UpdateCheckService Service, RecordingHandler Handler) BuildService(

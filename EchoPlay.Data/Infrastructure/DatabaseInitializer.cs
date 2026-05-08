@@ -124,7 +124,9 @@ namespace EchoPlay.Data.Infrastructure
 
             try
             {
-#pragma warning disable SCS0018 // Path Traversal: dbPath aus IConfiguration (ConnectionStrings:Default), nicht aus User-Input.
+                // Grund: dbPath stammt aus IConfiguration (ConnectionStrings:Default),
+                // nicht aus User-Input — Path-Traversal-Risiko greift hier nicht.
+#pragma warning disable SCS0018
                 long dbSize = new FileInfo(dbPath).Length;
 #pragma warning restore SCS0018
                 if (!HasEnoughDiskSpace(dbPath, dbSize))
@@ -147,7 +149,10 @@ namespace EchoPlay.Data.Infrastructure
                     await connection.OpenAsync().ConfigureAwait(false);
 
                     using SqliteCommand command = connection.CreateCommand();
-#pragma warning disable SCS0002 // SQL injection: VACUUM INTO erlaubt keine Parameter-Bindings, escapedPath ist intern aus dbPath (Config) plus UTC-Timestamp gebildet, Single-Quote-Escaping schliesst die einzige verbleibende Injection-Quelle.
+                    // Grund: VACUUM INTO erlaubt keine Parameter-Bindings; escapedPath
+                    // ist intern aus dbPath (Config) und UTC-Timestamp gebildet, das
+                    // Single-Quote-Escaping schliesst die einzige verbleibende Injection-Quelle.
+#pragma warning disable SCS0002
                     command.CommandText = $"VACUUM INTO '{escapedPath}'";
 #pragma warning restore SCS0002
                     _ = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -216,7 +221,9 @@ namespace EchoPlay.Data.Infrastructure
             string fileName = Path.GetFileName(dbPath);
             string pattern = $"{fileName}.backup-*";
 
-#pragma warning disable SCS0018 // Path Traversal: dbPath stammt aus der gebundenen IConfiguration (Source: DataServiceCollectionExtensions), nicht aus User-Input. Pattern verhindert Wildcard-Escapes.
+            // Grund: dbPath stammt aus der gebundenen IConfiguration
+            // (DataServiceCollectionExtensions), nicht aus User-Input.
+#pragma warning disable SCS0018
             string[] backups = Directory.GetFiles(directory, pattern);
 #pragma warning restore SCS0018
             Array.Sort(backups, (a, b) => string.CompareOrdinal(b, a));
@@ -225,7 +232,9 @@ namespace EchoPlay.Data.Infrastructure
             {
                 try
                 {
-#pragma warning disable SCS0018 // Path Traversal: backups[i] kommt direkt aus Directory.GetFiles oben, ist daher per Konstruktion innerhalb von 'directory'.
+                    // Grund: backups[i] kommt direkt aus Directory.GetFiles oben,
+                    // ist daher per Konstruktion innerhalb von 'directory'.
+#pragma warning disable SCS0018
                     File.Delete(backups[i]);
 #pragma warning restore SCS0018
                 }

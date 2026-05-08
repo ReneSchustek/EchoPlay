@@ -72,7 +72,9 @@ namespace EchoPlay.Spotify.Services
                 orderIndex++;
             }
 
-            _logger.Info($"Spotify-Episodenimport abgeschlossen: {episodes.Count} Episode(n) für Künstler '{sourceSeriesId}'.");
+            _logger.Info(
+                "Spotify-Episodenimport abgeschlossen: {EpisodeCount} Episode(n) für Künstler '{ArtistId}'.",
+                episodes.Count, sourceSeriesId);
 
             return episodes;
         }

@@ -1,0 +1,86 @@
+# gitleaks-Konfiguration für EchoPlay.
+# Dokumentation: https://github.com/gitleaks/gitleaks/blob/master/README.md#configuration
+#
+# Strategie: gitleaks-Defaults erweitern, EchoPlay-spezifische Pfade ausschließen,
+# zusätzliche EchoPlay-Patterns aktivieren (Spotify-Client-Secret, DPAPI-Blob).
+
+[extend]
+useDefault = true
+
+# ── Zusätzliche projektbezogene Regeln ──────────────────────────────────────
+
+[[rules]]
+id = "echoplay-spotify-client-secret"
+description = "Spotify Client Secret (32 Hex-Zeichen oder Base64-ähnlicher String aus dem Developer-Dashboard)"
+regex = '''(?i)(spotify[_\-\s]?client[_\-\s]?secret|spotify[_\-\s]?secret)['"\s:=]+([a-f0-9]{32}|[A-Za-z0-9+/=]{32,64})'''
+secretGroup = 2
+tags = ["secret", "spotify"]
+
+[[rules]]
+id = "echoplay-spotify-client-id-pinned"
+description = "Hardcodierter Spotify Client-ID-Wert in Produktivcode (Test-Sample erlaubt)"
+regex = '''(?i)(spotify[_\-\s]?client[_\-\s]?id)['"\s:=]+([a-f0-9]{32})'''
+secretGroup = 2
+tags = ["secret", "spotify"]
+[rules.allowlist]
+paths = [
+    '''(?i).*\.tests/.*''',
+    '''(?i).*test[a-z]*\.cs''',
+]
+
+[[rules]]
+id = "echoplay-dpapi-blob"
+description = "Hardcodiertes DPAPI-Cipher-Blob (Base64 mit langem Präfix-Tag)"
+regex = '''(?i)(dpapi[_\-\s]?blob|cipher[_\-\s]?bytes)['"\s:=]+([A-Za-z0-9+/=]{200,})'''
+secretGroup = 2
+tags = ["secret", "dpapi"]
+
+[[rules]]
+id = "echoplay-musicbrainz-token"
+description = "MusicBrainz / Discogs API-Token im Code"
+regex = '''(?i)(musicbrainz|discogs)[_\-\s]?(token|key|api[_\-\s]?key)['"\s:=]+([A-Za-z0-9_\-]{20,})'''
+secretGroup = 3
+tags = ["secret", "api-token"]
+
+# ── Globale Allowlist ───────────────────────────────────────────────────────
+
+[allowlist]
+description = "Pfade und Dateien, die nicht gescannt werden"
+paths = [
+    # Build-Output und IDE-Caches
+    '''(?i)(^|/)bin/''',
+    '''(?i)(^|/)obj/''',
+    '''(?i)(^|/)\.vs/''',
+    '''(?i)(^|/)node_modules/''',
+
+    # NuGet-Caches und Lockfiles haben keine Secrets
+    '''(?i)(^|/)packages/''',
+    '''(?i).*\.lock\.json$''',
+
+    # Embedded Test-Daten und Asset-Binaries
+    '''(?i).*\.png$''',
+    '''(?i).*\.jpg$''',
+    '''(?i).*\.ico$''',
+    '''(?i).*\.pdb$''',
+    '''(?i).*\.dll$''',
+
+    # KI-Workflow-Dateien (siehe CLAUDE.md — niemals committed)
+    '''(?i)(^|/)\.ai/''',
+
+    # Gitleaks selbst (großes Binary, eigene README mit Beispiel-Findings)
+    '''(?i)(^|/)tools/gitleaks''',
+    '''(?i)(^|/)tools/README\.md$''',
+    '''(?i)(^|/)tools/LICENSE$''',
+]
+
+# Stopwords für die generischen Default-Regeln, um Test-Daten und kommentierte
+# Beispiele aus FakeSpotifyApiClient u.ä. herauszufiltern.
+stopwords = [
+    "fake",
+    "stub",
+    "placeholder",
+    "example",
+    "sample",
+    "test",
+    "dummy",
+]

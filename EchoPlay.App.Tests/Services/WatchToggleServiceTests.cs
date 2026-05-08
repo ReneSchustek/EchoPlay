@@ -31,7 +31,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceProvider provider = services.BuildServiceProvider();
 
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-            WatchToggleService toggle = new(scopeFactory);
+            WatchToggleService toggle = new(scopeFactory, new FakeLoggerFactory());
             return (toggle, series, cache);
         }
 

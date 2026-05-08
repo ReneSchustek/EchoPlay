@@ -389,7 +389,7 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            ITagLookupCoordinator coordinator = new TagLookupCoordinator(scopeFactory);
+            ITagLookupCoordinator coordinator = new TagLookupCoordinator(scopeFactory, new FakeLoggerFactory());
 
             return new TagManagerViewModel(
                 tagService ?? new FakeTagService(),

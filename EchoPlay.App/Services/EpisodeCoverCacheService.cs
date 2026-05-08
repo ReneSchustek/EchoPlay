@@ -73,6 +73,7 @@ namespace EchoPlay.App.Services
             CoverFetchPriority priority = CoverFetchPriority.Background,
             CancellationToken ct = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.EpisodeCoverCache);
             try
             {
                 await CacheCoversInternalAsync(seriesId, importEpisodes, priority, ct);

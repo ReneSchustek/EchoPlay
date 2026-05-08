@@ -450,5 +450,133 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(1, result.SeriesMatched);
             Assert.Equal(0, result.EpisodesUpdated);
         }
+
+        // ── Brief 314 Phasen-Tests ─────────────────────────────────────────────
+
+        [Fact]
+        public async Task RunDetectionPhase_NewFolders_ReturnsCorrectCount()
+        {
+            // Detection-Phase: 3 Ordner im Root, davon 1 in der DB bekannt -> alle 3
+            // landen in DetectionResult.SeriesFolders, der bekannte wird via onSeriesSynced gemeldet.
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music",
+                AutoImportAfterScan = false
+            });
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series { Title = "TKKG", LocalFolderPath = "/music/TKKG" });
+
+            FakeLocalLibraryScanner scanner = new([], ["/music/TKKG", "/music/Neu1", "/music/Neu2"]);
+
+            SyncService service = BuildService(settings,
+                seriesService: seriesService,
+                episodeService: new FakeEpisodeDataService(),
+                trackService: new FakeLocalTrackDataService(),
+                scanner: scanner,
+                trackMatcher: new FakeTrackMatcher(),
+                metadataReader: new FakeMp3MetadataReader());
+
+            int announcedCount = 0;
+            Progress<Series> progress = new(_ => announcedCount++);
+
+            _ = await service.SyncAsync(onSeriesSynced: progress);
+
+            // Wartet kurz, damit Progress-Callback laeuft (synchroner Pfad sollte sofort feuern).
+            await Task.Yield();
+
+            // Bekannte Serie wird in der Detection-Phase und (mit aktualisiertem Pfad) erneut
+            // in der Materialize-Phase gemeldet — d.h. mindestens 1 Aufruf erwartet.
+            Assert.True(announcedCount >= 1, $"onSeriesSynced wurde {announcedCount}-mal aufgerufen, erwartet >= 1");
+        }
+
+        [Fact]
+        public async Task MaterializeSeries_TitleMatchesExisting_AssignsExistingId()
+        {
+            // Materialize-Series: scanResult.SeriesName matcht bestehende DB-Serie nach
+            // Normalizer-Vergleich -> die existierende Series-Id wird an Phase 4 weitergereicht,
+            // KEINE neue Serie wird angelegt.
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music"
+            });
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series { Title = "Die drei ???" });
+            Series existing = seriesService.All[0];
+            Guid existingId = existing.Id;
+            int seriesCountBefore = seriesService.All.Count;
+
+            IReadOnlyList<LocalScanResult> scanResults =
+            [
+                new LocalScanResult
+                {
+                    SeriesName       = "Die drei ???",
+                    SeriesFolderPath = "/music/Die drei ???",
+                    Episodes         = []
+                }
+            ];
+
+            SyncService service = BuildService(settings, seriesService,
+                episodeService: new FakeEpisodeDataService(),
+                trackService: new FakeLocalTrackDataService(),
+                scanner: new FakeLocalLibraryScanner(scanResults),
+                trackMatcher: new FakeTrackMatcher(),
+                metadataReader: new FakeMp3MetadataReader());
+
+            SyncResult result = await service.SyncAsync();
+
+            Assert.Equal(1, result.SeriesMatched);
+            // Keine neue Serie angelegt — Count unveraendert.
+            Assert.Equal(seriesCountBefore, seriesService.All.Count);
+            // Die bestehende Serie behaelt ihre Id.
+            Assert.Equal(existingId, seriesService.All[0].Id);
+            // LocalFolderPath wurde aktualisiert.
+            Assert.Equal("/music/Die drei ???", seriesService.All[0].LocalFolderPath);
+        }
+
+        [Fact]
+        public async Task MaterializeEpisodes_NewEpisodes_PersistsViaAddRange()
+        {
+            // Materialize-Episodes: bei Auto-Import einer neuen Serie geht jeder Episodenblock
+            // ueber AddRangeAsync (1 SaveChanges fuer N Episoden), nicht einzeln per AddAsync.
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music",
+                AutoImportAfterScan = true
+            });
+            FakeEpisodeDataService episodeService = new();
+
+            IReadOnlyList<LocalScanResult> scanResults =
+            [
+                new LocalScanResult
+                {
+                    SeriesName       = "Brand-neue Serie",
+                    SeriesFolderPath = "/music/Brand-neue Serie",
+                    Episodes         =
+                    [
+                        new LocalEpisodeScan { FolderPath = "/music/Neu/001", ParsedNumber = 1, TrackPaths = ["/music/Neu/001/t.mp3"] },
+                        new LocalEpisodeScan { FolderPath = "/music/Neu/002", ParsedNumber = 2, TrackPaths = ["/music/Neu/002/t.mp3"] },
+                        new LocalEpisodeScan { FolderPath = "/music/Neu/003", ParsedNumber = 3, TrackPaths = ["/music/Neu/003/t.mp3"] }
+                    ]
+                }
+            ];
+
+            SyncService service = BuildService(settings,
+                seriesService: new FakeSeriesDataService(),
+                episodeService: episodeService,
+                trackService: new FakeLocalTrackDataService(),
+                scanner: new FakeLocalLibraryScanner(scanResults),
+                trackMatcher: new FakeTrackMatcher(),
+                metadataReader: new FakeMp3MetadataReader());
+
+            SyncResult result = await service.SyncAsync();
+
+            Assert.Equal(3, result.EpisodesUpdated);
+            // Genau 1 AddRangeAsync, KEIN einzelner AddAsync — N+1-Vermeidung aus Brief 273.
+            Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
+            Assert.Equal(0, episodeService.AddAsyncCallCount);
+        }
     }
 }

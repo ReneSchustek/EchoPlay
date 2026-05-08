@@ -64,7 +64,7 @@ paths = [
     '''(?i).*\.pdb$''',
     '''(?i).*\.dll$''',
 
-    # Interne Arbeitsdateien (nicht versioniert)
+    # Lokale Workflow-Dateien (gitignored, niemals committed)
     '''(?i)(^|/)\.ai/''',
 
     # Gitleaks selbst (großes Binary, eigene README mit Beispiel-Findings)

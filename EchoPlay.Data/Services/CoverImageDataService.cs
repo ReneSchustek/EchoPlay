@@ -219,7 +219,7 @@ namespace EchoPlay.Data.Services
 
             if (deleted > 0)
             {
-                _logger.Info($"Cover-Cache vollständig geleert ({deleted} Einträge).");
+                _logger.Info("Cover-Cache vollständig geleert ({DeletedCount} Einträge).", deleted);
             }
 
             return deleted;

@@ -7,6 +7,7 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -109,7 +110,7 @@ namespace EchoPlay.App.Services
             }
             catch (TimeoutException)
             {
-                _logger.Warning($"BackgroundCoverService: Iteration hat Timeout ({timeout.TotalSeconds:F1}s) überschritten und wird hart abgebrochen.");
+                _logger.Warning("BackgroundCoverService: Iteration hat Timeout ({TimeoutSeconds}s) überschritten und wird hart abgebrochen.", timeout.TotalSeconds.ToString("F1", CultureInfo.CurrentCulture));
             }
 
             _cts.Dispose();
@@ -141,24 +142,26 @@ namespace EchoPlay.App.Services
             // Phase 1b: Lokale Episoden-Cover
             int episodeLocalLoaded = await LoadMissingLocalEpisodeCoversAsync(ct);
             loaded += seriesLocalLoaded + episodeLocalLoaded;
-            _logger.Info($"RunOnce Phase 1 (lokal): {seriesLocalLoaded + episodeLocalLoaded} Cover geladen " +
-                $"({seriesLocalLoaded} Serien, {episodeLocalLoaded} Episoden).");
+            _logger.Info(
+                "RunOnce Phase 1 (lokal): {TotalLoaded} Cover geladen ({SeriesLoaded} Serien, {EpisodeLoaded} Episoden).",
+                seriesLocalLoaded + episodeLocalLoaded, seriesLocalLoaded, episodeLocalLoaded);
 
             // Phase 1c: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
             int copied = await CopyLocalToOnlineAsync(cancellationToken);
             loaded += copied;
-            _logger.Info($"RunOnce Phase 1b (lokal→online Kopie): {copied} Cover kopiert.");
+            _logger.Info("RunOnce Phase 1b (lokal→online Kopie): {Copied} Cover kopiert.", copied);
 
             // Phase 2a: CoverImageUrl bei Online-Episoden nachtragen (Provider-API)
             int urlsUpdated = await UpdateMissingCoverUrlsAsync(ct);
-            _logger.Info($"RunOnce Phase 2a (URL-Nachtrag): {urlsUpdated} URLs gesetzt.");
+            _logger.Info("RunOnce Phase 2a (URL-Nachtrag): {UrlsUpdated} URLs gesetzt.", urlsUpdated);
 
             // Phase 2b: Fehlende Cover über Provider-URLs herunterladen (Serien + Episoden)
             int seriesProviderLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
             int episodeProviderLoaded = await DownloadMissingEpisodeProviderCoversAsync(ct);
             loaded += seriesProviderLoaded + episodeProviderLoaded;
-            _logger.Info($"RunOnce Phase 2b (Provider-URL Download): {seriesProviderLoaded + episodeProviderLoaded} Cover geladen " +
-                $"({seriesProviderLoaded} Serien, {episodeProviderLoaded} Episoden).");
+            _logger.Info(
+                "RunOnce Phase 2b (Provider-URL Download): {TotalLoaded} Cover geladen ({SeriesLoaded} Serien, {EpisodeLoaded} Episoden).",
+                seriesProviderLoaded + episodeProviderLoaded, seriesProviderLoaded, episodeProviderLoaded);
 
             return loaded;
         }
@@ -179,13 +182,13 @@ namespace EchoPlay.App.Services
 
             int localLoaded = await LoadMissingLocalSeriesCoversAsync(ct);
             loaded += localLoaded;
-            _logger.Info($"SplashCoverPhase Serien lokal: {localLoaded} Cover geladen.");
+            _logger.Info("SplashCoverPhase Serien lokal: {LocalLoaded} Cover geladen.", localLoaded);
 
             if (isOnlineAvailable)
             {
                 int providerLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
                 loaded += providerLoaded;
-                _logger.Info($"SplashCoverPhase Serien Provider: {providerLoaded} Cover geladen.");
+                _logger.Info("SplashCoverPhase Serien Provider: {ProviderLoaded} Cover geladen.", providerLoaded);
             }
             else
             {
@@ -222,7 +225,7 @@ namespace EchoPlay.App.Services
 
                     if (total > 0)
                     {
-                        _logger.Info($"Hintergrund: {localLoaded} lokal, {copied} kopiert, {providerLoaded} Provider.");
+                        _logger.Info("Hintergrund: {LocalLoaded} lokal, {Copied} kopiert, {ProviderLoaded} Provider.", localLoaded, copied, providerLoaded);
                     }
                 }
                 catch (OperationCanceledException)
@@ -231,7 +234,7 @@ namespace EchoPlay.App.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"Hintergrund-Cover-Scan fehlgeschlagen: {ex.Message}");
+                    _logger.Warning("Hintergrund-Cover-Scan fehlgeschlagen: {Reason}", ex.Message);
                 }
 
                 try
@@ -287,7 +290,7 @@ namespace EchoPlay.App.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"EnqueueForEpisodes fehlgeschlagen: {ex.Message}");
+                    _logger.Warning("EnqueueForEpisodes fehlgeschlagen: {Reason}", ex.Message);
                 }
                 finally
                 {
@@ -405,7 +408,7 @@ namespace EchoPlay.App.Services
                 IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
                     await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds, ct);
 
-                _logger.Info($"Priority SeriesOpen: starte {missing.Count} Folgen-Cover für Serie {seriesId}.");
+                _logger.Info("Priority SeriesOpen: starte {EpisodeCount} Folgen-Cover für Serie {SeriesId}.", missing.Count, seriesId);
 
                 ParallelOptions parallelOptions = new()
                 {
@@ -570,7 +573,7 @@ namespace EchoPlay.App.Services
 
             if (loaded > 0)
             {
-                _logger.Info($"Lokale Cover für \"{seriesTitle}\": {loaded} in DB geladen.");
+                _logger.Info("Lokale Cover für \"{SeriesTitle}\": {Loaded} in DB geladen.", seriesTitle, loaded);
             }
 
             return loaded;
@@ -694,7 +697,7 @@ namespace EchoPlay.App.Services
                 catch (Exception ex)
                 {
                     // Einzelne Serien-Fehler nicht abbrechen
-                    _logger.Warning($"URL-Nachtrag für \"{series.Title}\" fehlgeschlagen: {ex.Message}");
+                    _logger.Warning("URL-Nachtrag für \"{SeriesTitle}\" fehlgeschlagen: {Reason}", series.Title, ex.Message);
                 }
             }
 
@@ -720,7 +723,7 @@ namespace EchoPlay.App.Services
 
             IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
 
-            _logger.Info($"Lokal-Check Serien: {allSeries.Count} Serien gesamt.");
+            _logger.Info("Lokal-Check Serien: {SeriesCount} Serien gesamt.", allSeries.Count);
 
             List<Series> seriesWithFolder = [];
             foreach (Series series in allSeries)
@@ -741,8 +744,9 @@ namespace EchoPlay.App.Services
                 await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds, ct);
 
             int missingSeries = seriesWithFolder.Count - existingSeries.Count;
-            _logger.Info($"Lokal-Check Serien: {seriesWithFolder.Count} mit LocalFolderPath, " +
-                $"{existingSeries.Count} in DB, {missingSeries} fehlen.");
+            _logger.Info(
+                "Lokal-Check Serien: {WithFolderCount} mit LocalFolderPath, {ExistingCount} in DB, {MissingCount} fehlen.",
+                seriesWithFolder.Count, existingSeries.Count, missingSeries);
 
             int loaded = 0;
 
@@ -847,8 +851,9 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info($"Lokal-Check Episoden: {candidates.Count} mit Ordner, " +
-                $"{existing.Count} in DB, {loaded} geladen, {notFound} ohne Cover-Datei.");
+            _logger.Info(
+                "Lokal-Check Episoden: {CandidateCount} mit Ordner, {ExistingCount} in DB, {Loaded} geladen, {NotFound} ohne Cover-Datei.",
+                candidates.Count, existing.Count, loaded, notFound);
 
             return loaded;
         }
@@ -880,7 +885,7 @@ namespace EchoPlay.App.Services
 
             if (seriesNeedingCover.Count == 0)
             {
-                _logger.Info($"Provider-Check Serien: {allSeries.Count} Serien, keine mit CoverImageUrl.");
+                _logger.Info("Provider-Check Serien: {SeriesCount} Serien, keine mit CoverImageUrl.", allSeries.Count);
                 return 0;
             }
 
@@ -889,8 +894,9 @@ namespace EchoPlay.App.Services
                 await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds, ct);
 
             int missingSeriesCount = seriesNeedingCover.Count - existingSeries.Count;
-            _logger.Info($"Provider-Check Serien: {seriesNeedingCover.Count} mit CoverImageUrl, " +
-                $"{existingSeries.Count} bereits in DB, {missingSeriesCount} fehlen.");
+            _logger.Info(
+                "Provider-Check Serien: {NeedingCoverCount} mit CoverImageUrl, {ExistingCount} bereits in DB, {MissingCount} fehlen.",
+                seriesNeedingCover.Count, existingSeries.Count, missingSeriesCount);
 
             int loaded = 0;
 
@@ -909,7 +915,7 @@ namespace EchoPlay.App.Services
                 }
                 else
                 {
-                    _logger.Warning($"Serien-Cover Download fehlgeschlagen: \"{series.Title}\" URL={series.CoverImageUrl}");
+                    _logger.Warning("Serien-Cover Download fehlgeschlagen: \"{SeriesTitle}\" URL={CoverImageUrl}", series.Title, series.CoverImageUrl);
                 }
             }
 
@@ -978,8 +984,9 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info($"Provider-Check Episoden: {totalEpisodeCandidates} mit CoverImageUrl, " +
-                $"{totalEpisodeExisting} bereits in DB, {loaded} neu geladen.");
+            _logger.Info(
+                "Provider-Check Episoden: {CandidateCount} mit CoverImageUrl, {ExistingCount} bereits in DB, {Loaded} neu geladen.",
+                totalEpisodeCandidates, totalEpisodeExisting, loaded);
 
             return loaded;
         }

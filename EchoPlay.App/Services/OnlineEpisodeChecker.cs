@@ -140,7 +140,7 @@ namespace EchoPlay.App.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"Prüfung für '{series.Title}' fehlgeschlagen: {ex.Message}");
+                    _logger.Warning("Prüfung für '{SeriesTitle}' fehlgeschlagen: {Reason}", series.Title, ex.Message);
                 }
 
                 // Rate-Limiting: Pause vor dem nächsten API-Aufruf (nicht nach dem letzten)

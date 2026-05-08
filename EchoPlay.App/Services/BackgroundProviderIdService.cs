@@ -6,6 +6,7 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,7 +76,7 @@ namespace EchoPlay.App.Services
             }
             catch (TimeoutException)
             {
-                _logger.Warning($"BackgroundProviderIdService: Iteration hat Timeout ({timeout.TotalSeconds:F1}s) überschritten und wird hart abgebrochen.");
+                _logger.Warning("BackgroundProviderIdService: Iteration hat Timeout ({TimeoutSeconds}s) überschritten und wird hart abgebrochen.", timeout.TotalSeconds.ToString("F1", CultureInfo.CurrentCulture));
             }
 
             _cts.Dispose();
@@ -183,7 +184,7 @@ namespace EchoPlay.App.Services
 
             if (enrichedEpisodes > 0)
             {
-                _logger.Info($"{enrichedEpisodes} Episoden mit Apple-Music-Album-ID ergänzt.");
+                _logger.Info("{EnrichedEpisodes} Episoden mit Apple-Music-Album-ID ergänzt.", enrichedEpisodes);
             }
         }
 

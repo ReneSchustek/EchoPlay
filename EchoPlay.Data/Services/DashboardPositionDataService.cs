@@ -46,7 +46,7 @@ namespace EchoPlay.Data.Services
         {
             ArgumentNullException.ThrowIfNull(seriesIds);
 
-            _logger.Info($"Speichere Reihenfolge für '{section}' ({seriesIds.Count} Serien).");
+            _logger.Info("Speichere Reihenfolge für '{Section}' ({SeriesCount} Serien).", section, seriesIds.Count);
 
             // Bestehende Positionen des Bereichs entfernen – Replace-Strategie ist einfacher
             // und konsistenter als ein Merge, da die gesamte Reihenfolge auf einmal gesetzt wird.
@@ -78,11 +78,11 @@ namespace EchoPlay.Data.Services
             {
                 // Paralleler Scope hat für dieselbe Section bereits Positionen geschrieben —
                 // ignorieren, da die zweite Reihenfolge gleichwertig ist.
-                _logger.Warning($"UNIQUE-Konflikt bei Dashboard-Positionen ignoriert: {ex.InnerException?.Message}");
+                _logger.Warning("UNIQUE-Konflikt bei Dashboard-Positionen ignoriert: {Reason}", ex.InnerException?.Message);
                 return;
             }
 
-            _logger.Info($"Reihenfolge für '{section}' gespeichert ({seriesIds.Count} Positionen).");
+            _logger.Info("Reihenfolge für '{Section}' gespeichert ({SeriesCount} Positionen).", section, seriesIds.Count);
         }
     }
 }

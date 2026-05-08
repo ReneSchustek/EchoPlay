@@ -168,7 +168,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             DatabaseInitializer initializer = new(_context!);
             await initializer.InitializeAsync();
 
-            Series series = new() { Title = "Brief274-Fixture" };
+            Series series = new() { Title = "Migration-Fixture" };
             _ = _context!.Series.Add(series);
             _ = await _context.SaveChangesAsync();
 

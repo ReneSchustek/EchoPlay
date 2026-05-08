@@ -64,7 +64,7 @@ paths = [
     '''(?i).*\.pdb$''',
     '''(?i).*\.dll$''',
 
-    # KI-Workflow-Dateien (siehe CLAUDE.md — niemals committed)
+    # Lokale Workflow-Dateien (gitignored, niemals committed)
     '''(?i)(^|/)\.ai/''',
 
     # Gitleaks selbst (großes Binary, eigene README mit Beispiel-Findings)

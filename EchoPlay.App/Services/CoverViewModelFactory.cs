@@ -17,9 +17,8 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Bauplan fuer eine ViewModel-Cover-Quelle.
     /// Zentrale Stelle fuer die Fallback-Kaskade DB-Cover → cover.jpg → URL/ID3 → null.
-    /// Vor Brief 292 war die Logik dupliziert in <c>DashboardDataLoader</c> und
-    /// <c>SeriesDetailViewModel</c> — bei Aenderungen mussten beide Stellen synchron
-    /// gehalten werden, was fehleranfaellig war.
+    /// Verhindert dass dieselbe Logik in <c>DashboardDataLoader</c> und
+    /// <c>SeriesDetailViewModel</c> auseinanderdriftet.
     /// </summary>
 
     public interface ICoverViewModelFactory

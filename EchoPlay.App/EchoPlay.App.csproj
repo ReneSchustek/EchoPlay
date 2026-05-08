@@ -63,6 +63,20 @@
     <EmbeddedResource Include="Assets\logo.png" LogicalName="EchoPlay.App.Assets.logo.png" />
   </ItemGroup>
 
+  <!-- Defense-in-Depth gemäß splashscreen.md: bricht den Build hart, wenn die Datei
+       fehlt oder der EmbeddedResource-Eintrag aus der csproj entfernt wird. Verhindert,
+       dass in Produktion stillschweigend der Dev-Maschinen-Fallback in SplashWindow greift. -->
+  <Target Name="ValidateSplashLogoEmbeddedResource" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(MSBuildProjectDirectory)\Assets\logo.png')"
+           Text="Splash-Logo 'Assets\logo.png' fehlt im Projekt — Embedded-Resource für SplashWindow nicht herstellbar." />
+    <ItemGroup>
+      <_SplashLogoEmbeddedCheck Include="@(EmbeddedResource)"
+                                Condition="'%(LogicalName)' == 'EchoPlay.App.Assets.logo.png'" />
+    </ItemGroup>
+    <Error Condition="@(_SplashLogoEmbeddedCheck-&gt;Count()) == 0"
+           Text="EmbeddedResource mit LogicalName 'EchoPlay.App.Assets.logo.png' fehlt in EchoPlay.App.csproj — siehe splashscreen.md." />
+  </Target>
+
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>

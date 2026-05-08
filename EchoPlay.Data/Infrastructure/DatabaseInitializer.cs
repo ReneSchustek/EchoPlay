@@ -145,7 +145,9 @@ namespace EchoPlay.Data.Infrastructure
                     await connection.OpenAsync().ConfigureAwait(false);
 
                     using SqliteCommand command = connection.CreateCommand();
+#pragma warning disable SCS0002 // SQL injection: VACUUM INTO erlaubt keine Parameter-Bindings, escapedPath ist intern aus dbPath (Config) plus UTC-Timestamp gebildet, Single-Quote-Escaping schliesst die einzige verbleibende Injection-Quelle.
                     command.CommandText = $"VACUUM INTO '{escapedPath}'";
+#pragma warning restore SCS0002
                     _ = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
                     _logger?.Info("DB-Backup vor Migration erstellt: {BackupFileName}", Path.GetFileName(backupPath));

@@ -71,7 +71,7 @@ namespace EchoPlay.App.Services
             // einen manipulierten Release-Tag möglich (z. B. "../../foo").
             if (!VersionPattern().IsMatch(version))
             {
-                _logger.Warning($"Ungültiges Versionsformat im Update-Tag — Download abgelehnt: \"{version}\"");
+                _logger.Warning("Ungültiges Versionsformat im Update-Tag — Download abgelehnt: \"{Version}\"", version);
                 return false;
             }
 
@@ -85,7 +85,7 @@ namespace EchoPlay.App.Services
                 // das Regex erweitert wird und versehentlich Trennzeichen durchlässt).
                 if (!SecurePathHelper.IsPathInside(tempPath, tempDirectory))
                 {
-                    _logger.Warning($"Setup-Pfad liegt außerhalb von TEMP — Download abgelehnt: \"{tempPath}\"");
+                    _logger.Warning("Setup-Pfad liegt außerhalb von TEMP — Download abgelehnt: \"{TempPath}\"", tempPath);
                     return false;
                 }
 
@@ -126,7 +126,7 @@ namespace EchoPlay.App.Services
                 // den Release-Eintrag selbst läuft (CDN-Vergiftung wäre das Hauptszenario).
                 if (expectedFileSize > 0 && downloadedBytes != expectedFileSize)
                 {
-                    _logger.Warning($"Setup-Dateigröße weicht ab — erwartet {expectedFileSize}, geladen {downloadedBytes}. Datei wird gelöscht.");
+                    _logger.Warning("Setup-Dateigröße weicht ab — erwartet {ExpectedFileSize}, geladen {DownloadedBytes}. Datei wird gelöscht.", expectedFileSize, downloadedBytes);
                     TryDelete(tempPath);
                     return false;
                 }
@@ -153,7 +153,7 @@ namespace EchoPlay.App.Services
             catch (Exception ex)
             {
                 // Download-Fehler → Nutzer kann es beim nächsten Start erneut versuchen
-                _logger.Warning($"Update-Download fehlgeschlagen: {ex.Message}");
+                _logger.Warning("Update-Download fehlgeschlagen: {Reason}", ex.Message);
                 return false;
             }
         }
@@ -183,13 +183,13 @@ namespace EchoPlay.App.Services
             }
             catch (FormatException ex)
             {
-                _logger.Warning($"SHA-256 im Release-Body ist kein gültiges Hex — Update abgelehnt: {ex.Message}");
+                _logger.Warning("SHA-256 im Release-Body ist kein gültiges Hex — Update abgelehnt: {Reason}", ex.Message);
                 return false;
             }
 
             if (expectedBytes.Length != 32)
             {
-                _logger.Warning($"SHA-256 im Release-Body hat falsche Länge ({expectedBytes.Length} Bytes statt 32) — Update abgelehnt.");
+                _logger.Warning("SHA-256 im Release-Body hat falsche Länge ({ActualLength} Bytes statt 32) — Update abgelehnt.", expectedBytes.Length);
                 return false;
             }
 
@@ -201,7 +201,7 @@ namespace EchoPlay.App.Services
 
             if (!CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes))
             {
-                _logger.Warning($"SHA-256 der Setup-Datei stimmt nicht mit dem Release-Body überein — erwartet {Convert.ToHexString(expectedBytes)}, berechnet {Convert.ToHexString(actualBytes)}. Datei wird gelöscht.");
+                _logger.Warning("SHA-256 der Setup-Datei stimmt nicht mit dem Release-Body überein — erwartet {ExpectedHash}, berechnet {ActualHash}. Datei wird gelöscht.", Convert.ToHexString(expectedBytes), Convert.ToHexString(actualBytes));
                 return false;
             }
 
@@ -221,7 +221,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Aufräumen der Setup-Datei fehlgeschlagen: {ex.Message}");
+                _logger.Warning("Aufräumen der Setup-Datei fehlgeschlagen: {Reason}", ex.Message);
             }
         }
     }

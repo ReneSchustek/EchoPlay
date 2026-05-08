@@ -125,7 +125,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             if (!Directory.Exists(rootPath))
             {
-                _logger.Warning($"Wurzelverzeichnis existiert nicht: {PathRedactor.Redact(rootPath)}");
+                _logger.Warning("Wurzelverzeichnis existiert nicht: {Path}", PathRedactor.Redact(rootPath));
                 return [];
             }
 
@@ -159,7 +159,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 }
             }
 
-            _logger.Info($"Scan abgeschlossen: {results.Count} Serien gefunden in {PathRedactor.Redact(rootPath)}");
+            _logger.Info("Scan abgeschlossen: {SeriesCount} Serien gefunden in {Path}", results.Count, PathRedactor.Redact(rootPath));
 
             return results;
         }
@@ -391,7 +391,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                                        or TagLib.CorruptFileException
                                        or TagLib.UnsupportedFormatException)
             {
-                _logger.Warning($"ID3-Tags nicht lesbar, Ordnername wird verwendet: {PathRedactor.Redact(filePath)} – {ex.Message}");
+                _logger.Warning("ID3-Tags nicht lesbar, Ordnername wird verwendet: {Path} – {Reason}", PathRedactor.Redact(filePath), ex.Message);
                 return null;
             }
         }
@@ -416,7 +416,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                                        or DirectoryNotFoundException
                                        or ArgumentException)
             {
-                _logger.Warning($"Vorab-Zählung fehlgeschlagen, Fortschritt wird indeterministisch: {ex.Message}");
+                _logger.Warning("Vorab-Zählung fehlgeschlagen, Fortschritt wird indeterministisch: {Reason}", ex.Message);
                 return 0;
             }
         }
@@ -442,12 +442,12 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (IOException ex)
             {
-                _logger.Warning($"Audiodateien konnten nicht gelesen werden in: {PathRedactor.Redact(folderPath)} – {ex.Message}");
+                _logger.Warning("Audiodateien konnten nicht gelesen werden in: {Path} – {Reason}", PathRedactor.Redact(folderPath), ex.Message);
                 return [];
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.Warning($"Zugriff verweigert für: {PathRedactor.Redact(folderPath)} – {ex.Message}");
+                _logger.Warning("Zugriff verweigert für: {Path} – {Reason}", PathRedactor.Redact(folderPath), ex.Message);
                 return [];
             }
         }
@@ -466,12 +466,12 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (IOException ex)
             {
-                _logger.Warning($"Unterordner konnten nicht gelesen werden: {PathRedactor.Redact(path)} – {ex.Message}");
+                _logger.Warning("Unterordner konnten nicht gelesen werden: {Path} – {Reason}", PathRedactor.Redact(path), ex.Message);
                 return [];
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.Warning($"Zugriff verweigert für: {PathRedactor.Redact(path)} – {ex.Message}");
+                _logger.Warning("Zugriff verweigert für: {Path} – {Reason}", PathRedactor.Redact(path), ex.Message);
                 return [];
             }
         }

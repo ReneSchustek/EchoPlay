@@ -154,7 +154,7 @@ namespace EchoPlay.App.ViewModels
         {
             try
             {
-                _logger.Info($"Speichere Favoriten-Reihenfolge ({_favoriteSeries.Count} Serien).");
+                _logger.Info("Speichere Favoriten-Reihenfolge ({SeriesCount} Serien).", _favoriteSeries.Count);
 
                 List<Guid> seriesIds = new(_favoriteSeries.Count);
                 foreach (FavoriteSeriesCardViewModel card in _favoriteSeries)
@@ -173,7 +173,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (InvalidOperationException ex)
             {
-                _logger.Warning($"Favoriten-Reihenfolge konnte nicht gespeichert werden: {ex.Message}");
+                _logger.Warning("Favoriten-Reihenfolge konnte nicht gespeichert werden: {Reason}", ex.Message);
             }
         }
 

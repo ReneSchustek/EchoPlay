@@ -83,7 +83,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Cover-Caching für Serie {seriesId} fehlgeschlagen: {ex.Message}");
+                _logger.Warning("Cover-Caching für Serie {SeriesId} fehlgeschlagen: {Reason}", seriesId, ex.Message);
             }
         }
 
@@ -156,7 +156,7 @@ namespace EchoPlay.App.Services
             {
                 if (localFound > 0)
                 {
-                    _logger.Info($"Alle Cover für \"{seriesName}\" lokal kopiert ({localFound} Stück).");
+                    _logger.Info("Alle Cover für \"{SeriesName}\" lokal kopiert ({LocalFound} Stück).", seriesName, localFound);
                 }
                 return;
             }
@@ -185,7 +185,7 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info($"Cover-Suche für {needsCheck.Count} Episoden von \"{seriesName}\"");
+            _logger.Info("Cover-Suche für {EpisodeCount} Episoden von \"{SeriesName}\"", needsCheck.Count, seriesName);
 
             // ── Phase 2: Provider-URLs herunterladen (parallel, schnell) ────────
 
@@ -209,7 +209,7 @@ namespace EchoPlay.App.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"Provider-Cover für \"{episode.Title}\" fehlgeschlagen: {ex.Message}");
+                    _logger.Warning("Provider-Cover für \"{EpisodeTitle}\" fehlgeschlagen: {Reason}", episode.Title, ex.Message);
                 }
             }
 
@@ -264,12 +264,13 @@ namespace EchoPlay.App.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"Online-Cover für \"{episode.Title}\" fehlgeschlagen: {ex.Message}");
+                    _logger.Warning("Online-Cover für \"{EpisodeTitle}\" fehlgeschlagen: {Reason}", episode.Title, ex.Message);
                 }
             }
 
-            _logger.Info($"Cover abgeschlossen: {localFound} lokal, {downloaded} Provider, " +
-                $"{onlineFound} online, {stillMissing.Count - onlineFound} nicht gefunden");
+            _logger.Info(
+                "Cover abgeschlossen: {LocalFound} lokal, {Downloaded} Provider, {OnlineFound} online, {NotFound} nicht gefunden",
+                localFound, downloaded, onlineFound, stillMissing.Count - onlineFound);
         }
 
         /// <summary>

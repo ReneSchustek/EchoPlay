@@ -99,7 +99,9 @@ namespace EchoPlay.Data.Services
 
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.Info($"{tracks.Count} Track(s) für Episode '{episodeId}' gespeichert ({existing.Count} vorherige entfernt).");
+            _logger.Info(
+                "{TrackCount} Track(s) für Episode '{EpisodeId}' gespeichert ({RemovedCount} vorherige entfernt).",
+                tracks.Count, episodeId, existing.Count);
         }
     }
 }

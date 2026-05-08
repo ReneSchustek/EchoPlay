@@ -111,7 +111,7 @@ namespace EchoPlay.App.Services
                 return new SyncResult();
             }
 
-            _logger.Info($"Sync gestartet: {settings.LocalLibraryRootPath}");
+            _logger.Info("Sync gestartet: {RootPath}", settings.LocalLibraryRootPath);
 
             _scanEventService.BeginScan();
             try
@@ -222,7 +222,7 @@ namespace EchoPlay.App.Services
                             onSeriesSynced?.Report(importedSeries);
                             _scanEventService.RaiseSeriesSynced(importedSeries);
 
-                            _logger.Info($"Auto-Import: Neue Serie \"{scanResult.SeriesName}\" mit {createdEpisodes} Episoden angelegt");
+                            _logger.Info("Auto-Import: Neue Serie \"{SeriesName}\" mit {CreatedEpisodes} Episoden angelegt", scanResult.SeriesName, createdEpisodes);
                         }
                         else
                         {
@@ -301,7 +301,7 @@ namespace EchoPlay.App.Services
                     TracksCreated = tracksCreated
                 };
 
-                _logger.Info($"Sync abgeschlossen: {result}");
+                _logger.Info("Sync abgeschlossen: {Result}", result);
 
                 return result;
             }
@@ -418,7 +418,7 @@ namespace EchoPlay.App.Services
                     catch (Exception ex)
                     {
                         // Beschädigte Datei – Standardwerte verwenden, Sync nicht abbrechen
-                        _logger.Warning($"Metadaten nicht lesbar, Standardwerte werden verwendet: {path} ({ex.Message})");
+                        _logger.Warning("Metadaten nicht lesbar, Standardwerte werden verwendet: {Path} ({Reason})", path, ex.Message);
                     }
 
                     result.Add(new LocalTrack
@@ -496,7 +496,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Cover-Auflösung fehlgeschlagen für '{folderPath}': {ex.Message}");
+                _logger.Warning("Cover-Auflösung fehlgeschlagen für '{FolderPath}': {Reason}", folderPath, ex.Message);
                 return null;
             }
         }
@@ -534,7 +534,7 @@ namespace EchoPlay.App.Services
 
                 if (totalCopied > 0)
                 {
-                    _logger.Info($"Cover-Abgleich nach Scan: {totalCopied} Cover aus DB übernommen.");
+                    _logger.Info("Cover-Abgleich nach Scan: {TotalCopied} Cover aus DB übernommen.", totalCopied);
                 }
 
                 // Übernommene Cover als cover.jpg in den Episodenordner schreiben
@@ -582,7 +582,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Cover-Abgleich nach Scan fehlgeschlagen: {ex.Message}");
+                _logger.Warning("Cover-Abgleich nach Scan fehlgeschlagen: {Reason}", ex.Message);
             }
         }
     }

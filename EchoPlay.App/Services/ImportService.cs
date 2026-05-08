@@ -268,7 +268,7 @@ namespace EchoPlay.App.Services
                 return existing.Id;
             }
 
-            _logger.Info($"Import gestartet: \"{importSeries.Title}\" ({importSeries.Source})");
+            _logger.Info("Import gestartet: \"{Title}\" ({Source})", importSeries.Title, importSeries.Source);
 
             // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt
             Series series = MapToSeries(importSeries);
@@ -297,7 +297,7 @@ namespace EchoPlay.App.Services
 
             await episodeService.AddRangeAsync(mappedEpisodes, cancellationToken);
 
-            _logger.Info($"Import abgeschlossen: \"{importSeries.Title}\", {uniqueEpisodes.Count} Episoden");
+            _logger.Info("Import abgeschlossen: \"{Title}\", {EpisodeCount} Episoden", importSeries.Title, uniqueEpisodes.Count);
 
             // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
             _ = _coverCacheService.CacheCoversAsync(series.Id, uniqueEpisodes, ct: cancellationToken);
@@ -327,7 +327,7 @@ namespace EchoPlay.App.Services
             }
             (string providerKey, string sourceSeriesId) = resolved.Value;
 
-            _logger.Info($"Re-Import gestartet: \"{series.Title}\" via {providerKey}");
+            _logger.Info("Re-Import gestartet: \"{Title}\" via {ProviderKey}", series.Title, providerKey);
 
             using IServiceScope scope = _scopeFactory.CreateScope();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
@@ -346,7 +346,7 @@ namespace EchoPlay.App.Services
             await episodeService.AddRangeAsync(mappedEpisodes, cancellationToken);
             int count = mappedEpisodes.Count;
 
-            _logger.Info($"Re-Import abgeschlossen: \"{series.Title}\", {count} Episoden nachgeladen");
+            _logger.Info("Re-Import abgeschlossen: \"{Title}\", {EpisodeCount} Episoden nachgeladen", series.Title, count);
 
             // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
             if (count > 0)
@@ -430,7 +430,7 @@ namespace EchoPlay.App.Services
 
             if (newCount > 0)
             {
-                _logger.Info($"Delta-Import: {newCount} neue Episoden für \"{series.Title}\"");
+                _logger.Info("Delta-Import: {NewCount} neue Episoden für \"{Title}\"", newCount, series.Title);
 
                 // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
                 _ = _coverCacheService.CacheCoversAsync(series.Id, providerEpisodes, ct: cancellationToken);
@@ -469,7 +469,7 @@ namespace EchoPlay.App.Services
 
             if (skipped > 0)
             {
-                _logger.Warning($"Import: {skipped} doppelte Episoden-Treffer für \"{seriesTitle}\" verworfen.");
+                _logger.Warning("Import: {SkippedCount} doppelte Episoden-Treffer für \"{SeriesTitle}\" verworfen.", skipped, seriesTitle);
             }
 
             return unique;

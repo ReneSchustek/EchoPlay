@@ -86,11 +86,11 @@ namespace EchoPlay.Data.Services
             {
                 // Paralleler Scope hat bereits einen PlaybackState für dieselbe Episode angelegt.
                 // Der erste Eintrag gewinnt — redundante Einfügung ignorieren.
-                _logger.Warning($"UNIQUE-Konflikt beim Anlegen von PlaybackState für Episode '{playbackState.EpisodeId}' ignoriert.");
+                _logger.Warning("UNIQUE-Konflikt beim Anlegen von PlaybackState für Episode '{EpisodeId}' ignoriert.", playbackState.EpisodeId);
                 return;
             }
 
-            _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' hinzugefügt.");
+            _logger.Info("PlaybackState (ID: {PlaybackStateId}) für Episode '{EpisodeId}' hinzugefügt.", playbackState.Id, playbackState.EpisodeId);
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.PlaybackStates.Update(playbackState);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"PlaybackState (ID: {playbackState.Id}) für Episode '{playbackState.EpisodeId}' aktualisiert.");
+            _logger.Info("PlaybackState (ID: {PlaybackStateId}) für Episode '{EpisodeId}' aktualisiert.", playbackState.Id, playbackState.EpisodeId);
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace EchoPlay.Data.Services
             if (playbackState == null)
             {
                 // Wenn kein Wiedergabestatus existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning($"PlaybackState mit ID '{id}' nicht gefunden – Soft-Delete übersprungen.");
+                _logger.Warning("PlaybackState mit ID '{PlaybackStateId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 
@@ -234,7 +234,7 @@ namespace EchoPlay.Data.Services
             playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
 
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"PlaybackState (ID: {id}) als gelöscht markiert.");
+            _logger.Info("PlaybackState (ID: {PlaybackStateId}) als gelöscht markiert.", id);
         }
     }
 }

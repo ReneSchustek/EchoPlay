@@ -207,7 +207,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.Episodes.Add(episode);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) hinzugefügt.");
+            _logger.Info("Episode '{EpisodeTitle}' (ID: {EpisodeId}) hinzugefügt.", episode.Title, episode.Id);
         }
 
         /// <inheritdoc/>
@@ -224,7 +224,7 @@ namespace EchoPlay.Data.Services
 
             _context.Episodes.AddRange(episodes);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"{episodes.Count} Episoden in einem Batch-Insert hinzugefügt.");
+            _logger.Info("{EpisodeCount} Episoden in einem Batch-Insert hinzugefügt.", episodes.Count);
         }
 
         /// <summary>
@@ -239,7 +239,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.Episodes.Update(episode);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"Episode '{episode.Title}' (ID: {episode.Id}) aktualisiert.");
+            _logger.Info("Episode '{EpisodeTitle}' (ID: {EpisodeId}) aktualisiert.", episode.Title, episode.Id);
         }
 
         /// <inheritdoc/>
@@ -256,7 +256,7 @@ namespace EchoPlay.Data.Services
 
             _context.Episodes.UpdateRange(episodes);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"{episodes.Count} Episoden in einem Batch-Update aktualisiert.");
+            _logger.Info("{EpisodeCount} Episoden in einem Batch-Update aktualisiert.", episodes.Count);
         }
 
         /// <summary>
@@ -297,7 +297,7 @@ namespace EchoPlay.Data.Services
 
             if (episode is null)
             {
-                _logger.Warning($"Episode '{episodeId}' nicht gefunden – CoverLastChecked-Update übersprungen.");
+                _logger.Warning("Episode '{EpisodeId}' nicht gefunden – CoverLastChecked-Update übersprungen.", episodeId);
                 return;
             }
 
@@ -323,7 +323,7 @@ namespace EchoPlay.Data.Services
             if (episode == null)
             {
                 // Wenn die Episode nicht existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning($"Episode mit ID '{id}' nicht gefunden – Soft-Delete übersprungen.");
+                _logger.Warning("Episode mit ID '{EpisodeId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 
@@ -343,7 +343,9 @@ namespace EchoPlay.Data.Services
             }
 
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"Episode '{episode.Title}' (ID: {id}) und {playbackStates.Count} PlaybackState(s) als gelöscht markiert.");
+            _logger.Info(
+                "Episode '{EpisodeTitle}' (ID: {EpisodeId}) und {PlaybackStateCount} PlaybackState(s) als gelöscht markiert.",
+                episode.Title, id, playbackStates.Count);
         }
     }
 }

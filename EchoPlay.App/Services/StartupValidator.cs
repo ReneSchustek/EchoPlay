@@ -130,7 +130,7 @@ namespace EchoPlay.App.Services
                 if (!isLocalAvailable)
                 {
                     localHint = "StartupLocalLibraryUnavailableHint";
-                    _logger.Warning($"Lokales Verzeichnis nicht erreichbar: {settings.LocalLibraryRootPath}");
+                    _logger.Warning("Lokales Verzeichnis nicht erreichbar: {RootPath}", settings.LocalLibraryRootPath);
                 }
             }
 
@@ -146,7 +146,7 @@ namespace EchoPlay.App.Services
                 int cleaned = await cacheService.RemoveBySeriesIdsAsync(unwatchedSeriesIds, cancellationToken);
                 if (cleaned > 0)
                 {
-                    _logger.Info($"{cleaned} Cache-Einträge für nicht-überwachte Serien entfernt.");
+                    _logger.Info("{Cleaned} Cache-Einträge für nicht-überwachte Serien entfernt.", cleaned);
                 }
             }
 
@@ -194,12 +194,12 @@ namespace EchoPlay.App.Services
 
                 if (coverCount > 0)
                 {
-                    _logger.Info($"Cover-Check (Splash): {coverCount} fehlende Serien-Cover nachgeladen.");
+                    _logger.Info("Cover-Check (Splash): {CoverCount} fehlende Serien-Cover nachgeladen.", coverCount);
                 }
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Cover-Check fehlgeschlagen: {ex.Message}");
+                _logger.Warning("Cover-Check fehlgeschlagen: {Reason}", ex.Message);
             }
 
             // Schritt 7: Flag zurücksetzen – auch wenn der Rebuild teilweise fehlgeschlagen ist,
@@ -221,8 +221,9 @@ namespace EchoPlay.App.Services
             onStatus?.Invoke("Bereite Dashboard vor …");
             IReadOnlyList<CachedNewRelease> cachedReleases = await cacheService.GetAllAsync(cancellationToken);
 
-            _logger.Info($"Startup-Validierung abgeschlossen: Online={isOnlineAvailable}, " +
-                $"Lokal={isLocalAvailable}, Cache={cachedReleases.Count} Einträge.");
+            _logger.Info(
+                "Startup-Validierung abgeschlossen: Online={IsOnlineAvailable}, Lokal={IsLocalAvailable}, Cache={CacheCount} Einträge.",
+                isOnlineAvailable, isLocalAvailable, cachedReleases.Count);
 
             // Self-Diagnostics-Snapshot: kompakter Health-Check, der auch beim Log-Support-Case
             // lesbar ist. Mehrzeilig, weil JsonLogSink die Zeilen trotzdem als ein Eintrag erfasst.
@@ -397,14 +398,14 @@ namespace EchoPlay.App.Services
                     await cacheService.UpsertRangeAsync(newEntries, cancellationToken);
                 }
 
-                _logger.Info($"Neuerscheinungen-Cache aktualisiert: {newEntries.Count} Einträge aus {results.Count} Serien.");
+                _logger.Info("Neuerscheinungen-Cache aktualisiert: {NewEntries} Einträge aus {SeriesCount} Serien.", newEntries.Count, results.Count);
             }
             catch (Exception ex)
             {
                 // Fehler beim Refresh dürfen den Startup nicht blockieren –
                 // der Cache enthält dann weiterhin die alten (bereinigten) Daten.
                 string innerMsg = ex.InnerException?.Message ?? "keine InnerException";
-                _logger.Warning($"Neuerscheinungen-Refresh fehlgeschlagen: {ex.Message} | Inner: {innerMsg}");
+                _logger.Warning("Neuerscheinungen-Refresh fehlgeschlagen: {Reason} | Inner: {InnerReason}", ex.Message, innerMsg);
             }
         }
     }

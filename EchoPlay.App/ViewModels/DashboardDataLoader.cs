@@ -460,12 +460,12 @@ namespace EchoPlay.App.ViewModels
             }
             catch (InvalidOperationException ex)
             {
-                _logger.Warning($"Neuerscheinungen aus Cache konnten nicht geladen werden: {ex.Message}");
+                _logger.Warning("Neuerscheinungen aus Cache konnten nicht geladen werden: {Reason}", ex.Message);
                 return [];
             }
             catch (System.IO.IOException ex)
             {
-                _logger.Warning($"Neuerscheinungen aus Cache konnten nicht geladen werden: {ex.Message}");
+                _logger.Warning("Neuerscheinungen aus Cache konnten nicht geladen werden: {Reason}", ex.Message);
                 return [];
             }
         }

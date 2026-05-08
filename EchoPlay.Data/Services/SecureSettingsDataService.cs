@@ -54,7 +54,7 @@ namespace EchoPlay.Data.Services
             }
 
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"Verschlüsselter Wert für '{key}' gespeichert.");
+            _logger.Info("Verschlüsselter Wert für '{Key}' gespeichert.", key);
         }
 
         /// <inheritdoc/>
@@ -71,7 +71,7 @@ namespace EchoPlay.Data.Services
             {
                 _ = _context.SecureSettings.Remove(existing);
                 _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                _logger.Info($"Verschlüsselter Wert für '{key}' gelöscht.");
+                _logger.Info("Verschlüsselter Wert für '{Key}' gelöscht.", key);
             }
         }
     }

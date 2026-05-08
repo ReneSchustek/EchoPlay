@@ -36,8 +36,8 @@ namespace EchoPlay.Core.Logging
 
             if (string.IsNullOrEmpty(directory))
             {
-                // Reiner Dateiname ohne Verzeichnis — keine PII enthalten.
-                return fileName;
+                // Reine Pfad-Trennzeichen ("\\", "/") liefern leeren Datei-Namen — Fallback.
+                return string.IsNullOrEmpty(fileName) ? EmptyPlaceholder : fileName;
             }
 
             string directoryHash = ComputeShortHash(directory);

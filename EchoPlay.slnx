@@ -22,5 +22,6 @@
     <Project Path="EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj" Id="f1dc3c07-2e26-47fa-975a-06a0624d0945" />
     <Project Path="EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj" Id="344a913a-211e-4046-931e-28cc75f7813a" />
     <Project Path="EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj" />
+    <Project Path="EchoPlay.Fuzz/EchoPlay.Fuzz.csproj" />
   </Folder>
 </Solution>

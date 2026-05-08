@@ -6,29 +6,23 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Zeigt Bestätigungs-Dialoge über den WinUI-3-ContentDialog an.
-    /// Gibt <c>true</c> zurück, wenn der Benutzer auf die primäre Schaltfläche geklickt hat.
+    /// Content-Aufbau (Texte + lokalisierte Buttons) liegt in
+    /// <see cref="ConfirmationDialogContent.Build"/>, damit ohne XamlRoot testbar.
     /// </summary>
 
     public sealed class ConfirmationDialogService : IConfirmationDialogService
     {
-        /// <summary>
-        /// Zeigt einen modalen Bestätigungs-Dialog mit „Ja" und „Abbrechen".
-        /// Muss auf dem UI-Thread aufgerufen werden, da <see cref="ContentDialog"/>
-        /// ein XamlRoot aus dem aktiven Fenster benötigt.
-        /// </summary>
-        /// <param name="title">Titel des Dialogs.</param>
-        /// <param name="message">Die Frage oder Erklärung für den Benutzer.</param>
-        /// <returns><c>true</c>, wenn der Benutzer „Ja" gewählt hat; sonst <c>false</c>.</returns>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
+        /// <inheritdoc />
         public async Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default)
         {
+            ConfirmationDialogContent content = ConfirmationDialogContent.Build(title, message);
+
             ContentDialog dialog = new()
             {
-                Title = title,
-                Content = message,
-                PrimaryButtonText = SafeResourceLoader.Get("CommonYes"),
-                CloseButtonText = SafeResourceLoader.Get("CommonCancel"),
+                Title = content.Title,
+                Content = content.Message,
+                PrimaryButtonText = content.PrimaryButtonText,
+                CloseButtonText = content.CloseButtonText,
                 XamlRoot = App.MainWindow!.Content.XamlRoot
             };
 

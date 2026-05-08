@@ -21,6 +21,6 @@ namespace EchoPlay.App.Services
         /// <param name="key">Der Ressourcenschlüssel, z.B. <c>"NavStartseite.Content"</c>.</param>
         /// <returns>Der lokalisierte String oder <see cref="string.Empty"/> wenn der Schlüssel fehlt.</returns>
 
-        public string Get(string key) => _loader.GetString(key);
+        public string Get(string key) => ResourceKeyResolver.Resolve(key, _loader.GetString);
     }
 }

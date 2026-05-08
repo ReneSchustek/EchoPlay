@@ -481,6 +481,7 @@ namespace EchoPlay.App.Services
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IPlaybackStateDataService service = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
+                // Wiedergabe-Persistierung darf nicht durch externen CT abgebrochen werden — eigener _saveLock.
                 PlaybackState? existing = await service.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
 
                 if (existing is null)
@@ -492,12 +493,14 @@ namespace EchoPlay.App.Services
                         LastPlayedAt = _clock.UtcNow
                     };
 
+                    // Wiedergabe-Persistierung darf nicht durch externen CT abgebrochen werden — eigener _saveLock.
                     await service.AddAsync(newState, CancellationToken.None);
                 }
                 else
                 {
                     existing.LastPosition = position;
                     existing.LastPlayedAt = _clock.UtcNow;
+                    // Wiedergabe-Persistierung darf nicht durch externen CT abgebrochen werden — eigener _saveLock.
                     await service.UpdateAsync(existing, CancellationToken.None);
                 }
             }

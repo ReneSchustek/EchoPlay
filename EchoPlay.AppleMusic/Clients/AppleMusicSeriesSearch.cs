@@ -96,7 +96,7 @@ namespace EchoPlay.AppleMusic.Clients
                 }
             }
 
-            _logger.Info($"Apple-Music-Seriensuche abgeschlossen: {results.Count} Hörspielserien gefunden.");
+            _logger.Info("Apple-Music-Seriensuche abgeschlossen: {ResultCount} Hörspielserien gefunden.", results.Count);
 
             return results;
         }

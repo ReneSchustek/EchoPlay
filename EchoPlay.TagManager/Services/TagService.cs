@@ -48,7 +48,7 @@ namespace EchoPlay.TagManager.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Lesen der Tags: {PathRedactor.Redact(filePath)}", ex);
+                    _logger.Error("Fehler beim Lesen der Tags: {Path}", ex, PathRedactor.Redact(filePath));
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -66,11 +66,11 @@ namespace EchoPlay.TagManager.Services
                     ApplyAudioTag(file.Tag, tag);
                     file.Save();
 
-                    _logger.Info($"Tags geschrieben: {PathRedactor.Redact(filePath)}");
+                    _logger.Info("Tags geschrieben: {Path}", PathRedactor.Redact(filePath));
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Schreiben der Tags: {PathRedactor.Redact(filePath)}", ex);
+                    _logger.Error("Fehler beim Schreiben der Tags: {Path}", ex, PathRedactor.Redact(filePath));
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -89,7 +89,7 @@ namespace EchoPlay.TagManager.Services
                     {
                         // Null bedeutet: vorhandenes Cover entfernen
                         file.Tag.Pictures = [];
-                        _logger.Info($"Cover entfernt: {PathRedactor.Redact(filePath)}");
+                        _logger.Info("Cover entfernt: {Path}", PathRedactor.Redact(filePath));
                     }
                     else
                     {
@@ -100,14 +100,16 @@ namespace EchoPlay.TagManager.Services
                             Type = TagLib.PictureType.FrontCover
                         };
                         file.Tag.Pictures = [picture];
-                        _logger.Info($"Cover geschrieben ({mimeType}, {imageData.Length} Bytes): {PathRedactor.Redact(filePath)}");
+                        _logger.Info(
+                            "Cover geschrieben ({MimeType}, {ImageBytes} Bytes): {Path}",
+                            mimeType, imageData.Length, PathRedactor.Redact(filePath));
                     }
 
                     file.Save();
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Schreiben des Covers: {PathRedactor.Redact(filePath)}", ex);
+                    _logger.Error("Fehler beim Schreiben des Covers: {Path}", ex, PathRedactor.Redact(filePath));
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -125,11 +127,11 @@ namespace EchoPlay.TagManager.Services
                     file.Tag.Clear();
                     file.Save();
 
-                    _logger.Info($"Alle Tags entfernt: {PathRedactor.Redact(filePath)}");
+                    _logger.Info("Alle Tags entfernt: {Path}", PathRedactor.Redact(filePath));
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Fehler beim Entfernen aller Tags: {PathRedactor.Redact(filePath)}", ex);
+                    _logger.Error("Fehler beim Entfernen aller Tags: {Path}", ex, PathRedactor.Redact(filePath));
                     throw;
                 }
             }).ConfigureAwait(false);
@@ -166,7 +168,7 @@ namespace EchoPlay.TagManager.Services
                     // Bewusst breiter Catch: TagLib# wirft diverse Exceptions
                     // (CorruptFileException, UnsupportedFormatException, IOException etc.).
                     // Einzelne Dateien überspringen, damit der Rest des Ordners verarbeitet wird.
-                    _logger.Warning($"Datei übersprungen (Fehler beim Tag-Lesen): {file} – {ex.Message}");
+                    _logger.Warning("Datei übersprungen (Fehler beim Tag-Lesen): {File} – {Reason}", file, ex.Message);
                 }
             }
 

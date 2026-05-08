@@ -65,7 +65,7 @@ namespace EchoPlay.TagManager.Services
 
                 if (dto is null || dto.Releases.Count == 0)
                 {
-                    _logger.Info($"Keine Ergebnisse für Suche: {query}");
+                    _logger.Info("Keine Ergebnisse für Suche: {Query}", query);
                     return [];
                 }
 
@@ -73,12 +73,12 @@ namespace EchoPlay.TagManager.Services
                     .Select(MapToTagLookupResult)
                     .ToList();
 
-                _logger.Info($"MusicBrainz: {results.Count} Ergebnisse für \"{query}\"");
+                _logger.Info("MusicBrainz: {ResultCount} Ergebnisse für \"{Query}\"", results.Count, query);
                 return results;
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error($"MusicBrainz nicht erreichbar (Suche: {query})", ex);
+                _logger.Error("MusicBrainz nicht erreichbar (Suche: {Query})", ex, query);
                 throw;
             }
             finally

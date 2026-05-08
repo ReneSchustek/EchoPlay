@@ -123,7 +123,7 @@ namespace EchoPlay.AppleMusic.Clients
                 // nicht auf ein leeres Ergebnis – der Aufrufer muss das unterscheiden können.
                 if (result is null)
                 {
-                    _logger.Warning($"iTunes-API lieferte null-Response für: {relativeUrl}");
+                    _logger.Warning("iTunes-API lieferte null-Response für: {RelativeUrl}", relativeUrl);
                     throw new InvalidOperationException($"iTunes-API-Response konnte nicht deserialisiert werden: {relativeUrl}");
                 }
 
@@ -133,12 +133,12 @@ namespace EchoPlay.AppleMusic.Clients
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error($"iTunes-API-Anfrage fehlgeschlagen: {relativeUrl}", ex);
+                _logger.Error("iTunes-API-Anfrage fehlgeschlagen: {RelativeUrl}", ex, relativeUrl);
                 throw;
             }
             catch (JsonException ex)
             {
-                _logger.Error($"iTunes-API-Antwort konnte nicht geparst werden: {relativeUrl}", ex);
+                _logger.Error("iTunes-API-Antwort konnte nicht geparst werden: {RelativeUrl}", ex, relativeUrl);
                 throw;
             }
         }

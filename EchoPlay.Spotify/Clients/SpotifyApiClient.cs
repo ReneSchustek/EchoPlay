@@ -109,18 +109,18 @@ namespace EchoPlay.Spotify.Clients
                     });
                 }
 
-                _logger.Info($"Spotify-Künstlersuche erfolgreich: {artists.Count} Ergebnisse.");
+                _logger.Info("Spotify-Künstlersuche erfolgreich: {ArtistCount} Ergebnisse.", artists.Count);
 
                 return artists;
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error($"Spotify-Künstlersuche fehlgeschlagen: {requestUri}", ex);
+                _logger.Error("Spotify-Künstlersuche fehlgeschlagen: {RequestUri}", ex, requestUri);
                 throw;
             }
             catch (JsonException ex)
             {
-                _logger.Error($"Spotify-Antwort der Künstlersuche konnte nicht geparst werden: {requestUri}", ex);
+                _logger.Error("Spotify-Antwort der Künstlersuche konnte nicht geparst werden: {RequestUri}", ex, requestUri);
                 throw;
             }
         }
@@ -184,17 +184,17 @@ namespace EchoPlay.Spotify.Clients
                     });
                 }
 
-                _logger.Info($"Spotify-Albumsuche erfolgreich: {albums.Count} Ergebnisse.");
+                _logger.Info("Spotify-Albumsuche erfolgreich: {AlbumCount} Ergebnisse.", albums.Count);
                 return albums;
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error($"Spotify-Albumsuche fehlgeschlagen: {requestUri}", ex);
+                _logger.Error("Spotify-Albumsuche fehlgeschlagen: {RequestUri}", ex, requestUri);
                 throw;
             }
             catch (JsonException ex)
             {
-                _logger.Error($"Spotify-Antwort der Albumsuche konnte nicht geparst werden: {requestUri}", ex);
+                _logger.Error("Spotify-Antwort der Albumsuche konnte nicht geparst werden: {RequestUri}", ex, requestUri);
                 throw;
             }
         }
@@ -282,18 +282,18 @@ namespace EchoPlay.Spotify.Clients
                         : null;
                 }
 
-                _logger.Info($"Spotify-Alben für Künstler '{artistId}' geladen: {albums.Count} Alben.");
+                _logger.Info("Spotify-Alben für Künstler '{ArtistId}' geladen: {AlbumCount} Alben.", artistId, albums.Count);
 
                 return albums;
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error($"Spotify-Alben für Künstler '{artistId}' konnten nicht geladen werden.", ex);
+                _logger.Error("Spotify-Alben für Künstler '{ArtistId}' konnten nicht geladen werden.", ex, artistId);
                 throw;
             }
             catch (JsonException ex)
             {
-                _logger.Error($"Spotify-Albumantwort für Künstler '{artistId}' konnte nicht geparst werden.", ex);
+                _logger.Error("Spotify-Albumantwort für Künstler '{ArtistId}' konnte nicht geparst werden.", ex, artistId);
                 throw;
             }
         }
@@ -354,18 +354,18 @@ namespace EchoPlay.Spotify.Clients
                     });
                 }
 
-                _logger.Info($"Spotify-Tracks für Album '{albumId}' geladen: {tracks.Count} Tracks.");
+                _logger.Info("Spotify-Tracks für Album '{AlbumId}' geladen: {TrackCount} Tracks.", albumId, tracks.Count);
 
                 return tracks;
             }
             catch (HttpRequestException ex)
             {
-                _logger.Error($"Spotify-Tracks für Album '{albumId}' konnten nicht geladen werden.", ex);
+                _logger.Error("Spotify-Tracks für Album '{AlbumId}' konnten nicht geladen werden.", ex, albumId);
                 throw;
             }
             catch (JsonException ex)
             {
-                _logger.Error($"Spotify-Trackantwort für Album '{albumId}' konnte nicht geparst werden.", ex);
+                _logger.Error("Spotify-Trackantwort für Album '{AlbumId}' konnte nicht geparst werden.", ex, albumId);
                 throw;
             }
         }

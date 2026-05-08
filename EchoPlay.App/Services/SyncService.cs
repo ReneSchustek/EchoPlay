@@ -150,6 +150,7 @@ namespace EchoPlay.App.Services
         /// das Wurzelverzeichnis nach Serienordnern. Bekannte Serien werden
         /// sofort über <paramref name="onSeriesSynced"/> gemeldet.
         /// </summary>
+        // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         internal async Task<DetectionResult> RunDetectionPhaseAsync(
             IServiceProvider sp,
             AppSettings settings,
@@ -193,6 +194,7 @@ namespace EchoPlay.App.Services
         /// Läuft den orchestrierten Filesystem-Scan (Phase 2-4 intern beim
         /// Orchestrator: Audiodateien zählen, Serien, Folgen, Tracks).
         /// </summary>
+        // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         internal static async Task<IReadOnlyList<LocalScanResult>> RunScanPhaseAsync(
             IServiceProvider sp,
             AppSettings settings,
@@ -215,6 +217,7 @@ namespace EchoPlay.App.Services
         /// Ergebnis in einer Pipeline-Liste, mit der Phase 4 die Episoden
         /// effizient durchläuft.
         /// </summary>
+        // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         internal async Task<MaterializationResult> MaterializeSeriesAsync(
             IServiceProvider sp,
             IReadOnlyList<LocalScanResult> scanResults,
@@ -305,6 +308,7 @@ namespace EchoPlay.App.Services
         /// Serien bekommen einen Batch-Import; bestehende werden Episode-für-Episode
         /// gegen die DB abgeglichen und Tracks aktualisiert.
         /// </summary>
+        // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         internal async Task<(int EpisodesUpdated, int TracksCreated)> MaterializeEpisodesAsync(
             IServiceProvider sp,
             MaterializationResult materialization,

@@ -68,10 +68,12 @@ namespace EchoPlay.App.Tests.Services
         {
             private readonly Exception _ex;
             public ThrowingSpotifyClient(Exception ex) => _ex = ex;
-            public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default) => throw _ex;
-            public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default) => throw _ex;
-            public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default) => throw _ex;
-            public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default) => throw _ex;
+            // Task.FromException liefert ein faulted Task — semantisch identisch zu 'throw',
+            // aber ohne den throw-Variable-Pattern, der in synchronen Pfaden den Stacktrace verlieren wuerde.
+            public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyArtistDto>>(_ex);
+            public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);
+            public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);
+            public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyTrackDto>>(_ex);
         }
 
         private sealed class EmptyResultSpotifyClient : ISpotifyApiClient

@@ -36,7 +36,8 @@ namespace EchoPlay.App.Tests.Services
             ServiceProvider provider = services.BuildServiceProvider();
 
             FolderRestructureCoordinator coordinator = new(
-                provider.GetRequiredService<IServiceScopeFactory>());
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                new FakeLoggerFactory());
 
             return (coordinator, restructure, settings);
         }

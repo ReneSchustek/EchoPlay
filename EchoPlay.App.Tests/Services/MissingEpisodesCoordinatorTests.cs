@@ -45,7 +45,8 @@ namespace EchoPlay.App.Tests.Services
             return new MissingEpisodesCoordinator(
                 scopeFactory,
                 statusBar,
-                new FakeClock());
+                new FakeClock(),
+                new FakeLoggerFactory());
         }
 
         [Fact]

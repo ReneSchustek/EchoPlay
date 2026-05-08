@@ -1,5 +1,6 @@
 using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.Data.Entities.Settings;
+using EchoPlay.Logger.Abstractions;
 using EchoPlay.Spotify.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -19,23 +20,27 @@ namespace EchoPlay.App.Services
     public sealed class ConnectionTestCoordinator : IConnectionTestCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Coordinator mit der DI-Scope-Fabrik.
         /// </summary>
         /// <param name="scopeFactory">Für scoped API-Client-Auflösung.</param>
-
-        public ConnectionTestCoordinator(IServiceScopeFactory scopeFactory)
+        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+        public ConnectionTestCoordinator(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
+            _logger = loggerFactory.CreateLogger("ConnectionTestCoordinator");
         }
 
         /// <inheritdoc />
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="provider">Parameter <c>provider</c>.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<ConnectionTestResult> TestAsync(ProviderType provider, CancellationToken cancellationToken = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.ConnectionTest);
+
             if (provider == ProviderType.None)
             {
                 return new ConnectionTestResult(false, "No provider configured");

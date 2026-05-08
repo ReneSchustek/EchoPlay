@@ -6,6 +6,7 @@ using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Parsing;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -26,23 +27,26 @@ namespace EchoPlay.App.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly StatusBarViewModel _statusBar;
         private readonly IClock _clock;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
         /// </summary>
-
         public MissingEpisodesCoordinator(
             IServiceScopeFactory scopeFactory,
             StatusBarViewModel statusBar,
-            IClock clock)
+            IClock clock,
+            ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
             ArgumentNullException.ThrowIfNull(statusBar);
             ArgumentNullException.ThrowIfNull(clock);
+            ArgumentNullException.ThrowIfNull(loggerFactory);
 
             _scopeFactory = scopeFactory;
             _statusBar = statusBar;
             _clock = clock;
+            _logger = loggerFactory.CreateLogger("MissingEpisodesCoordinator");
         }
 
         /// <inheritdoc/>
@@ -51,6 +55,8 @@ namespace EchoPlay.App.Services
             string? seriesFolderPath,
             MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.MissingEpisodes);
+
             if (mode == MissingEpisodesMode.Cancel)
             {
                 return [];

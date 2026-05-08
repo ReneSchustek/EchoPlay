@@ -1,5 +1,6 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
@@ -15,25 +16,27 @@ namespace EchoPlay.App.Services
     public sealed class WatchToggleService : IWatchToggleService
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Service mit der Scope-Fabrik der Anwendung.
         /// </summary>
         /// <param name="scopeFactory">DI-Scope-Fabrik – wird pro Toggle einmal verwendet.</param>
-
-        public WatchToggleService(IServiceScopeFactory scopeFactory)
+        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+        public WatchToggleService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
+            _logger = loggerFactory.CreateLogger("WatchToggleService");
         }
 
         /// <inheritdoc/>
-
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         /// <param name="watch">Parameter <c>watch</c>.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task ToggleAsync(Guid seriesId, bool watch, CancellationToken cancellationToken = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.WatchToggle);
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService =
                 scope.ServiceProvider.GetRequiredService<ISeriesDataService>();

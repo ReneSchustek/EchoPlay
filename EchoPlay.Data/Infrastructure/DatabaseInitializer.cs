@@ -128,7 +128,7 @@ namespace EchoPlay.Data.Infrastructure
                 if (!HasEnoughDiskSpace(dbPath, dbSize))
                 {
                     long requiredMb = (dbSize * DiskSpaceSafetyFactor) / (1024 * 1024);
-                    _logger?.Warning($"DB-Backup übersprungen: zu wenig freier Speicher (benötigt ~{requiredMb} MB).");
+                    _logger?.Warning("DB-Backup übersprungen: zu wenig freier Speicher (benötigt ~{RequiredMb} MB).", requiredMb);
                     return;
                 }
 
@@ -148,22 +148,22 @@ namespace EchoPlay.Data.Infrastructure
                     command.CommandText = $"VACUUM INTO '{escapedPath}'";
                     _ = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-                    _logger?.Info($"DB-Backup vor Migration erstellt: {Path.GetFileName(backupPath)}");
+                    _logger?.Info("DB-Backup vor Migration erstellt: {BackupFileName}", Path.GetFileName(backupPath));
                 }
 
                 CleanupOldBackups(dbPath, retentionCount);
             }
             catch (SqliteException ex)
             {
-                _logger?.Warning($"Backup vor Migration fehlgeschlagen (SQLite): {ex.Message}");
+                _logger?.Warning("Backup vor Migration fehlgeschlagen (SQLite): {Reason}", ex.Message);
             }
             catch (IOException ex)
             {
-                _logger?.Warning($"Backup vor Migration fehlgeschlagen (IO): {ex.Message}");
+                _logger?.Warning("Backup vor Migration fehlgeschlagen (IO): {Reason}", ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger?.Warning($"Backup vor Migration fehlgeschlagen (Zugriff verweigert): {ex.Message}");
+                _logger?.Warning("Backup vor Migration fehlgeschlagen (Zugriff verweigert): {Reason}", ex.Message);
             }
         }
 
@@ -223,7 +223,7 @@ namespace EchoPlay.Data.Infrastructure
                 }
                 catch (IOException ex)
                 {
-                    _logger?.Warning($"Altes DB-Backup konnte nicht gelöscht werden ({Path.GetFileName(backups[i])}): {ex.Message}");
+                    _logger?.Warning("Altes DB-Backup konnte nicht gelöscht werden ({BackupFileName}): {Reason}", Path.GetFileName(backups[i]), ex.Message);
                 }
             }
         }

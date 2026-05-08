@@ -100,7 +100,7 @@ namespace EchoPlay.App.Services
             RemoveAllThemeDictionaries();
             LoadAndApplyTheme(themeName);
 
-            _logger.Info($"Theme initialisiert: {themeName}");
+            _logger.Info("Theme initialisiert: {ThemeName}", themeName);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace EchoPlay.App.Services
         {
             if (!KnownThemes.Contains(themeName))
             {
-                _logger.Warning($"Unbekanntes Theme ignoriert: {themeName}");
+                _logger.Warning("Unbekanntes Theme ignoriert: {ThemeName}", themeName);
                 return;
             }
 
@@ -132,7 +132,7 @@ namespace EchoPlay.App.Services
             string previousThemeName = _activeThemeName;
             LoadAndApplyTheme(themeName);
 
-            _logger.Info($"Theme gewechselt: {previousThemeName} → {themeName}");
+            _logger.Info("Theme gewechselt: {PreviousThemeName} → {ThemeName}", previousThemeName, themeName);
 
             // Persistierung im Hintergrund – ein Fehler darf den Theme-Wechsel nicht blockieren
             _ = PersistThemeAsync(themeName);
@@ -272,7 +272,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Error($"Theme konnte nicht persistiert werden: {themeName}", ex);
+                _logger.Error("Theme konnte nicht persistiert werden: {ThemeName}", ex, themeName);
             }
         }
     }

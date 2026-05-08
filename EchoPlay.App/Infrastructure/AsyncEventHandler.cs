@@ -65,7 +65,7 @@ namespace EchoPlay.App.Infrastructure
             }
             catch (Exception ex)
             {
-                logger.Warning($"Handler '{operationName}' fehlgeschlagen: {ex.Message}");
+                logger.Warning("Handler '{OperationName}' fehlgeschlagen: {Reason}", operationName, ex.Message);
                 try
                 {
                     await errorDialog.ShowAsync(

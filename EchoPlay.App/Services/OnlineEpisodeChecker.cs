@@ -92,15 +92,16 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        public Task<IReadOnlyList<OnlineEpisodeCheckResult>> CheckNewReleasesAsync(
+        public async Task<IReadOnlyList<OnlineEpisodeCheckResult>> CheckNewReleasesAsync(
             IReadOnlyList<CheckableSeriesInfo> subscribedSeries,
             DateTime cutoffDate,
             CancellationToken cancellationToken = default)
         {
-            return CheckSeriesSequentiallyAsync(
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.OnlineEpisodeCheck);
+            return await CheckSeriesSequentiallyAsync(
                 subscribedSeries,
                 (series, ct) => CheckNewReleasesForSeriesAsync(series, cutoffDate, ct),
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

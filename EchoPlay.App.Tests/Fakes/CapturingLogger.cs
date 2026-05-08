@@ -13,6 +13,12 @@ namespace EchoPlay.App.Tests.Fakes
     {
         public List<(string Level, string Message, Exception? Exception)> Entries { get; } = [];
 
+        /// <summary>
+        /// Erfasst alle BeginScope-Aufrufe in der Reihenfolge ihrer Eroeffnung.
+        /// Ermoeglicht Tests gegen JobScopes-Konstanten, ohne die Scope-Mechanik selbst zu testen.
+        /// </summary>
+        public List<string> ScopeNames { get; } = [];
+
         public bool IsDebugEnabled => true;
 
         public void Trace(string message) => Entries.Add(("Trace", message, null));
@@ -21,6 +27,10 @@ namespace EchoPlay.App.Tests.Fakes
         public void Warning(string message) => Entries.Add(("Warning", message, null));
         public void Error(string message, Exception? exception = null) => Entries.Add(("Error", message, exception));
         public void Fatal(string message, Exception? exception = null) => Entries.Add(("Fatal", message, exception));
-        public LogScope BeginScope(string name) => new(name);
+        public LogScope BeginScope(string name)
+        {
+            ScopeNames.Add(name);
+            return new(name);
+        }
     }
 }

@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MicrosoftDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue;
@@ -86,11 +87,11 @@ namespace EchoPlay.App.ViewModels
         /// Setzt die für den aktuellen Load-Durchlauf gesammelten Hintergrund-Anfragen zurück
         /// und lädt die bekannten Episoden-Cover-Bytes neu aus der DB (einmalige Batch-Query).
         /// </summary>
-        public async Task BeginLoadSessionAsync(IReadOnlyList<Guid> relevantEpisodeIds)
+        public async Task BeginLoadSessionAsync(IReadOnlyList<Guid> relevantEpisodeIds, CancellationToken cancellationToken = default)
         {
             _pendingEpisodeCoverCards.Clear();
             _episodeCoverBytesCache = _coverService is not null && relevantEpisodeIds.Count > 0
-                ? await _coverService.GetEpisodeCoverBytesAsync(relevantEpisodeIds)
+                ? await _coverService.GetEpisodeCoverBytesAsync(relevantEpisodeIds, cancellationToken)
                 : new Dictionary<Guid, byte[]>();
         }
 
@@ -279,7 +280,8 @@ namespace EchoPlay.App.ViewModels
         public async Task<IReadOnlyList<NewEpisodeCardViewModel>> BuildInProgressEpisodesAsync(
             IEpisodeDataService episodeService,
             IReadOnlyList<PlaybackState> allStates,
-            IReadOnlyList<Series> subscribedSeries)
+            IReadOnlyList<Series> subscribedSeries,
+            CancellationToken cancellationToken = default)
         {
             // Nur Stände mit tatsächlichem Fortschritt, die noch nicht abgeschlossen sind
             List<PlaybackState> activeStates = [];
@@ -304,7 +306,7 @@ namespace EchoPlay.App.ViewModels
 
             // Batch-Lookup: alle benötigten Episoden in einem Roundtrip statt einer pro State.
             IReadOnlyDictionary<Guid, Episode> episodes =
-                await LoadEpisodesByIdsAsync(episodeService, activeStates);
+                await LoadEpisodesByIdsAsync(episodeService, activeStates, cancellationToken);
 
             foreach (PlaybackState state in activeStates)
             {
@@ -336,7 +338,8 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private static async Task<IReadOnlyDictionary<Guid, Episode>> LoadEpisodesByIdsAsync(
             IEpisodeDataService episodeService,
-            List<PlaybackState> states)
+            List<PlaybackState> states,
+            CancellationToken cancellationToken = default)
         {
             if (states.Count == 0)
             {
@@ -349,7 +352,7 @@ namespace EchoPlay.App.ViewModels
                 _ = uniqueIds.Add(state.EpisodeId);
             }
 
-            return await episodeService.GetByIdsAsync([.. uniqueIds], CancellationToken.None);
+            return await episodeService.GetByIdsAsync([.. uniqueIds], cancellationToken);
         }
 
         /// <summary>
@@ -360,7 +363,8 @@ namespace EchoPlay.App.ViewModels
         public async Task<IReadOnlyList<RecentSeriesCardViewModel>> BuildRecentSeriesAsync(
             IEpisodeDataService episodeService,
             IReadOnlyList<PlaybackState> allStates,
-            IReadOnlyList<Series> subscribedSeries)
+            IReadOnlyList<Series> subscribedSeries,
+            CancellationToken cancellationToken = default)
         {
             // Stände mit tatsächlicher Hörzeit ODER als gehört markiert (Online-Folgen via Browser)
             List<PlaybackState> activeStates = [];
@@ -387,7 +391,7 @@ namespace EchoPlay.App.ViewModels
 
             // Batch-Lookup: alle benötigten Episoden in einem Roundtrip statt einer pro State.
             IReadOnlyDictionary<Guid, Episode> episodes =
-                await LoadEpisodesByIdsAsync(episodeService, activeStates);
+                await LoadEpisodesByIdsAsync(episodeService, activeStates, cancellationToken);
 
             foreach (PlaybackState state in activeStates)
             {
@@ -419,7 +423,9 @@ namespace EchoPlay.App.ViewModels
                 BitmapImage? cover = null;
                 if (_episodeCoverBytesCache.TryGetValue(episode.Id, out byte[]? recentBytes))
                 {
-                    cover = await CoverService.ConvertToBitmapAsync(recentBytes);
+                    // ConvertToBitmapAsync ist UI-Thread-bound (WinUI BitmapImage); ein extern propagierter
+                    // CT bringt keinen Nutzen, weil die Konvertierung sehr kurz und nicht CT-fähig ist.
+                    cover = await CoverService.ConvertToBitmapAsync(recentBytes, CancellationToken.None);
                 }
                 cover ??= await BuildSeriesCoverAsync(series);
 
@@ -438,7 +444,8 @@ namespace EchoPlay.App.ViewModels
         /// Bei Fehlern wird eine leere Liste zurückgegeben und der Vorfall geloggt.
         /// </summary>
         public async Task<IReadOnlyList<NewEpisodesGroupViewModel>> BuildNewReleaseGroupsAsync(
-            IReadOnlyList<Series> subscribedSeries)
+            IReadOnlyList<Series> subscribedSeries,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -450,13 +457,13 @@ namespace EchoPlay.App.ViewModels
                 ICachedNewReleaseDataService cacheService =
                     scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
 
-                IReadOnlyList<CachedNewRelease> cached = await cacheService.GetAllAsync(CancellationToken.None);
+                IReadOnlyList<CachedNewRelease> cached = await cacheService.GetAllAsync(cancellationToken);
                 if (cached.Count == 0)
                 {
                     return [];
                 }
 
-                return await BuildTilesFromEntries(cached, subscribedSeries, episodeService, stateService);
+                return await BuildTilesFromEntries(cached, subscribedSeries, episodeService, stateService, cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -480,7 +487,8 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<CachedNewRelease> cached,
             IReadOnlyList<Series> subscribedSeries,
             IEpisodeDataService episodeService,
-            IPlaybackStateDataService stateService)
+            IPlaybackStateDataService stateService,
+            CancellationToken cancellationToken = default)
         {
             DateTime today = _clock.UtcNow.Date;
 
@@ -489,7 +497,7 @@ namespace EchoPlay.App.ViewModels
 
             // Episoden und PlaybackStates einmal pro Serie laden (vermeidet N+1-Abfragen).
             Dictionary<Guid, IReadOnlyList<Episode>> episodesBySeries = [];
-            IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync(CancellationToken.None);
+            IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync(cancellationToken);
             Dictionary<Guid, PlaybackState> stateByEpisodeId = new(allStates.Count);
             foreach (PlaybackState ps in allStates)
             {
@@ -519,7 +527,7 @@ namespace EchoPlay.App.ViewModels
                     // Episodenliste pro Serie nur einmal laden
                     if (!episodesBySeries.TryGetValue(series.Id, out IReadOnlyList<Episode>? localEpisodes))
                     {
-                        localEpisodes = await episodeService.GetBySeriesIdAsync(series.Id, CancellationToken.None);
+                        localEpisodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
                         episodesBySeries[series.Id] = localEpisodes;
                     }
 
@@ -556,7 +564,7 @@ namespace EchoPlay.App.ViewModels
                 if (episodeId != Guid.Empty
                     && _episodeCoverBytesCache.TryGetValue(episodeId, out byte[]? newReleaseBytes))
                 {
-                    cover = await CoverService.ConvertToBitmapAsync(newReleaseBytes);
+                    cover = await CoverService.ConvertToBitmapAsync(newReleaseBytes, CancellationToken.None);
                     hasEpisodeCover = cover is not null;
                 }
 

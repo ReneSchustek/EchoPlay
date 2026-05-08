@@ -34,7 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- "Always" statt "PreserveNewest": auf GitHub-CI haben dotnet test-Laeufe
+         eine eigene Output-Pipeline pro Projekt, PreserveNewest greift dort nicht
+         zuverlaessig (Brief 319). -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
 </Project>

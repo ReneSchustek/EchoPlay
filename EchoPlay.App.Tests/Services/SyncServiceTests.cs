@@ -451,7 +451,7 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(0, result.EpisodesUpdated);
         }
 
-        // ── Arbeitspaket 314 Phasen-Tests ─────────────────────────────────────────────
+        // ── Phasen-Tests (Detection / Materialize-Series / Materialize-Episodes) ───
 
         [Fact]
         public async Task RunDetectionPhase_NewFolders_ReturnsCorrectCount()
@@ -574,7 +574,7 @@ namespace EchoPlay.App.Tests.Services
             SyncResult result = await service.SyncAsync();
 
             Assert.Equal(3, result.EpisodesUpdated);
-            // Genau 1 AddRangeAsync, KEIN einzelner AddAsync — N+1-Vermeidung aus Arbeitspaket 273.
+            // Genau 1 AddRangeAsync, KEIN einzelner AddAsync — N+1-Vermeidung beim Auto-Import.
             Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
             Assert.Equal(0, episodeService.AddAsyncCallCount);
         }

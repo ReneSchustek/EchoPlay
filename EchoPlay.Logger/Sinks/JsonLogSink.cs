@@ -18,6 +18,10 @@ namespace EchoPlay.Logger.Sinks
         private readonly SemaphoreSlim _writeLock = new(1, 1);
         private bool _disposed;
 
+        // UnsafeRelaxedJsonEscaping schreibt UTF-8-Klartext statt Unicode-Escapes für <, >, & und +.
+        // Bewusste Wahl: lokale Logfiles bleiben mit Umlauten und Sonderzeichen lesbar. Real-Risiko
+        // gering, weil Logs nicht in Web-Kontext gerendert werden. Falls die Logs künftig in eine
+        // Web-UI oder externe Aggregation fließen, ist die Encoder-Wahl neu zu bewerten.
         private static readonly JsonSerializerOptions SerializerOptions = new()
         {
             WriteIndented = false,

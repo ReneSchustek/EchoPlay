@@ -44,6 +44,10 @@ namespace EchoPlay.App.ViewModels
         private bool _hasSubscribedSeries = true;
         private bool _hasFavoriteSeries;
 
+        // Lifecycle-CTS: jeder LoadAsync-Aufruf cancelt die laufende Load-Session
+        // und legt eine neue an. Bei Dispose wird der aktuelle gestoppt + entsorgt.
+        private CancellationTokenSource? _loadCts;
+
         /// <summary>
         /// Initialisiert das ViewModel mit allen benötigten Services.
         /// </summary>
@@ -225,6 +229,18 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Asynchrone Ausführung.</returns>
         public async Task LoadAsync()
         {
+            // Lifecycle-Cancellation: laufenden Lade-Lauf abbrechen, Token erneuern.
+            // Wenn der Nutzer die Seite verlässt oder neu auf das Dashboard navigiert, sollen
+            // pending Service-Calls keinen verworfenen VM-State mehr beschreiben.
+            CancellationTokenSource? previous = _loadCts;
+            _loadCts = new CancellationTokenSource();
+            CancellationToken ct = _loadCts.Token;
+            if (previous is not null)
+            {
+                await previous.CancelAsync();
+                previous.Dispose();
+            }
+
             // Timing-Scope für Support: alle Build*-Schritte und HTTP/DB-Zeilen werden unter
             // „UA:<id> DashboardLoad" gruppiert – über `grep UA:<id>` pro Start auffindbar.
             using IDisposable ua = UserActionScope.BeginUserAction("DashboardLoad");
@@ -318,7 +334,7 @@ namespace EchoPlay.App.ViewModels
                 {
                     relevantEpisodeIds.Add(ps.EpisodeId);
                 }
-                await _dataLoader.BeginLoadSessionAsync(relevantEpisodeIds);
+                await _dataLoader.BeginLoadSessionAsync(relevantEpisodeIds, ct);
 
                 Stopwatch sectionStopwatch = Stopwatch.StartNew();
 
@@ -338,13 +354,13 @@ namespace EchoPlay.App.ViewModels
 
                 // In-Progress und Recent über den DataLoader bauen
                 IReadOnlyList<NewEpisodeCardViewModel> inProgress =
-                    await _dataLoader.BuildInProgressEpisodesAsync(episodeService, allStates, subscribedSeries);
+                    await _dataLoader.BuildInProgressEpisodesAsync(episodeService, allStates, subscribedSeries, ct);
                 InProgressVM.SetItems(inProgress);
                 _logger.Debug(() => $"BuildInProgress dauer={sectionStopwatch.ElapsedMilliseconds} ms");
                 sectionStopwatch.Restart();
 
                 IReadOnlyList<RecentSeriesCardViewModel> recent =
-                    await _dataLoader.BuildRecentSeriesAsync(episodeService, allStates, subscribedSeries);
+                    await _dataLoader.BuildRecentSeriesAsync(episodeService, allStates, subscribedSeries, ct);
                 ZuletztGehoertVM.SetItems(recent);
                 _logger.Debug(() => $"BuildRecent dauer={sectionStopwatch.ElapsedMilliseconds} ms");
             }
@@ -359,7 +375,7 @@ namespace EchoPlay.App.ViewModels
             {
                 Stopwatch newReleaseStopwatch = Stopwatch.StartNew();
                 IReadOnlyList<NewEpisodesGroupViewModel> groups =
-                    await _dataLoader.BuildNewReleaseGroupsAsync(subscribedSeries);
+                    await _dataLoader.BuildNewReleaseGroupsAsync(subscribedSeries, ct);
                 NeuerscheinungenVM.SetGroups(groups);
                 _logger.Debug(() => $"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
             }
@@ -509,6 +525,11 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public void Dispose()
         {
+            // Lifecycle-CTS: laufenden Lade-Lauf stoppen + freigeben.
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+            _loadCts = null;
+
             NeuerscheinungenVM.PropertyChanged -= OnSubVmPropertyChanged;
             FavoritenVM.PropertyChanged -= OnSubVmPropertyChanged;
             WeiterhoerenVM.PropertyChanged -= OnSubVmPropertyChanged;

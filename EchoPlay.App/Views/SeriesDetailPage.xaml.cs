@@ -58,7 +58,9 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            ViewModel.CancelPendingPriorityLoad();
+            // Cleanup() bricht zusätzlich den lifecycle-CTS ab, sodass laufende
+            // DB-Roundtrips beim Page-Verlassen nicht mehr in den verworfenen VM-State schreiben.
+            ViewModel.Cleanup();
         }
 
         /// <summary>

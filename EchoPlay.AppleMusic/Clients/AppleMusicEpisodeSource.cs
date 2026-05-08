@@ -79,7 +79,9 @@ namespace EchoPlay.AppleMusic.Clients
 
             if (foreignAlbums > 0)
             {
-                _logger.Warning($"Apple-Music-Lookup für Künstler '{sourceSeriesId}' enthielt {foreignAlbums} fremde Alben (ArtistId weicht ab) – wurden ausgefiltert.");
+                _logger.Warning(
+                    "Apple-Music-Lookup für Künstler '{ArtistId}' enthielt {ForeignAlbumCount} fremde Alben (ArtistId weicht ab) – wurden ausgefiltert.",
+                    sourceSeriesId, foreignAlbums);
             }
 
             if (albums.Count == 0)
@@ -123,7 +125,9 @@ namespace EchoPlay.AppleMusic.Clients
                 orderIndex++;
             }
 
-            _logger.Info($"Apple-Music-Episodenimport abgeschlossen: {episodes.Count} Episode(n) für Künstler '{sourceSeriesId}'.");
+            _logger.Info(
+                "Apple-Music-Episodenimport abgeschlossen: {EpisodeCount} Episode(n) für Künstler '{ArtistId}'.",
+                episodes.Count, sourceSeriesId);
 
             return episodes;
         }

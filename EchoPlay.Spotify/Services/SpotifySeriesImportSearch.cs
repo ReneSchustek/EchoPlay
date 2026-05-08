@@ -70,7 +70,7 @@ namespace EchoPlay.Spotify.Services
                 }
             }
 
-            _logger.Info($"Spotify-Seriensuche abgeschlossen: {results.Count} Hörspielserien gefunden.");
+            _logger.Info("Spotify-Seriensuche abgeschlossen: {ResultCount} Hörspielserien gefunden.", results.Count);
 
             return results;
         }

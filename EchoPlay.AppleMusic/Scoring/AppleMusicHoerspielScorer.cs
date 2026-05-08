@@ -71,7 +71,9 @@ namespace EchoPlay.AppleMusic.Scoring
 
             _cache.Store(result);
 
-            _logger.Info($"Ergebnis für '{source.ArtistName}': {(result.IsHoerspiel ? "Hörspiel" : "kein Hörspiel")} ({result.Score} Punkte)");
+            _logger.Info(
+                "Ergebnis für '{ArtistName}': {Classification} ({Score} Punkte)",
+                source.ArtistName, result.IsHoerspiel ? "Hörspiel" : "kein Hörspiel", result.Score);
 
             return result;
         }

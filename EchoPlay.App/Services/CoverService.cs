@@ -188,7 +188,7 @@ namespace EchoPlay.App.Services
                 }
                 catch (DbUpdateException ex) when (attempt < 3)
                 {
-                    _logger.Warning($"Cover-DB-Write Retry {attempt}/3 für {entityType} {entityId}: {ex.Message}");
+                    _logger.Warning("Cover-DB-Write Retry {Attempt}/3 für {EntityType} {EntityId}: {Reason}", attempt, entityType, entityId, ex.Message);
                     await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken).ConfigureAwait(false);
                 }
             }

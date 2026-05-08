@@ -135,8 +135,9 @@ namespace EchoPlay.Data.Services
 
             if (total > 0)
             {
-                _logger.Info($"Cover-Kopie für \"{seriesTitle}\": {total} kopiert " +
-                    $"({byExact} exakt, {byNumber} per Nummer, {byKeyword} per Schlagwort).");
+                _logger.Info(
+                    "Cover-Kopie für \"{SeriesTitle}\": {Total} kopiert ({ByExact} exakt, {ByNumber} per Nummer, {ByKeyword} per Schlagwort).",
+                    seriesTitle, total, byExact, byNumber, byKeyword);
             }
 
             return total;

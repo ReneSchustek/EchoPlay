@@ -81,7 +81,7 @@ namespace EchoPlay.TagManager.Services
                 string sourceDirectory = Path.GetDirectoryName(item.FilePath) ?? string.Empty;
                 if (!SecurePathHelper.IsPathInside(item.NewFilePath, sourceDirectory))
                 {
-                    _logger.Warning($"Umbenennung abgelehnt für \"{item.OldName}\": Zielpfad liegt außerhalb des Quellordners.");
+                    _logger.Warning("Umbenennung abgelehnt für \"{OldName}\": Zielpfad liegt außerhalb des Quellordners.", item.OldName);
                     continue;
                 }
 
@@ -95,15 +95,15 @@ namespace EchoPlay.TagManager.Services
                 catch (IOException ex)
                 {
                     // Gesperrte Dateien oder Namenskonflikte werden übersprungen und geloggt
-                    _logger.Warning($"Umbenennung fehlgeschlagen für \"{item.OldName}\": {ex.Message}");
+                    _logger.Warning("Umbenennung fehlgeschlagen für \"{OldName}\": {Reason}", item.OldName, ex.Message);
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    _logger.Warning($"Zugriff verweigert für \"{item.OldName}\": {ex.Message}");
+                    _logger.Warning("Zugriff verweigert für \"{OldName}\": {Reason}", item.OldName, ex.Message);
                 }
             }
 
-            _logger.Info($"Umbenennung abgeschlossen: {successCount}/{preview.Count} Dateien erfolgreich");
+            _logger.Info("Umbenennung abgeschlossen: {SuccessCount}/{Total} Dateien erfolgreich", successCount, preview.Count);
 
             return successCount;
         }

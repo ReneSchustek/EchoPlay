@@ -203,7 +203,7 @@ namespace EchoPlay.App
                 }
                 catch (Exception ex)
                 {
-                    _appLogger?.Warning($"DB-Purge fehlgeschlagen: {ex.Message}");
+                    _appLogger?.Warning("DB-Purge fehlgeschlagen: {Reason}", ex.Message);
                 }
             });
         }
@@ -240,7 +240,9 @@ namespace EchoPlay.App
             IStartupValidator startupValidator = Services.GetRequiredService<IStartupValidator>();
             StartupResult result = await startupValidator.ValidateAsync(status => splash.SetStatus(status));
 
-            _appLogger?.Info($"Startup-Validierung abgeschlossen: Online={result.IsOnlineAvailable}, Lokal={result.IsLocalLibraryAvailable}");
+            _appLogger?.Info(
+                "Startup-Validierung abgeschlossen: Online={IsOnlineAvailable}, Lokal={IsLocalLibraryAvailable}",
+                result.IsOnlineAvailable, result.IsLocalLibraryAvailable);
 
             // Update-Check: prueft, ob eine neuere Version auf GitHub verfuegbar ist.
             // Laeuft nach der Validierung, blockiert maximal 5 Sekunden (RequestTimeout in UpdateCheckService).
@@ -321,7 +323,7 @@ namespace EchoPlay.App
             }
             catch (Exception ex)
             {
-                _appLogger?.Warning($"Stopp der Hintergrund-Services fehlgeschlagen: {ex.Message}");
+                _appLogger?.Warning("Stopp der Hintergrund-Services fehlgeschlagen: {Reason}", ex.Message);
             }
 
             // PRAGMA optimize vor dem Shutdown: SQLite aktualisiert interne Statistiken
@@ -443,7 +445,7 @@ namespace EchoPlay.App
                     return;
                 }
 
-                _appLogger?.Info($"Neue Version verfügbar: {update.Version}");
+                _appLogger?.Info("Neue Version verfügbar: {Version}", update.Version);
 
                 Windows.ApplicationModel.Resources.ResourceLoader resources =
                     Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
@@ -497,13 +499,13 @@ namespace EchoPlay.App
                 {
                     // "Version überspringen" → in DB merken
                     await updateCheckService.SkipVersionAsync(update.Version);
-                    _appLogger?.Info($"Version {update.Version} übersprungen");
+                    _appLogger?.Info("Version {Version} übersprungen", update.Version);
                 }
             }
             catch (Exception ex)
             {
                 // Update-Check darf den App-Start niemals blockieren
-                _appLogger?.Warning($"Update-Check fehlgeschlagen: {ex.Message}");
+                _appLogger?.Warning("Update-Check fehlgeschlagen: {Reason}", ex.Message);
             }
         }
 

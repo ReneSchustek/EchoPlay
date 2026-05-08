@@ -163,7 +163,9 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return numA.CompareTo(numB);
             });
 
-            _logger.Info($"Ordnerstruktur-Analyse: {actions.Count} Dateien → {targetFolders.Count} Ordner in '{Path.GetFileName(seriesFolderPath)}'");
+            _logger.Info(
+                "Ordnerstruktur-Analyse: {FileCount} Dateien → {FolderCount} Ordner in '{SeriesFolder}'",
+                actions.Count, targetFolders.Count, Path.GetFileName(seriesFolderPath));
 
             return new RestructurePreview
             {
@@ -200,7 +202,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                     // Prüfen ob die Zieldatei bereits existiert – Kollision vermeiden
                     if (File.Exists(destination))
                     {
-                        _logger.Warning($"Zieldatei existiert bereits, übersprungen: {PathRedactor.Redact(destination)}");
+                        _logger.Warning("Zieldatei existiert bereits, übersprungen: {Destination}", PathRedactor.Redact(destination));
                         continue;
                     }
 
@@ -209,14 +211,16 @@ namespace EchoPlay.LocalLibrary.Scanning
                     TryWriteJournal(journalPath, completed);
                 }
 
-                _logger.Info($"Ordnerstruktur aufgebaut: {completed.Count} Dateien verschoben in '{Path.GetFileName(preview.SeriesFolderPath)}'");
+                _logger.Info(
+                    "Ordnerstruktur aufgebaut: {FileCount} Dateien verschoben in '{SeriesFolder}'",
+                    completed.Count, Path.GetFileName(preview.SeriesFolderPath));
                 TryDeleteJournal(journalPath);
                 return completed.Count;
             }
             catch (Exception ex)
             {
                 // Rollback: bereits verschobene Dateien zurückschieben
-                _logger.Error($"Fehler beim Verschieben, starte Rollback: {ex.Message}", ex);
+                _logger.Error("Fehler beim Verschieben, starte Rollback: {Reason}", ex, ex.Message);
 
                 foreach ((string source, string destination) in completed)
                 {
@@ -232,7 +236,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                                                        or NotSupportedException
                                                        or ArgumentException)
                     {
-                        _logger.Error($"Rollback fehlgeschlagen für '{PathRedactor.Redact(source)}': {rollbackEx.Message}", rollbackEx);
+                        _logger.Error("Rollback fehlgeschlagen für '{Source}': {Reason}", rollbackEx, PathRedactor.Redact(source), rollbackEx.Message);
                     }
                 }
 
@@ -269,7 +273,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
             {
-                _logger.Warning($"Journal '{PathRedactor.Redact(journalPath)}' konnte nicht gelesen werden: {ex.Message}");
+                _logger.Warning("Journal '{JournalPath}' konnte nicht gelesen werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
                 return 0;
             }
 
@@ -298,11 +302,13 @@ namespace EchoPlay.LocalLibrary.Scanning
                                            or NotSupportedException
                                            or ArgumentException)
                 {
-                    _logger.Error($"Journal-Recovery fehlgeschlagen für '{entry.Destination}': {ex.Message}", ex);
+                    _logger.Error("Journal-Recovery fehlgeschlagen für '{Destination}': {Reason}", ex, entry.Destination, ex.Message);
                 }
             }
 
-            _logger.Info($"Journal-Recovery: {recovered} von {entries.Count} Dateien zurückgerollt in '{Path.GetFileName(seriesFolderPath)}'");
+            _logger.Info(
+                "Journal-Recovery: {Recovered} von {Total} Dateien zurückgerollt in '{SeriesFolder}'",
+                recovered, entries.Count, Path.GetFileName(seriesFolderPath));
             TryDeleteJournal(journalPath);
             return recovered;
         }
@@ -323,7 +329,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
             {
                 // Journal ist Best-Effort – der Umbau läuft auch ohne persistentes Journal weiter.
-                _logger.Warning($"Journal '{PathRedactor.Redact(journalPath)}' konnte nicht geschrieben werden: {ex.Message}");
+                _logger.Warning("Journal '{JournalPath}' konnte nicht geschrieben werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
             }
         }
 
@@ -338,7 +344,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                _logger.Warning($"Journal '{PathRedactor.Redact(journalPath)}' konnte nicht gelöscht werden: {ex.Message}");
+                _logger.Warning("Journal '{JournalPath}' konnte nicht gelöscht werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
             }
         }
 

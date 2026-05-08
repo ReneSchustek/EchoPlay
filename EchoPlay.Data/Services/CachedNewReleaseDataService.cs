@@ -4,6 +4,7 @@ using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace EchoPlay.Data.Services
 {
@@ -134,11 +135,11 @@ namespace EchoPlay.Data.Services
             {
                 // Paralleler Scope hat denselben CollectionId eingefügt — ignorieren,
                 // da Cache-Einträge redundant sind und der andere Wert gleichwertig ist.
-                _logger.Warning($"UNIQUE-Konflikt beim Cache-Upsert ignoriert: {ex.InnerException?.Message}");
+                _logger.Warning("UNIQUE-Konflikt beim Cache-Upsert ignoriert: {Reason}", ex.InnerException?.Message);
                 return;
             }
 
-            _logger.Info($"Neuerscheinungen-Cache aktualisiert: {insertCount} neu, {updateCount} aktualisiert.");
+            _logger.Info("Neuerscheinungen-Cache aktualisiert: {InsertCount} neu, {UpdateCount} aktualisiert.", insertCount, updateCount);
         }
 
         /// <inheritdoc />
@@ -167,7 +168,9 @@ namespace EchoPlay.Data.Services
             _context.CachedNewReleases.RemoveRange(expired);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.Info($"{expired.Count} abgelaufene Neuerscheinung(en) aus dem Cache entfernt (Cutoff: {cutoff:yyyy-MM-dd}).");
+            _logger.Info(
+                "{ExpiredCount} abgelaufene Neuerscheinung(en) aus dem Cache entfernt (Cutoff: {Cutoff}).",
+                expired.Count, cutoff.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             return expired.Count;
         }
 
@@ -190,7 +193,7 @@ namespace EchoPlay.Data.Services
 
             if (deleted > 0)
             {
-                _logger.Info($"{deleted} Cache-Eintrag/Einträge für {seriesIds.Count} nicht-überwachte Serie(n) entfernt.");
+                _logger.Info("{DeletedCount} Cache-Eintrag/Einträge für {SeriesCount} nicht-überwachte Serie(n) entfernt.", deleted, seriesIds.Count);
             }
 
             return deleted;
@@ -206,7 +209,7 @@ namespace EchoPlay.Data.Services
 
             if (deleted > 0)
             {
-                _logger.Info($"Neuerscheinungen-Cache vollständig geleert ({deleted} Einträge).");
+                _logger.Info("Neuerscheinungen-Cache vollständig geleert ({DeletedCount} Einträge).", deleted);
             }
         }
     }

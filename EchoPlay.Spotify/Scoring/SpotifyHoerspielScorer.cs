@@ -70,7 +70,9 @@ namespace EchoPlay.Spotify.Scoring
 
             _cache.Store(result);
 
-            _logger.Info($"Ergebnis für '{source.Name}': {(result.IsHoerspiel ? "Hörspiel" : "kein Hörspiel")} ({result.Score} Punkte)");
+            _logger.Info(
+                "Ergebnis für '{ArtistName}': {Classification} ({Score} Punkte)",
+                source.Name, result.IsHoerspiel ? "Hörspiel" : "kein Hörspiel", result.Score);
 
             return result;
         }

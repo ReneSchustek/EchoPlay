@@ -73,7 +73,7 @@ namespace EchoPlay.App.Services
                 // Nach Windows-Profil-Migration oder PC-Wechsel sind die Cipher-Bytes nicht mehr
                 // entschlüsselbar. Ohne Aufräumen loggt jeder Start denselben Fehler — daher
                 // löschen wir die korrupten Records und erzwingen eine Neu-Eingabe durch den Nutzer.
-                _logger.Warning($"Spotify-Credentials konnten nicht entschlüsselt werden ({ex.Message}). Korrupte Records werden entfernt.");
+                _logger.Warning("Spotify-Credentials konnten nicht entschlüsselt werden ({Reason}). Korrupte Records werden entfernt.", ex.Message);
 
                 await service.DeleteAsync(KeyClientId, cancellationToken).ConfigureAwait(false);
                 await service.DeleteAsync(KeyClientSecret, cancellationToken).ConfigureAwait(false);

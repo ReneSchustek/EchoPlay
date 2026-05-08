@@ -368,7 +368,7 @@ namespace EchoPlay.App.ViewModels
             // progressiv über den BackgroundCoverService nachgeladen.
             _dataLoader.FlushPendingEpisodeCoverRefresh();
 
-            _logger.Info($"DashboardLoad total={totalStopwatch.ElapsedMilliseconds} ms");
+            _logger.Info("DashboardLoad total={ElapsedMs} ms", totalStopwatch.ElapsedMilliseconds);
         }
 
         /// <summary>

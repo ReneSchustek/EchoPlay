@@ -95,7 +95,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.Series.Add(series);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"Serie '{series.Title}' (ID: {series.Id}) hinzugefügt.");
+            _logger.Info("Serie '{SeriesTitle}' (ID: {SeriesId}) hinzugefügt.", series.Title, series.Id);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.Series.Update(series);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.Info($"Serie '{series.Title}' (ID: {series.Id}) aktualisiert.");
+            _logger.Info("Serie '{SeriesTitle}' (ID: {SeriesId}) aktualisiert.", series.Title, series.Id);
         }
 
         /// <summary>
@@ -199,11 +199,11 @@ namespace EchoPlay.Data.Services
 
             if (updated == 0)
             {
-                _logger.Warning($"Serie '{seriesId}' nicht gefunden – {flagName}-Update übersprungen.");
+                _logger.Warning("Serie '{SeriesId}' nicht gefunden – {FlagName}-Update übersprungen.", seriesId, flagName);
                 return;
             }
 
-            _logger.Info($"Serie (ID: {seriesId}) {flagName} = {value}.");
+            _logger.Info("Serie (ID: {SeriesId}) {FlagName} = {Value}.", seriesId, flagName, value);
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace EchoPlay.Data.Services
             if (series == null)
             {
                 // Wenn die Serie nicht existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning($"Serie mit ID '{id}' nicht gefunden – Soft-Delete übersprungen.");
+                _logger.Warning("Serie mit ID '{SeriesId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 
@@ -266,12 +266,14 @@ namespace EchoPlay.Data.Services
                 _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-                _logger.Info($"Serie '{series.Title}' (ID: {id}) und {episodes.Count} Episode(n) sowie {playbackStates.Count} PlaybackState(s) als gelöscht markiert.");
+                _logger.Info(
+                    "Serie '{SeriesTitle}' (ID: {SeriesId}) und {EpisodeCount} Episode(n) sowie {PlaybackStateCount} PlaybackState(s) als gelöscht markiert.",
+                    series.Title, id, episodes.Count, playbackStates.Count);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-                _logger.Error($"Soft-Delete für Serie '{id}' fehlgeschlagen – Transaktion zurückgerollt.", ex);
+                _logger.Error("Soft-Delete für Serie '{SeriesId}' fehlgeschlagen – Transaktion zurückgerollt.", ex, id);
                 throw;
             }
             finally

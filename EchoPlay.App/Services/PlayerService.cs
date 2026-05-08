@@ -165,13 +165,13 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex) when (ex is UriFormatException or System.IO.FileNotFoundException or UnauthorizedAccessException or ArgumentException)
             {
-                _logger.Error($"Wiedergabe konnte nicht gestartet werden: {ex.Message}", ex);
+                _logger.Error("Wiedergabe konnte nicht gestartet werden: {Reason}", ex, ex.Message);
                 lock (_stateLock) { ResetPlaybackState(); }
                 ErrorOccurred?.Invoke(this, $"Wiedergabe fehlgeschlagen: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.Error($"Unerwarteter Fehler beim Starten der Wiedergabe: {ex.Message}", ex);
+                _logger.Error("Unerwarteter Fehler beim Starten der Wiedergabe: {Reason}", ex, ex.Message);
                 lock (_stateLock) { ResetPlaybackState(); }
                 ErrorOccurred?.Invoke(this, "Ein unerwarteter Fehler ist bei der Wiedergabe aufgetreten.");
             }
@@ -230,7 +230,7 @@ namespace EchoPlay.App.Services
                 {
                     // Media-Pipeline-Fehler beim Stoppen sind nicht kritisch,
                     // aber für Diagnose bei subtilen Wiedergabe-Bugs hilfreich.
-                    _logger.Warning($"Media-Pipeline-Fehler beim Stop: {ex.Message}");
+                    _logger.Warning("Media-Pipeline-Fehler beim Stop: {Reason}", ex.Message);
                 }
             });
         }
@@ -263,7 +263,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Error($"Wiedergabe konnte nicht fortgesetzt werden: {ex.Message}", ex);
+                _logger.Error("Wiedergabe konnte nicht fortgesetzt werden: {Reason}", ex, ex.Message);
                 ErrorOccurred?.Invoke(this, "Wiedergabe konnte nicht fortgesetzt werden.");
             }
         }
@@ -432,7 +432,7 @@ namespace EchoPlay.App.Services
         private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
         {
             string message = args.ErrorMessage ?? "Unbekannter Wiedergabefehler";
-            _logger.Error($"MediaPlayer-Fehler: {message} (Error: {args.Error})");
+            _logger.Error("MediaPlayer-Fehler: {Message} (Error: {Error})", null, message, args.Error);
             ErrorOccurred?.Invoke(this, $"Wiedergabefehler: {message}");
         }
 
@@ -503,7 +503,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Wiedergabestatus konnte nicht gespeichert werden: {ex.Message}");
+                _logger.Warning("Wiedergabestatus konnte nicht gespeichert werden: {Reason}", ex.Message);
             }
             finally
             {

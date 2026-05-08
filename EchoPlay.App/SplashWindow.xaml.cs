@@ -27,8 +27,8 @@ namespace EchoPlay.App
         // Per LogicalName in der csproj fixiert, damit MSBuild-Heuristiken den Namen nicht ändern.
         private const string LogoResourceName = "EchoPlay.App.Assets.logo.png";
 
-        // Fallback-Pfad gemäß CLAUDE.md / splashscreen.md — greift nur, wenn die Embedded-Resource
-        // fehlt. In Produktion existiert der Pfad nicht; der Splash zeigt dann kein Logo, statt zu crashen.
+        // Fallback-Pfad — greift nur, wenn die Embedded-Resource fehlt.
+        // In Produktion existiert der Pfad nicht; der Splash zeigt dann kein Logo, statt zu crashen.
         private const string FallbackLogoPath = @"F:\Entwicklung\_Icons\Icon_Ruhrcoder_quadrat.png";
 
         /// <summary>

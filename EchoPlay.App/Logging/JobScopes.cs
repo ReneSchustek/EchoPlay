@@ -12,9 +12,6 @@ namespace EchoPlay.App.Logging
         public const string Player = "Job:Player";
         public const string UpdateCheck = "Job:UpdateCheck";
         public const string CoverDownload = "Job:CoverDownload";
-
-        // Brief 320: zusaetzliche Job-Kategorien fuer Services, die seit Brief 300
-        // ohne BeginScope-Instrumentierung waren.
         public const string OnlineEpisodeCheck = "Job:OnlineEpisodeCheck";
         public const string WatchToggle = "Job:WatchToggle";
         public const string ProviderIdEnrichment = "Job:ProviderIdEnrichment";

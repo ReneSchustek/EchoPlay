@@ -15,10 +15,7 @@ namespace EchoPlay.App.Services
 
     public sealed class TaskbarProgressService
     {
-        // Taskbar-Fortschrittsmodus: kein Balken, unbestimmt oder normaler Fortschritt
-        private const int TBPF_NOPROGRESS = 0x0;
-        private const int TBPF_INDETERMINATE = 0x1;
-        private const int TBPF_NORMAL = 0x2;
+        // Mapping in TaskbarProgressStateExtensions — testbar ohne COM.
 
         // COM-Instanz wird beim ersten Aufruf erzeugt und danach wiederverwendet.
         // null bedeutet: Initialisierung fehlgeschlagen oder noch nicht versucht.
@@ -41,8 +38,8 @@ namespace EchoPlay.App.Services
 
             try
             {
-                taskbar.SetProgressState(hwnd, TBPF_NORMAL);
-                taskbar.SetProgressValue(hwnd, (ulong)percentComplete, 100UL);
+                taskbar.SetProgressState(hwnd, TaskbarProgressState.Normal.ToFlag());
+                taskbar.SetProgressValue(hwnd, TaskbarProgressStateExtensions.ClampPercent(percentComplete), 100UL);
             }
             catch
             {
@@ -67,7 +64,7 @@ namespace EchoPlay.App.Services
 
             try
             {
-                taskbar.SetProgressState(hwnd, TBPF_INDETERMINATE);
+                taskbar.SetProgressState(hwnd, TaskbarProgressState.Indeterminate.ToFlag());
             }
             catch
             {
@@ -91,7 +88,7 @@ namespace EchoPlay.App.Services
 
             try
             {
-                taskbar.SetProgressState(hwnd, TBPF_NOPROGRESS);
+                taskbar.SetProgressState(hwnd, TaskbarProgressState.None.ToFlag());
             }
             catch
             {

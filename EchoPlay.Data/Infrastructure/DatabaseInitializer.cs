@@ -124,7 +124,9 @@ namespace EchoPlay.Data.Infrastructure
 
             try
             {
+#pragma warning disable SCS0018 // Path Traversal: dbPath aus IConfiguration (ConnectionStrings:Default), nicht aus User-Input.
                 long dbSize = new FileInfo(dbPath).Length;
+#pragma warning restore SCS0018
                 if (!HasEnoughDiskSpace(dbPath, dbSize))
                 {
                     long requiredMb = (dbSize * DiskSpaceSafetyFactor) / (1024 * 1024);
@@ -214,14 +216,18 @@ namespace EchoPlay.Data.Infrastructure
             string fileName = Path.GetFileName(dbPath);
             string pattern = $"{fileName}.backup-*";
 
+#pragma warning disable SCS0018 // Path Traversal: dbPath stammt aus der gebundenen IConfiguration (Source: DataServiceCollectionExtensions), nicht aus User-Input. Pattern verhindert Wildcard-Escapes.
             string[] backups = Directory.GetFiles(directory, pattern);
+#pragma warning restore SCS0018
             Array.Sort(backups, (a, b) => string.CompareOrdinal(b, a));
 
             for (int i = retentionCount; i < backups.Length; i++)
             {
                 try
                 {
+#pragma warning disable SCS0018 // Path Traversal: backups[i] kommt direkt aus Directory.GetFiles oben, ist daher per Konstruktion innerhalb von 'directory'.
                     File.Delete(backups[i]);
+#pragma warning restore SCS0018
                 }
                 catch (IOException ex)
                 {

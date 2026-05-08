@@ -26,7 +26,8 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ITagLookupService>(_ => new FakeTagLookupService());
             ServiceProvider provider = services.BuildServiceProvider();
             ITagLookupCoordinator coordinator = new TagLookupCoordinator(
-                provider.GetRequiredService<IServiceScopeFactory>());
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                new FakeLoggerFactory());
 
             return new TagManagerActionsContext(
                 TagService: tagService,

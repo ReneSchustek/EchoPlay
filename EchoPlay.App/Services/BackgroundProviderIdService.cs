@@ -123,6 +123,7 @@ namespace EchoPlay.App.Services
         /// <param name="ct">Parameter <c>ct</c>.</param>
         public async Task RunOnceAsync(CancellationToken ct = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.ProviderIdEnrichment);
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
             AppSettings settings = await settingsService.GetAsync(ct);

@@ -3,6 +3,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
@@ -19,23 +20,27 @@ namespace EchoPlay.App.Services
     public sealed class FolderRestructureCoordinator : IFolderRestructureCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Koordinator mit der Scope-Fabrik der Anwendung.
         /// </summary>
-
         /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
-        public FolderRestructureCoordinator(IServiceScopeFactory scopeFactory)
+        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+        public FolderRestructureCoordinator(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
+            _logger = loggerFactory.CreateLogger("FolderRestructureCoordinator");
         }
 
         /// <inheritdoc/>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="seriesFolderPath">Parameter <c>seriesFolderPath</c>.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath, CancellationToken cancellationToken = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.FolderRestructure);
+
             if (string.IsNullOrWhiteSpace(seriesFolderPath) || !Directory.Exists(seriesFolderPath))
             {
                 return null;

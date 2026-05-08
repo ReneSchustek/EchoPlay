@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using EchoPlay.App.Tests.Fakes;
 using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Data.Entities.Settings;
@@ -25,7 +26,7 @@ namespace EchoPlay.App.Tests.Services
         {
             ServiceCollection services = new();
             ServiceProvider provider = services.BuildServiceProvider();
-            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>());
+            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory());
 
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.None, CancellationToken.None);
 
@@ -39,7 +40,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<ISpotifyApiClient>(_ => new ThrowingSpotifyClient(new HttpRequestException("offline")));
             ServiceProvider provider = services.BuildServiceProvider();
-            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>());
+            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory());
 
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.Spotify, CancellationToken.None);
 
@@ -53,7 +54,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<ISpotifyApiClient>(_ => new EmptyResultSpotifyClient());
             ServiceProvider provider = services.BuildServiceProvider();
-            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>());
+            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory());
 
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.Spotify, CancellationToken.None);
 

@@ -1,4 +1,5 @@
 using EchoPlay.LocalLibrary.Parsing;
+using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,24 +25,27 @@ namespace EchoPlay.App.Services
     public sealed class TagLookupCoordinator : ITagLookupCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Coordinator mit der Scope-Factory.
         /// </summary>
         /// <param name="scopeFactory">Stellt pro Lookup einen frischen DI-Scope bereit.</param>
-
-        public TagLookupCoordinator(IServiceScopeFactory scopeFactory)
+        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+        public TagLookupCoordinator(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
+            _logger = loggerFactory.CreateLogger("TagLookupCoordinator");
         }
 
         /// <inheritdoc />
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="query">Parameter <c>query</c>.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
+            using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.TagLookup);
             using IServiceScope scope = _scopeFactory.CreateScope();
             ITagLookupService lookupService = scope.ServiceProvider.GetRequiredService<ITagLookupService>();
             return await lookupService.SearchAsync(query, cancellationToken).ConfigureAwait(false);

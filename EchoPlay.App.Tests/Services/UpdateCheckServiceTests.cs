@@ -73,7 +73,7 @@ namespace EchoPlay.App.Tests.Services
 
             await service.SkipVersionAsync("1.2.3", cancellationToken: TestContext.Current.CancellationToken);
 
-            AppSettings persisted = await settings.GetAsync();
+            AppSettings persisted = await settings.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal("1.2.3", persisted.SkippedUpdateVersion);
         }
 

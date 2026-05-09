@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.Services
             HttpClient client = factory.CreateClient("Test");
 
             using HttpResponseMessage response = await client.GetAsync(
-                new Uri("https://musicbrainz.org/ws/2/release"));
+                new Uri("https://musicbrainz.org/ws/2/release"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(3, primary.CallCount);         // 1 Original + 2 Retries

@@ -29,7 +29,7 @@ namespace EchoPlay.App.Tests.Services
 
             service.Start();
             // Kurz warten, damit RunAsync bis zum ersten await Task.Delay(InitialDelay, ct) läuft.
-            await Task.Delay(50);
+            await Task.Delay(50, cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
             await service.StopAsync(TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Services
 
             service.Start();
             // Kurz warten, damit RunAsync in den blockierenden CreateScope()-Aufruf läuft.
-            await Task.Delay(100);
+            await Task.Delay(100, cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
             await service.StopAsync(TimeSpan.FromMilliseconds(500), cancellationToken: TestContext.Current.CancellationToken);
@@ -117,7 +117,7 @@ namespace EchoPlay.App.Tests.Services
             public Microsoft.Extensions.DependencyInjection.IServiceScope CreateScope()
             {
                 // Bewusst ohne CancellationToken-Argument: simuliert Code, der CT ignoriert.
-                _release.Wait();
+                _release.Wait(cancellationToken: TestContext.Current.CancellationToken);
                 throw new InvalidOperationException("Released — Iteration wird hart abgebrochen.");
             }
 

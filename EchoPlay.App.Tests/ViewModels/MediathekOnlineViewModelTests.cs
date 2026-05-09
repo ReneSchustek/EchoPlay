@@ -70,9 +70,9 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nur Serien mit Online-Quelle erscheinen in der Online-Mediathek
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", SpotifyArtistId = "sp_3f", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "FAMOUS FIVE", SpotifyArtistId = "sp_ff", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", SpotifyArtistId = "sp_3f", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "FAMOUS FIVE", SpotifyArtistId = "sp_ff", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -86,8 +86,8 @@ namespace EchoPlay.App.Tests.ViewModels
             // Serien ohne SpotifyArtistId und AppleMusicArtistId (lokal per Scanner angelegt)
             // dürfen in der Online-Mediathek nicht erscheinen.
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Online-Serie", SpotifyArtistId = "sp_online", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Lokale Serie"   /* kein ArtistId */ });
+            await seriesService.AddAsync(new Series { Title = "Online-Serie", SpotifyArtistId = "sp_online", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Lokale Serie"   /* kein ArtistId */ }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -101,7 +101,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Der Titel der Kachel muss dem Titel aus der DB entsprechen
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Die ID der Kachel muss der DB-ID entsprechen
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -151,7 +151,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Series ohne CoverImageUrl und ohne Eintrag in CoverImages → CoverImage ist null
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Ohne Cover", SpotifyArtistId = "sp_oc", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "Ohne Cover", SpotifyArtistId = "sp_oc", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -164,7 +164,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Mehrfaches Laden überschreibt das Ergebnis korrekt
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -181,8 +181,8 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Leerer Suchtext → alle Online-Serien sichtbar
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", SpotifyArtistId = "sp_3f", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", SpotifyArtistId = "sp_3f", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -196,9 +196,9 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Kleingeschriebener Suchtext trifft gemischten Titel
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", SpotifyArtistId = "sp_3f", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Famous Five", SpotifyArtistId = "sp_ff", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", SpotifyArtistId = "sp_3f", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Famous Five", SpotifyArtistId = "sp_ff", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -213,7 +213,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Kein Treffer → leere gefilterte Liste
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -227,8 +227,8 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Suchtext leeren stellt alle Serien wieder her
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Bibi Blocksberg", SpotifyArtistId = "sp_bb", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Bibi Blocksberg", SpotifyArtistId = "sp_bb", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();
@@ -262,8 +262,8 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
-            await seriesService.AddAsync(new Series { Title = "Globi", SpotifyArtistId = "sp_globi", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Globi", SpotifyArtistId = "sp_globi", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All.First(s => s.Title == "TKKG").Id;
             Guid globi = seriesService.All.First(s => s.Title == "Globi").Id;
@@ -278,7 +278,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 });
 
             // Episodenservice braucht den Eintrag nur, damit LoadAsync die Serie nicht ignoriert
-            await episodeService.AddAsync(new Episode { Title = "Folge 1", SeriesId = tkkg });
+            await episodeService.AddAsync(new Episode { Title = "Folge 1", SeriesId = tkkg }, cancellationToken: TestContext.Current.CancellationToken);
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
@@ -328,7 +328,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Abonnement-Toggle muss IsSubscribed auf der Kachel und in der DB umschalten
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = false, SpotifyArtistId = "sp_tkkg", IsOnlineImported = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = false, SpotifyArtistId = "sp_tkkg", IsOnlineImported = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineViewModel vm = BuildViewModel(seriesService);
             await vm.LoadAsync();

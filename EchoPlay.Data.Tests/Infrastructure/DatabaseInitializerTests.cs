@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         public async ValueTask InitializeAsync()
         {
             _connection = new SqliteConnection("DataSource=:memory:");
-            await _connection.OpenAsync();
+            await _connection.OpenAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
             _ = builder.UseSqlite(_connection)
@@ -81,16 +81,16 @@ namespace EchoPlay.Data.Tests.Infrastructure
             using SqliteCommand cmd = _connection!.CreateCommand();
 
             cmd.CommandText = "SELECT name FROM pragma_table_info('CoverImages') WHERE name = 'SourceHash';";
-            Assert.Equal("SourceHash", await cmd.ExecuteScalarAsync());
+            Assert.Equal("SourceHash", await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
 
             cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SecureSettings';";
-            Assert.Equal("SecureSettings", await cmd.ExecuteScalarAsync());
+            Assert.Equal("SecureSettings", await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
 
             cmd.CommandText = "SELECT name FROM pragma_table_info('Episodes') WHERE name = 'SpotifyAlbumId';";
-            Assert.Equal("SpotifyAlbumId", await cmd.ExecuteScalarAsync());
+            Assert.Equal("SpotifyAlbumId", await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
 
             cmd.CommandText = "SELECT name FROM pragma_table_info('Episodes') WHERE name = 'AppleMusicAlbumId';";
-            Assert.Equal("AppleMusicAlbumId", await cmd.ExecuteScalarAsync());
+            Assert.Equal("AppleMusicAlbumId", await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -141,9 +141,9 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 """;
 
             Dictionary<string, string> indexes = new(StringComparer.Ordinal);
-            using (SqliteDataReader reader = await cmd.ExecuteReaderAsync())
+            using (SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken: TestContext.Current.CancellationToken))
             {
-                while (await reader.ReadAsync())
+                while (await reader.ReadAsync(cancellationToken: TestContext.Current.CancellationToken))
                 {
                     indexes[reader.GetString(0)] = reader.GetString(1);
                 }

@@ -38,7 +38,7 @@ namespace EchoPlay.App.Tests.Services
         private static async Task<Guid> AddSeriesAsync(FakeSeriesDataService series, bool watched)
         {
             Series s = new() { Title = "Test", IsWatched = watched };
-            await series.AddAsync(s);
+            await series.AddAsync(s, cancellationToken: TestContext.Current.CancellationToken);
             return s.Id;
         }
 
@@ -49,13 +49,13 @@ namespace EchoPlay.App.Tests.Services
             Guid seriesId = await AddSeriesAsync(series, watched: true);
 
             // Cache pre-fuellen, damit der Toggle-Pfad einen Eintrag findet, den er entfernen muss.
-            await cache.UpsertRangeAsync([new() { SeriesId = seriesId, CollectionId = 12345L, Title = "Folge", EpisodeNumber = 1 }]);
-            IReadOnlyList<CachedNewRelease> before = await cache.GetBySeriesIdAsync(seriesId);
+            await cache.UpsertRangeAsync([new() { SeriesId = seriesId, CollectionId = 12345L, Title = "Folge", EpisodeNumber = 1 }], cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlyList<CachedNewRelease> before = await cache.GetBySeriesIdAsync(seriesId, cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(before);
 
             await toggle.ToggleAsync(seriesId, watch: false, CancellationToken.None);
 
-            IReadOnlyList<CachedNewRelease> after = await cache.GetBySeriesIdAsync(seriesId);
+            IReadOnlyList<CachedNewRelease> after = await cache.GetBySeriesIdAsync(seriesId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Empty(after);
         }
 
@@ -67,7 +67,7 @@ namespace EchoPlay.App.Tests.Services
 
             await toggle.ToggleAsync(seriesId, watch: false, CancellationToken.None);
 
-            Series? after = await series.GetByIdAsync(seriesId);
+            Series? after = await series.GetByIdAsync(seriesId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(after);
             Assert.False(after!.IsWatched);
         }

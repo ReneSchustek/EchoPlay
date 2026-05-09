@@ -28,8 +28,8 @@ namespace EchoPlay.App.Tests.Services
         public async Task RequestPriorityForSeries_SkipsOtherSeries()
         {
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Target", LocalFolderPath = "C:/target" });
-            await seriesService.AddAsync(new Series { Title = "Other", LocalFolderPath = "C:/other" });
+            await seriesService.AddAsync(new Series { Title = "Target", LocalFolderPath = "C:/target" }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Other", LocalFolderPath = "C:/other" }, cancellationToken: TestContext.Current.CancellationToken);
 
             Series targetSeries = seriesService.All[0];
             Series otherSeries = seriesService.All[1];
@@ -41,14 +41,14 @@ namespace EchoPlay.App.Tests.Services
                 Title = "Target 1",
                 EpisodeNumber = 1,
                 LocalFolderPath = "C:/target/1"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode
             {
                 SeriesId = otherSeries.Id,
                 Title = "Other 1",
                 EpisodeNumber = 1,
                 LocalFolderPath = "C:/other/1"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             FakeCoverImageDataService coverImageService = new();
             RecordingLocalCoverLoader coverLoader = new(CoverBytes);
@@ -61,8 +61,8 @@ namespace EchoPlay.App.Tests.Services
             Episode targetEpisode = episodeService.All[0];
             Episode otherEpisode = episodeService.All[1];
 
-            Assert.True(await coverImageService.ExistsAsync(CoverEntityTypes.Episode, targetEpisode.Id));
-            Assert.False(await coverImageService.ExistsAsync(CoverEntityTypes.Episode, otherEpisode.Id));
+            Assert.True(await coverImageService.ExistsAsync(CoverEntityTypes.Episode, targetEpisode.Id, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await coverImageService.ExistsAsync(CoverEntityTypes.Episode, otherEpisode.Id, cancellationToken: TestContext.Current.CancellationToken));
             _ = Assert.Single(coverLoader.LoadedFolders);
             Assert.Equal("C:/target/1", coverLoader.LoadedFolders[0]);
         }
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task RequestPriorityForSeries_WhenCancelled_SwallowsOperationCanceledException()
         {
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Canceled", LocalFolderPath = "C:/canceled" });
+            await seriesService.AddAsync(new Series { Title = "Canceled", LocalFolderPath = "C:/canceled" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
@@ -83,7 +83,7 @@ namespace EchoPlay.App.Tests.Services
                     Title = $"Folge {i + 1}",
                     EpisodeNumber = i + 1,
                     LocalFolderPath = $"C:/canceled/{i + 1}"
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
             }
 
             FakeCoverImageDataService coverImageService = new();
@@ -314,7 +314,7 @@ namespace EchoPlay.App.Tests.Services
 
             public async Task<byte[]?> LoadAsync(string? episodeFolderPath, string? firstTrackPath)
             {
-                await Task.Delay(_delay);
+                await Task.Delay(_delay, cancellationToken: TestContext.Current.CancellationToken);
                 return null;
             }
         }

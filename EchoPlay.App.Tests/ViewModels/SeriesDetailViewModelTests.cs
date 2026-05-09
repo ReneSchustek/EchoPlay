@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // SeriesTitle muss nach LoadAsync den Titel aus der DB widerspiegeln
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             SeriesDetailViewModel vm = BuildViewModel(seriesService,
@@ -63,13 +63,13 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Alle Episoden der Serie müssen als Zeilen geladen werden
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Die drei ???" });
+            await seriesService.AddAsync(new Series { Title = "Die drei ???" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 2", EpisodeNumber = 2 });
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 3", EpisodeNumber = 3 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 3", EpisodeNumber = 3 }, cancellationToken: TestContext.Current.CancellationToken);
 
             SeriesDetailViewModel vm = BuildViewModel(seriesService, episodeService,
                 playbackService: new FakePlaybackStateDataService(),
@@ -86,11 +86,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Episode ohne PlaybackState erhält den Glyph für "Nicht gespielt"
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
 
             SeriesDetailViewModel vm = BuildViewModel(seriesService, episodeService,
                 playbackService: new FakePlaybackStateDataService(),  // kein State vorhanden
@@ -108,11 +108,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Episode mit nicht-vollständigem PlaybackState erhält den Glyph für "In Bearbeitung"
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             Episode episode = episodeService.All[0];
 
             FakePlaybackStateDataService playbackService = new(
@@ -141,11 +141,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Episode mit abgeschlossenem PlaybackState erhält den Glyph für "Abgeschlossen"
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             Episode episode = episodeService.All[0];
 
             FakePlaybackStateDataService playbackService = new(
@@ -174,11 +174,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Ohne lokale Tracks darf der PlayerService nicht aufgerufen werden
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             Episode episode = episodeService.All[0];
 
             FakePlayerService playerService = new();
@@ -198,11 +198,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Der PlayerService muss mit den richtigen Pfaden aufgerufen werden
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             Episode episode = episodeService.All[0];
 
             IReadOnlyList<LocalTrack> tracks =
@@ -235,11 +235,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nicht abgeschlossene Episode wird an der gespeicherten Position fortgesetzt
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             Episode episode = episodeService.All[0];
 
             TimeSpan savedPosition = TimeSpan.FromMinutes(15);
@@ -282,11 +282,11 @@ namespace EchoPlay.App.Tests.ViewModels
             // Arrange: VM lädt Serie mit injiziertem FakeBackgroundCoverService,
             // der die Priority-Anfrage offenhält, bis das Token abgebrochen wird.
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Detail" });
+            await seriesService.AddAsync(new Series { Title = "Detail" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
@@ -332,11 +332,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Abgeschlossene Episode wird von Anfang an gespielt
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             Episode episode = episodeService.All[0];
 
             FakePlaybackStateDataService playbackService = new(

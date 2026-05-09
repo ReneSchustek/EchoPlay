@@ -3,9 +3,10 @@
     x:Class="EchoPlay.App.SplashWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:automation="using:Microsoft.UI.Xaml.Automation"
     Title="EchoPlay">
 
-    <Grid Background="#FFFFFF">
+    <Grid Background="#FFFFFF" xml:lang="de-DE">
         <StackPanel
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
@@ -16,7 +17,9 @@
                 Width="100"
                 Height="100"
                 HorizontalAlignment="Center"
-                Stretch="Uniform"/>
+                Stretch="Uniform"
+                automation:AutomationProperties.AccessibilityView="Raw"
+                automation:AutomationProperties.Name=""/>
 
             <TextBlock
                 Text="EchoPlay"

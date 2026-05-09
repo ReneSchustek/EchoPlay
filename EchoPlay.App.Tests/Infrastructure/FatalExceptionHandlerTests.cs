@@ -92,6 +92,24 @@ namespace EchoPlay.App.Tests.Infrastructure
         }
 
         [Fact]
+        public void HandleUnobservedTaskException_TaskCanceled_LogsAsInfo()
+        {
+            // Beim App-Shutdown werden DI-Scopes disposed, pending DB-/HTTP-Tasks
+            // canceln still. Die Tasks sind dann unbeobachtet — der Handler muss
+            // erkennen, dass das erwartetes Verhalten ist, und nicht als Error loggen.
+            CapturingLogger logger = new();
+            AggregateException aggregate = new(new TaskCanceledException("shutdown"));
+            UnobservedTaskExceptionEventArgs args = new(aggregate);
+
+            FatalExceptionHandler.HandleUnobservedTaskException(logger, args);
+
+            _ = Assert.Single(logger.Entries);
+            Assert.Equal("Info", logger.Entries[0].Level);
+            Assert.Contains("Shutdown-Cancellation", logger.Entries[0].Message, StringComparison.Ordinal);
+            Assert.True(IsObserved(args));
+        }
+
+        [Fact]
         public void HandleUnobservedTaskException_NullArgs_ThrowsArgumentNullException()
         {
             CapturingLogger logger = new();

@@ -1,6 +1,7 @@
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Core;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Infrastructure
@@ -40,6 +41,10 @@ namespace EchoPlay.App.Infrastructure
         /// <summary>
         /// Loggt eine Exception aus <see cref="TaskScheduler.UnobservedTaskException"/> und markiert sie
         /// als beobachtet, damit der Prozess nicht vom TaskScheduler abgebrochen wird.
+        /// <see cref="OperationCanceledException"/> (inkl. <see cref="TaskCanceledException"/>) ist
+        /// beim Shutdown erwartbar — Page-LoadAsync-Tasks werden vom DI-Scope-Dispose abgebrochen,
+        /// die Tasks selbst werden nicht mehr beobachtet. Wird auf Info-Level geloggt, damit der
+        /// erwartete Shutdown-Pfad keinen Error-Eintrag erzeugt.
         /// </summary>
         /// <param name="logger">Der regulaere App-Logger, <see langword="null"/> vor DI-Init oder nach Dispose.</param>
         /// <param name="e">Event-Argument des TaskScheduler-Hooks, enthält <c>Exception</c>.</param>
@@ -47,12 +52,23 @@ namespace EchoPlay.App.Infrastructure
         {
             ArgumentNullException.ThrowIfNull(e);
 
-            string message = $"UnobservedTaskException: {e.Exception.Message}";
+            bool isCancellation = e.Exception.InnerExceptions.All(ex => ex is OperationCanceledException);
+            string message = isCancellation
+                ? $"UnobservedTaskException (Shutdown-Cancellation): {e.Exception.Message}"
+                : $"UnobservedTaskException: {e.Exception.Message}";
+
             if (logger is not null)
             {
-                logger.Error(message, e.Exception);
+                if (isCancellation)
+                {
+                    logger.Info(message);
+                }
+                else
+                {
+                    logger.Error(message, e.Exception);
+                }
             }
-            else
+            else if (!isCancellation)
             {
                 EmergencyTrace.Log($"[ERROR UnobservedTaskException] {e.Exception}");
             }

@@ -100,15 +100,12 @@ namespace EchoPlay.App.ViewModels
                 IReadOnlyList<Series> allSeries = await seriesService.GetSubscribedAsync();
                 IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
 
-                // Episodenanzahl über alle Serien summieren
+                // Episodenanzahl per Server-Side-GroupBy in einer Query, statt N+1 pro Serie.
                 IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-                int totalEpisodes = 0;
-
-                foreach (Series series in allSeries)
-                {
-                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
-                    totalEpisodes += episodes.Count;
-                }
+                IReadOnlyList<Guid> seriesIds = allSeries.Select(s => s.Id).ToList();
+                IReadOnlyDictionary<Guid, (int Total, int Local)> counts =
+                    await episodeService.GetEpisodeCountsForSeriesAsync(seriesIds);
+                int totalEpisodes = counts.Values.Sum(c => c.Total);
 
                 int completed = allStates.Count(s => s.IsCompleted);
                 int inProgress = allStates.Count(s => !s.IsCompleted && s.LastPosition > TimeSpan.Zero);

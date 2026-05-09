@@ -2,6 +2,8 @@ using EchoPlay.Logger.Core;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
@@ -41,6 +43,12 @@ namespace EchoPlay.App
             ZeigeVersion();
             ZentriereUndGroesse();
             EntferneTitelleiste();
+
+            // Brief 329 / WCAG 1.1.1: Logo dekorativ markieren — Screen-Reader skippt es.
+            // Bewusst per Code-Behind statt XAML, weil das XAML-Markup-Pattern unter
+            // unpackaged WinUI 3 einen Markup-Reader-Bug ausgeloest hat (Brief 327
+            // Stack-Trace: "Window.Title set more than once" beim Parser-Pass).
+            AutomationProperties.SetAccessibilityView(LogoImage, AccessibilityView.Raw);
         }
 
         /// <summary>

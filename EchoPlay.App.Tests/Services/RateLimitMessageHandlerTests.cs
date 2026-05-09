@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.Services
             RateLimitMessageHandler sut = new(limiter) { InnerHandler = inner };
             using HttpClient client = new(sut);
 
-            using HttpResponseMessage response = await client.GetAsync(new Uri("https://api.discogs.com/search"));
+            using HttpResponseMessage response = await client.GetAsync(new Uri("https://api.discogs.com/search"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             _ = Assert.Single(limiter.Hosts);
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.Services
             RateLimitMessageHandler sut = new(limiter) { InnerHandler = inner };
             using HttpClient client = new(sut);
 
-            using HttpResponseMessage response = await client.GetAsync(new Uri("https://itunes.apple.com/search"));
+            using HttpResponseMessage response = await client.GetAsync(new Uri("https://itunes.apple.com/search"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
             Assert.Equal("itunes.apple.com", limiter.Hosts[0]);
@@ -81,9 +81,9 @@ namespace EchoPlay.App.Tests.Services
             RateLimitMessageHandler sut = new(limiter) { InnerHandler = inner };
             using HttpClient client = new(sut);
 
-            using HttpResponseMessage r1 = await client.GetAsync(new Uri("https://musicbrainz.org/a"));
-            using HttpResponseMessage r2 = await client.GetAsync(new Uri("https://musicbrainz.org/b"));
-            using HttpResponseMessage r3 = await client.GetAsync(new Uri("https://musicbrainz.org/c"));
+            using HttpResponseMessage r1 = await client.GetAsync(new Uri("https://musicbrainz.org/a"), cancellationToken: TestContext.Current.CancellationToken);
+            using HttpResponseMessage r2 = await client.GetAsync(new Uri("https://musicbrainz.org/b"), cancellationToken: TestContext.Current.CancellationToken);
+            using HttpResponseMessage r3 = await client.GetAsync(new Uri("https://musicbrainz.org/c"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, limiter.Hosts.Count);
             Assert.All(limiter.Hosts, host => Assert.Equal("musicbrainz.org", host));

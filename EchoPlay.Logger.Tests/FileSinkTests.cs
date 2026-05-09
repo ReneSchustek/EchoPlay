@@ -158,7 +158,7 @@ namespace EchoPlay.Logger.Tests
                     Level: LogLevel.Information,
                     Message: $"Line-{idx:D2}",
                     Category: "Parallel",
-                    Scopes: [])));
+                    Scopes: [])), cancellationToken: TestContext.Current.CancellationToken);
             }
 
             await Task.WhenAll(writes);

@@ -16,7 +16,7 @@ namespace EchoPlay.App.Tests.Services
         {
             SplashLifetimeController controller = new();
             // Mindestdauer bewusst ueberschreiten, damit die Wartezeit entfaellt.
-            await Task.Delay(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50));
+            await Task.Delay(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
             await controller.WaitForMinimumDurationAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 await Task.Delay(50);
                 await cts.CancelAsync();
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
             await controller.WaitForMinimumDurationAsync(cts.Token);

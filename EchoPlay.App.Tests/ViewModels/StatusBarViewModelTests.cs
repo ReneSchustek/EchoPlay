@@ -44,9 +44,9 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nur abonnierte Serien zählen für die Info-Leiste
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
-            await seriesService.AddAsync(new Series { Title = "Bibi", IsSubscribed = true });
-            await seriesService.AddAsync(new Series { Title = "Globi", IsSubscribed = false });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Bibi", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Globi", IsSubscribed = false }, cancellationToken: TestContext.Current.CancellationToken);
 
             (StatusBarViewModel vm, _) = BuildViewModel(
                 seriesService,
@@ -65,15 +65,15 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             Episode ep1 = new() { Title = "Folge 1", SeriesId = seriesId };
             Episode ep2 = new() { Title = "Folge 2", SeriesId = seriesId };
             Episode ep3 = new() { Title = "Folge 3", SeriesId = seriesId };
-            await episodeService.AddAsync(ep1);
-            await episodeService.AddAsync(ep2);
-            await episodeService.AddAsync(ep3);
+            await episodeService.AddAsync(ep1, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(ep2, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(ep3, cancellationToken: TestContext.Current.CancellationToken);
 
             List<PlaybackState> states =
             [
@@ -100,7 +100,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "Die drei ???", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "Die drei ???", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             // Gestern erschienen, noch nicht gehört → zählt als neu
@@ -118,8 +118,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 ReleaseDate = TestIds.ReferenceDate.AddDays(7)
             };
 
-            await episodeService.AddAsync(epNeu);
-            await episodeService.AddAsync(epKommend);
+            await episodeService.AddAsync(epNeu, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(epKommend, cancellationToken: TestContext.Current.CancellationToken);
 
             (StatusBarViewModel vm, _) = BuildViewModel(
                 seriesService,
@@ -139,11 +139,11 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             Episode ep = new() { Title = "Folge 1", SeriesId = seriesId };
-            await episodeService.AddAsync(ep);
+            await episodeService.AddAsync(ep, cancellationToken: TestContext.Current.CancellationToken);
 
             (StatusBarViewModel vm, _) = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
@@ -157,7 +157,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = ep.Id,
                 IsCompleted = true,
                 LastPosition = TimeSpan.Zero
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             await vm.RefreshAsync();
 

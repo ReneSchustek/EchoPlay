@@ -82,12 +82,12 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             await seriesService.AddAsync(new Series
             {
                 Title = "Bibi Blocksberg",
                 LocalFolderPath = null   // noch kein Ordner gefunden
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -97,7 +97,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 SeriesId = tkkg,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -119,7 +119,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -130,14 +130,14 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode
             {
                 Title = "Folge 2",
                 SeriesId = tkkg,
                 EpisodeNumber = 2,
                 LocalFolderPath = null   // noch nicht gescannt
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -160,7 +160,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -171,7 +171,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid episodeId = episodeService.All[0].Id;
 
@@ -228,7 +228,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -249,7 +249,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -272,7 +272,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -283,7 +283,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -312,7 +312,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -323,7 +323,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -349,7 +349,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -360,7 +360,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeNumber = 1,
                 LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
                 LocalTrackCount = 2
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid episodeId = episodeService.All[0].Id;
 
@@ -402,7 +402,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -425,7 +425,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\NichtExistierenderPfad\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -455,7 +455,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = null
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
 
@@ -486,14 +486,14 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 LocalFolderPath = @"C:\Hoerspiele\TKKG"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid seriesId = seriesService.All[0].Id;
             byte[] coverBytes = [0xFF, 0xD8, 0xFF];
 
-            await coverService.SetCoverAsync(CoverEntityTypes.Series, seriesId, coverBytes);
+            await coverService.SetCoverAsync(CoverEntityTypes.Series, seriesId, coverBytes, cancellationToken: TestContext.Current.CancellationToken);
 
-            CoverImage? cover = await coverService.GetByEntityAsync(CoverEntityTypes.Series, seriesId);
+            CoverImage? cover = await coverService.GetByEntityAsync(CoverEntityTypes.Series, seriesId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(cover);
             Assert.Equal(coverBytes, cover!.ImageData);
         }

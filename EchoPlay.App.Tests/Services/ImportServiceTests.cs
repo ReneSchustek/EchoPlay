@@ -428,7 +428,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 Title = "Bestehende Serie",
                 AppleMusicArtistId = "artist-existing"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             ImportService service = BuildService(settings, seriesService, episodeService,
                 spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
@@ -490,7 +490,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 Title = "Vorhandene Serie",
                 SpotifyArtistId = "spotify-123"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             ImportService service = BuildService(settings, seriesService, episodeService,
                 spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
@@ -524,7 +524,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 Title = "TKKG",
                 AppleMusicArtistId = "artist-tkkg"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Series existingSeries = seriesService.All[0];
 
@@ -561,14 +561,14 @@ namespace EchoPlay.App.Tests.Services
             {
                 Title = "TKKG",
                 AppleMusicArtistId = "artist-tkkg"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Series existingSeries = seriesService.All[0];
 
             // Drei bestehende Episoden – Titel-Lookup wird sie ausfiltern.
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 });
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 });
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 3", EpisodeNumber = 3 });
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 3", EpisodeNumber = 3 }, cancellationToken: TestContext.Current.CancellationToken);
 
             // Provider liefert dieselben drei Folgen + zwei neue.
             IReadOnlyList<ImportEpisode> providerEpisodes =
@@ -609,19 +609,19 @@ namespace EchoPlay.App.Tests.Services
             {
                 Title = "TKKG",
                 AppleMusicArtistId = "artist-tkkg"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Series existingSeries = seriesService.All[0];
 
             // Zwei vorhandene Folgen ohne Cover, eine mit bereits gesetztem Cover.
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 });
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 });
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode
             {
                 SeriesId = existingSeries.Id,
                 Title = "Folge 3",
                 EpisodeNumber = 3,
                 CoverImageUrl = "https://example.org/already.jpg"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             IReadOnlyList<ImportEpisode> providerEpisodes =
             [

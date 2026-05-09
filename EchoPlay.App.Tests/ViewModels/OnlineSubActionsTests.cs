@@ -134,7 +134,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
-            await seriesService.AddAsync(series);
+            await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineActionsContext ctx = BuildContext(seriesService: seriesService);
             OnlineSeriesViewModel seriesVM = new();
@@ -163,7 +163,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
-            await seriesService.AddAsync(series);
+            await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekOnlineActionsContext ctx = BuildContext(seriesService: seriesService);
             OnlineSeriesViewModel seriesVM = new();

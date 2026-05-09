@@ -118,7 +118,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Die Drei ???" });
+            await seriesService.AddAsync(new Series { Title = "Die Drei ???" }, cancellationToken: TestContext.Current.CancellationToken);
 
             IReadOnlyList<LocalScanResult> scanResults =
             [
@@ -189,7 +189,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
 
             Series addedSeries = seriesService.All[0];
 
@@ -199,7 +199,7 @@ namespace EchoPlay.App.Tests.Services
                 SeriesId = addedSeries.Id,
                 Title = "Folge 1",
                 EpisodeNumber = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             IReadOnlyList<LocalScanResult> scanResults =
             [
@@ -241,7 +241,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Die drei ???" });
+            await seriesService.AddAsync(new Series { Title = "Die drei ???" }, cancellationToken: TestContext.Current.CancellationToken);
 
             Series series = seriesService.All[0];
             FakeEpisodeDataService episodeService = new();
@@ -250,7 +250,7 @@ namespace EchoPlay.App.Tests.Services
                 SeriesId = series.Id,
                 Title = "Folge 1",
                 EpisodeNumber = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             Episode episode = episodeService.All[0];
 
@@ -298,12 +298,12 @@ namespace EchoPlay.App.Tests.Services
             });
 
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 });
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 2", EpisodeNumber = 2 });
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
 
             IReadOnlyList<LocalScanResult> scanResults =
             [
@@ -417,7 +417,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
 
             IReadOnlyList<LocalScanResult> scanResults =
             [
@@ -465,7 +465,7 @@ namespace EchoPlay.App.Tests.Services
                 AutoImportAfterScan = false
             });
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", LocalFolderPath = "/music/TKKG" });
+            await seriesService.AddAsync(new Series { Title = "TKKG", LocalFolderPath = "/music/TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
 
             FakeLocalLibraryScanner scanner = new([], ["/music/TKKG", "/music/Neu1", "/music/Neu2"]);
 
@@ -502,7 +502,7 @@ namespace EchoPlay.App.Tests.Services
                 LocalLibraryRootPath = "/music"
             });
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Die drei ???" });
+            await seriesService.AddAsync(new Series { Title = "Die drei ???" }, cancellationToken: TestContext.Current.CancellationToken);
             Series existing = seriesService.All[0];
             Guid existingId = existing.Id;
             int seriesCountBefore = seriesService.All.Count;

@@ -135,7 +135,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.SaveAsync();
 
             Assert.Equal(1, settings.SaveCallCount);
-            Assert.Equal("ModernClassic", (await settings.GetAsync()).ActiveTheme);
+            Assert.Equal("ModernClassic", (await settings.GetAsync(cancellationToken: TestContext.Current.CancellationToken)).ActiveTheme);
         }
 
         [Fact]

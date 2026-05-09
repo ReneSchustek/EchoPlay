@@ -168,7 +168,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Leere Datenbank ohne irgendein Schema: die AppSettings-Abfrage wirft
             // eine SqliteException, die als "Erstinstallation" interpretiert werden muss.
             await using SqliteConnection connection = new($"Data Source={_dbPath}");
-            await connection.OpenAsync();
+            await connection.OpenAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
             _ = builder.UseSqlite(connection);
@@ -231,7 +231,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Opt-Out-Semantik greift (pending migrations + AppSettings lesbar).
             await using (SqliteConnection setup = new($"Data Source={_dbPath}"))
             {
-                await setup.OpenAsync();
+                await setup.OpenAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 using SqliteCommand cmd = setup.CreateCommand();
                 cmd.CommandText = """
@@ -264,7 +264,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
                     );
                     INSERT INTO "AppSettings" ("Id") VALUES ('11111111-1111-1111-1111-111111111111');
                     """;
-                _ = await cmd.ExecuteNonQueryAsync();
+                _ = await cmd.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
             }
 
             // Kein Backup-File vor dem Init.

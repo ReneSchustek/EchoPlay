@@ -41,9 +41,16 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Zähler für Aufrufe von <see cref="UpdateRangeAsync"/> für Batch-Verifikation (Single-Roundtrip statt N Aufrufe).</summary>
         public int UpdateRangeAsyncCallCount { get; private set; }
 
+        /// <summary>Zähler für Aufrufe von <see cref="GetBySeriesIdAsync"/> für N+1-Detektion (StatistikViewModel etc.).</summary>
+        public int GetBySeriesIdAsyncCallCount { get; private set; }
+
+        /// <summary>Zähler für Aufrufe von <see cref="GetEpisodeCountsForSeriesAsync"/> für Batch-Verifikation.</summary>
+        public int GetEpisodeCountsForSeriesAsyncCallCount { get; private set; }
+
         /// <inheritdoc/>
         public Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
+            GetBySeriesIdAsyncCallCount++;
             IReadOnlyList<Episode> result = _episodes
                 .Where(e => e.SeriesId == seriesId)
                 .OrderBy(e => e.EpisodeNumber)
@@ -127,6 +134,7 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(
             IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
+            GetEpisodeCountsForSeriesAsyncCallCount++;
             Dictionary<Guid, (int Total, int Local)> result = new();
 
             foreach (Guid seriesId in seriesIds)

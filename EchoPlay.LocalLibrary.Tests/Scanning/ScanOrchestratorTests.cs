@@ -37,7 +37,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             ScanOrchestrator orchestrator = new(scanner);
 
             List<ScanProgress> reported = [];
-            IProgress<ScanProgress> progress = new Progress<ScanProgress>(p => reported.Add(p));
+            IProgress<ScanProgress> progress = new SynchronousProgress<ScanProgress>(reported.Add);
 
             _ = await orchestrator.ScanAsync(_root, "{number}", progress);
 
@@ -54,7 +54,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             ScanOrchestrator orchestrator = new(scanner);
 
             List<ScanProgress> reported = [];
-            IProgress<ScanProgress> progress = new Progress<ScanProgress>(p => reported.Add(p));
+            IProgress<ScanProgress> progress = new SynchronousProgress<ScanProgress>(reported.Add);
 
             _ = await orchestrator.ScanAsync(_root, "{number}", progress);
 
@@ -62,6 +62,24 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             Assert.NotNull(phase1);
             Assert.False(string.IsNullOrEmpty(phase1!.PhaseLabel));
             Assert.Contains("Vorbereitung", phase1.PhaseLabel, StringComparison.Ordinal);
+        }
+
+        // Progress<T> stellt Reports asynchron ueber den SynchronizationContext zu;
+        // im Test-Kontext ohne Context laeuft das via ThreadPool und kann die Liste
+        // erst nach dem Test-Body fuellen. Synchroner Adapter eliminiert das Race.
+        private sealed class SynchronousProgress<T> : IProgress<T>
+        {
+            private readonly Action<T> _handler;
+
+            public SynchronousProgress(Action<T> handler)
+            {
+                _handler = handler;
+            }
+
+            public void Report(T value)
+            {
+                _handler(value);
+            }
         }
 
         [Fact]

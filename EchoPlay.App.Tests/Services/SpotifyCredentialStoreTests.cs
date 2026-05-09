@@ -97,7 +97,7 @@ namespace EchoPlay.App.Tests.Services
             (SpotifyCredentialStore freshStore, FakeSecureSettingsDataService fakeService) = BuildStore();
 
             // Daten manuell in den FakeService eintragen (simuliert DB-Zustand)
-            await fakeService.SaveAsync("Spotify:ClientId", new byte[] { 1, 2, 3 });
+            await fakeService.SaveAsync("Spotify:ClientId", new byte[] { 1, 2, 3 }, cancellationToken: TestContext.Current.CancellationToken);
 
             await freshStore.InitializeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -123,16 +123,16 @@ namespace EchoPlay.App.Tests.Services
             (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
 
             byte[] corruptedBytes = [0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE];
-            await fakeService.SaveAsync("Spotify:ClientId", corruptedBytes);
-            await fakeService.SaveAsync("Spotify:ClientSecret", corruptedBytes);
+            await fakeService.SaveAsync("Spotify:ClientId", corruptedBytes, cancellationToken: TestContext.Current.CancellationToken);
+            await fakeService.SaveAsync("Spotify:ClientSecret", corruptedBytes, cancellationToken: TestContext.Current.CancellationToken);
 
             (string ClientId, string ClientSecret)? result = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
             Assert.False(store.HasCredentials);
             Assert.True(store.LastLoadFailedDueToCorruption);
-            Assert.Null(await fakeService.GetAsync("Spotify:ClientId"));
-            Assert.Null(await fakeService.GetAsync("Spotify:ClientSecret"));
+            Assert.Null(await fakeService.GetAsync("Spotify:ClientId", cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Null(await fakeService.GetAsync("Spotify:ClientSecret", cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -140,8 +140,8 @@ namespace EchoPlay.App.Tests.Services
         {
             (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
 
-            await fakeService.SaveAsync("Spotify:ClientId", [0xDE, 0xAD]);
-            await fakeService.SaveAsync("Spotify:ClientSecret", [0xDE, 0xAD]);
+            await fakeService.SaveAsync("Spotify:ClientId", [0xDE, 0xAD], cancellationToken: TestContext.Current.CancellationToken);
+            await fakeService.SaveAsync("Spotify:ClientSecret", [0xDE, 0xAD], cancellationToken: TestContext.Current.CancellationToken);
             _ = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.True(store.LastLoadFailedDueToCorruption);
 

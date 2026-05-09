@@ -90,16 +90,16 @@ namespace EchoPlay.App.Tests.Services
             {
                 await limiter.WaitAsync("mixed.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
                 return sw.ElapsedMilliseconds;
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             // Kurzer Abstand, damit der Foreground-Call seinen Slot reserviert hat.
-            await Task.Delay(30);
+            await Task.Delay(30, cancellationToken: TestContext.Current.CancellationToken);
 
             Task<long> backgroundTask = Task.Run(async () =>
             {
                 await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
                 return sw.ElapsedMilliseconds;
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             long foregroundMs = await foregroundTask;
             long backgroundMs = await backgroundTask;

@@ -20,7 +20,7 @@ namespace EchoPlay.Spotify.Tests.Auth
             (HttpClient client, TokenServer tokens) = BuildClient(api);
             tokens.EnqueueToken("token-A");
 
-            using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative));
+            using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             _ = Assert.Single(api.AuthorizationHeaders);
@@ -38,7 +38,7 @@ namespace EchoPlay.Spotify.Tests.Auth
             tokens.EnqueueToken("token-stale");
             tokens.EnqueueToken("token-fresh");
 
-            using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative));
+            using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal(2, api.CallCount);
@@ -57,7 +57,7 @@ namespace EchoPlay.Spotify.Tests.Auth
             tokens.EnqueueToken("token-1");
             tokens.EnqueueToken("token-2");
 
-            using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative));
+            using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
             // Genau zwei Versuche — kein dritter Refresh, kein Infinite-Loop.
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

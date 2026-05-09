@@ -88,7 +88,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Test", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "Test", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeCachedNewReleaseDataService cacheService = new(
@@ -125,7 +125,7 @@ namespace EchoPlay.App.Tests.Services
             _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Flag muss nach dem Durchlauf zurückgesetzt sein
-            AppSettings reloaded = await settings.GetAsync();
+            AppSettings reloaded = await settings.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.False(reloaded.ClearCacheOnNextStart);
         }
 
@@ -138,7 +138,7 @@ namespace EchoPlay.App.Tests.Services
                 Title = "Nicht überwacht",
                 IsSubscribed = true,
                 IsWatched = false
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeCachedNewReleaseDataService cacheService = new(
@@ -241,7 +241,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 Title = "Testserie",
                 LocalFolderPath = @"C:\Serien\Testserie"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeEpisodeDataService episodeService = new();
@@ -250,7 +250,7 @@ namespace EchoPlay.App.Tests.Services
                 SeriesId = series.Id,
                 Title = "Folge 1",
                 LocalFolderPath = @"C:\Serien\Testserie\01"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             CallCountingLocalCoverLoader coverLoader = new();
 

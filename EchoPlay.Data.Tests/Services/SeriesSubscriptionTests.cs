@@ -40,7 +40,7 @@ namespace EchoPlay.Data.Tests.Services
 
             // ChangeTracker leeren, damit der nächste FindAsync wirklich aus der DB liest
             Context.ChangeTracker.Clear();
-            Series? updated = await Context.Series.FindAsync(series.Id);
+            Series? updated = await Context.Series.FindAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(updated!.IsSubscribed);
         }

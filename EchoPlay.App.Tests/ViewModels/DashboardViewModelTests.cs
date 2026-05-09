@@ -80,7 +80,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = false });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = false }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.LoadAsync();
@@ -95,8 +95,8 @@ namespace EchoPlay.App.Tests.ViewModels
             // Favorisierte Serien erscheinen in der Favoriten-Kachelreihe
             FakeSeriesDataService seriesService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true });
-            await seriesService.AddAsync(new Series { Title = "Fünf Freunde", IsSubscribed = true, IsFavorite = false });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Fünf Freunde", IsSubscribed = true, IsFavorite = false }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
@@ -110,7 +110,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Wenn Serien abonniert aber keine favorisiert → Hinweistext sichtbar
             FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = false });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = false }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
@@ -125,7 +125,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             // DB-Cache vorbefüllen
@@ -161,7 +161,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             // Lokale Episode mit Folgennummer 230 – als gehört markiert
@@ -171,7 +171,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 SeriesId = seriesId,
                 EpisodeNumber = 230,
                 LocalTrackCount = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid episodeId = episodeService.All[0].Id;
 
             await stateService.AddAsync(new PlaybackState
@@ -179,7 +179,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = episodeId,
                 IsCompleted = true,
                 LastPosition = TimeSpan.FromMinutes(60)
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             // DB-Cache kennt die gleiche Folge 230
             Series series = seriesService.All[0];
@@ -211,7 +211,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", IsSubscribed = true, IsFavorite = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             // DB-Cache mit einer verfügbaren und einer angekündigten Folge
@@ -264,7 +264,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             // DB-Cache: zwei Folgen mit unterschiedlichem Datum
@@ -308,7 +308,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeCachedNewReleaseDataService cacheService = new(
@@ -402,7 +402,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
 
             FakeCachedNewReleaseDataService cacheService = new(
@@ -506,7 +506,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "Die drei Fragezeichen",
                 IsSubscribed = true
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             await episodeService.AddAsync(new Episode
@@ -514,7 +514,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Online-Folge",
                 SeriesId = seriesId,
                 LocalTrackCount = 0
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid episodeId = episodeService.All[0].Id;
 
             // Online-Folge: kein lokaler Fortschritt, aber als gehört markiert
@@ -524,7 +524,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 LastPosition = TimeSpan.Zero,
                 IsCompleted = true,
                 LastPlayedAt = TestIds.ReferenceDate
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
@@ -546,7 +546,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 IsSubscribed = true
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             await episodeService.AddAsync(new Episode
@@ -554,7 +554,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Lokale Folge",
                 SeriesId = seriesId,
                 LocalTrackCount = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid episodeId = episodeService.All[0].Id;
 
             await stateService.AddAsync(new PlaybackState
@@ -562,7 +562,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = episodeId,
                 LastPosition = TimeSpan.FromMinutes(15),
                 IsCompleted = false
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
@@ -579,8 +579,8 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "Serie A", IsSubscribed = true, IsWatched = true });
-            await seriesService.AddAsync(new Series { Title = "Serie B", IsSubscribed = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "Serie A", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
+            await seriesService.AddAsync(new Series { Title = "Serie B", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesAId = seriesService.All[0].Id;
             Guid seriesBId = seriesService.All[1].Id;
 
@@ -589,13 +589,13 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Folge A",
                 SeriesId = seriesAId,
                 LocalTrackCount = 0
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode
             {
                 Title = "Folge B",
                 SeriesId = seriesBId,
                 LocalTrackCount = 1
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid episodeAId = episodeService.All[0].Id;
             Guid episodeBId = episodeService.All[1].Id;
 
@@ -605,7 +605,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = episodeAId,
                 IsCompleted = true,
                 LastPlayedAt = TestIds.ReferenceDate.AddHours(-2)
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             // Serie B: neuer gehört, aber älteres UpdatedAt
             await stateService.AddAsync(new PlaybackState
@@ -613,7 +613,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = episodeBId,
                 LastPosition = TimeSpan.FromMinutes(10),
                 LastPlayedAt = TestIds.ReferenceDate.AddMinutes(-30)
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
@@ -784,7 +784,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             await episodeService.AddAsync(new Episode
@@ -793,7 +793,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 SeriesId = seriesId,
                 LocalTrackCount = 1,
                 LocalFolderPath = @"C:\\pfad\\ohne\\cover"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
             Guid episodeId = episodeService.All[0].Id;
 
             await stateService.AddAsync(new PlaybackState
@@ -801,7 +801,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 EpisodeId = episodeId,
                 LastPosition = TimeSpan.FromMinutes(5),
                 IsCompleted = false
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
@@ -822,7 +822,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
             const int stateCount = 20;
@@ -835,7 +835,7 @@ namespace EchoPlay.App.Tests.ViewModels
                     EpisodeNumber = i + 1,
                     LocalTrackCount = 1,
                     LocalFolderPath = $@"C:\\folge{i + 1}"
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
                 Guid episodeId = episodeService.All[i].Id;
 
                 await stateService.AddAsync(new PlaybackState
@@ -843,7 +843,7 @@ namespace EchoPlay.App.Tests.ViewModels
                     EpisodeId = episodeId,
                     LastPosition = TimeSpan.FromMinutes(5 + i),
                     IsCompleted = false
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
             }
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
@@ -862,7 +862,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakeOnlineEpisodeChecker tracker = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true });
+            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
 
             AppSettings offlineSettings = new() { OfflineMode = true };
 

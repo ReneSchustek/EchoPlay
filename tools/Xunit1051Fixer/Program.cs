@@ -80,7 +80,18 @@ internal static class Program
                 continue;
             }
             Out.Line($"\n=== {Path.GetFileNameWithoutExtension(csproj)} ===");
-            using MSBuildWorkspace workspace = MSBuildWorkspace.Create();
+            // Properties bewusst gesetzt, damit App.Tests (SelfContained=true,
+            // RuntimeIdentifier=win-x64) auch die Referenz auf EchoPlay.App im selben
+            // Modus laedt und der MSBuild NETSDK1150-Check nicht zuschlaegt.
+            Dictionary<string, string> wsProps = new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Configuration"] = "Release",
+                ["Platform"] = "x64",
+                ["RuntimeIdentifier"] = "win-x64",
+                ["SelfContained"] = "true",
+                ["UseAppHost"] = "true",
+            };
+            using MSBuildWorkspace workspace = MSBuildWorkspace.Create(wsProps);
             workspace.WorkspaceFailed += (_, e) =>
             {
                 if (e.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
@@ -146,7 +157,17 @@ internal static class Program
 
                 IParameterSymbol? ctParam = method.Parameters.FirstOrDefault(p =>
                     p.Type.ToDisplayString() == CtFqn);
-                if (ctParam is null) continue;
+
+                // Wenn die genutzte Ueberladung selbst keinen CT-Param hat: pruefen, ob
+                // EINE andere Ueberladung mit CT existiert. Der xunit-Analyzer fordert
+                // dann den Wechsel auf diese Ueberladung.
+                if (ctParam is null)
+                {
+                    IMethodSymbol? overload = FindCtOverload(method);
+                    if (overload is null) continue;
+                    ctParam = overload.Parameters.First(p => p.Type.ToDisplayString() == CtFqn);
+                    method = overload;
+                }
 
                 if (HasCtArgument(inv, ctParam, model)) continue;
 
@@ -173,6 +194,31 @@ internal static class Program
             patches += targets.Count;
         }
         return patches;
+    }
+
+    private static IMethodSymbol? FindCtOverload(IMethodSymbol method)
+    {
+        if (method.ContainingType is not INamedTypeSymbol container) return null;
+        foreach (IMethodSymbol candidate in EnumerateMethodOverloads(container, method.Name))
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidate, method)) continue;
+            IParameterSymbol? ct = candidate.Parameters.FirstOrDefault(p => p.Type.ToDisplayString() == CtFqn);
+            if (ct is null) continue;
+            if (candidate.Parameters.Length < method.Parameters.Length) continue;
+            return candidate;
+        }
+        return null;
+    }
+
+    private static IEnumerable<IMethodSymbol> EnumerateMethodOverloads(INamedTypeSymbol type, string name)
+    {
+        for (INamedTypeSymbol? t = type; t is not null; t = t.BaseType)
+        {
+            foreach (ISymbol m in t.GetMembers(name))
+            {
+                if (m is IMethodSymbol ms) yield return ms;
+            }
+        }
     }
 
     private static bool HasCtArgument(InvocationExpressionSyntax inv, IParameterSymbol ctParam, SemanticModel model)

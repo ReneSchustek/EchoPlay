@@ -18,11 +18,11 @@ namespace EchoPlay.Data.Tests.Services
 
             Series subscribed = await DataBuilder.PersistSeriesAsync("Die drei ???");
             subscribed.IsSubscribed = true;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Series> result = await service.GetSubscribedAsync();
+            IReadOnlyList<Series> result = await service.GetSubscribedAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.Equal("Die drei ???", result[0].Title);
@@ -36,7 +36,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            await service.SetSubscribedAsync(series.Id, true);
+            await service.SetSubscribedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
             // ChangeTracker leeren, damit der nächste FindAsync wirklich aus der DB liest
             Context.ChangeTracker.Clear();
@@ -52,11 +52,11 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.IsSubscribed = true;
             series.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Series> result = await service.GetSubscribedAsync();
+            IReadOnlyList<Series> result = await service.GetSubscribedAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -72,11 +72,11 @@ namespace EchoPlay.Data.Tests.Services
             bibi.IsSubscribed = true;
             tkkg.IsSubscribed = true;
             drei.IsSubscribed = true;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Series> result = await service.GetSubscribedAsync();
+            IReadOnlyList<Series> result = await service.GetSubscribedAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);
             Assert.Equal("Bibi Blocksberg", result[0].Title);

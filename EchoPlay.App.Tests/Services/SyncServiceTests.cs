@@ -76,7 +76,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, result.SeriesMatched);
             Assert.Equal(0, result.SeriesUnmatched);
@@ -102,7 +102,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, result.SeriesMatched);
         }
@@ -137,7 +137,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.SeriesMatched);
         }
@@ -172,7 +172,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, result.SeriesMatched);
             Assert.Equal(1, result.SeriesUnmatched);
@@ -225,7 +225,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.EpisodesUpdated);
         }
@@ -279,7 +279,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            _ = await service.SyncAsync();
+            _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(trackService.SavedTracks.ContainsKey(episode.Id));
             Assert.Equal(2, trackService.SavedTracks[episode.Id].Count);
@@ -341,7 +341,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.SeriesMatched);
             Assert.Equal(1, result.SeriesUnmatched);
@@ -395,7 +395,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.SeriesMatched);
             Assert.Equal(episodeCount, result.EpisodesUpdated);
@@ -444,7 +444,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Serie matched, aber keine Episode aktualisiert
             Assert.Equal(1, result.SeriesMatched);
@@ -480,7 +480,7 @@ namespace EchoPlay.App.Tests.Services
             int announcedCount = 0;
             Progress<Series> progress = new(_ => announcedCount++);
 
-            _ = await service.SyncAsync(onSeriesSynced: progress);
+            _ = await service.SyncAsync(onSeriesSynced: progress, cancellationToken: TestContext.Current.CancellationToken);
 
             // Wartet kurz, damit Progress-Callback laeuft (synchroner Pfad sollte sofort feuern).
             await Task.Yield();
@@ -524,7 +524,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.SeriesMatched);
             // Keine neue Serie angelegt — Count unveraendert.
@@ -571,7 +571,7 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeMp3MetadataReader());
 
-            SyncResult result = await service.SyncAsync();
+            SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.EpisodesUpdated);
             // Genau 1 AddRangeAsync, KEIN einzelner AddAsync — N+1-Vermeidung beim Auto-Import.

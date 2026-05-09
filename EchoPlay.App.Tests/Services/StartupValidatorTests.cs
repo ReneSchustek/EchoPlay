@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.Services
         {
             StartupValidator validator = BuildValidator();
 
-            StartupResult result = await validator.ValidateAsync();
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result);
             Assert.NotNull(result.Settings);
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { OfflineMode = true });
             StartupValidator validator = BuildValidator(settingsService: settings);
 
-            StartupResult result = await validator.ValidateAsync();
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.IsOnlineAvailable);
         }
@@ -109,7 +109,7 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService,
                 cacheService: cacheService);
 
-            StartupResult result = await validator.ValidateAsync();
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Cache muss nach Clear leer sein
             Assert.Empty(result.CachedReleases);
@@ -122,7 +122,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(appSettings);
 
             StartupValidator validator = BuildValidator(settingsService: settings);
-            _ = await validator.ValidateAsync();
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Flag muss nach dem Durchlauf zurückgesetzt sein
             AppSettings reloaded = await settings.GetAsync();
@@ -161,7 +161,7 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService,
                 cacheService: cacheService);
 
-            StartupResult result = await validator.ValidateAsync();
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Cache-Einträge für nicht-überwachte Serien müssen entfernt sein
             Assert.Empty(result.CachedReleases);
@@ -174,7 +174,7 @@ namespace EchoPlay.App.Tests.Services
                 settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }));
 
             List<string> statusMessages = [];
-            _ = await validator.ValidateAsync(status => statusMessages.Add(status));
+            _ = await validator.ValidateAsync(status => statusMessages.Add(status), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(statusMessages);
             Assert.Contains(statusMessages, s => s.Contains("Einstellungen", StringComparison.Ordinal));
@@ -200,7 +200,7 @@ namespace EchoPlay.App.Tests.Services
                 settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
                 coverServiceOverride: fakeCover);
 
-            _ = await validator.ValidateAsync();
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Splash darf ausschließlich die Serien-Phase anstossen.
             Assert.Equal(1, fakeCover.RunSeriesCoversCallCount);
@@ -226,7 +226,7 @@ namespace EchoPlay.App.Tests.Services
                 settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
                 coverServiceOverride: fakeCover);
 
-            _ = await validator.ValidateAsync();
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Offline-Modus muss den Provider-URL-Download in der Serien-Phase sperren.
             Assert.False(fakeCover.LastIsOnlineAvailable);

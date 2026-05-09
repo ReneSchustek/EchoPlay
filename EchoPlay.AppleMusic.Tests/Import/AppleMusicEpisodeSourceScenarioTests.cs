@@ -37,7 +37,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
 
             // ACT
-            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317");
+            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Es müssen genau zwei Episoden erzeugt werden (eine pro Album).
@@ -73,7 +73,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
 
             // ACT
-            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317");
+            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Die SourceEpisodeId muss die numerische iTunes-Track-ID als String enthalten.

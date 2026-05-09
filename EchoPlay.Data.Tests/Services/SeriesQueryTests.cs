@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Tests.Services
             // Das Soft-Delete erfolgt bewusst nach dem Persistieren, da der QueryFilter
             // ausschließlich auf gespeicherte Zustände wirkt.
             deletedSeries.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Der ChangeTracker wird geleert, um sicherzustellen, dass die folgende
             // Abfrage tatsächlich über die Datenbank erfolgt und nicht auf bereits
@@ -41,7 +41,7 @@ namespace EchoPlay.Data.Tests.Services
 
             // Die Abfrage erfolgt ohne IgnoreQueryFilters, da hier explizit das
             // Standardverhalten der Anwendung geprüft wird.
-            IReadOnlyList<Series> result = await service.GetAllAsync();
+            IReadOnlyList<Series> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Es darf ausschließlich die nicht gelöschte Serie zurückgegeben werden.
             Assert.Equal(expectedCount, result.Count);
@@ -54,7 +54,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            Series? result = await service.GetByIdAsync(series.Id);
+            Series? result = await service.GetByIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result);
             Assert.Equal("TKKG", result.Title);
@@ -65,7 +65,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             SeriesDataService service = new(Context, NullLoggerFactory);
 
-            Series? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999997"));
+            Series? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999997"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -75,11 +75,11 @@ namespace EchoPlay.Data.Tests.Services
         {
             Series series = new() { Title = "Die drei ???", AppleMusicArtistId = "12345" };
             _ = Context.Series.Add(series);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            Series? result = await service.GetByAppleMusicArtistIdAsync("12345");
+            Series? result = await service.GetByAppleMusicArtistIdAsync("12345", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result);
             Assert.Equal("Die drei ???", result.Title);
@@ -90,7 +90,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             SeriesDataService service = new(Context, NullLoggerFactory);
 
-            Series? result = await service.GetByAppleMusicArtistIdAsync("99999");
+            Series? result = await service.GetByAppleMusicArtistIdAsync("99999", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -102,10 +102,10 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            await service.SetWatchedAsync(series.Id, true);
+            await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            Series? reloaded = await service.GetByIdAsync(series.Id);
+            Series? reloaded = await service.GetByIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
             Assert.True(reloaded!.IsWatched);
         }
 
@@ -115,7 +115,7 @@ namespace EchoPlay.Data.Tests.Services
             SeriesDataService service = new(Context, NullLoggerFactory);
 
             // Unbekannte ID → kein Fehler, nur Log-Warnung
-            await service.SetWatchedAsync(new Guid("99999999-9999-9999-9999-999999999998"), true);
+            await service.SetWatchedAsync(new Guid("99999999-9999-9999-9999-999999999998"), true, cancellationToken: TestContext.Current.CancellationToken);
         }
     }
 }

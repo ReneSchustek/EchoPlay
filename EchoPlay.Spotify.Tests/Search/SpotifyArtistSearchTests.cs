@@ -22,7 +22,7 @@ namespace EchoPlay.Spotify.Tests.Search
             FakeSpotifyApiClient apiClient = new(artists: [SpotifyTestData.DieDreiFragezeichen]);
 
             // ACT
-            IReadOnlyList<SpotifyArtistDto> result = await apiClient.SearchArtistsAsync("Die drei ???", 10);
+            IReadOnlyList<SpotifyArtistDto> result = await apiClient.SearchArtistsAsync("Die drei ???", 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Es wird genau ein Treffer erwartet.

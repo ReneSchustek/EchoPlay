@@ -57,7 +57,7 @@ namespace EchoPlay.App.Tests.Services
             IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
                 TestIds.SeriesA,
                 Path.GetTempPath(),
-                MissingEpisodesMode.Cancel);
+                MissingEpisodesMode.Cancel, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.Services
             IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
                 TestIds.SeriesB,
                 seriesFolderPath: null,
-                MissingEpisodesMode.OfflineOnly);
+                MissingEpisodesMode.OfflineOnly, cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.Contains("Kein lokaler Ordner", result[0], StringComparison.Ordinal);
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
             IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
                 TestIds.SeriesC,
                 nonExistentPath,
-                MissingEpisodesMode.OfflineOnly);
+                MissingEpisodesMode.OfflineOnly, cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.Contains("Kein lokaler Ordner", result[0], StringComparison.Ordinal);
@@ -103,7 +103,7 @@ namespace EchoPlay.App.Tests.Services
                 IReadOnlyList<string> result = await coordinator.CheckSingleSeriesAsync(
                     TestIds.SeriesD,
                     tempFolder,
-                    MissingEpisodesMode.OfflineOnly);
+                    MissingEpisodesMode.OfflineOnly, cancellationToken: TestContext.Current.CancellationToken);
 
                 _ = Assert.Single(result);
                 Assert.Contains("Keine Folgenordner", result[0], StringComparison.Ordinal);
@@ -119,7 +119,7 @@ namespace EchoPlay.App.Tests.Services
         {
             MissingEpisodesCoordinator coordinator = BuildCoordinator();
 
-            MissingEpisodesReport report = await coordinator.CheckAllSeriesAsync(MissingEpisodesMode.Cancel);
+            MissingEpisodesReport report = await coordinator.CheckAllSeriesAsync(MissingEpisodesMode.Cancel, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(report.Results);
             Assert.Equal(0, report.TotalLocalGaps);
@@ -131,7 +131,7 @@ namespace EchoPlay.App.Tests.Services
         {
             MissingEpisodesCoordinator coordinator = BuildCoordinator();
 
-            MissingEpisodesReport report = await coordinator.CheckAllSeriesAsync(MissingEpisodesMode.OfflineOnly);
+            MissingEpisodesReport report = await coordinator.CheckAllSeriesAsync(MissingEpisodesMode.OfflineOnly, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(report.Results);
             Assert.NotEqual(default, report.CheckedAtUtc);

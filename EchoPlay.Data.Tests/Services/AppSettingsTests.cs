@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             AppSettingsDataService service = new(Context, NullLoggerFactory);
 
-            AppSettings settings = await service.GetAsync();
+            AppSettings settings = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(settings);
             Assert.Equal(90, settings.NewReleaseDays);
@@ -27,13 +27,13 @@ namespace EchoPlay.Data.Tests.Services
         {
             AppSettingsDataService service = new(Context, NullLoggerFactory);
 
-            AppSettings settings = await service.GetAsync();
+            AppSettings settings = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             settings.NewReleaseDays = 30;
             settings.OfflineMode = true;
-            await service.SaveAsync(settings);
+            await service.SaveAsync(settings, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            AppSettings reloaded = await service.GetAsync();
+            AppSettings reloaded = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(30, reloaded.NewReleaseDays);
             Assert.True(reloaded.OfflineMode);
         }
@@ -43,8 +43,8 @@ namespace EchoPlay.Data.Tests.Services
         {
             AppSettingsDataService service = new(Context, NullLoggerFactory);
 
-            AppSettings first = await service.GetAsync();
-            AppSettings second = await service.GetAsync();
+            AppSettings first = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
+            AppSettings second = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(first.Id, second.Id);
         }
@@ -54,12 +54,12 @@ namespace EchoPlay.Data.Tests.Services
         {
             AppSettingsDataService service = new(Context, NullLoggerFactory);
 
-            AppSettings settings = await service.GetAsync();
+            AppSettings settings = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             settings.ClearCacheOnNextStart = true;
-            await service.SaveAsync(settings);
+            await service.SaveAsync(settings, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            AppSettings reloaded = await service.GetAsync();
+            AppSettings reloaded = await service.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.True(reloaded.ClearCacheOnNextStart);
         }
     }

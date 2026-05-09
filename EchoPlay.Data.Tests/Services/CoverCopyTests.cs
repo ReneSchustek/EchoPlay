@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Tests.Services
                 EntityId = episodeId,
                 ImageData = imageData
             });
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             return await Context.CoverImages
                 .AsNoTracking()
-                .FirstOrDefaultAsync(ci => ci.EntityType == "Episode" && ci.EntityId == episodeId);
+                .FirstOrDefaultAsync(ci => ci.EntityType == "Episode" && ci.EntityId == episodeId, cancellationToken: TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -43,17 +43,17 @@ namespace EchoPlay.Data.Tests.Services
             Series source = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Folge 1");
             sourceEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(sourceEp.Id, [0xFF, 0xD8, 0xFF]);
 
             Series target = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "Episode 1");
             targetEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, copied);
 
@@ -69,17 +69,17 @@ namespace EchoPlay.Data.Tests.Services
             Series source = await DataBuilder.PersistSeriesAsync("Die drei ???");
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der Super-Papagei");
             sourceEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(sourceEp.Id, [0x89, 0x50, 0x4E, 0x47]);
 
             Series target = await DataBuilder.PersistSeriesAsync("Die drei ???");
             Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "Der Super-Papagei");
             targetEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, copied);
 
@@ -93,7 +93,7 @@ namespace EchoPlay.Data.Tests.Services
             // Kein passender Serientitel → nichts zu kopieren
             Series source = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Folge 1");
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(sourceEp.Id, [0xFF, 0xD8]);
 
             Series target = await DataBuilder.PersistSeriesAsync("Bibi Blocksberg");
@@ -101,7 +101,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, copied);
         }
@@ -112,12 +112,12 @@ namespace EchoPlay.Data.Tests.Services
             // Alle Episoden haben bereits Cover in CoverImages → nichts zu tun
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(episode.Id, [0xFF, 0xD8]);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(series.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, copied);
         }
@@ -127,7 +127,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Unbekannte Serie → 0, kein Fehler
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(new Guid("99999999-9999-9999-9999-999999999992"));
+            int copied = await service.CopyFromMatchingEpisodesAsync(new Guid("99999999-9999-9999-9999-999999999992"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, copied);
         }
@@ -139,17 +139,17 @@ namespace EchoPlay.Data.Tests.Services
             Series source = await DataBuilder.PersistSeriesAsync("TKKG");
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der blinde Hellseher");
             sourceEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(sourceEp.Id, [0xAA, 0xBB]);
 
             Series target = await DataBuilder.PersistSeriesAsync("Bibi Blocksberg");
             Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "Hexen gibt es doch");
             targetEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, copied);
         }
@@ -162,17 +162,17 @@ namespace EchoPlay.Data.Tests.Services
             source.LocalFolderPath = @"C:\Hoerspiele\Die drei Fragezeichen";
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der Super-Papagei");
             sourceEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(sourceEp.Id, [0xAA, 0xBB]);
 
             Series target = await DataBuilder.PersistSeriesAsync("Die drei ???");
             Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "001/und der Super-Papagei");
             targetEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, copied);
         }
@@ -185,17 +185,17 @@ namespace EchoPlay.Data.Tests.Services
             source.LocalFolderPath = @"C:\Hoerspiele\TKKG";
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der blinde Hellseher");
             sourceEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             await PersistEpisodeCoverAsync(sourceEp.Id, [0xAA, 0xBB]);
 
             Series target = await DataBuilder.PersistSeriesAsync("Die drei ???");
             Episode targetEp = await DataBuilder.PersistEpisodeAsync(target, "001/und der Super-Papagei");
             targetEp.EpisodeNumber = 1;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, copied);
         }
@@ -211,7 +211,7 @@ namespace EchoPlay.Data.Tests.Services
 
             Episode sourceEp2 = await DataBuilder.PersistEpisodeAsync(source, "Folge 2");
             sourceEp2.EpisodeNumber = 2;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             await PersistEpisodeCoverAsync(sourceEp1.Id, [0x01]);
             await PersistEpisodeCoverAsync(sourceEp2.Id, [0x02]);
@@ -223,11 +223,11 @@ namespace EchoPlay.Data.Tests.Services
 
             Episode targetEp2 = await DataBuilder.PersistEpisodeAsync(target, "Folge 2");
             targetEp2.EpisodeNumber = 2;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverCopyService service = new(Context, NullLoggerFactory);
-            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id);
+            int copied = await service.CopyFromMatchingEpisodesAsync(target.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, copied);
         }

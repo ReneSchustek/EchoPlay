@@ -32,7 +32,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             """;
             AppleMusicSearchClient client = BuildClient(responseJson);
 
-            ITunesResponseDto<ITunesCollectionDto> result = await client.LookupAlbumsAsync(artistId: 100);
+            ITunesResponseDto<ITunesCollectionDto> result = await client.LookupAlbumsAsync(artistId: 100, ct: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result.Results);
             // ResultCount entspricht dem JSON-Header "resultCount", nicht der tatsaechlichen Listenlaenge.
@@ -45,7 +45,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             const string responseJson = """{"resultCount":0,"results":[]}""";
             AppleMusicSearchClient client = BuildClient(responseJson);
 
-            ITunesResponseDto<ITunesCollectionDto> result = await client.LookupAlbumsAsync(artistId: 999);
+            ITunesResponseDto<ITunesCollectionDto> result = await client.LookupAlbumsAsync(artistId: 999, ct: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, result.ResultCount);
             Assert.Empty(result.Results);
@@ -57,7 +57,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             AppleMusicSearchClient client = BuildClient(string.Empty, HttpStatusCode.InternalServerError);
 
             _ = await Assert.ThrowsAsync<HttpRequestException>(
-                async () => await client.LookupAlbumsAsync(artistId: 100));
+                async () => await client.LookupAlbumsAsync(artistId: 100, ct: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             """;
             AppleMusicSearchClient client = BuildClient(responseJson);
 
-            ITunesResponseDto<ITunesArtistDto> result = await client.SearchArtistsAsync("Die drei");
+            ITunesResponseDto<ITunesArtistDto> result = await client.SearchArtistsAsync("Die drei", ct: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.ResultCount);
         }
@@ -97,7 +97,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             using HttpClient http = new(handler) { BaseAddress = new Uri("https://itunes.apple.com/") };
             AppleMusicSearchClient client = new(http, NullLoggerFactory.Instance);
 
-            _ = await client.SearchAlbumsAsync("test", limit: 10);
+            _ = await client.SearchAlbumsAsync("test", limit: 10, ct: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(handler.RequestUris);
             Assert.Contains("limit=10", handler.RequestUris[0].Query, StringComparison.Ordinal);

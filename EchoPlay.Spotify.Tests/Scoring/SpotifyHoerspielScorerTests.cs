@@ -32,7 +32,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = ["pop", "dance"]
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Die drei ???");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Die drei ???", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.IsHoerspiel);
             Assert.Equal(HoerspielDecisionReason.NegativeMusicGenre, result.Reason);
@@ -55,7 +55,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = ["indie rock"]
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Unbekannter Künstler");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Unbekannter Künstler", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.IsHoerspiel);
             Assert.Equal(HoerspielDecisionReason.NegativeMusicGenre, result.Reason);
@@ -80,7 +80,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = ["hörspiel"]
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "TKKG");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "TKKG", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.IsHoerspiel);
             Assert.Equal(HoerspielDecisionReason.KnownSeriesName, result.Reason);
@@ -102,7 +102,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Benjamin Blümchen");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Benjamin Blümchen", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.IsHoerspiel);
             Assert.Equal(HoerspielDecisionReason.KnownSeriesName, result.Reason);
@@ -131,7 +131,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "unbekannte Serie");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "unbekannte Serie", cancellationToken: TestContext.Current.CancellationToken);
 
             // Contains-Bonus (50) + ExactWordMatch-Bonus (25) + AlbumStructure-Bonus (25) = 100
             Assert.True(result.IsHoerspiel);
@@ -158,7 +158,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Die 3 Detektive");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Die 3 Detektive", cancellationToken: TestContext.Current.CancellationToken);
 
             // Zahlwort-Variante "Die drei Detektive" matcht → NameContainsBonus
             Assert.True(result.IsHoerspiel);
@@ -188,7 +188,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Eine neue Hörspielserie");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Eine neue Hörspielserie", cancellationToken: TestContext.Current.CancellationToken);
 
             // Contains (50) + ExactWord (25) + Album (25) = 100
             Assert.True(result.IsHoerspiel);
@@ -210,7 +210,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Kein Album Vorhanden");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Kein Album Vorhanden", cancellationToken: TestContext.Current.CancellationToken);
 
             // Contains (50) + ExactWord (25) + NoAlbumPenalty (-25) = 50 → gerade noch akzeptiert
             Assert.Equal(50, result.Score);
@@ -235,7 +235,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Kurze Musik Tracks");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Kurze Musik Tracks", cancellationToken: TestContext.Current.CancellationToken);
 
             // Contains (50) + ExactWord (25) + NoAlbumPenalty (-25) = 50
             Assert.Equal(50, result.Score);
@@ -260,7 +260,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Ganz anderer Suchbegriff");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Ganz anderer Suchbegriff", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.IsHoerspiel);
             Assert.Equal(HoerspielDecisionReason.None, result.Reason);
@@ -287,8 +287,8 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult first = await scorer.ScoreAsync(artist, "TKKG");
-            HoerspielScoreResult second = await scorer.ScoreAsync(artist, "TKKG");
+            HoerspielScoreResult first = await scorer.ScoreAsync(artist, "TKKG", cancellationToken: TestContext.Current.CancellationToken);
+            HoerspielScoreResult second = await scorer.ScoreAsync(artist, "TKKG", cancellationToken: TestContext.Current.CancellationToken);
 
             // Beide Ergebnisse müssen identisch sein (selbe Referenz aus dem Cache)
             Assert.Same(first, second);
@@ -314,7 +314,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Suchbegriff");
+            HoerspielScoreResult result = await scorer.ScoreAsync(artist, "Suchbegriff", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal("artist-id-check", result.ArtistId);
         }

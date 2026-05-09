@@ -19,7 +19,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Episode> result = await service.GetBySeriesIdAsync(series.Id);
+            IReadOnlyList<Episode> result = await service.GetBySeriesIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count);
         }
@@ -30,7 +30,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("Leere Serie");
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            IReadOnlyList<Episode> result = await service.GetBySeriesIdAsync(series.Id);
+            IReadOnlyList<Episode> result = await service.GetBySeriesIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -43,7 +43,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            Episode? result = await service.GetByIdAsync(episode.Id);
+            Episode? result = await service.GetByIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result);
             Assert.Equal("Folge 1", result.Title);
@@ -54,7 +54,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            Episode? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999996"));
+            Episode? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999996"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -69,7 +69,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Episode> result = await service.GetBySeriesIdsAsync([seriesA.Id, seriesB.Id]);
+            IReadOnlyList<Episode> result = await service.GetBySeriesIdsAsync([seriesA.Id, seriesB.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count);
         }
@@ -82,12 +82,12 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            Episode? loaded = await service.GetByIdAsync(episode.Id);
+            Episode? loaded = await service.GetByIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
             loaded!.Title = "Neu";
-            await service.UpdateAsync(loaded);
+            await service.UpdateAsync(loaded, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            Episode? reloaded = await service.GetByIdAsync(episode.Id);
+            Episode? reloaded = await service.GetByIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal("Neu", reloaded!.Title);
         }
 
@@ -100,11 +100,11 @@ namespace EchoPlay.Data.Tests.Services
             Episode ep2 = new() { SeriesId = series.Id, Title = "F2", EpisodeNumber = 20, LocalFolderPath = @"C:\2" };
             Episode ep3 = new() { SeriesId = series.Id, Title = "F3", EpisodeNumber = 5 }; // kein lokaler Pfad
             Context.Episodes.AddRange(ep1, ep2, ep3);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            int? highest = await service.GetHighestLocalEpisodeNumberAsync(series.Id);
+            int? highest = await service.GetHighestLocalEpisodeNumberAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(20, highest);
         }
@@ -115,11 +115,11 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("Nur Online");
             Episode ep = new() { SeriesId = series.Id, Title = "Online", EpisodeNumber = 5 };
             _ = Context.Episodes.Add(ep);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            int? highest = await service.GetHighestLocalEpisodeNumberAsync(series.Id);
+            int? highest = await service.GetHighestLocalEpisodeNumberAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(highest);
         }
@@ -132,12 +132,12 @@ namespace EchoPlay.Data.Tests.Services
             Episode ep1 = new() { SeriesId = series.Id, Title = "Lokal", LocalFolderPath = @"C:\Lokal" };
             Episode ep2 = new() { SeriesId = series.Id, Title = "Online" };
             Context.Episodes.AddRange(ep1, ep2);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
             IReadOnlyDictionary<Guid, (int Total, int Local)> counts =
-                await service.GetEpisodeCountsForSeriesAsync([series.Id]);
+                await service.GetEpisodeCountsForSeriesAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(counts.ContainsKey(series.Id));
             Assert.Equal(2, counts[series.Id].Total);
@@ -156,16 +156,16 @@ namespace EchoPlay.Data.Tests.Services
             Episode active = new() { SeriesId = series.Id, Title = "Aktiv", LocalFolderPath = @"C:\Aktiv" };
             Episode deleted = new() { SeriesId = series.Id, Title = "Gelöscht", LocalFolderPath = @"C:\Geloescht" };
             Context.Episodes.AddRange(active, deleted);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             deleted.MarkAsDeleted(EntityClock.Current.UtcNow);
             _ = Context.Episodes.Update(deleted);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
             IReadOnlyDictionary<Guid, (int Total, int Local)> counts =
-                await service.GetEpisodeCountsForSeriesAsync([series.Id]);
+                await service.GetEpisodeCountsForSeriesAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(counts.ContainsKey(series.Id));
             Assert.Equal(1, counts[series.Id].Total);
@@ -183,16 +183,16 @@ namespace EchoPlay.Data.Tests.Services
 
             Episode deleted = new() { SeriesId = series.Id, Title = "Gelöscht" };
             _ = Context.Episodes.Add(deleted);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             deleted.MarkAsDeleted(EntityClock.Current.UtcNow);
             _ = Context.Episodes.Update(deleted);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
             IReadOnlyDictionary<Guid, (int Total, int Local)> counts =
-                await service.GetEpisodeCountsForSeriesAsync([series.Id]);
+                await service.GetEpisodeCountsForSeriesAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(counts.ContainsKey(series.Id));
         }
@@ -209,15 +209,15 @@ namespace EchoPlay.Data.Tests.Services
 
             Episode ep = new() { SeriesId = series.Id, Title = "Folge" };
             _ = Context.Episodes.Add(ep);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
             IReadOnlyDictionary<Guid, (int Total, int Local)> first =
-                await service.GetEpisodeCountsForSeriesAsync([series.Id]);
+                await service.GetEpisodeCountsForSeriesAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
             IReadOnlyDictionary<Guid, (int Total, int Local)> second =
-                await service.GetEpisodeCountsForSeriesAsync([series.Id]);
+                await service.GetEpisodeCountsForSeriesAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(first[series.Id], second[series.Id]);
         }
@@ -230,7 +230,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([episode.Id]);
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([episode.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.True(result.ContainsKey(episode.Id));
@@ -248,7 +248,7 @@ namespace EchoPlay.Data.Tests.Services
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
             IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync(
-                [episode1.Id, episode2.Id, episode3.Id]);
+                [episode1.Id, episode2.Id, episode3.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);
             Assert.True(result.ContainsKey(episode1.Id));
@@ -261,7 +261,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([]);
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -276,7 +276,7 @@ namespace EchoPlay.Data.Tests.Services
             EpisodeDataService service = new(Context, NullLoggerFactory);
             Guid missingId = new("99999999-9999-9999-9999-999999999991");
 
-            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([episode.Id, missingId]);
+            IReadOnlyDictionary<Guid, Episode> result = await service.GetByIdsAsync([episode.Id, missingId], cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.True(result.ContainsKey(episode.Id));
@@ -292,16 +292,16 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
-            Episode? loaded1 = await service.GetByIdAsync(ep1.Id);
-            Episode? loaded2 = await service.GetByIdAsync(ep2.Id);
+            Episode? loaded1 = await service.GetByIdAsync(ep1.Id, cancellationToken: TestContext.Current.CancellationToken);
+            Episode? loaded2 = await service.GetByIdAsync(ep2.Id, cancellationToken: TestContext.Current.CancellationToken);
             loaded1!.CoverImageUrl = "https://example.org/cover1.jpg";
             loaded2!.CoverImageUrl = "https://example.org/cover2.jpg";
 
-            await service.UpdateRangeAsync([loaded1, loaded2]);
+            await service.UpdateRangeAsync([loaded1, loaded2], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            Episode? reloaded1 = await service.GetByIdAsync(ep1.Id);
-            Episode? reloaded2 = await service.GetByIdAsync(ep2.Id);
+            Episode? reloaded1 = await service.GetByIdAsync(ep1.Id, cancellationToken: TestContext.Current.CancellationToken);
+            Episode? reloaded2 = await service.GetByIdAsync(ep2.Id, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal("https://example.org/cover1.jpg", reloaded1!.CoverImageUrl);
             Assert.Equal("https://example.org/cover2.jpg", reloaded2!.CoverImageUrl);
         }
@@ -311,7 +311,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            await service.UpdateRangeAsync([]);
+            await service.UpdateRangeAsync([], cancellationToken: TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -323,10 +323,10 @@ namespace EchoPlay.Data.Tests.Services
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
             DateTime now = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
-            await service.SetCoverLastCheckedAsync(episode.Id, now);
+            await service.SetCoverLastCheckedAsync(episode.Id, now, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            Episode? reloaded = await service.GetByIdAsync(episode.Id);
+            Episode? reloaded = await service.GetByIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.NotNull(reloaded!.CoverLastChecked);
         }
     }

@@ -45,7 +45,7 @@ namespace EchoPlay.Spotify.Tests.Live
         {
             // ACT
             IReadOnlyList<SpotifyArtistDto> artists =
-                await _apiClient.SearchArtistsAsync("Die drei ???", 3);
+                await _apiClient.SearchArtistsAsync("Die drei ???", 3, cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.NotEmpty(artists);
@@ -65,14 +65,14 @@ namespace EchoPlay.Spotify.Tests.Live
         {
             // ARRANGE – Kuenstler suchen, um eine gueltige Artist-ID zu erhalten
             IReadOnlyList<SpotifyArtistDto> artists =
-                await _apiClient.SearchArtistsAsync("Die drei ???", 1);
+                await _apiClient.SearchArtistsAsync("Die drei ???", 1, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(artists);
             string artistId = artists[0].SpotifyArtistId;
 
             // ACT
             IReadOnlyList<SpotifyAlbumDto> albums =
-                await _apiClient.GetArtistAlbumsAsync(artistId, 5);
+                await _apiClient.GetArtistAlbumsAsync(artistId, 5, cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.NotEmpty(albums);
@@ -92,19 +92,19 @@ namespace EchoPlay.Spotify.Tests.Live
         {
             // ARRANGE – Kuenstler und Album suchen
             IReadOnlyList<SpotifyArtistDto> artists =
-                await _apiClient.SearchArtistsAsync("Die drei ???", 1);
+                await _apiClient.SearchArtistsAsync("Die drei ???", 1, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(artists);
 
             IReadOnlyList<SpotifyAlbumDto> albums =
-                await _apiClient.GetArtistAlbumsAsync(artists[0].SpotifyArtistId, 1);
+                await _apiClient.GetArtistAlbumsAsync(artists[0].SpotifyArtistId, 1, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(albums);
             string albumId = albums[0].SpotifyAlbumId;
 
             // ACT
             IReadOnlyList<SpotifyTrackDto> tracks =
-                await _apiClient.GetAlbumTracksAsync(albumId);
+                await _apiClient.GetAlbumTracksAsync(albumId, cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.NotEmpty(tracks);

@@ -19,8 +19,8 @@ namespace EchoPlay.Spotify.Tests.Auth
             handler.EnqueueToken("token-1", expiresInSeconds: 3600);
             SpotifyTokenClient tokenClient = CreateTokenClient(handler);
 
-            string first = await tokenClient.GetAccessTokenAsync();
-            string second = await tokenClient.GetAccessTokenAsync();
+            string first = await tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken);
+            string second = await tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal("token-1", first);
             Assert.Equal("token-1", second);
@@ -35,9 +35,9 @@ namespace EchoPlay.Spotify.Tests.Auth
             handler.EnqueueToken("token-2", expiresInSeconds: 3600);
             SpotifyTokenClient tokenClient = CreateTokenClient(handler);
 
-            string first = await tokenClient.GetAccessTokenAsync();
-            await tokenClient.InvalidateAsync();
-            string second = await tokenClient.GetAccessTokenAsync();
+            string first = await tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken);
+            await tokenClient.InvalidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+            string second = await tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal("token-1", first);
             Assert.Equal("token-2", second);
@@ -52,7 +52,7 @@ namespace EchoPlay.Spotify.Tests.Auth
             SpotifyTokenClient tokenClient = CreateTokenClient(handler);
 
             Task<string>[] tasks = Enumerable.Range(0, 10)
-                .Select(_ => tokenClient.GetAccessTokenAsync())
+                .Select(_ => tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken))
                 .ToArray();
             string[] tokens = await Task.WhenAll(tasks);
 
@@ -86,7 +86,7 @@ namespace EchoPlay.Spotify.Tests.Auth
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()),
                 new FakeClock());
 
-            _ = await Assert.ThrowsAsync<InvalidOperationException>(() => tokenClient.GetAccessTokenAsync());
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(() => tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken));
             Assert.Equal(0, handler.CallCount);
         }
 

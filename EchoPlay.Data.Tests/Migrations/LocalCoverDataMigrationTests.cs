@@ -36,7 +36,7 @@ namespace EchoPlay.Data.Tests.Migrations
             // Schema bis zum Vorgaenger-Stand aufbauen,
             // damit die Spalten Series.LocalCoverData und Episodes.LocalCoverData noch existieren.
             IMigrator migrator = _context.GetService<IMigrator>();
-            await migrator.MigrateAsync(PreviousMigration);
+            await migrator.MigrateAsync(PreviousMigration, cancellationToken: TestContext.Current.CancellationToken);
         }
 
         /// <inheritdoc/>
@@ -64,7 +64,7 @@ namespace EchoPlay.Data.Tests.Migrations
         public async Task Migration_DropsLocalCoverDataColumns_FromBothTables()
         {
             // Migration auf den neuesten Stand bringen
-            await _context!.Database.MigrateAsync();
+            await _context!.Database.MigrateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             using SqliteCommand cmd = _connection!.CreateCommand();
 
@@ -86,7 +86,7 @@ namespace EchoPlay.Data.Tests.Migrations
 
             await InsertSeriesWithLocalCoverAsync(seriesId, "TKKG", coverBytes);
 
-            await _context!.Database.MigrateAsync();
+            await _context!.Database.MigrateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             byte[]? migrated = await ReadCoverImageBytesAsync("Series", seriesId);
 
@@ -104,7 +104,7 @@ namespace EchoPlay.Data.Tests.Migrations
             await InsertSeriesWithLocalCoverAsync(seriesId, "Die drei ???", coverData: null);
             await InsertEpisodeWithLocalCoverAsync(episodeId, seriesId, coverBytes);
 
-            await _context!.Database.MigrateAsync();
+            await _context!.Database.MigrateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             byte[]? migrated = await ReadCoverImageBytesAsync("Episode", episodeId);
 
@@ -124,7 +124,7 @@ namespace EchoPlay.Data.Tests.Migrations
             await InsertSeriesWithLocalCoverAsync(seriesId, "Bibi Blocksberg", legacyBytes);
             await InsertExistingCoverImageAsync("Series", seriesId, originalBytes);
 
-            await _context!.Database.MigrateAsync();
+            await _context!.Database.MigrateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             using SqliteCommand cmd = _connection!.CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM CoverImages WHERE EntityType = 'Series' AND EntityId = $id;";

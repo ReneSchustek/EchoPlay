@@ -33,7 +33,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             DeezerAlbumCoverSearchService service = BuildService(HttpStatusCode.OK, HappyPathJson);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal("Folge 1 – Der Fluch", only.ReleaseTitle);
@@ -47,7 +47,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             DeezerAlbumCoverSearchService service = BuildService(HttpStatusCode.OK, EmptyJson);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Unbekannt");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Unbekannt", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -59,7 +59,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             HttpClient client = new(handler);
             DeezerAlbumCoverSearchService service = new(client);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Egal");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Egal", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }

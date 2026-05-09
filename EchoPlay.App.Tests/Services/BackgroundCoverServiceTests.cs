@@ -141,7 +141,7 @@ namespace EchoPlay.App.Tests.Services
                 loggerFactory);
 
             // Eine echte Iteration (RunOnceAsync) durchläuft sämtliche Scope-erzeugenden Phasen.
-            _ = await service.RunOnceAsync();
+            _ = await service.RunOnceAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             int created = scopeFactory.CreatedCount;
             int active = scopeFactory.ActiveCount;

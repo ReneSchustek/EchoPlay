@@ -23,7 +23,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             StubCoverSearchService providerB = new([]);
             CompositeCoverSearchService composite = new([providerA, providerB]);
 
-            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("TKKG");
+            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal(expected, only);
@@ -36,7 +36,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             StubCoverSearchService providerB = new([]);
             CompositeCoverSearchService composite = new([providerA, providerB]);
 
-            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("Unbekannt");
+            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("Unbekannt", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -53,7 +53,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             ThrowingCoverSearchService providerB = new();
             CompositeCoverSearchService composite = new([providerA, providerB]);
 
-            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("TKKG");
+            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal(fromA, only);
@@ -65,7 +65,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CountingCoverSearchService provider = new();
             CompositeCoverSearchService composite = new([provider]);
 
-            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync(string.Empty);
+            IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync(string.Empty, ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
             Assert.Equal(0, provider.CallCount);

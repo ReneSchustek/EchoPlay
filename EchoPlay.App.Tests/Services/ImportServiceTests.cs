@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            SearchOutcome result = await service.SearchAsync("drei");
+            SearchOutcome result = await service.SearchAsync("drei", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result.Results);
             Assert.Equal("Spotify", result.Results[0].Source);
@@ -117,7 +117,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            SearchOutcome result = await service.SearchAsync("tkkg");
+            SearchOutcome result = await service.SearchAsync("tkkg", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result.Results);
             Assert.Equal("AppleMusic", result.Results[0].Source);
@@ -137,7 +137,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            SearchOutcome result = await service.SearchAsync("unbekannt");
+            SearchOutcome result = await service.SearchAsync("unbekannt", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result.Results);
             Assert.False(result.SpotifyFallbackApplied);
@@ -167,7 +167,7 @@ namespace EchoPlay.App.Tests.Services
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
                 credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
 
-            SearchOutcome result = await service.SearchAsync("query");
+            SearchOutcome result = await service.SearchAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result.Results);
             Assert.Equal("AppleMusic", result.Results[0].Source);
@@ -193,7 +193,7 @@ namespace EchoPlay.App.Tests.Services
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
                 credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
 
-            SearchOutcome result = await service.SearchAsync("query");
+            SearchOutcome result = await service.SearchAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result.Results);
             Assert.Equal("AppleMusic", result.Results[0].Source);
@@ -214,7 +214,7 @@ namespace EchoPlay.App.Tests.Services
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
                 credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
 
-            SearchOutcome result = await service.SearchAsync("query");
+            SearchOutcome result = await service.SearchAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result.Results);
             Assert.False(result.SpotifyFallbackApplied);
@@ -235,7 +235,7 @@ namespace EchoPlay.App.Tests.Services
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
                 credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
 
-            SearchOutcome result = await service.SearchAlbumsAsync("query");
+            SearchOutcome result = await service.SearchAlbumsAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.SpotifyFallbackApplied);
         }
@@ -252,7 +252,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
 
-            SearchOutcome result = await service.SearchAlbumsAsync("query");
+            SearchOutcome result = await service.SearchAlbumsAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.SpotifyFallbackApplied);
         }
@@ -270,7 +270,7 @@ namespace EchoPlay.App.Tests.Services
                 appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
                 credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
 
-            SearchOutcome result = await service.SearchAlbumsAsync("   ");
+            SearchOutcome result = await service.SearchAlbumsAsync("   ", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result.Results);
             Assert.False(result.SpotifyFallbackApplied);
@@ -298,7 +298,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 80
             };
 
-            _ = await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(seriesService.All);
             Assert.Equal("Die drei ???", seriesService.All[0].Title);
@@ -334,7 +334,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 90
             };
 
-            _ = await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, episodeService.All.Count);
         }
@@ -372,7 +372,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 80
             };
 
-            _ = await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             // Drei eindeutige SourceEpisodeIds -> exakt drei Episoden, das erste Vorkommen gewinnt.
             Assert.Equal(3, episodeService.All.Count);
@@ -411,7 +411,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 70
             };
 
-            _ = await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, episodeService.All.Count);
         }
@@ -445,7 +445,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 70
             };
 
-            _ = await service.ImportAsync(importSeries);
+            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             // Nur die initial angelegte Serie darf vorhanden sein
             _ = Assert.Single(seriesService.All);
@@ -473,7 +473,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 60
             };
 
-            Guid id = await service.ImportAsync(importSeries);
+            Guid id = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEqual(Guid.Empty, id);
         }
@@ -507,7 +507,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 75
             };
 
-            bool result = await service.IsAlreadyImportedAsync(series);
+            bool result = await service.IsAlreadyImportedAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result);
         }
@@ -541,7 +541,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
 
-            int count = await service.ReImportEpisodesAsync(existingSeries);
+            int count = await service.ReImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, count);
             Assert.Equal(3, episodeService.All.Count);
@@ -586,7 +586,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
 
-            int newCount = await service.DeltaImportEpisodesAsync(existingSeries);
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, newCount);
             Assert.Equal(5, episodeService.All.Count);
@@ -636,7 +636,7 @@ namespace EchoPlay.App.Tests.Services
                 spotifyEpisodeSource: new FakeEpisodeImportSource([]),
                 appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
 
-            int newCount = await service.DeltaImportEpisodesAsync(existingSeries);
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, newCount);
             // Ein einziger Batch-Update für die zwei nachzutragenden Cover.
@@ -671,7 +671,7 @@ namespace EchoPlay.App.Tests.Services
                 Score = 40
             };
 
-            bool result = await service.IsAlreadyImportedAsync(series);
+            bool result = await service.IsAlreadyImportedAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
         }

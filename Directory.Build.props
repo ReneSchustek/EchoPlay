@@ -22,9 +22,10 @@
 
   <!-- Test-Projekte: xUnit-Konventionen (Unterstriche in Testnamen) -->
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) or '$(MSBuildProjectName)' == 'EchoPlay.Fuzz'">
-    <!-- xUnit1051: TestContext.Current.CancellationToken hat in unseren kurzen Tests
-         keinen praktischen Nutzen (keine reaktive Test-Cancellation noetig). Wir nutzen
-         dedizierte CTSs oder CT.None mit Begruendung gemaess Brief 287/306/315. -->
+    <!-- xUnit1051: TestContext.Current.CancellationToken-Empfehlung. Mechanischer
+         Append-Fix bricht an Methoden mit optionalen Default-Parametern (CT wuerde
+         in falsche Position einsortiert). Saubere Umstellung erfordert Roslyn-basiertes
+         Tooling und ist als Folge-Brief 328 angelegt. -->
     <NoWarn>$(NoWarn);CA1707;xUnit1051</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>

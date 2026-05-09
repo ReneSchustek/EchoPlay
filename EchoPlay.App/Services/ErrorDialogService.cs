@@ -1,8 +1,8 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.Logger.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -40,11 +40,12 @@ namespace EchoPlay.App.Services
 
             // Defense-in-Depth: bei Startup-Failures vor abgeschlossener MainWindow-Init
             // (siehe App.xaml.cs Fatal-Pfade) ist MainWindow oder XamlRoot null. Statt
-            // NullReferenceException im Error-Service Trace-Fallback (analog Brief 305 Splash).
+            // NullReferenceException im Error-Service EmergencyTrace-Fallback, analog
+            // SplashWindow-Pfad — der regulaere Logger ist hier ggf. selbst noch nicht da.
             XamlRoot? xamlRoot = _xamlRootProvider();
             if (xamlRoot is null)
             {
-                Trace.WriteLine($"ErrorDialogService: {content.Title} — {content.Message} (MainWindow nicht verfuegbar)");
+                EmergencyTrace.Log($"ErrorDialogService: {content.Title} — {content.Message} (MainWindow nicht verfuegbar)");
                 return;
             }
 

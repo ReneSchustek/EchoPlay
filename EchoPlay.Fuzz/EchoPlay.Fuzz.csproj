@@ -4,19 +4,21 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- CA1062: FsCheck-Generatoren liefern Werte gemaess Constraint (NonNull, PositiveInt) - explizite Null-Validierung im Test-Body ist redundant. -->
-    <NoWarn>$(NoWarn);CA1707;CA1062</NoWarn>
+    <!-- CA1062: FsCheck-Generatoren liefern Werte gemaess Constraint (NonNull, PositiveInt) - explizite Null-Validierung im Test-Body ist redundant.
+         CA1515: Test-Klassen in xunit-Projekten muessen nach Konvention public sein, damit der Runner sie discovern kann.
+                 xunit.v3 setzt fuer Fuzz (IsTestProject=true) implizit OutputType=Exe, wodurch CA1515 sonst greifen wuerde. -->
+    <NoWarn>$(NoWarn);CA1707;CA1062;CA1515</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="FsCheck.Xunit" Version="3.3.0" />
+    <PackageReference Include="FsCheck.Xunit.v3" Version="3.3.3" />
   </ItemGroup>
 
   <ItemGroup>

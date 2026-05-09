@@ -10,12 +10,17 @@
     <UseWinUI>false</UseWinUI>
     <!-- EchoPlay.App wird als x64 gebaut – Testprojekt muss dieselbe Architektur verwenden -->
     <PlatformTarget>x64</PlatformTarget>
+    <!-- xunit.v3 ist self-contained-faehig; EchoPlay.App referenziert WindowsAppSDK
+         (self-contained). Ohne SelfContained=true im Test-Projekt schlaegt der NETSDK1151-Check
+         zu (Non-self-contained darf nicht auf Self-contained verweisen). -->
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
-    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

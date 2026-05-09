@@ -35,7 +35,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
                 expectedFileSize: 100,
-                expectedSha256: string.Empty);
+                expectedSha256: string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
             Assert.Equal(0, handler.RequestCount);
@@ -58,7 +58,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
                 expectedFileSize: 999_999, // Mismatch erzwingt Abbruch nach Download
-                expectedSha256: string.Empty);
+                expectedSha256: string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
             Assert.Equal(1, handler.RequestCount);
@@ -74,7 +74,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: "1.0.0",
                 expectedFileSize: 999, // Erwartet 999 Bytes, geliefert wurden 5
-                expectedSha256: string.Empty);
+                expectedSha256: string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
             Assert.Equal(1, handler.RequestCount);
@@ -94,7 +94,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: "1.0.0",
                 expectedFileSize: 0,
-                expectedSha256: string.Empty);
+                expectedSha256: string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
         }
@@ -133,7 +133,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
                 expectedFileSize: payload.Length,
-                expectedSha256: wrongHash);
+                expectedSha256: wrongHash, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
             Assert.Equal(1, handler.RequestCount);
@@ -156,7 +156,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
                 expectedFileSize: payload.Length,
-                expectedSha256: invalidHash);
+                expectedSha256: invalidHash, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
 
@@ -178,7 +178,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
                 expectedFileSize: payload.Length,
-                expectedSha256: shortHash);
+                expectedSha256: shortHash, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
 
@@ -206,7 +206,7 @@ namespace EchoPlay.App.Tests.Services
                 downloadUrl: "https://example.org/setup.exe",
                 version: version,
                 expectedFileSize: payload.Length,
-                expectedSha256: correctHash);
+                expectedSha256: correctHash, cancellationToken: TestContext.Current.CancellationToken);
 
             // Process.Start mit Dummy-payload schlägt fehl → false. Aber der Pfad bis dorthin
             // ist nur erreichbar, wenn ContentLength- UND Hash-Check beide grün waren.

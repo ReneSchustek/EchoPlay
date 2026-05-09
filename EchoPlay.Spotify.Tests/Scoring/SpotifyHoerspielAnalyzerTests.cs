@@ -26,7 +26,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = ["pop"]
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Popband XY");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Popband XY", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.HasNegativeMusicGenre);
         }
@@ -46,7 +46,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "TKKG");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "TKKG", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.IsKnownSeries);
         }
@@ -66,7 +66,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie ABC");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie ABC", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.NameContainsQuery);
         }
@@ -86,7 +86,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Die 3 Detektive");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Die 3 Detektive", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.HasNumberVariantMatch);
         }
@@ -106,7 +106,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie Abenteuer");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie Abenteuer", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.HasExactWordMatch);
         }
@@ -130,7 +130,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Hörspielserie XY");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Hörspielserie XY", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.HasHoerspielAlbumStructure);
             Assert.True(result.HasAlbums);
@@ -151,7 +151,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
                 Genres = []
             };
 
-            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Ohne Alben");
+            SpotifyHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Ohne Alben", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.HasAlbums);
             Assert.False(result.HasHoerspielAlbumStructure);

@@ -150,7 +150,7 @@ namespace EchoPlay.Logger.Tests
 
             string[] files = Directory.GetFiles(_tempDirectory, "*.jsonl");
             _ = Assert.Single(files);
-            string[] lines = await File.ReadAllLinesAsync(files[0]);
+            string[] lines = await File.ReadAllLinesAsync(files[0], cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(2, lines.Length);
             using JsonDocument doc0 = JsonDocument.Parse(lines[0]);
             using JsonDocument doc1 = JsonDocument.Parse(lines[1]);

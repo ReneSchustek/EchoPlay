@@ -29,7 +29,7 @@ namespace EchoPlay.App.Tests.Services
             Series series = new() { Title = "Test" };
 
             // Darf nicht crashen und keine API-Calls machen
-            await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(series, provider);
+            await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(series, provider, cancellationToken: TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace EchoPlay.App.Tests.Services
             Series series = new() { Title = "Test" };
 
             // Darf nicht crashen – FakeOnlineEpisodeChecker gibt leere Ergebnisse zurück
-            await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(series, provider);
+            await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(series, provider, cancellationToken: TestContext.Current.CancellationToken);
         }
     }
 }

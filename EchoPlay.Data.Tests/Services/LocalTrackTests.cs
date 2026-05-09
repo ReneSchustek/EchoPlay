@@ -27,11 +27,11 @@ namespace EchoPlay.Data.Tests.Services
                 FilePath = @"C:\track2.mp3",
                 TrackNumber = 2
             });
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             LocalTrackDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<LocalTrack> tracks = await service.GetByEpisodeIdAsync(episode.Id);
+            IReadOnlyList<LocalTrack> tracks = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, tracks.Count);
         }
@@ -43,7 +43,7 @@ namespace EchoPlay.Data.Tests.Services
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             LocalTrackDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<LocalTrack> tracks = await service.GetByEpisodeIdAsync(episode.Id);
+            IReadOnlyList<LocalTrack> tracks = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(tracks);
         }
@@ -61,10 +61,10 @@ namespace EchoPlay.Data.Tests.Services
             ];
 
             LocalTrackDataService service = new(Context, NullLoggerFactory);
-            await service.SaveTracksForEpisodeAsync(episode.Id, tracks);
+            await service.SaveTracksForEpisodeAsync(episode.Id, tracks, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<LocalTrack> result = await service.GetByEpisodeIdAsync(episode.Id);
+            IReadOnlyList<LocalTrack> result = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(2, result.Count);
         }
 
@@ -81,7 +81,7 @@ namespace EchoPlay.Data.Tests.Services
                 FilePath = @"C:\old.mp3",
                 TrackNumber = 1
             });
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             // Neue Tracks speichern (ersetzt alte)
@@ -92,10 +92,10 @@ namespace EchoPlay.Data.Tests.Services
             ];
 
             LocalTrackDataService service = new(Context, NullLoggerFactory);
-            await service.SaveTracksForEpisodeAsync(episode.Id, newTracks);
+            await service.SaveTracksForEpisodeAsync(episode.Id, newTracks, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<LocalTrack> result = await service.GetByEpisodeIdAsync(episode.Id);
+            IReadOnlyList<LocalTrack> result = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(2, result.Count);
             Assert.Contains(result, t => t.FilePath == @"C:\new1.mp3");
         }

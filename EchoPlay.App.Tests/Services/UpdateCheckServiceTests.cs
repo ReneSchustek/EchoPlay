@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { OfflineMode = true });
             (UpdateCheckService service, RecordingHandler handler) = BuildService(settings);
 
-            UpdateInfo? result = await service.CheckForUpdateAsync();
+            UpdateInfo? result = await service.CheckForUpdateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
             Assert.Equal(0, handler.RequestCount);
@@ -35,7 +35,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings());
             (UpdateCheckService service, _) = BuildService(settings, statusCode: HttpStatusCode.InternalServerError);
 
-            UpdateInfo? result = await service.CheckForUpdateAsync();
+            UpdateInfo? result = await service.CheckForUpdateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.Services
             ThrowingHandler handler = new();
             UpdateCheckService service = BuildServiceWithHandler(settings, handler);
 
-            UpdateInfo? result = await service.CheckForUpdateAsync();
+            UpdateInfo? result = await service.CheckForUpdateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings());
             (UpdateCheckService service, _) = BuildService(settings);
 
-            await service.SkipVersionAsync("1.2.3");
+            await service.SkipVersionAsync("1.2.3", cancellationToken: TestContext.Current.CancellationToken);
 
             AppSettings persisted = await settings.GetAsync();
             Assert.Equal("1.2.3", persisted.SkippedUpdateVersion);

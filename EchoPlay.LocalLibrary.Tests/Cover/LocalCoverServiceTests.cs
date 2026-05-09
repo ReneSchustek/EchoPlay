@@ -39,9 +39,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public async Task ResolveAsync_ReturnsCoverBytes_WhenCoverJpgExists()
         {
             // cover.jpg im Serienordner ist die bevorzugte lokale Quelle
-            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"), JpegA);
+            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegA, result);
         }
@@ -50,9 +50,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public async Task ResolveAsync_ReturnsCoverBytes_WhenCoverJpegExists()
         {
             // cover.jpeg (mit e) wird ebenfalls erkannt
-            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpeg"), JpegA);
+            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpeg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegA, result);
         }
@@ -61,9 +61,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public async Task ResolveAsync_ReturnsCoverBytes_WhenFolderJpgExists()
         {
             // folder.jpg – üblich wenn cover.jpg fehlt (z.B. ältere Windows-Media-Player-Bibliotheken)
-            await File.WriteAllBytesAsync(Path.Combine(_root, "folder.jpg"), JpegB);
+            await File.WriteAllBytesAsync(Path.Combine(_root, "folder.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegB, result);
         }
@@ -73,9 +73,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // Windows Media Player erzeugt AlbumArt_*_Large.jpg automatisch – letzter Fallback
             string wmpFile = Path.Combine(_root, "AlbumArt_{9C849FDB-D1AC-4B16-9A54-3AD2F74CE9A9}_Large.jpg");
-            await File.WriteAllBytesAsync(wmpFile, JpegC);
+            await File.WriteAllBytesAsync(wmpFile, JpegC, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegC, result);
         }
@@ -87,10 +87,10 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // Cover/front.jpg ist das Erkennungsbild – hat Vorrang vor generischen Dateinamen
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
-            await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA);
-            await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB);
+            await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
+            await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegA, result);
         }
@@ -100,9 +100,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // back.jpg zeigt die Rückseite – wird übersprungen, auch wenn kein front.jpg existiert
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
-            await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB);
+            await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             // Nur back.jpg vorhanden → kein verwendbares Cover im Unterordner
             Assert.Null(result);
@@ -113,9 +113,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // cover.jpg im Cover-Unterordner wird verwendet wenn kein "back" im Namen steht
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
-            await File.WriteAllBytesAsync(Path.Combine(coverDir, "cover.jpg"), JpegA);
+            await File.WriteAllBytesAsync(Path.Combine(coverDir, "cover.jpg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegA, result);
         }
@@ -125,10 +125,10 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // Cover-Unterordner wird zuerst geprüft – cover.jpg direkt im Serienordner kommt danach
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
-            await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA);
-            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"), JpegB);
+            await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
+            await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
 
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(JpegA, result);
         }
@@ -139,7 +139,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public async Task ResolveAsync_ReturnsNull_WhenNoSourceAvailable()
         {
             // Kein lokales Cover, keine URL → null zurückgeben
-            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null);
+            byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -149,7 +149,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // Nicht existierendes Verzeichnis darf keinen Fehler werfen
             byte[]? result = await BuildService().ResolveAsync(
-                "/non/existent/path", coverImageUrl: null);
+                "/non/existent/path", coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }

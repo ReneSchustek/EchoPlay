@@ -49,7 +49,7 @@ namespace EchoPlay.Spotify.Tests.Search
             ISeriesImportSearch search = provider.GetRequiredService<ISeriesImportSearch>();
 
             // ACT
-            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Die drei ???");
+            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Die drei ???", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Der Kandidat muss die Seriensuche passieren.
@@ -98,7 +98,7 @@ namespace EchoPlay.Spotify.Tests.Search
             // ACT
             // Der Suchbegriff stimmt mit dem Künstlernamen überein, sodass die API ihn liefert.
             // Die Filterung muss dann über IsHoerspiel erfolgen, nicht über die API-Suche.
-            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Random Pop Artist");
+            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Random Pop Artist", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Ungeeignete Kandidaten dürfen nicht als Import-Serie erscheinen.

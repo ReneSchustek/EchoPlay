@@ -43,7 +43,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
         {
             // ACT
             ITunesResponseDto<ITunesArtistDto> response =
-                await _searchClient.SearchArtistsAsync("Die drei ???", 3);
+                await _searchClient.SearchArtistsAsync("Die drei ???", 3, ct: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.True(response.ResultCount > 0);
@@ -64,14 +64,14 @@ namespace EchoPlay.AppleMusic.Tests.Live
         {
             // ARRANGE – Künstler suchen, um eine gültige Artist-ID zu erhalten
             ITunesResponseDto<ITunesArtistDto> artists =
-                await _searchClient.SearchArtistsAsync("Die drei ???", 1);
+                await _searchClient.SearchArtistsAsync("Die drei ???", 1, ct: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(artists.Results);
             long artistId = artists.Results[0].ArtistId;
 
             // ACT
             ITunesResponseDto<ITunesCollectionDto> albums =
-                await _searchClient.LookupAlbumsAsync(artistId);
+                await _searchClient.LookupAlbumsAsync(artistId, ct: TestContext.Current.CancellationToken);
 
             // ASSERT – Mindestens ein Album (neben dem Artist-Eintrag)
             List<ITunesCollectionDto> collections = albums.Results
@@ -95,12 +95,12 @@ namespace EchoPlay.AppleMusic.Tests.Live
         {
             // ARRANGE – Künstler und Album suchen
             ITunesResponseDto<ITunesArtistDto> artists =
-                await _searchClient.SearchArtistsAsync("Die drei ???", 1);
+                await _searchClient.SearchArtistsAsync("Die drei ???", 1, ct: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(artists.Results);
 
             ITunesResponseDto<ITunesCollectionDto> albums =
-                await _searchClient.LookupAlbumsAsync(artists.Results[0].ArtistId);
+                await _searchClient.LookupAlbumsAsync(artists.Results[0].ArtistId, ct: TestContext.Current.CancellationToken);
 
             ITunesCollectionDto? firstAlbum = albums.Results
                 .FirstOrDefault(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase));
@@ -109,7 +109,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
 
             // ACT
             ITunesResponseDto<ITunesTrackDto> tracks =
-                await _searchClient.LookupTracksAsync(firstAlbum.CollectionId);
+                await _searchClient.LookupTracksAsync(firstAlbum.CollectionId, ct: TestContext.Current.CancellationToken);
 
             // ASSERT
             List<ITunesTrackDto> trackList = tracks.Results

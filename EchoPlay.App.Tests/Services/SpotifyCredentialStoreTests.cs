@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.False(store.HasCredentials);
 
-            await store.SaveAsync("test-client-id", "test-client-secret");
+            await store.SaveAsync("test-client-id", "test-client-secret", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(store.HasCredentials);
         }
@@ -52,10 +52,10 @@ namespace EchoPlay.App.Tests.Services
             // Nach dem Löschen muss HasCredentials false sein
             (SpotifyCredentialStore store, _) = BuildStore();
 
-            await store.SaveAsync("test-client-id", "test-client-secret");
+            await store.SaveAsync("test-client-id", "test-client-secret", cancellationToken: TestContext.Current.CancellationToken);
             Assert.True(store.HasCredentials);
 
-            await store.ClearAsync();
+            await store.ClearAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.False(store.HasCredentials);
         }
 
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.Services
             // Ohne gespeicherte Credentials muss GetAsync null zurückgeben
             (SpotifyCredentialStore store, _) = BuildStore();
 
-            (string ClientId, string ClientSecret)? result = await store.GetAsync();
+            (string ClientId, string ClientSecret)? result = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -76,9 +76,9 @@ namespace EchoPlay.App.Tests.Services
             // Gespeicherte Credentials müssen nach dem Lesen wieder identisch sein
             (SpotifyCredentialStore store, _) = BuildStore();
 
-            await store.SaveAsync("meine-client-id", "mein-secret");
+            await store.SaveAsync("meine-client-id", "mein-secret", cancellationToken: TestContext.Current.CancellationToken);
 
-            (string ClientId, string ClientSecret)? result = await store.GetAsync();
+            (string ClientId, string ClientSecret)? result = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.NotNull(result);
             Assert.Equal("meine-client-id", result.Value.ClientId);
@@ -91,7 +91,7 @@ namespace EchoPlay.App.Tests.Services
             // InitializeAsync muss den Cache korrekt setzen
             (SpotifyCredentialStore store, _) = BuildStore();
 
-            await store.SaveAsync("id", "secret");
+            await store.SaveAsync("id", "secret", cancellationToken: TestContext.Current.CancellationToken);
 
             // Neuen Store mit demselben FakeService erstellen, um InitializeAsync zu testen
             (SpotifyCredentialStore freshStore, FakeSecureSettingsDataService fakeService) = BuildStore();
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.Services
             // Daten manuell in den FakeService eintragen (simuliert DB-Zustand)
             await fakeService.SaveAsync("Spotify:ClientId", new byte[] { 1, 2, 3 });
 
-            await freshStore.InitializeAsync();
+            await freshStore.InitializeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(freshStore.HasCredentials);
         }
@@ -110,7 +110,7 @@ namespace EchoPlay.App.Tests.Services
             // Ohne Daten muss InitializeAsync HasCredentials auf false setzen
             (SpotifyCredentialStore store, _) = BuildStore();
 
-            await store.InitializeAsync();
+            await store.InitializeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(store.HasCredentials);
         }
@@ -126,7 +126,7 @@ namespace EchoPlay.App.Tests.Services
             await fakeService.SaveAsync("Spotify:ClientId", corruptedBytes);
             await fakeService.SaveAsync("Spotify:ClientSecret", corruptedBytes);
 
-            (string ClientId, string ClientSecret)? result = await store.GetAsync();
+            (string ClientId, string ClientSecret)? result = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
             Assert.False(store.HasCredentials);
@@ -142,7 +142,7 @@ namespace EchoPlay.App.Tests.Services
 
             await fakeService.SaveAsync("Spotify:ClientId", [0xDE, 0xAD]);
             await fakeService.SaveAsync("Spotify:ClientSecret", [0xDE, 0xAD]);
-            _ = await store.GetAsync();
+            _ = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.True(store.LastLoadFailedDueToCorruption);
 
             store.AcknowledgeCorruptionNotice();

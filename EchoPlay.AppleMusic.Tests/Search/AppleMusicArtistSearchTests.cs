@@ -20,7 +20,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             FakeAppleMusicSearchClient searchClient = new(artists: [AppleMusicTestData.DieDreiFragezeichen]);
 
             // ACT
-            ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Die drei ???");
+            ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Die drei ???", ct: TestContext.Current.CancellationToken);
 
             // ASSERT
             _ = Assert.Single(result.Results);
@@ -37,7 +37,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             FakeAppleMusicSearchClient searchClient = new(artists: [AppleMusicTestData.DieDreiFragezeichen]);
 
             // ACT
-            ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Nicht vorhanden");
+            ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Nicht vorhanden", ct: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.Empty(result.Results);
@@ -53,7 +53,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             FakeAppleMusicSearchClient searchClient = new(artists: [AppleMusicTestData.DieDreiFragezeichen]);
 
             // ACT
-            ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Die drei ???");
+            ITunesResponseDto<ITunesArtistDto> result = await searchClient.SearchArtistsAsync("Die drei ???", ct: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.Equal("Hörspiele", result.Results[0].PrimaryGenreName);

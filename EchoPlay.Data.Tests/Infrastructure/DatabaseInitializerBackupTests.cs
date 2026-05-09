@@ -134,7 +134,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 DbBackupRetentionCount = 3,
             };
             _ = context.AppSettings.Add(settings);
-            _ = await context.SaveChangesAsync();
+            _ = await context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DatabaseInitializer initializer = new(context);
             (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync();
@@ -154,7 +154,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 DbBackupRetentionCount = 9999,
             };
             _ = context.AppSettings.Add(settings);
-            _ = await context.SaveChangesAsync();
+            _ = await context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DatabaseInitializer initializer = new(context);
             (_, int retention) = await initializer.TryReadBackupSettingsAsync();
@@ -202,7 +202,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             foreach (string stamp in fakeTimestamps)
             {
                 string path = _dbPath + ".backup-" + stamp;
-                await File.WriteAllTextAsync(path, "dummy");
+                await File.WriteAllTextAsync(path, "dummy", cancellationToken: TestContext.Current.CancellationToken);
             }
 
             Assert.True(GetBackupFiles().Length >= 5);

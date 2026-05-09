@@ -16,14 +16,14 @@ namespace EchoPlay.Data.Tests.Services
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
-            await service.SetCoverAsync("Series", TestIds.Indexed(1), [0xFF, 0xD8]);
-            await service.SetCoverAsync("Episode", TestIds.Indexed(2), [0x89, 0x50]);
+            await service.SetCoverAsync("Series", TestIds.Indexed(1), [0xFF, 0xD8], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SetCoverAsync("Episode", TestIds.Indexed(2), [0x89, 0x50], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            int deleted = await service.ClearAllAsync();
+            int deleted = await service.ClearAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, deleted);
-            int remaining = await Context.CoverImages.IgnoreQueryFilters().CountAsync();
+            int remaining = await Context.CoverImages.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(0, remaining);
         }
 
@@ -32,7 +32,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
-            int deleted = await service.ClearAllAsync();
+            int deleted = await service.ClearAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, deleted);
         }
@@ -44,18 +44,18 @@ namespace EchoPlay.Data.Tests.Services
             Guid entityId = TestIds.Indexed(3);
 
             // Insert
-            await service.SetCoverAsync("Series", entityId, [0x01, 0x02]);
+            await service.SetCoverAsync("Series", entityId, [0x01, 0x02], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? cover = await service.GetByEntityAsync("Series", entityId);
+            CoverImage? cover = await service.GetByEntityAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(cover);
             Assert.Equal(2, cover.ImageData.Length);
 
             // Update
-            await service.SetCoverAsync("Series", entityId, [0x03, 0x04, 0x05]);
+            await service.SetCoverAsync("Series", entityId, [0x03, 0x04, 0x05], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? updated = await service.GetByEntityAsync("Series", entityId);
+            CoverImage? updated = await service.GetByEntityAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(3, updated!.ImageData.Length);
         }
 
@@ -65,10 +65,10 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
             Guid entityId = TestIds.Indexed(4);
 
-            await service.SetCoverAsync("Series", entityId, [0xFF, 0xD8]);
+            await service.SetCoverAsync("Series", entityId, [0xFF, 0xD8], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            bool exists = await service.ExistsAsync("Series", entityId);
+            bool exists = await service.ExistsAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(exists);
         }
@@ -78,7 +78,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
-            bool exists = await service.ExistsAsync("Series", TestIds.Indexed(5));
+            bool exists = await service.ExistsAsync("Series", TestIds.Indexed(5), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(exists);
         }
@@ -90,11 +90,11 @@ namespace EchoPlay.Data.Tests.Services
             Guid entityId = TestIds.Indexed(6);
 
             // Platzhalter-Eintrag ohne Bild und ohne LastChecked
-            await service.SetLastCheckedAsync("Episode", entityId, DateTime.MinValue);
+            await service.SetLastCheckedAsync("Episode", entityId, DateTime.MinValue, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DateTime threshold = TestIds.ReferenceDate.AddDays(-1);
-            IReadOnlyList<Guid> pending = await service.GetUncheckedEntityIdsAsync("Episode", threshold, 10);
+            IReadOnlyList<Guid> pending = await service.GetUncheckedEntityIdsAsync("Episode", threshold, 10, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Contains(entityId, pending);
         }
@@ -106,12 +106,12 @@ namespace EchoPlay.Data.Tests.Services
             Guid id1 = TestIds.Indexed(7);
             Guid id2 = TestIds.Indexed(8);
 
-            await service.SetCoverAsync("Episode", id1, [0x01]);
-            await service.SetCoverAsync("Episode", id2, [0x02]);
+            await service.SetCoverAsync("Episode", id1, [0x01], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SetCoverAsync("Episode", id2, [0x02], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             IReadOnlyDictionary<Guid, byte[]> result =
-                await service.GetImageDataByEntitiesAsync("Episode", [id1, id2]);
+                await service.GetImageDataByEntitiesAsync("Episode", [id1, id2], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count);
             Assert.True(result.ContainsKey(id1));
@@ -126,13 +126,13 @@ namespace EchoPlay.Data.Tests.Services
             Guid platzhalter = TestIds.Indexed(10);
 
             // Echtes Cover
-            await service.SetCoverAsync("Episode", mitCover, [0xFF, 0xD8]);
+            await service.SetCoverAsync("Episode", mitCover, [0xFF, 0xD8], cancellationToken: TestContext.Current.CancellationToken);
             // Platzhalter: nur LastChecked, keine Bilddaten
-            await service.SetLastCheckedAsync("Episode", platzhalter, TestIds.ReferenceDate);
+            await service.SetLastCheckedAsync("Episode", platzhalter, TestIds.ReferenceDate, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             IReadOnlyDictionary<Guid, byte[]> result =
-                await service.GetImageDataByEntitiesAsync("Episode", [mitCover, platzhalter]);
+                await service.GetImageDataByEntitiesAsync("Episode", [mitCover, platzhalter], cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.True(result.ContainsKey(mitCover));
@@ -146,10 +146,10 @@ namespace EchoPlay.Data.Tests.Services
             Guid entityId = TestIds.Indexed(11);
             byte[] imageData = [0xFF, 0xD8, 0xFF, 0xE0];
 
-            await service.SetCoverAsync("Series", entityId, imageData);
+            await service.SetCoverAsync("Series", entityId, imageData, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? cover = await service.GetByEntityAsync("Series", entityId);
+            CoverImage? cover = await service.GetByEntityAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(cover);
             Assert.NotNull(cover!.SourceHash);
@@ -168,16 +168,16 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
             Guid entityId = TestIds.Indexed(12);
 
-            await service.SetCoverAsync("Series", entityId, [0x01, 0x02]);
+            await service.SetCoverAsync("Series", entityId, [0x01, 0x02], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? first = await service.GetByEntityAsync("Series", entityId);
+            CoverImage? first = await service.GetByEntityAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
             string? firstHash = first!.SourceHash;
 
-            await service.SetCoverAsync("Series", entityId, [0x03, 0x04, 0x05]);
+            await service.SetCoverAsync("Series", entityId, [0x03, 0x04, 0x05], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? second = await service.GetByEntityAsync("Series", entityId);
+            CoverImage? second = await service.GetByEntityAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEqual(firstHash, second!.SourceHash);
         }
@@ -189,14 +189,14 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
             Guid entityId = TestIds.Indexed(13);
 
-            await service.SetCoverAsync("Episode", entityId, [0x01]);
+            await service.SetCoverAsync("Episode", entityId, [0x01], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             // Zweiter Aufruf mit anderen Daten — kein Fehler erwartet
-            await service.SetCoverAsync("Episode", entityId, [0x02, 0x03]);
+            await service.SetCoverAsync("Episode", entityId, [0x02, 0x03], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? cover = await service.GetByEntityAsync("Episode", entityId);
+            CoverImage? cover = await service.GetByEntityAsync("Episode", entityId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(cover);
             Assert.Equal(2, cover!.ImageData.Length);
             Assert.Equal(0x02, cover.ImageData[0]);
@@ -210,17 +210,17 @@ namespace EchoPlay.Data.Tests.Services
             Guid id2 = TestIds.Indexed(21);
             Guid id3 = TestIds.Indexed(22);
 
-            await service.SetCoverAsync("Series", id1, [0x01]);
-            await service.SetCoverAsync("Series", id2, [0x02]);
-            await service.SetCoverAsync("Series", id3, [0x03]);
+            await service.SetCoverAsync("Series", id1, [0x01], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SetCoverAsync("Series", id2, [0x02], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SetCoverAsync("Series", id3, [0x03], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            int deleted = await service.DeleteByEntitiesAsync("Series", [id1, id3]);
+            int deleted = await service.DeleteByEntitiesAsync("Series", [id1, id3], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, deleted);
-            Assert.False(await service.ExistsAsync("Series", id1));
-            Assert.True(await service.ExistsAsync("Series", id2));
-            Assert.False(await service.ExistsAsync("Series", id3));
+            Assert.False(await service.ExistsAsync("Series", id1, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.True(await service.ExistsAsync("Series", id2, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await service.ExistsAsync("Series", id3, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -228,7 +228,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
-            int deleted = await service.DeleteByEntitiesAsync("Series", []);
+            int deleted = await service.DeleteByEntitiesAsync("Series", [], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, deleted);
         }
@@ -239,15 +239,15 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
             Guid sharedId = TestIds.Indexed(23);
 
-            await service.SetCoverAsync("Series", sharedId, [0x01]);
-            await service.SetCoverAsync("Episode", sharedId, [0x02]);
+            await service.SetCoverAsync("Series", sharedId, [0x01], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SetCoverAsync("Episode", sharedId, [0x02], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            int deleted = await service.DeleteByEntitiesAsync("Series", [sharedId]);
+            int deleted = await service.DeleteByEntitiesAsync("Series", [sharedId], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, deleted);
-            Assert.False(await service.ExistsAsync("Series", sharedId));
-            Assert.True(await service.ExistsAsync("Episode", sharedId));
+            Assert.False(await service.ExistsAsync("Series", sharedId, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.True(await service.ExistsAsync("Episode", sharedId, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -256,7 +256,7 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
 
             int deleted = await service.DeleteByEntitiesAsync("Series",
-                [TestIds.Indexed(900), TestIds.Indexed(901)]);
+                [TestIds.Indexed(900), TestIds.Indexed(901)], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, deleted);
         }
@@ -269,28 +269,28 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
             Guid entityId = TestIds.Indexed(50);
 
-            await service.SetCoverAsync("Series", entityId, [0xAA, 0xBB]);
+            await service.SetCoverAsync("Series", entityId, [0xAA, 0xBB], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             CoverImage? existing = await Context.CoverImages
                 .IgnoreQueryFilters()
                 .AsTracking()
-                .FirstAsync(c => c.EntityType == "Series" && c.EntityId == entityId);
+                .FirstAsync(c => c.EntityType == "Series" && c.EntityId == entityId, cancellationToken: TestContext.Current.CancellationToken);
             existing.MarkAsDeleted(TestIds.ReferenceDate);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            await service.SetCoverAsync("Series", entityId, [0xCC, 0xDD, 0xEE]);
+            await service.SetCoverAsync("Series", entityId, [0xCC, 0xDD, 0xEE], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            CoverImage? reinserted = await service.GetByEntityAsync("Series", entityId);
+            CoverImage? reinserted = await service.GetByEntityAsync("Series", entityId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(reinserted);
             Assert.Equal(3, reinserted!.ImageData.Length);
             Assert.False(reinserted.IsDeleted);
 
             int totalIncludingDeleted = await Context.CoverImages
                 .IgnoreQueryFilters()
-                .CountAsync(c => c.EntityType == "Series" && c.EntityId == entityId);
+                .CountAsync(c => c.EntityType == "Series" && c.EntityId == entityId, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(2, totalIncludingDeleted);
         }
     }

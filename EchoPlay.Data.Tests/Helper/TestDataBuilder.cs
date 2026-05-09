@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Tests.Helper
             };
 
             _ = _context.Series.Add(series);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             return series;
         }
@@ -55,7 +55,7 @@ namespace EchoPlay.Data.Tests.Helper
             };
 
             _ = _context.Episodes.Add(episode);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             return episode;
         }
@@ -76,7 +76,7 @@ namespace EchoPlay.Data.Tests.Helper
             };
 
             _ = _context.PlaybackStates.Add(playbackState);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             return playbackState;
         }

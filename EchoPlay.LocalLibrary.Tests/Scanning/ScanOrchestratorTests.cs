@@ -39,7 +39,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             List<ScanProgress> reported = [];
             IProgress<ScanProgress> progress = new SynchronousProgress<ScanProgress>(reported.Add);
 
-            _ = await orchestrator.ScanAsync(_root, "{number}", progress);
+            _ = await orchestrator.ScanAsync(_root, "{number}", progress, cancellationToken: TestContext.Current.CancellationToken);
 
             // Phase 1 und Phase 2 müssen immer gemeldet werden
             Assert.Contains(reported, p => p.Phase == 1);
@@ -56,7 +56,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             List<ScanProgress> reported = [];
             IProgress<ScanProgress> progress = new SynchronousProgress<ScanProgress>(reported.Add);
 
-            _ = await orchestrator.ScanAsync(_root, "{number}", progress);
+            _ = await orchestrator.ScanAsync(_root, "{number}", progress, cancellationToken: TestContext.Current.CancellationToken);
 
             ScanProgress? phase1 = reported.Find(p => p.Phase == 1);
             Assert.NotNull(phase1);
@@ -90,7 +90,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             ScanOrchestrator orchestrator = new(scanner);
 
             IReadOnlyList<EchoPlay.LocalLibrary.Models.LocalScanResult> results =
-                await orchestrator.ScanAsync(_root, "{number}");
+                await orchestrator.ScanAsync(_root, "{number}", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(results);
         }
@@ -102,7 +102,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             FakeLocalLibraryScanner scanner = new();
             ScanOrchestrator orchestrator = new(scanner);
 
-            _ = await orchestrator.ScanAsync(_root, "{number}");
+            _ = await orchestrator.ScanAsync(_root, "{number}", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, scanner.ScanCallCount);
         }
@@ -115,7 +115,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             ScanOrchestrator orchestrator = new(scanner);
 
             IReadOnlyList<EchoPlay.LocalLibrary.Models.LocalScanResult> results =
-                await orchestrator.ScanAsync("/non/existent/path/xyz", "{number}");
+                await orchestrator.ScanAsync("/non/existent/path/xyz", "{number}", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(results);
         }

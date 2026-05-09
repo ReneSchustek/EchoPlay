@@ -80,7 +80,7 @@ namespace EchoPlay.Logger.Tests
             await sink.WriteAsync(entry);
 
             string[] logFiles = Directory.GetFiles(testDir, "*.log");
-            string content = await File.ReadAllTextAsync(logFiles[0]);
+            string content = await File.ReadAllTextAsync(logFiles[0], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Contains("ProfilierungsMeldung", content, StringComparison.Ordinal);
             Assert.Contains("InhaltKlasse", content, StringComparison.Ordinal);
@@ -118,7 +118,7 @@ namespace EchoPlay.Logger.Tests
             string[] logFiles = Directory.GetFiles(testDir, "*.log");
             _ = Assert.Single(logFiles);
 
-            string content = await File.ReadAllTextAsync(logFiles[0]);
+            string content = await File.ReadAllTextAsync(logFiles[0], cancellationToken: TestContext.Current.CancellationToken);
             Assert.Contains("ErsteNachricht", content, StringComparison.Ordinal);
             Assert.Contains("ZweiteNachricht", content, StringComparison.Ordinal);
         }
@@ -166,7 +166,7 @@ namespace EchoPlay.Logger.Tests
             string[] logFiles = Directory.GetFiles(testDir, "*.log");
             _ = Assert.Single(logFiles);
 
-            string[] lines = await File.ReadAllLinesAsync(logFiles[0]);
+            string[] lines = await File.ReadAllLinesAsync(logFiles[0], cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(writers, lines.Length);
             for (int i = 0; i < writers; i++)
             {

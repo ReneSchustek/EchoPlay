@@ -40,7 +40,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
 
             // ACT
-            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317");
+            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Ohne Alben dürfen keine Episoden entstehen.
@@ -106,7 +106,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
 
             // ACT
             IReadOnlyList<ImportEpisode> episodes =
-                await episodeImport.GetEpisodesAsync(ScotlandYardArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                await episodeImport.GetEpisodesAsync(ScotlandYardArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture), cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Genau zwei Episoden – das fremde Detektiv-Clipper-Album darf nicht durchrutschen.
@@ -136,7 +136,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
 
             // ACT & ASSERT
             _ = await Assert.ThrowsAsync<ArgumentException>(
-                () => episodeImport.GetEpisodesAsync("keine-gueltige-id"));
+                () => episodeImport.GetEpisodesAsync("keine-gueltige-id", cancellationToken: TestContext.Current.CancellationToken));
         }
     }
 }

@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             Series series = new() { Title = title };
             _ = Context.Series.Add(series);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             return series.Id;
         }
         [Fact]
@@ -30,7 +30,7 @@ namespace EchoPlay.Data.Tests.Services
             // Leere Datenbank – es dürfen keine Positionen zurückkommen
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
 
-            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Neuerscheinungen");
+            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Neuerscheinungen", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -45,12 +45,12 @@ namespace EchoPlay.Data.Tests.Services
             List<Guid> seriesIds = [seriesA, seriesB, seriesC];
 
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
-            await service.SaveOrderAsync("Favoriten", seriesIds);
+            await service.SaveOrderAsync("Favoriten", seriesIds, cancellationToken: TestContext.Current.CancellationToken);
 
             // ChangeTracker leeren, damit der nächste Lesevorgang tatsächlich aus der DB kommt
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Favoriten");
+            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Favoriten", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);
             Assert.Equal(seriesA, result[0].SeriesId);
@@ -92,11 +92,11 @@ namespace EchoPlay.Data.Tests.Services
 
             // Bewusst in unsortierter Reihenfolge einfügen
             Context.DashboardPositions.AddRange(positionHigh, positionLow, positionMid);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Neuerscheinungen");
+            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Neuerscheinungen", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);
             Assert.Equal(0, result[0].Position);
@@ -114,14 +114,14 @@ namespace EchoPlay.Data.Tests.Services
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
 
             // Erste Reihenfolge: A vor B
-            await service.SaveOrderAsync("Favoriten", [seriesA, seriesB]);
+            await service.SaveOrderAsync("Favoriten", [seriesA, seriesB], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             // Zweite Reihenfolge: B vor A – muss die erste komplett ersetzen
-            await service.SaveOrderAsync("Favoriten", [seriesB, seriesA]);
+            await service.SaveOrderAsync("Favoriten", [seriesB, seriesA], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Favoriten");
+            IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Favoriten", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count);
             Assert.Equal(seriesB, result[0].SeriesId);
@@ -140,12 +140,12 @@ namespace EchoPlay.Data.Tests.Services
 
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
 
-            await service.SaveOrderAsync("Favoriten", [seriesFav]);
-            await service.SaveOrderAsync("Neuerscheinungen", [seriesNeu]);
+            await service.SaveOrderAsync("Favoriten", [seriesFav], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SaveOrderAsync("Neuerscheinungen", [seriesNeu], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<DashboardPosition> favoritenResult = await service.GetBySectionAsync("Favoriten");
-            IReadOnlyList<DashboardPosition> neuResult = await service.GetBySectionAsync("Neuerscheinungen");
+            IReadOnlyList<DashboardPosition> favoritenResult = await service.GetBySectionAsync("Favoriten", cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlyList<DashboardPosition> neuResult = await service.GetBySectionAsync("Neuerscheinungen", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(favoritenResult);
             Assert.Equal(seriesFav, favoritenResult[0].SeriesId);

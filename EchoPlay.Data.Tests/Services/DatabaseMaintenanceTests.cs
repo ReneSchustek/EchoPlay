@@ -18,22 +18,22 @@ namespace EchoPlay.Data.Tests.Services
             Series onlineSeries = new() { Title = "Online-Serie", IsOnlineImported = true };
             Series localSeries = new() { Title = "Lokale Serie", IsOnlineImported = false };
             Context.Series.AddRange(onlineSeries, localSeries);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Episode onlineEpisode = new() { SeriesId = onlineSeries.Id, Title = "Online-Folge" };
             Episode localEpisode = new() { SeriesId = localSeries.Id, Title = "Lokale Folge" };
             Context.Episodes.AddRange(onlineEpisode, localEpisode);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearOnlineLibraryAsync();
 
-            List<Series> remaining = await Context.Series.IgnoreQueryFilters().ToListAsync();
+            List<Series> remaining = await Context.Series.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(remaining);
             Assert.Equal("Lokale Serie", remaining[0].Title);
 
-            List<Episode> remainingEpisodes = await Context.Episodes.IgnoreQueryFilters().ToListAsync();
+            List<Episode> remainingEpisodes = await Context.Episodes.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(remainingEpisodes);
             Assert.Equal("Lokale Folge", remainingEpisodes[0].Title);
         }
@@ -43,13 +43,13 @@ namespace EchoPlay.Data.Tests.Services
         {
             Series localSeries = new() { Title = "Nur Lokal", IsOnlineImported = false };
             _ = Context.Series.Add(localSeries);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearOnlineLibraryAsync();
 
-            int count = await Context.Series.IgnoreQueryFilters().CountAsync();
+            int count = await Context.Series.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(1, count);
         }
 
@@ -59,17 +59,17 @@ namespace EchoPlay.Data.Tests.Services
             // Rein lokale Serie (nicht online-importiert) → wird gelöscht
             Series localOnly = new() { Title = "Nur Lokal", IsOnlineImported = false };
             _ = Context.Series.Add(localOnly);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Episode localEpisode = new() { SeriesId = localOnly.Id, Title = "Lokale Folge" };
             _ = Context.Episodes.Add(localEpisode);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearLocalLibraryAsync();
 
-            int seriesCount = await Context.Series.IgnoreQueryFilters().CountAsync();
+            int seriesCount = await Context.Series.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(0, seriesCount);
         }
 
@@ -84,13 +84,13 @@ namespace EchoPlay.Data.Tests.Services
                 LocalFolderPath = @"C:\Hörspiele\Serie"
             };
             _ = Context.Series.Add(onlineSeries);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearLocalLibraryAsync();
 
-            Series? updated = await Context.Series.IgnoreQueryFilters().FirstAsync();
+            Series? updated = await Context.Series.IgnoreQueryFilters().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Null(updated.LocalFolderPath);
         }
 
@@ -99,11 +99,11 @@ namespace EchoPlay.Data.Tests.Services
         {
             Series series = new() { Title = "Test", IsOnlineImported = true };
             _ = Context.Series.Add(series);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Episode episode = new() { SeriesId = series.Id, Title = "Folge" };
             _ = Context.Episodes.Add(episode);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Context.LocalTracks.Add(new LocalTrack
             {
@@ -111,13 +111,13 @@ namespace EchoPlay.Data.Tests.Services
                 FilePath = @"C:\test.mp3",
                 TrackNumber = 1
             });
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearLocalLibraryAsync();
 
-            int trackCount = await Context.LocalTracks.IgnoreQueryFilters().CountAsync();
+            int trackCount = await Context.LocalTracks.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(0, trackCount);
         }
 
@@ -129,7 +129,7 @@ namespace EchoPlay.Data.Tests.Services
             // Cover für eine Serie anlegen, dann alles löschen
             Series series = new() { Title = "Test" };
             _ = Context.Series.Add(series);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Context.CoverImages.Add(new CoverImage
             {
@@ -137,13 +137,13 @@ namespace EchoPlay.Data.Tests.Services
                 EntityId = series.Id,
                 ImageData = [1, 2, 3]
             });
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearLibraryAsync();
 
-            int coverCount = await Context.CoverImages.IgnoreQueryFilters().CountAsync();
+            int coverCount = await Context.CoverImages.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Equal(0, coverCount);
         }
 
@@ -154,19 +154,19 @@ namespace EchoPlay.Data.Tests.Services
             Series onlineSeries = new() { Title = "Online", IsOnlineImported = true };
             Series localSeries = new() { Title = "Lokal", IsOnlineImported = false };
             Context.Series.AddRange(onlineSeries, localSeries);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Context.CoverImages.AddRange(
                 new CoverImage { EntityType = "Series", EntityId = onlineSeries.Id, ImageData = [1] },
                 new CoverImage { EntityType = "Series", EntityId = localSeries.Id, ImageData = [2] }
             );
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearOnlineLibraryAsync();
 
-            List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync();
+            List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(remaining);
             Assert.Equal(localSeries.Id, remaining[0].EntityId);
         }
@@ -178,19 +178,19 @@ namespace EchoPlay.Data.Tests.Services
             Series localOnly = new() { Title = "Nur Lokal", IsOnlineImported = false };
             Series onlineSeries = new() { Title = "Online", IsOnlineImported = true };
             Context.Series.AddRange(localOnly, onlineSeries);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Context.CoverImages.AddRange(
                 new CoverImage { EntityType = "Series", EntityId = localOnly.Id, ImageData = [1] },
                 new CoverImage { EntityType = "Series", EntityId = onlineSeries.Id, ImageData = [2] }
             );
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DatabaseMaintenanceService service = new(Context);
             await service.ClearLocalLibraryAsync();
 
-            List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync();
+            List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(remaining);
             Assert.Equal(onlineSeries.Id, remaining[0].EntityId);
         }

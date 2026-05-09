@@ -60,8 +60,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
             await initializer.InitializeAsync();
 
-            IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync();
-            IEnumerable<string> pending = await _context.Database.GetPendingMigrationsAsync();
+            IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
+            IEnumerable<string> pending = await _context.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(applied);
             Assert.Empty(pending);
@@ -99,14 +99,14 @@ namespace EchoPlay.Data.Tests.Infrastructure
             DatabaseInitializer initializer = new(_context!);
 
             await initializer.InitializeAsync();
-            int firstAppliedCount = (await _context!.Database.GetAppliedMigrationsAsync()).Count();
+            int firstAppliedCount = (await _context!.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken)).Count();
 
             // Zweiter Aufruf darf kein neues Schema anwenden und keine Fehler werfen.
             await initializer.InitializeAsync();
-            int secondAppliedCount = (await _context.Database.GetAppliedMigrationsAsync()).Count();
+            int secondAppliedCount = (await _context.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken)).Count();
 
             Assert.Equal(firstAppliedCount, secondAppliedCount);
-            Assert.Empty(await _context.Database.GetPendingMigrationsAsync());
+            Assert.Empty(await _context.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -117,7 +117,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
             await initializer.InitializeAsync();
 
-            IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync();
+            IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Contains(applied, id => id.Contains("AddSourceHashSecureSettingsProviderIds", StringComparison.Ordinal));
         }
 
@@ -170,7 +170,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
             Series series = new() { Title = "Migration-Fixture" };
             _ = _context!.Series.Add(series);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Episode episode = new()
             {
@@ -179,7 +179,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 ReleaseDate = new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc)
             };
             _ = _context.Episodes.Add(episode);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackState state = new()
             {
@@ -196,15 +196,15 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 ImageData = [0x01, 0x02, 0x03]
             };
             _ = _context.CoverImages.Add(cover);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Zweiter InitializeAsync-Aufruf darf an bestehenden Daten nicht scheitern.
             await initializer.InitializeAsync();
 
-            Assert.Empty(await _context.Database.GetPendingMigrationsAsync());
-            Assert.Equal(1, await _context.Episodes.CountAsync());
-            Assert.Equal(1, await _context.PlaybackStates.CountAsync());
-            Assert.Equal(1, await _context.CoverImages.CountAsync());
+            Assert.Empty(await _context.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Equal(1, await _context.Episodes.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Equal(1, await _context.PlaybackStates.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Equal(1, await _context.CoverImages.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
         }
     }
 }

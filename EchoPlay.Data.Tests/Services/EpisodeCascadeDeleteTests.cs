@@ -34,13 +34,13 @@ namespace EchoPlay.Data.Tests.Services
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
             // Das Löschen der Episode löst bewusst die Kaskade auf die untergeordneten PlaybackStates aus.
-            await service.DeleteAsync(episode.Id);
+            await service.DeleteAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             // Der IgnoreQueryFilters-Aufruf ist notwendig, um den tatsächlichen Persistenzzustand unabhängig vom globalen Soft-Delete-Filter
             // überprüfen zu können.
             Episode? persistedEpisode =
                 await Context.Episodes.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(entity => entity.Id == episode.Id);
+                    .FirstOrDefaultAsync(entity => entity.Id == episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(persistedEpisode);
             Assert.True(persistedEpisode.IsDeleted);
@@ -49,7 +49,7 @@ namespace EchoPlay.Data.Tests.Services
             // darstellen.
             PlaybackState? persistedPlaybackState =
                 await Context.PlaybackStates.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(entity => entity.Id == playbackState.Id);
+                    .FirstOrDefaultAsync(entity => entity.Id == playbackState.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(persistedPlaybackState);
             Assert.True(persistedPlaybackState.IsDeleted);
@@ -57,7 +57,7 @@ namespace EchoPlay.Data.Tests.Services
             // Die Serie darf nicht beeinflusst werden, da das Löschen einer Episode keine fachliche Bedeutung für die Existenz der Serie hat.
             Series? persistedSeries =
                 await Context.Series.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(entity => entity.Id == series.Id);
+                    .FirstOrDefaultAsync(entity => entity.Id == series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(persistedSeries);
             Assert.False(persistedSeries.IsDeleted);

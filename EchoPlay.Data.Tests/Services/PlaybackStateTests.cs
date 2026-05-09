@@ -37,10 +37,10 @@ namespace EchoPlay.Data.Tests.Services
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
             // Der Wiedergabestatus wird explizit über den Service persistiert, um sicherzustellen, dass der produktive Codepfad getestet wird.
-            await service.AddAsync(playbackState);
+            await service.AddAsync(playbackState, cancellationToken: TestContext.Current.CancellationToken);
 
             // Der Abruf erfolgt über die EpisodeId, da dies der fachlich relevante Zugriffspfad innerhalb der Anwendung ist.
-            PlaybackState? result = await service.GetByEpisodeIdAsync(episode.Id);
+            PlaybackState? result = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             // Es muss exakt der zuvor gespeicherte PlaybackState zurückgegeben werden.
             Assert.NotNull(result);

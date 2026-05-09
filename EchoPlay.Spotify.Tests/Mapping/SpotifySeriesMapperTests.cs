@@ -30,7 +30,7 @@ namespace EchoPlay.Spotify.Tests.Mapping
                 Genres = ["audiobook"]
             };
 
-            ImportSeries result = await mapper.MapToImportSeriesAsync(artist, "drei fragezeichen");
+            ImportSeries result = await mapper.MapToImportSeriesAsync(artist, "drei fragezeichen", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal("artist-1", result.SourceSeriesId);
             Assert.Equal("Spotify", result.Source);
@@ -59,7 +59,7 @@ namespace EchoPlay.Spotify.Tests.Mapping
                 Genres = ["pop"]
             };
 
-            ImportSeries result = await mapper.MapToImportSeriesAsync(artist, "Pop-Sternchen");
+            ImportSeries result = await mapper.MapToImportSeriesAsync(artist, "Pop-Sternchen", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result.IsHoerspiel);
             Assert.Equal(0, result.Score);
@@ -82,7 +82,7 @@ namespace EchoPlay.Spotify.Tests.Mapping
                 ImageUrl = null
             };
 
-            ImportSeries result = await mapper.MapToImportSeriesAsync(artist, "ohne cover");
+            ImportSeries result = await mapper.MapToImportSeriesAsync(artist, "ohne cover", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result.CoverImageUrl);
         }

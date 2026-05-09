@@ -40,7 +40,7 @@ namespace EchoPlay.Spotify.Tests.Import
             IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
 
             // ACT
-            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("artist-ddf");
+            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("artist-ddf", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Ohne Alben dürfen keine Episoden entstehen.

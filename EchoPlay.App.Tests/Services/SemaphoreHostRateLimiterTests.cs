@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("test.host");
+            await limiter.WaitAsync("test.host", ct: TestContext.Current.CancellationToken);
             sw.Stop();
 
             // Erster Aufruf darf keine nennenswerte Wartezeit haben
@@ -36,10 +36,10 @@ namespace EchoPlay.App.Tests.Services
                 ["slow.host"] = TimeSpan.FromMilliseconds(300)
             });
 
-            await limiter.WaitAsync("slow.host");
+            await limiter.WaitAsync("slow.host", ct: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("slow.host");
+            await limiter.WaitAsync("slow.host", ct: TestContext.Current.CancellationToken);
             sw.Stop();
 
             // Zweiter Aufruf muss mindestens ~300 ms warten
@@ -55,11 +55,11 @@ namespace EchoPlay.App.Tests.Services
                 ["host-b"] = TimeSpan.FromSeconds(5)
             });
 
-            await limiter.WaitAsync("host-a");
+            await limiter.WaitAsync("host-a", ct: TestContext.Current.CancellationToken);
 
             // Host-B wurde noch nie aufgerufen — darf sofort zurückkehren
             Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("host-b");
+            await limiter.WaitAsync("host-b", ct: TestContext.Current.CancellationToken);
             sw.Stop();
 
             Assert.True(sw.ElapsedMilliseconds < 200);
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             // Erster Aufruf: setzt den letzten Aufruf-Zeitstempel sofort.
-            await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background);
+            await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
 
             // Foreground-Anfrage im Hintergrund starten; sie darf wegen des Intervalls
             // erst nach ca. 300 ms zurückkehren, blockiert aber während ihrer Laufzeit
@@ -88,7 +88,7 @@ namespace EchoPlay.App.Tests.Services
             Stopwatch sw = Stopwatch.StartNew();
             Task<long> foregroundTask = Task.Run(async () =>
             {
-                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Foreground);
+                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
                 return sw.ElapsedMilliseconds;
             });
 
@@ -97,7 +97,7 @@ namespace EchoPlay.App.Tests.Services
 
             Task<long> backgroundTask = Task.Run(async () =>
             {
-                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background);
+                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
                 return sw.ElapsedMilliseconds;
             });
 
@@ -118,7 +118,7 @@ namespace EchoPlay.App.Tests.Services
             });
 
             // Ersten Aufruf durchlaufen, damit intern ein SemaphoreSlim angelegt wird.
-            await limiter.WaitAsync("disposed.host");
+            await limiter.WaitAsync("disposed.host", ct: TestContext.Current.CancellationToken);
 
             limiter.Dispose();
 
@@ -129,7 +129,7 @@ namespace EchoPlay.App.Tests.Services
             // damit Konsumenten den Shutdown-Fehler sofort bemerken statt auf einen
             // disposeten Semaphore zu warten.
             _ = await Assert.ThrowsAsync<ObjectDisposedException>(
-                () => limiter.WaitAsync("disposed.host"));
+                () => limiter.WaitAsync("disposed.host", ct: TestContext.Current.CancellationToken));
         }
     }
 }

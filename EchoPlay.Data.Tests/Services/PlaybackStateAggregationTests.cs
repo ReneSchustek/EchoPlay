@@ -77,11 +77,11 @@ namespace EchoPlay.Data.Tests.Services
             };
             _ = _context.PlaybackStates.Add(inProgressState);
 
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            (int finished, int inProgress, int notStarted) = await service.GetCountsBySeriesIdAsync(series.Id);
+            (int finished, int inProgress, int notStarted) = await service.GetCountsBySeriesIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, finished);
             Assert.Equal(1, inProgress);
@@ -98,7 +98,7 @@ namespace EchoPlay.Data.Tests.Services
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            (int finished, int inProgress, int notStarted) = await service.GetCountsBySeriesIdAsync(series.Id);
+            (int finished, int inProgress, int notStarted) = await service.GetCountsBySeriesIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, finished);
             Assert.Equal(0, inProgress);
@@ -122,16 +122,16 @@ namespace EchoPlay.Data.Tests.Services
                 LastPosition = TimeSpan.FromMinutes(15)
             };
             _ = _context.PlaybackStates.Add(state);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Logisch löschen über die Domänen-API.
             state.MarkAsDeleted(EntityClock.Current.UtcNow);
             _ = _context.PlaybackStates.Update(state);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            (int finished, int inProgress, int notStarted) = await service.GetCountsBySeriesIdAsync(series.Id);
+            (int finished, int inProgress, int notStarted) = await service.GetCountsBySeriesIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, finished);
             Assert.Equal(0, inProgress);
@@ -152,7 +152,7 @@ namespace EchoPlay.Data.Tests.Services
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
             _interceptor.Reset();
-            _ = await service.GetCountsBySeriesIdAsync(series.Id);
+            _ = await service.GetCountsBySeriesIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, _interceptor.SelectCount);
         }
@@ -182,11 +182,11 @@ namespace EchoPlay.Data.Tests.Services
                 LastPlayedAt = now.AddMinutes(-5)
             };
             _context.PlaybackStates.AddRange(olderState, newerState);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 10);
+            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, rows.Count);
             Assert.Equal(newerState.EpisodeId, rows[0].EpisodeId);
@@ -214,11 +214,11 @@ namespace EchoPlay.Data.Tests.Services
                 _ = _context.PlaybackStates.Add(state);
             }
 
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 2);
+            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 2, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, rows.Count);
         }
@@ -259,11 +259,11 @@ namespace EchoPlay.Data.Tests.Services
                 LastPlayedAt = now.AddMinutes(-2)
             };
             _context.PlaybackStates.AddRange(emptyState, completedState, inProgressState);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 10);
+            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, rows.Count);
             Assert.DoesNotContain(rows, r => r.EpisodeId == emptyEpisode.Id);
@@ -287,15 +287,15 @@ namespace EchoPlay.Data.Tests.Services
                 LastPlayedAt = FixedNow
             };
             _ = _context.PlaybackStates.Add(state);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             state.MarkAsDeleted(EntityClock.Current.UtcNow);
             _ = _context.PlaybackStates.Update(state);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 10);
+            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(rows);
         }
@@ -310,7 +310,7 @@ namespace EchoPlay.Data.Tests.Services
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
             _interceptor.Reset();
-            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 0);
+            IReadOnlyList<RecentPlaybackRow> rows = await service.GetRecentActiveAsync(maxRows: 0, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(rows);
             Assert.Equal(0, _interceptor.SelectCount);
@@ -334,18 +334,18 @@ namespace EchoPlay.Data.Tests.Services
                 LastPlayedAt = FixedNow
             };
             _ = _context.PlaybackStates.Add(state);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            IReadOnlyList<RecentPlaybackRow> beforeDelete = await service.GetRecentActiveAsync(maxRows: 10);
+            IReadOnlyList<RecentPlaybackRow> beforeDelete = await service.GetRecentActiveAsync(maxRows: 10, cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(beforeDelete);
 
             state.MarkAsDeleted(EntityClock.Current.UtcNow);
             _ = _context.PlaybackStates.Update(state);
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            IReadOnlyList<RecentPlaybackRow> afterDelete = await service.GetRecentActiveAsync(maxRows: 10);
+            IReadOnlyList<RecentPlaybackRow> afterDelete = await service.GetRecentActiveAsync(maxRows: 10, cancellationToken: TestContext.Current.CancellationToken);
             Assert.Empty(afterDelete);
         }
 
@@ -371,12 +371,12 @@ namespace EchoPlay.Data.Tests.Services
                 _ = _context.PlaybackStates.Add(state);
             }
 
-            _ = await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(_context, NullLoggerFactory);
 
-            IReadOnlyList<RecentPlaybackRow> two = await service.GetRecentActiveAsync(maxRows: 2);
-            IReadOnlyList<RecentPlaybackRow> four = await service.GetRecentActiveAsync(maxRows: 4);
+            IReadOnlyList<RecentPlaybackRow> two = await service.GetRecentActiveAsync(maxRows: 2, cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlyList<RecentPlaybackRow> four = await service.GetRecentActiveAsync(maxRows: 4, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, two.Count);
             Assert.Equal(4, four.Count);

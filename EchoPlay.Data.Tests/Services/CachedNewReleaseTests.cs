@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CachedNewReleaseDataService service = new(Context, NullLoggerFactory);
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -49,10 +49,10 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count);
         }
@@ -84,10 +84,10 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Neueste zuerst
             Assert.Equal("Neuere Folge", result[0].Title);
@@ -114,7 +114,7 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(initial);
+            await service.UpsertRangeAsync(initial, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             // Zweiter Insert: gleiche CollectionId, neuer Titel
@@ -131,10 +131,10 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(updated);
+            await service.UpsertRangeAsync(updated, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Nur ein Eintrag (Update statt zweiter Insert)
             _ = Assert.Single(result);
@@ -169,15 +169,15 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            int removed = await service.RemoveOlderThanAsync(cutoff);
+            int removed = await service.RemoveOlderThanAsync(cutoff, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, removed);
 
             Context.ChangeTracker.Clear();
-            IReadOnlyList<CachedNewRelease> remaining = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> remaining = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(remaining);
             Assert.Equal("Aktuell", remaining[0].Title);
@@ -188,7 +188,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CachedNewReleaseDataService service = new(Context, NullLoggerFactory);
 
-            DateTime? latest = await service.GetLatestCheckTimeAsync();
+            DateTime? latest = await service.GetLatestCheckTimeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(latest);
         }
@@ -222,10 +222,10 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DateTime? latest = await service.GetLatestCheckTimeAsync();
+            DateTime? latest = await service.GetLatestCheckTimeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.NotNull(latest);
             Assert.Equal(newerCheck, latest.Value);
@@ -257,13 +257,13 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            await service.ClearAllAsync();
+            await service.ClearAllAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -295,11 +295,11 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<CachedNewRelease> resultA = await service.GetBySeriesIdAsync(seriesA.Id);
-            IReadOnlyList<CachedNewRelease> resultB = await service.GetBySeriesIdAsync(seriesB.Id);
+            IReadOnlyList<CachedNewRelease> resultA = await service.GetBySeriesIdAsync(seriesA.Id, cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlyList<CachedNewRelease> resultB = await service.GetBySeriesIdAsync(seriesB.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(resultA);
             Assert.Equal("Folge von A", resultA[0].Title);
@@ -325,10 +325,10 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Series-Navigation muss geladen sein (Include in GetAllAsync)
             Assert.NotNull(result[0].Series);
@@ -341,9 +341,9 @@ namespace EchoPlay.Data.Tests.Services
             CachedNewReleaseDataService service = new(Context, NullLoggerFactory);
 
             // Leere Liste: kein Fehler, kein Insert
-            await service.UpsertRangeAsync([]);
+            await service.UpsertRangeAsync([], cancellationToken: TestContext.Current.CancellationToken);
 
-            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> result = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Empty(result);
         }
 
@@ -368,13 +368,13 @@ namespace EchoPlay.Data.Tests.Services
                 }
             ];
 
-            await service.UpsertRangeAsync(entries);
+            await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            int removed = await service.RemoveBySeriesIdsAsync([seriesA.Id]);
+            int removed = await service.RemoveBySeriesIdsAsync([seriesA.Id], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, removed);
-            IReadOnlyList<CachedNewRelease> remaining = await service.GetAllAsync();
+            IReadOnlyList<CachedNewRelease> remaining = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(remaining);
             Assert.Equal(seriesB.Id, remaining[0].SeriesId);
         }
@@ -384,7 +384,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             CachedNewReleaseDataService service = new(Context, NullLoggerFactory);
 
-            int removed = await service.RemoveBySeriesIdsAsync([]);
+            int removed = await service.RemoveBySeriesIdsAsync([], cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(0, removed);
         }

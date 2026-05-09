@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Services
             (PageModeGuard guard, _, FakeErrorDialogService errorDialog, FakeNavigationService navigation) =
                 BuildGuard(new AppSettings { OfflineMode = false });
 
-            bool result = await guard.EnsureOnlineAccessAsync();
+            bool result = await guard.EnsureOnlineAccessAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result);
             Assert.Empty(errorDialog.ShownDialogs);
@@ -57,7 +57,7 @@ namespace EchoPlay.App.Tests.Services
             (PageModeGuard guard, _, FakeErrorDialogService errorDialog, FakeNavigationService navigation) =
                 BuildGuard(new AppSettings { OfflineMode = true });
 
-            bool result = await guard.EnsureOnlineAccessAsync();
+            bool result = await guard.EnsureOnlineAccessAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
             _ = Assert.Single(errorDialog.ShownDialogs);
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.Services
             (PageModeGuard guard, _, FakeErrorDialogService errorDialog, FakeNavigationService navigation) =
                 BuildGuard(new AppSettings { OnlineOnlyMode = false });
 
-            bool result = await guard.EnsureLocalAccessAsync();
+            bool result = await guard.EnsureLocalAccessAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result);
             Assert.Empty(errorDialog.ShownDialogs);
@@ -85,7 +85,7 @@ namespace EchoPlay.App.Tests.Services
             (PageModeGuard guard, _, FakeErrorDialogService errorDialog, FakeNavigationService navigation) =
                 BuildGuard(new AppSettings { OnlineOnlyMode = true });
 
-            bool result = await guard.EnsureLocalAccessAsync();
+            bool result = await guard.EnsureLocalAccessAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
             _ = Assert.Single(errorDialog.ShownDialogs);

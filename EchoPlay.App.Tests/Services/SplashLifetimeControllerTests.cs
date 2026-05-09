@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
             await Task.Delay(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50));
 
             Stopwatch sw = Stopwatch.StartNew();
-            await controller.WaitForMinimumDurationAsync();
+            await controller.WaitForMinimumDurationAsync(cancellationToken: TestContext.Current.CancellationToken);
             sw.Stop();
 
             Assert.True(sw.ElapsedMilliseconds < 200,
@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Services
             SplashLifetimeController controller = new();
 
             Stopwatch sw = Stopwatch.StartNew();
-            await controller.WaitForMinimumDurationAsync();
+            await controller.WaitForMinimumDurationAsync(cancellationToken: TestContext.Current.CancellationToken);
             sw.Stop();
 
             // Der Test toleriert Scheduler-Jitter, prueft aber, dass die Wartezeit signifikant

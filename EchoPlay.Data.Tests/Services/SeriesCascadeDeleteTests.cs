@@ -33,12 +33,12 @@ namespace EchoPlay.Data.Tests.Services
             SeriesDataService service = new(Context, NullLoggerFactory);
 
             // Das Löschen der Serie löst bewusst die vollständige Cascade über Episoden bis hin zu PlaybackStates aus.
-            await service.DeleteAsync(series.Id);
+            await service.DeleteAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             // IgnoreQueryFilters ist erforderlich, um den tatsächlichen Persistenzzustand unabhängig vom Soft-Delete-Filter zu prüfen.
             Series? persistedSeries =
                 await Context.Series.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(entity => entity.Id == series.Id);
+                    .FirstOrDefaultAsync(entity => entity.Id == series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(persistedSeries);
             Assert.True(persistedSeries.IsDeleted);
@@ -46,7 +46,7 @@ namespace EchoPlay.Data.Tests.Services
             // Alle Episoden der Serie müssen logisch gelöscht sein, da sie ohne ihre Serie keinen gültigen fachlichen Zustand besitzen.
             Episode? persistedEpisode =
                 await Context.Episodes.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(entity => entity.Id == episode.Id);
+                    .FirstOrDefaultAsync(entity => entity.Id == episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(persistedEpisode);
             Assert.True(persistedEpisode.IsDeleted);
@@ -54,7 +54,7 @@ namespace EchoPlay.Data.Tests.Services
             // PlaybackStates dürfen nach dem Löschen der Serie nicht mehr aktiv oder sichtbar bleiben.
             PlaybackState? persistedPlaybackState =
                 await Context.PlaybackStates.IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(entity => entity.Id == playbackState.Id);
+                    .FirstOrDefaultAsync(entity => entity.Id == playbackState.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(persistedPlaybackState);
             Assert.True(persistedPlaybackState.IsDeleted);

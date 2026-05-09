@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         private EchoPlayDbContext? _context;
 
         /// <inheritdoc/>
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             _connection = new SqliteConnection("DataSource=:memory:");
             await _connection.OpenAsync();
@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         }
 
         /// <inheritdoc/>
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             if (_context is not null)
             {

@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Tests.Migrations
         private EchoPlayDbContext? _context;
 
         /// <inheritdoc/>
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             _connection = new SqliteConnection("DataSource=:memory:");
             await _connection.OpenAsync();
@@ -33,14 +33,14 @@ namespace EchoPlay.Data.Tests.Migrations
 
             _context = new EchoPlayDbContext(builder.Options);
 
-            // Schema bis zum Vorgänger der Brief-240-Migration aufbauen,
+            // Schema bis zum Vorgaenger-Stand aufbauen,
             // damit die Spalten Series.LocalCoverData und Episodes.LocalCoverData noch existieren.
             IMigrator migrator = _context.GetService<IMigrator>();
             await migrator.MigrateAsync(PreviousMigration);
         }
 
         /// <inheritdoc/>
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             if (_context is not null)
             {

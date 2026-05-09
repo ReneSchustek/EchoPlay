@@ -56,7 +56,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverArtArchiveSearchService service = BuildService(
                 HttpStatusCode.OK, SingleReleaseJson, HttpStatusCode.OK);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync(string.Empty);
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync(string.Empty, ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -68,7 +68,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverArtArchiveSearchService service = BuildService(
                 HttpStatusCode.OK, EmptyReleasesJson, HttpStatusCode.OK);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Unbekannte Serie");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Unbekannte Serie", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -81,7 +81,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverArtArchiveSearchService service = BuildService(
                 HttpStatusCode.OK, SingleReleaseJson, HttpStatusCode.OK);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.Equal("TKKG – Hörspiel", result[0].ReleaseTitle);
@@ -98,7 +98,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverArtArchiveSearchService service = BuildService(
                 HttpStatusCode.OK, SingleReleaseJson, HttpStatusCode.NotFound);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -111,7 +111,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             HttpClient client = new(handler);
             CoverArtArchiveSearchService service = new(client);
 
-            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG");
+            IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }

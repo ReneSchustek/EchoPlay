@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Services
             await Task.Delay(50);
 
             Stopwatch sw = Stopwatch.StartNew();
-            await service.StopAsync(TimeSpan.FromSeconds(2));
+            await service.StopAsync(TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
             sw.Stop();
 
             // Wenn der Token respektiert wird, endet StopAsync deutlich vor dem Timeout.
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Tests.Services
                 $"Erwartet < 1500 ms (Iteration muss auf Cancel reagieren), tatsächlich {sw.ElapsedMilliseconds} ms.");
 
             // Zweiter StopAsync-Aufruf ist idempotent und muss sofort zurückkehren.
-            await service.StopAsync(TimeSpan.FromSeconds(5));
+            await service.StopAsync(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.Services
             await Task.Delay(100);
 
             Stopwatch sw = Stopwatch.StartNew();
-            await service.StopAsync(TimeSpan.FromMilliseconds(500));
+            await service.StopAsync(TimeSpan.FromMilliseconds(500), cancellationToken: TestContext.Current.CancellationToken);
             sw.Stop();
 
             // StopAsync kehrt nach dem Timeout zurück, statt auf den hängenden Task zu warten.

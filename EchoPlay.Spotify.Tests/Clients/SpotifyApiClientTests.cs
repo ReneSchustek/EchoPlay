@@ -31,7 +31,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             """;
             SpotifyApiClient client = BuildClient(responseJson);
 
-            IReadOnlyList<SpotifyArtistDto> result = await client.SearchArtistsAsync("Die drei", limit: 10);
+            IReadOnlyList<SpotifyArtistDto> result = await client.SearchArtistsAsync("Die drei", limit: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.Equal("abc", result[0].SpotifyArtistId);
@@ -43,7 +43,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             const string responseJson = """{"artists":{"items":[]}}""";
             SpotifyApiClient client = BuildClient(responseJson);
 
-            IReadOnlyList<SpotifyArtistDto> result = await client.SearchArtistsAsync("nichts", limit: 10);
+            IReadOnlyList<SpotifyArtistDto> result = await client.SearchArtistsAsync("nichts", limit: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -54,7 +54,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             SpotifyApiClient client = BuildClient(string.Empty, HttpStatusCode.InternalServerError);
 
             _ = await Assert.ThrowsAsync<HttpRequestException>(
-                async () => await client.SearchAlbumsAsync("test", limit: 10));
+                async () => await client.SearchAlbumsAsync("test", limit: 10, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             const string responseJson = """{"items":[],"next":null}""";
             SpotifyApiClient client = BuildClient(responseJson);
 
-            IReadOnlyList<SpotifyAlbumDto> result = await client.GetArtistAlbumsAsync("artistX", limit: 10);
+            IReadOnlyList<SpotifyAlbumDto> result = await client.GetArtistAlbumsAsync("artistX", limit: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -76,7 +76,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             const string responseJson = """{"items":[],"next":null}""";
             SpotifyApiClient client = BuildClient(responseJson);
 
-            IReadOnlyList<SpotifyTrackDto> result = await client.GetAlbumTracksAsync("alb1");
+            IReadOnlyList<SpotifyTrackDto> result = await client.GetAlbumTracksAsync("alb1", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }

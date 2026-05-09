@@ -18,11 +18,11 @@ namespace EchoPlay.Data.Tests.Services
 
             Series favorited = await DataBuilder.PersistSeriesAsync("Die drei ???");
             favorited.IsFavorite = true;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Series> result = await service.GetFavoritesAsync();
+            IReadOnlyList<Series> result = await service.GetFavoritesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
             Assert.Equal("Die drei ???", result[0].Title);
@@ -36,7 +36,7 @@ namespace EchoPlay.Data.Tests.Services
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            await service.SetFavoriteAsync(series.Id, true);
+            await service.SetFavoriteAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
             // ChangeTracker leeren, damit der nächste FindAsync wirklich aus der DB liest
             Context.ChangeTracker.Clear();
@@ -52,11 +52,11 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             series.IsFavorite = true;
             series.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Series> result = await service.GetFavoritesAsync();
+            IReadOnlyList<Series> result = await service.GetFavoritesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -72,11 +72,11 @@ namespace EchoPlay.Data.Tests.Services
             bibi.IsFavorite = true;
             tkkg.IsFavorite = true;
             drei.IsFavorite = true;
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             SeriesDataService service = new(Context, NullLoggerFactory);
-            IReadOnlyList<Series> result = await service.GetFavoritesAsync();
+            IReadOnlyList<Series> result = await service.GetFavoritesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);
             Assert.Equal("Bibi Blocksberg", result[0].Title);
@@ -91,7 +91,7 @@ namespace EchoPlay.Data.Tests.Services
             SeriesDataService service = new(Context, NullLoggerFactory);
 
             // Kein Assert nötig – der Test schlägt fehl wenn eine Exception geworfen wird
-            await service.SetFavoriteAsync(new Guid("99999999-9999-9999-9999-999999999995"), true);
+            await service.SetFavoriteAsync(new Guid("99999999-9999-9999-9999-999999999995"), true, cancellationToken: TestContext.Current.CancellationToken);
         }
     }
 }

@@ -32,7 +32,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             string coverPath = Path.Combine(_tempRoot, "cover.jpg");
             byte[] expectedBytes = [0x01, 0x02, 0x03, 0x04];
-            await File.WriteAllBytesAsync(coverPath, expectedBytes);
+            await File.WriteAllBytesAsync(coverPath, expectedBytes, cancellationToken: TestContext.Current.CancellationToken);
             LocalCoverLoader loader = new();
 
             byte[]? result = await loader.LoadAsync(_tempRoot, firstTrackPath: null);

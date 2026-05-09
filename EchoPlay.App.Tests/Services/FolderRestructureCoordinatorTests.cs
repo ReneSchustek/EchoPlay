@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.Services
         {
             (FolderRestructureCoordinator coordinator, _, _) = BuildCoordinator();
 
-            RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(string.Empty);
+            RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -58,7 +58,7 @@ namespace EchoPlay.App.Tests.Services
             (FolderRestructureCoordinator coordinator, _, _) = BuildCoordinator();
 
             RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(
-                Path.Combine(Path.GetTempPath(), "echoplay-folder-restructure-tests-doesnotexist"));
+                Path.Combine(Path.GetTempPath(), "echoplay-folder-restructure-tests-doesnotexist"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -78,7 +78,7 @@ namespace EchoPlay.App.Tests.Services
                     Actions = new List<RestructureAction>()
                 });
 
-                RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(tempFolder);
+                RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(tempFolder, cancellationToken: TestContext.Current.CancellationToken);
 
                 Assert.Null(result);
             }
@@ -124,7 +124,7 @@ namespace EchoPlay.App.Tests.Services
                     }
                 });
 
-                RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(tempFolder);
+                RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(tempFolder, cancellationToken: TestContext.Current.CancellationToken);
 
                 Assert.NotNull(result);
                 Assert.Equal(2, result!.FileCount);
@@ -167,7 +167,7 @@ namespace EchoPlay.App.Tests.Services
                 RestructurePreviewDisplay display = new(original);
                 restructure.SetExecuteResult(filesMoved: 1);
 
-                int moved = await coordinator.ExecuteAsync(display);
+                int moved = await coordinator.ExecuteAsync(display, cancellationToken: TestContext.Current.CancellationToken);
 
                 Assert.Equal(1, moved);
                 Assert.Equal(1, restructure.ExecuteCallCount);

@@ -49,7 +49,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             ISeriesImportSearch search = provider.GetRequiredService<ISeriesImportSearch>();
 
             // ACT
-            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Die drei ???");
+            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Die drei ???", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Der Kandidat muss die Seriensuche passieren.
@@ -98,7 +98,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             ISeriesImportSearch search = provider.GetRequiredService<ISeriesImportSearch>();
 
             // ACT
-            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Random Pop Artist");
+            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Random Pop Artist", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Ungeeignete Kandidaten dürfen nicht als Import-Serie erscheinen.
@@ -130,7 +130,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             ISeriesImportSearch search = provider.GetRequiredService<ISeriesImportSearch>();
 
             // ACT
-            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Nicht vorhanden");
+            IReadOnlyList<ImportSeries> result = await search.SearchAsync("Nicht vorhanden", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.Empty(result);

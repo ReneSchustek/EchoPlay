@@ -113,7 +113,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = Context.DashboardPositions.Add(orphanPosition);
 
             // SaveChanges muss fehlschlagen, weil die referenzierte Serie nicht existiert
-            _ = await Assert.ThrowsAsync<DbUpdateException>(() => Context.SaveChangesAsync());
+            _ = await Assert.ThrowsAsync<DbUpdateException>(() => Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // FK erlaubt Positionen für existierende Serien
             Series series = new() { Title = "TKKG" };
             _ = Context.Series.Add(series);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardPosition position = new()
             {
@@ -131,10 +131,10 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 Position = 0
             };
             _ = Context.DashboardPositions.Add(position);
-            _ = await Context.SaveChangesAsync();
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardPosition? loaded = await Context.DashboardPositions
-                .FirstOrDefaultAsync(dp => dp.SeriesId == series.Id);
+                .FirstOrDefaultAsync(dp => dp.SeriesId == series.Id, cancellationToken: TestContext.Current.CancellationToken);
             Assert.NotNull(loaded);
             Assert.Equal("Favoriten", loaded.Section);
         }

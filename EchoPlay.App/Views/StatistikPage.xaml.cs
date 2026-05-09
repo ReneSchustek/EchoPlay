@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -23,12 +24,14 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Lädt die Statistiken beim Navigieren zur Seite.
+        /// Lädt die Statistiken beim Navigieren zur Seite. Standard-Pattern aller
+        /// EchoPlay-Pages: async void + AsyncEventHandler.RunSafelyAsync schluckt
+        /// OperationCanceledException beim App-Shutdown still.
         /// </summary>
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            _ = ViewModel.LoadAsync();
+            await AsyncEventHandler.RunSafelyAsync(ViewModel.LoadAsync);
         }
     }
 }

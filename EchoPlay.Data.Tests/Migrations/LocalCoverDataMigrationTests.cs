@@ -25,7 +25,7 @@ namespace EchoPlay.Data.Tests.Migrations
         public async ValueTask InitializeAsync()
         {
             _connection = new SqliteConnection("DataSource=:memory:");
-            await _connection.OpenAsync();
+            await _connection.OpenAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DbContextOptionsBuilder<EchoPlayDbContext> builder = new();
             _ = builder.UseSqlite(_connection)
@@ -69,10 +69,10 @@ namespace EchoPlay.Data.Tests.Migrations
             using SqliteCommand cmd = _connection!.CreateCommand();
 
             cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Series') WHERE name = 'LocalCoverData';";
-            long seriesColumns = (long)(await cmd.ExecuteScalarAsync())!;
+            long seriesColumns = (long)(await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken))!;
 
             cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Episodes') WHERE name = 'LocalCoverData';";
-            long episodeColumns = (long)(await cmd.ExecuteScalarAsync())!;
+            long episodeColumns = (long)(await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken))!;
 
             Assert.Equal(0, seriesColumns);
             Assert.Equal(0, episodeColumns);
@@ -129,7 +129,7 @@ namespace EchoPlay.Data.Tests.Migrations
             using SqliteCommand cmd = _connection!.CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM CoverImages WHERE EntityType = 'Series' AND EntityId = $id;";
             _ = cmd.Parameters.AddWithValue("$id", seriesId.ToString());
-            long count = (long)(await cmd.ExecuteScalarAsync())!;
+            long count = (long)(await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken))!;
 
             Assert.Equal(1, count);
 
@@ -149,7 +149,7 @@ namespace EchoPlay.Data.Tests.Migrations
             _ = cmd.Parameters.AddWithValue("$title", title);
             _ = cmd.Parameters.AddWithValue("$cover", (object?)coverData ?? DBNull.Value);
             _ = cmd.Parameters.AddWithValue("$now", FixedNow);
-            _ = await cmd.ExecuteNonQueryAsync();
+            _ = await cmd.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
 
         private async Task InsertEpisodeWithLocalCoverAsync(Guid id, Guid seriesId, byte[] coverData)
@@ -166,7 +166,7 @@ namespace EchoPlay.Data.Tests.Migrations
             _ = cmd.Parameters.AddWithValue("$seriesId", seriesId.ToString());
             _ = cmd.Parameters.AddWithValue("$cover", coverData);
             _ = cmd.Parameters.AddWithValue("$now", FixedNow);
-            _ = await cmd.ExecuteNonQueryAsync();
+            _ = await cmd.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
 
         private async Task InsertExistingCoverImageAsync(string entityType, Guid entityId, byte[] imageData)
@@ -181,7 +181,7 @@ namespace EchoPlay.Data.Tests.Migrations
             _ = cmd.Parameters.AddWithValue("$entityId", entityId.ToString());
             _ = cmd.Parameters.AddWithValue("$bytes", imageData);
             _ = cmd.Parameters.AddWithValue("$now", FixedNow);
-            _ = await cmd.ExecuteNonQueryAsync();
+            _ = await cmd.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
 
         private async Task<byte[]?> ReadCoverImageBytesAsync(string entityType, Guid entityId)
@@ -190,7 +190,7 @@ namespace EchoPlay.Data.Tests.Migrations
             cmd.CommandText = "SELECT ImageData FROM CoverImages WHERE EntityType = $type AND EntityId = $id;";
             _ = cmd.Parameters.AddWithValue("$type", entityType);
             _ = cmd.Parameters.AddWithValue("$id", entityId.ToString());
-            object? result = await cmd.ExecuteScalarAsync();
+            object? result = await cmd.ExecuteScalarAsync(cancellationToken: TestContext.Current.CancellationToken);
             return result as byte[];
         }
     }

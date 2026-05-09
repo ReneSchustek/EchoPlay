@@ -124,7 +124,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "TKKG",
                 SpotifyArtistId = KnownSpotifyId
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             List<ImportSeries> results =
             [
@@ -182,7 +182,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "Fünf Freunde",
                 SpotifyArtistId = "ff-002"
-            });
+            }, cancellationToken: TestContext.Current.CancellationToken);
 
             List<ImportSeries> results =
             [
@@ -245,7 +245,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Bei Scope "Lokal" dürfen nur Serien aus der Datenbank kommen – kein Provider-Aufruf
             FakeSeriesDataService localData = new();
-            await localData.AddAsync(new Series { Title = "TKKG" });
+            await localData.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
 
             IServiceScopeFactory localFactory = BuildLocalScopeFactory(localData);
             SucheViewModel vm = BuildViewModel([], scopeFactory: localFactory);
@@ -266,7 +266,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Bei Scope "Online" dürfen keine lokalen Serien in den Ergebnissen erscheinen
             FakeSeriesDataService localData = new();
-            await localData.AddAsync(new Series { Title = "Fünf Freunde" });
+            await localData.AddAsync(new Series { Title = "Fünf Freunde" }, cancellationToken: TestContext.Current.CancellationToken);
 
             IServiceScopeFactory localFactory = BuildLocalScopeFactory(localData);
 
@@ -292,7 +292,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Bei Scope "Alle Quellen" müssen Online- und lokale Ergebnisse gemeinsam erscheinen
             FakeSeriesDataService localData = new();
-            await localData.AddAsync(new Series { Title = "Fünf Freunde" });
+            await localData.AddAsync(new Series { Title = "Fünf Freunde" }, cancellationToken: TestContext.Current.CancellationToken);
 
             IServiceScopeFactory localFactory = BuildLocalScopeFactory(localData);
 

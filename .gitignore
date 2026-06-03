@@ -86,3 +86,8 @@ solution_dump.txt
 # Aider-Tool-Artefakte
 .aider*
 
+
+# Build-Output
+AppPackages/
+BundleArtifacts/
+

@@ -4,6 +4,7 @@
 
 EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organisieren möchten. Serien können aus Online-Quellen (Spotify, Apple Music) importiert oder aus lokalen Audiodateien eingelesen werden. Die App merkt sich den Wiedergabestatus jeder Episode, zeigt Neuerscheinungen an und hilft beim Entdecken fehlender Folgen.
 
+
 ---
 
 ## Funktionsumfang

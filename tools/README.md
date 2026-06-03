@@ -14,8 +14,8 @@ powershell tools/install-gitleaks.ps1
 Lokaler Aufruf:
 
 ```powershell
-powershell .ai/scripts/secret-scan.ps1
-powershell .ai/scripts/secret-scan.ps1 -History
+powershell _ai/_global/scripts/secret-scan.ps1
+powershell _ai/_global/scripts/secret-scan.ps1 -History
 ```
 
 CI nutzt stattdessen die `gitleaks-action` (siehe `.github/workflows/security.yml`),

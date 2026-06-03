@@ -91,3 +91,14 @@ solution_dump.txt
 AppPackages/
 BundleArtifacts/
 
+
+# KI-Workflow-Material (BRIEF126)
+.ai/
+**/.ai/
+.claude/
+**/.claude/
+CLAUDE.md
+**/CLAUDE.md
+_ai/
+**/_ai/
+

@@ -41,7 +41,7 @@ patterns='Claude|Anthropic|claude\.ai|noreply@anthropic|🤖 Generated|Generated
 # Pfade ausschliessen, die KI-Schluesselworte explizit dokumentieren oder als
 # Workflow-Patterns enthalten (interne .ai-Doku, der Hook-Installer selbst,
 # Workflow-Skripte, die "Claude-Delegation" als Konzept beschreiben).
-ignore_paths='^(\.ai/|tools/install-pre-commit-hook\.ps1$|\.git/hooks/|CLAUDE\.md$)'
+ignore_paths='^(_ai/|tools/install-pre-commit-hook\.ps1$|\.git/hooks/|CLAUDE\.md$)'
 
 # Geprueft werden NUR Dateien ausserhalb der Ausnahme-Pfade.
 files_to_check=$(git diff --cached --name-only --diff-filter=ACM | grep -vE "$ignore_paths" || true)

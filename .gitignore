@@ -82,3 +82,8 @@ logs/
 solution_dump.txt
 
 
+
+# Build-Output
+AppPackages/
+BundleArtifacts/
+

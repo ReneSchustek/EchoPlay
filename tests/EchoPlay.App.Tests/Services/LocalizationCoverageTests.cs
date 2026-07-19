@@ -87,8 +87,8 @@ namespace EchoPlay.App.Tests.Services
 
         private static string ResolveResourcePath(string culture)
         {
-            // Test-Bin: EchoPlay.App.Tests/bin/{Config}/net10.0-windows10.0.../
-            // Resource-Root: EchoPlay.App/Strings/{culture}/Resources.resw
+            // Ausgehend vom Solution-Root das App-Projekt suchen, statt den
+            // Ordner-Layout (src/) fest zu verdrahten — so übersteht der Test Umzüge.
             string baseDir = AppContext.BaseDirectory;
             DirectoryInfo? dir = new(baseDir);
             while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EchoPlay.slnx")))
@@ -101,11 +101,13 @@ namespace EchoPlay.App.Tests.Services
                 throw new InvalidOperationException($"EchoPlay.slnx nicht gefunden, ausgehend von '{baseDir}'.");
             }
 
-            string path = Path.Combine(dir.FullName, "EchoPlay.App", "Strings", culture, "Resources.resw");
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException($"Ressource-Datei nicht gefunden: {path}");
-            }
+            string relativePath = Path.Combine("Strings", culture, "Resources.resw");
+            string path = Directory
+                .EnumerateFiles(dir.FullName, "Resources.resw", SearchOption.AllDirectories)
+                .FirstOrDefault(p => p.EndsWith(Path.DirectorySeparatorChar + relativePath, StringComparison.OrdinalIgnoreCase)
+                    && p.Contains(Path.DirectorySeparatorChar + "EchoPlay.App" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                    && !p.Contains(Path.DirectorySeparatorChar + "EchoPlay.App.Tests" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                ?? throw new FileNotFoundException($"Ressource-Datei '{relativePath}' nicht gefunden unterhalb von '{dir.FullName}'.");
 
             return path;
         }

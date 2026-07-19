@@ -197,8 +197,8 @@ namespace EchoPlay.App.Services
 
                 string coverPath = Path.Combine(folderPath, CoverConstants.CoverFileName);
 
-                // Defense-in-Depth: Cover darf nur in den uebergebenen Folder geschrieben werden,
-                // nie ausserhalb (Symlink-Escape oder kuenstlicher CoverFileName-Wert).
+                // Defense-in-Depth: Cover darf nur in den übergebenen Folder geschrieben werden,
+                // nie außerhalb (Symlink-Escape oder künstlicher CoverFileName-Wert).
                 if (!SecurePathHelper.IsPathInside(coverPath, folderPath))
                 {
                     return;

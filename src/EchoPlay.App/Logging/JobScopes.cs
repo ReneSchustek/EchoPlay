@@ -1,9 +1,9 @@
 namespace EchoPlay.App.Logging
 {
     /// <summary>
-    /// String-Konstanten fuer Service-Logging-Scopes (Format <c>"Job:&lt;Kategorie&gt;"</c>).
+    /// String-Konstanten für Service-Logging-Scopes (Format <c>"Job:&lt;Kategorie&gt;"</c>).
     /// Vermeidet Magic-Strings in <c>BeginScope</c>-Aufrufen und macht die Filter im
-    /// Log-Viewer ueber alle Services konsistent.
+    /// Log-Viewer über alle Services konsistent.
     /// </summary>
     internal static class JobScopes
     {

@@ -66,7 +66,7 @@ namespace EchoPlay.App.Services
         /// Phase 3: Online-Suchkette (CompositeCoverSearchService).
         /// Nach der Suche wird <c>CoverLastChecked</c> gesetzt – egal ob Treffer oder nicht.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Public Entry-Point für Cover-Caching: HTTP-, IO- oder DB-Fehler aus den drei Such-Phasen (Provider-URL, lokale DB, Online-Kette) dürfen den Import/Scan nicht abbrechen; Abbrueche werden separat über OperationCanceledException behandelt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Public Entry-Point für Cover-Caching: HTTP-, IO- oder DB-Fehler aus den drei Such-Phasen (Provider-URL, lokale DB, Online-Kette) dürfen den Import/Scan nicht abbrechen; Abbrüche werden separat über OperationCanceledException behandelt.")]
         public async Task CacheCoversAsync(
             Guid seriesId,
             IReadOnlyList<ImportEpisode>? importEpisodes = null,
@@ -104,7 +104,7 @@ namespace EchoPlay.App.Services
             // Auswertungen Foreground-Spikes erkennen können.
             if (priority == CoverFetchPriority.Foreground)
             {
-                _logger.Debug(() => $"Cover-Caching Serie {seriesId} mit Foreground-Prioritaet angefordert.");
+                _logger.Debug(() => $"Cover-Caching Serie {seriesId} mit Foreground-Priorität angefordert.");
             }
 
             // ── Phase 1: Lokale Cover kopieren (Raw SQL via Data-Schicht) ────────
@@ -399,7 +399,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="url">Absolute Cover-URL.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, TLS-, Redirect- oder Timeout-Fehler beim Laden einzelner Cover-URLs werden zu 'null' normalisiert; der Aufrufer ueberspringt diese Episode und fährt mit der nächsten fort.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, TLS-, Redirect- oder Timeout-Fehler beim Laden einzelner Cover-URLs werden zu 'null' normalisiert; der Aufrufer überspringt diese Episode und fährt mit der nächsten fort.")]
         private async Task<byte[]?> DownloadSafeAsync(string url, CancellationToken cancellationToken = default)
         {
             try

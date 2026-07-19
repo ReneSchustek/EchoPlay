@@ -5,14 +5,14 @@ using System.Collections.Generic;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Reine Mapping-Logik fuer den NavigationService: bildet
+    /// Reine Mapping-Logik für den NavigationService: bildet
     /// <see cref="NavigationTarget"/>-Enum-Werte auf konkrete Page-Typen ab.
     /// Extrahiert aus <see cref="NavigationService"/>, damit die Mapping-Tabelle
     /// ohne Frame-Initialisierung testbar ist.
     /// </summary>
     public static class NavigationRouteResolver
     {
-        // Mapping logischer Ziele auf Page-Typen. Single Source of Truth fuer
+        // Mapping logischer Ziele auf Page-Typen. Single Source of Truth für
         // die Routing-Tabelle der App — neue Seiten werden hier registriert.
         private static readonly Dictionary<NavigationTarget, Type> TargetMap =
             new()
@@ -32,7 +32,7 @@ namespace EchoPlay.App.Services
             };
 
         /// <summary>
-        /// Liefert den Page-Typ fuer ein Navigations-Ziel.
+        /// Liefert den Page-Typ für ein Navigations-Ziel.
         /// </summary>
         /// <param name="target">Logisches Ziel (Enum-Wert).</param>
         /// <returns>Konkreter Page-Typ.</returns>
@@ -53,7 +53,7 @@ namespace EchoPlay.App.Services
         public static bool IsRegistered(NavigationTarget target) => TargetMap.ContainsKey(target);
 
         /// <summary>
-        /// Anzahl der registrierten Ziele. Waechter fuer Tests, dass keine
+        /// Anzahl der registrierten Ziele. Wächter für Tests, dass keine
         /// Seite stillschweigend aus der Routing-Tabelle verloren geht.
         /// </summary>
         public static int RegisteredTargetCount => TargetMap.Count;

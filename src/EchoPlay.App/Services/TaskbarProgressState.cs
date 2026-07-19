@@ -3,7 +3,7 @@ using System;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Logischer Fortschritts-Modus fuer den Taskleisten-Balken. Mapping zu
+    /// Logischer Fortschritts-Modus für den Taskleisten-Balken. Mapping zu
     /// den ITaskbarList3-COM-Flags liegt in <see cref="TaskbarProgressStateExtensions"/>.
     /// </summary>
     public enum TaskbarProgressState

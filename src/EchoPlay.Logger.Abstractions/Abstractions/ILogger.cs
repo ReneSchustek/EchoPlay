@@ -79,9 +79,9 @@ namespace EchoPlay.Logger.Abstractions
 
         // ── Message-Template-Overloads (strukturiertes Logging) ────────────────
         // Default-Implementierung rendert per string.Format und delegiert an die
-        // bestehende Plain-Message-Version. Strukturierte Sinks koennen die
-        // Methoden ueberschreiben und Template + Args als Properties exponieren,
-        // damit Filter wie {UserId} oder {SeriesId} moeglich werden.
+        // bestehende Plain-Message-Version. Strukturierte Sinks können die
+        // Methoden überschreiben und Template + Args als Properties exponieren,
+        // damit Filter wie {UserId} oder {SeriesId} möglich werden.
 
         /// <summary>
         /// Schreibt eine Info-Nachricht mit Message-Template.
@@ -99,7 +99,7 @@ namespace EchoPlay.Logger.Abstractions
         /// Schreibt eine Warnung mit Message-Template.
         /// </summary>
         /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
-        /// <param name="args">Werte fuer die Platzhalter.</param>
+        /// <param name="args">Werte für die Platzhalter.</param>
         void Warning(string template, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(template);
@@ -111,7 +111,7 @@ namespace EchoPlay.Logger.Abstractions
         /// </summary>
         /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
         /// <param name="exception">Optionale Exception.</param>
-        /// <param name="args">Werte fuer die Platzhalter.</param>
+        /// <param name="args">Werte für die Platzhalter.</param>
         void Error(string template, Exception? exception, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(template);
@@ -122,7 +122,7 @@ namespace EchoPlay.Logger.Abstractions
         /// Schreibt eine Debug-Nachricht mit Message-Template (lazy: rendert nur bei aktivem Debug-Level).
         /// </summary>
         /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
-        /// <param name="args">Werte fuer die Platzhalter.</param>
+        /// <param name="args">Werte für die Platzhalter.</param>
         void Debug(string template, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(template);

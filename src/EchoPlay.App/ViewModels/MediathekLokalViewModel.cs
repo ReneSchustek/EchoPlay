@@ -586,7 +586,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Page zeigt einen Drei-Optionen-Dialog (Online / Nur offline / Abbrechen)
         /// und liefert das Ergebnis als <see cref="MissingEpisodesMode"/>.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.MissingEpisodesModeRequested; Signatur Func<Task<MissingEpisodesMode>> ist nötig, damit die Page das Dialog-Ergebnis asynchron zurückliefern kann (EventHandler<T> unterstuetzt kein await/Rückgabewert).")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Pass-Through auf _actions.MissingEpisodesModeRequested; Signatur Func<Task<MissingEpisodesMode>> ist nötig, damit die Page das Dialog-Ergebnis asynchron zurückliefern kann (EventHandler<T> unterstützt kein await/Rückgabewert).")]
         public event Func<Task<MissingEpisodesMode>>? MissingEpisodesModeRequested
         {
             add => _actions.MissingEpisodesModeRequested += value;

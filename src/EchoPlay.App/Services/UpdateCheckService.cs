@@ -44,7 +44,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Für scoped AppSettings-Abfrage.</param>
         /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
-        /// <param name="loggerFactory">Logger-Fabrik fuer Job-Scopes und Diagnose.</param>
+        /// <param name="loggerFactory">Logger-Fabrik für Job-Scopes und Diagnose.</param>
 
         public UpdateCheckService(IServiceScopeFactory scopeFactory, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         {
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Services
                 }
 
                 // Externes Token + internes Timeout per Linked-CTS verbinden,
-                // damit App-Shutdown den Update-Check zuverlaessig abbricht.
+                // damit App-Shutdown den Update-Check zuverlässig abbricht.
                 using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(RequestTimeout);
                 string url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";

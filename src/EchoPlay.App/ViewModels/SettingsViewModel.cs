@@ -146,7 +146,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn der Lokal-Tab mehrere Muster-Vorschläge liefert und der Nutzer
         /// eines auswählen soll. Die Page zeigt darauf einen ContentDialog an.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste des Lokal-Tabs; die Page oeffnet einen ContentDialog für die Muster-Auswahl, Action<IReadOnlyList<...>> bleibt semantisch klarer als ein dedizierter EventArgs-Typ.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste des Lokal-Tabs; die Page öffnet einen ContentDialog für die Muster-Auswahl, Action<IReadOnlyList<...>> bleibt semantisch klarer als ein dedizierter EventArgs-Typ.")]
         public event Action<IReadOnlyList<PatternSuggestionDisplay>>? PatternSelectionRequested;
 
         // ── Pass-Through-Eigenschaften: Allgemein ───────────────────────────────

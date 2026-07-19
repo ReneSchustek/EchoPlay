@@ -15,7 +15,7 @@ namespace EchoPlay.App.Services
     public sealed class SplashLifetimeController
     {
         /// <summary>
-        /// Mindest-Anzeigedauer gemaess <c>splashscreen.md</c>.
+        /// Mindest-Anzeigedauer gemäß <c>splashscreen.md</c>.
         /// </summary>
         public static readonly TimeSpan MinimumDuration = TimeSpan.FromMilliseconds(1500);
 
@@ -32,8 +32,8 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Wartet, falls noetig, bis die <see cref="MinimumDuration"/> erreicht ist.
-        /// Kehrt sofort zurueck, wenn die Mindestzeit bereits ueberschritten wurde
+        /// Wartet, falls nötig, bis die <see cref="MinimumDuration"/> erreicht ist.
+        /// Kehrt sofort zurück, wenn die Mindestzeit bereits überschritten wurde
         /// oder wenn das Token gecanceled wird.
         /// </summary>
         /// <param name="cancellationToken">Optionaler Abbruch-Token (Splash-Lebenszyklus).</param>
@@ -53,7 +53,7 @@ namespace EchoPlay.App.Services
             }
             catch (TaskCanceledException)
             {
-                // Cancellation beim Splash-Schliessen ist erwartetes Verhalten — verschluckter Abbruch.
+                // Cancellation beim Splash-Schließen ist erwartetes Verhalten — verschluckter Abbruch.
             }
         }
     }

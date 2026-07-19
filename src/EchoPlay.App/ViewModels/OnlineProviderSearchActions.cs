@@ -69,7 +69,7 @@ namespace EchoPlay.App.ViewModels
             _providerSearchVM.ProviderSearchResults = [];
             _providerSearchVM.IsSpotifyFallbackHintVisible = false;
 
-            // Vorherige Cover-Loads abbrechen UND aeltere Provider-Suche obsolet machen –
+            // Vorherige Cover-Loads abbrechen UND ältere Provider-Suche obsolet machen –
             // beide nutzen denselben Token-Lebenszyklus.
             CancellationToken coverToken = StartNewCoverScope();
 
@@ -137,7 +137,7 @@ namespace EchoPlay.App.ViewModels
             }
             finally
             {
-                // Loader nur zuruecksetzen, wenn diese Suche noch die aktuelle ist –
+                // Loader nur zurücksetzen, wenn diese Suche noch die aktuelle ist –
                 // sonst flackert der Spinner beim Back-to-Back-Wechsel zwischen den Suchen.
                 if (!coverToken.IsCancellationRequested)
                 {

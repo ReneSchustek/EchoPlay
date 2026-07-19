@@ -1,12 +1,12 @@
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Reine Datenstruktur fuer einen Fehler-Dialog. Trennt den Daten-Aufbau
-    /// vom WinUI-Rendering, damit Tests den Content ohne XamlRoot pruefen koennen.
+    /// Reine Datenstruktur für einen Fehler-Dialog. Trennt den Daten-Aufbau
+    /// vom WinUI-Rendering, damit Tests den Content ohne XamlRoot prüfen können.
     /// </summary>
     /// <param name="Title">Titel des Dialogs.</param>
-    /// <param name="Message">Fehlermeldung fuer den Benutzer.</param>
-    /// <param name="CloseButtonText">Beschriftung der Schliessen-Schaltflaeche (Default: "OK").</param>
+    /// <param name="Message">Fehlermeldung für den Benutzer.</param>
+    /// <param name="CloseButtonText">Beschriftung der Schließen-Schaltflaeche (Default: "OK").</param>
     public sealed record ErrorDialogContent(
         string Title,
         string Message,

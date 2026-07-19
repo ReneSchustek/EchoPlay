@@ -3,14 +3,14 @@ using EchoPlay.App.Helpers;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Reine Datenstruktur fuer einen Bestaetigungs-Dialog. Enthaelt die vier
-    /// Texte, die der WinUI-Renderer in den ContentDialog uebernimmt — der
+    /// Reine Datenstruktur für einen Bestätigungs-Dialog. Enthält die vier
+    /// Texte, die der WinUI-Renderer in den ContentDialog übernimmt — der
     /// Aufbau dieser Texte (inkl. lokalisierter Default-Buttons) bleibt
     /// dadurch ohne XamlRoot testbar.
     /// </summary>
     /// <param name="Title">Titel des Dialogs.</param>
-    /// <param name="Message">Die eigentliche Frage/Erklaerung.</param>
-    /// <param name="PrimaryButtonText">Beschriftung der Bestaetigen-Schaltflaeche (Default: "CommonYes"-Resource).</param>
+    /// <param name="Message">Die eigentliche Frage/Erklärung.</param>
+    /// <param name="PrimaryButtonText">Beschriftung der Bestätigen-Schaltflaeche (Default: "CommonYes"-Resource).</param>
     /// <param name="CloseButtonText">Beschriftung der Abbrechen-Schaltflaeche (Default: "CommonCancel"-Resource).</param>
     public sealed record ConfirmationDialogContent(
         string Title,
@@ -25,7 +25,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         public static ConfirmationDialogContent Build(string title, string message)
         {
-            // Fallback-Texte schuetzen vor leeren resw-Eintraegen oder Test-Hosts
+            // Fallback-Texte schützen vor leeren resw-Einträgen oder Test-Hosts
             // ohne WinUI-Runtime (siehe SafeResourceLoader-Guard).
             string yes = SafeResourceLoader.Get("CommonYes", "Ja");
             string cancel = SafeResourceLoader.Get("CommonCancel", "Abbrechen");

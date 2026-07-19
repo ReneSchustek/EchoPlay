@@ -305,8 +305,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Arbeitet die Queue sequentiell ab: erst DB-Treffer, dann Dateisystem, dann Provider-URL.
         /// </summary>
-        /// <param name="episodeIds">IDs der Episoden, fuer die ein Cover nachgeladen werden soll.</param>
-        /// <param name="onCoverReady">Callback fuer jedes gefundene Cover (EpisodenId + Bytes).</param>
+        /// <param name="episodeIds">IDs der Episoden, für die ein Cover nachgeladen werden soll.</param>
+        /// <param name="onCoverReady">Callback für jedes gefundene Cover (EpisodenId + Bytes).</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Episode-Schleife in der Cover-Queue: TagLib-, IO- oder HTTP-Fehler einer Episode werden als Debug protokolliert und die Queue fährt mit der nächsten Episode fort, damit eine kaputte Datei nicht die ganze Kachelzeile blockiert.")]
         private async Task ProcessEnqueuedEpisodesAsync(IReadOnlyList<Guid> episodeIds, Action<Guid, byte[]>? onCoverReady, CancellationToken cancellationToken = default)
@@ -442,7 +442,7 @@ namespace EchoPlay.App.Services
                 }).ConfigureAwait(false);
 
                 // Phase 2 (Foreground): Provider-URLs. HTTP, daher seriell, damit der
-                // Rate-Limiter nicht gesprengt wird; der Foreground-Slot ueberholt
+                // Rate-Limiter nicht gesprengt wird; der Foreground-Slot überholt
                 // Background-Waits via IHostRateLimiter automatisch.
                 IReadOnlyDictionary<Guid, byte[]> stillMissing =
                     await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, missingIds, ct);
@@ -996,7 +996,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="url">Absolute Cover-URL.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, Timeout-, TLS- oder Redirect-Fehler beim Laden einzelner Cover-URLs werden alle zu 'null' normalisiert, damit der Aufrufer die Episode ueberspringen und mit anderen weitermachen kann.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, Timeout-, TLS- oder Redirect-Fehler beim Laden einzelner Cover-URLs werden alle zu 'null' normalisiert, damit der Aufrufer die Episode überspringen und mit anderen weitermachen kann.")]
         private async Task<byte[]?> DownloadSafeAsync(string url, CancellationToken cancellationToken = default)
         {
             try

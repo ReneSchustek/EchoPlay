@@ -26,7 +26,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Test-Konstruktor: erlaubt das Einsetzen eines Fake-XamlRoot-Providers
-        /// (auch null fuer Pre-MainWindow-Szenarien).
+        /// (auch null für Pre-MainWindow-Szenarien).
         /// </summary>
         internal ErrorDialogService(Func<XamlRoot?> xamlRootProvider)
         {
@@ -41,11 +41,11 @@ namespace EchoPlay.App.Services
             // Defense-in-Depth: bei Startup-Failures vor abgeschlossener MainWindow-Init
             // (siehe App.xaml.cs Fatal-Pfade) ist MainWindow oder XamlRoot null. Statt
             // NullReferenceException im Error-Service EmergencyTrace-Fallback, analog
-            // SplashWindow-Pfad — der regulaere Logger ist hier ggf. selbst noch nicht da.
+            // SplashWindow-Pfad — der reguläre Logger ist hier ggf. selbst noch nicht da.
             XamlRoot? xamlRoot = _xamlRootProvider();
             if (xamlRoot is null)
             {
-                EmergencyTrace.Log($"ErrorDialogService: {content.Title} — {content.Message} (MainWindow nicht verfuegbar)");
+                EmergencyTrace.Log($"ErrorDialogService: {content.Title} — {content.Message} (MainWindow nicht verfügbar)");
                 return;
             }
 

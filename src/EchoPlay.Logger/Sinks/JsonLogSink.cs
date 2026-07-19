@@ -7,7 +7,7 @@ using EchoPlay.Logger.Models;
 namespace EchoPlay.Logger.Sinks
 {
     /// <summary>
-    /// Schreibt Log-Eintraege als JSON-Lines (ein JSON-Objekt pro Zeile) in eine Datei.
+    /// Schreibt Log-Einträge als JSON-Lines (ein JSON-Objekt pro Zeile) in eine Datei.
     /// Für strukturiertes Log-Shipping an externe Tools. Felder: timestamp (ISO-8601 UTC),
     /// level, category, scopes (Array), message, exception (falls vorhanden).
     /// </summary>
@@ -32,7 +32,7 @@ namespace EchoPlay.Logger.Sinks
         /// Erstellt einen neuen JsonLogSink.
         /// </summary>
         /// <param name="logDirectory">Verzeichnis für JSON-Log-Dateien.</param>
-        /// <param name="maxFileSizeMb">Maximale Dateigroesse in MB pro JSON-Log (Standard: 10).</param>
+        /// <param name="maxFileSizeMb">Maximale Dateigröße in MB pro JSON-Log (Standard: 10).</param>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sink-Konstruktor darf bei Verzeichnis-Fehlern nicht crashen; Fallback auf AppData\\EchoPlay\\Logs-Json analog FileSink, sonst No-Op.")]
         public JsonLogSink(string logDirectory, int maxFileSizeMb = 10)
         {

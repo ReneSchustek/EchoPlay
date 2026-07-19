@@ -81,8 +81,8 @@ namespace EchoPlay.App
                 {
                     if (t.IsFaulted) logger.Error("StatusBar.LoadAsync fehlgeschlagen", t.Exception);
                 },
-                // MainWindow-Konstruktor: kein Aufrufer-CT verfuegbar; ContinueWith muss
-                // unabhaengig von Window-Lifecycle laufen, damit StatusBar-Fehler geloggt werden.
+                // MainWindow-Konstruktor: kein Aufrufer-CT verfügbar; ContinueWith muss
+                // unabhängig von Window-Lifecycle laufen, damit StatusBar-Fehler geloggt werden.
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted,
                 TaskScheduler.Default);

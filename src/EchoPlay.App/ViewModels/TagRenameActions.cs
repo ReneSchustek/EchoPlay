@@ -76,7 +76,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Führt die Umbenennung aller Dateien nach Nutzerbestätigung durch.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Ausfuehrung: IO-Fehler einzelner Dateien (File.Move, UnauthorizedAccess, PathTooLong) werden geloggt und die verbleibenden Dateien werden dennoch umbenannt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Rename-Ausführung: IO-Fehler einzelner Dateien (File.Move, UnauthorizedAccess, PathTooLong) werden geloggt und die verbleibenden Dateien werden dennoch umbenannt.")]
         public async Task ExecuteRenameAsync()
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagRenameExecute");

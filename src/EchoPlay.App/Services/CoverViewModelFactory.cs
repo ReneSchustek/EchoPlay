@@ -15,8 +15,8 @@ using Microsoft.UI.Xaml.Media.Imaging;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Bauplan fuer eine ViewModel-Cover-Quelle.
-    /// Zentrale Stelle fuer die Fallback-Kaskade DB-Cover → cover.jpg → URL/ID3 → null.
+    /// Bauplan für eine ViewModel-Cover-Quelle.
+    /// Zentrale Stelle für die Fallback-Kaskade DB-Cover → cover.jpg → URL/ID3 → null.
     /// Verhindert dass dieselbe Logik in <c>DashboardDataLoader</c> und
     /// <c>SeriesDetailViewModel</c> auseinanderdriftet.
     /// </summary>
@@ -24,14 +24,14 @@ namespace EchoPlay.App.Services
     public interface ICoverViewModelFactory
     {
         /// <summary>
-        /// Liefert ein Cover fuer die Serie. Priorität: DB-Cover → cover.jpg im Serienordner → URL → null.
+        /// Liefert ein Cover für die Serie. Priorität: DB-Cover → cover.jpg im Serienordner → URL → null.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="series">Parameter <c>series</c>.</param>
         Task<BitmapImage?> BuildSeriesCoverAsync(Series? series, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Liefert ein Cover fuer die Episode. Prioritaet: DB-Cover → cover.jpg im Ordner → ID3-Tag → null.
+        /// Liefert ein Cover für die Episode. Priorität: DB-Cover → cover.jpg im Ordner → ID3-Tag → null.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="episode">Parameter <c>episode</c>.</param>
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Services
 
     /// <inheritdoc/>
     [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "Cover-Build darf einzelne IO-/Dekodier-Fehler nicht zum Abbruch fuehren — 'null' fuehrt zum Fallback-Cover oder Platzhalter.")]
+        Justification = "Cover-Build darf einzelne IO-/Dekodier-Fehler nicht zum Abbruch führen — 'null' führt zum Fallback-Cover oder Platzhalter.")]
     public sealed class CoverViewModelFactory : ICoverViewModelFactory
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -48,8 +48,8 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Initialisiert die Factory. <paramref name="coverService"/> ist optional —
-        /// in Test-Konstellationen ohne Cover-Service liefert die Factory `null` fuer
-        /// alle DB-Cover-Pfade und faellt sofort auf den Datei-/URL-Pfad zurueck.
+        /// in Test-Konstellationen ohne Cover-Service liefert die Factory `null` für
+        /// alle DB-Cover-Pfade und fällt sofort auf den Datei-/URL-Pfad zurück.
         /// </summary>
 
 
@@ -148,7 +148,7 @@ namespace EchoPlay.App.Services
                 }
                 catch
                 {
-                    // IO-/Bild-Dekodier-Fehler einer einzelnen Episode duerfen die Ansicht nicht blockieren.
+                    // IO-/Bild-Dekodier-Fehler einer einzelnen Episode dürfen die Ansicht nicht blockieren.
                 }
             }
 

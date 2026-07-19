@@ -208,7 +208,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn der Nutzer den Ordner-Hinzufügen-Button drückt.
         /// Die Page reagiert auf das Event und ruft <see cref="AddFolderAsync"/> mit dem Fenster-Handle auf.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal ohne Nutzdaten: die Page ergaenzt das HWND erst im Handler; ein EventArgs-Wrapper brachte keinen Mehrwert, da MVVM-strict keine HWND-Referenz ins VM lassen will.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal ohne Nutzdaten: die Page ergänzt das HWND erst im Handler; ein EventArgs-Wrapper brachte keinen Mehrwert, da MVVM-strict keine HWND-Referenz ins VM lassen will.")]
         public event Action? AddFolderRequested;
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace EchoPlay.App.ViewModels
         /// Das übergeordnete ViewModel leert daraufhin seine Listen, damit der Nutzer während
         /// des Scans nicht auf veraltete Kacheln blickt.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Parent-VM-Bridge ohne Nutzdaten: leert Listen vor Scan-Beginn; Action ist semantisch klar, EventArgs-Wrapper waere ohne Inhalt ueberfluessig.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Parent-VM-Bridge ohne Nutzdaten: leert Listen vor Scan-Beginn; Action ist semantisch klar, EventArgs-Wrapper wäre ohne Inhalt überflüssig.")]
         public event Action? ScanStarting;
 
         // ── Aktivierung ──────────────────────────────────────────────────────────

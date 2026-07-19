@@ -23,7 +23,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, nachdem die Serie erfolgreich aus den Favoriten entfernt wurde.
         /// Das Dashboard-ViewModel reagiert darauf und entfernt die Kachel aus der Liste.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Card-VM meldet genau eine Entity-ID an den Dashboard-Container; Action<Guid> bleibt semantisch klarer als ein kuenstlicher 'SeriesIdEventArgs'-Wrapper.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Card-VM meldet genau eine Entity-ID an den Dashboard-Container; Action<Guid> bleibt semantisch klarer als ein künstlicher 'SeriesIdEventArgs'-Wrapper.")]
         public event Action<Guid>? RemovedFromFavorites;
 
         /// <summary>

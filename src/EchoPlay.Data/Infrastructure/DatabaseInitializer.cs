@@ -151,7 +151,7 @@ namespace EchoPlay.Data.Infrastructure
                     using SqliteCommand command = connection.CreateCommand();
                     // Grund: VACUUM INTO erlaubt keine Parameter-Bindings; escapedPath
                     // ist intern aus dbPath (Config) und UTC-Timestamp gebildet, das
-                    // Single-Quote-Escaping schliesst die einzige verbleibende Injection-Quelle.
+                    // Single-Quote-Escaping schließt die einzige verbleibende Injection-Quelle.
 #pragma warning disable SCS0002
                     command.CommandText = $"VACUUM INTO '{escapedPath}'";
 #pragma warning restore SCS0002

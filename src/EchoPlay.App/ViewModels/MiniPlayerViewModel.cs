@@ -32,7 +32,7 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das ViewModel und registriert sich für Zustandsänderungen des PlayerService.
         /// </summary>
         /// <param name="playerService">Der zentrale Wiedergabe-Service.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch ausserhalb von WinUI zu konstruieren.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch außerhalb von WinUI zu konstruieren.")]
         public MiniPlayerViewModel(IPlayerService playerService)
         {
             _playerService = playerService;
@@ -184,8 +184,8 @@ namespace EchoPlay.App.ViewModels
             _playerService.ErrorOccurred -= OnErrorOccurred;
         }
 
-        // Hilfs-Methode: alle MiniPlayer-Befehle muessen sich auf einer Korrelations-ID
-        // im Log ablegen. Vermeidet Code-Duplikation in den fuenf RelayCommand-Lambdas.
+        // Hilfs-Methode: alle MiniPlayer-Befehle müssen sich auf einer Korrelations-ID
+        // im Log ablegen. Vermeidet Code-Duplikation in den fünf RelayCommand-Lambdas.
         private static void InvokeWithScope(string actionName, Action action)
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction(actionName);

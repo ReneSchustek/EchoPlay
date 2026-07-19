@@ -76,7 +76,7 @@ namespace EchoPlay.App.Services
         /// Entfernt den Fortschrittsbalken aus der Taskleiste.
         /// Wird nach Abschluss des Scans aufgerufen.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3.SetProgressState (Win32-COM): native Shell-Fehler beim Zuruecksetzen des Fortschrittsbalkens dürfen den Aufrufer nicht reißen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3.SetProgressState (Win32-COM): native Shell-Fehler beim Zurücksetzen des Fortschrittsbalkens dürfen den Aufrufer nicht reißen.")]
         public void Clear()
         {
             ITaskbarList3? taskbar = GetTaskbar();
@@ -102,7 +102,7 @@ namespace EchoPlay.App.Services
         /// Gibt die COM-Instanz zurück, legt sie beim ersten Aufruf an.
         /// Bei Fehlern (z.B. kein Shell-Support) wird null zurückgegeben.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Einmalige COM-Activation von ITaskbarList3: auf Systemen ohne passende Shell-Unterstuetzung kann 'new TaskbarInstance()' oder 'HrInit' scheitern (COMException/InvalidCastException); das Feature wird dann still deaktiviert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Einmalige COM-Activation von ITaskbarList3: auf Systemen ohne passende Shell-Unterstützung kann 'new TaskbarInstance()' oder 'HrInit' scheitern (COMException/InvalidCastException); das Feature wird dann still deaktiviert.")]
         private ITaskbarList3? GetTaskbar()
         {
             if (_initAttempted)

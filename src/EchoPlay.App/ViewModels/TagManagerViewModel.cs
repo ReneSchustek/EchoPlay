@@ -143,14 +143,14 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Wird ausgelöst, wenn der Online-Lookup fertig ist. Die Page zeigt einen ContentDialog.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<IReadOnlyList<TagLookupCandidate>> liefert die Trefferliste direkt an die Page, die sie in einem ContentDialog anzeigt; ein zusaetzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<IReadOnlyList<TagLookupCandidate>> liefert die Trefferliste direkt an die Page, die sie in einem ContentDialog anzeigt; ein zusätzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
         public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
 
         /// <summary>
         /// Wird ausgelöst, wenn der Auto-Lookup einen eindeutigen Treffer gefunden hat.
         /// Die Page zeigt eine Bestätigungs-InfoBar.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<TagLookupCandidate> liefert den eindeutigen Auto-Lookup-Treffer direkt an die Page für die InfoBar; ein zusaetzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<TagLookupCandidate> liefert den eindeutigen Auto-Lookup-Treffer direkt an die Page für die InfoBar; ein zusätzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
         public event EventHandler<TagLookupCandidate>? AutoLookupApplied;
 
         /// <summary>Wird ausgelöst, wenn der Nutzer ein Cover per Datei-Picker laden möchte.</summary>

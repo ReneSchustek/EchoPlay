@@ -64,7 +64,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn mehrere Muster-Vorschläge vorliegen oder das beste Ergebnis
         /// unter dem Konfidenz-Schwellwert liegt. Die Page zeigt dann einen Auswahl-Dialog.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste: die Page oeffnet einen ContentDialog für die Muster-Auswahl; Action<IReadOnlyList<...>> bleibt klarer als ein dedizierter EventArgs-Typ mit identischer Semantik.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste: die Page öffnet einen ContentDialog für die Muster-Auswahl; Action<IReadOnlyList<...>> bleibt klarer als ein dedizierter EventArgs-Typ mit identischer Semantik.")]
         public event Action<IReadOnlyList<PatternSuggestionDisplay>>? PatternSelectionRequested;
 
         /// <summary>Gibt an, ob die lokale Bibliothek aktiv ist.</summary>

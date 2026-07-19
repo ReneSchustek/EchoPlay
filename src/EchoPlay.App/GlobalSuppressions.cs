@@ -13,7 +13,7 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "WinUI-3-XAML-Code-Behind (x:Class) benötigt public View-Klassen.")]
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.Controls",
-    Justification = "WinUI-3-XAML-Code-Behind (x:Class) und DependencyProperty-Binding benoetigen public Control-Klassen.")]
+    Justification = "WinUI-3-XAML-Code-Behind (x:Class) und DependencyProperty-Binding benötigen public Control-Klassen.")]
 [assembly: SuppressMessage("Design", "CA1515:Consider making public types internal",
     Scope = "namespaceanddescendants", Target = "~N:EchoPlay.App.Models",
     Justification = "WinUI-3-XAML-Databinding (DataTemplate DataType) verwendet Models direkt als Binding-Quelle.")]

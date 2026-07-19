@@ -25,7 +25,7 @@ namespace EchoPlay.App.ViewModels
     /// die zugehörigen lokalen Tracks in die zweite Spalte.
     /// Online-Serien ohne lokale Dateien zeigen eine entsprechende Leer-Meldung.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Der einzige verwerfbare Zustand (_priorityCts) wird über CancelPendingPriorityLoad deterministisch freigegeben, das vom OnNavigatedFrom-Pfad der Page aufgerufen wird; ein eigener Dispose-Kontrakt im Transient-VM wuerde der bestehenden VM-Konvention widersprechen.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Der einzige verwerfbare Zustand (_priorityCts) wird über CancelPendingPriorityLoad deterministisch freigegeben, das vom OnNavigatedFrom-Pfad der Page aufgerufen wird; ein eigener Dispose-Kontrakt im Transient-VM würde der bestehenden VM-Konvention widersprechen.")]
     public sealed class SeriesDetailViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -35,8 +35,8 @@ namespace EchoPlay.App.ViewModels
         private readonly IClock _clock;
         private CancellationTokenSource? _priorityCts;
 
-        // Lifecycle-CTS: gilt fuer alle Service-Calls in dieser Detail-VM-Instanz.
-        // Wird beim Page-Verlassen ueber Cleanup() gestoppt.
+        // Lifecycle-CTS: gilt für alle Service-Calls in dieser Detail-VM-Instanz.
+        // Wird beim Page-Verlassen über Cleanup() gestoppt.
         private readonly CancellationTokenSource _lifecycleCts = new();
 
         private string _seriesTitle = string.Empty;

@@ -115,7 +115,7 @@ namespace EchoPlay.Logger.Sinks
         private string GetCurrentFilePath()
         {
             // Lokalzeit für Datei-Namen, damit der Anwender Log-Dateien anhand seiner Tageszeit
-            // wiederfindet (UTC-Datums-Sprung um Mitternacht waere irritierend).
+            // wiederfindet (UTC-Datums-Sprung um Mitternacht wäre irritierend).
             string baseName = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             string filePath = Path.Combine(_logDirectory, $"{baseName}.log");
 

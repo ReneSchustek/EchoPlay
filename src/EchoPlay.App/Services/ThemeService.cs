@@ -142,7 +142,7 @@ namespace EchoPlay.App.Services
         /// Gibt den Namen des aktuell aktiven Themes zurück.
         /// </summary>
         /// <returns>Theme-Name, z.B. "MidnightLibrary".</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Bewusst als Methode modelliert, da ThemeService kuenftig asynchron nachladen könnte (ActiveThemeName via Get-Methode bleibt stabil, Property-Umwandlung waere Breaking Change).")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Bewusst als Methode modelliert, da ThemeService künftig asynchron nachladen könnte (ActiveThemeName via Get-Methode bleibt stabil, Property-Umwandlung wäre Breaking Change).")]
         public string GetActiveThemeName() => _activeThemeName;
 
         /// <summary>

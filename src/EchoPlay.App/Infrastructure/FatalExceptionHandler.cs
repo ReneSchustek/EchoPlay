@@ -16,9 +16,9 @@ namespace EchoPlay.App.Infrastructure
     {
         /// <summary>
         /// Loggt eine Exception aus <see cref="AppDomain.UnhandledException"/>. Fällt auf
-        /// <see cref="EmergencyTrace"/> zurück, wenn der regulaere Logger noch nicht verfuegbar ist.
+        /// <see cref="EmergencyTrace"/> zurück, wenn der reguläre Logger noch nicht verfügbar ist.
         /// </summary>
-        /// <param name="logger">Der regulaere App-Logger, <see langword="null"/> vor DI-Init oder nach Dispose.</param>
+        /// <param name="logger">Der reguläre App-Logger, <see langword="null"/> vor DI-Init oder nach Dispose.</param>
         /// <param name="e">Event-Argument des AppDomain-Hooks, enthält <c>ExceptionObject</c> und <c>IsTerminating</c>.</param>
         public static void HandleDomainException(ILogger? logger, UnhandledExceptionEventArgs e)
         {
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Infrastructure
         /// die Tasks selbst werden nicht mehr beobachtet. Wird auf Info-Level geloggt, damit der
         /// erwartete Shutdown-Pfad keinen Error-Eintrag erzeugt.
         /// </summary>
-        /// <param name="logger">Der regulaere App-Logger, <see langword="null"/> vor DI-Init oder nach Dispose.</param>
+        /// <param name="logger">Der reguläre App-Logger, <see langword="null"/> vor DI-Init oder nach Dispose.</param>
         /// <param name="e">Event-Argument des TaskScheduler-Hooks, enthält <c>Exception</c>.</param>
         public static void HandleUnobservedTaskException(ILogger? logger, UnobservedTaskExceptionEventArgs e)
         {

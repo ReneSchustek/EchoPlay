@@ -37,7 +37,7 @@ namespace EchoPlay.App
     /// verantwortlich für den Aufbau von Konfiguration
     /// und Dependency Injection.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "WinUI-3 Entry-Point-Typ heisst per Konvention 'App' im 'EchoPlay.App'-Namespace.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "WinUI-3 Entry-Point-Typ heißt per Konvention 'App' im 'EchoPlay.App'-Namespace.")]
     public partial class App : Application
     {
         private static IHost? _host;
@@ -90,7 +90,7 @@ namespace EchoPlay.App
                 // Globaler Handler registrieren, bevor der Host gestartet wird.
                 this.UnhandledException += OnUnhandledException;
 
-                // Zusaetzliche Fanglinien für Exceptions, die WinUIs UnhandledException nicht abfaengt:
+                // Zusätzliche Fanglinien für Exceptions, die WinUIs UnhandledException nicht abfängt:
                 // - AppDomain.UnhandledException: Fehler aus Nicht-UI-Threads (Task.Run ohne await, Threadpool).
                 // - TaskScheduler.UnobservedTaskException: Tasks deren Exception nie per await konsumiert wurde.
                 AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
@@ -108,7 +108,7 @@ namespace EchoPlay.App
                 int dbPurgeDays = await RefreshAppSettingsAsync();
                 SchedulePurgeInBackground(dbPurgeDays);
 
-                // Hintergrunddienste vor dem Fenster anstossen.
+                // Hintergrunddienste vor dem Fenster anstoßen.
                 ThemeService themeService = await StartBackgroundServicesAsync();
 
                 // Startup-Validierung + Update-Check.
@@ -148,7 +148,7 @@ namespace EchoPlay.App
         {
             _host ??= CreateHost();
 
-            // LoggerManager initialisieren – Cleanup laeuft beim Dispose (App-Ende)
+            // LoggerManager initialisieren – Cleanup läuft beim Dispose (App-Ende)
             _loggerManager = Services.GetRequiredService<LoggerManager>();
             _appLogger = _loggerManager.Factory.CreateLogger("App");
             _appLogger.Info("Anwendung gestartet");
@@ -162,7 +162,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Liest die persistierten AppSettings, applied Logger-Retention und MinLevel,
-        /// und schreibt LastAppStart zurueck. Liefert die DbPurgeDays fuer den
+        /// und schreibt LastAppStart zurück. Liefert die DbPurgeDays für den
         /// nachfolgenden Wartungs-Task. Ausgelagerte Phase aus <see cref="OnLaunched"/>.
         /// </summary>
         /// <returns>Die konfigurierte DB-Purge-Aufbewahrungsdauer in Tagen.</returns>
@@ -185,11 +185,11 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Plant den DB-Wartungs-Task im Hintergrund. Kein kritischer Pfad — darf den
-        /// Start nicht verzoegern. Fehler werden geloggt, aber nicht durchgereicht.
+        /// Start nicht verzögern. Fehler werden geloggt, aber nicht durchgereicht.
         /// </summary>
-        /// <param name="dbPurgeDays">Aufbewahrungsdauer fuer Soft-Delete-Eintraege.</param>
+        /// <param name="dbPurgeDays">Aufbewahrungsdauer für Soft-Delete-Einträge.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
-            Justification = "Hintergrund-Purge: SQLite-Locks oder IO-Fehler waehrend VACUUM duerfen den App-Start nicht stoeren — wird beim naechsten Start erneut versucht.")]
+            Justification = "Hintergrund-Purge: SQLite-Locks oder IO-Fehler während VACUUM dürfen den App-Start nicht stören — wird beim nächsten Start erneut versucht.")]
         private void SchedulePurgeInBackground(int dbPurgeDays)
         {
             _ = Task.Run(async () =>
@@ -211,9 +211,9 @@ namespace EchoPlay.App
         /// <summary>
         /// Startet die Hintergrund-Services, die vor dem Hauptfenster laufen sollen,
         /// und initialisiert das Theme. Ausgelagerte Phase aus <see cref="OnLaunched"/>
-        /// fuer bessere Stepdown-Lesbarkeit (ein Verantwortungsbereich pro Methode).
+        /// für bessere Stepdown-Lesbarkeit (ein Verantwortungsbereich pro Methode).
         /// </summary>
-        /// <returns>Der initialisierte Theme-Service fuer spaeteres SyncRequestedTheme nach Window.Activate.</returns>
+        /// <returns>Der initialisierte Theme-Service für späteres SyncRequestedTheme nach Window.Activate.</returns>
         private async Task<ThemeService> StartBackgroundServicesAsync()
         {
             // Provider-ID-Enrichment: ergänzt fehlende SpotifyAlbumId/AppleMusicAlbumId.
@@ -227,16 +227,16 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Fuehrt die Startup-Validierung (Online/Lokal/Cache/Neuerscheinungen) und den
-        /// Update-Check aus. Statustext laeuft in den Splash. Ausgelagerte Phase aus
+        /// Führt die Startup-Validierung (Online/Lokal/Cache/Neuerscheinungen) und den
+        /// Update-Check aus. Statustext läuft in den Splash. Ausgelagerte Phase aus
         /// <see cref="OnLaunched"/>.
         /// </summary>
-        /// <param name="splash">Das aktive Splash-Fenster fuer Statustext-Updates.</param>
-        /// <returns>Das Validation-Ergebnis fuer das Dashboard-VM.</returns>
+        /// <param name="splash">Das aktive Splash-Fenster für Statustext-Updates.</param>
+        /// <returns>Das Validation-Ergebnis für das Dashboard-VM.</returns>
         private async Task<StartupResult> RunStartupValidationAsync(SplashWindow splash)
         {
             // Startup-Validierung: Online-Check, Lokal-Check, Cache-Bereinigung, Neuerscheinungen-Refresh.
-            // Laeuft komplett im Splash, damit das Dashboard sofort aktuelle Daten anzeigen kann.
+            // Läuft komplett im Splash, damit das Dashboard sofort aktuelle Daten anzeigen kann.
             IStartupValidator startupValidator = Services.GetRequiredService<IStartupValidator>();
             StartupResult result = await startupValidator.ValidateAsync(status => splash.SetStatus(status));
 
@@ -244,8 +244,8 @@ namespace EchoPlay.App
                 "Startup-Validierung abgeschlossen: Online={IsOnlineAvailable}, Lokal={IsLocalLibraryAvailable}",
                 result.IsOnlineAvailable, result.IsLocalLibraryAvailable);
 
-            // Update-Check: prueft, ob eine neuere Version auf GitHub verfuegbar ist.
-            // Laeuft nach der Validierung, blockiert maximal 5 Sekunden (RequestTimeout in UpdateCheckService).
+            // Update-Check: prüft, ob eine neuere Version auf GitHub verfügbar ist.
+            // Läuft nach der Validierung, blockiert maximal 5 Sekunden (RequestTimeout in UpdateCheckService).
             await CheckForUpdateAsync(splash);
 
             return result;
@@ -410,7 +410,7 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Behandelt Exceptions, die von Nicht-UI-Threads ausgeloest werden (<c>Task.Run</c>,
+        /// Behandelt Exceptions, die von Nicht-UI-Threads ausgelöst werden (<c>Task.Run</c>,
         /// <c>Thread</c>, <c>ThreadPool</c>). WinUIs <see cref="OnUnhandledException"/> sieht diese nicht.
         /// </summary>
         /// <param name="sender">Quelle der Exception (typischerweise <see cref="AppDomain"/>).</param>
@@ -423,7 +423,7 @@ namespace EchoPlay.App
         /// konsumiert wurde (z. B. <c>_ = Task.Run(...)</c> ohne Fehlerbehandlung im Body).
         /// </summary>
         /// <param name="sender">Der <see cref="TaskScheduler"/>, der das Event meldet.</param>
-        /// <param name="e">Enthält die Exception und ermoeglicht <c>SetObserved()</c>, um den Crash zu verhindern.</param>
+        /// <param name="e">Enthält die Exception und ermöglicht <c>SetObserved()</c>, um den Crash zu verhindern.</param>
         private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
             => EchoPlay.App.Infrastructure.FatalExceptionHandler.HandleUnobservedTaskException(_appLogger, e);
 

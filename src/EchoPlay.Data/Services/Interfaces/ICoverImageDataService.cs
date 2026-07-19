@@ -93,10 +93,10 @@ namespace EchoPlay.Data.Services.Interfaces
         Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Liefert die Gesamtanzahl der Cover-Eintraege in der Tabelle. Für Self-Diagnostics beim App-Start.
+        /// Liefert die Gesamtanzahl der Cover-Einträge in der Tabelle. Für Self-Diagnostics beim App-Start.
         /// Kein Blob-Load, nur ein COUNT(*).
         /// </summary>
-        /// <returns>Anzahl der persistierten Cover-Eintraege.</returns>
+        /// <returns>Anzahl der persistierten Cover-Einträge.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task<int> CountAsync(CancellationToken cancellationToken = default);
     }

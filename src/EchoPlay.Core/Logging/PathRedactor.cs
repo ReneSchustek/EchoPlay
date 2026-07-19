@@ -46,7 +46,7 @@ namespace EchoPlay.Core.Logging
 
         // SHA-256 mit OrdinalIgnoreCase auf normalisiertem Pfad: gleiche Verzeichnisse
         // (auch mit unterschiedlicher Schreibweise) erhalten denselben Hash, damit
-        // Log-Korrelation moeglich bleibt.
+        // Log-Korrelation möglich bleibt.
         private static string ComputeShortHash(string directory)
         {
             string normalized = directory.ToUpperInvariant();

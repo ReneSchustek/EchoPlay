@@ -267,7 +267,7 @@ namespace EchoPlay.App.ViewModels
         public Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode) =>
             CoverFactory.BuildEpisodeCoverAsync(episode);
 
-        // Lazy-Init der Factory: instanziiert beim ersten Cover-Aufruf, gemeinsam fuer Loader.
+        // Lazy-Init der Factory: instanziiert beim ersten Cover-Aufruf, gemeinsam für Loader.
         private ICoverViewModelFactory CoverFactory =>
             _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService);
         private ICoverViewModelFactory? _coverFactory;

@@ -91,8 +91,8 @@ namespace EchoPlay.App.Services
         /// ab und prüft zusätzlich, ob Spotify-Credentials hinterlegt sind. Fehlen sie, wird transparent
         /// auf Apple Music umgelenkt und ein Warning geloggt — die AppSettings bleiben unverändert.
         /// </summary>
-        /// <param name="scope">DI-Scope fuer den Credential-Store-Lookup.</param>
-        /// <param name="activeProvider">Vom Nutzer gewaehlter Provider aus den AppSettings.</param>
+        /// <param name="scope">DI-Scope für den Credential-Store-Lookup.</param>
+        /// <param name="activeProvider">Vom Nutzer gewählter Provider aus den AppSettings.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Tuple aus effektivem Provider und Hinweis-Flag, ob ein Spotify→Apple-Music-Fallback gegriffen hat.</returns>
         private async Task<(ProviderType ResolvedProvider, bool SpotifyFallbackApplied)> ResolveProviderAsync(

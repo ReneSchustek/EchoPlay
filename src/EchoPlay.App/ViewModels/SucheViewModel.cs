@@ -176,8 +176,8 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Sucheingabe des Nutzers. Wird im TwoWay-Binding mit der AutoSuggestBox verknüpft.
-        /// Beim Leerwerden (eingebauter X-Button der AutoSuggestBox oder vollstaendiges
-        /// Löschen per Tastatur) loest der Setter automatisch <see cref="Reset"/> aus,
+        /// Beim Leerwerden (eingebauter X-Button der AutoSuggestBox oder vollständiges
+        /// Löschen per Tastatur) löst der Setter automatisch <see cref="Reset"/> aus,
         /// damit Treffer und Status-Hinweise sofort verschwinden.
         /// </summary>
         public string SearchText
@@ -246,8 +246,8 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Wartet auf den Abschluss aller aktuell laufenden Suchanfragen (für deterministische Tests).
-        /// Snapshottet die Liste der laufenden Such-TCS, damit Back-to-Back-Suchen vollstaendig
-        /// abgewartet werden können – auch dann, wenn die aeltere Suche aufgrund eines Token-Cancels
+        /// Snapshottet die Liste der laufenden Such-TCS, damit Back-to-Back-Suchen vollständig
+        /// abgewartet werden können – auch dann, wenn die ältere Suche aufgrund eines Token-Cancels
         /// kurz vor dem Abschluss steht.
         /// </summary>
         internal Task WaitForSearchCompleteAsync()
@@ -358,12 +358,12 @@ namespace EchoPlay.App.ViewModels
                 _inflightSearches.Add(completedSource);
             }
 
-            // Cancel + neuer CTS: aktuelle Suche wird zum Inhaber des Tokens, alle aelteren
+            // Cancel + neuer CTS: aktuelle Suche wird zum Inhaber des Tokens, alle älteren
             // Suchen sehen ab hier IsCancellationRequested == true und verwerfen ihre Treffer.
             CancellationToken coverToken = StartNewCoverScope();
 
-            // Sucheingabe einfrieren, damit nachtraegliche Änderungen am Feld während
-            // der laufenden Anfrage den Treffer-Build nicht verfaelschen.
+            // Sucheingabe einfrieren, damit nachträgliche Änderungen am Feld während
+            // der laufenden Anfrage den Treffer-Build nicht verfälschen.
             string searchText = _searchText;
             SearchSource scope = SelectedScope;
 
@@ -454,7 +454,7 @@ namespace EchoPlay.App.ViewModels
             }
             finally
             {
-                // Loader nur zuruecksetzen, wenn diese Suche noch die aktuelle ist –
+                // Loader nur zurücksetzen, wenn diese Suche noch die aktuelle ist –
                 // sonst flackert der Spinner beim Back-to-Back-Wechsel zwischen den Suchen.
                 if (!coverToken.IsCancellationRequested)
                 {

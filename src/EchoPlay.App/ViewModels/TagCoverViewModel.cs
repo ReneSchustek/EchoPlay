@@ -57,7 +57,7 @@ namespace EchoPlay.App.ViewModels
         /// Rohdaten des aktuell gehaltenen Covers – benötigt für das Schreiben auf weitere
         /// Dateien (<c>ApplyCoverToAll</c>). <see langword="null"/> wenn kein Cover gesetzt ist.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Bildrohdaten werden direkt an TagLib-APIs (ByteVector) und an 'ApplyCoverToAll' uebergeben; ein ReadOnlyMemory-Wrapper wuerde nur Kopien erzeugen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Bildrohdaten werden direkt an TagLib-APIs (ByteVector) und an 'ApplyCoverToAll' übergeben; ein ReadOnlyMemory-Wrapper würde nur Kopien erzeugen.")]
         public byte[]? CoverImageData => _coverImageData;
 
         /// <summary>

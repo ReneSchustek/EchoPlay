@@ -44,10 +44,10 @@ namespace EchoPlay.App
             ZentriereUndGroesse();
             EntferneTitelleiste();
 
-            // Brief 329 / WCAG 1.1.1: Logo dekorativ markieren — Screen-Reader skippt es.
+            // WCAG 1.1.1: Logo dekorativ markieren — Screen-Reader skippt es.
             // Bewusst per Code-Behind statt XAML, weil das XAML-Markup-Pattern unter
-            // unpackaged WinUI 3 einen Markup-Reader-Bug ausgeloest hat (Brief 327
-            // Stack-Trace: "Window.Title set more than once" beim Parser-Pass).
+            // unpackaged WinUI 3 einen Markup-Reader-Bug auslöst
+            // (Stack-Trace: "Window.Title set more than once" beim Parser-Pass).
             AutomationProperties.SetAccessibilityView(LogoImage, AccessibilityView.Raw);
         }
 

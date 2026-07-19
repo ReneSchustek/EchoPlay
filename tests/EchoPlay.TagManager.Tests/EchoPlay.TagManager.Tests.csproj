@@ -2,17 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
@@ -22,12 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\..\src\EchoPlay.Logger\EchoPlay.Logger.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.TagManager\EchoPlay.TagManager.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EchoPlay.Logger\EchoPlay.Logger.csproj" />
-    <ProjectReference Include="..\EchoPlay.AppleMusic\EchoPlay.AppleMusic.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>

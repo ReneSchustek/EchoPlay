@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Quellcode auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: .NET 10 einrichten
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
@@ -26,25 +26,17 @@ jobs:
       - name: Security-Audit (hart)
         run: dotnet list package --vulnerable --include-transitive
 
-      - name: Build Release (x64)
-        run: dotnet build EchoPlay.slnx -c Release -p:Platform=x64 --no-restore
+      - name: Build Release (Solution, App wird per Projekt-Mapping als x64 gebaut)
+        run: dotnet build EchoPlay.slnx -c Release --no-restore
 
-      - name: Tests (x64)
-        run: |
-          dotnet test EchoPlay.Core.Tests/EchoPlay.Core.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.Data.Tests/EchoPlay.Data.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.AppleMusic.Tests/EchoPlay.AppleMusic.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj -c Release --no-build --verbosity normal
-          dotnet test EchoPlay.App.Tests/EchoPlay.App.Tests.csproj -c Release -p:Platform=x64 --no-build --verbosity normal
+      - name: Tests
+        run: dotnet test EchoPlay.slnx -c Release --no-build --verbosity normal
 
       - name: Publish MSIX (unpackaged, win-x64)
-        run: dotnet publish EchoPlay.App/EchoPlay.App.csproj -c Release -r win-x64 -p:Platform=x64 --self-contained --no-build -o publish
+        run: dotnet publish src/EchoPlay.App/EchoPlay.App.csproj -c Release -r win-x64 -p:Platform=x64 --self-contained --no-build -o publish
 
       - name: Release-Artefakt hochladen
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: EchoPlay-${{ github.ref_name }}-win-x64
           path: publish/

@@ -28,10 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EchoPlay.App\EchoPlay.App.csproj" />
-    <ProjectReference Include="..\EchoPlay.Data\EchoPlay.Data.csproj" />
-    <ProjectReference Include="..\EchoPlay.LocalLibrary\EchoPlay.LocalLibrary.csproj" />
-    <ProjectReference Include="..\EchoPlay.Core\EchoPlay.Core.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.App\EchoPlay.App.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Data\EchoPlay.Data.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.LocalLibrary\EchoPlay.LocalLibrary.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Core\EchoPlay.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

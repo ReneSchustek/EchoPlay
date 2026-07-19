@@ -2,7 +2,6 @@
 CHANGELOG.md
 SECURITY.md
 INSTALLER.md
-triage-watch.ps1
 
 # Build-Artefakte
 [Bb]in/
@@ -82,10 +81,7 @@ logs/
 solution_dump.txt
 
 
-
 # Build-Output
 AppPackages/
 BundleArtifacts/
-
-
 

@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EchoPlay.Core\EchoPlay.Core.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Core\EchoPlay.Core.csproj" />
   </ItemGroup>
 
 </Project>

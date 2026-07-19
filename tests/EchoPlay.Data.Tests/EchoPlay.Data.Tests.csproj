@@ -26,8 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EchoPlay.Data\EchoPlay.Data.csproj" />
-    <ProjectReference Include="..\EchoPlay.Logger\EchoPlay.Logger.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Data\EchoPlay.Data.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Logger\EchoPlay.Logger.csproj" />
   </ItemGroup>
 
   <ItemGroup>

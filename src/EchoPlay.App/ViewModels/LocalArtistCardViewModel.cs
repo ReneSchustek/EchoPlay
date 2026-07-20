@@ -14,16 +14,13 @@ namespace EchoPlay.App.ViewModels
     /// Nur Serien mit einem lokal zugeordneten Ordner (<see cref="LocalFolderPath"/> != null) werden hier angezeigt.
     /// </summary>
     /// <remarks>
-    /// Erweitert <see cref="CoverCardViewModelBase"/>, damit <see cref="CoverCardViewModelBase.CoverImage"/> und <see cref="IsFavorite"/>
+    /// Erweitert <see cref="SeriesTileViewModelBase"/>, damit <see cref="CoverCardViewModelBase.CoverImage"/> und <see cref="SeriesTileViewModelBase.IsFavorite"/>
     /// nachträglich geändert werden können, ohne die Liste neu aufzubauen. Das ViewModel der lokalen Mediathek
     /// zeigt die Serien-Kacheln sofort an – Cover laden progressiv im Hintergrund nach.
     /// </remarks>
-    public sealed class LocalArtistCardViewModel : CoverCardViewModelBase, IAccordionSelectable
+    public sealed class LocalArtistCardViewModel : SeriesTileViewModelBase
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private bool _isFavorite;
-        private bool _isWatched;
-        private bool _isSelectedInAccordion;
 
         /// <summary>
         /// Erstellt ein Kachel-ViewModel für die linke Spalte.
@@ -54,8 +51,8 @@ namespace EchoPlay.App.ViewModels
             LocalFolderPath = localFolderPath;
             LocalEpisodeCount = localEpisodeCount;
             TotalEpisodeCount = totalEpisodeCount;
-            _isFavorite = isFavorite;
-            _isWatched = isWatched;
+            IsFavorite = isFavorite;
+            IsWatched = isWatched;
             _scopeFactory = scopeFactory;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
@@ -86,78 +83,9 @@ namespace EchoPlay.App.ViewModels
         public string CountText => $"{LocalEpisodeCount} / {TotalEpisodeCount}";
 
         /// <summary>
-        /// Gibt an, ob diese Serie als Favorit markiert ist.
-        /// Der Stern auf der Kachel wechselt zwischen gefüllt und leer.
-        /// </summary>
-        public bool IsFavorite
-        {
-            get => _isFavorite;
-            private set
-            {
-                if (SetProperty(ref _isFavorite, value))
-                {
-                    OnPropertyChanged(nameof(FavoriteGlyph));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Stern-Symbol für die Kachel: gefüllt (★) wenn Favorit, leer (☆) wenn nicht.
-        /// Segoe Fluent Icons: E735 = FavoriteStarFill (gefüllt), E734 = FavoriteStar (leer).
-        /// </summary>
-        public string FavoriteGlyph => _isFavorite ? "\uE735" : "\uE734";
-
-        /// <summary>
         /// Schaltet den Favoritenstatus der Serie um und persistiert die Änderung in der Datenbank.
         /// </summary>
         public ICommand ToggleFavoriteCommand { get; }
-
-        /// <summary>
-        /// Gibt an, ob die Serie auf Neuerscheinungen überwacht wird.
-        /// </summary>
-        public bool IsWatched
-        {
-            get => _isWatched;
-            set
-            {
-                if (SetProperty(ref _isWatched, value))
-                {
-                    OnPropertyChanged(nameof(WatchedGlyph));
-                    OnPropertyChanged(nameof(WatchedVisibility));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Auge-Symbol für die Kachel: Segoe Fluent Icons E7B3 = RedEye.
-        /// </summary>
-        public string WatchedGlyph => "\uE7B3";
-
-        /// <summary>
-        /// Sichtbarkeit des Überwachungs-Icons: nur bei überwachten Serien eingeblendet.
-        /// </summary>
-        public Visibility WatchedVisibility =>
-            _isWatched ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Gibt an, ob diese Serie im Akkordeon aufgeklappt ist.
-        /// Steuert das V-Icon unter der Kachel.
-        /// </summary>
-        public bool IsSelectedInAccordion
-        {
-            get => _isSelectedInAccordion;
-            set
-            {
-                if (SetProperty(ref _isSelectedInAccordion, value))
-                {
-                    OnPropertyChanged(nameof(SelectedIndicatorVisibility));
-                }
-            }
-        }
-
-        /// <summary>Sichtbarkeit des V-Pfeils unter der Kachel.</summary>
-        public Visibility SelectedIndicatorVisibility =>
-            _isSelectedInAccordion ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
         /// Schaltet den Favoritenstatus um: Favorit → kein Favorit, kein Favorit → Favorit.
@@ -165,7 +93,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async System.Threading.Tasks.Task ToggleFavoriteAsync()
         {
-            bool newValue = !_isFavorite;
+            bool newValue = !IsFavorite;
 
             await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, SeriesId, newValue);
             IsFavorite = newValue;

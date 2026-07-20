@@ -3,7 +3,7 @@ namespace EchoPlay.Logger.Configuration
     /// <summary>
     /// Konfigurationsoptionen für den Logger.
     /// </summary>
-    public class LoggerOptions
+    public sealed class LoggerOptions
     {
         /// <summary>
         /// Verzeichnis für Log-Dateien.

@@ -6,7 +6,7 @@ namespace EchoPlay.Logger.Formatting
     /// <summary>
     /// Standard-Formatter für lesbare Log-Ausgaben im Klartext-Format.
     /// </summary>
-    public class DefaultLogFormatter : ILogFormatter
+    public sealed class DefaultLogFormatter : ILogFormatter
     {
         /// <summary>
         /// Formatiert einen Log-Eintrag als lesbaren String.

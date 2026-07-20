@@ -4,7 +4,7 @@ using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services;
 using EchoPlay.Data.Services.Projections;
-using EchoPlay.Data.Tests.Helper;
+using EchoPlay.Data.Tests.Helpers;
 using EchoPlay.Data.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 

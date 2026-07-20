@@ -3,7 +3,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using System.Diagnostics.CodeAnalysis;
 
-namespace EchoPlay.Data.Tests.Helper
+namespace EchoPlay.Data.Tests.Helpers
 {
     /// <summary>
     /// Stellt explizite Hilfsmethoden zum Erzeugen und Persistieren konsistenter Testdaten für EF-Core-Integrationstests bereit.

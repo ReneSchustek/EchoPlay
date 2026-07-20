@@ -75,8 +75,7 @@ namespace EchoPlay.Data.Configurations
                    .HasFilter("AppleMusicAlbumId IS NOT NULL");
 
             // Purge-Index für DatabaseMaintenanceService
-            _ = builder.HasIndex(e => new { e.IsDeleted, e.DeletedAt })
-                   .HasFilter("IsDeleted = 1");
+            builder.HasPurgeIndex();
         }
     }
 }

@@ -46,8 +46,7 @@ namespace EchoPlay.Data.Configurations
                    .HasFilter("IsDeleted = 0 AND LastPlayedAt IS NOT NULL");
 
             // Purge-Index für DatabaseMaintenanceService
-            _ = builder.HasIndex(p => new { p.IsDeleted, p.DeletedAt })
-                   .HasFilter("IsDeleted = 1");
+            builder.HasPurgeIndex();
         }
     }
 }

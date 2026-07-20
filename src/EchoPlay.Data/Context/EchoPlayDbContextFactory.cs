@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Context
     /// Ermöglicht es den Entity Framework Core Tools (z.B. Migrations), 
     /// den Kontext ohne eine laufende Applikation zu instanziieren.
     /// </summary>
-    public class EchoPlayDbContextFactory : IDesignTimeDbContextFactory<EchoPlayDbContext>
+    public sealed class EchoPlayDbContextFactory : IDesignTimeDbContextFactory<EchoPlayDbContext>
     {
         /// <inheritdoc/>
         public EchoPlayDbContext CreateDbContext(string[] args)

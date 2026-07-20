@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Configurations
     /// <summary>
     /// EF-Core-Konfiguration für Episoden innerhalb einer Hörspielserie.
     /// </summary>
-    public class EpisodeConfiguration : IEntityTypeConfiguration<Episode>
+    internal sealed class EpisodeConfiguration : IEntityTypeConfiguration<Episode>
     {
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<Episode> builder)

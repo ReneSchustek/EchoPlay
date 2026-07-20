@@ -17,7 +17,7 @@ namespace EchoPlay.Data.Services
     /// </summary>
     public sealed class CoverCopyService(
         EchoPlayDbContext context,
-        ILoggerFactory loggerFactory) : ICoverCopyService
+        EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory) : ICoverCopyService
     {
         private readonly EchoPlayDbContext _context = context;
         private readonly ILogger _logger = loggerFactory.CreateLogger("CoverCopyService");

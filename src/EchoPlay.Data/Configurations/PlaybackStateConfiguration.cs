@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Configurations
     /// <summary>
     /// EF-Core-Konfiguration für den Wiedergabestatus einer Episode.
     /// </summary>
-    public class PlaybackStateConfiguration : IEntityTypeConfiguration<PlaybackState>
+    internal sealed class PlaybackStateConfiguration : IEntityTypeConfiguration<PlaybackState>
     {
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<PlaybackState> builder)

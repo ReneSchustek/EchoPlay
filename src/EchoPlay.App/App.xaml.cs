@@ -11,7 +11,7 @@ using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.DependencyInjection;
 using EchoPlay.LocalLibrary.DependencyInjection;
 using EchoPlay.Logger.Core;
-using EchoPlay.Logger.Extensions;
+using EchoPlay.Logger.DependencyInjection;
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Auth;
 using EchoPlay.Spotify.Clients;

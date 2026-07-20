@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Configurations
     /// <summary>
     /// EF-Core-Konfiguration für die SecureSettings-Tabelle.
     /// </summary>
-    public sealed class SecureSettingConfiguration : IEntityTypeConfiguration<SecureSetting>
+    internal sealed class SecureSettingConfiguration : IEntityTypeConfiguration<SecureSetting>
     {
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<SecureSetting> builder)

@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -137,13 +136,13 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void OpenInBrowser()
         {
-            if (string.IsNullOrEmpty(ProviderUrl)) return;
-
-            _ = Process.Start(new ProcessStartInfo
+            // Nur http/https-Links im Browser öffnen – schützt gegen manipulierte
+            // ProviderUrls (z.B. file:// oder Custom-Protocol), die per ShellExecute
+            // sonst beliebige Programme starten könnten.
+            if (!EchoPlay.App.Helpers.SafeUrlLauncher.TryOpenInBrowser(ProviderUrl))
             {
-                FileName = ProviderUrl,
-                UseShellExecute = true
-            });
+                return;
+            }
 
             // Folge als gehört markieren – der Nutzer öffnet die App/Webseite zum Anhören,
             // also gilt sie als gehört. Kann über Kontextmenü rückgängig gemacht werden.

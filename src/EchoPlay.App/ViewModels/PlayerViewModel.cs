@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -11,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using TagLib;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -43,7 +43,7 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das ViewModel und abonniert den <see cref="IPlayerService.StateChanged"/>-Event.
         /// </summary>
         /// <param name="playerService">Zentraler Service für die Audiowiedergabe.</param>
-        /// <param name="scopeFactory">Für Datenbankzugriffe (AppSettings, LastOpenedPlayerFolder).</param>
+        /// <param name="scopeFactory">Für Datenbankzugriffe (AppSettings, LastOpenedPlayerFolder) und den Cover-Loader.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch außerhalb von WinUI zu konstruieren.")]
         public PlayerViewModel(IPlayerService playerService, IServiceScopeFactory scopeFactory)
         {
@@ -458,14 +458,12 @@ namespace EchoPlay.App.ViewModels
         {
             try
             {
-                // Disk-I/O auf Hintergrundthread auslagern – ID3-Tag-Lesen kann bei großen Dateien spürbar sein
-                byte[]? imageData = await Task.Run(() =>
-                {
-                    using TagLib.File tagFile = TagLib.File.Create(filePath);
-                    IPicture[] pictures = tagFile.Tag.Pictures;
-
-                    return pictures.Length > 0 ? pictures[0].Data.Data : null;
-                });
+                // Cover-Extraktion aus dem ID3-Tag ist im LocalCoverLoader gekapselt (inkl.
+                // Hintergrundthread und Fehlerbehandlung). Kein Episodenordner → nur der ID3-Pfad.
+                // Scoped-Service über die ScopeFactory auflösen (analog BackgroundCoverService).
+                using IServiceScope coverScope = _scopeFactory.CreateScope();
+                ILocalCoverLoader coverLoader = coverScope.ServiceProvider.GetRequiredService<ILocalCoverLoader>();
+                byte[]? imageData = await coverLoader.LoadAsync(episodeFolderPath: null, firstTrackPath: filePath);
 
                 if (imageData is null)
                 {

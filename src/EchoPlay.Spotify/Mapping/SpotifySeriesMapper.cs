@@ -25,6 +25,8 @@ namespace EchoPlay.Spotify.Mapping
         /// <returns>Das fachlich bewertete Import-Serienmodell.</returns>
         public async Task<ImportSeries> MapToImportSeriesAsync(SpotifyArtistDto artist, string searchQuery, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(artist);
+
             HoerspielScoreResult scoreResult = await _scorer.ScoreAsync(artist, searchQuery, cancellationToken).ConfigureAwait(false);
 
             return new ImportSeries

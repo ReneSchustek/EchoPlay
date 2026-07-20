@@ -58,45 +58,16 @@ namespace EchoPlay.AppleMusic.Scoring
 
             (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.ArtistId).ConfigureAwait(false);
 
-            List<string> debugParts = [];
+            DebugInfoBuilder debug = new();
+            debug.Add(isKnownSeries, $"Bekannte Serie: '{artistName}'");
+            debug.Add(nameContainsQuery, "Name-Contains-Match");
+            debug.Add(hasNumberVariantMatch, "Zahlwort-Variante");
+            debug.Add(hasExactWordMatch, "Exaktes Wort-Match");
+            debug.Add(hasHoerspielGenre, $"Hörspiel-Genre: '{source.PrimaryGenreName}'");
+            debug.Add(hasHoerspielAlbumStructure, "Hörspiel-Albumstruktur");
+            debug.Add(!hasHoerspielAlbumStructure && !hasAlbums, "Keine Alben");
 
-            if (isKnownSeries)
-            {
-                debugParts.Add($"Bekannte Serie: '{artistName}'");
-            }
-
-            if (nameContainsQuery)
-            {
-                debugParts.Add("Name-Contains-Match");
-            }
-
-            if (hasNumberVariantMatch)
-            {
-                debugParts.Add("Zahlwort-Variante");
-            }
-
-            if (hasExactWordMatch)
-            {
-                debugParts.Add("Exaktes Wort-Match");
-            }
-
-            if (hasHoerspielGenre)
-            {
-                debugParts.Add($"Hörspiel-Genre: '{source.PrimaryGenreName}'");
-            }
-
-            if (hasHoerspielAlbumStructure)
-            {
-                debugParts.Add("Hörspiel-Albumstruktur");
-            }
-            else if (!hasAlbums)
-            {
-                debugParts.Add("Keine Alben");
-            }
-
-            string debugInfo = debugParts.Count > 0
-                ? string.Join("; ", debugParts)
-                : "Keine Indikatoren gefunden";
+            string debugInfo = debug.Build("Keine Indikatoren gefunden");
 
             _logger.Debug(() => $"Hörspiel-Analyse für '{artistName}' abgeschlossen: {debugInfo}");
 

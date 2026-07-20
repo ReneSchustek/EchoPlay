@@ -59,45 +59,16 @@ namespace EchoPlay.Spotify.Scoring
 
             (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.SpotifyArtistId, cancellationToken).ConfigureAwait(false);
 
-            List<string> debugParts = [];
+            DebugInfoBuilder debug = new();
+            debug.Add(hasNegativeMusicGenre, $"Negatives Musikgenre: [{string.Join(", ", source.Genres)}]");
+            debug.Add(isKnownSeries, $"Bekannte Serie: '{source.Name}'");
+            debug.Add(nameContainsQuery, "Name-Contains-Match");
+            debug.Add(hasNumberVariantMatch, "Zahlwort-Variante");
+            debug.Add(hasExactWordMatch, "Exaktes Wort-Match");
+            debug.Add(hasHoerspielAlbumStructure, "Hörspiel-Albumstruktur");
+            debug.Add(!hasHoerspielAlbumStructure && !hasAlbums, "Keine Alben");
 
-            if (hasNegativeMusicGenre)
-            {
-                debugParts.Add($"Negatives Musikgenre: [{string.Join(", ", source.Genres)}]");
-            }
-
-            if (isKnownSeries)
-            {
-                debugParts.Add($"Bekannte Serie: '{source.Name}'");
-            }
-
-            if (nameContainsQuery)
-            {
-                debugParts.Add("Name-Contains-Match");
-            }
-
-            if (hasNumberVariantMatch)
-            {
-                debugParts.Add("Zahlwort-Variante");
-            }
-
-            if (hasExactWordMatch)
-            {
-                debugParts.Add("Exaktes Wort-Match");
-            }
-
-            if (hasHoerspielAlbumStructure)
-            {
-                debugParts.Add("Hörspiel-Albumstruktur");
-            }
-            else if (!hasAlbums)
-            {
-                debugParts.Add("Keine Alben");
-            }
-
-            string debugInfo = debugParts.Count > 0
-                ? string.Join("; ", debugParts)
-                : "Keine Indikatoren gefunden";
+            string debugInfo = debug.Build("Keine Indikatoren gefunden");
 
             _logger.Debug(() => $"Hörspiel-Analyse für '{source.Name}' abgeschlossen: {debugInfo}");
 

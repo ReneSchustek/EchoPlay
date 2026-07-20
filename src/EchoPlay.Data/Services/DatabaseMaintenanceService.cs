@@ -124,46 +124,7 @@ namespace EchoPlay.Data.Services
 
             if (onlineSeriesIds.Count == 0) return;
 
-            List<Guid> episodeIds = await _context.Episodes
-                .IgnoreQueryFilters()
-                .Where(e => onlineSeriesIds.Contains(e.SeriesId))
-                .Select(e => e.Id)
-                .ToListAsync().ConfigureAwait(false);
-
-            if (episodeIds.Count > 0)
-            {
-                _ = await _context.LocalTracks
-                    .IgnoreQueryFilters()
-                    .Where(t => episodeIds.Contains(t.EpisodeId))
-                    .ExecuteDeleteAsync().ConfigureAwait(false);
-
-                _ = await _context.PlaybackStates
-                    .IgnoreQueryFilters()
-                    .Where(ps => episodeIds.Contains(ps.EpisodeId))
-                    .ExecuteDeleteAsync().ConfigureAwait(false);
-            }
-
-            _ = await _context.Episodes
-                .IgnoreQueryFilters()
-                .Where(e => onlineSeriesIds.Contains(e.SeriesId))
-                .ExecuteDeleteAsync().ConfigureAwait(false);
-
-            _ = await _context.Series
-                .IgnoreQueryFilters()
-                .Where(s => onlineSeriesIds.Contains(s.Id))
-                .ExecuteDeleteAsync().ConfigureAwait(false);
-
-            // Cover der gelöschten Online-Episoden und -Serien entfernen
-            if (episodeIds.Count > 0)
-            {
-                _ = await _context.CoverImages
-                    .Where(c => c.EntityType == "Episode" && episodeIds.Contains(c.EntityId))
-                    .ExecuteDeleteAsync().ConfigureAwait(false);
-            }
-
-            _ = await _context.CoverImages
-                .Where(c => c.EntityType == "Series" && onlineSeriesIds.Contains(c.EntityId))
-                .ExecuteDeleteAsync().ConfigureAwait(false);
+            await DeleteSeriesCascadeAsync(onlineSeriesIds).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -196,42 +157,59 @@ namespace EchoPlay.Data.Services
 
             if (localOnlySeriesIds.Count > 0)
             {
-                List<Guid> episodeIds = await _context.Episodes
-                    .IgnoreQueryFilters()
-                    .Where(e => localOnlySeriesIds.Contains(e.SeriesId))
-                    .Select(e => e.Id)
-                    .ToListAsync().ConfigureAwait(false);
+                // LocalTracks wurden oben bereits vollständig gelöscht; der (idempotente)
+                // LocalTracks-Delete in der Kaskade ist hier ein No-Op.
+                await DeleteSeriesCascadeAsync(localOnlySeriesIds).ConfigureAwait(false);
+            }
+        }
 
-                if (episodeIds.Count > 0)
-                {
-                    _ = await _context.PlaybackStates
-                        .IgnoreQueryFilters()
-                        .Where(ps => episodeIds.Contains(ps.EpisodeId))
-                        .ExecuteDeleteAsync().ConfigureAwait(false);
-                }
+        /// <summary>
+        /// Löscht die angegebenen Serien und alle abhängigen Daten in FK-korrekter Reihenfolge:
+        /// LocalTracks → PlaybackStates → Episodes → Series → CoverImages (Episode + Series).
+        /// </summary>
+        /// <param name="seriesIds">Die IDs der zu löschenden Serien.</param>
+        private async Task DeleteSeriesCascadeAsync(IReadOnlyList<Guid> seriesIds)
+        {
+            List<Guid> episodeIds = await _context.Episodes
+                .IgnoreQueryFilters()
+                .Where(e => seriesIds.Contains(e.SeriesId))
+                .Select(e => e.Id)
+                .ToListAsync().ConfigureAwait(false);
 
-                _ = await _context.Episodes
+            if (episodeIds.Count > 0)
+            {
+                _ = await _context.LocalTracks
                     .IgnoreQueryFilters()
-                    .Where(e => localOnlySeriesIds.Contains(e.SeriesId))
+                    .Where(t => episodeIds.Contains(t.EpisodeId))
                     .ExecuteDeleteAsync().ConfigureAwait(false);
 
-                _ = await _context.Series
+                _ = await _context.PlaybackStates
                     .IgnoreQueryFilters()
-                    .Where(s => localOnlySeriesIds.Contains(s.Id))
-                    .ExecuteDeleteAsync().ConfigureAwait(false);
-
-                // Cover der gelöschten lokalen Episoden und Serien entfernen
-                if (episodeIds.Count > 0)
-                {
-                    _ = await _context.CoverImages
-                        .Where(c => c.EntityType == "Episode" && episodeIds.Contains(c.EntityId))
-                        .ExecuteDeleteAsync().ConfigureAwait(false);
-                }
-
-                _ = await _context.CoverImages
-                    .Where(c => c.EntityType == "Series" && localOnlySeriesIds.Contains(c.EntityId))
+                    .Where(ps => episodeIds.Contains(ps.EpisodeId))
                     .ExecuteDeleteAsync().ConfigureAwait(false);
             }
+
+            _ = await _context.Episodes
+                .IgnoreQueryFilters()
+                .Where(e => seriesIds.Contains(e.SeriesId))
+                .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            _ = await _context.Series
+                .IgnoreQueryFilters()
+                .Where(s => seriesIds.Contains(s.Id))
+                .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            // Cover der gelöschten Episoden und Serien entfernen
+            if (episodeIds.Count > 0)
+            {
+                _ = await _context.CoverImages
+                    .Where(c => c.EntityType == "Episode" && episodeIds.Contains(c.EntityId))
+                    .ExecuteDeleteAsync().ConfigureAwait(false);
+            }
+
+            _ = await _context.CoverImages
+                .Where(c => c.EntityType == "Series" && seriesIds.Contains(c.EntityId))
+                .ExecuteDeleteAsync().ConfigureAwait(false);
         }
     }
 }

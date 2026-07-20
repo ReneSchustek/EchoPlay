@@ -21,8 +21,8 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class OnlineSubActionsTests
     {
-        // Stabile Test-IDs fuer "unbekannte" Series-IDs in Negativ-Tests.
-        // Deterministisch statt Guid.NewGuid(): unabhaengig vom Lauf reproduzierbar.
+        // Stabile Test-IDs für "unbekannte" Series-IDs in Negativ-Tests.
+        // Deterministisch statt Guid.NewGuid(): unabhängig vom Lauf reproduzierbar.
         private static readonly Guid UnknownSeriesId = new("00000000-0000-0000-0000-deadbeef0001");
         private static readonly Guid UnknownRemoveId = new("00000000-0000-0000-0000-deadbeef0002");
 

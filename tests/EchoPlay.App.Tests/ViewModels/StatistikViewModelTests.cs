@@ -9,8 +9,8 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests fuer <see cref="StatistikViewModel"/>. Fokus: keine N+1-Queries beim
-    /// Episodenzaehler-Aufbau (siehe Brief 324).
+    /// Tests für <see cref="StatistikViewModel"/>. Fokus: keine N+1-Queries beim
+    /// Episodenzähler-Aufbau.
     /// </summary>
     public sealed class StatistikViewModelTests
     {
@@ -31,7 +31,7 @@ namespace EchoPlay.App.Tests.ViewModels
             StatistikViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            // Brief 324 — keine N+1: GetBySeriesIdAsync darf nicht in der Schleife laufen.
+            // Keine N+1: GetBySeriesIdAsync darf nicht in der Schleife laufen.
             Assert.Equal(0, episodeService.GetBySeriesIdAsyncCallCount);
             // Statt dessen: ein einziger GroupBy-Server-Aufruf.
             Assert.Equal(1, episodeService.GetEpisodeCountsForSeriesAsyncCallCount);

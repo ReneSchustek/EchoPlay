@@ -9,7 +9,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests fuer den Lifecycle-CTS-Mechanismus in <see cref="DashboardViewModel"/>:
+    /// Tests für den Lifecycle-CTS-Mechanismus in <see cref="DashboardViewModel"/>:
     /// Dispose stoppt laufende Service-Calls, ein Re-LoadAsync canclet den
     /// vorigen Token sauber.
     /// </summary>
@@ -53,7 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task LoadAsync_Twice_CancelsPreviousToken()
         {
             // Zwei unmittelbar aufeinanderfolgende LoadAsync-Aufrufe: der zweite cancelt
-            // den ersten und legt einen frischen CTS an. Test darf nicht haengenbleiben.
+            // den ersten und legt einen frischen CTS an. Test darf nicht hängenbleiben.
             DashboardViewModel vm = BuildViewModel();
 
             Task first = vm.LoadAsync();

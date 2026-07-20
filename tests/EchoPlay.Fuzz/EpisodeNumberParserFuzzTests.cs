@@ -5,9 +5,9 @@ using FsCheck.Xunit;
 namespace EchoPlay.Fuzz
 {
     /// <summary>
-    /// Property-based-Fuzz-Tests fuer <see cref="EpisodeNumberParser.Extract"/>.
+    /// Property-based-Fuzz-Tests für <see cref="EpisodeNumberParser.Extract"/>.
     /// Property: Egal welcher String als Input — der Parser darf nur null oder
-    /// einen Wert in (0, 1000) zurueckgeben und nie eine Exception werfen.
+    /// einen Wert in (0, 1000) zurückgeben und nie eine Exception werfen.
     /// </summary>
     public sealed class EpisodeNumberParserFuzzTests
     {

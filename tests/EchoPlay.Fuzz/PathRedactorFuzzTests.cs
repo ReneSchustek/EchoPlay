@@ -5,9 +5,9 @@ using FsCheck.Xunit;
 namespace EchoPlay.Fuzz
 {
     /// <summary>
-    /// Property-based-Fuzz-Tests fuer <see cref="PathRedactor.Redact"/>.
+    /// Property-based-Fuzz-Tests für <see cref="PathRedactor.Redact"/>.
     /// Property: Egal welcher Eingabe-String — der Redactor darf nicht abstuerzen
-    /// und gibt einen nicht-leeren String zurueck. Der Datei-/Verzeichnisname
+    /// und gibt einen nicht-leeren String zurück. Der Datei-/Verzeichnisname
     /// muss redacted erscheinen (kein voller Original-Pfad mehr).
     /// </summary>
     public sealed class PathRedactorFuzzTests

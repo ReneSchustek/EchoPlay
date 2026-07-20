@@ -30,7 +30,9 @@ namespace EchoPlay.App.Services
         /// </summary>
         internal ErrorDialogService(Func<XamlRoot?> xamlRootProvider)
         {
-            _xamlRootProvider = xamlRootProvider ?? throw new ArgumentNullException(nameof(xamlRootProvider));
+            ArgumentNullException.ThrowIfNull(xamlRootProvider);
+
+            _xamlRootProvider = xamlRootProvider;
         }
 
         /// <inheritdoc />

@@ -38,6 +38,8 @@ namespace EchoPlay.Spotify.Services
             Justification = "Einzelne Bewertungsfehler aus der Scoring-/Mapper-Pipeline dürfen die Gesamtsuche nicht abbrechen; der Mapper kombiniert mehrere Heuristiken und die konkreten Fehlertypen sind nicht vollständig vorhersehbar.")]
         public async Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:Search");
 
             _logger.Debug(() => $"Spotify-Seriensuche gestartet: '{query}'.");

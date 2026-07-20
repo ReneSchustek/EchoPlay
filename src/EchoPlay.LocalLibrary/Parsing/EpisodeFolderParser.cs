@@ -64,6 +64,8 @@ namespace EchoPlay.LocalLibrary.Parsing
         /// <returns><c>true</c> wenn das Muster auf den Ordnernamen passt, sonst <c>false</c>.</returns>
         public bool TryParse(string folderName, out int? number, out string? title)
         {
+            ArgumentNullException.ThrowIfNull(folderName);
+
             number = null;
             title = null;
 

@@ -1,4 +1,5 @@
 using EchoPlay.Data.Context;
+using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -203,12 +204,12 @@ namespace EchoPlay.Data.Services
             if (episodeIds.Count > 0)
             {
                 _ = await _context.CoverImages
-                    .Where(c => c.EntityType == "Episode" && episodeIds.Contains(c.EntityId))
+                    .Where(c => c.EntityType == CoverEntityTypes.Episode && episodeIds.Contains(c.EntityId))
                     .ExecuteDeleteAsync().ConfigureAwait(false);
             }
 
             _ = await _context.CoverImages
-                .Where(c => c.EntityType == "Series" && seriesIds.Contains(c.EntityId))
+                .Where(c => c.EntityType == CoverEntityTypes.Series && seriesIds.Contains(c.EntityId))
                 .ExecuteDeleteAsync().ConfigureAwait(false);
         }
     }

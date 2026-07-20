@@ -26,7 +26,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = "Hörspiele"
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "TKKG");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "TKKG", TestContext.Current.CancellationToken);
 
             Assert.True(result.IsKnownSeries);
         }
@@ -46,7 +46,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = null
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie ABC");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie ABC", TestContext.Current.CancellationToken);
 
             Assert.True(result.NameContainsQuery);
         }
@@ -66,7 +66,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = null
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Die 3 Detektive");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Die 3 Detektive", TestContext.Current.CancellationToken);
 
             Assert.True(result.HasNumberVariantMatch);
         }
@@ -86,7 +86,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = null
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie Abenteuer");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Serie Abenteuer", TestContext.Current.CancellationToken);
 
             Assert.True(result.HasExactWordMatch);
         }
@@ -106,7 +106,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = "Hörspiele"
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Irgendein Künstler");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Irgendein Künstler", TestContext.Current.CancellationToken);
 
             Assert.True(result.HasHoerspielGenre);
         }
@@ -126,7 +126,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = "Pop"
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Popband XY");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Popband XY", TestContext.Current.CancellationToken);
 
             Assert.False(result.HasHoerspielGenre);
         }
@@ -150,7 +150,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = null
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Hörspielserie XY");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Hörspielserie XY", TestContext.Current.CancellationToken);
 
             Assert.True(result.HasHoerspielAlbumStructure);
             Assert.True(result.HasAlbums);
@@ -171,7 +171,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = null
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Ohne Alben");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Ohne Alben", TestContext.Current.CancellationToken);
 
             Assert.False(result.HasAlbums);
             Assert.False(result.HasHoerspielAlbumStructure);
@@ -192,7 +192,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
                 PrimaryGenreName = "Kinder und Jugend"
             };
 
-            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Kinderserie XY");
+            AppleMusicHoerspielAnalysis result = await analyzer.AnalyzeAsync(artist, "Kinderserie XY", TestContext.Current.CancellationToken);
 
             Assert.True(result.HasHoerspielGenre);
         }

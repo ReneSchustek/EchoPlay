@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Services;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -193,10 +194,7 @@ namespace EchoPlay.App.ViewModels
         {
             bool newValue = !_isFavorite;
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-
-            await seriesService.SetFavoriteAsync(SeriesId, newValue);
+            await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, SeriesId, newValue);
             IsFavorite = newValue;
         }
     }

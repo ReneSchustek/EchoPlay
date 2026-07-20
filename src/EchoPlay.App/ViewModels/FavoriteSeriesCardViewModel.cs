@@ -88,10 +88,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-
-            await seriesService.SetFavoriteAsync(SeriesId, false);
+            await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, SeriesId, false);
             RemovedFromFavorites?.Invoke(SeriesId);
         }
     }

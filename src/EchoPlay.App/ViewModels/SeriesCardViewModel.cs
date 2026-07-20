@@ -293,10 +293,7 @@ namespace EchoPlay.App.ViewModels
         {
             bool newValue = !_isFavorite;
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-
-            await seriesService.SetFavoriteAsync(Id, newValue);
+            await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, Id, newValue);
             IsFavorite = newValue;
         }
     }

@@ -108,8 +108,8 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                 // Zielordnernamen generieren
                 string targetFolderName = episodeNumber.HasValue
-                    ? $"{episodeNumber.Value:D3} - {SanitizeFolderName(title)}"
-                    : SanitizeFolderName(title);
+                    ? $"{episodeNumber.Value:D3} - {EchoPlay.Core.PathSanitizer.SanitizeSegment(title)}"
+                    : EchoPlay.Core.PathSanitizer.SanitizeSegment(title);
 
                 string targetFolderPath = Path.Combine(seriesFolderPath, targetFolderName);
                 _ = targetFolders.Add(targetFolderName);
@@ -355,19 +355,6 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// Entfernt ungültige Zeichen aus einem Ordnernamen.
         /// Windows erlaubt keine Zeichen wie <c>\ / : * ? " &lt; &gt; |</c> in Ordnernamen.
         /// </summary>
-        private static string SanitizeFolderName(string name)
-        {
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitized = name;
-
-            foreach (char c in invalidChars)
-            {
-                sanitized = sanitized.Replace(c, '_');
-            }
-
-            return sanitized.Trim();
-        }
-
         /// <summary>Erzeugt eine leere Vorschau für den angegebenen Pfad.</summary>
         private static RestructurePreview EmptyPreview(string seriesFolderPath)
         {

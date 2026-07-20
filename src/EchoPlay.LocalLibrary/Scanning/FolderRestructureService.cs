@@ -331,10 +331,6 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
         }
 
-        /// <summary>
-        /// Entfernt ungültige Zeichen aus einem Ordnernamen.
-        /// Windows erlaubt keine Zeichen wie <c>\ / : * ? " &lt; &gt; |</c> in Ordnernamen.
-        /// </summary>
         /// <summary>Erzeugt eine leere Vorschau für den angegebenen Pfad.</summary>
         private static RestructurePreview EmptyPreview(string seriesFolderPath)
         {

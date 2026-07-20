@@ -4,7 +4,7 @@ namespace EchoPlay.LocalLibrary.Metadata
     /// Liest Metadaten aus lokalen Audiodateien via TagLibSharp.
     /// Unterstützt alle Formate, die TagLibSharp erkennt (.mp3, .m4a, .flac, .ogg u.a.).
     /// </summary>
-    public sealed class Mp3MetadataReader : IMp3MetadataReader
+    public sealed class AudioMetadataReader : IAudioMetadataReader
     {
         /// <summary>
         /// Liest Abspieldauer und Tracknummer aus der angegebenen Audiodatei.

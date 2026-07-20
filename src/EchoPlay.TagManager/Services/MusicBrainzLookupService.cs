@@ -60,16 +60,16 @@ namespace EchoPlay.TagManager.Services
                 using HttpResponseMessage response = await _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken).ConfigureAwait(false);
                 _ = response.EnsureSuccessStatusCode();
 
-                MusicBrainzReleaseSearchResponse? dto = await response.Content
+                MusicBrainzReleaseSearchResponse? searchResponse = await response.Content
                     .ReadFromJsonAsync<MusicBrainzReleaseSearchResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                if (dto is null || dto.Releases.Count == 0)
+                if (searchResponse is null || searchResponse.Releases.Count == 0)
                 {
                     _logger.Info("Keine Ergebnisse für Suche: {Query}", query);
                     return [];
                 }
 
-                List<TagLookupResult> results = dto.Releases
+                List<TagLookupResult> results = searchResponse.Releases
                     .Select(MapToTagLookupResult)
                     .ToList();
 

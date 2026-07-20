@@ -30,7 +30,7 @@ namespace EchoPlay.App.Tests.Services
             FakeLocalTrackDataService trackService,
             FakeLocalLibraryScanner scanner,
             FakeTrackMatcher trackMatcher,
-            FakeMp3MetadataReader metadataReader)
+            FakeAudioMetadataReader metadataReader)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.Services
             _ = services.AddScoped<IScanOrchestrator>(_ => new FakeScanOrchestrator(scanner));
             _ = services.AddScoped<ILocalCoverService>(_ => new FakeLocalCoverService());
             _ = services.AddScoped<ITrackMatcher>(_ => trackMatcher);
-            _ = services.AddScoped<IMp3MetadataReader>(_ => metadataReader);
+            _ = services.AddScoped<IAudioMetadataReader>(_ => metadataReader);
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
 
             _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
@@ -74,7 +74,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner([]),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -100,7 +100,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner([]),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -135,7 +135,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -170,7 +170,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -223,7 +223,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -277,7 +277,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: trackService,
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -339,7 +339,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -393,7 +393,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: trackService,
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -442,7 +442,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -475,7 +475,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: scanner,
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             int announcedCount = 0;
             Progress<Series> progress = new(_ => announcedCount++);
@@ -522,7 +522,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -569,7 +569,7 @@ namespace EchoPlay.App.Tests.Services
                 trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
                 trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeMp3MetadataReader());
+                metadataReader: new FakeAudioMetadataReader());
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 

@@ -16,7 +16,7 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
         /// <summary>
         /// Registriert alle Dienste des <c>EchoPlay.LocalLibrary</c>-Projekts als Scoped.
         /// Eingeschlossen: <see cref="ILocalLibraryScanner"/>, <see cref="IScanOrchestrator"/>,
-        /// <see cref="TrackMatcher"/>, <see cref="Mp3MetadataReader"/>, <see cref="CoverService"/>,
+        /// <see cref="TrackMatcher"/>, <see cref="AudioMetadataReader"/>, <see cref="CoverService"/>,
         /// <see cref="ILocalCoverLoader"/>, <see cref="ILocalCoverService"/>,
         /// <see cref="ICoverSearchService"/> und <see cref="IEpisodePatternAnalyzer"/>.
         /// </summary>
@@ -27,7 +27,7 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
             _ = services.AddScoped<ILocalLibraryScanner, LocalLibraryScanner>();
             _ = services.AddScoped<IScanOrchestrator, ScanOrchestrator>();
             _ = services.AddScoped<ITrackMatcher, TrackMatcher>();
-            _ = services.AddScoped<IMp3MetadataReader, Mp3MetadataReader>();
+            _ = services.AddScoped<IAudioMetadataReader, AudioMetadataReader>();
             _ = services.AddScoped<ITagTitleReader, TagTitleReader>();
             _ = services.AddScoped<ILocalCoverLoader, LocalCoverLoader>();
             _ = services.AddScoped<ILocalCoverService, LocalCoverService>();

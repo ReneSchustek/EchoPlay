@@ -317,7 +317,7 @@ namespace EchoPlay.App.Services
         {
             IEpisodeDataService episodeService = sp.GetRequiredService<IEpisodeDataService>();
             ILocalTrackDataService trackService = sp.GetRequiredService<ILocalTrackDataService>();
-            IMp3MetadataReader metadataReader = sp.GetRequiredService<IMp3MetadataReader>();
+            IAudioMetadataReader metadataReader = sp.GetRequiredService<IAudioMetadataReader>();
             ITrackMatcher trackMatcher = sp.GetRequiredService<ITrackMatcher>();
 
             int episodesUpdated = 0;
@@ -391,7 +391,7 @@ namespace EchoPlay.App.Services
             IReadOnlyList<LocalEpisodeScan> episodeScans,
             IEpisodeDataService episodeService,
             ILocalTrackDataService trackService,
-            IMp3MetadataReader metadataReader,
+            IAudioMetadataReader metadataReader,
             CancellationToken cancellationToken)
         {
             List<Episode> newEpisodes = new(episodeScans.Count);
@@ -439,7 +439,7 @@ namespace EchoPlay.App.Services
             Guid episodeId,
             IReadOnlyList<string> trackPaths,
             ILocalTrackDataService trackService,
-            IMp3MetadataReader metadataReader,
+            IAudioMetadataReader metadataReader,
             CancellationToken cancellationToken = default)
         {
             List<LocalTrack> tracks = await Task.Run(() =>

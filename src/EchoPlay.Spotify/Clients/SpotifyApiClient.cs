@@ -56,16 +56,7 @@ namespace EchoPlay.Spotify.Clients
 
             try
             {
-                using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken), cancellationToken).ConfigureAwait(false);
-
-                // Transport- und Authentifizierungsfehler können hier
-                // nicht fachlich sinnvoll behandelt werden und werden
-                // daher direkt weitergegeben.
-                _ = response.EnsureSuccessStatusCode();
-
-                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.Relative, cancellationToken).ConfigureAwait(false);
 
                 JsonElement items =
                     document.RootElement.GetProperty("artists").GetProperty("items");
@@ -102,10 +93,7 @@ namespace EchoPlay.Spotify.Clients
                             .Select(g => g!)],
 
                         // Für EchoPlay genügt ein einzelnes Bild.
-                        ImageUrl =
-                            item.TryGetProperty("images", out JsonElement images) && images.GetArrayLength() > 0
-                                ? images[0].GetProperty("url").GetString()
-                                : null
+                        ImageUrl = TryGetFirstImageUrl(item)
                     });
                 }
 
@@ -136,13 +124,7 @@ namespace EchoPlay.Spotify.Clients
 
             try
             {
-                using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken), cancellationToken).ConfigureAwait(false);
-
-                _ = response.EnsureSuccessStatusCode();
-
-                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.Relative, cancellationToken).ConfigureAwait(false);
 
                 JsonElement items =
                     document.RootElement.GetProperty("albums").GetProperty("items");
@@ -168,9 +150,7 @@ namespace EchoPlay.Spotify.Clients
                         artistName = artists[0].TryGetProperty("name", out JsonElement an) ? an.GetString() : null;
                     }
 
-                    string? imageUrl = item.TryGetProperty("images", out JsonElement images) && images.GetArrayLength() > 0
-                        ? images[0].GetProperty("url").GetString()
-                        : null;
+                    string? imageUrl = TryGetFirstImageUrl(item);
 
                     int totalTracks = item.TryGetProperty("total_tracks", out JsonElement tt) ? tt.GetInt32() : 0;
 
@@ -227,12 +207,7 @@ namespace EchoPlay.Spotify.Clients
                 {
                     // Die Pagination-URL aus "next" ist absolut, der Startwert ist relativ –
                     // UriKind.RelativeOrAbsolute deckt beide Fälle im Loop ab.
-                    using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                        () => _httpClient.GetAsync(new Uri(requestUri, UriKind.RelativeOrAbsolute), cancellationToken), cancellationToken).ConfigureAwait(false);
-                    _ = response.EnsureSuccessStatusCode();
-
-                    using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                    using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.RelativeOrAbsolute, cancellationToken).ConfigureAwait(false);
 
                     JsonElement items = document.RootElement.GetProperty("items");
 
@@ -257,10 +232,7 @@ namespace EchoPlay.Spotify.Clients
                         // Das Veröffentlichungsdatum kann unterschiedlich genau sein
                         // (Jahr, Monat oder Tag) und wird daher defensiv geparst.
                         // Cover-URL: erstes Bild im "images"-Array (höchste Auflösung)
-                        string? imageUrl = item.TryGetProperty("images", out JsonElement imgs)
-                                           && imgs.GetArrayLength() > 0
-                            ? imgs[0].GetProperty("url").GetString()
-                            : null;
+                        string? imageUrl = TryGetFirstImageUrl(item);
 
                         albums.Add(new SpotifyAlbumDto
                         {
@@ -316,12 +288,7 @@ namespace EchoPlay.Spotify.Clients
 
             try
             {
-                using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                    () => _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken), cancellationToken).ConfigureAwait(false);
-                _ = response.EnsureSuccessStatusCode();
-
-                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.Relative, cancellationToken).ConfigureAwait(false);
 
                 JsonElement items = document.RootElement.GetProperty("items");
 
@@ -369,5 +336,40 @@ namespace EchoPlay.Spotify.Clients
                 throw;
             }
         }
+
+        /// <summary>
+        /// Führt einen GET-Request mit Retry aus, stellt den Erfolg sicher und parst die
+        /// Antwort in ein <see cref="JsonDocument"/>. Der Aufrufer ist für die Entsorgung
+        /// des zurückgegebenen Dokuments verantwortlich (<c>using</c>).
+        /// </summary>
+        /// <param name="requestUri">Die relative oder absolute Anfrage-URL.</param>
+        /// <param name="uriKind">Die Art der URL (relativ, absolut oder beides).</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
+        /// <returns>Das geparste JSON-Dokument der Antwort.</returns>
+        private async Task<JsonDocument> SendAndParseAsync(string requestUri, UriKind uriKind, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
+                () => _httpClient.GetAsync(new Uri(requestUri, uriKind), cancellationToken), cancellationToken).ConfigureAwait(false);
+
+            // Transport- und Authentifizierungsfehler können hier nicht fachlich sinnvoll
+            // behandelt werden und werden daher direkt weitergegeben.
+            _ = response.EnsureSuccessStatusCode();
+
+            // JsonDocument.ParseAsync puffert den gesamten Stream, daher darf der Stream
+            // nach dem Parsen entsorgt werden – das Dokument bleibt gültig.
+            using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Liefert die URL des ersten Bildes aus dem <c>images</c>-Array eines Spotify-Objekts.
+        /// Für EchoPlay genügt ein einzelnes Cover (höchste Auflösung zuerst).
+        /// </summary>
+        /// <param name="item">Das Spotify-JSON-Objekt (Künstler oder Album).</param>
+        /// <returns>Die Bild-URL oder <c>null</c>, wenn kein Bild vorhanden ist.</returns>
+        private static string? TryGetFirstImageUrl(JsonElement item) =>
+            item.TryGetProperty("images", out JsonElement images) && images.GetArrayLength() > 0
+                ? images[0].GetProperty("url").GetString()
+                : null;
     }
 }

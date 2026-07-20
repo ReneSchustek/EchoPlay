@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -32,7 +33,7 @@ namespace EchoPlay.Data.Services
         {
             return await _context.CoverImages
 
-                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
+                .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -81,7 +82,7 @@ namespace EchoPlay.Data.Services
 
             CoverImage? existing = await _context.CoverImages
                 .AsTracking()
-                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
+                .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
                 .ConfigureAwait(false);
 
             if (existing is not null)
@@ -119,7 +120,7 @@ namespace EchoPlay.Data.Services
 
                     CoverImage? retry = await _context.CoverImages
                         .AsTracking()
-                        .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
+                        .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
                         .ConfigureAwait(false);
 
                     if (retry is not null)
@@ -145,7 +146,7 @@ namespace EchoPlay.Data.Services
         {
             CoverImage? existing = await _context.CoverImages
                 .AsTracking()
-                .FirstOrDefaultAsync(c => c.EntityType == entityType && c.EntityId == entityId, cancellationToken)
+                .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
                 .ConfigureAwait(false);
 
             if (existing is not null)
@@ -203,7 +204,7 @@ namespace EchoPlay.Data.Services
             // Übersetzungsproblemen führen, daher wird die Länge per Projektion ermittelt.
             int? length = await _context.CoverImages
 
-                .Where(c => c.EntityType == entityType && c.EntityId == entityId)
+                .Where(ByEntity(entityType, entityId))
                 .Select(c => (int?)c.ImageData.Length)
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -251,6 +252,16 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public Task<int> CountAsync(CancellationToken cancellationToken = default) => _context.CoverImages.CountAsync(cancellationToken);
+
+        /// <summary>
+        /// Prädikat für den Einzel-Lookup eines Covers über EntityType und EntityId.
+        /// Zentralisiert die sonst mehrfach wiederholte Filterbedingung.
+        /// </summary>
+        /// <param name="entityType">Der Entitätstyp (z.B. "Episode", "Series").</param>
+        /// <param name="entityId">Die ID der Entität.</param>
+        /// <returns>Ein EF-übersetzbares Filterprädikat.</returns>
+        private static Expression<Func<CoverImage, bool>> ByEntity(string entityType, Guid entityId) =>
+            cover => cover.EntityType == entityType && cover.EntityId == entityId;
 
         /// <summary>
         /// Berechnet den SHA-256-Hash der Bilddaten als Hex-String (64 Zeichen).

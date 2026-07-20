@@ -218,13 +218,11 @@ namespace EchoPlay.Data.Services
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"DB:Series:Delete:{id}");
 
             Series? series = await _context.Series
-                .AsTracking()
-                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken).ConfigureAwait(false);
+                .LoadTrackedByIdOrWarnAsync(_logger, id, "Serie", "Soft-Delete", cancellationToken).ConfigureAwait(false);
 
-            if (series == null)
+            if (series is null)
             {
                 // Wenn die Serie nicht existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning("Serie mit ID '{SeriesId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 
@@ -253,15 +251,8 @@ namespace EchoPlay.Data.Services
                         .Where(state => episodeIds.Contains(state.EpisodeId))
                         .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-                foreach (Episode episode in episodes)
-                {
-                    episode.MarkAsDeleted(EntityClock.Current.UtcNow);
-                }
-
-                foreach (PlaybackState playbackState in playbackStates)
-                {
-                    playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
-                }
+                episodes.MarkRangeDeleted();
+                playbackStates.MarkRangeDeleted();
 
                 _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

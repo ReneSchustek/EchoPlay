@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.IO;
 using EchoPlay.LocalLibrary.Parsing;
 using System.Collections.Generic;
 using System.IO;
@@ -145,20 +146,7 @@ namespace EchoPlay.LocalLibrary.Analysis
             hasFlatSeries = false;
             List<string> names = [];
 
-            string[] seriesFolders;
-
-            try
-            {
-                seriesFolders = Directory.GetDirectories(libraryRootPath);
-            }
-            catch (IOException)
-            {
-                return names;
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                return names;
-            }
+            string[] seriesFolders = SafeFileSystem.EnumerateDirectories(libraryRootPath);
 
             // Stichprobe begrenzen – bei >20 Serien wird das Ergebnis nicht genauer, aber langsamer
             foreach (string seriesFolder in seriesFolders.Take(MaxSeriesSampleCount))
@@ -211,48 +199,24 @@ namespace EchoPlay.LocalLibrary.Analysis
         {
             List<string> names = [];
 
-            string[] seriesFolders;
-
-            try
-            {
-                seriesFolders = Directory.GetDirectories(libraryRootPath);
-            }
-            catch (IOException)
-            {
-                return names;
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                return names;
-            }
+            string[] seriesFolders = SafeFileSystem.EnumerateDirectories(libraryRootPath);
 
             foreach (string seriesFolder in seriesFolders.Take(MaxSeriesSampleCount))
             {
-                try
+                // Nur Ordner ohne Unterordner sind flache Serien
+                if (SafeFileSystem.EnumerateDirectories(seriesFolder).Length > 0)
                 {
-                    // Nur Ordner ohne Unterordner sind flache Serien
-                    if (Directory.GetDirectories(seriesFolder).Length > 0)
-                    {
-                        continue;
-                    }
-
-                    foreach (string file in Directory.GetFiles(seriesFolder).Where(IsAudioFile))
-                    {
-                        string? nameWithoutExt = Path.GetFileNameWithoutExtension(file);
-
-                        if (nameWithoutExt is not null)
-                        {
-                            names.Add(nameWithoutExt);
-                        }
-                    }
+                    continue;
                 }
-                catch (IOException)
+
+                foreach (string file in SafeFileSystem.EnumerateFiles(seriesFolder).Where(IsAudioFile))
                 {
-                    // Nicht lesbare Ordner ohne Abbruch überspringen
-                }
-                catch (System.UnauthorizedAccessException)
-                {
-                    // Zugriff verweigert – Ordner überspringen
+                    string? nameWithoutExt = Path.GetFileNameWithoutExtension(file);
+
+                    if (nameWithoutExt is not null)
+                    {
+                        names.Add(nameWithoutExt);
+                    }
                 }
             }
 
@@ -264,18 +228,7 @@ namespace EchoPlay.LocalLibrary.Analysis
         /// </summary>
         private static bool HasAudioFiles(string folderPath)
         {
-            try
-            {
-                return Directory.GetFiles(folderPath).Any(IsAudioFile);
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-                return false;
-            }
+            return SafeFileSystem.EnumerateFiles(folderPath).Any(IsAudioFile);
         }
 
         /// <summary>

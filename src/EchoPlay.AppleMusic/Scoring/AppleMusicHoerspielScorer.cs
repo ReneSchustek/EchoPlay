@@ -1,7 +1,7 @@
+using System.Globalization;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Core.Scoring;
 using EchoPlay.Logger.Abstractions;
-using EchoPlay.Logger.Scoping;
 using Microsoft.Extensions.Options;
 
 namespace EchoPlay.AppleMusic.Scoring
@@ -9,17 +9,16 @@ namespace EchoPlay.AppleMusic.Scoring
     /// <summary>
     /// Apple-Music-spezifische Implementierung der fachlichen Hörspiel-Bewertung.
     /// Der Scorer enthält ausschließlich Arithmetik und Entscheidungslogik.
-    /// Die eigentliche Analyse wird an den <see cref="AppleMusicHoerspielAnalyzer"/> delegiert.
+    /// Die eigentliche Analyse wird an den <see cref="AppleMusicHoerspielAnalyzer"/> delegiert;
+    /// das Score-Gerüst (Cache, Logging) stammt aus <see cref="HoerspielScorerBase{TSource}"/>.
     /// Seit dem Wechsel auf die iTunes Search API wird zusätzlich das Genre als positiver Indikator genutzt.
     /// Thread-Safety: Alle Felder sind <c>readonly</c>, der gemeinsame <see cref="HoerspielDecisionCache"/>
     /// ist thread-safe. Instanzen dürfen parallel von mehreren Scopes genutzt werden.
     /// </summary>
-    internal sealed class AppleMusicHoerspielScorer : IHoerspielScorer<ITunesArtistDto>
+    internal sealed class AppleMusicHoerspielScorer : HoerspielScorerBase<ITunesArtistDto>
     {
         private readonly AppleMusicHoerspielAnalyzer _analyzer;
         private readonly AppleMusicHoerspielSettings _settings;
-        private readonly HoerspielDecisionCache _cache;
-        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Scorer mit Analyzer, Einstellungen, Cache und Logger.
@@ -33,49 +32,31 @@ namespace EchoPlay.AppleMusic.Scoring
             IOptions<AppleMusicHoerspielSettings> options,
             HoerspielDecisionCache cache,
             ILoggerFactory loggerFactory)
+            : base(cache, loggerFactory.CreateLogger("AppleMusicHoerspielScorer"))
         {
             _analyzer = analyzer;
             _settings = options.Value;
-            _cache = cache;
-            _logger = loggerFactory.CreateLogger("AppleMusicHoerspielScorer");
         }
 
-        /// <summary>
-        /// Bewertet einen iTunes-Künstler asynchron hinsichtlich seiner Eignung als Hörspiel.
-        /// </summary>
-        /// <param name="source">Der iTunes-Künstler.</param>
-        /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
-        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
-        /// <returns>Das Ergebnis der Hörspiel-Bewertung.</returns>
-        public async Task<HoerspielScoreResult> ScoreAsync(
+        /// <inheritdoc/>
+        protected override string ProviderName => "AppleMusic";
+
+        /// <inheritdoc/>
+        protected override string GetArtistId(ITunesArtistDto source) =>
+            source.ArtistId.ToString(CultureInfo.InvariantCulture);
+
+        /// <inheritdoc/>
+        protected override string GetArtistName(ITunesArtistDto source) => source.ArtistName;
+
+        /// <inheritdoc/>
+        protected override async Task<HoerspielScoreResult> AnalyzeAndEvaluateAsync(
             ITunesArtistDto source,
+            string artistId,
             string searchQuery,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
-            string artistId = source.ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-            using LogScope scope = _logger.BeginScope($"Scoring:AppleMusic:{artistId}");
-
-            // Cache-Prüfung: bereits bewertete Künstler nicht erneut analysieren
-            if (_cache.TryGet(artistId, out HoerspielScoreResult? cached) && cached != null)
-            {
-                _logger.Debug(() => $"Cache-Treffer für '{source.ArtistName}'");
-                return cached;
-            }
-
-            _logger.Debug(() => $"Starte Analyse für '{source.ArtistName}'");
-
             AppleMusicHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery).ConfigureAwait(false);
-
-            HoerspielScoreResult result = Evaluate(artistId, analysis);
-
-            _cache.Store(result);
-
-            _logger.Info(
-                "Ergebnis für '{ArtistName}': {Classification} ({Score} Punkte)",
-                source.ArtistName, result.IsHoerspiel ? "Hörspiel" : "kein Hörspiel", result.Score);
-
-            return result;
+            return Evaluate(artistId, analysis);
         }
 
         /// <summary>
@@ -87,76 +68,17 @@ namespace EchoPlay.AppleMusic.Scoring
         /// <returns>Das Bewertungsergebnis.</returns>
         private HoerspielScoreResult Evaluate(string artistId, AppleMusicHoerspielAnalysis analysis)
         {
-            // Harte Akzeptanz bei bekannter Hörspielserie
             if (analysis.IsKnownSeries)
             {
-                _logger.Debug(() => $"Hard-Accept: bekannte Hörspielserie");
-                return HoerspielScoreResult.Yes(
-                    artistId,
-                    HoerspielDecisionReason.KnownSeriesName,
-                    100,
-                    analysis.DebugInfo);
+                Logger.Debug(() => "Hard-Accept: bekannte Hörspielserie");
             }
 
-            // Score-basierte Bewertung
-            int score = 0;
-            List<string> scoreParts = [];
-
-            if (analysis.NameContainsQuery)
-            {
-                score += _settings.NameContainsBonus;
-                scoreParts.Add($"Name-Contains: +{_settings.NameContainsBonus}");
-            }
-
-            if (analysis.HasNumberVariantMatch)
-            {
-                score += _settings.NameContainsBonus;
-                scoreParts.Add($"Zahlwort-Variante: +{_settings.NameContainsBonus}");
-            }
-
-            if (analysis.HasExactWordMatch)
-            {
-                score += _settings.ExactWordMatchBonus;
-                scoreParts.Add($"Exaktes Wort-Match: +{_settings.ExactWordMatchBonus}");
-            }
-
-            if (analysis.HasHoerspielGenre)
-            {
-                score += _settings.GenreBonus;
-                scoreParts.Add($"Hörspiel-Genre: +{_settings.GenreBonus}");
-            }
-
-            if (analysis.HasHoerspielAlbumStructure)
-            {
-                score += _settings.AlbumStructureBonus;
-                scoreParts.Add($"Album-Struktur: +{_settings.AlbumStructureBonus}");
-            }
-            else
-            {
-                score += _settings.NoAlbumPenalty;
-                scoreParts.Add($"Keine Hörspiel-Alben: {_settings.NoAlbumPenalty}");
-            }
-
-            string debugInfo = scoreParts.Count > 0
-                ? string.Join("; ", scoreParts) + $" → Gesamt: {score}"
-                : $"Keine Indikatoren gefunden → Gesamt: {score}";
-
-            bool isHoerspiel = score >= _settings.MinimumScoreThreshold;
-
-            if (isHoerspiel)
-            {
-                return HoerspielScoreResult.Yes(
-                    artistId,
-                    HoerspielDecisionReason.None,
-                    score,
-                    debugInfo);
-            }
-
-            return HoerspielScoreResult.No(
+            // Apple-Music-spezifisch: Genre-Bonus wird nach dem exakten Wort-Match eingereiht
+            return HoerspielScoreCalculator.Evaluate(
                 artistId,
-                HoerspielDecisionReason.None,
-                score,
-                debugInfo);
+                analysis,
+                _settings,
+                [new HoerspielScoreComponent(analysis.HasHoerspielGenre, _settings.GenreBonus, "Hörspiel-Genre")]);
         }
     }
 }

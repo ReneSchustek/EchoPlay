@@ -10,13 +10,12 @@ namespace EchoPlay.App.ViewModels
     /// Nur Episoden mit einem zugeordneten lokalen Ordner werden hier angezeigt.
     /// </summary>
     /// <remarks>
-    /// Erweitert <see cref="ObservableObject"/>, damit <see cref="CoverImage"/> nachträglich
+    /// Erweitert <see cref="CoverCardViewModelBase"/>, damit <see cref="CoverCardViewModelBase.CoverImage"/> nachträglich
     /// gesetzt werden kann – zum Beispiel wenn der Nutzer über das Kontextmenü ein neues
     /// Cover auswählt oder eine Cover-Suche ausführt.
     /// </remarks>
-    public sealed class LocalEpisodeCardViewModel : ObservableObject
+    public sealed class LocalEpisodeCardViewModel : CoverCardViewModelBase
     {
-        private BitmapImage? _coverImage;
         private bool _isCompleted;
 
         /// <summary>
@@ -48,7 +47,7 @@ namespace EchoPlay.App.ViewModels
             LocalTrackCount = localTrackCount;
             FolderPath = folderPath;
             IsSpecialEpisode = isSpecialEpisode;
-            _coverImage = coverImage;
+            CoverImage = coverImage;
             _isCompleted = isCompleted;
         }
 
@@ -75,25 +74,6 @@ namespace EchoPlay.App.ViewModels
         /// Wird beim "Alle Tracks dieser Folge bearbeiten"-Button als Argument übergeben.
         /// </summary>
         public string? FolderPath { get; }
-
-        /// <summary>
-        /// Cover-Bild der Episode aus dem Folgenordner oder manuell gesetzt.
-        /// <see langword="null"/> wenn kein Cover vorhanden – die UI zeigt dann einen Platzhalter.
-        /// Wird nach dem Setzen via <see cref="ObservableObject.SetProperty"/> automatisch
-        /// in der UI aktualisiert (erfordert <c>Mode=OneWay</c> im XAML).
-        /// </summary>
-        public BitmapImage? CoverImage
-        {
-            get => _coverImage;
-            set
-            {
-                if (SetProperty(ref _coverImage, value))
-                {
-                    // NoCoverVisibility hängt direkt vom Cover ab – bei Änderung mitfeuern
-                    OnPropertyChanged(nameof(NoCoverVisibility));
-                }
-            }
-        }
 
         /// <summary>
         /// Kombinierter Anzeige-Titel aus Episodennummer und Bezeichnung.
@@ -137,11 +117,5 @@ namespace EchoPlay.App.ViewModels
         public Visibility CompletedCheckVisibility =>
             _isCompleted ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>
-        /// Sichtbarkeit des Platzhalter-Icons in der Kachelansicht.
-        /// Das Icon wird eingeblendet wenn kein Cover vorhanden ist.
-        /// Wird automatisch aktualisiert wenn <see cref="CoverImage"/> sich ändert.
-        /// </summary>
-        public Visibility NoCoverVisibility => _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
     }
 }

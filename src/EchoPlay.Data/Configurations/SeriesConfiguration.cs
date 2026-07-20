@@ -73,8 +73,7 @@ namespace EchoPlay.Data.Configurations
 
             // Purge-Index: DatabaseMaintenanceService filtert auf IsDeleted + DeletedAt.
             // Partial Index nur für gelöschte Einträge – spart Speicher im Normalfall.
-            _ = builder.HasIndex(s => new { s.IsDeleted, s.DeletedAt })
-                   .HasFilter("IsDeleted = 1");
+            builder.HasPurgeIndex();
         }
     }
 }

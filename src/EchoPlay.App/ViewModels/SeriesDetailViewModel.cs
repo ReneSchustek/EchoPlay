@@ -524,10 +524,7 @@ namespace EchoPlay.App.ViewModels
 
             bool newValue = !_isFavorite;
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-
-            await seriesService.SetFavoriteAsync(_seriesId, newValue, _lifecycleCts.Token);
+            await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, _seriesId, newValue, _lifecycleCts.Token);
             IsFavorite = newValue;
         }
 
@@ -546,25 +543,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId, _lifecycleCts.Token);
-
-            if (existing is not null)
-            {
-                existing.IsCompleted = true;
-                existing.CompletedAt = _clock.UtcNow;
-                await stateService.UpdateAsync(existing, _lifecycleCts.Token);
-            }
-            else
-            {
-                PlaybackState newState = new()
-                {
-                    EpisodeId = episodeId,
-                    IsCompleted = true,
-                    CompletedAt = _clock.UtcNow,
-                    LastPlayedAt = _clock.UtcNow
-                };
-                await stateService.AddAsync(newState, _lifecycleCts.Token);
-            }
+            await stateService.MarkCompletedAsync(episodeId, _clock.UtcNow, _lifecycleCts.Token);
 
             await LoadAsync(_seriesId);
         }
@@ -582,12 +561,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId, _lifecycleCts.Token);
-
-            if (existing is not null)
-            {
-                await stateService.DeleteAsync(existing.Id, _lifecycleCts.Token);
-            }
+            await stateService.MarkNotStartedAsync(episodeId, _lifecycleCts.Token);
 
             await LoadAsync(_seriesId);
         }
@@ -604,28 +578,8 @@ namespace EchoPlay.App.ViewModels
         public async Task PlayEpisodeAsync(Guid episodeId)
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesPlayEpisode");
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-            IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episodeId, _lifecycleCts.Token);
-
-            if (tracks.Count == 0)
-            {
-                return;
-            }
-
-            PlaybackState? savedState = await playbackService.GetByEpisodeIdAsync(episodeId, _lifecycleCts.Token);
-            TimeSpan resumePosition = savedState is { IsCompleted: false } ? savedState.LastPosition : TimeSpan.Zero;
-
-            List<string> paths = new(tracks.Count);
-
-            foreach (LocalTrack track in tracks)
-            {
-                paths.Add(track.FilePath);
-            }
-
-            _playerService.Play(episodeId, paths, startIndex: 0, resumePosition: resumePosition);
+            await PlaybackLauncher.PlayEpisodeAsync(_scopeFactory, _playerService, episodeId, _lifecycleCts.Token);
         }
 
         /// <summary>

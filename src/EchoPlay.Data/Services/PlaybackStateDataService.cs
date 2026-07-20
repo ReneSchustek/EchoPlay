@@ -1,6 +1,5 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Playback;
-using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Data.Services.Projections;
@@ -78,11 +77,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.PlaybackStates.Add(playbackState);
 
-            try
-            {
-                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
+            if (await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false) is not null)
             {
                 // Paralleler Scope hat bereits einen PlaybackState für dieselbe Episode angelegt.
                 // Der erste Eintrag gewinnt — redundante Einfügung ignorieren.
@@ -220,13 +215,11 @@ namespace EchoPlay.Data.Services
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             PlaybackState? playbackState = await _context.PlaybackStates
-                .AsTracking()
-                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken).ConfigureAwait(false);
+                .LoadTrackedByIdOrWarnAsync(_logger, id, "PlaybackState", "Soft-Delete", cancellationToken).ConfigureAwait(false);
 
-            if (playbackState == null)
+            if (playbackState is null)
             {
                 // Wenn kein Wiedergabestatus existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning("PlaybackState mit ID '{PlaybackStateId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 
@@ -235,6 +228,40 @@ namespace EchoPlay.Data.Services
 
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info("PlaybackState (ID: {PlaybackStateId}) als gelöscht markiert.", id);
+        }
+
+        /// <inheritdoc />
+        public async Task MarkCompletedAsync(Guid episodeId, DateTime completedAt, CancellationToken cancellationToken = default)
+        {
+            PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken).ConfigureAwait(false);
+
+            if (existing is not null)
+            {
+                existing.IsCompleted = true;
+                existing.CompletedAt = completedAt;
+                await UpdateAsync(existing, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await AddAsync(new PlaybackState
+                {
+                    EpisodeId = episodeId,
+                    IsCompleted = true,
+                    CompletedAt = completedAt,
+                    LastPlayedAt = completedAt
+                }, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task MarkNotStartedAsync(Guid episodeId, CancellationToken cancellationToken = default)
+        {
+            PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken).ConfigureAwait(false);
+
+            if (existing is not null)
+            {
+                await DeleteAsync(existing.Id, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

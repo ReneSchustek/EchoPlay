@@ -36,7 +36,7 @@ namespace EchoPlay.App.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
         private readonly IScanEventService _scanEventService;
-        private readonly CoverService _coverService;
+        private readonly ICoverService _coverService;
 
         /// <summary>
         /// Initialisiert den SyncService.
@@ -51,7 +51,7 @@ namespace EchoPlay.App.Services
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
             IScanEventService scanEventService,
-            CoverService coverService)
+            ICoverService coverService)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;

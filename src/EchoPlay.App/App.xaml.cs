@@ -731,6 +731,7 @@ namespace EchoPlay.App
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
             _ = builder.Services.AddSingleton<EpisodeCoverCacheService>();
             _ = builder.Services.AddSingleton<CoverService>();
+            _ = builder.Services.AddSingleton<ICoverService>(provider => provider.GetRequiredService<ICoverService>());
             _ = builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
             _ = builder.Services.AddSingleton<BackgroundCoverService>();
             _ = builder.Services.AddSingleton<BackgroundProviderIdService>();
@@ -794,7 +795,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IConfirmationDialogService>(),
                 provider.GetRequiredService<IPlayerService>(),
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
-                provider.GetRequiredService<CoverService>(),
+                provider.GetRequiredService<ICoverService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IClock>(),
                 provider.GetRequiredService<BackgroundCoverService>()));
@@ -807,7 +808,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IOnlineAccessGuard>(),
                 provider.GetRequiredService<IHttpClientFactory>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<CoverService>(),
+                provider.GetRequiredService<ICoverService>(),
                 provider.GetRequiredService<BackgroundCoverService>(),
                 provider.GetRequiredService<IWatchToggleService>(),
                 provider.GetRequiredService<IHostRateLimiter>(),
@@ -828,7 +829,7 @@ namespace EchoPlay.App
                     provider.GetRequiredService<IOnlineAccessGuard>(),
                     provider.GetRequiredService<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(),
                     provider.GetRequiredService<IClock>(),
-                    provider.GetRequiredService<CoverService>(),
+                    provider.GetRequiredService<ICoverService>(),
                     provider.GetRequiredService<IWatchToggleService>(),
                     provider.GetRequiredService<IPageModeGuard>(),
                     provider.GetRequiredService<IFolderRestructureCoordinator>(),

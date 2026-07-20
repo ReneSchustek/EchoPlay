@@ -45,7 +45,7 @@ namespace EchoPlay.App.ViewModels
             IOnlineAccessGuard onlineAccessGuard,
             IHttpClientFactory httpClientFactory,
             EpisodeCoverCacheService? coverCacheService = null,
-            CoverService? coverService = null,
+            ICoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null,
             IWatchToggleService? watchToggleService = null,
             IHostRateLimiter? rateLimiter = null,

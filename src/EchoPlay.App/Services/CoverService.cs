@@ -20,7 +20,7 @@ namespace EchoPlay.App.Services
     /// den ICoverImageDataService zu.
     /// </summary>
 
-    public sealed class CoverService
+    public sealed class CoverService : ICoverService
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;

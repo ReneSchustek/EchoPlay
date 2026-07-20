@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Enthält Tests zur Verifikation des Kaskadenverhaltens beim Löschen einer Episode. Der Fokus liegt darauf sicherzustellen, dass das
     /// Löschen einer Episode korrekt auf untergeordnete PlaybackStates wirkt, ohne die übergeordnete Serie zu beeinflussen.
     /// </summary>
-    public class EpisodeCascadeDeleteTests : DbTestBase
+    public sealed class EpisodeCascadeDeleteTests : DbTestBase
     {
         /// <summary>
         /// Stellt sicher, dass das Löschen einer Episode alle zugehörigen PlaybackStates logisch löscht, während die zugehörige Serie

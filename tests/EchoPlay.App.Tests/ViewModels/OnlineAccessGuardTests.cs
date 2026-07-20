@@ -169,6 +169,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddSingleton<EchoPlay.Core.Abstractions.Time.IClock>(new FakeClock());
             _ = services.AddHttpClient();
             _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
+            _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
             _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();

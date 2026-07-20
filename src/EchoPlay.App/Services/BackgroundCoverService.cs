@@ -29,7 +29,7 @@ namespace EchoPlay.App.Services
     public class BackgroundCoverService : IDisposable
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly CoverService _coverService;
+        private readonly ICoverService _coverService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISpotifyCredentialStore _credentialStore;
         private readonly BackgroundCoverServiceOptions _options;
@@ -57,7 +57,7 @@ namespace EchoPlay.App.Services
 
         public BackgroundCoverService(
             IServiceScopeFactory scopeFactory,
-            CoverService coverService,
+            ICoverService coverService,
             IHttpClientFactory httpClientFactory,
             ISpotifyCredentialStore credentialStore,
             BackgroundCoverServiceOptions options,

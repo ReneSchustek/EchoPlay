@@ -29,7 +29,7 @@ namespace EchoPlay.App.ViewModels
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILocalCoverLoader _coverLoader;
-        private readonly EchoPlay.App.Services.CoverService? _coverService;
+        private readonly EchoPlay.App.Services.ICoverService? _coverService;
         private readonly IClock _clock;
         private readonly ILogger? _logger;
 
@@ -62,7 +62,7 @@ namespace EchoPlay.App.ViewModels
             IServiceScopeFactory scopeFactory,
             ILocalCoverLoader coverLoader,
             IClock clock,
-            EchoPlay.App.Services.CoverService? coverService = null,
+            EchoPlay.App.Services.ICoverService? coverService = null,
             ILogger? logger = null)
         {
             _scopeFactory = scopeFactory;

@@ -638,6 +638,15 @@
   <data name="UeberOrdnerstrukturText.Text" xml:space="preserve">
     <value>{Bibliothekspfad}\&#10;  {Serienname}\&#10;    {Nummer} - {Titel}\&#10;      Track 01.mp3&#10;      Track 02.mp3&#10;&#10;Beispiel:&#10;D:\Hörspiele\&#10;  Die drei Fragezeichen\&#10;    001 - Der Super-Papagei\&#10;      01 - Ein Hilferuf.mp3</value>
   </data>
+  <data name="UeberSupportHeading.Text" xml:space="preserve">
+    <value>Gefällt dir EchoPlay? Über einen Kaffee freue ich mich – ganz freiwillig.</value>
+  </data>
+  <data name="SupportButton.Content" xml:space="preserve">
+    <value>☕ Kaffee spendieren</value>
+  </data>
+  <data name="SupportButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Kaffee spendieren</value>
+  </data>
   <data name="SettingsEpisodePatternHint.Text" xml:space="preserve">
     <value>Platzhalter: {number:000} für Folgennummer, {title} für Titel</value>
   </data>

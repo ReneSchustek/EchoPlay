@@ -1,0 +1,52 @@
+using System;
+using EchoPlay.App;
+using Xunit;
+
+namespace EchoPlay.App.Tests
+{
+    /// <summary>
+    /// Sichert die Manipulationssicherheit des Spendenziels ab: die Ziel-URL ist eine
+    /// Compile-Zeit-Konstante auf der offiziellen PayPal-Domain, per HTTPS, ohne
+    /// Laufzeit-Parameter. Es gibt keinen Config-/DB-/Netz-Pfad, der sie verändern könnte.
+    /// </summary>
+    public sealed class SupportDonationTests
+    {
+        [Fact]
+        public void PayPalUrl_IsAbsoluteHttpsUri()
+        {
+            bool parsed = Uri.TryCreate(SupportDonation.PayPalUrl, UriKind.Absolute, out Uri? uri);
+
+            Assert.True(parsed);
+            Assert.Equal(Uri.UriSchemeHttps, uri!.Scheme);
+        }
+
+        [Fact]
+        public void PayPalUrl_TargetsOfficialPayPalDomain()
+        {
+            Uri uri = new(SupportDonation.PayPalUrl);
+
+            bool isOfficial = uri.Host.Equals("paypal.me", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.Equals("paypal.com", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.Equals("www.paypal.com", StringComparison.OrdinalIgnoreCase);
+
+            Assert.True(isOfficial, $"Unerwartete Host-Domain: {uri.Host}");
+        }
+
+        [Fact]
+        public void PayPalUrl_CarriesNoRuntimeQueryParameters()
+        {
+            Uri uri = new(SupportDonation.PayPalUrl);
+
+            Assert.True(string.IsNullOrEmpty(uri.Query));
+        }
+
+        [Fact]
+        public void IsConfigured_IsFalse_WhileHandleIsPlaceholder()
+        {
+            // Solange kein echter Handle eingetragen ist, bleibt der Spenden-Eintrag
+            // ausgeblendet – dieser Test dokumentiert den Guard. Nach dem Eintragen des
+            // echten paypal.me-Handles kippt der Wert auf true und der Button erscheint.
+            Assert.False(SupportDonation.IsConfigured);
+        }
+    }
+}

@@ -95,6 +95,33 @@
                 TextWrapping="Wrap"
                 Margin="0,4,0,0"/>
 
+            <!-- Freiwilliger Spenden-Einstieg. Bleibt ausgeblendet, solange kein echter
+                 PayPal-Handle konfiguriert ist (Sichtbarkeit im Code-Behind gesetzt). -->
+            <StackPanel
+                x:Name="SupportPanel"
+                Spacing="8"
+                Visibility="Collapsed"
+                Margin="0,8,0,0">
+
+                <Rectangle
+                    Height="1"
+                    Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Margin="0,8"/>
+
+                <TextBlock
+                    x:Uid="UeberSupportHeading"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextWrapping="Wrap"
+                    TextAlignment="Center"/>
+
+                <Button
+                    x:Uid="SupportButton"
+                    Click="OnSupportClick"
+                    HorizontalAlignment="Center"/>
+
+            </StackPanel>
+
         </StackPanel>
     </ScrollViewer>
 

@@ -638,6 +638,15 @@
   <data name="UeberOrdnerstrukturText.Text" xml:space="preserve">
     <value>{LibraryPath}\&#10;  {SeriesName}\&#10;    {Number} - {Title}\&#10;      Track 01.mp3&#10;      Track 02.mp3&#10;&#10;Example:&#10;D:\Audiobooks\&#10;  The Three Investigators\&#10;    001 - The Secret of Terror Castle\&#10;      01 - Chapter 1.mp3</value>
   </data>
+  <data name="UeberSupportHeading.Text" xml:space="preserve">
+    <value>Enjoying EchoPlay? A coffee is always appreciated – entirely optional.</value>
+  </data>
+  <data name="SupportButton.Content" xml:space="preserve">
+    <value>☕ Buy me a coffee</value>
+  </data>
+  <data name="SupportButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Buy me a coffee</value>
+  </data>
   <data name="SettingsEpisodePatternHint.Text" xml:space="preserve">
     <value>Placeholders: {number:000} for episode number, {title} for title</value>
   </data>

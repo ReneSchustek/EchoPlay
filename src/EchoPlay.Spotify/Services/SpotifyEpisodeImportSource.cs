@@ -33,6 +33,8 @@ namespace EchoPlay.Spotify.Services
         /// <returns>Eine sortierte Liste importierbarer Episoden.</returns>
         public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(sourceSeriesId);
+
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:{sourceSeriesId}");
 
             _logger.Debug(() => $"Spotify-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");

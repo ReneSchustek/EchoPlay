@@ -49,14 +49,14 @@ namespace EchoPlay.Spotify.Scoring
             _logger.Debug(() => $"Hörspiel-Analyse für Künstler '{source.Name}' (ID: {source.SpotifyArtistId}) gestartet.");
 
             bool hasNegativeMusicGenre = HasNegativeMusicGenre(source.Genres);
-            bool isKnownSeries = IsKnownSeries(source.Name);
+            bool isKnownSeries = HoerspielNameMatcher.IsKnownSeries(source.Name, _settings.DefaultKnownSeries);
 
             string normalizedName = HoerspielTextNormalizer.Normalize(source.Name);
             string normalizedQuery = HoerspielTextNormalizer.Normalize(searchQuery);
 
             bool nameContainsQuery = normalizedName.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase);
-            bool hasNumberVariantMatch = HasNumberVariantMatch(normalizedName, normalizedQuery);
-            bool hasExactWordMatch = IsExactWordMatch(normalizedName, normalizedQuery);
+            bool hasNumberVariantMatch = HoerspielNameMatcher.HasNumberVariantMatch(normalizedName, normalizedQuery, _settings.NumberWordMapping);
+            bool hasExactWordMatch = HoerspielNameMatcher.IsExactWordMatch(normalizedName, normalizedQuery);
 
             (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.SpotifyArtistId, cancellationToken).ConfigureAwait(false);
 
@@ -134,110 +134,6 @@ namespace EchoPlay.Spotify.Scoring
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Prüft, ob der Künstlername einer bekannten Hörspielserie entspricht.
-        /// </summary>
-        /// <param name="artistName">Der Künstlername.</param>
-        /// <returns><c>true</c>, wenn eine bekannte Serie erkannt wurde.</returns>
-        private bool IsKnownSeries(string artistName)
-        {
-            string normalizedName = HoerspielTextNormalizer.Normalize(artistName);
-
-            foreach (string knownSeries in _settings.DefaultKnownSeries)
-            {
-                string normalizedSeries = HoerspielTextNormalizer.Normalize(knownSeries);
-
-                if (normalizedName.Contains(normalizedSeries, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Prüft, ob eine Zahlwort-Variante des Suchbegriffs im Künstlernamen enthalten ist.
-        /// </summary>
-        /// <param name="normalizedName">Der normalisierte Künstlername.</param>
-        /// <param name="normalizedQuery">Der normalisierte Suchbegriff.</param>
-        /// <returns><c>true</c>, wenn eine Zahlwort-Variante gefunden wurde.</returns>
-        private bool HasNumberVariantMatch(string normalizedName, string normalizedQuery)
-        {
-            List<string> variants = GenerateNumberVariants(normalizedQuery);
-
-            foreach (string variant in variants)
-            {
-                if (normalizedName.Contains(variant, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Erzeugt Namensvarianten durch Ersetzung von Ziffern durch Zahlwörter und umgekehrt.
-        /// </summary>
-        /// <param name="normalizedQuery">Der normalisierte Suchbegriff.</param>
-        /// <returns>Liste der erzeugten Varianten (ohne das Original).</returns>
-        private List<string> GenerateNumberVariants(string normalizedQuery)
-        {
-            List<string> variants = [];
-
-            foreach (KeyValuePair<string, string> mapping in _settings.NumberWordMapping)
-            {
-                // Ziffer → Zahlwort
-                if (normalizedQuery.Contains(mapping.Key, StringComparison.Ordinal))
-                {
-                    variants.Add(normalizedQuery.Replace(mapping.Key, mapping.Value, StringComparison.Ordinal));
-                }
-
-                // Zahlwort → Ziffer
-                if (normalizedQuery.Contains(mapping.Value, StringComparison.Ordinal))
-                {
-                    variants.Add(normalizedQuery.Replace(mapping.Value, mapping.Key, StringComparison.Ordinal));
-                }
-            }
-
-            return variants;
-        }
-
-        /// <summary>
-        /// Prüft, ob der Suchbegriff als eigenständiges Wort im Künstlernamen vorkommt.
-        /// </summary>
-        /// <param name="normalizedName">Der normalisierte Künstlername.</param>
-        /// <param name="normalizedQuery">Der normalisierte Suchbegriff.</param>
-        /// <returns><c>true</c>, wenn ein exaktes Wort-Match vorliegt.</returns>
-        private static bool IsExactWordMatch(string normalizedName, string normalizedQuery)
-        {
-            string[] nameWords = normalizedName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            string[] queryWords = normalizedQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            // Alle Wörter des Suchbegriffs müssen als eigenständige Wörter im Namen vorkommen
-            foreach (string queryWord in queryWords)
-            {
-                bool found = false;
-
-                foreach (string nameWord in nameWords)
-                {
-                    if (string.Equals(nameWord, queryWord, StringComparison.OrdinalIgnoreCase))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    return false;
-                }
-            }
-
-            return queryWords.Length > 0;
         }
 
         /// <summary>

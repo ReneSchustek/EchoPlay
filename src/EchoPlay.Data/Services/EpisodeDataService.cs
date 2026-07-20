@@ -129,32 +129,6 @@ namespace EchoPlay.Data.Services
         }
 
         /// <summary>
-        /// Liefert alle Episoden einer Serie, für die noch kein lokaler Ordner gescannt wurde.
-        /// Nützlich um zu prüfen, welche Online-Episoden lokal noch fehlen.
-        /// </summary>
-        /// <param name="seriesId">Die ID der betroffenen Serie.</param>
-        /// <returns>
-        /// Episoden ohne <c>LocalFolderPath</c>, sortiert nach Episodennummer und Titel.
-        /// Leere Liste wenn alle Episoden lokal gefunden wurden.
-        /// </returns>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId, CancellationToken cancellationToken = default)
-        {
-            _logger.Debug(() => $"Lade fehlende lokale Episoden für Serie '{seriesId}'.");
-
-            List<Episode> result = await _context.Episodes
-
-                .Where(e => e.SeriesId == seriesId && e.LocalFolderPath == null)
-                .OrderBy(e => e.EpisodeNumber)
-                .ThenBy(e => e.Title)
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-            _logger.Debug(() => $"{result.Count} fehlende Episoden für Serie '{seriesId}' gefunden.");
-
-            return result;
-        }
-
-        /// <summary>
         /// Liefert eine Episode anhand ihrer eindeutigen ID oder <c>null</c>, wenn sie nicht existiert oder logisch gelöscht wurde.
         /// Der Zugriff erfolgt über <see cref="DbSet{TEntity}.FindAsync(object[])"/>, da es sich um einen Primary-Key-Zugriff handelt.
         /// </summary>
@@ -257,32 +231,6 @@ namespace EchoPlay.Data.Services
             _context.Episodes.UpdateRange(episodes);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info("{EpisodeCount} Episoden in einem Batch-Update aktualisiert.", episodes.Count);
-        }
-
-        /// <summary>
-        /// Ermittelt die höchste Episodennummer aller lokal vorhandenen Episoden einer Serie.
-        /// Episoden ohne Nummer (<c>EpisodeNumber == null</c>) werden ignoriert, da sie
-        /// keinen verlässlichen Vergleichswert liefern.
-        /// </summary>
-        /// <param name="seriesId">Die eindeutige ID der Serie.</param>
-        /// <returns>
-        /// Die höchste Episodennummer mit zugeordnetem lokalen Ordner,
-        /// oder <see langword="null"/> wenn keine passende Episode existiert.
-        /// </returns>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId, CancellationToken cancellationToken = default)
-        {
-            // MAX über eine leere Menge liefert in SQL NULL – EF Core bildet das auf int? ab
-            int? result = await _context.Episodes
-
-                .Where(e => e.SeriesId == seriesId
-                         && e.LocalFolderPath != null
-                         && e.EpisodeNumber != null)
-                .MaxAsync(e => (int?)e.EpisodeNumber, cancellationToken).ConfigureAwait(false);
-
-            _logger.Debug(() => $"Höchste lokale Folgennummer für Serie '{seriesId}': {result?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "keine"}.");
-
-            return result;
         }
 
         /// <inheritdoc/>

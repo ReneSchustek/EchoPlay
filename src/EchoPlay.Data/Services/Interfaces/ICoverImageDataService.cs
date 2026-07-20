@@ -44,15 +44,6 @@ namespace EchoPlay.Data.Services.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Setzt den LastChecked-Zeitstempel für eine Entity (auch bei Nicht-Treffer).
-        /// </summary>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityId">Parameter entityId.</param>
-        /// <param name="checkedAt">Parameter checkedAt.</param>
-        Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Liefert Entities, deren Cover noch nie geprüft wurde oder deren Cooldown abgelaufen ist.
         /// Für den Background-Worker: gibt die nächsten zu prüfenden Entities zurück.
         /// </summary>

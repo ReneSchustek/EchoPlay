@@ -1,34 +1,14 @@
 using EchoPlay.Core.Models;
 using EchoPlay.LocalLibrary.Matching;
-using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace EchoPlay.LocalLibrary.Tests.Matching
 {
     /// <summary>
-    /// Ergänzende Tests für Grenzfälle und <see cref="CustomMatchHintWriter.WriteHintFile"/>.
+    /// Ergänzende Tests für Grenzfälle von <see cref="TrackMatcher.Classify"/>.
     /// </summary>
-    public sealed class TrackMatcherEdgeCaseTests : IDisposable
+    public sealed class TrackMatcherEdgeCaseTests
     {
         private readonly TrackMatcher _matcher = new();
-        private readonly string _tempDir;
-
-        /// <summary>
-        /// Erstellt ein temporäres Verzeichnis für Datei-Tests.
-        /// </summary>
-        public TrackMatcherEdgeCaseTests()
-        {
-            _tempDir = Directory.CreateTempSubdirectory("echoplay_matcher_").FullName;
-        }
-
-        /// <summary>
-        /// Räumt das temporäre Verzeichnis auf.
-        /// </summary>
-        public void Dispose()
-        {
-            Directory.Delete(_tempDir, recursive: true);
-        }
 
         [Fact]
         public void Classify_ExactlyTwentyTracks_ReturnsTbT()
@@ -64,34 +44,6 @@ namespace EchoPlay.LocalLibrary.Tests.Matching
             TrackMatchKind result = _matcher.Classify(localTrackCount: 1, onlineTrackCount: 1);
 
             Assert.Equal(TrackMatchKind.TbT, result);
-        }
-
-        [Fact]
-        public void WriteCustomHintFile_CreatesFile_WithNumberedLines()
-        {
-            // Die Hint-Datei muss nummerierte Tracknamen enthalten
-            IReadOnlyList<string> trackNames = ["Intro", "Hauptteil", "Abspann"];
-
-            CustomMatchHintWriter.WriteHintFile(_tempDir, trackNames);
-
-            string filePath = Path.Combine(_tempDir, "expected_tracks.txt");
-            string[] lines = File.ReadAllLines(filePath);
-
-            Assert.Equal(3, lines.Length);
-            Assert.Equal("1 Intro", lines[0]);
-            Assert.Equal("2 Hauptteil", lines[1]);
-            Assert.Equal("3 Abspann", lines[2]);
-        }
-
-        [Fact]
-        public void WriteCustomHintFile_CreatesFile_EvenForEmptyList()
-        {
-            // Auch eine leere Trackliste darf nicht zu einem Fehler führen
-            CustomMatchHintWriter.WriteHintFile(_tempDir, []);
-
-            string filePath = Path.Combine(_tempDir, "expected_tracks.txt");
-            Assert.True(File.Exists(filePath));
-            Assert.Empty(File.ReadAllLines(filePath));
         }
     }
 }

@@ -61,12 +61,7 @@ namespace EchoPlay.LocalLibrary.Cover
                 searchResponse = await _httpClient.GetFromJsonAsync<MusicBrainzReleaseSearchResponse>(
                     url, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is HttpRequestException
-                                       or TaskCanceledException
-                                       or JsonException
-                                       or NotSupportedException
-                                       or UriFormatException
-                                       or InvalidOperationException)
+            catch (Exception ex) when (JsonCoverSearchServiceBase.IsTransientRequestError(ex))
             {
                 // Netzwerkfehler → leere Liste, kein Absturz
                 return [];

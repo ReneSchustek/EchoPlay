@@ -66,7 +66,7 @@ namespace EchoPlay.App.ViewModels
             IConfirmationDialogService confirmationDialogService,
             IPlayerService playerService,
             ILoggerFactory loggerFactory,
-            CoverService? coverService = null,
+            ICoverService? coverService = null,
             ILocalizationService? localizationService = null,
             IClock? clock = null,
             BackgroundCoverService? backgroundCoverService = null)

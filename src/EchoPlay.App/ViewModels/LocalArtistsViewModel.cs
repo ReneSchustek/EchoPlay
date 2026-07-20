@@ -23,7 +23,7 @@ namespace EchoPlay.App.ViewModels
     public sealed class LocalArtistsViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly CoverService? _coverService;
+        private readonly ICoverService? _coverService;
 
         private IReadOnlyList<LocalArtistCardViewModel> _allArtists = [];
         private IReadOnlyList<LocalArtistCardViewModel> _artists = [];
@@ -38,7 +38,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. In Tests <see langword="null"/>.</param>
         public LocalArtistsViewModel(
             IServiceScopeFactory scopeFactory,
-            CoverService? coverService = null)
+            ICoverService? coverService = null)
         {
             _scopeFactory = scopeFactory;
             _coverService = coverService;

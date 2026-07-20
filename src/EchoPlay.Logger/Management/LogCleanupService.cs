@@ -30,8 +30,12 @@ namespace EchoPlay.Logger.Management
                 return;
             }
 
-            List<FileInfo> logFiles = [.. Directory
-                .GetFiles(_options.LogDirectory, "*.log")
+            // Beide Sink-Dateitypen berücksichtigen: FileSink (.log) und JsonLogSink (.jsonl).
+            // Sonst wachsen die JSON-Logs unbegrenzt, weil sie nie bereinigt würden.
+            string[] logPatterns = ["*.log", "*.jsonl"];
+
+            List<FileInfo> logFiles = [.. logPatterns
+                .SelectMany(pattern => Directory.GetFiles(_options.LogDirectory, pattern))
                 .Select(f => new FileInfo(f))
                 .OrderBy(f => f.LastWriteTime)];
 

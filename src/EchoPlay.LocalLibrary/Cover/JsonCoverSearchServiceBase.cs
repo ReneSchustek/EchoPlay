@@ -111,7 +111,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// </summary>
         /// <param name="ex">Die aufgetretene Ausnahme.</param>
         /// <returns><c>true</c>, wenn der Fehler tolerierbar ist.</returns>
-        protected static bool IsTransientRequestError(Exception ex) =>
+        internal static bool IsTransientRequestError(Exception ex) =>
             ex is HttpRequestException
                or TaskCanceledException
                or JsonException

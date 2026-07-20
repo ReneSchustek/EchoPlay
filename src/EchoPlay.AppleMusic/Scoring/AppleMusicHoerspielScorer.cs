@@ -55,7 +55,7 @@ namespace EchoPlay.AppleMusic.Scoring
             string searchQuery,
             CancellationToken cancellationToken)
         {
-            AppleMusicHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery).ConfigureAwait(false);
+            AppleMusicHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery, cancellationToken).ConfigureAwait(false);
             return Evaluate(artistId, analysis);
         }
 

@@ -27,7 +27,7 @@ namespace EchoPlay.App.Services
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICoverSearchService _coverSearchService;
-        private readonly CoverService _coverService;
+        private readonly ICoverService _coverService;
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly IErrorDialogService _errorDialogService;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Services
         public EpisodeCoverCoordinator(
             IServiceScopeFactory scopeFactory,
             ICoverSearchService coverSearchService,
-            CoverService coverService,
+            ICoverService coverService,
             IConfirmationDialogService confirmationDialogService,
             IErrorDialogService errorDialogService,
             IHttpClientFactory httpClientFactory,

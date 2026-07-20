@@ -44,7 +44,7 @@ namespace EchoPlay.App.Services
     public sealed class CoverViewModelFactory : ICoverViewModelFactory
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly EchoPlay.App.Services.CoverService? _coverService;
+        private readonly EchoPlay.App.Services.ICoverService? _coverService;
 
         /// <summary>
         /// Initialisiert die Factory. <paramref name="coverService"/> ist optional —
@@ -55,7 +55,7 @@ namespace EchoPlay.App.Services
 
         /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
         /// <param name="coverService">Parameter <c>coverService</c>.</param>
-        public CoverViewModelFactory(IServiceScopeFactory scopeFactory, CoverService? coverService = null)
+        public CoverViewModelFactory(IServiceScopeFactory scopeFactory, ICoverService? coverService = null)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
             _scopeFactory = scopeFactory;

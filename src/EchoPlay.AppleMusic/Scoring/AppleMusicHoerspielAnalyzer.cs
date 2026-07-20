@@ -38,10 +38,12 @@ namespace EchoPlay.AppleMusic.Scoring
         /// </summary>
         /// <param name="source">Der iTunes-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Das Analyse-Ergebnis mit Boolean-Flags.</returns>
         public async Task<AppleMusicHoerspielAnalysis> AnalyzeAsync(
             ITunesArtistDto source,
-            string searchQuery)
+            string searchQuery,
+            CancellationToken cancellationToken = default)
         {
             _logger.Debug(() => $"Hörspiel-Analyse für Künstler '{source.ArtistName}' (ID: {source.ArtistId}) gestartet.");
 
@@ -56,7 +58,7 @@ namespace EchoPlay.AppleMusic.Scoring
             bool hasExactWordMatch = HoerspielNameMatcher.IsExactWordMatch(normalizedName, normalizedQuery);
             bool hasHoerspielGenre = IsHoerspielGenre(source.PrimaryGenreName);
 
-            (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.ArtistId).ConfigureAwait(false);
+            (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.ArtistId, cancellationToken).ConfigureAwait(false);
 
             DebugInfoBuilder debug = new();
             debug.Add(isKnownSeries, $"Bekannte Serie: '{artistName}'");
@@ -112,11 +114,12 @@ namespace EchoPlay.AppleMusic.Scoring
         /// Lädt Alben und deren Tracks über die iTunes Lookup API.
         /// </summary>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>Ein Tupel mit Flags: ob Alben vorhanden sind und ob Hörspiel-Struktur erkannt wurde.</returns>
-        private async Task<(bool HasAlbums, bool HasHoerspielStructure)> AnalyzeAlbumsAsync(long artistId)
+        private async Task<(bool HasAlbums, bool HasHoerspielStructure)> AnalyzeAlbumsAsync(long artistId, CancellationToken cancellationToken)
         {
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
-                await _searchClient.LookupAlbumsAsync(artistId).ConfigureAwait(false);
+                await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
 
             // Lookup-Antworten enthalten den Künstler als erstes Element
             List<ITunesCollectionDto> albums = albumsResponse.Results
@@ -139,7 +142,7 @@ namespace EchoPlay.AppleMusic.Scoring
 
                 try
                 {
-                    tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId).ConfigureAwait(false);
+                    tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (TransientRequestError.IsTransient(ex))
                 {

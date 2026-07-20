@@ -38,7 +38,7 @@ namespace EchoPlay.App.ViewModels
         private readonly IErrorDialogService _errorDialogService;
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly IPlayerService _playerService;
-        private readonly CoverService? _coverService;
+        private readonly ICoverService? _coverService;
         private readonly ILocalizationService? _localizationService;
         private readonly IClock _clock;
         private readonly ILogger _logger;
@@ -64,7 +64,7 @@ namespace EchoPlay.App.ViewModels
             IErrorDialogService errorDialogService,
             IConfirmationDialogService confirmationDialogService,
             IPlayerService playerService,
-            CoverService? coverService,
+            ICoverService? coverService,
             ILocalizationService? localizationService,
             IClock clock,
             ILogger logger,

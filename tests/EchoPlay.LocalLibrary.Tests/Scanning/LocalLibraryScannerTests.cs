@@ -320,17 +320,15 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             _ = Directory.CreateDirectory(Path.Combine(seriesB, "001"));
             await File.WriteAllTextAsync(Path.Combine(seriesB, "001", "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
+            // Synchroner IProgress: Der Scanner ruft Report() direkt im Scan-Thread auf.
+            // Progress<T> würde die Callbacks über den Synchronization-Context marshallen –
+            // unter paralleler Test-Last drainen die ThreadPool-Callbacks nicht zuverlässig,
+            // was den Test flaky macht. Ein synchroner Collector erfasst deterministisch.
             List<string> reported = [];
-            IProgress<LocalScanResult> onSeriesScanned = new Progress<LocalScanResult>(r =>
+            IProgress<LocalScanResult> onSeriesScanned = new SynchronousProgress<LocalScanResult>(r =>
                 reported.Add(r.SeriesName));
 
             _ = await _scanner.ScanSeriesAsync(_root, "{number:000}", onSeriesScanned: onSeriesScanned, ct: TestContext.Current.CancellationToken);
-
-            // Polling statt fester Wartezeit: Progress-Callbacks laufen über den Synchronization-Context.
-            for (int wait = 0; wait < 50 && reported.Count < 2; wait++)
-            {
-                await Task.Yield();
-            }
 
             Assert.Equal(2, reported.Count);
             Assert.Contains("TKKG", reported);
@@ -516,6 +514,17 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             // W03a → Kassette 3, Seite a → 5; W03b → 6
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 5);
             Assert.Contains(results[0].Episodes, e => e.ParsedNumber == 6);
+        }
+
+        /// <summary>
+        /// <see cref="IProgress{T}"/>-Implementierung, die den Callback synchron im
+        /// aufrufenden Thread ausführt – im Gegensatz zu <see cref="Progress{T}"/>, das
+        /// über den Synchronization-Context bzw. den ThreadPool marshallt. So sind
+        /// Report-Aufrufe im Test deterministisch prüfbar, ohne auf Callbacks zu warten.
+        /// </summary>
+        private sealed class SynchronousProgress<T>(Action<T> handler) : IProgress<T>
+        {
+            public void Report(T value) => handler(value);
         }
     }
 }

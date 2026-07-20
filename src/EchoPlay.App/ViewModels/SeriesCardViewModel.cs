@@ -15,7 +15,7 @@ namespace EchoPlay.App.ViewModels
     /// Kachel-ViewModel für eine Serie in der Online-Mediathek.
     /// Enthält Episodenzähler, Abonnementstatus und den Befehl zum Umschalten des Abonnements.
     /// </summary>
-    public sealed class SeriesCardViewModel : ObservableObject, IAccordionSelectable
+    public sealed class SeriesCardViewModel : CoverCardViewModelBase, IAccordionSelectable
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IConfirmationDialogService _confirmationDialogService;
@@ -25,7 +25,6 @@ namespace EchoPlay.App.ViewModels
         private bool _isFavorite;
         private bool _isWatched;
         private bool _isSelectedInAccordion;
-        private BitmapImage? _coverImage;
 
         /// <summary>
         /// Initialisiert das Kachel-ViewModel mit Stammdaten und Services.
@@ -60,7 +59,7 @@ namespace EchoPlay.App.ViewModels
         {
             Id = id;
             Title = title;
-            _coverImage = coverImage;
+            CoverImage = coverImage;
             TotalEpisodeCount = totalEpisodeCount;
             NewEpisodeCount = newEpisodeCount;
             InProgressCount = inProgressCount;
@@ -83,39 +82,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Titel der Serie.</summary>
         public string Title { get; }
 
-        /// <summary>
-        /// Vorschaubild der Serie.
-        /// Null, wenn weder lokale Coverdaten noch eine URL verfügbar sind.
-        /// </summary>
-        /// <summary>
-        /// Cover-Bild der Serie – wird ggf. nachträglich gesetzt wenn das Cover
-        /// aus der Provider-URL heruntergeladen und gecacht wurde.
-        /// </summary>
-        public BitmapImage? CoverImage
-        {
-            get => _coverImage;
-            set
-            {
-                if (SetProperty(ref _coverImage, value))
-                {
-                    OnPropertyChanged(nameof(NoCoverVisibility));
-                }
-            }
-        }
-
-        /// <summary>Sichtbarkeit des Cover-Platzhalters wenn kein Bild vorhanden.</summary>
-        public Visibility NoCoverVisibility =>
-            _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Setzt das Cover-Bild zurück. Wird beim Ersetzen der Online-Mediathek-Liste
-        /// oder beim Verlassen der Page aufgerufen, damit hunderte Kachel-Bitmaps nicht
-        /// bis zum nächsten GC-Lauf am Heap kleben.
-        /// </summary>
-        public void ClearCoverImage()
-        {
-            CoverImage = null;
-        }
+        // CoverImage, NoCoverVisibility und ClearCoverImage stammen aus CoverCardViewModelBase.
 
         /// <summary>Gesamtanzahl der Episoden dieser Serie.</summary>
         public int TotalEpisodeCount { get; }

@@ -39,24 +39,5 @@ namespace EchoPlay.LocalLibrary.Matching
 
             return TrackMatchKind.Custom;
         }
-
-        /// <summary>
-        /// Erstellt eine Hilfsdatei im Episodenordner mit den erwarteten Tracknamen.
-        /// Nützlich für Custom-Matching, damit der Nutzer die Zuordnung manuell korrigieren kann.
-        /// </summary>
-        /// <param name="episodeFolderPath">Absoluter Pfad zum Episodenordner.</param>
-        /// <param name="expectedTrackNames">Erwartete Tracknamen in der richtigen Reihenfolge.</param>
-        /// <exception cref="IOException">
-        /// Wird geworfen, wenn der Ordner nicht beschreibbar ist.
-        /// </exception>
-        public static void WriteCustomHintFile(string episodeFolderPath, IReadOnlyList<string> expectedTrackNames)
-        {
-            string filePath = Path.Combine(episodeFolderPath, "expected_tracks.txt");
-
-            IEnumerable<string> lines = expectedTrackNames
-                .Select((name, index) => $"{index + 1} {name}");
-
-            File.WriteAllLines(filePath, lines);
-        }
     }
 }

@@ -5,7 +5,7 @@ using EchoPlay.App.Services;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Smoke-Tests fuer den Cover-Helligkeits-Analyzer.
+    /// Smoke-Tests für den Cover-Helligkeits-Analyzer.
     /// Vollstaendige Pixel-Tests brauchen einen WinUI-Test-Host und ein gueltiges
     /// PNG/JPEG — hier nur die robusten Null-Pfade, die ohne BitmapDecoder-Setup laufen.
     /// </summary>

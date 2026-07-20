@@ -13,9 +13,9 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer <see cref="LogViewerCoordinator"/> — Filterlogik (BuildFilteredLiveEntries)
+    /// Tests für <see cref="LogViewerCoordinator"/> — Filterlogik (BuildFilteredLiveEntries)
     /// und IsLiveViewAvailable. Datei-IO-Pfade werden uebersprungen, weil sie LoggerManager
-    /// mit echtem Filesystem benoetigen wuerden.
+    /// mit echtem Filesystem benötigen wuerden.
     /// </summary>
     public sealed class LogViewerCoordinatorTests
     {

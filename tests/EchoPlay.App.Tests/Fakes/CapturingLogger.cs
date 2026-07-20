@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Fakes
         public List<(string Level, string Message, Exception? Exception)> Entries { get; } = [];
 
         /// <summary>
-        /// Erfasst alle BeginScope-Aufrufe in der Reihenfolge ihrer Eroeffnung.
+        /// Erfasst alle BeginScope-Aufrufe in der Reihenfolge ihrer Eröffnung.
         /// Ermoeglicht Tests gegen JobScopes-Konstanten, ohne die Scope-Mechanik selbst zu testen.
         /// </summary>
         public List<string> ScopeNames { get; } = [];

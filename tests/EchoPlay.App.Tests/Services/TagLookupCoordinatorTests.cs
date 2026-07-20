@@ -6,7 +6,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer die internen pure-Funktion-Helper des <see cref="TagLookupCoordinator"/>.
+    /// Tests für die internen pure-Funktion-Helper des <see cref="TagLookupCoordinator"/>.
     /// Wir testen den Core direkt — der HttpClient-Pfad waere ohne Live-API nicht sinnvoll
     /// abdeckbar; die SearchAsync-Funktion delegiert ohnehin an einen DI-aufgeloesten Service.
     /// </summary>

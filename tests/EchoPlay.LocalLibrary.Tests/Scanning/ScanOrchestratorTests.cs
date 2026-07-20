@@ -64,7 +64,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             Assert.Contains("Vorbereitung", phase1.PhaseLabel, StringComparison.Ordinal);
         }
 
-        // Progress<T> stellt Reports asynchron ueber den SynchronizationContext zu;
+        // Progress<T> stellt Reports asynchron über den SynchronizationContext zu;
         // im Test-Kontext ohne Context laeuft das via ThreadPool und kann die Liste
         // erst nach dem Test-Body fuellen. Synchroner Adapter eliminiert das Race.
         private sealed class SynchronousProgress<T> : IProgress<T>

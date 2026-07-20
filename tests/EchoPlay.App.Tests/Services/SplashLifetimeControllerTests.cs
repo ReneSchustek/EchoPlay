@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.Services
             sw.Stop();
 
             Assert.True(sw.ElapsedMilliseconds < 200,
-                $"Erwartet sofortiger Return (< 200 ms), tatsaechlich {sw.ElapsedMilliseconds} ms.");
+                $"Erwartet sofortiger Return (< 200 ms), tatsächlich {sw.ElapsedMilliseconds} ms.");
         }
 
         [Fact]
@@ -36,9 +36,9 @@ namespace EchoPlay.App.Tests.Services
             sw.Stop();
 
             // Der Test toleriert Scheduler-Jitter, prueft aber, dass die Wartezeit signifikant
-            // ueber 1000 ms liegt (Default-Mindestdauer ist 1500 ms).
+            // über 1000 ms liegt (Default-Mindestdauer ist 1500 ms).
             Assert.True(sw.ElapsedMilliseconds >= 1000,
-                $"Erwartet >= 1000 ms Wartezeit, tatsaechlich {sw.ElapsedMilliseconds} ms.");
+                $"Erwartet >= 1000 ms Wartezeit, tatsächlich {sw.ElapsedMilliseconds} ms.");
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Services
             sw.Stop();
 
             Assert.True(sw.ElapsedMilliseconds < 1000,
-                $"Erwartet vorzeitiges Ende (< 1000 ms), tatsaechlich {sw.ElapsedMilliseconds} ms.");
+                $"Erwartet vorzeitiges Ende (< 1000 ms), tatsächlich {sw.ElapsedMilliseconds} ms.");
         }
     }
 }

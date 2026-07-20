@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Verifiziert den GitHub-Releases-basierten Update-Check fuer die wichtigsten
+    /// Verifiziert den GitHub-Releases-basierten Update-Check für die wichtigsten
     /// Pfade — Offline-Modus, HTTP-Fehler, SkippedVersion.
     /// </summary>
     public sealed class UpdateCheckServiceTests

@@ -26,7 +26,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearOnlineLibraryAsync();
 
             List<Series> remaining = await Context.Series.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -46,7 +46,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearOnlineLibraryAsync();
 
             int count = await Context.Series.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -66,7 +66,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearLocalLibraryAsync();
 
             int seriesCount = await Context.Series.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -87,7 +87,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearLocalLibraryAsync();
 
             Series? updated = await Context.Series.IgnoreQueryFilters().FirstAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -114,7 +114,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearLocalLibraryAsync();
 
             int trackCount = await Context.LocalTracks.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -140,7 +140,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearLibraryAsync();
 
             int coverCount = await Context.CoverImages.IgnoreQueryFilters().CountAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -163,7 +163,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearOnlineLibraryAsync();
 
             List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -187,7 +187,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            DatabaseMaintenanceService service = new(Context);
+            DatabaseMaintenanceService service = new(Context, NullLoggerFactory);
             await service.ClearLocalLibraryAsync();
 
             List<CoverImage> remaining = await Context.CoverImages.IgnoreQueryFilters().ToListAsync(cancellationToken: TestContext.Current.CancellationToken);

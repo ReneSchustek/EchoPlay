@@ -9,7 +9,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Enthält grundlegende Tests für den PlaybackStateDataService.
     /// Der Fokus liegt auf dem korrekten Persistieren und Wiederauffinden von Wiedergabeständen über ihre zugehörige Episode.
     /// </summary>
-    public class PlaybackStateTests : DbTestBase
+    public sealed class PlaybackStateTests : DbTestBase
     {
         /// <summary>
         /// Stellt sicher, dass ein gespeicherter PlaybackState über die EpisodeId korrekt wieder abgerufen werden kann.

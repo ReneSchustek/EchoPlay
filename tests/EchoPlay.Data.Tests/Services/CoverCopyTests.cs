@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Prüft die Cover-Kopie per Raw SQL über die CoverImages-Tabelle
     /// mit verschiedenen Matching-Strategien.
     /// </summary>
-    public class CoverCopyTests : DbTestBase
+    public sealed class CoverCopyTests : DbTestBase
     {
         /// <summary>
         /// Legt einen CoverImage-Eintrag für eine Episode an.

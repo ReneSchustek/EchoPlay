@@ -74,20 +74,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Lädt Cover-Binärdaten für mehrere Serien in einer Query (Batch).
-        /// Verhindert N+1-Probleme beim Laden von Serienlisten.
-        /// </summary>
-
-        public async Task<IReadOnlyDictionary<Guid, byte[]>> GetSeriesCoverBytesAsync(
-            IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
-        {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ICoverImageDataService coverService = scope.ServiceProvider
-                .GetRequiredService<ICoverImageDataService>();
-            return await coverService.GetImageDataByEntitiesAsync(EntityTypeSeries, seriesIds, cancellationToken);
-        }
-
-        /// <summary>
         /// Lädt Cover-Binärdaten für mehrere Episoden in einer Query (Batch).
         /// Verhindert N+1-Probleme beim Laden von Episodenlisten.
         /// </summary>

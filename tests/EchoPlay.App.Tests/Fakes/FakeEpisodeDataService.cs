@@ -149,27 +149,6 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId, CancellationToken cancellationToken = default)
-        {
-            IReadOnlyList<Episode> result = _episodes
-                .Where(e => e.SeriesId == seriesId && e.LocalFolderPath is null)
-                .OrderBy(e => e.EpisodeNumber)
-                .ThenBy(e => e.Title)
-                .ToList();
-            return Task.FromResult(result);
-        }
-
-        /// <inheritdoc/>
-        public Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId, CancellationToken cancellationToken = default)
-        {
-            int? result = _episodes
-                .Where(e => e.SeriesId == seriesId && e.LocalFolderPath is not null && e.EpisodeNumber is not null)
-                .Select(e => e.EpisodeNumber)
-                .Max();
-            return Task.FromResult(result);
-        }
-
-        /// <inheritdoc/>
         public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             _ = _episodes.RemoveAll(e => e.Id == id);

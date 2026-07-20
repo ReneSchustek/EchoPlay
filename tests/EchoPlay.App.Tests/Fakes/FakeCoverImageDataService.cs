@@ -59,17 +59,6 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt, CancellationToken cancellationToken = default)
-        {
-            if (_covers.TryGetValue((entityType, entityId), out CoverImage? cover))
-            {
-                cover.LastChecked = checkedAt;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
         public Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
             string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default)
         {

@@ -92,39 +92,6 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task GetHighestLocalEpisodeNumberAsync_ReturnsMax()
-        {
-            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
-
-            Episode ep1 = new() { SeriesId = series.Id, Title = "F1", EpisodeNumber = 10, LocalFolderPath = @"C:\1" };
-            Episode ep2 = new() { SeriesId = series.Id, Title = "F2", EpisodeNumber = 20, LocalFolderPath = @"C:\2" };
-            Episode ep3 = new() { SeriesId = series.Id, Title = "F3", EpisodeNumber = 5 }; // kein lokaler Pfad
-            Context.Episodes.AddRange(ep1, ep2, ep3);
-            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
-            Context.ChangeTracker.Clear();
-
-            EpisodeDataService service = new(Context, NullLoggerFactory);
-            int? highest = await service.GetHighestLocalEpisodeNumberAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
-
-            Assert.Equal(20, highest);
-        }
-
-        [Fact]
-        public async Task GetHighestLocalEpisodeNumberAsync_ReturnsNull_WhenNoLocal()
-        {
-            Series series = await DataBuilder.PersistSeriesAsync("Nur Online");
-            Episode ep = new() { SeriesId = series.Id, Title = "Online", EpisodeNumber = 5 };
-            _ = Context.Episodes.Add(ep);
-            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
-            Context.ChangeTracker.Clear();
-
-            EpisodeDataService service = new(Context, NullLoggerFactory);
-            int? highest = await service.GetHighestLocalEpisodeNumberAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
-
-            Assert.Null(highest);
-        }
-
-        [Fact]
         public async Task GetEpisodeCountsForSeriesAsync_ReturnsCounts()
         {
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");

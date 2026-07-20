@@ -26,12 +26,6 @@ namespace EchoPlay.App.Services
         /// <returns>Das Cover oder <c>null</c>.</returns>
         Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default);
 
-        /// <summary>Lädt Cover-Binärdaten für mehrere Serien in einer Query (Batch, kein N+1).</summary>
-        /// <param name="seriesIds">Die IDs der Serien.</param>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Zuordnung Serie-ID → Cover-Bytes für vorhandene Cover.</returns>
-        Task<IReadOnlyDictionary<Guid, byte[]>> GetSeriesCoverBytesAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);
-
         /// <summary>Lädt Cover-Binärdaten für mehrere Episoden in einer Query (Batch, kein N+1).</summary>
         /// <param name="episodeIds">Die IDs der Episoden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

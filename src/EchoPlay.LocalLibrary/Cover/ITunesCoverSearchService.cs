@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,80 +18,45 @@ namespace EchoPlay.LocalLibrary.Cover
     /// <c>100x100bb</c> → <c>600x600bb</c> für das Vollbild,
     /// <c>100x100bb</c> → <c>250x250bb</c> für das Thumbnail.
     /// </remarks>
-    public sealed class ITunesCoverSearchService : ICoverSearchService
+    public sealed class ITunesCoverSearchService : JsonCoverSearchServiceBase
     {
-        private readonly HttpClient _httpClient;
-
-        /// <summary>Maximal 9 Treffer – passt in ein 3×3-Grid im Auswahldialog.</summary>
-        private const int MaxResults = 9;
-
         /// <summary>
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public ITunesCoverSearchService(HttpClient httpClient)
+        public ITunesCoverSearchService(HttpClient httpClient) : base(httpClient)
         {
-            _httpClient = httpClient;
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+        public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
-            CancellationToken ct = default)
+            CancellationToken ct = default) =>
+            SearchJsonAsync<ITunesSearchResponse, ITunesAlbumResult>(
+                title,
+                static (encodedTitle, maxResults) => $"https://itunes.apple.com/search?term={encodedTitle}&media=music&entity=album&limit={maxResults}",
+                static response => response.Results,
+                MapAlbum,
+                ct);
+
+        private static CoverSearchResult? MapAlbum(ITunesAlbumResult album, string fallbackTitle)
         {
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(album.ArtworkUrl100))
             {
-                return [];
+                return null;
             }
 
-            ITunesSearchResponse? response;
+            // iTunes liefert 100×100 als Standard – Größe im URL-String austauschen
+            string thumbnailUrl = album.ArtworkUrl100.Replace("100x100bb", "250x250bb", StringComparison.Ordinal);
+            string fullUrl = album.ArtworkUrl100.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
 
-            try
-            {
-                string encodedTitle = Uri.EscapeDataString(title);
-                string url = $"https://itunes.apple.com/search?term={encodedTitle}&media=music&entity=album&limit={MaxResults}";
+            string albumTitle = album.CollectionName ?? fallbackTitle;
 
-                response = await _httpClient.GetFromJsonAsync<ITunesSearchResponse>(url, ct).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is HttpRequestException
-                                       or TaskCanceledException
-                                       or JsonException
-                                       or NotSupportedException
-                                       or UriFormatException
-                                       or InvalidOperationException)
-            {
-                // Netzwerkfehler oder JSON-Deserialisierung → leere Liste, kein Absturz
-                return [];
-            }
-
-            if (response?.Results is not { Count: > 0 })
-            {
-                return [];
-            }
-
-            List<CoverSearchResult> results = [];
-
-            foreach (ITunesAlbumResult album in response.Results)
-            {
-                if (string.IsNullOrWhiteSpace(album.ArtworkUrl100))
-                {
-                    continue;
-                }
-
-                // iTunes liefert 100×100 als Standard – Größe im URL-String austauschen
-                string thumbnailUrl = album.ArtworkUrl100.Replace("100x100bb", "250x250bb", StringComparison.Ordinal);
-                string fullUrl = album.ArtworkUrl100.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
-
-                string albumTitle = album.CollectionName ?? title;
-
-                results.Add(new CoverSearchResult(
-                    ThumbnailUrl: thumbnailUrl,
-                    FullUrl: fullUrl,
-                    ReleaseTitle: albumTitle,
-                    Source: "iTunes"));
-            }
-
-            return results;
+            return new CoverSearchResult(
+                ThumbnailUrl: thumbnailUrl,
+                FullUrl: fullUrl,
+                ReleaseTitle: albumTitle,
+                Source: "iTunes");
         }
 
         // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────

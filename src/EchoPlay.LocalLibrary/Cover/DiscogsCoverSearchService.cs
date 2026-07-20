@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,79 +18,45 @@ namespace EchoPlay.LocalLibrary.Cover
     /// Ein <c>User-Agent</c>-Header ist Pflicht, sonst antwortet Discogs mit HTTP 403.
     /// Die Thumbnails sind klein (~150 px), das Vollbild wird über die Release-Detail-URL geladen.
     /// </remarks>
-    public sealed class DiscogsCoverSearchService : ICoverSearchService
+    public sealed class DiscogsCoverSearchService : JsonCoverSearchServiceBase
     {
-        private readonly HttpClient _httpClient;
-
-        /// <summary>Maximal 9 Treffer pro Suche.</summary>
-        private const int MaxResults = 9;
-
         /// <summary>
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// Der Client muss einen gültigen <c>User-Agent</c>-Header tragen.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public DiscogsCoverSearchService(HttpClient httpClient)
+        public DiscogsCoverSearchService(HttpClient httpClient) : base(httpClient)
         {
-            _httpClient = httpClient;
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+        public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
-            CancellationToken ct = default)
+            CancellationToken ct = default) =>
+            SearchJsonAsync<DiscogsSearchResponse, DiscogsRelease>(
+                title,
+                static (encodedTitle, maxResults) => $"https://api.discogs.com/database/search?q={encodedTitle}&type=release&per_page={maxResults}",
+                static response => response.Results,
+                MapRelease,
+                ct);
+
+        private static CoverSearchResult? MapRelease(DiscogsRelease release, string fallbackTitle)
         {
-            if (string.IsNullOrWhiteSpace(title))
+            // Discogs liefert ein Thumbnail und eine Cover-URL.
+            // Manche Releases haben kein Bild – die filtern wir raus.
+            if (string.IsNullOrWhiteSpace(release.CoverImage)
+                || string.IsNullOrWhiteSpace(release.Thumb))
             {
-                return [];
+                return null;
             }
 
-            DiscogsSearchResponse? response;
+            string releaseTitle = release.Title ?? fallbackTitle;
 
-            try
-            {
-                string encodedTitle = Uri.EscapeDataString(title);
-                string url = $"https://api.discogs.com/database/search?q={encodedTitle}&type=release&per_page={MaxResults}";
-
-                response = await _httpClient.GetFromJsonAsync<DiscogsSearchResponse>(url, ct).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is HttpRequestException
-                                       or TaskCanceledException
-                                       or JsonException
-                                       or NotSupportedException
-                                       or UriFormatException
-                                       or InvalidOperationException)
-            {
-                return [];
-            }
-
-            if (response?.Results is not { Count: > 0 })
-            {
-                return [];
-            }
-
-            List<CoverSearchResult> results = [];
-
-            foreach (DiscogsRelease release in response.Results)
-            {
-                // Discogs liefert ein Thumbnail und eine Cover-URL.
-                // Manche Releases haben kein Bild – die filtern wir raus.
-                if (string.IsNullOrWhiteSpace(release.CoverImage)
-                    || string.IsNullOrWhiteSpace(release.Thumb))
-                {
-                    continue;
-                }
-
-                string releaseTitle = release.Title ?? title;
-
-                results.Add(new CoverSearchResult(
-                    ThumbnailUrl: release.Thumb,
-                    FullUrl: release.CoverImage,
-                    ReleaseTitle: releaseTitle,
-                    Source: "Discogs"));
-            }
-
-            return results;
+            return new CoverSearchResult(
+                ThumbnailUrl: release.Thumb,
+                FullUrl: release.CoverImage,
+                ReleaseTitle: releaseTitle,
+                Source: "Discogs");
         }
 
         // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────

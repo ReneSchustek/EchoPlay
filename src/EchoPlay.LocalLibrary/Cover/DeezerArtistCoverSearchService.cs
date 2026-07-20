@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,78 +18,47 @@ namespace EchoPlay.LocalLibrary.Cover
     /// Die Bilder kommen in festen Größen: <c>picture_medium</c> (250×250),
     /// <c>picture_big</c> (500×500), <c>picture_xl</c> (1000×1000).
     /// </remarks>
-    public sealed class DeezerArtistCoverSearchService : ICoverSearchService
+    public sealed class DeezerArtistCoverSearchService : JsonCoverSearchServiceBase
     {
-        private readonly HttpClient _httpClient;
-
-        /// <summary>Maximal 6 Künstlertreffer – Serienbilder sind meist im ersten Ergebnis.</summary>
-        private const int MaxResults = 6;
-
         /// <summary>
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public DeezerArtistCoverSearchService(HttpClient httpClient)
+        public DeezerArtistCoverSearchService(HttpClient httpClient) : base(httpClient)
         {
-            _httpClient = httpClient;
         }
 
+        /// <summary>Maximal 6 Künstlertreffer – Serienbilder sind meist im ersten Ergebnis.</summary>
+        protected override int MaxResults => 6;
+
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+        public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
-            CancellationToken ct = default)
+            CancellationToken ct = default) =>
+            SearchJsonAsync<DeezerSearchResponse, DeezerArtist>(
+                title,
+                static (encodedTitle, maxResults) => $"https://api.deezer.com/search/artist?q={encodedTitle}&limit={maxResults}",
+                static response => response.Data,
+                MapArtist,
+                ct);
+
+        private static CoverSearchResult? MapArtist(DeezerArtist artist, string fallbackTitle)
         {
-            if (string.IsNullOrWhiteSpace(title))
+            // Deezer liefert einen Platzhalter-URL wenn kein Bild vorhanden ist –
+            // diese enthalten "/artist//", ohne ID dazwischen
+            if (string.IsNullOrWhiteSpace(artist.PictureMedium)
+                || string.IsNullOrWhiteSpace(artist.PictureXl))
             {
-                return [];
+                return null;
             }
 
-            DeezerSearchResponse? response;
+            string artistName = artist.Name ?? fallbackTitle;
 
-            try
-            {
-                string encodedTitle = Uri.EscapeDataString(title);
-                string url = $"https://api.deezer.com/search/artist?q={encodedTitle}&limit={MaxResults}";
-
-                response = await _httpClient.GetFromJsonAsync<DeezerSearchResponse>(url, ct).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is HttpRequestException
-                                       or TaskCanceledException
-                                       or JsonException
-                                       or NotSupportedException
-                                       or UriFormatException
-                                       or InvalidOperationException)
-            {
-                return [];
-            }
-
-            if (response?.Data is not { Count: > 0 })
-            {
-                return [];
-            }
-
-            List<CoverSearchResult> results = [];
-
-            foreach (DeezerArtist artist in response.Data)
-            {
-                // Deezer liefert einen Platzhalter-URL wenn kein Bild vorhanden ist –
-                // diese enthalten "/artist//", ohne ID dazwischen
-                if (string.IsNullOrWhiteSpace(artist.PictureMedium)
-                    || string.IsNullOrWhiteSpace(artist.PictureXl))
-                {
-                    continue;
-                }
-
-                string artistName = artist.Name ?? title;
-
-                results.Add(new CoverSearchResult(
-                    ThumbnailUrl: artist.PictureMedium,
-                    FullUrl: artist.PictureXl,
-                    ReleaseTitle: artistName,
-                    Source: "Deezer (Künstler)"));
-            }
-
-            return results;
+            return new CoverSearchResult(
+                ThumbnailUrl: artist.PictureMedium,
+                FullUrl: artist.PictureXl,
+                ReleaseTitle: artistName,
+                Source: "Deezer (Künstler)");
         }
 
         // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────

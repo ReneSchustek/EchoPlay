@@ -7,7 +7,7 @@ namespace EchoPlay.Logger.Sinks
     /// <summary>
     /// Schreibt Log-Einträge in die Debug-Konsole (Visual Studio Output-Fenster).
     /// </summary>
-    public class DebugConsoleSink : ILogSink
+    public sealed class DebugConsoleSink : ILogSink
     {
         private readonly ILogFormatter _formatter;
 

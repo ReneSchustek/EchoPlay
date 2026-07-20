@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Services
     /// </summary>
     public sealed class CoverImageDataService(
         EchoPlayDbContext context,
-        ILoggerFactory loggerFactory) : ICoverImageDataService
+        EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory) : ICoverImageDataService
     {
         private readonly EchoPlayDbContext _context = context;
         private readonly ILogger _logger = loggerFactory.CreateLogger("CoverImageDataService");

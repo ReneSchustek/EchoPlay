@@ -19,7 +19,7 @@ namespace EchoPlay.Logger.Core
     /// <param name="sinks">Liste der Ausgabeziele für Log-Einträge.</param>
     /// <param name="options">Logger-Konfiguration – <c>MinimumLevel</c> wird bei jedem Aufruf neu gelesen.</param>
     [SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "Etablierter Framework-Name; Namespace und Typ sind bewusst identisch wie bei Microsoft.Extensions.Logging.")]
-    public class Logger(string category, IReadOnlyList<ILogSink> sinks, LoggerOptions options) : ILogger
+    public sealed class Logger(string category, IReadOnlyList<ILogSink> sinks, LoggerOptions options) : ILogger
     {
         private readonly string _category = category;
         private readonly IReadOnlyList<ILogSink> _sinks = sinks;

@@ -1,5 +1,5 @@
 using EchoPlay.Data.Context;
-using EchoPlay.Data.Tests.Helper;
+using EchoPlay.Data.Tests.Helpers;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Tests.Infrastructure

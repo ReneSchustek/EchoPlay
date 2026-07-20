@@ -9,7 +9,7 @@ namespace EchoPlay.Data.Configurations
     /// EF-Core-Konfiguration für die Series-Entität.
     /// Beschreibt, wie Hörspielserien in der Datenbank gespeichert werden.
     /// </summary>
-    public class SeriesConfiguration : IEntityTypeConfiguration<Series>
+    internal sealed class SeriesConfiguration : IEntityTypeConfiguration<Series>
     {
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<Series> builder)

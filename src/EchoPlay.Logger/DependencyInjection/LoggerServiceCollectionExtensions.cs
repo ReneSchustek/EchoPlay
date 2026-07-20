@@ -7,12 +7,12 @@ using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Sinks;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EchoPlay.Logger.Extensions
+namespace EchoPlay.Logger.DependencyInjection
 {
     /// <summary>
     /// Erweiterungsmethoden für die Registrierung des EchoPlay Loggers im DI-Container.
     /// </summary>
-    public static class ServiceCollectionExtensions
+    public static class LoggerServiceCollectionExtensions
     {
         /// <summary>
         /// Registriert den EchoPlay Logger im DI-Container.

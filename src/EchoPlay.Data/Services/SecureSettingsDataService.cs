@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Services
     /// </summary>
     public sealed class SecureSettingsDataService(
         EchoPlayDbContext context,
-        ILoggerFactory loggerFactory) : ISecureSettingsDataService
+        EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory) : ISecureSettingsDataService
     {
         private readonly EchoPlayDbContext _context = context;
         private readonly ILogger _logger = loggerFactory.CreateLogger("SecureSettingsDataService");

@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Enthält Tests zur Verifikation des Soft-Delete-Verhaltens von PlaybackStates.
     /// Der Fokus liegt darauf sicherzustellen, dass das Löschen eines Wiedergabestatus keine Auswirkungen auf übergeordnete Entitäten hat.
     /// </summary>
-    public class PlaybackStateSoftDeleteTests : DbTestBase
+    public sealed class PlaybackStateSoftDeleteTests : DbTestBase
     {
         /// <summary>
         /// Stellt sicher, dass das Löschen eines PlaybackStates ausschließlich diesen selbst logisch löscht, während Episode und Serie unverändert

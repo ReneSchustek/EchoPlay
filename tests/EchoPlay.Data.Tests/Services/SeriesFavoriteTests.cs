@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Tests für den Favoriten-Mechanismus der <see cref="SeriesDataService"/>-Klasse.
     /// Prüft Filterung, Persistenz und Sortierung rund um das <c>IsFavorite</c>-Flag.
     /// </summary>
-    public class SeriesFavoriteTests : DbTestBase
+    public sealed class SeriesFavoriteTests : DbTestBase
     {
         [Fact]
         public async Task GetFavorites_ReturnsOnlyFavorites()

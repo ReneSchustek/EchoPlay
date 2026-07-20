@@ -9,7 +9,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Prüft Speicherung, Upsert-Logik, Bereinigung und Lesen
     /// von gecachten iTunes-Neuerscheinungen.
     /// </summary>
-    public class CachedNewReleaseTests : DbTestBase
+    public sealed class CachedNewReleaseTests : DbTestBase
     {
         [Fact]
         public async Task GetAllAsync_ReturnsEmptyList_WhenCacheEmpty()

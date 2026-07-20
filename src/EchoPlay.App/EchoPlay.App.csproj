@@ -81,6 +81,24 @@
            Text="EmbeddedResource mit LogicalName 'EchoPlay.App.Assets.logo.png' fehlt in EchoPlay.App.csproj — siehe splashscreen.md." />
   </Target>
 
+  <!-- Koppelt die Package.appxmanifest-Identity-Version an VersionPrefix (Directory.Build.props):
+       stimmen beide nicht überein, bricht der Build hart ab. So bleibt VersionPrefix die einzige
+       Versionsquelle und das Manifest kann nie unbemerkt driften. Bewusst nur eine Prüfung (XmlPeek,
+       read-only) statt Auto-Rewrite — ein XmlPoke würde die Manifest-Formatierung zerstören.
+       Bei einem Release VersionPrefix hochzählen und die vierstellige Manifest-Version (X.Y.Z.0)
+       einmal nachziehen. Namespace-agnostisch via local-name() wegen des Default-Namespace. -->
+  <Target Name="VerifyAppxManifestVersion" BeforeTargets="BeforeBuild">
+    <PropertyGroup>
+      <_ExpectedManifestVersion>$(VersionPrefix).0</_ExpectedManifestVersion>
+    </PropertyGroup>
+    <XmlPeek XmlInputPath="$(MSBuildProjectDirectory)\Package.appxmanifest"
+             Query="/*[local-name()='Package']/*[local-name()='Identity']/@Version">
+      <Output TaskParameter="Result" ItemName="_CurrentManifestVersion" />
+    </XmlPeek>
+    <Error Condition="'@(_CurrentManifestVersion)' != '$(_ExpectedManifestVersion)'"
+           Text="Package.appxmanifest-Version '@(_CurrentManifestVersion)' passt nicht zu VersionPrefix — erwartet '$(_ExpectedManifestVersion)'. Identity-Version im Manifest auf '$(_ExpectedManifestVersion)' setzen (VersionPrefix in Directory.Build.props ist die Versionsquelle)." />
+  </Target>
+
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>

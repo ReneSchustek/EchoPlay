@@ -1,10 +1,9 @@
 using EchoPlay.Core.Abstractions.Import;
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
 using EchoPlay.Spotify.Mapping;
-using System.Net.Http;
-using System.Text.Json;
 
 namespace EchoPlay.Spotify.Services
 {
@@ -53,11 +52,7 @@ namespace EchoPlay.Spotify.Services
                 {
                     tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is HttpRequestException
-                                           or TaskCanceledException
-                                           or JsonException
-                                           or InvalidOperationException
-                                           or UriFormatException)
+                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
                 {
                     // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
                     _logger.Warning(

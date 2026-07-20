@@ -1,9 +1,8 @@
 using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Dtos;
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Scoring;
 using Microsoft.Extensions.Options;
-using System.Net.Http;
-using System.Text.Json;
 
 namespace EchoPlay.AppleMusic.Scoring
 {
@@ -171,11 +170,7 @@ namespace EchoPlay.AppleMusic.Scoring
                 {
                     tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is HttpRequestException
-                                           or TaskCanceledException
-                                           or JsonException
-                                           or InvalidOperationException
-                                           or UriFormatException)
+                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
                 {
                     // Schlägt das Laden der Tracks für ein Album fehl, wird es bei der Strukturanalyse
                     // übersprungen, um die Gesamtbewertung nicht zu blockieren.

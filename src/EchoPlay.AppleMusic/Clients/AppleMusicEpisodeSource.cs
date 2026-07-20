@@ -2,9 +2,8 @@ using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.AppleMusic.Mapping;
 using EchoPlay.Core.Abstractions.Import;
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Models.Import;
-using System.Net.Http;
-using System.Text.Json;
 
 namespace EchoPlay.AppleMusic.Clients
 {
@@ -101,11 +100,7 @@ namespace EchoPlay.AppleMusic.Clients
                 {
                     tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is HttpRequestException
-                                           or TaskCanceledException
-                                           or JsonException
-                                           or InvalidOperationException
-                                           or UriFormatException)
+                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
                 {
                     // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
                     _logger.Warning(

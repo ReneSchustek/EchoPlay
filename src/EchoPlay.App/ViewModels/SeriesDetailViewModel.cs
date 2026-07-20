@@ -546,25 +546,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId, _lifecycleCts.Token);
-
-            if (existing is not null)
-            {
-                existing.IsCompleted = true;
-                existing.CompletedAt = _clock.UtcNow;
-                await stateService.UpdateAsync(existing, _lifecycleCts.Token);
-            }
-            else
-            {
-                PlaybackState newState = new()
-                {
-                    EpisodeId = episodeId,
-                    IsCompleted = true,
-                    CompletedAt = _clock.UtcNow,
-                    LastPlayedAt = _clock.UtcNow
-                };
-                await stateService.AddAsync(newState, _lifecycleCts.Token);
-            }
+            await stateService.MarkCompletedAsync(episodeId, _clock.UtcNow, _lifecycleCts.Token);
 
             await LoadAsync(_seriesId);
         }
@@ -582,12 +564,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId, _lifecycleCts.Token);
-
-            if (existing is not null)
-            {
-                await stateService.DeleteAsync(existing.Id, _lifecycleCts.Token);
-            }
+            await stateService.MarkNotStartedAsync(episodeId, _lifecycleCts.Token);
 
             await LoadAsync(_seriesId);
         }

@@ -71,6 +71,40 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
+        public async Task MarkCompletedAsync(Guid episodeId, DateTime completedAt, CancellationToken cancellationToken = default)
+        {
+            PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken);
+
+            if (existing is not null)
+            {
+                existing.IsCompleted = true;
+                existing.CompletedAt = completedAt;
+                await UpdateAsync(existing, cancellationToken);
+            }
+            else
+            {
+                await AddAsync(new PlaybackState
+                {
+                    EpisodeId = episodeId,
+                    IsCompleted = true,
+                    CompletedAt = completedAt,
+                    LastPlayedAt = completedAt
+                }, cancellationToken);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task MarkNotStartedAsync(Guid episodeId, CancellationToken cancellationToken = default)
+        {
+            PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken);
+
+            if (existing is not null)
+            {
+                await DeleteAsync(existing.Id, cancellationToken);
+            }
+        }
+
+        /// <inheritdoc/>
         public Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             HashSet<Guid> completed = _states

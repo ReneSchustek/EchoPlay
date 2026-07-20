@@ -236,5 +236,39 @@ namespace EchoPlay.Data.Services
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info("PlaybackState (ID: {PlaybackStateId}) als gelöscht markiert.", id);
         }
+
+        /// <inheritdoc />
+        public async Task MarkCompletedAsync(Guid episodeId, DateTime completedAt, CancellationToken cancellationToken = default)
+        {
+            PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken).ConfigureAwait(false);
+
+            if (existing is not null)
+            {
+                existing.IsCompleted = true;
+                existing.CompletedAt = completedAt;
+                await UpdateAsync(existing, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await AddAsync(new PlaybackState
+                {
+                    EpisodeId = episodeId,
+                    IsCompleted = true,
+                    CompletedAt = completedAt,
+                    LastPlayedAt = completedAt
+                }, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task MarkNotStartedAsync(Guid episodeId, CancellationToken cancellationToken = default)
+        {
+            PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken).ConfigureAwait(false);
+
+            if (existing is not null)
+            {
+                await DeleteAsync(existing.Id, cancellationToken).ConfigureAwait(false);
+            }
+        }
     }
 }

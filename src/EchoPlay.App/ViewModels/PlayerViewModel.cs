@@ -2,6 +2,7 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace EchoPlay.App.ViewModels
     {
         private readonly IPlayerService _playerService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly DispatcherQueue? _dispatcherQueue;
 
         private ObservableCollection<PlaylistItemViewModel> _playlistItems = [];
         private BitmapImage? _coverImage;
@@ -42,10 +44,21 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="playerService">Zentraler Service für die Audiowiedergabe.</param>
         /// <param name="scopeFactory">Für Datenbankzugriffe (AppSettings, LastOpenedPlayerFolder).</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch außerhalb von WinUI zu konstruieren.")]
         public PlayerViewModel(IPlayerService playerService, IServiceScopeFactory scopeFactory)
         {
             _playerService = playerService;
             _scopeFactory = scopeFactory;
+
+            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests) – daher try-catch.
+            try
+            {
+                _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+            }
+            catch (Exception)
+            {
+                _dispatcherQueue = null;
+            }
 
             _playerService.StateChanged += OnPlayerStateChanged;
 
@@ -344,7 +357,17 @@ namespace EchoPlay.App.ViewModels
 
         private void OnPlayerStateChanged(object? sender, EventArgs e)
         {
-            RefreshFromPlayerService();
+            // StateChanged feuert aus dem Positions-Timer-Thread des PlayerService – die
+            // gebundenen Properties dürfen aber nur auf dem UI-Thread verändert werden.
+            // In Tests gibt es keinen UI-Thread, daher direkt aktualisieren.
+            if (_dispatcherQueue is not null)
+            {
+                _ = _dispatcherQueue.TryEnqueue(RefreshFromPlayerService);
+            }
+            else
+            {
+                RefreshFromPlayerService();
+            }
         }
 
         /// <summary>

@@ -463,7 +463,7 @@ namespace EchoPlay.App.ViewModels
                     return [];
                 }
 
-                return await BuildTilesFromEntries(cached, subscribedSeries, episodeService, stateService, cancellationToken);
+                return await BuildTilesFromEntriesAsync(cached, subscribedSeries, episodeService, stateService, cancellationToken);
             }
             catch (InvalidOperationException ex)
             {
@@ -483,7 +483,7 @@ namespace EchoPlay.App.ViewModels
         /// danach folgen die Monate absteigend (neuester zuerst).
         /// Gehörte Folgen werden herausgefiltert.
         /// </summary>
-        private async Task<IReadOnlyList<NewEpisodesGroupViewModel>> BuildTilesFromEntries(
+        private async Task<IReadOnlyList<NewEpisodesGroupViewModel>> BuildTilesFromEntriesAsync(
             IReadOnlyList<CachedNewRelease> cached,
             IReadOnlyList<Series> subscribedSeries,
             IEpisodeDataService episodeService,

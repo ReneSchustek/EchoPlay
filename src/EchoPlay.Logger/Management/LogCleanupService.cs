@@ -10,7 +10,7 @@ namespace EchoPlay.Logger.Management
     /// Erstellt einen neuen LogCleanupService.
     /// </remarks>
     /// <param name="options">Die Logger-Konfiguration.</param>
-    public class LogCleanupService(LoggerOptions options)
+    public sealed class LogCleanupService(LoggerOptions options)
     {
         private readonly LoggerOptions _options = options;
 

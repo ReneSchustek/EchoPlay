@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Configurations
     /// Binärdaten sind bewusst von den Metadaten-Tabellen getrennt,
     /// damit normale Queries keine MB an Bilddaten mitladen.
     /// </summary>
-    public class CoverImageConfiguration : IEntityTypeConfiguration<CoverImage>
+    internal sealed class CoverImageConfiguration : IEntityTypeConfiguration<CoverImage>
     {
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<CoverImage> builder)

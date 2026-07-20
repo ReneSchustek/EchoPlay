@@ -14,7 +14,7 @@ namespace EchoPlay.Logger.Core
     /// </remarks>
     /// <param name="sinks">Liste der Ausgabeziele für alle Logger.</param>
     /// <param name="options">Geteilte Konfiguration – insbesondere <c>MinimumLevel</c> ist zur Laufzeit änderbar.</param>
-    public class LoggerFactory(IEnumerable<ILogSink> sinks, LoggerOptions options) : ILoggerFactory
+    public sealed class LoggerFactory(IEnumerable<ILogSink> sinks, LoggerOptions options) : ILoggerFactory
     {
         private readonly List<ILogSink> _sinks = [.. sinks];
         private readonly LoggerOptions _options = options;

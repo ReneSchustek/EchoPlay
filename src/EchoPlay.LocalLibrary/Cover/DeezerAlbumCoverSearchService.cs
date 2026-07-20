@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,76 +18,42 @@ namespace EchoPlay.LocalLibrary.Cover
     /// Die Cover kommen in festen Größen: <c>cover_medium</c> (250×250),
     /// <c>cover_big</c> (500×500), <c>cover_xl</c> (1000×1000).
     /// </remarks>
-    public sealed class DeezerAlbumCoverSearchService : ICoverSearchService
+    public sealed class DeezerAlbumCoverSearchService : JsonCoverSearchServiceBase
     {
-        private readonly HttpClient _httpClient;
-
-        /// <summary>Maximal 9 Treffer – passt in ein 3×3-Grid im Auswahldialog.</summary>
-        private const int MaxResults = 9;
-
         /// <summary>
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public DeezerAlbumCoverSearchService(HttpClient httpClient)
+        public DeezerAlbumCoverSearchService(HttpClient httpClient) : base(httpClient)
         {
-            _httpClient = httpClient;
         }
 
         /// <inheritdoc/>
-        public async Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+        public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
-            CancellationToken ct = default)
+            CancellationToken ct = default) =>
+            SearchJsonAsync<DeezerSearchResponse, DeezerAlbum>(
+                title,
+                static (encodedTitle, maxResults) => $"https://api.deezer.com/search/album?q={encodedTitle}&limit={maxResults}",
+                static response => response.Data,
+                MapAlbum,
+                ct);
+
+        private static CoverSearchResult? MapAlbum(DeezerAlbum album, string fallbackTitle)
         {
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(album.CoverMedium)
+                || string.IsNullOrWhiteSpace(album.CoverXl))
             {
-                return [];
+                return null;
             }
 
-            DeezerSearchResponse? response;
+            string albumTitle = album.Title ?? fallbackTitle;
 
-            try
-            {
-                string encodedTitle = Uri.EscapeDataString(title);
-                string url = $"https://api.deezer.com/search/album?q={encodedTitle}&limit={MaxResults}";
-
-                response = await _httpClient.GetFromJsonAsync<DeezerSearchResponse>(url, ct).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is HttpRequestException
-                                       or TaskCanceledException
-                                       or JsonException
-                                       or NotSupportedException
-                                       or UriFormatException
-                                       or InvalidOperationException)
-            {
-                return [];
-            }
-
-            if (response?.Data is not { Count: > 0 })
-            {
-                return [];
-            }
-
-            List<CoverSearchResult> results = [];
-
-            foreach (DeezerAlbum album in response.Data)
-            {
-                if (string.IsNullOrWhiteSpace(album.CoverMedium)
-                    || string.IsNullOrWhiteSpace(album.CoverXl))
-                {
-                    continue;
-                }
-
-                string albumTitle = album.Title ?? title;
-
-                results.Add(new CoverSearchResult(
-                    ThumbnailUrl: album.CoverMedium,
-                    FullUrl: album.CoverXl,
-                    ReleaseTitle: albumTitle,
-                    Source: "Deezer (Album)"));
-            }
-
-            return results;
+            return new CoverSearchResult(
+                ThumbnailUrl: album.CoverMedium,
+                FullUrl: album.CoverXl,
+                ReleaseTitle: albumTitle,
+                Source: "Deezer (Album)");
         }
 
         // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────

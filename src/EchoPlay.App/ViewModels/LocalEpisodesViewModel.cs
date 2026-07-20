@@ -536,25 +536,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId);
-
-            if (existing is not null)
-            {
-                existing.IsCompleted = true;
-                existing.CompletedAt = _clock.UtcNow;
-                await stateService.UpdateAsync(existing);
-            }
-            else
-            {
-                PlaybackState newState = new()
-                {
-                    EpisodeId = episodeId,
-                    IsCompleted = true,
-                    CompletedAt = _clock.UtcNow,
-                    LastPlayedAt = _clock.UtcNow
-                };
-                await stateService.AddAsync(newState);
-            }
+            await stateService.MarkCompletedAsync(episodeId, _clock.UtcNow);
 
             // Kachel sofort aktualisieren – ohne Serienwechsel und Rückkehr.
             // Haken erscheint per PropertyChanged auf IsCompleted → CompletedCheckVisibility.
@@ -578,12 +560,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService stateService =
                 scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(episodeId);
-
-            if (existing is not null)
-            {
-                await stateService.DeleteAsync(existing.Id);
-            }
+            await stateService.MarkNotStartedAsync(episodeId);
 
             // Kachel sofort aktualisieren – Haken verschwindet per PropertyChanged.
             _ = _completedEpisodeIds.Remove(episodeId);

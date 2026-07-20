@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using EchoPlay.Core.Security;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
@@ -142,23 +143,7 @@ namespace EchoPlay.TagManager.Services
                 result = result.Replace("{track}", string.Empty, StringComparison.Ordinal);
             }
 
-            return SanitizeFileName(result);
-        }
-
-        /// <summary>
-        /// Ersetzt alle für Dateinamen ungültigen Zeichen durch Unterstriche
-        /// und trimmt führende und abschließende Leerzeichen.
-        /// </summary>
-        private static string SanitizeFileName(string name)
-        {
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-
-            foreach (char c in invalidChars)
-            {
-                name = name.Replace(c, '_');
-            }
-
-            return name.Trim();
+            return PathSanitizer.SanitizeSegment(result);
         }
     }
 }

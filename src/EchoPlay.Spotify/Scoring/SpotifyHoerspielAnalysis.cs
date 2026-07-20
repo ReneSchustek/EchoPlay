@@ -1,3 +1,5 @@
+using EchoPlay.Core.Scoring;
+
 namespace EchoPlay.Spotify.Scoring
 {
     /// <summary>
@@ -5,7 +7,7 @@ namespace EchoPlay.Spotify.Scoring
     /// Enthält ausschließlich Boolean-Flags und Debug-Informationen,
     /// die vom Scorer zur Score-Berechnung herangezogen werden.
     /// </summary>
-    internal sealed class SpotifyHoerspielAnalysis
+    internal sealed class SpotifyHoerspielAnalysis : IHoerspielAnalysis
     {
         /// <summary>
         /// Gibt an, ob mindestens ein Genre des Künstlers ein negatives Musik-Genre ist.

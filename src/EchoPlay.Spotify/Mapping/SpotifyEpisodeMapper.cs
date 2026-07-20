@@ -20,26 +20,19 @@ namespace EchoPlay.Spotify.Mapping
         /// <returns>Eine Import-Episode die das gesamte Album repräsentiert.</returns>
         public static ImportEpisode MapAlbumToEpisode(SpotifyAlbumDto album, IReadOnlyList<SpotifyTrackDto> tracks, int orderIndex)
         {
-            // Gesamtdauer: Summe aller Track-Dauern
-            TimeSpan totalDuration = TimeSpan.Zero;
-            foreach (SpotifyTrackDto track in tracks)
-            {
-                totalDuration += track.Duration;
-            }
+            ArgumentNullException.ThrowIfNull(album);
+            ArgumentNullException.ThrowIfNull(tracks);
 
-            return new ImportEpisode
-            {
-                // Album-ID statt Track-ID – ein Album = eine Folge
-                SourceEpisodeId = album.SpotifyAlbumId,
-                Title = album.Title,
-                EpisodeNumber = EchoPlay.Core.Parsing.EpisodeNumberParser.Extract(album.Title),
-                ReleaseDate = album.ReleaseDate,
-                Duration = totalDuration,
-                OrderIndex = orderIndex,
-                ProviderUrl = $"https://open.spotify.com/album/{album.SpotifyAlbumId}",
-                CoverImageUrl = album.ImageUrl,
-                Source = "Spotify"
-            };
+            // Album-ID statt Track-ID – ein Album = eine Folge
+            return ImportEpisodeFactory.Create(
+                sourceEpisodeId: album.SpotifyAlbumId,
+                title: album.Title,
+                releaseDate: album.ReleaseDate,
+                trackDurations: tracks.Select(track => track.Duration),
+                orderIndex: orderIndex,
+                providerUrl: $"https://open.spotify.com/album/{album.SpotifyAlbumId}",
+                coverImageUrl: album.ImageUrl,
+                source: "Spotify");
         }
 
     }

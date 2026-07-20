@@ -46,5 +46,94 @@ namespace EchoPlay.Data.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(playbackState.Id, result.Id);
         }
+
+        /// <summary>
+        /// Ohne vorhandenen Wiedergabestatus legt <c>MarkCompletedAsync</c> einen neuen an,
+        /// der als abgeschlossen markiert ist und den übergebenen Zeitpunkt trägt.
+        /// </summary>
+        [Fact]
+        public async Task MarkCompletedAsync_NoExistingState_CreatesCompletedState()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("Serie");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Episode");
+
+            DateTime completedAt = new(2026, 7, 20, 12, 0, 0, DateTimeKind.Utc);
+            PlaybackStateDataService service = new(Context, NullLoggerFactory);
+
+            await service.MarkCompletedAsync(episode.Id, completedAt, cancellationToken: TestContext.Current.CancellationToken);
+
+            PlaybackState? result = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.NotNull(result);
+            Assert.True(result.IsCompleted);
+            Assert.Equal(completedAt, result.CompletedAt);
+            Assert.Equal(completedAt, result.LastPlayedAt);
+        }
+
+        /// <summary>
+        /// Mit vorhandenem Wiedergabestatus aktualisiert <c>MarkCompletedAsync</c> diesen auf abgeschlossen,
+        /// ohne einen zweiten Eintrag anzulegen.
+        /// </summary>
+        [Fact]
+        public async Task MarkCompletedAsync_ExistingState_UpdatesToCompleted()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("Serie");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Episode");
+
+            PlaybackStateDataService service = new(Context, NullLoggerFactory);
+            await service.AddAsync(
+                new PlaybackState { EpisodeId = episode.Id, LastPosition = TimeSpan.FromMinutes(5) },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // Produktiv läuft jede Operation in einem frischen Scope; im Test den Tracker leeren.
+            Context.ChangeTracker.Clear();
+
+            DateTime completedAt = new(2026, 7, 20, 12, 0, 0, DateTimeKind.Utc);
+            await service.MarkCompletedAsync(episode.Id, completedAt, cancellationToken: TestContext.Current.CancellationToken);
+
+            IReadOnlyList<PlaybackState> all = await service.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
+            PlaybackState state = Assert.Single(all);
+            Assert.True(state.IsCompleted);
+            Assert.Equal(completedAt, state.CompletedAt);
+        }
+
+        /// <summary>
+        /// <c>MarkNotStartedAsync</c> entfernt einen vorhandenen Wiedergabestatus.
+        /// </summary>
+        [Fact]
+        public async Task MarkNotStartedAsync_ExistingState_RemovesState()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("Serie");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Episode");
+
+            PlaybackStateDataService service = new(Context, NullLoggerFactory);
+            await service.AddAsync(
+                new PlaybackState { EpisodeId = episode.Id, IsCompleted = true },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // Produktiv läuft jede Operation in einem frischen Scope; im Test den Tracker leeren.
+            Context.ChangeTracker.Clear();
+
+            await service.MarkNotStartedAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
+
+            PlaybackState? result = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.Null(result);
+        }
+
+        /// <summary>
+        /// Ohne vorhandenen Wiedergabestatus ist <c>MarkNotStartedAsync</c> ein No-Op ohne Fehler.
+        /// </summary>
+        [Fact]
+        public async Task MarkNotStartedAsync_NoState_DoesNothing()
+        {
+            Series series = await DataBuilder.PersistSeriesAsync("Serie");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Episode");
+
+            PlaybackStateDataService service = new(Context, NullLoggerFactory);
+
+            await service.MarkNotStartedAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
+
+            PlaybackState? result = await service.GetByEpisodeIdAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.Null(result);
+        }
     }
 }

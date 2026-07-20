@@ -143,17 +143,10 @@ namespace EchoPlay.LocalLibrary.Cover
 
             foreach (string candidate in orderedCandidates.OrderBy(f => f))
             {
-                try
+                byte[]? bytes = TryReadBytes(candidate);
+                if (bytes is not null)
                 {
-                    return File.ReadAllBytes(candidate);
-                }
-                catch (IOException)
-                {
-                    // Datei lesbar aber nicht zugänglich – nächste prüfen
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // Keine Leserechte – nächste prüfen
+                    return bytes;
                 }
             }
 
@@ -175,17 +168,10 @@ namespace EchoPlay.LocalLibrary.Cover
                     continue;
                 }
 
-                try
+                byte[]? bytes = TryReadBytes(path);
+                if (bytes is not null)
                 {
-                    return File.ReadAllBytes(path);
-                }
-                catch (IOException)
-                {
-                    // Datei vorhanden aber nicht lesbar – nächste Variante prüfen
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // Keine Leserechte – nächste Variante prüfen
+                    return bytes;
                 }
             }
 
@@ -197,17 +183,10 @@ namespace EchoPlay.LocalLibrary.Cover
 
                 foreach (string wmpFile in wmpFiles.OrderBy(f => f))
                 {
-                    try
+                    byte[]? bytes = TryReadBytes(wmpFile);
+                    if (bytes is not null)
                     {
-                        return File.ReadAllBytes(wmpFile);
-                    }
-                    catch (IOException)
-                    {
-                        // Nicht lesbar – nächste prüfen
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        // Keine Leserechte – nächste prüfen
+                        return bytes;
                     }
                 }
             }
@@ -221,6 +200,28 @@ namespace EchoPlay.LocalLibrary.Cover
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Liest den Inhalt einer Datei; liefert <c>null</c> bei IO- oder Zugriffsfehlern,
+        /// damit der Aufrufer die nächste Kandidaten-Datei prüfen kann.
+        /// </summary>
+        /// <param name="path">Der vollständige Dateipfad.</param>
+        /// <returns>Die Bytes der Datei oder <c>null</c>, wenn sie nicht lesbar ist.</returns>
+        private static byte[]? TryReadBytes(string path)
+        {
+            try
+            {
+                return File.ReadAllBytes(path);
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
         }
     }
 }

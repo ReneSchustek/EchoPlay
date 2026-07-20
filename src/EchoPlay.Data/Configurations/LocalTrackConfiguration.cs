@@ -43,8 +43,7 @@ namespace EchoPlay.Data.Configurations
             _ = builder.HasIndex(t => new { t.EpisodeId, t.TrackNumber });
 
             // Purge-Index für DatabaseMaintenanceService
-            _ = builder.HasIndex(t => new { t.IsDeleted, t.DeletedAt })
-                   .HasFilter("IsDeleted = 1");
+            builder.HasPurgeIndex();
         }
     }
 }

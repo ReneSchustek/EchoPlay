@@ -16,8 +16,8 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer <see cref="ConnectionTestCoordinator"/>. Verwendet inline definierte
-    /// Stub-API-Clients fuer Spotify und Apple Music, damit kein Netzwerk noetig ist.
+    /// Tests für <see cref="ConnectionTestCoordinator"/>. Verwendet inline definierte
+    /// Stub-API-Clients für Spotify und Apple Music, damit kein Netzwerk noetig ist.
     /// </summary>
     public sealed class ConnectionTestCoordinatorTests
     {

@@ -411,7 +411,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SearchAsync_BackToBack_DiscardsOlderResults()
         {
             // Zwei Suchen ohne Pause: die zweite verdraengt die erste, die spät eintreffenden
-            // Stale-Treffer der ersten dürfen die UI nicht mehr ueberschreiben.
+            // Stale-Treffer der ersten dürfen die UI nicht mehr überschreiben.
             GatedSeriesImportSearch gated = new();
             SucheViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
 

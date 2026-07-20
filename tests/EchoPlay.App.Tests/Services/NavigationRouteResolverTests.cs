@@ -7,7 +7,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer den extrahierten Routing-Resolver.
+    /// Tests für den extrahierten Routing-Resolver.
     /// </summary>
     public sealed class NavigationRouteResolverTests
     {

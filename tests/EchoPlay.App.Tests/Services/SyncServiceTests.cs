@@ -539,7 +539,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task MaterializeEpisodes_NewEpisodes_PersistsViaAddRange()
         {
             // Materialize-Episodes: bei Auto-Import einer neuen Serie geht jeder Episodenblock
-            // ueber AddRangeAsync (1 SaveChanges fuer N Episoden), nicht einzeln per AddAsync.
+            // über AddRangeAsync (1 SaveChanges für N Episoden), nicht einzeln per AddAsync.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
                 LocalLibraryEnabled = true,

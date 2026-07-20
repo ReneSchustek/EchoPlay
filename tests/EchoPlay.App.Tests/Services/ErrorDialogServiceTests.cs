@@ -6,7 +6,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer den Defense-in-Depth-Pfad in <see cref="ErrorDialogService"/>:
+    /// Tests für den Defense-in-Depth-Pfad in <see cref="ErrorDialogService"/>:
     /// bei Pre-MainWindow-Szenarien (XamlRoot null) darf der Service nicht crashen.
     /// </summary>
     public sealed class ErrorDialogServiceTests
@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.Services
 
             await service.ShowAsync("Fehler", "Test-Nachricht", TestContext.Current.CancellationToken);
 
-            // Wenn ShowAsync ohne Exception zurueckkehrt, ist der Trace-Fallback gegriffen.
+            // Wenn ShowAsync ohne Exception zurückkehrt, ist der Trace-Fallback gegriffen.
             // Dialog-Anzeige selbst ist UI-Code und im Test-Host nicht erreichbar.
             Assert.True(true);
         }

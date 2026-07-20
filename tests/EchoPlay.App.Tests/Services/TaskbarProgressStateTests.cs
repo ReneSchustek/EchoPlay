@@ -4,7 +4,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer das Mapping zwischen <see cref="TaskbarProgressState"/> und den
+    /// Tests für das Mapping zwischen <see cref="TaskbarProgressState"/> und den
     /// ITaskbarList3-COM-Flags sowie die Prozent-Clamp-Logik.
     /// </summary>
     public sealed class TaskbarProgressStateTests

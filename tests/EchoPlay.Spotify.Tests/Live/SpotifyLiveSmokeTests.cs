@@ -8,7 +8,7 @@ namespace EchoPlay.Spotify.Tests.Live
     /// Technischer Smoke-Test für die Spotify-Web-API.
     ///
     /// Die Tests sind bewusst deaktiviert, da:
-    /// - sie echte Netzwerkzugriffe benoetigen
+    /// - sie echte Netzwerkzugriffe benötigen
     /// - Firewall, Proxy oder VPN den Zugriff verhindern können
     /// - dies keinen Rueckschluss auf die Codequalitaet zulaesst
     ///
@@ -40,7 +40,7 @@ namespace EchoPlay.Spotify.Tests.Live
         /// </summary>
 
         //[Fact]
-        [Fact(Skip = "Manuell ausfuehren – benötigt Internetzugang und gueltige Spotify-Credentials")]
+        [Fact(Skip = "Manuell ausführen – benötigt Internetzugang und gültige Spotify-Credentials")]
         public async Task SpotifyApi_IsReachable_AndReturnsArtists()
         {
             // ACT
@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Live
         /// </summary>
 
         //[Fact]
-        [Fact(Skip = "Manuell ausfuehren – benötigt Internetzugang und gueltige Spotify-Credentials")]
+        [Fact(Skip = "Manuell ausführen – benötigt Internetzugang und gültige Spotify-Credentials")]
         public async Task SpotifyApi_GetArtistAlbums_ReturnsAlbums()
         {
             // ARRANGE – Kuenstler suchen, um eine gueltige Artist-ID zu erhalten
@@ -87,7 +87,7 @@ namespace EchoPlay.Spotify.Tests.Live
         /// </summary>
 
         //[Fact]
-        [Fact(Skip = "Manuell ausfuehren – benötigt Internetzugang und gueltige Spotify-Credentials")]
+        [Fact(Skip = "Manuell ausführen – benötigt Internetzugang und gültige Spotify-Credentials")]
         public async Task SpotifyApi_GetAlbumTracks_ReturnsTracks()
         {
             // ARRANGE – Kuenstler und Album suchen

@@ -6,7 +6,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer die Fallback-Logik des Ressourcen-Resolvers.
+    /// Tests für die Fallback-Logik des Ressourcen-Resolvers.
     /// Der Loader wird per Lambda gemockt, damit kein WinUI-ResourceLoader noetig ist.
     /// </summary>
     public sealed class ResourceKeyResolverTests

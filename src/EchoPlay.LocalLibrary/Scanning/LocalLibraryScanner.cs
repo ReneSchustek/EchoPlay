@@ -227,39 +227,9 @@ namespace EchoPlay.LocalLibrary.Scanning
                     foreach (string trackPath in flatTracks)
                     {
                         string fileNameWithoutExt = Path.GetFileNameWithoutExtension(trackPath);
-                        int? number = null;
-                        string? title = null;
-                        bool matched = false;
 
-                        // Kassetten-Rips zuerst prüfen – "01a Titel", "Black Beauty - 01a - Titel".
-                        // Muss VOR den generischen Parsern laufen, damit "{number} {title}"
-                        // nicht fälschlich "01" als Nummer und "a Titel" als Titel extrahiert.
-                        if (CassetteRipParser.TryParse(fileNameWithoutExt, out number, out title))
-                        {
-                            matched = true;
-                            _logger.Debug(() => $"Kassetten-Rip erkannt: '{fileNameWithoutExt}' → Episode {number}");
-                        }
-
-                        // Generische Parser-Muster durchprobieren wenn kein Kassetten-Muster passt
-                        if (!matched)
-                        {
-                            foreach (EpisodeFolderParser fileParser in fileParsers)
-                            {
-                                if (fileParser.TryParse(fileNameWithoutExt, out number, out title))
-                                {
-                                    matched = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (!matched)
-                        {
-                            // Kein Muster erkannt – Dateiname als Titel verwenden, ohne Nummer.
-                            // So gehen keine Dateien verloren (z.B. "Astrid Lindgren - Immer dieser Michel")
-                            title = fileNameWithoutExt;
-                            _logger.Debug(() => $"Flache Serie – kein Muster-Treffer: '{fileNameWithoutExt}' – Dateiname als Titel");
-                        }
+                        // Parse-Kaskade (Kassette → Parser-Kette → Fallback) zentral in FileNameEpisodeParser.
+                        (int? number, string title) = FileNameEpisodeParser.Parse(fileNameWithoutExt, fileParsers);
 
                         string? episodeTitle = ResolveEpisodeTitle([trackPath], title);
 

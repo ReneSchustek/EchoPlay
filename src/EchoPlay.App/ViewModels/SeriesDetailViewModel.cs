@@ -30,7 +30,7 @@ namespace EchoPlay.App.ViewModels
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPlayerService _playerService;
-        private readonly CoverService? _coverService;
+        private readonly ICoverService? _coverService;
         private readonly BackgroundCoverService? _backgroundCoverService;
         private readonly IClock _clock;
         private CancellationTokenSource? _priorityCts;
@@ -71,7 +71,7 @@ namespace EchoPlay.App.ViewModels
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
             IClock clock,
-            CoverService? coverService = null,
+            ICoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null)
         {
             _scopeFactory = scopeFactory;

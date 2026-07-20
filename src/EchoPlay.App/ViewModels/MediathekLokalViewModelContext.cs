@@ -24,7 +24,7 @@ namespace EchoPlay.App.ViewModels
         IOnlineAccessGuard OnlineAccessGuard,
         IOnlineEpisodeChecker OnlineEpisodeChecker,
         IClock Clock,
-        EchoPlay.App.Services.CoverService? CoverService = null,
+        EchoPlay.App.Services.ICoverService? CoverService = null,
         IWatchToggleService? WatchToggleService = null,
         IPageModeGuard? PageModeGuard = null,
         IFolderRestructureCoordinator? RestructureCoordinator = null,

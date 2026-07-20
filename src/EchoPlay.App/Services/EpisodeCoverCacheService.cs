@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
-        private readonly CoverService _coverService;
+        private readonly ICoverService _coverService;
         private readonly IClock _clock;
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Services
         public EpisodeCoverCacheService(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
-            CoverService coverService,
+            ICoverService coverService,
             IClock clock,
             IHttpClientFactory httpClientFactory)
         {

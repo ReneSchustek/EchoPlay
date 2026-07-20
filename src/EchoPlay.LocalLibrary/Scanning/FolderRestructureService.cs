@@ -82,29 +82,9 @@ namespace EchoPlay.LocalLibrary.Scanning
             {
                 string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
                 string fileName = Path.GetFileName(filePath);
-                int? episodeNumber = null;
-                string? title = null;
 
-                // Kassetten-Rip prüfen
-                _ = CassetteRipParser.TryParse(fileNameWithoutExt, out episodeNumber, out title);
-
-                // Generische Parser
-                if (episodeNumber is null)
-                {
-                    foreach (EpisodeFolderParser parser in fileParsers)
-                    {
-                        if (parser.TryParse(fileNameWithoutExt, out episodeNumber, out title))
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                // Kein Muster erkannt – Dateiname als Titel, keine Nummer
-                if (title is null)
-                {
-                    title = fileNameWithoutExt;
-                }
+                // Parse-Kaskade (Kassette → Parser-Kette → Fallback) zentral in FileNameEpisodeParser.
+                (int? episodeNumber, string title) = FileNameEpisodeParser.Parse(fileNameWithoutExt, fileParsers);
 
                 // Zielordnernamen generieren
                 string targetFolderName = episodeNumber.HasValue

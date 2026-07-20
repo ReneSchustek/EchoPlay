@@ -334,7 +334,7 @@ namespace EchoPlay.App.ViewModels
                 foreach (Episode episode in episodes)
                 {
                     _ = stateById.TryGetValue(episode.Id, out PlaybackState? episodeState);
-                    PlaybackStatus playbackStatus = DetermineStatus(episodeState);
+                    PlaybackStatus playbackStatus = PlaybackStatusResolver.Resolve(episodeState);
 
                     if (playbackStatus == PlaybackStatus.Finished)
                     {
@@ -615,19 +615,6 @@ namespace EchoPlay.App.ViewModels
             };
 
             Episodes = sorted.ToList();
-        }
-
-        /// <summary>
-        /// Leitet den <see cref="PlaybackStatus"/> aus dem gespeicherten Zustand ab.
-        /// </summary>
-        private static PlaybackStatus DetermineStatus(PlaybackState? state)
-        {
-            if (state is null || state.LastPosition == TimeSpan.Zero)
-            {
-                return PlaybackStatus.NotStarted;
-            }
-
-            return state.IsCompleted ? PlaybackStatus.Finished : PlaybackStatus.InProgress;
         }
 
         // ── Cover-Ladelogik ──────────────────────────────────────────────────────

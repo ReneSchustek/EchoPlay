@@ -68,6 +68,19 @@ namespace EchoPlay.Data.Entities.Playback
         }
 
         /// <summary>
+        /// Markiert die Episode als vollständig gehört. Kapselt die kanonische Abschluss-Semantik
+        /// (<see cref="IsCompleted"/>, <see cref="CompletedAt"/> und <see cref="LastPlayedAt"/> konsistent setzen),
+        /// damit alle Wege zum Abschluss dieselbe Regel verwenden.
+        /// </summary>
+        /// <param name="completedAt">Der Abschlusszeitpunkt.</param>
+        public void MarkCompleted(DateTime completedAt)
+        {
+            IsCompleted = true;
+            CompletedAt = completedAt;
+            LastPlayedAt = completedAt;
+        }
+
+        /// <summary>
         /// Setzt den Wiedergabestatus in den Ausgangszustand zurück.
         /// Diese Methode wird verwendet, wenn eine Episode bewusst erneut begonnen oder der Fortschritt verworfen werden soll.
         /// </summary>

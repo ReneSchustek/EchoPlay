@@ -238,27 +238,8 @@ namespace EchoPlay.App.ViewModels
 
             foreach (Episode episode in episodes)
             {
-                PlaybackState? existing = await playbackService.GetByEpisodeIdAsync(episode.Id);
-
-                if (existing is not null)
-                {
-                    if (!existing.IsCompleted)
-                    {
-                        existing.IsCompleted = true;
-                        existing.CompletedAt = _clock.UtcNow;
-                        await playbackService.UpdateAsync(existing);
-                    }
-                }
-                else
-                {
-                    await playbackService.AddAsync(new PlaybackState
-                    {
-                        EpisodeId = episode.Id,
-                        IsCompleted = true,
-                        CompletedAt = _clock.UtcNow,
-                        LastPlayedAt = _clock.UtcNow
-                    });
-                }
+                // Kanonischer Abschluss-Pfad statt externem get-modify-set (TDA).
+                await playbackService.MarkCompletedAsync(episode.Id, _clock.UtcNow);
             }
 
             // Statistiken (gehörte/offene Folgen) in der Statusleiste aktualisieren

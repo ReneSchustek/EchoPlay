@@ -1,10 +1,7 @@
 # Lokale Workflow- und Projekt-Metadaten – nur lokal, niemals committen
-.ai/
-CLAUDE.md
 CHANGELOG.md
 SECURITY.md
 INSTALLER.md
-triage-watch.ps1
 
 # Build-Artefakte
 [Bb]in/
@@ -86,19 +83,8 @@ solution_dump.txt
 # Aider-Tool-Artefakte
 .aider*
 
-
 # Build-Output
 AppPackages/
 BundleArtifacts/
 
-
-# KI-Workflow-Material (BRIEF126)
-.ai/
 **/.ai/
-.claude/
-**/.claude/
-CLAUDE.md
-**/CLAUDE.md
-_ai/
-**/_ai/
-

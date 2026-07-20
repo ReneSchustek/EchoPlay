@@ -1,0 +1,2 @@
+# Der Hook-Installer traegt die Muster als Suchpattern, nicht als Spur.
+tools/install-pre-commit-hook.ps1

@@ -1,7 +1,7 @@
 <Project>
   <!--
     Zentrale Build-Konfiguration für alle Projekte in dieser Solution.
-    Einzelne .csproj-Dateien k��nnen diese Werte überschreiben.
+    Einzelne .csproj-Dateien können diese Werte überschreiben.
   -->
   <PropertyGroup>
     <!-- Nullability: Null-Reference-Warnungen als Fehler -->

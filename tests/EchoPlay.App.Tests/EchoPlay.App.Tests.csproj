@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows-TFM erforderlich, da EchoPlay.App net10.0-windows10.0.19041.0 als einzigen TFM hat -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- Kein WinUI – Tests laufen ohne echten XAML-Host -->
+    <UseWinUI>false</UseWinUI>
+    <!-- EchoPlay.App wird als x64 gebaut – Testprojekt muss dieselbe Architektur verwenden -->
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- xunit.v3 ist self-contained-faehig; EchoPlay.App referenziert WindowsAppSDK
+         (self-contained). Ohne SelfContained=true im Test-Projekt schlaegt der NETSDK1151-Check
+         zu (Non-self-contained darf nicht auf Self-contained verweisen). -->
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="10.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EchoPlay.App\EchoPlay.App.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Data\EchoPlay.Data.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.LocalLibrary\EchoPlay.LocalLibrary.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Core\EchoPlay.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- "Always" statt "PreserveNewest": auf GitHub-CI haben dotnet test-Laeufe
+         eine eigene Output-Pipeline pro Projekt, PreserveNewest greift dort nicht
+         zuverlaessig — Konfig-Datei muss bei jedem Lauf frisch ins Output-Verzeichnis. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+</Project>

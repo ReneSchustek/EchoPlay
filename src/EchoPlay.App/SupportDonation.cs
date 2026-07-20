@@ -23,11 +23,9 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Offizielle PayPal-Spenden-URL (HTTPS, ohne Laufzeit-Parameter).
-        /// Zum Aktivieren <c>PLATZHALTER</c> durch den echten paypal.me-Handle ersetzen,
-        /// z.B. <c>https://paypal.me/ruhrcoder</c>. Dies ist die einzige Stelle, die dafür
-        /// angepasst werden muss.
+        /// Fest verdrahtet auf den paypal.me-Handle des Entwicklers.
         /// </summary>
-        public const string PayPalUrl = "https://paypal.me/" + Placeholder;
+        public const string PayPalUrl = "https://paypal.me/rschustek";
 
         /// <summary>
         /// <see langword="true"/>, sobald ein echter Handle eingetragen ist (kein Platzhalter mehr).

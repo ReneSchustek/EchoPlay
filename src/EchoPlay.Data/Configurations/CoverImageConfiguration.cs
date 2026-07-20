@@ -51,8 +51,7 @@ namespace EchoPlay.Data.Configurations
             _ = builder.HasIndex(c => new { c.EntityType, c.LastChecked });
 
             // Purge-Index
-            _ = builder.HasIndex(c => new { c.IsDeleted, c.DeletedAt })
-                   .HasFilter("IsDeleted = 1");
+            builder.HasPurgeIndex();
         }
     }
 }

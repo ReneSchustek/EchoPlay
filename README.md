@@ -46,6 +46,20 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 
 ---
 
+## Installation
+
+Die fertige Anwendung gibt es als Windows-Installer unter
+[GitHub Releases](https://github.com/ReneSchustek/EchoPlay/releases). Lade die
+`EchoPlay-Setup-vX.Y.Z.exe` der neuesten Version herunter und führe sie aus — die
+Installation läuft ohne Adminrechte (Per-User) und benötigt keine vorinstallierte
+Runtime, da .NET und das Windows App SDK im Paket enthalten sind.
+
+Die App prüft beim Start selbst auf neue Versionen und verifiziert heruntergeladene
+Updates gegen den im Release hinterlegten SHA-256-Hash. Wie der Installer gebaut wird,
+steht in [INSTALLER.md](INSTALLER.md).
+
+---
+
 ## Technologie-Stack
 
 | Technologie | Einsatz |

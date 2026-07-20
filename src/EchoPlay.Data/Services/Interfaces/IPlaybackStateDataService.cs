@@ -46,6 +46,23 @@ namespace EchoPlay.Data.Services.Interfaces
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Markiert eine Episode als vollständig gehört: aktualisiert einen vorhandenen
+        /// Wiedergabestatus oder legt einen neuen an (idempotentes Get-or-Create).
+        /// </summary>
+        /// <param name="episodeId">ID der zu markierenden Episode.</param>
+        /// <param name="completedAt">Zeitpunkt des Abschlusses (Aufrufer liefert die Uhr).</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task MarkCompletedAsync(Guid episodeId, DateTime completedAt, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Setzt eine Episode auf ungehört zurück, indem ein vorhandener Wiedergabestatus
+        /// entfernt wird. Existiert kein Eintrag, ist der Aufruf ein No-Op.
+        /// </summary>
+        /// <param name="episodeId">ID der zurückzusetzenden Episode.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task MarkNotStartedAsync(Guid episodeId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Berechnet aggregierte Wiedergabe-Zähler für alle Episoden einer Serie in einer einzigen DB-Abfrage.
         /// Ersetzt das N+1-Muster, bei dem für jede Episode ein separater <c>GetByEpisodeIdAsync</c>-Aufruf
         /// nötig wäre.

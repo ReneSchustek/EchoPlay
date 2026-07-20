@@ -410,26 +410,7 @@ namespace EchoPlay.App.ViewModels
             using IServiceScope scope = _scopeFactory.CreateScope();
             IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(EpisodeId);
-
-            if (existing is not null)
-            {
-                existing.IsCompleted = true;
-                existing.CompletedAt = _clock.UtcNow;
-                await stateService.UpdateAsync(existing);
-            }
-            else
-            {
-                PlaybackState newState = new()
-                {
-                    EpisodeId = EpisodeId,
-                    IsCompleted = true,
-                    CompletedAt = _clock.UtcNow,
-                    LastPosition = TimeSpan.Zero,
-                    LastPlayedAt = _clock.UtcNow
-                };
-                await stateService.AddAsync(newState);
-            }
+            await stateService.MarkCompletedAsync(EpisodeId, _clock.UtcNow);
 
             Status = PlaybackStatus.Finished;
             ProgressPercent = 100;
@@ -453,12 +434,7 @@ namespace EchoPlay.App.ViewModels
             using IServiceScope scope = _scopeFactory.CreateScope();
             IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-            PlaybackState? existing = await stateService.GetByEpisodeIdAsync(EpisodeId);
-
-            if (existing is not null)
-            {
-                await stateService.DeleteAsync(existing.Id);
-            }
+            await stateService.MarkNotStartedAsync(EpisodeId);
 
             Status = PlaybackStatus.NotStarted;
             ProgressPercent = 0;

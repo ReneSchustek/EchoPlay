@@ -7,7 +7,7 @@ using System.IO;
 namespace EchoPlay.LocalLibrary.Tests.Matching
 {
     /// <summary>
-    /// Ergänzende Tests für Grenzfälle und <see cref="TrackMatcher.WriteCustomHintFile"/>.
+    /// Ergänzende Tests für Grenzfälle und <see cref="CustomMatchHintWriter.WriteHintFile"/>.
     /// </summary>
     public sealed class TrackMatcherEdgeCaseTests : IDisposable
     {
@@ -72,7 +72,7 @@ namespace EchoPlay.LocalLibrary.Tests.Matching
             // Die Hint-Datei muss nummerierte Tracknamen enthalten
             IReadOnlyList<string> trackNames = ["Intro", "Hauptteil", "Abspann"];
 
-            TrackMatcher.WriteCustomHintFile(_tempDir, trackNames);
+            CustomMatchHintWriter.WriteHintFile(_tempDir, trackNames);
 
             string filePath = Path.Combine(_tempDir, "expected_tracks.txt");
             string[] lines = File.ReadAllLines(filePath);
@@ -87,7 +87,7 @@ namespace EchoPlay.LocalLibrary.Tests.Matching
         public void WriteCustomHintFile_CreatesFile_EvenForEmptyList()
         {
             // Auch eine leere Trackliste darf nicht zu einem Fehler führen
-            TrackMatcher.WriteCustomHintFile(_tempDir, []);
+            CustomMatchHintWriter.WriteHintFile(_tempDir, []);
 
             string filePath = Path.Combine(_tempDir, "expected_tracks.txt");
             Assert.True(File.Exists(filePath));

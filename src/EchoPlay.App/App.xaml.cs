@@ -629,6 +629,9 @@ namespace EchoPlay.App
                 client.BaseAddress = new(baseSpotifyOptions.AuthBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+            // Standard-Resilience (Retry + Exponential-Backoff + CircuitBreaker) wie bei allen
+            // externen Clients – ein transienter Fehler beim Token-Holen darf den Import nicht sofort abbrechen.
+            _ = spotifyTokenBuilder.AddStandardResilienceHandler();
             AttachRequestLogging(spotifyTokenBuilder);
 
             // SpotifyTokenClient als Singleton: Der Token-Cache lebt prozessweit, parallele
@@ -646,6 +649,10 @@ namespace EchoPlay.App
                 client.BaseAddress = new(baseSpotifyOptions.ApiBaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(15);
             });
+            // Resilience als ÄUSSERER Handler (zuerst registriert), Auth-Handler INNEN: so bekommt jeder
+            // Retry-Versuch über AttachBearerToken einen frischen Token. StandardResilienceHandler retryt
+            // nur 408/429/5xx/Timeout – der 401-Refresh im AuthMessageHandler bleibt davon unberührt.
+            _ = spotifyApiBuilder.AddStandardResilienceHandler();
             _ = spotifyApiBuilder.AddHttpMessageHandler<SpotifyAuthMessageHandler>();
             AttachRequestLogging(spotifyApiBuilder);
 

@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Enthält Tests zur Verifikation des Abfrageverhaltens von Serien.
     /// Der Fokus liegt auf der korrekten Anwendung des globalen Soft-Delete-QueryFilters.
     /// </summary>
-    public class SeriesQueryTests : DbTestBase
+    public sealed class SeriesQueryTests : DbTestBase
     {
         /// <summary>
         /// Stellt sicher, dass logisch gelöschte Serien nicht mehr über reguläre

@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Enthält Tests zur Verifikation des vollständigen Soft-Delete-Cascade-Verhaltens
     /// beim Löschen einer Serie. Diese Tests sichern die oberste Ebene der Delete-Matrix ab.
     /// </summary>
-    public class SeriesCascadeDeleteTests : DbTestBase
+    public sealed class SeriesCascadeDeleteTests : DbTestBase
     {
         /// <summary>
         /// Stellt sicher, dass das Löschen einer Serie alle untergeordneten Episoden sowie deren PlaybackStates logisch löscht.

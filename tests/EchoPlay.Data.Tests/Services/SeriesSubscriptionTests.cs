@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Tests für den Abonnement-Mechanismus der <see cref="SeriesDataService"/>-Klasse.
     /// Prüft Filterung, Persistenz und Sortierung rund um das <c>IsSubscribed</c>-Flag.
     /// </summary>
-    public class SeriesSubscriptionTests : DbTestBase
+    public sealed class SeriesSubscriptionTests : DbTestBase
     {
         [Fact]
         public async Task GetSubscribed_ReturnsOnlySubscribed()

@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Tests.Services
     /// Prüft Speicherung, Ersetzung und bereichsbezogene Filterung
     /// von benutzerdefinierten Dashboard-Positionen.
     /// </summary>
-    public class DashboardPositionTests : DbTestBase
+    public sealed class DashboardPositionTests : DbTestBase
     {
         /// <summary>
         /// Legt eine Serie in der DB an und gibt ihre Id zurück.

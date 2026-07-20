@@ -20,6 +20,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Erlaubt EchoPlay.App.Tests den Zugriff auf internal-Mitglieder, damit
+         ViewModel-Hilfsmethoden (z.B. BuildAutoLookupQuery) direkt getestet werden
+         können, ohne sie public zu machen. Einheitlich per csproj-Item wie in den
+         anderen Modulen (Data/Spotify/AppleMusic/TagManager). -->
     <InternalsVisibleTo Include="EchoPlay.App.Tests" />
   </ItemGroup>
 

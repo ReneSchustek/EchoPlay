@@ -15,16 +15,13 @@ namespace EchoPlay.App.ViewModels
     /// Kachel-ViewModel für eine Serie in der Online-Mediathek.
     /// Enthält Episodenzähler, Abonnementstatus und den Befehl zum Umschalten des Abonnements.
     /// </summary>
-    public sealed class SeriesCardViewModel : CoverCardViewModelBase, IAccordionSelectable
+    public sealed class SeriesCardViewModel : SeriesTileViewModelBase
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly ILocalizationService _localizationService;
 
         private bool _isSubscribed;
-        private bool _isFavorite;
-        private bool _isWatched;
-        private bool _isSelectedInAccordion;
 
         /// <summary>
         /// Initialisiert das Kachel-ViewModel mit Stammdaten und Services.
@@ -65,8 +62,8 @@ namespace EchoPlay.App.ViewModels
             InProgressCount = inProgressCount;
             FinishedCount = finishedCount;
             _isSubscribed = isSubscribed;
-            _isFavorite = isFavorite;
-            _isWatched = isWatched;
+            IsFavorite = isFavorite;
+            IsWatched = isWatched;
 
             _scopeFactory = scopeFactory;
             _confirmationDialogService = confirmationDialogService;
@@ -126,26 +123,6 @@ namespace EchoPlay.App.ViewModels
             _isSubscribed ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Gibt an, ob diese Serie im Akkordeon aufgeklappt ist.
-        /// Steuert das V-Icon unter der Kachel.
-        /// </summary>
-        public bool IsSelectedInAccordion
-        {
-            get => _isSelectedInAccordion;
-            set
-            {
-                if (SetProperty(ref _isSelectedInAccordion, value))
-                {
-                    OnPropertyChanged(nameof(SelectedIndicatorVisibility));
-                }
-            }
-        }
-
-        /// <summary>Sichtbarkeit des V-Pfeils unter der Kachel.</summary>
-        public Visibility SelectedIndicatorVisibility =>
-            _isSelectedInAccordion ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
         /// Gibt an, ob mindestens eine Episode noch nicht angehört wurde.
         /// Wird für den <see cref="SeriesStatusFilter.Neu"/>-Filter verwendet.
         /// </summary>
@@ -164,59 +141,8 @@ namespace EchoPlay.App.ViewModels
         public bool AllEpisodesFinished =>
             TotalEpisodeCount > 0 && FinishedCount == TotalEpisodeCount;
 
-        /// <summary>
-        /// Gibt an, ob die Serie als Favorit markiert ist.
-        /// Der Stern auf der Kachel wechselt zwischen gefüllt und leer.
-        /// </summary>
-        public bool IsFavorite
-        {
-            get => _isFavorite;
-            private set
-            {
-                if (SetProperty(ref _isFavorite, value))
-                {
-                    OnPropertyChanged(nameof(FavoriteGlyph));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Stern-Symbol für die Kachel: gefüllt (★) wenn Favorit, leer (☆) wenn nicht.
-        /// Segoe Fluent Icons: E735 = FavoriteStarFill (gefüllt), E734 = FavoriteStar (leer).
-        /// </summary>
-        public string FavoriteGlyph => _isFavorite ? "\uE735" : "\uE734";
-
         /// <summary>Schaltet den Favoritenstatus um und persistiert die Änderung in der Datenbank.</summary>
         public ICommand ToggleFavoriteCommand { get; }
-
-        /// <summary>
-        /// Gibt an, ob die Serie auf Neuerscheinungen überwacht wird.
-        /// Steuert das Auge-Icon auf der Kachel und den Dashboard-Filter.
-        /// </summary>
-        public bool IsWatched
-        {
-            get => _isWatched;
-            set
-            {
-                if (SetProperty(ref _isWatched, value))
-                {
-                    OnPropertyChanged(nameof(WatchedGlyph));
-                    OnPropertyChanged(nameof(WatchedVisibility));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Auge-Symbol für die Kachel: gefüllt wenn überwacht, leer wenn nicht.
-        /// Segoe Fluent Icons: E7B3 = RedEye.
-        /// </summary>
-        public string WatchedGlyph => "\uE7B3";
-
-        /// <summary>
-        /// Sichtbarkeit des Überwachungs-Icons: nur bei überwachten Serien eingeblendet.
-        /// </summary>
-        public Visibility WatchedVisibility =>
-            _isWatched ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>Schaltet das Abonnement um und zeigt vorher einen Bestätigungs-Dialog.</summary>
         public ICommand ToggleSubscriptionCommand { get; }
@@ -258,7 +184,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task ToggleFavoriteAsync()
         {
-            bool newValue = !_isFavorite;
+            bool newValue = !IsFavorite;
 
             await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, Id, newValue);
             IsFavorite = newValue;

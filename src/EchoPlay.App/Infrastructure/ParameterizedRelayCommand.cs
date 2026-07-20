@@ -16,10 +16,11 @@ namespace EchoPlay.App.Infrastructure
         private readonly Action<object?> _execute;
 
         /// <summary>
-        /// Wird ausgelöst, wenn sich <see cref="CanExecute"/> geändert hat.
-        /// Für dieses Command immer <see langword="true"/> – das Event wird nie gefeuert.
+        /// Von <see cref="ICommand"/> gefordert. <see cref="CanExecute"/> ist für dieses Command
+        /// konstant <see langword="true"/>, daher gibt es keinen Zustandswechsel und die Accessoren
+        /// sind bewusst leer.
         /// </summary>
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
 
         /// <summary>
         /// Initialisiert das Command mit der auszuführenden Aktion.
@@ -36,15 +37,5 @@ namespace EchoPlay.App.Infrastructure
 
         /// <inheritdoc/>
         public void Execute(object? parameter) => _execute(parameter);
-
-        /// <summary>
-        /// Löst <see cref="CanExecuteChanged"/> aus, falls der Aktivierungszustand extern gesteuert werden soll.
-        /// Bei diesem Command ist der Zustand immer aktiv – der Parameter wird ignoriert.
-        /// </summary>
-        /// <param name="_">Nicht verwendet.</param>
-        public void SetEnabled(bool _)
-        {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-        }
     }
 }

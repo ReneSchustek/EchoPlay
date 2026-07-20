@@ -138,39 +138,6 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityId">Parameter entityId.</param>
-        /// <param name="checkedAt">Parameter checkedAt.</param>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task SetLastCheckedAsync(string entityType, Guid entityId, DateTime checkedAt, CancellationToken cancellationToken = default)
-        {
-            CoverImage? existing = await _context.CoverImages
-                .AsTracking()
-                .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
-                .ConfigureAwait(false);
-
-            if (existing is not null)
-            {
-                existing.LastChecked = checkedAt;
-                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                // Kein Cover vorhanden → Platzhalter-Eintrag mit LastChecked aber ohne Bild,
-                // damit der Background-Worker weiß, dass er schon gesucht hat
-                CoverImage placeholder = new()
-                {
-                    EntityType = entityType,
-                    EntityId = entityId,
-                    ImageData = [],
-                    LastChecked = checkedAt
-                };
-                _ = _context.CoverImages.Add(placeholder);
-                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        /// <inheritdoc/>
         public async Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
             string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default)
         {

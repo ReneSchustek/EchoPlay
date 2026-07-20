@@ -292,12 +292,10 @@ namespace EchoPlay.Data.Services
         public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {
             Episode? episode = await _context.Episodes
-                .AsTracking()
-                .FirstOrDefaultAsync(e => e.Id == episodeId, cancellationToken).ConfigureAwait(false);
+                .LoadTrackedByIdOrWarnAsync(_logger, episodeId, "Episode", "CoverLastChecked-Update", cancellationToken).ConfigureAwait(false);
 
             if (episode is null)
             {
-                _logger.Warning("Episode '{EpisodeId}' nicht gefunden – CoverLastChecked-Update übersprungen.", episodeId);
                 return;
             }
 
@@ -317,13 +315,11 @@ namespace EchoPlay.Data.Services
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"DB:Episode:Delete:{id}");
 
             Episode? episode = await _context.Episodes
-                .AsTracking()
-                .FirstOrDefaultAsync(e => e.Id == id, cancellationToken).ConfigureAwait(false);
+                .LoadTrackedByIdOrWarnAsync(_logger, id, "Episode", "Soft-Delete", cancellationToken).ConfigureAwait(false);
 
-            if (episode == null)
+            if (episode is null)
             {
                 // Wenn die Episode nicht existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning("Episode mit ID '{EpisodeId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 

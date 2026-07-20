@@ -218,13 +218,11 @@ namespace EchoPlay.Data.Services
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"DB:Series:Delete:{id}");
 
             Series? series = await _context.Series
-                .AsTracking()
-                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken).ConfigureAwait(false);
+                .LoadTrackedByIdOrWarnAsync(_logger, id, "Serie", "Soft-Delete", cancellationToken).ConfigureAwait(false);
 
-            if (series == null)
+            if (series is null)
             {
                 // Wenn die Serie nicht existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning("Serie mit ID '{SeriesId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 

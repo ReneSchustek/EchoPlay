@@ -84,4 +84,6 @@ solution_dump.txt
 # Build-Output
 AppPackages/
 BundleArtifacts/
+# Setup-Publish-Artefakte (self-contained Publish + kompilierte Setup.exe, ~300 MB)
+dist/
 

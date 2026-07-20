@@ -6,7 +6,7 @@ namespace EchoPlay.LocalLibrary.Metadata
     /// Definiert den Vertrag zum Auslesen von Metadaten aus Audiodateien.
     /// Ermöglicht die Entkopplung des SyncService von der konkreten Implementierung.
     /// </summary>
-    public interface IMp3MetadataReader
+    public interface IAudioMetadataReader
     {
         /// <summary>
         /// Liest Abspieldauer und Tracknummer aus der angegebenen Audiodatei.

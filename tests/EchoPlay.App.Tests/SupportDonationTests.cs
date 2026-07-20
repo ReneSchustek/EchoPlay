@@ -41,12 +41,11 @@ namespace EchoPlay.App.Tests
         }
 
         [Fact]
-        public void IsConfigured_IsFalse_WhileHandleIsPlaceholder()
+        public void IsConfigured_IsTrue_WhenRealHandleIsSet()
         {
-            // Solange kein echter Handle eingetragen ist, bleibt der Spenden-Eintrag
-            // ausgeblendet – dieser Test dokumentiert den Guard. Nach dem Eintragen des
-            // echten paypal.me-Handles kippt der Wert auf true und der Button erscheint.
-            Assert.False(SupportDonation.IsConfigured);
+            // Ein echter Handle ist hinterlegt (kein Platzhalter mehr) – der Spenden-Button
+            // wird dadurch sichtbar geschaltet.
+            Assert.True(SupportDonation.IsConfigured);
         }
     }
 }

@@ -18,6 +18,8 @@ namespace EchoPlay.Core.Parsing
         /// <returns>Die extrahierte Folgennummer oder null wenn keine gültige Zahl gefunden.</returns>
         public static int? Extract(string albumTitle)
         {
+            ArgumentNullException.ThrowIfNull(albumTitle);
+
             Match match = NumberPattern().Match(albumTitle);
 
             if (match.Success && int.TryParse(match.Value, out int number))

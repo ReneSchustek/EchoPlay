@@ -45,6 +45,8 @@ namespace EchoPlay.Spotify.Clients
         /// <returns>Eine Liste roher Spotify-Künstlerdaten.</returns>
         public async Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
             // Spotify stellt eine rein query-basierte Such-API bereit.
             // Die Verantwortung für Relevanz oder Scoring liegt nicht hier.
             string requestUri =
@@ -116,6 +118,8 @@ namespace EchoPlay.Spotify.Clients
         /// <inheritdoc/>
         public async Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
             string requestUri =
                 $"search?q={Uri.EscapeDataString(query)}&type=album&limit={limit}";
 
@@ -191,6 +195,8 @@ namespace EchoPlay.Spotify.Clients
         /// <returns>Eine Liste roher Spotify-Albumdaten.</returns>
         public async Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(artistId);
+
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetArtistAlbums");
 
             _logger.Debug(() => $"Spotify-Alben laden für Künstler '{artistId}' (max. {limit}).");
@@ -280,6 +286,8 @@ namespace EchoPlay.Spotify.Clients
         /// <returns>Eine Liste roher Spotify-Trackdaten.</returns>
         public async Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(albumId);
+
             string requestUri = $"albums/{albumId}/tracks";
 
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetAlbumTracks");

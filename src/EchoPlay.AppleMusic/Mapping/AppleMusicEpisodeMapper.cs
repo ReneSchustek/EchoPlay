@@ -41,18 +41,6 @@ namespace EchoPlay.AppleMusic.Mapping
         /// Versucht, das Veröffentlichungsdatum aus dem ISO-8601-String zu parsen.
         /// </summary>
         private static DateTime? TryParseReleaseDate(string? releaseDate)
-        {
-            if (string.IsNullOrWhiteSpace(releaseDate))
-            {
-                return null;
-            }
-
-            if (DateTime.TryParse(releaseDate, out DateTime parsed))
-            {
-                return parsed;
-            }
-
-            return null;
-        }
+            => DateTime.TryParse(releaseDate, out DateTime parsed) ? parsed : null;
     }
 }

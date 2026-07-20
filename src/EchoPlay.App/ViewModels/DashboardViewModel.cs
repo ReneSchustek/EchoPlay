@@ -199,23 +199,23 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="DashboardFavoritenViewModel.FavoriteSectionVisibility"/>
         public Visibility FavoriteSectionVisibility => FavoritenVM.FavoriteSectionVisibility;
 
-        /// <inheritdoc cref="DashboardWeiterhoerenViewModel.UnheardSeries"/>
-        public IReadOnlyList<UnheardSeriesCardViewModel> UnheardSeries => WeiterhoerenVM.UnheardSeries;
+        /// <summary>Angefangene Serien mit noch ungehörten Folgen (Weiterhören-Sektion).</summary>
+        public IReadOnlyList<UnheardSeriesCardViewModel> UnheardSeries => WeiterhoerenVM.Items;
 
-        /// <inheritdoc cref="DashboardWeiterhoerenViewModel.UnheardSectionVisibility"/>
-        public Visibility UnheardSectionVisibility => WeiterhoerenVM.UnheardSectionVisibility;
+        /// <summary>Sichtbarkeit der Weiterhören-Sektion.</summary>
+        public Visibility UnheardSectionVisibility => WeiterhoerenVM.SectionVisibility;
 
-        /// <inheritdoc cref="DashboardInProgressViewModel.InProgressEpisodes"/>
-        public IReadOnlyList<NewEpisodeCardViewModel> InProgressEpisodes => InProgressVM.InProgressEpisodes;
+        /// <summary>Aktuell laufende Episoden (In-Progress-Sektion).</summary>
+        public IReadOnlyList<NewEpisodeCardViewModel> InProgressEpisodes => InProgressVM.Items;
 
-        /// <inheritdoc cref="DashboardInProgressViewModel.InProgressSectionVisibility"/>
-        public Visibility InProgressSectionVisibility => InProgressVM.InProgressSectionVisibility;
+        /// <summary>Sichtbarkeit der In-Progress-Sektion.</summary>
+        public Visibility InProgressSectionVisibility => InProgressVM.SectionVisibility;
 
-        /// <inheritdoc cref="DashboardZuletztGehoertViewModel.RecentSeries"/>
-        public IReadOnlyList<RecentSeriesCardViewModel> RecentSeries => ZuletztGehoertVM.RecentSeries;
+        /// <summary>Zuletzt gehörte Serien (Zuletzt-gehört-Sektion).</summary>
+        public IReadOnlyList<RecentSeriesCardViewModel> RecentSeries => ZuletztGehoertVM.Items;
 
-        /// <inheritdoc cref="DashboardZuletztGehoertViewModel.RecentSectionVisibility"/>
-        public Visibility RecentSectionVisibility => ZuletztGehoertVM.RecentSectionVisibility;
+        /// <summary>Sichtbarkeit der Zuletzt-gehört-Sektion.</summary>
+        public Visibility RecentSectionVisibility => ZuletztGehoertVM.SectionVisibility;
 
         /// <inheritdoc cref="DashboardFavoritenViewModel.SaveFavoriteSeriesOrderAsync"/>
         public Task SaveFavoriteSeriesOrderAsync() => FavoritenVM.SaveFavoriteSeriesOrderAsync();
@@ -503,11 +503,45 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Leitet PropertyChanged-Events der Sub-VMs an die eigenen Pass-Through-Properties weiter.
-        /// Alle relevanten Property-Namen sind zwischen Top-VM und Sub-VMs bewusst identisch gehalten.
+        /// Die Sektions-Sub-VMs melden generisch <c>Items</c>/<c>SectionVisibility</c> und werden
+        /// auf die sektionsspezifischen Proxy-Namen abgebildet, an die die View bindet; Favoriten-
+        /// und Neuerscheinungen-VM behalten ihre eigenen Property-Namen.
         /// </summary>
         private void OnSubVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            OnPropertyChanged(e.PropertyName);
+            switch (sender)
+            {
+                case DashboardWeiterhoerenViewModel:
+                    ForwardSectionChange(e.PropertyName, nameof(UnheardSeries), nameof(UnheardSectionVisibility));
+                    break;
+                case DashboardInProgressViewModel:
+                    ForwardSectionChange(e.PropertyName, nameof(InProgressEpisodes), nameof(InProgressSectionVisibility));
+                    break;
+                case DashboardZuletztGehoertViewModel:
+                    ForwardSectionChange(e.PropertyName, nameof(RecentSeries), nameof(RecentSectionVisibility));
+                    break;
+                default:
+                    OnPropertyChanged(e.PropertyName);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Bildet die generischen Sektions-Property-Namen auf die Dashboard-Proxy-Namen ab.
+        /// </summary>
+        /// <param name="changedProperty">Der vom Sub-VM gemeldete Property-Name.</param>
+        /// <param name="itemsProxy">Der Proxy-Name für die Liste.</param>
+        /// <param name="visibilityProxy">Der Proxy-Name für die Sichtbarkeit.</param>
+        private void ForwardSectionChange(string? changedProperty, string itemsProxy, string visibilityProxy)
+        {
+            if (changedProperty == nameof(DashboardInProgressViewModel.Items))
+            {
+                OnPropertyChanged(itemsProxy);
+            }
+            else if (changedProperty == nameof(DashboardInProgressViewModel.SectionVisibility))
+            {
+                OnPropertyChanged(visibilityProxy);
+            }
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Core.Models.Import;
-using EchoPlay.Core.Parsing;
 using System.Globalization;
 
 namespace EchoPlay.AppleMusic.Mapping
@@ -25,27 +24,17 @@ namespace EchoPlay.AppleMusic.Mapping
             ArgumentNullException.ThrowIfNull(album);
             ArgumentNullException.ThrowIfNull(tracks);
 
-            // Gesamtdauer: Summe aller Track-Dauern
-            TimeSpan totalDuration = TimeSpan.Zero;
-            foreach (ITunesTrackDto track in tracks)
-            {
-                totalDuration += TimeSpan.FromMilliseconds(track.TrackTimeMillis ?? 0);
-            }
-
-            return new ImportEpisode
-            {
-                // Collection-ID statt Track-ID – ein Album = eine Folge
-                SourceEpisodeId = album.CollectionId.ToString(CultureInfo.InvariantCulture),
-                Title = album.CollectionName,
-                EpisodeNumber = EpisodeNumberParser.Extract(album.CollectionName),
-                ReleaseDate = TryParseReleaseDate(album.ReleaseDate),
-                Duration = totalDuration,
-                OrderIndex = orderIndex,
-                ProviderUrl = $"https://music.apple.com/de/album/{album.CollectionId}",
-                // iTunes liefert 100px-Thumbnails – für höhere Auflösung "100x100" durch "600x600" ersetzen
-                CoverImageUrl = album.ArtworkUrl100?.Replace("100x100", "600x600", StringComparison.Ordinal),
-                Source = "AppleMusic"
-            };
+            // Collection-ID statt Track-ID – ein Album = eine Folge.
+            // iTunes liefert 100px-Thumbnails – für höhere Auflösung "100x100" durch "600x600" ersetzen.
+            return ImportEpisodeFactory.Create(
+                sourceEpisodeId: album.CollectionId.ToString(CultureInfo.InvariantCulture),
+                title: album.CollectionName,
+                releaseDate: TryParseReleaseDate(album.ReleaseDate),
+                trackDurations: tracks.Select(track => TimeSpan.FromMilliseconds(track.TrackTimeMillis ?? 0)),
+                orderIndex: orderIndex,
+                providerUrl: $"https://music.apple.com/de/album/{album.CollectionId}",
+                coverImageUrl: album.ArtworkUrl100?.Replace("100x100", "600x600", StringComparison.Ordinal),
+                source: "AppleMusic");
         }
 
         /// <summary>

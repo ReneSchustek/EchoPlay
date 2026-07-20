@@ -12,32 +12,37 @@ namespace EchoPlay.Data.Services
     /// kein Laden in den Change-Tracker, direkte DELETE-Statements gegen SQLite.
     /// </summary>
     /// <param name="context">Der EF-Core-Kontext für direkte DB-Operationen.</param>
-    public sealed class DatabaseMaintenanceService(EchoPlayDbContext context) : IDatabaseMaintenanceService
+    /// <param name="loggerFactory">Factory für den Logger dieses Dienstes.</param>
+    public sealed class DatabaseMaintenanceService(
+        EchoPlayDbContext context,
+        EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory) : IDatabaseMaintenanceService
     {
         private readonly EchoPlayDbContext _context = context;
+        private readonly EchoPlay.Logger.Abstractions.ILogger _logger = loggerFactory.CreateLogger("DatabaseMaintenanceService");
 
         /// <inheritdoc/>
         /// <param name="retentionDays">Parameter retentionDays.</param>
         public async Task PurgeAsync(int retentionDays)
         {
             DateTime cutoff = EntityClock.Current.UtcNow.AddDays(-retentionDays);
+            int purged = 0;
 
             // Phase 1: Kinder gelöschter Episoden bereinigen.
             // Reihenfolge wichtig – FK-Einschränkungen verbieten Löschen mit aktiven Referenzen.
 
             // LocalTracks und PlaybackStates für einzeln gelöschte Episoden entfernen
-            _ = await _context.LocalTracks
+            purged += await _context.LocalTracks
                 .IgnoreQueryFilters()
                 .Where(t => t.Episode.IsDeleted && t.Episode.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _ = await _context.PlaybackStates
+            purged += await _context.PlaybackStates
                 .IgnoreQueryFilters()
                 .Where(p => p.Episode.IsDeleted && p.Episode.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
             // Gelöschte Episoden selbst entfernen
-            _ = await _context.Episodes
+            purged += await _context.Episodes
                 .IgnoreQueryFilters()
                 .Where(e => e.IsDeleted && e.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
@@ -45,26 +50,28 @@ namespace EchoPlay.Data.Services
             // Phase 2: Kinder gelöschter Serien bereinigen.
             // Nicht alle Episoden einer gelöschten Serie müssen selbst IsDeleted=true haben –
             // daher explizit über die Series-Navigation navigieren.
-            _ = await _context.LocalTracks
+            purged += await _context.LocalTracks
                 .IgnoreQueryFilters()
                 .Where(t => t.Episode.Series.IsDeleted && t.Episode.Series.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _ = await _context.PlaybackStates
+            purged += await _context.PlaybackStates
                 .IgnoreQueryFilters()
                 .Where(p => p.Episode.Series.IsDeleted && p.Episode.Series.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _ = await _context.Episodes
+            purged += await _context.Episodes
                 .IgnoreQueryFilters()
                 .Where(e => e.Series.IsDeleted && e.Series.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
             // Serien selbst als letztes – alle abhängigen Einträge wurden bereits entfernt
-            _ = await _context.Series
+            purged += await _context.Series
                 .IgnoreQueryFilters()
                 .Where(s => s.IsDeleted && s.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            _logger.Info("DB-Purge abgeschlossen: {PurgedRows} verwaiste Zeilen älter als {RetentionDays} Tage entfernt.", purged, retentionDays);
         }
 
         /// <inheritdoc/>
@@ -74,6 +81,7 @@ namespace EchoPlay.Data.Services
             // und aktualisiert bei Bedarf die internen Indizes des SQLite-Query-Planers.
             // Am effektivsten am Ende einer Sitzung, wenn die App die meisten Abfragen durchlaufen hat.
             _ = await _context.Database.ExecuteSqlRawAsync("PRAGMA optimize;").ConfigureAwait(false);
+            _logger.Info("SQLite PRAGMA optimize ausgeführt – Query-Planer-Statistiken aktualisiert.");
         }
 
         /// <inheritdoc/>
@@ -82,6 +90,7 @@ namespace EchoPlay.Data.Services
             // VACUUM schreibt die gesamte SQLite-Datei neu – freigegebene Seiten werden zurückgewonnen.
             // Der Befehl ist synchron auf DB-Ebene, daher via ExecuteSqlRawAsync aufrufen.
             _ = await _context.Database.ExecuteSqlRawAsync("VACUUM;").ConfigureAwait(false);
+            _logger.Info("SQLite VACUUM abgeschlossen – Datenbankdatei neu geschrieben, freie Seiten zurückgewonnen.");
         }
 
         /// <inheritdoc/>
@@ -90,26 +99,30 @@ namespace EchoPlay.Data.Services
             // Reihenfolge ist FK-kritisch: zuerst Blatt-Tabellen, dann Wurzel-Tabellen.
             // EF Core erzeugt direkte DELETE-Statements – kein Laden in den Change-Tracker.
 
-            _ = await _context.LocalTracks
+            int tracks = await _context.LocalTracks
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _ = await _context.PlaybackStates
+            int states = await _context.PlaybackStates
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _ = await _context.Episodes
+            int episodes = await _context.Episodes
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _ = await _context.Series
+            int series = await _context.Series
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
             // Alle Cover löschen – keine Entity-Zuordnung mehr vorhanden
-            _ = await _context.CoverImages
+            int covers = await _context.CoverImages
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            _logger.Info(
+                "Gesamte Mediathek geleert: {Series} Serien, {Episodes} Folgen, {Tracks} Tracks, {States} Wiedergabestände, {Covers} Cover entfernt.",
+                series, episodes, tracks, states, covers);
         }
 
         /// <inheritdoc/>
@@ -126,6 +139,8 @@ namespace EchoPlay.Data.Services
             if (onlineSeriesIds.Count == 0) return;
 
             await DeleteSeriesCascadeAsync(onlineSeriesIds).ConfigureAwait(false);
+
+            _logger.Info("Online-Mediathek geleert: {SeriesCount} online-importierte Serien inkl. abhängiger Daten entfernt.", onlineSeriesIds.Count);
         }
 
         /// <inheritdoc/>
@@ -162,6 +177,8 @@ namespace EchoPlay.Data.Services
                 // LocalTracks-Delete in der Kaskade ist hier ein No-Op.
                 await DeleteSeriesCascadeAsync(localOnlySeriesIds).ConfigureAwait(false);
             }
+
+            _logger.Info("Lokale Mediathek geleert: {SeriesCount} rein lokale Serien entfernt, lokale Pfade der übrigen zurückgesetzt.", localOnlySeriesIds.Count);
         }
 
         /// <summary>

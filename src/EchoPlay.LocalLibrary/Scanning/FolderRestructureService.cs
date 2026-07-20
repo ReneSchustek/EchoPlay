@@ -5,7 +5,6 @@ using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
 using System.Security;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Scanning
 {
@@ -17,15 +16,6 @@ namespace EchoPlay.LocalLibrary.Scanning
     /// </summary>
     public sealed class FolderRestructureService : IFolderRestructureService
     {
-        /// <summary>
-        /// Kassetten-Muster – identisch mit dem im <see cref="LocalLibraryScanner"/>.
-        /// Erkennt Dateien wie "01a Titel", "Serie - 01a - Titel", "W03a Titel", "11a".
-        /// </summary>
-        private static readonly Regex CassettePattern = new(
-            @"^(?:.*\s-\s)?(?<prefix>[A-Za-z]*)(?<number>\d{1,3})(?<side>[abAB])(?:\s-\s|\s)(?<title>.+)$|" +
-            @"^(?<prefix>[A-Za-z]*)(?<number>\d{1,3})(?<side>[abAB])$",
-            RegexOptions.Compiled);
-
         private readonly ILogger _logger;
 
         /// <summary>
@@ -83,14 +73,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             // Parser für die Nummern/Titel-Extraktion – gleiche Muster wie im Scanner
             EpisodeFolderParser configuredParser = new(folderPattern);
-            EpisodeFolderParser[] fileParsers =
-            [
-                configuredParser,
-                new("{*} - {number:000} - {title}"),
-                new("{number:000} - {title}"),
-                new("{number} {title}"),
-                new("{*}_FOLGE_{number}_{title}"),
-            ];
+            EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(configuredParser);
 
             List<RestructureAction> actions = [];
             HashSet<string> targetFolders = [];
@@ -103,20 +86,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 string? title = null;
 
                 // Kassetten-Rip prüfen
-                Match cassetteMatch = CassettePattern.Match(fileNameWithoutExt);
-                if (cassetteMatch.Success)
-                {
-                    string cassetteNumberStr = cassetteMatch.Groups["number"].Value;
-                    char side = char.ToLowerInvariant(cassetteMatch.Groups["side"].Value[0]);
-
-                    if (int.TryParse(cassetteNumberStr, out int cassetteNumber))
-                    {
-                        episodeNumber = (cassetteNumber * 2) - (side == 'a' ? 1 : 0);
-                        title = cassetteMatch.Groups["title"].Success && cassetteMatch.Groups["title"].Value.Length > 0
-                            ? cassetteMatch.Groups["title"].Value.Trim()
-                            : fileNameWithoutExt;
-                    }
-                }
+                _ = CassetteRipParser.TryParse(fileNameWithoutExt, out episodeNumber, out title);
 
                 // Generische Parser
                 if (episodeNumber is null)

@@ -1,0 +1,64 @@
+using EchoPlay.App.Helpers;
+using EchoPlay.Logger.Core;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Threading.Tasks;
+
+namespace EchoPlay.App.Services
+{
+    /// <summary>
+    /// Zeigt Fehler-Dialoge über den WinUI-3-ContentDialog an.
+    /// Content-Aufbau liegt in <see cref="ErrorDialogContent.Build"/> — testbar ohne XamlRoot.
+    /// </summary>
+
+    public sealed class ErrorDialogService : IErrorDialogService
+    {
+        private readonly Func<XamlRoot?> _xamlRootProvider;
+
+        /// <summary>
+        /// Standard-Konstruktor: nutzt <see cref="App.MainWindow"/> zur Laufzeit.
+        /// </summary>
+        public ErrorDialogService()
+            : this(static () => App.MainWindow?.Content?.XamlRoot)
+        {
+        }
+
+        /// <summary>
+        /// Test-Konstruktor: erlaubt das Einsetzen eines Fake-XamlRoot-Providers
+        /// (auch null für Pre-MainWindow-Szenarien).
+        /// </summary>
+        internal ErrorDialogService(Func<XamlRoot?> xamlRootProvider)
+        {
+            _xamlRootProvider = xamlRootProvider ?? throw new ArgumentNullException(nameof(xamlRootProvider));
+        }
+
+        /// <inheritdoc />
+        public async Task ShowAsync(string title, string message, CancellationToken cancellationToken = default)
+        {
+            ErrorDialogContent content = ErrorDialogContent.Build(title, message);
+
+            // Defense-in-Depth: bei Startup-Failures vor abgeschlossener MainWindow-Init
+            // (siehe App.xaml.cs Fatal-Pfade) ist MainWindow oder XamlRoot null. Statt
+            // NullReferenceException im Error-Service EmergencyTrace-Fallback, analog
+            // SplashWindow-Pfad — der reguläre Logger ist hier ggf. selbst noch nicht da.
+            XamlRoot? xamlRoot = _xamlRootProvider();
+            if (xamlRoot is null)
+            {
+                EmergencyTrace.Log($"ErrorDialogService: {content.Title} — {content.Message} (MainWindow nicht verfügbar)");
+                return;
+            }
+
+            ContentDialog dialog = new()
+            {
+                Title = content.Title,
+                Content = content.Message,
+                CloseButtonText = content.CloseButtonText,
+                XamlRoot = xamlRoot
+            };
+
+            ContentDialogDragHelper.MakeDraggable(dialog);
+            _ = await dialog.ShowAsync();
+        }
+    }
+}

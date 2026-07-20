@@ -1,27 +1,27 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="EchoPlay.App/EchoPlay.App.csproj" Id="afe1e52e-824e-4e32-a4ca-fc6c6d73691b">
+    <Project Path="src/EchoPlay.App/EchoPlay.App.csproj" Id="afe1e52e-824e-4e32-a4ca-fc6c6d73691b">
       <Platform Project="x64" />
       <Deploy />
     </Project>
-    <Project Path="EchoPlay.AppleMusic/EchoPlay.AppleMusic.csproj" Id="e481f845-df41-498d-80f3-c88594a35819" />
-    <Project Path="EchoPlay.Core/EchoPlay.Core.csproj" Id="60372029-fecb-4689-9f46-1bcffe00eb0f" />
-    <Project Path="EchoPlay.Data/EchoPlay.Data.csproj" Id="f932cbe6-e8eb-4bea-8b86-ad30ce1b9ea4" />
-    <Project Path="EchoPlay.LocalLibrary/EchoPlay.LocalLibrary.csproj" Id="e220095f-5982-4b64-b947-f7c2d5cd7bf8" />
-    <Project Path="EchoPlay.Logger/EchoPlay.Logger.csproj" Id="6c32147f-397e-4d0a-97a6-4e768d34cd11" />
-    <Project Path="EchoPlay.Logger.Abstractions/EchoPlay.Logger.Abstractions.csproj" />
-    <Project Path="EchoPlay.Spotify/EchoPlay.Spotify.csproj" Id="0a9be2c6-4bb8-4bbb-9157-55281de4940b" />
-    <Project Path="EchoPlay.TagManager/EchoPlay.TagManager.csproj" />
+    <Project Path="src/EchoPlay.AppleMusic/EchoPlay.AppleMusic.csproj" Id="e481f845-df41-498d-80f3-c88594a35819" />
+    <Project Path="src/EchoPlay.Core/EchoPlay.Core.csproj" Id="60372029-fecb-4689-9f46-1bcffe00eb0f" />
+    <Project Path="src/EchoPlay.Data/EchoPlay.Data.csproj" Id="f932cbe6-e8eb-4bea-8b86-ad30ce1b9ea4" />
+    <Project Path="src/EchoPlay.LocalLibrary/EchoPlay.LocalLibrary.csproj" Id="e220095f-5982-4b64-b947-f7c2d5cd7bf8" />
+    <Project Path="src/EchoPlay.Logger/EchoPlay.Logger.csproj" Id="6c32147f-397e-4d0a-97a6-4e768d34cd11" />
+    <Project Path="src/EchoPlay.Logger.Abstractions/EchoPlay.Logger.Abstractions.csproj" />
+    <Project Path="src/EchoPlay.Spotify/EchoPlay.Spotify.csproj" Id="0a9be2c6-4bb8-4bbb-9157-55281de4940b" />
+    <Project Path="src/EchoPlay.TagManager/EchoPlay.TagManager.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="EchoPlay.App.Tests/EchoPlay.App.Tests.csproj" Id="ce891dfa-cbd9-4eab-bce4-d98f6f868010" />
-    <Project Path="EchoPlay.AppleMusic.Tests/EchoPlay.AppleMusic.Tests.csproj" Id="b06d5675-4bb7-4cf9-bdb9-5521db2dfd1d" />
-    <Project Path="EchoPlay.Core.Tests/EchoPlay.Core.Tests.csproj" Id="d3eab29b-2f3c-48d3-be92-602545ff51fd" />
-    <Project Path="EchoPlay.Data.Tests/EchoPlay.Data.Tests.csproj" Id="b84c7ce3-baea-4b82-85f7-aebff1daa12f" />
-    <Project Path="EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj" Id="854d1105-4cf1-462a-b339-5f2863d47d21" />
-    <Project Path="EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj" Id="f1dc3c07-2e26-47fa-975a-06a0624d0945" />
-    <Project Path="EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj" Id="344a913a-211e-4046-931e-28cc75f7813a" />
-    <Project Path="EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj" />
-    <Project Path="EchoPlay.Fuzz/EchoPlay.Fuzz.csproj" />
+    <Project Path="tests/EchoPlay.App.Tests/EchoPlay.App.Tests.csproj" Id="ce891dfa-cbd9-4eab-bce4-d98f6f868010" />
+    <Project Path="tests/EchoPlay.AppleMusic.Tests/EchoPlay.AppleMusic.Tests.csproj" Id="b06d5675-4bb7-4cf9-bdb9-5521db2dfd1d" />
+    <Project Path="tests/EchoPlay.Core.Tests/EchoPlay.Core.Tests.csproj" Id="d3eab29b-2f3c-48d3-be92-602545ff51fd" />
+    <Project Path="tests/EchoPlay.Data.Tests/EchoPlay.Data.Tests.csproj" Id="b84c7ce3-baea-4b82-85f7-aebff1daa12f" />
+    <Project Path="tests/EchoPlay.LocalLibrary.Tests/EchoPlay.LocalLibrary.Tests.csproj" Id="854d1105-4cf1-462a-b339-5f2863d47d21" />
+    <Project Path="tests/EchoPlay.Logger.Tests/EchoPlay.Logger.Tests.csproj" Id="f1dc3c07-2e26-47fa-975a-06a0624d0945" />
+    <Project Path="tests/EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj" Id="344a913a-211e-4046-931e-28cc75f7813a" />
+    <Project Path="tests/EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj" />
+    <Project Path="tests/EchoPlay.Fuzz/EchoPlay.Fuzz.csproj" />
   </Folder>
 </Solution>

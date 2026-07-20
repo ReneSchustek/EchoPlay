@@ -89,8 +89,9 @@ namespace EchoPlay.Data.Tests.Services
             CoverImageDataService service = new(Context, NullLoggerFactory);
             Guid entityId = TestIds.Indexed(6);
 
-            // Platzhalter-Eintrag ohne Bild und ohne LastChecked
-            await service.SetLastCheckedAsync("Episode", entityId, DateTime.MinValue, cancellationToken: TestContext.Current.CancellationToken);
+            // Platzhalter-Eintrag ohne Bild und mit abgelaufenem LastChecked
+            _ = Context.CoverImages.Add(new CoverImage { EntityType = "Episode", EntityId = entityId, ImageData = [], LastChecked = DateTime.MinValue });
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             DateTime threshold = TestIds.ReferenceDate.AddDays(-1);
@@ -128,7 +129,8 @@ namespace EchoPlay.Data.Tests.Services
             // Echtes Cover
             await service.SetCoverAsync("Episode", mitCover, [0xFF, 0xD8], cancellationToken: TestContext.Current.CancellationToken);
             // Platzhalter: nur LastChecked, keine Bilddaten
-            await service.SetLastCheckedAsync("Episode", platzhalter, TestIds.ReferenceDate, cancellationToken: TestContext.Current.CancellationToken);
+            _ = Context.CoverImages.Add(new CoverImage { EntityType = "Episode", EntityId = platzhalter, ImageData = [], LastChecked = TestIds.ReferenceDate });
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             IReadOnlyDictionary<Guid, byte[]> result =

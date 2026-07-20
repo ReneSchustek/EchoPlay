@@ -97,32 +97,6 @@ namespace EchoPlay.Data.Services.Interfaces
         Task UpdateRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Liefert alle Episoden einer Serie, für die noch kein lokaler Ordner zugeordnet wurde.
-        /// Dies sind Episoden, die in der Datenbank bekannt sind (z.B. durch Online-Import),
-        /// aber beim letzten Scan nicht auf der Festplatte gefunden wurden.
-        /// </summary>
-        /// <param name="seriesId">Die eindeutige ID der Serie.</param>
-        /// <returns>
-        /// Episoden ohne <c>LocalFolderPath</c>, sortiert nach Episodennummer und Titel.
-        /// Gibt eine leere Liste zurück, wenn alle Episoden lokal vorhanden sind.
-        /// </returns>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        Task<IReadOnlyList<Episode>> GetMissingLocalEpisodesAsync(Guid seriesId, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Ermittelt die höchste Episodennummer aller lokal vorhandenen Episoden einer Serie.
-        /// Wird auf dem Dashboard verwendet, um zu entscheiden, welche Folgen als „Neuerscheinung"
-        /// gelten: Nur Episoden mit einer höheren Nummer als dieser Wert sind wirklich neu.
-        /// </summary>
-        /// <param name="seriesId">Die eindeutige ID der Serie.</param>
-        /// <returns>
-        /// Die höchste Episodennummer mit zugeordnetem lokalen Ordner,
-        /// oder <see langword="null"/> wenn keine lokale Episode existiert.
-        /// </returns>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        Task<int?> GetHighestLocalEpisodeNumberAsync(Guid seriesId, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Setzt den Zeitstempel der letzten Cover-Suche.
         /// Wird nach jeder automatischen Suche gesetzt, unabhängig vom Ergebnis.
         /// Verhindert wiederholtes Durchsuchen bei Episoden ohne Treffer (Cooldown).

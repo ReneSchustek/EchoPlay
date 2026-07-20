@@ -20,11 +20,10 @@ namespace EchoPlay.App.ViewModels
     /// Online-Episoden haben keine lokalen Tracks – stattdessen gibt es
     /// einen „Im Browser öffnen"-Button für den Direktzugriff beim Provider.
     /// </summary>
-    public sealed class OnlineEpisodeCardViewModel : ObservableObject
+    public sealed class OnlineEpisodeCardViewModel : CoverCardViewModelBase
     {
         private readonly IServiceScopeFactory? _scopeFactory;
         private readonly IClock _clock;
-        private BitmapImage? _coverImage;
         private bool _isCompleted;
 
         /// <summary>
@@ -99,22 +98,6 @@ namespace EchoPlay.App.ViewModels
             !string.IsNullOrEmpty(ProviderUrl) ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Cover-Bild – wird asynchron nachgeladen.
-        /// Null zeigt den Platzhalter an.
-        /// </summary>
-        public BitmapImage? CoverImage
-        {
-            get => _coverImage;
-            set
-            {
-                if (SetProperty(ref _coverImage, value))
-                {
-                    OnPropertyChanged(nameof(NoCoverVisibility));
-                }
-            }
-        }
-
-        /// <summary>
         /// Ob die Episode als gehört markiert ist.
         /// </summary>
         public bool IsCompleted
@@ -128,10 +111,6 @@ namespace EchoPlay.App.ViewModels
                 }
             }
         }
-
-        /// <summary>Sichtbarkeit des Platzhalters wenn kein Cover vorhanden.</summary>
-        public Visibility NoCoverVisibility =>
-            _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>Sichtbarkeit des Gehört-Häkchens.</summary>
         public Visibility CompletedVisibility =>

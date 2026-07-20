@@ -4,10 +4,6 @@
 
 EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organisieren möchten. Serien können aus Online-Quellen (Spotify, Apple Music) importiert oder aus lokalen Audiodateien eingelesen werden. Die App merkt sich den Wiedergabestatus jeder Episode, zeigt Neuerscheinungen an und hilft beim Entdecken fehlender Folgen.
 
-> **KI-Workflow-Material:** Briefs, Rules, Memory, Reviews und Skripte liegen unter
-> `F:\Entwicklung\dotnet\_ai\EchoPlay\` (zentrale KI-Topologie). Die Junction
-> `_ai\` im Repo-Root verweist auf diesen Pfad und ist via `.gitignore` ausgeklammert.
-
 ---
 
 ## Funktionsumfang
@@ -55,7 +51,7 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 | Technologie | Einsatz |
 |---|---|
 | .NET 10 / C# | Anwendungsframework |
-| WinUI 3 (Windows App SDK 1.8) | UI-Framework |
+| WinUI 3 (Windows App SDK 2.0) | UI-Framework |
 | Windows SDK BuildTools 10.0.28000 | Manifest-Validierung, XAML-Compiler |
 | Entity Framework Core 10 | ORM mit SQLite (WAL-Modus, Soft-Delete, Migrationen mit `VACUUM INTO`-Backup) |
 | Microsoft.Extensions.Http.Resilience | Polly-basierte Retry-/Timeout-/Circuit-Breaker-Policies für HTTP-Provider |
@@ -98,8 +94,8 @@ EchoPlay.Setup                → Inno-Setup-Skripte für den Windows-Installer
 ```bash
 git clone <repo-url>
 cd EchoPlay
-dotnet build -p:Platform=x64
-dotnet run --project EchoPlay.App
+dotnet build EchoPlay.slnx -p:Platform=x64
+dotnet run --project src/EchoPlay.App
 ```
 
 Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche über Spotify können die Zugangsdaten im laufenden Programm unter **Einstellungen → Online** eingegeben werden; sie werden per Windows DPAPI (CurrentUser-Scope) in der lokalen SQLite-Datenbank verschlüsselt abgelegt — weder im Code, in appsettings.json noch in User Secrets.
@@ -111,7 +107,7 @@ Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche übe
 1. **Solution öffnen:** `EchoPlay.slnx` in Visual Studio 2022. Startprojekt ist `EchoPlay.App`.
 2. **Build-Plattform:** Immer `x64` — WinUI 3 und die Tests laufen nicht unter `AnyCPU`.
 3. **Tests ausführen:** `dotnet test -p:Platform=x64` (Solution-weit) oder pro Projekt. Live-API-Tests (Spotify, iTunes) sind per Default skipped.
-4. **Migrationen:** Nach Entity-Änderung `dotnet ef migrations add <Name> --project EchoPlay.Data --startup-project EchoPlay.App`. `.Designer.cs` muss committed werden — sonst erkennt EF die Migration nicht. Historie und Breaking-Change-Liste in `MIGRATIONS.md`.
+4. **Migrationen:** Nach Entity-Änderung `dotnet ef migrations add <Name> --project src/EchoPlay.Data --startup-project src/EchoPlay.App`. `.Designer.cs` muss committed werden — sonst erkennt EF die Migration nicht. Historie und Breaking-Change-Liste in `MIGRATIONS.md`.
 5. **Warnungen = Fehler:** Das Projekt fährt mit `TreatWarningsAsErrors=true` und `AnalysisMode=All`. Neue CA-Warnungen müssen entweder gelöst oder mit Methoden-Begründung suppressed werden.
 6. **DI-Lifetimes:** ViewModels sind `Transient`, `DbContext` ist `Scoped`. ViewModels nutzen `IServiceScopeFactory` für DB-Zugriff — direkte `DbContext`-Injektion in ViewModels ist ein Captive-Dependency-Muster und wird im Review abgelehnt.
 7. **Keine Cover-BLOBs an Entities:** Cover liegen in der `CoverImages`-Tabelle, referenziert über `ICoverImageDataService`.
@@ -134,4 +130,4 @@ Privates Projekt, keine öffentliche Lizenz.
 
 ---
 
-**Stand 2026-05-05** — 36 Migrationen, 830 Tests grün, .NET 10 / WinUI 3.
+**Stand:** .NET 10 / WinUI 3 (Windows App SDK 2.0), EF Core 10 / SQLite, 36 Migrationen.

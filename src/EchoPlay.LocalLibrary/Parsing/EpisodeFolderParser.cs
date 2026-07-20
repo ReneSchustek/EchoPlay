@@ -35,6 +35,27 @@ namespace EchoPlay.LocalLibrary.Parsing
         }
 
         /// <summary>
+        /// Erstellt die Standard-Kaskade an Parsern für flache Serien-Dateinamen.
+        /// Das konfigurierte Muster wird zuerst probiert, danach die üblichen Fallback-Muster.
+        /// Scanner und Umstrukturierungs-Service nutzen dieselbe Reihenfolge.
+        /// </summary>
+        /// <param name="configuredParser">Der konfigurierte Parser, der zuerst greift.</param>
+        /// <returns>Die Parser-Kaskade in Prüfreihenfolge.</returns>
+        public static EpisodeFolderParser[] CreateFileNameParserChain(EpisodeFolderParser configuredParser)
+        {
+            ArgumentNullException.ThrowIfNull(configuredParser);
+
+            return
+            [
+                configuredParser,                        // Konfiguriertes Muster zuerst
+                new("{*} - {number:000} - {title}"),     // "Serie - 001 - Titel"
+                new("{number:000} - {title}"),           // "001 - Titel"
+                new("{number} {title}"),                 // "01 Titel" (einfach)
+                new("{*}_FOLGE_{number}_{title}"),       // "SERIE_FOLGE_01_TITEL"
+            ];
+        }
+
+        /// <summary>
         /// Versucht, einen Ordnernamen anhand des Musters zu parsen.
         /// </summary>
         /// <param name="folderName">Nur der Ordnername, kein vollständiger Pfad.</param>

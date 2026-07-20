@@ -6,7 +6,6 @@ using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
 using System.Security;
-using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Scanning
 {
@@ -18,20 +17,6 @@ namespace EchoPlay.LocalLibrary.Scanning
     /// </summary>
     public sealed class LocalLibraryScanner : ILocalLibraryScanner
     {
-        /// <summary>
-        /// Erkennt Kassetten-Rips mit a/b-Seiten im Dateinamen.
-        /// Unterstützte Formate:
-        /// - <c>01a Titel</c> (Pumuckl)
-        /// - <c>Serie - 01a - Titel</c> (Black Beauty)
-        /// - <c>W03a Titel</c> (Weihnachts-Sonderfolgen mit Buchstaben-Präfix)
-        /// - <c>11a</c> (ohne Titel)
-        /// Gruppen: prefix (optional), number, side (a/b), title (optional).
-        /// </summary>
-        private static readonly Regex CassettePattern = new(
-            @"^(?:.*\s-\s)?(?<prefix>[A-Za-z]*)(?<number>\d{1,3})(?<side>[abAB])(?:\s-\s|\s)(?<title>.+)$|" +
-            @"^(?<prefix>[A-Za-z]*)(?<number>\d{1,3})(?<side>[abAB])$",
-            RegexOptions.Compiled);
-
         private readonly ILogger _logger;
         private readonly ITagTitleReader _tagTitleReader;
 
@@ -237,14 +222,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                     // Mehrere Parser-Muster probieren – Dateinamen folgen anderen Konventionen
                     // als Ordnernamen (z.B. "Karl May - 001 - Durch die Wüste")
-                    EpisodeFolderParser[] fileParsers =
-                    [
-                        parser,                                           // Konfiguriertes Muster zuerst
-                        new("{*} - {number:000} - {title}"),              // "Serie - 001 - Titel"
-                        new("{number:000} - {title}"),                    // "001 - Titel"
-                        new("{number} {title}"),                          // "01 Titel" (einfach)
-                        new("{*}_FOLGE_{number}_{title}"),                // "SERIE_FOLGE_01_TITEL"
-                    ];
+                    EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(parser);
 
                     foreach (string trackPath in flatTracks)
                     {
@@ -256,24 +234,10 @@ namespace EchoPlay.LocalLibrary.Scanning
                         // Kassetten-Rips zuerst prüfen – "01a Titel", "Black Beauty - 01a - Titel".
                         // Muss VOR den generischen Parsern laufen, damit "{number} {title}"
                         // nicht fälschlich "01" als Nummer und "a Titel" als Titel extrahiert.
-                        Match cassetteMatch = CassettePattern.Match(fileNameWithoutExt);
-                        if (cassetteMatch.Success)
+                        if (CassetteRipParser.TryParse(fileNameWithoutExt, out number, out title))
                         {
-                            string cassetteNumberStr = cassetteMatch.Groups["number"].Value;
-                            char side = char.ToLowerInvariant(cassetteMatch.Groups["side"].Value[0]);
-
-                            if (int.TryParse(cassetteNumberStr, out int cassetteNumber))
-                            {
-                                // Fortlaufende Nummer: Seite a = ungerade, Seite b = gerade.
-                                // Kassette 01a → 1, 01b → 2, 02a → 3, 02b → 4 usw.
-                                number = (cassetteNumber * 2) - (side == 'a' ? 1 : 0);
-                                title = cassetteMatch.Groups["title"].Success && cassetteMatch.Groups["title"].Value.Length > 0
-                                    ? cassetteMatch.Groups["title"].Value.Trim()
-                                    : fileNameWithoutExt;
-                                matched = true;
-
-                                _logger.Debug(() => $"Kassetten-Rip erkannt: '{fileNameWithoutExt}' → Kassette {cassetteNumberStr}{side}, Episode {number}");
-                            }
+                            matched = true;
+                            _logger.Debug(() => $"Kassetten-Rip erkannt: '{fileNameWithoutExt}' → Episode {number}");
                         }
 
                         // Generische Parser-Muster durchprobieren wenn kein Kassetten-Muster passt

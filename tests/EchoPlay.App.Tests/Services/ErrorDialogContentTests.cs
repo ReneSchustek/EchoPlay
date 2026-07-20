@@ -4,7 +4,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer den Build-Helfer von <see cref="ErrorDialogContent"/>.
+    /// Tests für den Build-Helfer von <see cref="ErrorDialogContent"/>.
     /// </summary>
     public sealed class ErrorDialogContentTests
     {

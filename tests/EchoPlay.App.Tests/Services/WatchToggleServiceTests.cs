@@ -12,9 +12,9 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer <see cref="WatchToggleService"/>.
+    /// Tests für <see cref="WatchToggleService"/>.
     /// Verwendet eine echte ServiceCollection mit Fake-Implementierungen, um den
-    /// Scope-Factory-Pfad realitaetsnah zu pruefen.
+    /// Scope-Factory-Pfad realitaetsnah zu prüfen.
     /// </summary>
     public sealed class WatchToggleServiceTests
     {

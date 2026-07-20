@@ -4,9 +4,9 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests fuer den Build-Helfer von <see cref="ConfirmationDialogContent"/>.
+    /// Tests für den Build-Helfer von <see cref="ConfirmationDialogContent"/>.
     /// SafeResourceLoader liefert in Test-Hosts den Fallback "(missing: key)" oder
-    /// den Schluessel selbst, was hier ausreicht — geprueft wird die Strukturierung,
+    /// den Schlüssel selbst, was hier ausreicht — geprüft wird die Strukturierung,
     /// nicht der konkrete Lokalisierungs-Wert.
     /// </summary>
     public sealed class ConfirmationDialogContentTests

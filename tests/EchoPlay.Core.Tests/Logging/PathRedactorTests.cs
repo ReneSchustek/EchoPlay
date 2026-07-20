@@ -24,7 +24,7 @@ namespace EchoPlay.Core.Tests.Logging
         [Fact]
         public void Redact_FileNameOnly_ReturnsFileNameUntouched()
         {
-            // Reiner Dateiname (ohne Verzeichnis) enthaelt per Definition keine User-PII.
+            // Reiner Dateiname (ohne Verzeichnis) enthält per Definition keine User-PII.
             string result = PathRedactor.Redact("Folge42.mp3");
 
             Assert.Equal("Folge42.mp3", result);
@@ -67,7 +67,7 @@ namespace EchoPlay.Core.Tests.Logging
         [Fact]
         public void Redact_CaseInsensitive_SameDirectoryProducesSameHash()
         {
-            // Windows-Dateisystem ist Case-Insensitive; gleiche Verzeichnisse muessen denselben
+            // Windows-Dateisystem ist Case-Insensitive; gleiche Verzeichnisse müssen denselben
             // Hash liefern, damit Log-Korrelation auch bei Schreibweisen-Drift funktioniert.
             string upper = @"C:\USERS\Renes\Music\song.mp3";
             string lower = @"C:\users\Renes\Music\song.mp3";

@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Tests.Services
         private static readonly EchoPlay.Logger.Abstractions.ILoggerFactory NullLoggerFactory =
             new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions());
 
-        // Feste Referenz-Zeit fuer deterministische Tests; Aggregations-Sortierung
+        // Feste Referenz-Zeit für deterministische Tests; Aggregations-Sortierung
         // braucht keine echte Wallclock-Zeit, nur konsistente relative Differenzen.
         private static readonly DateTime FixedNow = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
 

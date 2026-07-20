@@ -83,7 +83,7 @@ namespace EchoPlay.Core.Tests.Security
             string rootWithSep = root + Path.DirectorySeparatorChar;
             string candidate = Path.Combine(root, "cover.jpg");
 
-            // Verschiedene Trailing-Separator-Kombinationen muessen gleich behandelt werden.
+            // Verschiedene Trailing-Separator-Kombinationen müssen gleich behandelt werden.
             Assert.True(SecurePathHelper.IsPathInside(candidate, rootWithSep));
         }
     }

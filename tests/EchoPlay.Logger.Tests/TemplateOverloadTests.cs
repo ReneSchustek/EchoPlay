@@ -4,7 +4,7 @@ namespace EchoPlay.Logger.Tests
 {
     /// <summary>
     /// Verifiziert die Default-Implementierung der Message-Template-Overloads in <see cref="ILogger"/>.
-    /// Strukturierte Sinks koennen die Methoden ueberschreiben — der Default-Pfad rendert per
+    /// Strukturierte Sinks können die Methoden überschreiben — der Default-Pfad rendert per
     /// String-Substitution und delegiert an den Plain-Message-Pfad.
     /// </summary>
     public sealed class TemplateOverloadTests
@@ -88,7 +88,7 @@ namespace EchoPlay.Logger.Tests
             Assert.Equal("Wert (null)", captured.LastMessage);
         }
 
-        // Test-Logger ohne Sinks; nur fuer Default-Method-Verifikation.
+        // Test-Logger ohne Sinks; nur für Default-Method-Verifikation.
         private sealed class CapturingTestLogger : ILogger
         {
             public bool IsDebugEnabled { get; set; } = true;

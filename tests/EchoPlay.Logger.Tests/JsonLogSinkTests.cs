@@ -20,7 +20,7 @@ namespace EchoPlay.Logger.Tests
     /// <c>Guid.NewGuid()</c> als Verzeichnis-Suffix ist bewusst: xUnit fuehrt Tests in
     /// derselben Klasse parallel aus. Filesystem-basierte Sinks brauchen physische
     /// Isolation pro Lauf, sonst greifen Datei-Locks ineinander. Determinismus ist hier
-    /// auf Verzeichnis-Eindeutigkeit beschraenkt — Test-Ausgaben sind unabhaengig vom Suffix.
+    /// auf Verzeichnis-Eindeutigkeit beschränkt — Test-Ausgaben sind unabhängig vom Suffix.
     /// </remarks>
     public sealed class JsonLogSinkTests : IDisposable
     {

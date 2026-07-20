@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task GetArtistAlbumsAsync_EmptyResponse_ReturnsEmptyList()
         {
-            // Volle JSON-Felder fuer Album-Mapping waeren fragil — wir testen den Empty-Pfad
+            // Volle JSON-Felder für Album-Mapping waeren fragil — wir testen den Empty-Pfad
             // gegen die echte Spotify-Response-Form (items + next).
             const string responseJson = """{"items":[],"next":null}""";
             SpotifyApiClient client = BuildClient(responseJson);

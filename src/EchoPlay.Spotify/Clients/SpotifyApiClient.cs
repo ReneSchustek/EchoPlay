@@ -245,7 +245,9 @@ namespace EchoPlay.Spotify.Clients
                             SpotifyAlbumId = albumId,
                             Title = title,
                             ReleaseDate =
-                                DateTime.TryParse(item.GetProperty("release_date").GetString(), out DateTime date)
+                                DateTime.TryParse(item.GetProperty("release_date").GetString(),
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    System.Globalization.DateTimeStyles.RoundtripKind, out DateTime date)
                                     ? date
                                     : null,
                             TotalTracks = item.GetProperty("total_tracks").GetInt32(),

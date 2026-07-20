@@ -68,76 +68,17 @@ namespace EchoPlay.AppleMusic.Scoring
         /// <returns>Das Bewertungsergebnis.</returns>
         private HoerspielScoreResult Evaluate(string artistId, AppleMusicHoerspielAnalysis analysis)
         {
-            // Harte Akzeptanz bei bekannter Hörspielserie
             if (analysis.IsKnownSeries)
             {
                 Logger.Debug(() => "Hard-Accept: bekannte Hörspielserie");
-                return HoerspielScoreResult.Yes(
-                    artistId,
-                    HoerspielDecisionReason.KnownSeriesName,
-                    100,
-                    analysis.DebugInfo);
             }
 
-            // Score-basierte Bewertung
-            int score = 0;
-            List<string> scoreParts = [];
-
-            if (analysis.NameContainsQuery)
-            {
-                score += _settings.NameContainsBonus;
-                scoreParts.Add($"Name-Contains: +{_settings.NameContainsBonus}");
-            }
-
-            if (analysis.HasNumberVariantMatch)
-            {
-                score += _settings.NameContainsBonus;
-                scoreParts.Add($"Zahlwort-Variante: +{_settings.NameContainsBonus}");
-            }
-
-            if (analysis.HasExactWordMatch)
-            {
-                score += _settings.ExactWordMatchBonus;
-                scoreParts.Add($"Exaktes Wort-Match: +{_settings.ExactWordMatchBonus}");
-            }
-
-            if (analysis.HasHoerspielGenre)
-            {
-                score += _settings.GenreBonus;
-                scoreParts.Add($"Hörspiel-Genre: +{_settings.GenreBonus}");
-            }
-
-            if (analysis.HasHoerspielAlbumStructure)
-            {
-                score += _settings.AlbumStructureBonus;
-                scoreParts.Add($"Album-Struktur: +{_settings.AlbumStructureBonus}");
-            }
-            else
-            {
-                score += _settings.NoAlbumPenalty;
-                scoreParts.Add($"Keine Hörspiel-Alben: {_settings.NoAlbumPenalty}");
-            }
-
-            string debugInfo = scoreParts.Count > 0
-                ? string.Join("; ", scoreParts) + $" → Gesamt: {score}"
-                : $"Keine Indikatoren gefunden → Gesamt: {score}";
-
-            bool isHoerspiel = score >= _settings.MinimumScoreThreshold;
-
-            if (isHoerspiel)
-            {
-                return HoerspielScoreResult.Yes(
-                    artistId,
-                    HoerspielDecisionReason.None,
-                    score,
-                    debugInfo);
-            }
-
-            return HoerspielScoreResult.No(
+            // Apple-Music-spezifisch: Genre-Bonus wird nach dem exakten Wort-Match eingereiht
+            return HoerspielScoreCalculator.Evaluate(
                 artistId,
-                HoerspielDecisionReason.None,
-                score,
-                debugInfo);
+                analysis,
+                _settings,
+                [new HoerspielScoreComponent(analysis.HasHoerspielGenre, _settings.GenreBonus, "Hörspiel-Genre")]);
         }
     }
 }

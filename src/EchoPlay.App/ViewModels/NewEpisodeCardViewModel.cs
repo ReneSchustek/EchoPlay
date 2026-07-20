@@ -367,29 +367,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-            IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
-
-            IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(EpisodeId);
-
-            if (tracks.Count == 0)
-            {
-                return;
-            }
-
-            PlaybackState? savedState = await stateService.GetByEpisodeIdAsync(EpisodeId);
-            // Nur fortsetzen, wenn die Episode nicht bereits abgeschlossen ist
-            TimeSpan resumePosition = savedState is { IsCompleted: false } ? savedState.LastPosition : TimeSpan.Zero;
-
-            List<string> paths = new(tracks.Count);
-
-            foreach (LocalTrack track in tracks)
-            {
-                paths.Add(track.FilePath);
-            }
-
-            _playerService.Play(EpisodeId, paths, startIndex: 0, resumePosition: resumePosition);
+            await PlaybackLauncher.PlayEpisodeAsync(_scopeFactory, _playerService, EpisodeId);
         }
 
         /// <summary>

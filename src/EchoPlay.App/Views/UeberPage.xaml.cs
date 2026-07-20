@@ -1,3 +1,5 @@
+using EchoPlay.App.Helpers;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
@@ -36,6 +38,20 @@ namespace EchoPlay.App.Views
                 .ToString(3) ?? "1.0.0";
 
             VersionText.Text = $"Version {version}";
+
+            // Spenden-Einstieg nur zeigen, wenn ein echter PayPal-Handle hinterlegt ist –
+            // sonst bliebe ein toter Platzhalter-Link stehen.
+            SupportPanel.Visibility = SupportDonation.IsConfigured ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Öffnet das fest verdrahtete PayPal-Spendenziel im System-Browser.
+        /// Der <see cref="SafeUrlLauncher"/> lässt nur http/https zu; die URL selbst ist eine
+        /// Compile-Zeit-Konstante (<see cref="SupportDonation.PayPalUrl"/>) und nicht manipulierbar.
+        /// </summary>
+        private void OnSupportClick(object sender, RoutedEventArgs e)
+        {
+            _ = SafeUrlLauncher.TryOpenInBrowser(SupportDonation.PayPalUrl);
         }
     }
 }

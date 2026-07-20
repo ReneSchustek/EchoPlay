@@ -215,13 +215,11 @@ namespace EchoPlay.Data.Services
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             PlaybackState? playbackState = await _context.PlaybackStates
-                .AsTracking()
-                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken).ConfigureAwait(false);
+                .LoadTrackedByIdOrWarnAsync(_logger, id, "PlaybackState", "Soft-Delete", cancellationToken).ConfigureAwait(false);
 
-            if (playbackState == null)
+            if (playbackState is null)
             {
                 // Wenn kein Wiedergabestatus existiert, ist kein Soft-Delete erforderlich.
-                _logger.Warning("PlaybackState mit ID '{PlaybackStateId}' nicht gefunden – Soft-Delete übersprungen.", id);
                 return;
             }
 

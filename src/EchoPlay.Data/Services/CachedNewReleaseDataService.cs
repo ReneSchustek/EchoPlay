@@ -1,6 +1,5 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -127,15 +126,12 @@ namespace EchoPlay.Data.Services
                 }
             }
 
-            try
-            {
-                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
+            DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
+            if (conflict is not null)
             {
                 // Paralleler Scope hat denselben CollectionId eingefügt — ignorieren,
                 // da Cache-Einträge redundant sind und der andere Wert gleichwertig ist.
-                _logger.Warning("UNIQUE-Konflikt beim Cache-Upsert ignoriert: {Reason}", ex.InnerException?.Message);
+                _logger.Warning("UNIQUE-Konflikt beim Cache-Upsert ignoriert: {Reason}", conflict.InnerException?.Message);
                 return;
             }
 

@@ -336,11 +336,8 @@ namespace EchoPlay.Data.Services
                     .Where(state => state.EpisodeId == id)
                     .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            foreach (PlaybackState playbackState in playbackStates)
-            {
-                // PlaybackStates besitzen keine eigenständige fachliche Existenz und müssen bei der Löschung ihrer Episode ebenfalls entfernt werden.
-                playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
-            }
+            // PlaybackStates besitzen keine eigenständige fachliche Existenz und müssen bei der Löschung ihrer Episode ebenfalls entfernt werden.
+            playbackStates.MarkRangeDeleted();
 
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             _logger.Info(

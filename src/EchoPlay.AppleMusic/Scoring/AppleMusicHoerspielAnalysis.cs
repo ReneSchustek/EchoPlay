@@ -1,3 +1,5 @@
+using EchoPlay.Core.Scoring;
+
 namespace EchoPlay.AppleMusic.Scoring
 {
     /// <summary>
@@ -5,7 +7,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// Enthält ausschließlich Boolean-Flags und Debug-Informationen.
     /// Seit dem Wechsel auf die iTunes Search API steht auch ein Genre-Flag zur Verfügung.
     /// </summary>
-    internal sealed class AppleMusicHoerspielAnalysis
+    internal sealed class AppleMusicHoerspielAnalysis : IHoerspielAnalysis
     {
         /// <summary>
         /// Gibt an, ob der Künstlername einer bekannten Hörspielserie entspricht.

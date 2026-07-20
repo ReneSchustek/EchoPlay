@@ -1,6 +1,5 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Playback;
-using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Data.Services.Projections;
@@ -78,11 +77,7 @@ namespace EchoPlay.Data.Services
 
             _ = _context.PlaybackStates.Add(playbackState);
 
-            try
-            {
-                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (DbUpdateException ex) when (UniqueConstraintHandler.IsUniqueViolation(ex))
+            if (await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false) is not null)
             {
                 // Paralleler Scope hat bereits einen PlaybackState für dieselbe Episode angelegt.
                 // Der erste Eintrag gewinnt — redundante Einfügung ignorieren.

@@ -253,15 +253,8 @@ namespace EchoPlay.Data.Services
                         .Where(state => episodeIds.Contains(state.EpisodeId))
                         .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-                foreach (Episode episode in episodes)
-                {
-                    episode.MarkAsDeleted(EntityClock.Current.UtcNow);
-                }
-
-                foreach (PlaybackState playbackState in playbackStates)
-                {
-                    playbackState.MarkAsDeleted(EntityClock.Current.UtcNow);
-                }
+                episodes.MarkRangeDeleted();
+                playbackStates.MarkRangeDeleted();
 
                 _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

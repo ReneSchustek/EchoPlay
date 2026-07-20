@@ -186,7 +186,7 @@ namespace EchoPlay.App.ViewModels
             bool hasLocalTrack,
             bool isAnnounced)
         {
-            PlaybackStatus status = DetermineStatus(state);
+            PlaybackStatus status = PlaybackStatusResolver.Resolve(state);
             double progress = CalculateProgress(state, episode.Duration);
 
             (BitmapImage? cover, bool hasEpisodeCover) =
@@ -663,17 +663,6 @@ namespace EchoPlay.App.ViewModels
             }
 
             return null;
-        }
-
-        /// <summary>Leitet den <see cref="PlaybackStatus"/> aus dem gespeicherten Zustand ab.</summary>
-        private static PlaybackStatus DetermineStatus(PlaybackState? state)
-        {
-            if (state is null || state.LastPosition == TimeSpan.Zero)
-            {
-                return PlaybackStatus.NotStarted;
-            }
-
-            return state.IsCompleted ? PlaybackStatus.Finished : PlaybackStatus.InProgress;
         }
 
         /// <summary>

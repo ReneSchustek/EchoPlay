@@ -237,19 +237,14 @@ namespace EchoPlay.Data.Services
 
             if (existing is not null)
             {
-                existing.IsCompleted = true;
-                existing.CompletedAt = completedAt;
+                existing.MarkCompleted(completedAt);
                 await UpdateAsync(existing, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                await AddAsync(new PlaybackState
-                {
-                    EpisodeId = episodeId,
-                    IsCompleted = true,
-                    CompletedAt = completedAt,
-                    LastPlayedAt = completedAt
-                }, cancellationToken).ConfigureAwait(false);
+                PlaybackState state = new() { EpisodeId = episodeId };
+                state.MarkCompleted(completedAt);
+                await AddAsync(state, cancellationToken).ConfigureAwait(false);
             }
         }
 

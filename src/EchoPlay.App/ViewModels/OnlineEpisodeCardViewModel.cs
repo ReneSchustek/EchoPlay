@@ -188,26 +188,9 @@ namespace EchoPlay.App.ViewModels
                 IPlaybackStateDataService stateService = scope.ServiceProvider
                     .GetRequiredService<IPlaybackStateDataService>();
 
-                // Prüfen ob bereits ein PlaybackState existiert
-                PlaybackState? existing = await stateService.GetByEpisodeIdAsync(EpisodeId);
-
-                if (existing is not null)
-                {
-                    existing.IsCompleted = true;
-                    existing.LastPlayedAt = _clock.UtcNow;
-                    await stateService.UpdateAsync(existing);
-                }
-                else
-                {
-                    PlaybackState newState = new()
-                    {
-                        EpisodeId = EpisodeId,
-                        IsCompleted = true,
-                        LastPlayedAt = _clock.UtcNow,
-                        LastPosition = TimeSpan.Zero
-                    };
-                    await stateService.AddAsync(newState);
-                }
+                // Kanonischer Abschluss-Pfad (setzt konsistent CompletedAt) statt externem
+                // get-modify-set, das zuvor nur LastPlayedAt setzte und CompletedAt = null ließ.
+                await stateService.MarkCompletedAsync(EpisodeId, _clock.UtcNow);
             }
             catch (Exception)
             {

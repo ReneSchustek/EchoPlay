@@ -5,7 +5,6 @@ using EchoPlay.Spotify.Mapping;
 using EchoPlay.Spotify.Scoring;
 using EchoPlay.Spotify.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace EchoPlay.Spotify.DependencyInjection
 {
@@ -25,13 +24,8 @@ namespace EchoPlay.Spotify.DependencyInjection
             _ = services.AddScoped<IEpisodeImportSource, SpotifyEpisodeImportSource>();
 
             // Keyed-Registrierungen für ImportService – Schlüssel entspricht ProviderType.Spotify.ToString().
-            // Der Typ-Check ist hier sicher, weil wir uns in derselben Assembly befinden.
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify",
-                (sp, _) => sp.GetServices<ISeriesImportSearch>()
-                    .First(s => s is SpotifySeriesImportSearch));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify",
-                (sp, _) => sp.GetServices<IEpisodeImportSource>()
-                    .First(s => s is SpotifyEpisodeImportSource));
+            _ = services.AddKeyedScoped<ISeriesImportSearch, SpotifySeriesImportSearch>("Spotify");
+            _ = services.AddKeyedScoped<IEpisodeImportSource, SpotifyEpisodeImportSource>("Spotify");
 
             _ = services.AddOptions<SpotifyHoerspielSettings>();
             _ = services.AddScoped<HoerspielDecisionCache>();

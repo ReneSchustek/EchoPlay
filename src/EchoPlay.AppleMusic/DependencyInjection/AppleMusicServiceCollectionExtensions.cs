@@ -6,7 +6,6 @@ using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Scoring;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using System.Linq;
 
 namespace EchoPlay.AppleMusic.DependencyInjection
 {
@@ -37,12 +36,8 @@ namespace EchoPlay.AppleMusic.DependencyInjection
             _ = services.AddScoped<IEpisodeImportSource, AppleMusicEpisodeSource>();
 
             // Keyed-Registrierungen für ImportService – Schlüssel entspricht ProviderType.AppleMusic.ToString().
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic",
-                (sp, _) => sp.GetServices<ISeriesImportSearch>()
-                    .First(s => s is AppleMusicSeriesSearch));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic",
-                (sp, _) => sp.GetServices<IEpisodeImportSource>()
-                    .First(s => s is AppleMusicEpisodeSource));
+            _ = services.AddKeyedScoped<ISeriesImportSearch, AppleMusicSeriesSearch>("AppleMusic");
+            _ = services.AddKeyedScoped<IEpisodeImportSource, AppleMusicEpisodeSource>("AppleMusic");
 
             _ = services.AddOptions<AppleMusicHoerspielSettings>();
             services.TryAddScoped<HoerspielDecisionCache>();

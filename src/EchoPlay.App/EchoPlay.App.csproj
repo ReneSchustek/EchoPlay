@@ -10,14 +10,68 @@
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
-    <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- MSIX bleibt der Default (VS-Deploy, F5, Tests). Für den verteilbaren
+         Setup-Publish wird beim Aufruf -p:WindowsPackageType=None gesetzt; dann
+         schaltet das MSIX-Tooling (samt VS-Deploy-Zwang DEP1560) sauber ab.
+         Muss nach einem gesetzten WindowsPackageType ausgewertet werden. -->
+    <EnableMsixTooling Condition="'$(WindowsPackageType)' != 'None'">true</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <!-- Deaktiviert den [ModuleInitializer]-basierten Windows-App-Runtime-Init-Code.
          Bei MSIX-Deployment ist die Runtime bereits registriert – dieser Init ist redundant.
          Ohne dieses Flag schlägt das Laden der App-Assembly in Unit-Test-Prozessen fehl,
-         da dort keine Windows App Runtime registriert ist (keine MSIX-Umgebung). -->
-    <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+         da dort keine Windows App Runtime registriert ist (keine MSIX-Umgebung).
+         NUR im MSIX-/Test-Build unterdrücken: Im self-contained-Setup-Publish (unpackaged)
+         muss der Runtime-Init laufen, sonst startet die WinUI-3-Laufzeit nicht und der
+         Prozess stirbt beim ersten XAML-Zugriff mit einer Stowed-Exception in
+         Microsoft.UI.Xaml.dll. -->
+    <WindowsAppSdkDeploymentManagerInitialize Condition="'$(WindowsAppSDKSelfContained)' != 'true'">false</WindowsAppSdkDeploymentManagerInitialize>
   </PropertyGroup>
+
+  <!-- Der verteilbare Setup-Publish läuft self-contained (Windows App SDK gebündelt,
+       keine systemweit installierte Runtime nötig). In diesem Modus zieht das SDK die
+       generierte Datei UndockedRegFreeWinRT-AutoInitializer.cs aus dem NuGet-Cache herein,
+       die CA5392 verletzt (P/Invoke ohne DefaultDllImportSearchPaths). Fremd-/Generat-Code
+       außerhalb unserer .editorconfig — daher CA5392 ausschließlich im self-contained-Modus
+       unterdrücken; der normale (MSIX-)Build bleibt streng zero-warning. -->
+  <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)' == 'true'">
+    <NoWarn>$(NoWarn);CA5392</NoWarn>
+  </PropertyGroup>
+
+  <!-- Der WinUI-3-Resource-Index (EchoPlay.App.pri) wird beim Build erzeugt, aber von
+       'dotnet publish' (unpackaged) nicht mitgenommen. Ohne PRI scheitert zur Laufzeit das
+       Laden von XAML/ms-appx-Assets (XamlParseException). Daher die generierte PRI explizit
+       in den Publish-Output aufnehmen. -->
+  <Target Name="IncludeProjectPriInPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(OutDir)$(AssemblyName).pri" Condition="Exists('$(OutDir)$(AssemblyName).pri')">
+        <RelativePath>$(AssemblyName).pri</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <!-- Lose Content-Dateien, die zur Laufzeit über ms-appx / echte Dateipfade geladen werden,
+       nimmt 'dotnet publish' (unpackaged) sonst nicht mit — sie liegen nur in der PRI des
+       normalen Builds. Ohne sie stirbt der Start:
+         * Assets\ (favicon.ico, logo.png) → DirectoryNotFoundException bei Datei-Zugriff.
+         * Themes\*.xaml → App.xaml lädt die sechs Paletten per Source="Themes/…"; fehlen sie,
+           scheitert der App.xaml-Parse beim Start mit einer Stowed-Exception in
+           Microsoft.UI.Xaml.dll (noch vor der Logger-Initialisierung).
+       Daher beide Bäume lose in den Publish-Output kopieren (wie im normalen Build). -->
+  <Target Name="CopyLooseContentToPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_LooseAsset Include="$(MSBuildProjectDirectory)\Assets\**\*" />
+      <ResolvedFileToPublish Include="@(_LooseAsset)">
+        <RelativePath>Assets\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <_LooseTheme Include="$(MSBuildProjectDirectory)\Themes\*.xaml" />
+      <ResolvedFileToPublish Include="@(_LooseTheme)">
+        <RelativePath>Themes\%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <!-- Erlaubt EchoPlay.App.Tests den Zugriff auf internal-Mitglieder, damit

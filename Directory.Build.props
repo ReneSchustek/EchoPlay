@@ -4,6 +4,12 @@
     Einzelne .csproj-Dateien können diese Werte überschreiben.
   -->
   <PropertyGroup>
+    <!-- SemVer-2.0.0-Versionsquelle für die gesamte Solution. Treibt AssemblyVersion/
+         FileVersion/InformationalVersion aller Projekte. UpdateCheckService liest genau
+         diese Version (Assembly.GetName().Version) und vergleicht sie gegen den neuesten
+         GitHub-Release-Tag (vX.Y.Z). Bei jedem Release hier UND in
+         src/EchoPlay.App/Package.appxmanifest (Version="X.Y.Z.0") synchron hochzählen. -->
+    <VersionPrefix>1.0.0</VersionPrefix>
     <!-- Nullability: Null-Reference-Warnungen als Fehler -->
     <Nullable>enable</Nullable>
     <!-- Moderne using-Direktiven automatisch -->

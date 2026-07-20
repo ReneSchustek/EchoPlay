@@ -93,13 +93,7 @@ namespace EchoPlay.TagManager.Services
                     }
                     else
                     {
-                        TagLib.Picture picture = new()
-                        {
-                            Data = new TagLib.ByteVector(imageData),
-                            MimeType = mimeType,
-                            Type = TagLib.PictureType.FrontCover
-                        };
-                        file.Tag.Pictures = [picture];
+                        file.Tag.Pictures = [CreateFrontCover(imageData, mimeType)];
                         _logger.Info(
                             "Cover geschrieben ({MimeType}, {ImageBytes} Bytes): {Path}",
                             mimeType, imageData.Length, PathRedactor.Redact(filePath));
@@ -308,15 +302,22 @@ namespace EchoPlay.TagManager.Services
 
             if (source.CoverImageData is not null)
             {
-                TagLib.Picture picture = new()
-                {
-                    Data = new TagLib.ByteVector(source.CoverImageData),
-                    MimeType = source.CoverMimeType ?? "image/jpeg",
-                    Type = TagLib.PictureType.FrontCover
-                };
-                target.Pictures = [picture];
+                target.Pictures = [CreateFrontCover(source.CoverImageData, source.CoverMimeType ?? "image/jpeg")];
             }
         }
+
+        /// <summary>
+        /// Erzeugt ein FrontCover-<see cref="TagLib.Picture"/> aus Bilddaten und MIME-Typ.
+        /// </summary>
+        /// <param name="data">Die Bilddaten.</param>
+        /// <param name="mimeType">Der MIME-Typ des Bildes.</param>
+        /// <returns>Das FrontCover-Bild.</returns>
+        private static TagLib.Picture CreateFrontCover(byte[] data, string mimeType) => new()
+        {
+            Data = new TagLib.ByteVector(data),
+            MimeType = mimeType,
+            Type = TagLib.PictureType.FrontCover
+        };
 
         /// <summary>
         /// Gibt <see langword="null"/> zurück, wenn <paramref name="value"/> leer oder

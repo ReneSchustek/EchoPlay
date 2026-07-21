@@ -510,6 +510,25 @@ namespace EchoPlay.App
         }
 
         /// <summary>
+        /// Registriert <see cref="CoverService"/> als Singleton und mappt
+        /// <see cref="ICoverService"/> auf DIESELBE konkrete Instanz.
+        /// </summary>
+        /// <remarks>
+        /// Die Factory löst bewusst den KONKRETEN <see cref="CoverService"/> auf, nicht
+        /// <see cref="ICoverService"/> selbst — eine Selbst-Auflösung würde endlos
+        /// rekursieren (der DI-Container erkennt nur Konstruktor-, keine Factory-Zyklen)
+        /// und den App-Start einfrieren. Bewusst ausgelagert, damit die Registrierung
+        /// per Test aufgelöst und gegen diese Regression abgesichert werden kann.
+        /// Gleiches Interface→Konkret-Muster wie ThemeService/NavigationService/PlayerService.
+        /// </remarks>
+        /// <param name="services">Die zu befüllende Service-Collection.</param>
+        internal static void RegisterCoverService(IServiceCollection services)
+        {
+            _ = services.AddSingleton<CoverService>();
+            _ = services.AddSingleton<ICoverService>(provider => provider.GetRequiredService<CoverService>());
+        }
+
+        /// <summary>
         /// Erstellt und konfiguriert den generischen Host
         /// für die EchoPlay-Anwendung.
         /// </summary>
@@ -737,12 +756,7 @@ namespace EchoPlay.App
             // Eigener Service statt Teil von ImportService, damit die LocalLibrary-Assembly
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
             _ = builder.Services.AddSingleton<EpisodeCoverCacheService>();
-            _ = builder.Services.AddSingleton<CoverService>();
-            // ICoverService auf die KONKRETE CoverService-Instanz auflösen (nicht auf sich
-            // selbst) — sonst ruft die Factory endlos GetRequiredService<ICoverService> und
-            // die Auflösung rekursiert unendlich (DI erkennt nur Konstruktor-, keine
-            // Factory-Zyklen). Gleiches Interface→Konkret-Muster wie ThemeService/PlayerService.
-            _ = builder.Services.AddSingleton<ICoverService>(provider => provider.GetRequiredService<CoverService>());
+            RegisterCoverService(builder.Services);
             _ = builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
             _ = builder.Services.AddSingleton<BackgroundCoverService>();
             _ = builder.Services.AddSingleton<BackgroundProviderIdService>();

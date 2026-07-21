@@ -70,17 +70,42 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public string? LocalFolderPath { get; }
 
+        private int _localEpisodeCount;
+        private int _totalEpisodeCount;
+
         /// <summary>Anzahl der Episoden mit mindestens einem lokal gefundenen Track.</summary>
-        public int LocalEpisodeCount { get; }
+        public int LocalEpisodeCount
+        {
+            get => _localEpisodeCount;
+            private set => SetProperty(ref _localEpisodeCount, value);
+        }
 
         /// <summary>Gesamtanzahl aller Episoden dieser Serie.</summary>
-        public int TotalEpisodeCount { get; }
+        public int TotalEpisodeCount
+        {
+            get => _totalEpisodeCount;
+            private set => SetProperty(ref _totalEpisodeCount, value);
+        }
 
         /// <summary>
         /// Anzeige-Text der Episodenzähler, z.B. "3 / 10".
         /// Zeigt wie viele Episoden lokal vorhanden sind gegenüber der Gesamtanzahl.
         /// </summary>
         public string CountText => $"{LocalEpisodeCount} / {TotalEpisodeCount}";
+
+        /// <summary>
+        /// Aktualisiert die Episodenzähler nachträglich – z.B. wenn der Scan die Episoden einer
+        /// Serie erst nach dem Anlegen der Kachel persistiert. Meldet zusätzlich <see cref="CountText"/>
+        /// als geändert, damit die gebundene Anzeige live nachzieht statt auf "0 / 0" zu verharren.
+        /// </summary>
+        /// <param name="localEpisodeCount">Neue Anzahl lokal vorhandener Episoden.</param>
+        /// <param name="totalEpisodeCount">Neue Gesamtanzahl der Episoden.</param>
+        public void UpdateCounts(int localEpisodeCount, int totalEpisodeCount)
+        {
+            LocalEpisodeCount = localEpisodeCount;
+            TotalEpisodeCount = totalEpisodeCount;
+            OnPropertyChanged(nameof(CountText));
+        }
 
         /// <summary>
         /// Schaltet den Favoritenstatus der Serie um und persistiert die Änderung in der Datenbank.

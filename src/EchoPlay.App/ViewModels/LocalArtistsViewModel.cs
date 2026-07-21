@@ -188,18 +188,23 @@ namespace EchoPlay.App.ViewModels
             ArgumentNullException.ThrowIfNull(series);
             try
             {
-                if (_allArtists.Any(a => a.SeriesId == series.Id))
-                {
-                    return;
-                }
-
-                BitmapImage? cover = await BuildCoverImageAsync(series);
-
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
                 IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
                 int localEpisodeCount = episodes.Count(e => e.LocalFolderPath is not null);
                 int totalEpisodeCount = episodes.Count;
+
+                // Karte existiert bereits (z.B. früher im Scan mit noch 0 Episoden gemeldet):
+                // Zähler live nachziehen statt abzubrechen – sonst bleibt die Kachel auf "0 / 0"
+                // stehen, bis erst der abschließende Reload sie ersetzt.
+                LocalArtistCardViewModel? existing = _allArtists.FirstOrDefault(a => a.SeriesId == series.Id);
+                if (existing is not null)
+                {
+                    existing.UpdateCounts(localEpisodeCount, totalEpisodeCount);
+                    return;
+                }
+
+                BitmapImage? cover = await BuildCoverImageAsync(series);
 
                 LocalArtistCardViewModel card = new(
                     seriesId: series.Id,

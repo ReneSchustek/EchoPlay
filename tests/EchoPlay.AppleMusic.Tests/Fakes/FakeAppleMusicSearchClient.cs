@@ -12,6 +12,13 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
     {
         private readonly IReadOnlyList<ITunesArtistDto> _artists;
         private readonly Dictionary<long, List<ITunesCollectionDto>> _albumsByArtist = [];
+        private readonly List<long> _lookedUpCollectionIds = [];
+
+        /// <summary>
+        /// Zeichnet auf, für welche Collection-IDs ein Track-Lookup ausgelöst wurde.
+        /// Erlaubt Tests zu prüfen, dass der Delta-Abgleich den teuren Lookup für bekannte Folgen spart.
+        /// </summary>
+        public IReadOnlyList<long> LookedUpCollectionIds => _lookedUpCollectionIds;
 
         /// <summary>
         /// Initialisiert den Fake mit einer Liste von Künstlern.
@@ -98,6 +105,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Leere Lookup-Antwort.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksAsync(long collectionId, CancellationToken ct = default)
         {
+            _lookedUpCollectionIds.Add(collectionId);
             return Task.FromResult(new ITunesResponseDto<ITunesTrackDto>());
         }
     }

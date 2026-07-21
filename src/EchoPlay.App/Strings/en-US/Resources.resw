@@ -380,11 +380,11 @@
   <data name="OnlineOpenInBrowserButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Open in browser</value>
   </data>
-  <data name="OnlineEpisodeSortByTitle.Content" xml:space="preserve">
-    <value>Title A–Z</value>
+  <data name="OnlineEpisodeSortByNumber.Content" xml:space="preserve">
+    <value>Number ascending</value>
   </data>
-  <data name="OnlineEpisodeSortByTitleDesc.Content" xml:space="preserve">
-    <value>Title Z–A</value>
+  <data name="OnlineEpisodeSortByNumberDesc.Content" xml:space="preserve">
+    <value>Number descending</value>
   </data>
   <data name="OnlineEpisodeSortByDate.Content" xml:space="preserve">
     <value>Newest first</value>

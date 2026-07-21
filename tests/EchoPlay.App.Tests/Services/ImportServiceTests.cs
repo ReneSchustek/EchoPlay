@@ -651,6 +651,88 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task DeltaImportEpisodesAsync_FallsBackToAppleMusic_WhenSpotifyCredentialsMissing()
+        {
+            // Serie mit Spotify- UND Apple-ID. Ohne hinterlegte Spotify-Credentials darf der
+            // Delta-Import nicht stillschweigend über den unbrauchbaren Spotify-Provider laufen,
+            // sondern muss auf Apple Music ausweichen – sonst kämen neue Folgen nie an
+            // (real beobachtet: Fünf Freunde blieb bei Folge 169, obwohl Apple 170/171 führt).
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Fünf Freunde",
+                SpotifyArtistId = "spotify-artist",
+                AppleMusicArtistId = "216347875"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series existingSeries = seriesService.All[0];
+
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 169", EpisodeNumber = 169 }, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Spotify-Quelle liefert (unbenutzt) nichts; nur Apple hat die neue Folge 170.
+            FakeEpisodeImportSource spotifySource = new([]);
+            FakeEpisodeImportSource appleSource = new(
+            [
+                new() { SourceEpisodeId = "am169", Title = "Folge 169", EpisodeNumber = 169 },
+                new() { SourceEpisodeId = "am170", Title = "Folge 170", EpisodeNumber = 170 },
+            ]);
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: spotifySource,
+                appleMusicEpisodeSource: appleSource,
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Genau die neue Folge 170 muss über Apple Music angekommen sein.
+            Assert.Equal(1, newCount);
+            Assert.Contains(episodeService.All, e => e.Title == "Folge 170");
+        }
+
+        [Fact]
+        public async Task DeltaImportEpisodesAsync_UsesSpotify_WhenCredentialsPresent()
+        {
+            // Gegenprobe: Sind Spotify-Credentials vorhanden, bleibt Spotify der bevorzugte Provider
+            // für eine Serie mit beiden IDs – der Apple-Fallback darf dann NICHT greifen.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Fünf Freunde",
+                SpotifyArtistId = "spotify-artist",
+                AppleMusicArtistId = "216347875"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series existingSeries = seriesService.All[0];
+
+            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 169", EpisodeNumber = 169 }, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Nur die Spotify-Quelle hat die neue Folge; Apple liefert nichts.
+            FakeEpisodeImportSource spotifySource = new(
+            [
+                new() { SourceEpisodeId = "sp170", Title = "Folge 170", EpisodeNumber = 170 },
+            ]);
+            FakeEpisodeImportSource appleSource = new([]);
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: spotifySource,
+                appleMusicEpisodeSource: appleSource,
+                credentialsProvider: FakeSpotifyClientCredentialsProvider.WithCredentials());
+
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, newCount);
+            Assert.Contains(episodeService.All, e => e.Title == "Folge 170");
+        }
+
+        [Fact]
         public async Task IsAlreadyImportedAsync_ReturnsFalse_WhenSeriesNotFound()
         {
             // Unbekannte SourceSeriesId darf nicht als "bereits vorhanden" erkannt werden

@@ -141,5 +141,12 @@ namespace EchoPlay.Data.Entities.Settings
         /// Notfall-Schalter zum Einsatz, wenn der Nutzer die Opt-Out-Option noch nicht kennt.
         /// </summary>
         public int DbBackupRetentionCount { get; set; } = 5;
+
+        /// <summary>
+        /// Zuletzt gewählte Sortierung der Online-Folgenliste, damit die Auswahl über Serien-
+        /// wechsel und App-Neustarts erhalten bleibt und nicht auf den Standard zurückspringt.
+        /// 0 = Nummer aufsteigend (Standard), 1 = Nummer absteigend, 2 = Neueste zuerst.
+        /// </summary>
+        public int OnlineEpisodeSortIndex { get; set; }
     }
 }

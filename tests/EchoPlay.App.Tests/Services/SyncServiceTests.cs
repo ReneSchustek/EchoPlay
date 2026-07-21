@@ -30,7 +30,8 @@ namespace EchoPlay.App.Tests.Services
             FakeLocalTrackDataService trackService,
             FakeLocalLibraryScanner scanner,
             FakeTrackMatcher trackMatcher,
-            FakeAudioMetadataReader metadataReader)
+            FakeAudioMetadataReader metadataReader,
+            FakeScanEventService? scanEventService = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
@@ -54,7 +55,7 @@ namespace EchoPlay.App.Tests.Services
             return new SyncService(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<ILoggerFactory>(),
-                new FakeScanEventService(),
+                scanEventService ?? new FakeScanEventService(),
                 coverService);
         }
 
@@ -404,6 +405,72 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(0, episodeService.AddAsyncCallCount);
             // Track-Batches: pro Episode genau ein SaveTracksForEpisodeAsync-Aufruf.
             Assert.Equal(episodeCount, trackService.SavedTracks.Count);
+        }
+
+        [Fact]
+        public async Task SyncAsync_RaisesSeriesSynced_AfterEpisodesPersisted()
+        {
+            // Regression: Die Kachel einer neu gescannten Serie blieb auf "0 / 0" stehen, weil
+            // SeriesSynced nur in Phase 3 (vor der Episoden-Persistenz) gemeldet wurde. Es muss
+            // (auch) nach Phase 4 gemeldet werden – dann sieht der Kachel-Handler die echten Zähler.
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music",
+                AutoImportAfterScan = true
+            });
+
+            FakeEpisodeDataService episodeService = new();
+
+            const int episodeCount = 5;
+            List<LocalEpisodeScan> episodes = new(episodeCount);
+            for (int i = 0; i < episodeCount; i++)
+            {
+                episodes.Add(new LocalEpisodeScan
+                {
+                    FolderPath = $"/music/Neue Serie/{i + 1:000}",
+                    ParsedNumber = i + 1,
+                    TrackPaths = [$"/music/Neue Serie/{i + 1:000}/track1.mp3"]
+                });
+            }
+
+            IReadOnlyList<LocalScanResult> scanResults =
+            [
+                new LocalScanResult
+                {
+                    SeriesName = "Neue Serie",
+                    SeriesFolderPath = "/music/Neue Serie",
+                    Episodes = episodes
+                }
+            ];
+
+            FakeScanEventService scanEvents = new();
+
+            // Zähler, den der Kachel-Callback zum Zeitpunkt jedes Emits sehen würde.
+            int maxEpisodesSeenAtEmit = 0;
+            int emitCount = 0;
+            scanEvents.SeriesSynced += s =>
+            {
+                emitCount++;
+                int seen = episodeService.GetBySeriesIdAsync(s.Id).GetAwaiter().GetResult().Count;
+                maxEpisodesSeenAtEmit = Math.Max(maxEpisodesSeenAtEmit, seen);
+            };
+
+            SyncService service = BuildService(settings,
+                seriesService: new FakeSeriesDataService(),
+                episodeService: episodeService,
+                trackService: new FakeLocalTrackDataService(),
+                scanner: new FakeLocalLibraryScanner(scanResults),
+                trackMatcher: new FakeTrackMatcher(),
+                metadataReader: new FakeAudioMetadataReader(),
+                scanEventService: scanEvents);
+
+            _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.True(emitCount >= 1, "Serie wurde nie über SeriesSynced gemeldet.");
+            // Kern der Regression: Zum Zeitpunkt (mindestens) eines Emits müssen alle Episoden
+            // bereits persistiert sein – sonst zeigt die Kachel dauerhaft 0.
+            Assert.Equal(episodeCount, maxEpisodesSeenAtEmit);
         }
 
         [Fact]

@@ -16,11 +16,11 @@ namespace EchoPlay.Spotify.Tests.Import
     public sealed class SpotifyEpisodeImportSourceScenarioTests
     {
         /// <summary>
-        /// Stellt sicher, dass Episoden albumübergreifend
-        /// nach ReleaseDate und TrackNumber sortiert werden.
+        /// Stellt sicher, dass Episoden albumübergreifend nach ReleaseDate sortiert werden –
+        /// neueste zuerst, damit bei einem abgebrochenen Import die aktuellsten Folgen zuerst vorliegen.
         /// </summary>
         [Fact]
-        public async Task GetEpisodesAsync_ReturnsEpisodesSortedByAlbumReleaseDate()
+        public async Task GetEpisodesAsync_ReturnsEpisodesSortedByAlbumReleaseDateDescending()
         {
             // ARRANGE
             // Der Szenario-Fake bildet eine realistische Spotify-Struktur ab.
@@ -44,10 +44,10 @@ namespace EchoPlay.Spotify.Tests.Import
             // Ein Album = eine Episode – zwei Alben ergeben zwei Episoden.
             Assert.Equal(2, episodes.Count);
 
-            // Die Episode aus dem früheren Album muss zuerst erscheinen (Sortierung nach ReleaseDate).
+            // Die Episode aus dem späteren Album muss zuerst erscheinen (Sortierung nach ReleaseDate absteigend).
             // Der Titel ist jetzt der Albumname, nicht mehr der Trackname.
-            Assert.Equal("Früheres Album", episodes[0].Title);
-            Assert.Equal("Späteres Album", episodes[1].Title);
+            Assert.Equal("Späteres Album", episodes[0].Title);
+            Assert.Equal("Früheres Album", episodes[1].Title);
         }
     }
 }

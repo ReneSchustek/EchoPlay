@@ -116,6 +116,79 @@ namespace EchoPlay.AppleMusic.Tests.Import
         }
 
         /// <summary>
+        /// Delta-Abgleich: Für bereits bekannte Folgen (Titel = Albumname) muss der teure Track-Lookup
+        /// entfallen – aber ihre Metadaten (inkl. Cover) müssen weiterhin zurückkommen, damit der
+        /// Delta-Import ein fehlendes Cover einer bestehenden Folge nachtragen kann. Nur für die
+        /// unbekannte, neue Folge darf ein Track-Lookup ausgelöst werden.
+        /// </summary>
+        [Fact]
+        public async Task GetEpisodesAsync_KnownTitles_SkipsTrackLookupButKeepsMetadata()
+        {
+            // ARRANGE
+            ServiceCollection services = new();
+
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
+            _ = services.AddAppleMusicImport();
+
+            const long ArtistId = 555000;
+            const long KnownCollectionId = 4001;
+            const long NewCollectionId = 4002;
+
+            FakeAppleMusicSearchClient client = new(artists: []);
+            client.AddAlbums(ArtistId,
+            [
+                new ITunesCollectionDto
+                {
+                    WrapperType = "collection",
+                    CollectionId = KnownCollectionId,
+                    CollectionName = "Folge 1",
+                    ArtistId = ArtistId,
+                    ArtistName = "TKKG",
+                    ReleaseDate = "2020-01-01T00:00:00Z",
+                    ArtworkUrl100 = "https://example.org/100x100/folge1.jpg",
+                    TrackCount = 1,
+                    PrimaryGenreName = "Hörspiele"
+                },
+                new ITunesCollectionDto
+                {
+                    WrapperType = "collection",
+                    CollectionId = NewCollectionId,
+                    CollectionName = "Folge 2",
+                    ArtistId = ArtistId,
+                    ArtistName = "TKKG",
+                    ReleaseDate = "2021-01-01T00:00:00Z",
+                    ArtworkUrl100 = "https://example.org/100x100/folge2.jpg",
+                    TrackCount = 1,
+                    PrimaryGenreName = "Hörspiele"
+                }
+            ]);
+
+            _ = services.AddSingleton<IAppleMusicSearchClient>(client);
+            ServiceProvider provider = services.BuildServiceProvider();
+            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
+
+            HashSet<string> known = new(StringComparer.OrdinalIgnoreCase) { "Folge 1" };
+
+            // ACT
+            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync(
+                ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                known,
+                TestContext.Current.CancellationToken);
+
+            // ASSERT
+            // Beide Alben kommen zurück – die bekannte "Folge 1" wird nicht verschluckt (Cover-Nachtrag).
+            Assert.Equal(2, episodes.Count);
+            Assert.Contains(episodes, e => e.Title == "Folge 1");
+            Assert.Contains(episodes, e => e.Title == "Folge 2");
+            // Bekannte "Folge 1" behält ihre Cover-URL aus den Album-Metadaten (kein Track-Lookup nötig).
+            Assert.Contains(episodes, e => e.Title == "Folge 1" && !string.IsNullOrEmpty(e.CoverImageUrl));
+
+            // Der teure Track-Lookup lief NUR für die neue, unbekannte Folge – nicht für "Folge 1".
+            Assert.Equal([NewCollectionId], client.LookedUpCollectionIds);
+        }
+
+        /// <summary>
         /// Stellt sicher, dass eine ungültige SourceSeriesId zu einer ArgumentException führt.
         /// </summary>
         [Fact]

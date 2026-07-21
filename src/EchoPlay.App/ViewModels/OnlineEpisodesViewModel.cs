@@ -97,11 +97,19 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void ApplySort()
         {
+            // Primär nach Folgennummer sortieren (Standard). Episoden ohne Nummer
+            // (Sondereditionen, Lieder-Sammlungen) landen dank int.MaxValue am Ende statt
+            // – wie bei reiner Titel-Sortierung – vermischt zwischen den nummerierten Folgen.
+            // Sekundär nach Titel, damit unnummerierte Einträge untereinander stabil stehen.
             IEnumerable<OnlineEpisodeCardViewModel> sorted = _episodeSortIndex switch
             {
-                1 => _allEpisodes.OrderByDescending(e => e.Title, StringComparer.OrdinalIgnoreCase),
+                1 => _allEpisodes
+                    .OrderByDescending(e => e.EpisodeNumber ?? int.MinValue)
+                    .ThenByDescending(e => e.Title, StringComparer.OrdinalIgnoreCase),
                 2 => _allEpisodes.OrderByDescending(e => e.ReleaseDate ?? DateTime.MinValue),
-                _ => _allEpisodes.OrderBy(e => e.Title, StringComparer.OrdinalIgnoreCase)
+                _ => _allEpisodes
+                    .OrderBy(e => e.EpisodeNumber ?? int.MaxValue)
+                    .ThenBy(e => e.Title, StringComparer.OrdinalIgnoreCase)
             };
 
             Episodes = [.. sorted];

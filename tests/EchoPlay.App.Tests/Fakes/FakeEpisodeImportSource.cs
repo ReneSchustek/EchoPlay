@@ -24,8 +24,14 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(
+            string sourceSeriesId,
+            IReadOnlySet<string>? knownEpisodeTitles = null,
+            CancellationToken cancellationToken = default)
         {
+            // knownEpisodeTitles steuert bei echten Quellen nur, ob der teure Track-Lookup
+            // (Dauer) entfällt – der zurückgegebene Satz enthält bekannte Alben weiterhin
+            // (Metadaten inkl. Cover), damit der Delta-Import Cover nachtragen kann.
             return Task.FromResult(_episodes);
         }
     }

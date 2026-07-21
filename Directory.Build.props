@@ -9,7 +9,7 @@
          diese Version (Assembly.GetName().Version) und vergleicht sie gegen den neuesten
          GitHub-Release-Tag (vX.Y.Z). Bei jedem Release hier UND in
          src/EchoPlay.App/Package.appxmanifest (Version="X.Y.Z.0") synchron hochzählen. -->
-    <VersionPrefix>1.0.5</VersionPrefix>
+    <VersionPrefix>1.0.6</VersionPrefix>
     <!-- Nullability: Null-Reference-Warnungen als Fehler -->
     <Nullable>enable</Nullable>
     <!-- Moderne using-Direktiven automatisch -->

@@ -33,6 +33,14 @@
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 HorizontalAlignment="Center"/>
 
+            <!-- Manuelle Update-Prüfung (ergänzt die automatische Prüfung beim Start) -->
+            <Button
+                x:Name="CheckUpdateButton"
+                x:Uid="UeberCheckUpdateButton"
+                Click="OnCheckUpdateClick"
+                HorizontalAlignment="Center"
+                Margin="0,4,0,0"/>
+
             <Rectangle
                 Height="1"
                 Fill="{ThemeResource DividerStrokeColorDefaultBrush}"

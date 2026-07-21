@@ -12,9 +12,9 @@
             MaxWidth="420"
             Margin="24,48,24,48">
 
-            <!-- App-Logo -->
+            <!-- App-Logo (transparente Variante, ohne weißen Hintergrund) -->
             <Image
-                Source="ms-appx:///Assets/logo.png"
+                Source="ms-appx:///Assets/logo-transparent.png"
                 Width="96"
                 Height="96"
                 HorizontalAlignment="Center"

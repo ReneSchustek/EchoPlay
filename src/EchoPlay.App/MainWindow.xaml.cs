@@ -59,7 +59,10 @@ namespace EchoPlay.App
             AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 750));
 
             // Icon für Taskleiste und Titelleiste – muss nach InitializeComponent gesetzt werden.
-            AppWindow.SetIcon("Assets/favicon.ico");
+            // Absoluter Pfad ab dem App-Verzeichnis: ein relativer Pfad löst gegen das
+            // Arbeitsverzeichnis auf und schlägt fehl (kein Taskleisten-Symbol), sobald die App
+            // nicht aus ihrem Installationsordner heraus gestartet wird.
+            AppWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "favicon.ico"));
 
             // Zurück-Button nach jeder Navigation aktualisieren
             ContentFrame.Navigated += (_, _) => NavView.IsBackEnabled = ContentFrame.CanGoBack;

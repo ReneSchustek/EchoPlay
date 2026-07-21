@@ -37,14 +37,29 @@
     <NoWarn>$(NoWarn);CA5392</NoWarn>
   </PropertyGroup>
 
-  <!-- Der WinUI-3-Resource-Index (EchoPlay.App.pri) wird beim Build erzeugt, aber von
-       'dotnet publish' (unpackaged) nicht mitgenommen. Ohne PRI scheitert zur Laufzeit das
-       Laden von XAML/ms-appx-Assets (XamlParseException). Daher die generierte PRI explizit
-       in den Publish-Output aufnehmen. -->
+  <!-- Die WinUI-3-Resource-Indizes werden beim Build erzeugt, aber von 'dotnet publish'
+       (unpackaged) nicht mitgenommen. Ohne sie scheitert zur Laufzeit das Laden von
+       XAML/ms-appx-Assets (XamlParseException) sowie der lokalisierten .resw-Strings.
+       Beide explizit in den Publish-Output aufnehmen:
+       - EchoPlay.App.pri: Projekt-Index (XAML/ms-appx).
+       - resources.pri: den der Windows-App-SDK-ResourceLoader
+         (Microsoft.Windows.ApplicationModel.Resources) im unpackaged-Betrieb per Default
+         sucht. Im unpackaged-Build erzeugt das SDK KEIN resources.pri (nur EchoPlay.App.pri),
+         daher denselben Index zusätzlich unter dem Default-Namen ablegen. Fehlt er, wirft
+         'new ResourceLoader()' und jeder lokalisierte String crasht (KERNELBASE). -->
   <Target Name="IncludeProjectPriInPublish" AfterTargets="ComputeFilesToPublish">
     <ItemGroup>
       <ResolvedFileToPublish Include="$(OutDir)$(AssemblyName).pri" Condition="Exists('$(OutDir)$(AssemblyName).pri')">
         <RelativePath>$(AssemblyName).pri</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <!-- Denselben Projekt-Index zusätzlich als 'resources.pri' — den Default-Dateinamen des
+           Windows-App-SDK-ResourceLoaders. Nur im unpackaged-Publish (WindowsPackageType=None);
+           im MSIX-Tooling-Build ist resources.pri bereits ein Standard-Publish-Item und ein
+           zweiter Eintrag löste NETSDK1152 (doppelter Publish-Pfad) aus. -->
+      <ResolvedFileToPublish Include="$(OutDir)$(AssemblyName).pri"
+                             Condition="'$(WindowsPackageType)' == 'None' and Exists('$(OutDir)$(AssemblyName).pri')">
+        <RelativePath>resources.pri</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </ResolvedFileToPublish>
     </ItemGroup>

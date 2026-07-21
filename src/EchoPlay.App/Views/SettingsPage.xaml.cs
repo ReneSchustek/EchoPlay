@@ -22,8 +22,7 @@ namespace EchoPlay.App.Views
     public sealed partial class SettingsPage : Page
     {
         private readonly ILocalizationService _localizationService;
-        private static readonly Windows.ApplicationModel.Resources.ResourceLoader _resources =
-            Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
+        private static readonly EchoPlay.App.Helpers.SafeResourceStrings _resources = new();
         private DispatcherTimer? _logLiveTimer;
 
         /// <summary>Alle Theme-Vorschauen für die Farbkacheln in den Einstellungen.</summary>

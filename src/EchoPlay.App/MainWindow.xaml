@@ -107,7 +107,7 @@
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem x:Name="NavUeber" x:Uid="NavUeber" Tag="Ueber">
+                <NavigationViewItem x:Name="NavUeber" x:Uid="NavUeber" Tag="Über">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE946;" />
                     </NavigationViewItem.Icon>

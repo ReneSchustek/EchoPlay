@@ -30,8 +30,13 @@ jobs:
       - name: Security-Audit (hart)
         run: dotnet list package --vulnerable --include-transitive
 
+      # PublishReadyToRun=false nur im Gate-Build: Die App wird über ihr Publish-Profil
+      # schon hier mit RID win-x64 gebaut, wodurch R2R triggert — dessen Runtime-Package
+      # steckt aber nicht im RID-losen restore (NETSDK1094). Das echte R2R läuft im
+      # publish-setup.ps1-Schritt (eigener RID-Restore). Der Gate-Build braucht nur
+      # Kompilierung + Zero-Warning, kein R2R.
       - name: Build Release (Solution, App wird per Projekt-Mapping als x64 gebaut)
-        run: dotnet build EchoPlay.slnx -c Release --no-restore
+        run: dotnet build EchoPlay.slnx -c Release --no-restore -p:PublishReadyToRun=false
 
       - name: Tests
         run: dotnet test EchoPlay.slnx -c Release --no-build --verbosity normal

@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.Views
 {
@@ -138,7 +137,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private static async Task SaveReportAsTxtAsync(string reportText)
         {
-            ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
+            EchoPlay.App.Helpers.SafeResourceStrings resources = new();
             EchoPlay.App.Services.IFilePickerService picker =
                 App.Services.GetRequiredService<EchoPlay.App.Services.IFilePickerService>();
 

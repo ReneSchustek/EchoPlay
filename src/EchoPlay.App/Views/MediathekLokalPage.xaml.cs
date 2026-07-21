@@ -10,7 +10,6 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.Views
 {
@@ -29,7 +28,7 @@ namespace EchoPlay.App.Views
         // und das Rekursions-Flag (vorher direkt in der Page geführt).
         private readonly Helpers.AccordionSplitHandler<LocalArtistCardViewModel> _splitHandler;
 
-        private static readonly ResourceLoader _resources = ResourceLoader.GetForViewIndependentUse();
+        private static readonly EchoPlay.App.Helpers.SafeResourceStrings _resources = new();
 
         private readonly INavigationService _navigationService;
 

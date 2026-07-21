@@ -100,8 +100,7 @@ namespace EchoPlay.App.Views
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                Windows.ApplicationModel.Resources.ResourceLoader resources =
-                    Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
+                EchoPlay.App.Helpers.SafeResourceStrings resources = new();
 
                 if (results.Count == 0)
                 {

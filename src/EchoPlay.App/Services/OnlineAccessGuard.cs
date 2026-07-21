@@ -4,7 +4,6 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.Services
 {
@@ -50,9 +49,8 @@ namespace EchoPlay.App.Services
             }
 
             // Offline-Modus aktiv → Nutzer fragen, ob die Aktion trotzdem ausgeführt werden soll
-            ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
-            string title = resources.GetString("OfflineOnlineAccessTitle");
-            string message = resources.GetString("OfflineOnlineAccessMessage");
+            string title = EchoPlay.App.Helpers.SafeResourceLoader.Get("OfflineOnlineAccessTitle");
+            string message = EchoPlay.App.Helpers.SafeResourceLoader.Get("OfflineOnlineAccessMessage");
 
             bool confirmed = await _confirmationDialog.ConfirmAsync(title, message, cancellationToken);
             if (!confirmed)

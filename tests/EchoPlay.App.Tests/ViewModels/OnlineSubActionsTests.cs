@@ -195,6 +195,30 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public void OnlineEpisodesViewModel_SetEpisodes_KeepsChosenSortOrder()
+        {
+            // Die gewählte Sortierung darf beim Serienwechsel (SetEpisodes) nicht auf den Standard
+            // zurückspringen – die Auswahl soll erhalten bleiben (User-Wunsch: „nicht zurückspringen").
+            OnlineEpisodesViewModel vm = new();
+
+            vm.EpisodeSortIndex = 1; // Nummer absteigend
+
+            vm.SetEpisodes(
+            [
+                new(Guid.NewGuid(), 1, "Folge 1"),
+                new(Guid.NewGuid(), 3, "Folge 3"),
+                new(Guid.NewGuid(), 2, "Folge 2"),
+            ]);
+
+            // Sortier-Auswahl bleibt erhalten ...
+            Assert.Equal(1, vm.EpisodeSortIndex);
+            // ... und wird auf die neue Liste angewandt: absteigend nach Nummer.
+            Assert.Equal(3, vm.Episodes[0].EpisodeNumber);
+            Assert.Equal(2, vm.Episodes[1].EpisodeNumber);
+            Assert.Equal(1, vm.Episodes[2].EpisodeNumber);
+        }
+
+        [Fact]
         public async Task OnlineEpisodePipeline_SearchEpisodeCoversAsync_ReturnsEmpty_WhenServiceIsNull()
         {
             System.Collections.Generic.IReadOnlyList<EchoPlay.App.Models.CoverSearchHit> hits =

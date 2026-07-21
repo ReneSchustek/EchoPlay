@@ -1,6 +1,8 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
+using EchoPlay.Data.Entities.Settings;
+using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
@@ -24,6 +26,7 @@ namespace EchoPlay.App.ViewModels
     public sealed class MediathekOnlineViewModel : ObservableObject, IDisposable
     {
         private readonly MediathekOnlineActions _actions;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPageModeGuard? _pageModeGuard;
         private readonly INavigationService? _navigationService;
         private readonly EchoPlay.LocalLibrary.Cover.ICoverSearchService? _coverSearchService;
@@ -53,6 +56,7 @@ namespace EchoPlay.App.ViewModels
             EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService = null,
             INavigationService? navigationService = null)
         {
+            _scopeFactory = scopeFactory;
             _pageModeGuard = pageModeGuard;
             _navigationService = navigationService;
             _coverSearchService = coverSearchService;
@@ -253,7 +257,71 @@ namespace EchoPlay.App.ViewModels
         public int EpisodeSortIndex
         {
             get => EpisodesVM.EpisodeSortIndex;
-            set => EpisodesVM.EpisodeSortIndex = value;
+            set
+            {
+                if (EpisodesVM.EpisodeSortIndex == value)
+                {
+                    return;
+                }
+
+                EpisodesVM.EpisodeSortIndex = value;
+
+                // Nutzer-Auswahl dauerhaft merken, damit sie über Serienwechsel und App-Neustarts
+                // erhalten bleibt. Fire-and-forget: die Sortierung ist bereits angewandt, der DB-
+                // Schreibvorgang darf die UI nicht blockieren.
+                _ = PersistEpisodeSortIndexAsync(value);
+            }
+        }
+
+        /// <summary>
+        /// Schreibt den gewählten Folgen-Sortierindex in die AppSettings. Fehler werden bewusst
+        /// verschluckt – eine nicht gespeicherte Sortier-Vorliebe ist kein nutzerrelevanter Fehler.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort-Persistenz einer UI-Vorliebe: DB-/SQLite-Fehler beim Speichern der Sortierung dürfen die bereits angewandte Sortierung und die UI nicht beeinträchtigen.")]
+        private async Task PersistEpisodeSortIndexAsync(int sortIndex)
+        {
+            try
+            {
+                using IServiceScope scope = _scopeFactory.CreateScope();
+                IAppSettingsDataService settingsService =
+                    scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+
+                AppSettings settings = await settingsService.GetAsync();
+                if (settings.OnlineEpisodeSortIndex == sortIndex)
+                {
+                    return;
+                }
+
+                settings.OnlineEpisodeSortIndex = sortIndex;
+                await settingsService.SaveAsync(settings);
+            }
+            catch (Exception)
+            {
+                // Persistenz der Sortier-Vorliebe ist best-effort.
+            }
+        }
+
+        /// <summary>
+        /// Stellt die zuletzt gespeicherte Folgen-Sortierung wieder her. Setzt den Wert direkt am
+        /// Sub-VM (nicht über den persistierenden Setter), damit das Wiederherstellen keinen
+        /// erneuten Schreibvorgang auslöst.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort-Wiederherstellung einer UI-Vorliebe: schlägt der Settings-Zugriff fehl, bleibt der Standard aktiv; das darf den Seitenaufbau nicht blockieren.")]
+        private async Task RestoreEpisodeSortIndexAsync()
+        {
+            try
+            {
+                using IServiceScope scope = _scopeFactory.CreateScope();
+                IAppSettingsDataService settingsService =
+                    scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+
+                AppSettings settings = await settingsService.GetAsync();
+                EpisodesVM.EpisodeSortIndex = settings.OnlineEpisodeSortIndex;
+            }
+            catch (Exception)
+            {
+                // Ohne gespeicherte Vorliebe bleibt der Standard (Nummer aufsteigend).
+            }
         }
 
         /// <inheritdoc cref="OnlineEpisodesViewModel.IsLoadingEpisodes"/>
@@ -303,7 +371,13 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <inheritdoc cref="MediathekOnlineActions.LoadAsync"/>
-        public Task LoadAsync() => _actions.LoadAsync();
+        public async Task LoadAsync()
+        {
+            // Gespeicherte Folgen-Sortierung wiederherstellen, bevor Episoden angezeigt werden,
+            // damit die Auswahl über App-Neustarts erhalten bleibt.
+            await RestoreEpisodeSortIndexAsync();
+            await _actions.LoadAsync();
+        }
 
         /// <inheritdoc cref="MediathekOnlineActions.SelectSeriesAsync"/>
         public Task SelectSeriesAsync(SeriesCardViewModel card)

@@ -30,7 +30,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Index der Episoden-Sortierung: 0 = Titel A–Z, 1 = Titel Z–A, 2 = Neueste zuerst.
+        /// Index der Episoden-Sortierung: 0 = Nummer aufsteigend, 1 = Nummer absteigend, 2 = Neueste zuerst.
         /// </summary>
         public int EpisodeSortIndex
         {
@@ -66,15 +66,13 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Ersetzt die Episodenliste komplett und wendet die aktuelle Sortierung an.
-        /// Setzt <see cref="EpisodeSortIndex"/> auf 0 zurück, damit nach dem Serienwechsel
-        /// wieder die Standard-Sortierung aktiv ist.
+        /// Die gewählte Sortierung bleibt bewusst erhalten – sie darf beim Serienwechsel
+        /// nicht auf den Standard zurückspringen (persistiert über <see cref="EpisodeSortIndex"/>).
         /// </summary>
         /// <param name="episodes">Die neuen Episoden-Kacheln.</param>
         public void SetEpisodes(IReadOnlyList<OnlineEpisodeCardViewModel> episodes)
         {
             _allEpisodes = [.. episodes];
-            _episodeSortIndex = 0;
-            OnPropertyChanged(nameof(EpisodeSortIndex));
             ApplySort();
         }
 

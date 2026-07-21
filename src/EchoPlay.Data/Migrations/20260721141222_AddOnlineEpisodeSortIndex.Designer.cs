@@ -3,6 +3,7 @@ using System;
 using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EchoPlay.Data.Migrations
 {
     [DbContext(typeof(EchoPlayDbContext))]
-    partial class EchoPlayDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721141222_AddOnlineEpisodeSortIndex")]
+    partial class AddOnlineEpisodeSortIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");

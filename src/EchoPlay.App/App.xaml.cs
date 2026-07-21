@@ -602,17 +602,18 @@ namespace EchoPlay.App
 
             Microsoft.Extensions.DependencyInjection.IHttpClientBuilder updateDownloadBuilder = builder.Services.AddHttpClient("UpdateDownload", client =>
             {
-                client.Timeout = TimeSpan.FromMinutes(2);
+                // Großzügiges Timeout für den großen Setup-Download (self-contained, ~80 MB)
+                // auch auf langsamen Verbindungen.
+                client.Timeout = TimeSpan.FromMinutes(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateDownload/1.0");
             });
-            _ = updateDownloadBuilder.AddStandardResilienceHandler(options =>
-            {
-                options.Retry.MaxRetryAttempts = 3;
-                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-                options.Retry.UseJitter = true;
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
-                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
-            });
+            // Bewusst KEIN StandardResilienceHandler: Dessen Per-Versuch-Timeout ist für kleine,
+            // gepufferte API-Aufrufe gedacht und müsste einen großen Streaming-Download in ein
+            // Attempt-Fenster zwängen. Zudem verlangt der eingebaute Circuit-Breaker
+            // SamplingDuration >= 2×AttemptTimeout — eine hier übersehene Kopplung, die erst beim
+            // ersten Benutzen des Clients als OptionsValidationException zuschlägt und den Download
+            // komplett scheitern lässt (Update-Dialog erscheint, Installation bleibt aus). Ein
+            // fehlgeschlagener Download wird beim nächsten Start erneut angeboten.
             AttachRequestLogging(updateDownloadBuilder);
 
             Microsoft.Extensions.DependencyInjection.IHttpClientBuilder updateCheckBuilder = builder.Services.AddHttpClient("UpdateCheck", client =>

@@ -69,6 +69,13 @@ if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
     -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish fehlgeschlagen ($LASTEXITCODE)." }
 
+# Verteil-Konvention absichern: keine Debug-Symbole in der Distribution. Der Release-Build
+# setzt DebugType=none, hier nur der deterministische Guard gegen Drift (siehe INSTALLER.md).
+$pdb = @(Get-ChildItem -Path $publishDir -Recurse -Filter '*.pdb' -File -ErrorAction SilentlyContinue)
+if ($pdb.Count -gt 0) {
+    throw "Publish enthält $($pdb.Count) *.pdb-Datei(en) — Debug-Symbole gehören nicht in die Distribution (DebugType in Release prüfen)."
+}
+
 Write-Host 'Setup.exe kompilieren (Inno Setup) ...' -ForegroundColor Cyan
 & $iscc "/DMyAppVersion=$Version" $iss
 if ($LASTEXITCODE -ne 0) { throw "ISCC fehlgeschlagen ($LASTEXITCODE)." }

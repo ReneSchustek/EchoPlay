@@ -808,6 +808,7 @@ namespace EchoPlay.App
             // Update-Services: prüft auf neue Versionen und lädt die Setup-Datei herunter.
             _ = builder.Services.AddSingleton<UpdateCheckService>();
             _ = builder.Services.AddSingleton<UpdateDownloadService>();
+            _ = builder.Services.AddSingleton<UpdateInteractionService>();
 
             // Zentrales Picker-Setup für FolderPicker/FileOpen/FileSave; entfernt Boilerplate
             // aus den Pages und kapselt die WinUI3-Window-Handle-Initialisierung.

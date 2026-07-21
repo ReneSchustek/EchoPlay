@@ -1164,6 +1164,24 @@
   <data name="UpdateDownloadFailedMessage" xml:space="preserve">
     <value>The update could not be downloaded. Please try again at next startup.</value>
   </data>
+  <data name="UeberCheckUpdateButton.Content" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="UeberCheckUpdateButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="UpdateUpToDateTitle" xml:space="preserve">
+    <value>Up to date</value>
+  </data>
+  <data name="UpdateUpToDateMessage" xml:space="preserve">
+    <value>You are already running the latest version.</value>
+  </data>
+  <data name="UpdateCheckFailedTitle" xml:space="preserve">
+    <value>Check failed</value>
+  </data>
+  <data name="UpdateCheckFailedMessage" xml:space="preserve">
+    <value>The update check failed. Please try again later.</value>
+  </data>
   <data name="CoverDownloadFailedTitle" xml:space="preserve">
     <value>Download failed</value>
   </data>

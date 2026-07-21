@@ -1166,6 +1166,24 @@
   <data name="UpdateDownloadFailedMessage" xml:space="preserve">
     <value>Das Update konnte nicht heruntergeladen werden. Bitte versuche es beim nächsten Start erneut.</value>
   </data>
+  <data name="UeberCheckUpdateButton.Content" xml:space="preserve">
+    <value>Auf Updates prüfen</value>
+  </data>
+  <data name="UeberCheckUpdateButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Auf Updates prüfen</value>
+  </data>
+  <data name="UpdateUpToDateTitle" xml:space="preserve">
+    <value>Alles aktuell</value>
+  </data>
+  <data name="UpdateUpToDateMessage" xml:space="preserve">
+    <value>Du verwendest bereits die neueste Version.</value>
+  </data>
+  <data name="UpdateCheckFailedTitle" xml:space="preserve">
+    <value>Prüfung fehlgeschlagen</value>
+  </data>
+  <data name="UpdateCheckFailedMessage" xml:space="preserve">
+    <value>Die Update-Prüfung ist fehlgeschlagen. Bitte versuche es später erneut.</value>
+  </data>
   <data name="CoverDownloadFailedTitle" xml:space="preserve">
     <value>Download fehlgeschlagen</value>
   </data>

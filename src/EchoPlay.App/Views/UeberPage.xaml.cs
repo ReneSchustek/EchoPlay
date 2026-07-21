@@ -1,7 +1,10 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.App.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {
@@ -52,6 +55,25 @@ namespace EchoPlay.App.Views
         private void OnSupportClick(object sender, RoutedEventArgs e)
         {
             _ = SafeUrlLauncher.TryOpenInBrowser(SupportDonation.PayPalUrl);
+        }
+
+        /// <summary>
+        /// Stößt eine manuelle Update-Prüfung an. Der Button ist während der Prüfung deaktiviert,
+        /// damit kein Doppelklick zwei parallele Prüfungen startet. Fehler behandelt der
+        /// <see cref="UpdateInteractionService"/> selbst (Hinweis-Dialog), der Aufruf wirft nie.
+        /// </summary>
+        private async void OnCheckUpdateClick(object sender, RoutedEventArgs e)
+        {
+            CheckUpdateButton.IsEnabled = false;
+            try
+            {
+                UpdateInteractionService service = App.Services.GetRequiredService<UpdateInteractionService>();
+                await service.CheckForUpdatesAsync(XamlRoot);
+            }
+            finally
+            {
+                CheckUpdateButton.IsEnabled = true;
+            }
         }
     }
 }

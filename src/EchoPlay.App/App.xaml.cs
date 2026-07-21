@@ -738,7 +738,11 @@ namespace EchoPlay.App
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
             _ = builder.Services.AddSingleton<EpisodeCoverCacheService>();
             _ = builder.Services.AddSingleton<CoverService>();
-            _ = builder.Services.AddSingleton<ICoverService>(provider => provider.GetRequiredService<ICoverService>());
+            // ICoverService auf die KONKRETE CoverService-Instanz auflösen (nicht auf sich
+            // selbst) — sonst ruft die Factory endlos GetRequiredService<ICoverService> und
+            // die Auflösung rekursiert unendlich (DI erkennt nur Konstruktor-, keine
+            // Factory-Zyklen). Gleiches Interface→Konkret-Muster wie ThemeService/PlayerService.
+            _ = builder.Services.AddSingleton<ICoverService>(provider => provider.GetRequiredService<CoverService>());
             _ = builder.Services.AddSingleton(new BackgroundCoverServiceOptions());
             _ = builder.Services.AddSingleton<BackgroundCoverService>();
             _ = builder.Services.AddSingleton<BackgroundProviderIdService>();

@@ -277,7 +277,7 @@ namespace EchoPlay.App.Services
             // Episoden laden – bei großen Serien (>100 Episoden) kann dieser HTTP-Aufruf mehrere Sekunden dauern
             progress?.Report($"Lade Episoden für \"{importSeries.Title}\" \u2026");
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(importSeries.Source);
-            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId, cancellationToken);
+            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId, cancellationToken: cancellationToken);
 
             // Schutzgitter: doppelte SourceEpisodeIds (Provider-Duplikate, Re-Releases,
             // Compilation-Alben mit identischer CollectionId) werden hier idempotent verworfen,
@@ -333,7 +333,7 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
-            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(sourceSeriesId, cancellationToken);
+            IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(sourceSeriesId, cancellationToken: cancellationToken);
 
             // Batch-Insert: ein einziger SaveChangesAsync-Aufruf statt N (analog ImportAsync).
             // Bei einer Serie mit 200 Folgen ersetzt das 200 DB-Roundtrips durch einen.
@@ -390,7 +390,14 @@ namespace EchoPlay.App.Services
                 _ = existingByTitle.TryAdd(existing.Title, existing);
             }
 
-            IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(sourceSeriesId, cancellationToken);
+            // Delta: bekannte Titel als Hinweis mitgeben. Die Quelle spart dadurch den teuren
+            // Track-Lookup für bestehende Folgen (nur die Dauer bräuchte ihn), liefert deren
+            // Metadaten inkl. Cover aber weiterhin – so kostet der Abgleich nur so viele Track-
+            // Lookups wie es neue Folgen gibt, und fehlende Cover lassen sich trotzdem nachtragen.
+            IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(
+                sourceSeriesId,
+                new HashSet<string>(existingByTitle.Keys, StringComparer.OrdinalIgnoreCase),
+                cancellationToken);
 
             // Add- und Update-Pfad getrennt sammeln; jeder Pfad löst genau einen DB-Roundtrip aus.
             List<Episode> newEpisodes = [];

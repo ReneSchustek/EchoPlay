@@ -29,9 +29,13 @@ namespace EchoPlay.Spotify.Services
         /// die Episoden der übrigen Alben bleiben unberührt.
         /// </summary>
         /// <param name="sourceSeriesId">Die Spotify-Artist-ID der Serie.</param>
+        /// <param name="knownEpisodeTitles">Bereits bekannte Episoden-Titel; für passende Alben entfällt der Track-Lookup, ihre Metadaten inkl. Cover werden dennoch geliefert (siehe Interface). Null/leer lädt alle vollständig.</param>
         /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
-        /// <returns>Eine sortierte Liste importierbarer Episoden.</returns>
-        public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(string sourceSeriesId, CancellationToken cancellationToken = default)
+        /// <returns>Eine nach Erscheinungsdatum absteigend sortierte Liste importierbarer Episoden.</returns>
+        public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(
+            string sourceSeriesId,
+            IReadOnlySet<string>? knownEpisodeTitles = null,
+            CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(sourceSeriesId);
 
@@ -43,24 +47,44 @@ namespace EchoPlay.Spotify.Services
             // Die Pagination im ApiClient iteriert seitenweise (je 50) bis alle geladen sind.
             IReadOnlyList<SpotifyAlbumDto> albums = await _apiClient.GetArtistAlbumsAsync(sourceSeriesId, limit: int.MaxValue, cancellationToken).ConfigureAwait(false);
 
+            // Neueste zuerst – bei einem abgebrochenen Import (App-Shutdown) liegen so die
+            // aktuellsten Folgen bereits vor, statt als Letzte wegzufallen.
+            IEnumerable<SpotifyAlbumDto> orderedAlbums = albums.OrderByDescending(a => a.ReleaseDate);
+
             List<ImportEpisode> episodes = [];
             int orderIndex = 0;
 
-            foreach (SpotifyAlbumDto album in albums.OrderBy(a => a.ReleaseDate))
+            foreach (SpotifyAlbumDto album in orderedAlbums)
             {
+                // Delta-Abgleich: Bei bereits bekannten Folgen (Titel = Albumname) entfällt der
+                // Track-Lookup. Er dient nur der Dauerberechnung und ist für bestehende Folgen
+                // unnötig. Die Album-Metadaten (inkl. Cover-URL) werden trotzdem geliefert, damit
+                // der Delta-Import bei einer bestehenden Folge ein fehlendes Cover nachtragen kann.
+                // Ohne diese Ersparnis kostet jeder Neu-Folgen-Check einen Track-Lookup pro
+                // bestehender Folge.
+                bool isKnown = knownEpisodeTitles is { Count: > 0 }
+                    && knownEpisodeTitles.Contains(album.Title);
+
                 IReadOnlyList<SpotifyTrackDto> tracks;
 
-                try
+                if (isKnown)
                 {
-                    tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
+                    tracks = [];
                 }
-                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
+                else
                 {
-                    // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
-                    _logger.Warning(
-                        $"Tracks für Spotify-Album '{album.SpotifyAlbumId}' ('{album.Title}') konnten nicht geladen werden. Album wird übersprungen.");
-                    _logger.Error("Fehlerdetails:", ex);
-                    continue;
+                    try
+                    {
+                        tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (TransientRequestError.IsTransient(ex))
+                    {
+                        // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
+                        _logger.Warning(
+                            $"Tracks für Spotify-Album '{album.SpotifyAlbumId}' ('{album.Title}') konnten nicht geladen werden. Album wird übersprungen.");
+                        _logger.Error("Fehlerdetails:", ex);
+                        continue;
+                    }
                 }
 
                 // Ein Album = eine Folge – Tracks werden nur für die Dauerberechnung verwendet

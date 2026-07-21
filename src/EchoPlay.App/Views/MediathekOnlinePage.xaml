@@ -184,8 +184,8 @@
             <ComboBox Grid.Column="1"
                       SelectedIndex="{x:Bind ViewModel.EpisodeSortIndex, Mode=TwoWay}"
                       MinWidth="160">
-                <ComboBoxItem x:Uid="OnlineEpisodeSortByTitle"/>
-                <ComboBoxItem x:Uid="OnlineEpisodeSortByTitleDesc"/>
+                <ComboBoxItem x:Uid="OnlineEpisodeSortByNumber"/>
+                <ComboBoxItem x:Uid="OnlineEpisodeSortByNumberDesc"/>
                 <ComboBoxItem x:Uid="OnlineEpisodeSortByDate"/>
             </ComboBox>
         </Grid>

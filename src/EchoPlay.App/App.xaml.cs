@@ -447,23 +447,24 @@ namespace EchoPlay.App
 
                 _appLogger?.Info("Neue Version verfügbar: {Version}", update.Version);
 
-                Windows.ApplicationModel.Resources.ResourceLoader resources =
-                    Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
+                // Lokalisierte Strings über SafeResourceLoader (Windows-App-SDK-Loader) — der
+                // WinRT-ResourceLoader crasht im unpackaged-Betrieb.
+                System.Text.CompositeFormat messageFormat = System.Text.CompositeFormat.Parse(
+                    EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateAvailableMessage"));
+                string dialogContent = string.Format(
+                    System.Globalization.CultureInfo.CurrentCulture, messageFormat, update.Version)
+                    + (string.IsNullOrWhiteSpace(update.ReleaseNotes)
+                        ? string.Empty
+                        : "\n\n" + update.ReleaseNotes);
 
                 // Drei-Optionen-Dialog: Jetzt aktualisieren / Später / Version überspringen
                 ContentDialog dialog = new()
                 {
-                    Title = resources.GetString("UpdateAvailableTitle"),
-                    Content = string.Format(
-                        System.Globalization.CultureInfo.CurrentCulture,
-                        resources.GetString("UpdateAvailableMessage"),
-                        update.Version)
-                        + (string.IsNullOrWhiteSpace(update.ReleaseNotes)
-                            ? string.Empty
-                            : "\n\n" + update.ReleaseNotes),
-                    PrimaryButtonText = resources.GetString("UpdateNowButton"),
-                    SecondaryButtonText = resources.GetString("UpdateLaterButton"),
-                    CloseButtonText = resources.GetString("UpdateSkipButton"),
+                    Title = EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateAvailableTitle"),
+                    Content = dialogContent,
+                    PrimaryButtonText = EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateNowButton"),
+                    SecondaryButtonText = EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateLaterButton"),
+                    CloseButtonText = EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateSkipButton"),
                     XamlRoot = splash.Content.XamlRoot,
                     DefaultButton = ContentDialogButton.Primary
                 };
@@ -473,7 +474,7 @@ namespace EchoPlay.App
                 if (result == ContentDialogResult.Primary)
                 {
                     // Download und Installation starten
-                    splash.SetStatus(resources.GetString("UpdateDownloadingMessage"));
+                    splash.SetStatus(EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateDownloadingMessage"));
 
                     UpdateDownloadService downloadService = Services.GetRequiredService<UpdateDownloadService>();
                     bool success = await downloadService.DownloadAndInstallAsync(
@@ -492,8 +493,8 @@ namespace EchoPlay.App
                     // Download fehlgeschlagen → Hinweis, dann normal weiter
                     IErrorDialogService errorDialog = Services.GetRequiredService<IErrorDialogService>();
                     await errorDialog.ShowAsync(
-                        resources.GetString("UpdateDownloadFailedTitle"),
-                        resources.GetString("UpdateDownloadFailedMessage"));
+                        EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateDownloadFailedTitle"),
+                        EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateDownloadFailedMessage"));
                 }
                 else if (result == ContentDialogResult.None)
                 {
@@ -539,8 +540,12 @@ namespace EchoPlay.App
 
             // Konfiguration wird bewusst im Host geladen,
             // da nur dieser Zugriff auf Dateisystem und Umgebungen hat.
+            // Absoluter Pfad ab dem App-Verzeichnis — sonst löst der relative Dateiname
+            // gegen das aktuelle Arbeitsverzeichnis auf und der Start scheitert mit
+            // FileNotFoundException, sobald die App nicht aus ihrem Installationsordner
+            // heraus gestartet wird (z. B. über die Kommandozeile).
             _ = builder.Configuration
-                .AddJsonFile("appsettings.json", optional: false);
+                .AddJsonFile(System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: false);
 
             // Microsoft-seitige HttpClient-/Resilience-Logs auf Warning dämpfen.
             // EchoPlay loggt jede HTTP-Anfrage und Antwort selbst über HttpRequestLoggingHandler;

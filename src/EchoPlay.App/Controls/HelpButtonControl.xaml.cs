@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.ApplicationModel.Resources;
 
 namespace EchoPlay.App.Controls
 {
@@ -50,8 +49,7 @@ namespace EchoPlay.App.Controls
                 return;
             }
 
-            ResourceLoader resources = ResourceLoader.GetForViewIndependentUse();
-            control.HelpTip.Subtitle = resources.GetString($"{uid}/Subtitle");
+            control.HelpTip.Subtitle = EchoPlay.App.Helpers.SafeResourceLoader.Get($"{uid}/Subtitle");
         }
 
         private void OnHelpClick(object sender, RoutedEventArgs e)

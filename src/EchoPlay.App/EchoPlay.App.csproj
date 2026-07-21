@@ -5,6 +5,10 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>EchoPlay.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Embedded-Icon der EchoPlay.App.exe: liefert das App-Icon für Startmenü-Verknüpfung,
+         Windows-Suche und Taskleiste (unpackaged; MSIX zieht seine Kacheln aus dem Manifest).
+         Ohne dieses Icon zeigen Verknüpfung/Suche ein leeres Standard-Symbol. -->
+    <ApplicationIcon>Assets\favicon.ico</ApplicationIcon>
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
@@ -125,6 +129,10 @@
     <Content Include="Assets\Wide310x150Logo.scale-100.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\logo.png" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Transparente Logo-Variante (ohne weißen Hintergrund) für die Über-Seite. Das
+         weiß-hinterlegte logo.png bleibt für Splash/Icon; hier auf einer getönten Fläche
+         soll das Logo freigestellt sitzen. -->
+    <Content Include="Assets\logo-transparent.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\favicon.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

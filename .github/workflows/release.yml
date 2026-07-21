@@ -6,6 +6,10 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
 
+# Zum Anlegen des Releases und Hochladen der Setup.exe.
+permissions:
+  contents: write
+
 jobs:
   build-release:
     name: Build + Test + Package (Release / x64)
@@ -32,26 +36,58 @@ jobs:
       - name: Tests
         run: dotnet test EchoPlay.slnx -c Release --no-build --verbosity normal
 
-      - name: Publish MSIX (unpackaged, win-x64)
-        run: dotnet publish src/EchoPlay.App/EchoPlay.App.csproj -c Release -r win-x64 -p:Platform=x64 --self-contained --no-build -o publish
+      - name: Inno Setup bereitstellen
+        run: choco install innosetup -y --no-progress
 
-      - name: Release-Artefakt hochladen
+      - name: Version bestimmen (Tag oder VersionPrefix)
+        id: version
+        shell: pwsh
+        run: |
+          $ref = "${{ github.ref }}"
+          if ($ref -like 'refs/tags/v*') {
+            $version = "${{ github.ref_name }}" -replace '^v', ''
+          } else {
+            $props = Get-Content Directory.Build.props -Raw
+            $version = [regex]::Match($props, '<VersionPrefix>([^<]+)</VersionPrefix>').Groups[1].Value.Trim()
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version"
+
+      # Derselbe erprobte Weg wie lokal (DRY): self-contained Publish mit den korrekten
+      # Flags (WindowsPackageType=None / WindowsAppSDKSelfContained) plus Inno-Setup-Kompilierung.
+      # Kein --no-build -> kein NETSDK1094 (ReadyToRun findet das RID-Runtime-Package).
+      - name: Self-contained Publish + Setup.exe kompilieren
+        shell: pwsh
+        run: ./tools/publish-setup.ps1 -Version '${{ steps.version.outputs.version }}' -Distribution "$env:GITHUB_WORKSPACE\publish-dist"
+
+      - name: SHA-256 der Setup.exe berechnen
+        id: hash
+        shell: pwsh
+        run: |
+          $setup = "dist/EchoPlay-Setup-v${{ steps.version.outputs.version }}.exe"
+          if (-not (Test-Path $setup)) { throw "Setup.exe nicht gefunden: $setup" }
+          $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash
+          "hash=$hash" >> $env:GITHUB_OUTPUT
+          "setup=$setup" >> $env:GITHUB_OUTPUT
+          Write-Host "SHA256: $hash"
+
+      - name: Setup.exe als Workflow-Artefakt sichern
         uses: actions/upload-artifact@v6
         with:
-          name: EchoPlay-${{ github.ref_name }}-win-x64
-          path: publish/
+          name: EchoPlay-Setup-v${{ steps.version.outputs.version }}
+          path: ${{ steps.hash.outputs.setup }}
 
-      - name: GitHub-Release-Draft erstellen
+      - name: GitHub-Release veröffentlichen
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
           name: ${{ github.ref_name }}
           body: |
-            EchoPlay ${{ github.ref_name }}
+            EchoPlay ${{ github.ref_name }} — selbstinstallierendes Setup für Windows 10/11 (x64).
 
-            **Manueller Smoke-Test und Code-Signing vor Promotion erforderlich.**
+            Keine vorinstallierte Runtime nötig: .NET und Windows App SDK sind im Setup gebündelt.
 
-            Siehe `.ai/operations/release-checklist.md` §6–§8.
-          files: |
-            publish/**/*
+            **Integritätsprüfung** — SHA-256 der Setup.exe (der eingebaute Update-Prüfer verifiziert die heruntergeladene Datei gegen diesen Wert):
+
+            SHA256: ${{ steps.hash.outputs.hash }}
+          files: ${{ steps.hash.outputs.setup }}

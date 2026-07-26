@@ -433,6 +433,64 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("fresh", vm.Results[0].Title);
         }
 
+        [Fact]
+        public async Task SearchAsync_OnlineThrows_LocalResultsStillReturned()
+        {
+            // Arbeitspaket 431, Hyp. A (der ungetestete Kernpfad): Wirft der Online-Zweig (kein Netz,
+            // Provider-Timeout, Parser-Fehler), dürfen die lokalen Treffer nicht mehr
+            // verschluckt werden. "Benjamin" muss die lokale "Benjamin Blümchen" liefern.
+            FakeSeriesDataService localSeries = new();
+            await localSeries.AddAsync(new Series { Title = "Benjamin Blümchen" },
+                cancellationToken: TestContext.Current.CancellationToken);
+            FakeErrorDialogService errorDialog = new();
+            ImportService importService = BuildImportService([], new FakeSeriesDataService(), new ThrowingSeriesImportSearch());
+
+            SucheViewModel vm = new(importService, errorDialog, new FakeLocalizationService(),
+                BuildLocalScopeFactory(localSeries));
+            vm.SearchText = "Benjamin";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            SearchResultViewModel result = Assert.Single(vm.Results);
+            Assert.Equal("Benjamin Blümchen", result.Title);
+            Assert.True(result.IsImported); // lokal vorhanden → als importiert markiert
+            _ = Assert.Single(errorDialog.ShownDialogs); // Online-Fehler wird weiterhin gemeldet
+        }
+
+        [Fact]
+        public async Task SearchAsync_WordBoundaryPrefix_MatchesLocalSeries()
+        {
+            // "Benjamin" → "Benjamin Blümchen" aus der lokalen Bibliothek; Online liefert nichts.
+            FakeSeriesDataService localSeries = new();
+            await localSeries.AddAsync(new Series { Title = "Benjamin Blümchen" },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            SucheViewModel vm = BuildViewModel(searchResults: [], scopeFactory: BuildLocalScopeFactory(localSeries));
+            vm.SearchText = "Benjamin";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            SearchResultViewModel result = Assert.Single(vm.Results);
+            Assert.Equal("Benjamin Blümchen", result.Title);
+        }
+
+        [Fact]
+        public async Task SearchLocalAsync_TrimsQuery()
+        {
+            // Führende/abschließende Leerzeichen dürfen den lokalen Substring-Vergleich nicht sabotieren.
+            FakeSeriesDataService localSeries = new();
+            await localSeries.AddAsync(new Series { Title = "Benjamin Blümchen" },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            SucheViewModel vm = BuildViewModel(searchResults: [], scopeFactory: BuildLocalScopeFactory(localSeries));
+            vm.SearchText = "  Benjamin  ";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            SearchResultViewModel result = Assert.Single(vm.Results);
+            Assert.Equal("Benjamin Blümchen", result.Title);
+        }
+
         /// <summary>
         /// Hilfsklasse: wirft immer eine Exception, um Netzwerkfehler zu simulieren.
         /// </summary>

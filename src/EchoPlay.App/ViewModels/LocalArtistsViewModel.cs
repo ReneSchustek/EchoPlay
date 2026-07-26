@@ -201,6 +201,22 @@ namespace EchoPlay.App.ViewModels
                 if (existing is not null)
                 {
                     existing.UpdateCounts(localEpisodeCount, totalEpisodeCount);
+
+                    // Regression-Schutz zu Commit 67f7adb: Eine schon im Live-Scan angelegte Karte
+                    // kann noch ohne Cover sein (kein cover.jpg zur Anlagezeit, DB-Cover erst spaeter
+                    // vom Hintergrunddienst geschrieben). Frueher zog der abschliessende Voll-Reload
+                    // das Cover pro Karte nach; seit dem Frueh-Return entfaellt das. Ohne Nachbau
+                    // bliebe die Serie die ganze Session ohne Bild. Ein bereits gesetztes Cover wird
+                    // NICHT ueberschrieben (kein Flackern, kein unnoetiger DB-Treffer).
+                    if (existing.CoverImage is null)
+                    {
+                        BitmapImage? refreshedCover = await BuildCoverImageAsync(series);
+                        if (refreshedCover is not null)
+                        {
+                            existing.CoverImage = refreshedCover;
+                        }
+                    }
+
                     return;
                 }
 

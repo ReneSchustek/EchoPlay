@@ -6,6 +6,7 @@ using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Scanning;
+using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -445,13 +446,7 @@ namespace EchoPlay.App.ViewModels
             AppSettings settings = await settingsService.GetAsync();
             ActiveTheme = settings.ActiveTheme;
             ActiveLanguage = settings.ActiveLanguage;
-            ActiveProviderDisplay = settings.ActiveProvider switch
-            {
-                ProviderType.Spotify => "Spotify",
-                ProviderType.AppleMusic => "Apple Music",
-                ProviderType.Both => "Spotify + Apple Music",
-                _ => string.Empty
-            };
+            ActiveProviderDisplay = await ResolveProviderDisplayAsync(scope, settings.ActiveProvider);
 
             // Sichtbarkeit der Online-Mediathek: nur einblenden wenn ein Provider gewählt ist
             bool providerActive = settings.ActiveProvider != ProviderType.None;
@@ -516,6 +511,41 @@ namespace EchoPlay.App.ViewModels
             FinishedEpisodesCount = finished;
             UnfinishedEpisodesCount = unfinished;
             NewEpisodesCount = newCount;
+        }
+
+        /// <summary>
+        /// Ermittelt den anzuzeigenden Provider-Namen credential-bewusst. Ist Spotify gewählt,
+        /// aber sind keine Spotify-Credentials hinterlegt (oder nicht entschlüsselbar → DPAPI-Purge),
+        /// lenkt die Suche transparent auf Apple Music (siehe <c>ImportService.ResolveProviderAsync</c>).
+        /// Die Info-Leiste darf dann nicht fälschlich „Spotify" als verbunden zeigen, sondern den
+        /// effektiv nutzbaren Zustand („Spotify getrennt – Apple Music aktiv").
+        /// </summary>
+        /// <param name="scope">Aktueller DI-Scope aus <see cref="RefreshAsync"/>.</param>
+        /// <param name="provider">Der in den AppSettings gewählte Provider.</param>
+        /// <returns>Der anzuzeigende Provider-Text.</returns>
+        private static async Task<string> ResolveProviderDisplayAsync(IServiceScope scope, ProviderType provider)
+        {
+            switch (provider)
+            {
+                case ProviderType.Spotify:
+                    // GetService (nicht GetRequiredService): fehlt der Provider (z.B. in Alt-Tests
+                    // ohne Spotify-Registrierung), bleibt es beim bisherigen "Spotify"-Verhalten.
+                    ISpotifyClientCredentialsProvider? credentialsProvider =
+                        scope.ServiceProvider.GetService<ISpotifyClientCredentialsProvider>();
+                    if (credentialsProvider is not null && await credentialsProvider.GetAsync() is null)
+                    {
+                        ILocalizationService localization =
+                            scope.ServiceProvider.GetRequiredService<ILocalizationService>();
+                        return localization.Get("StatusBarSpotifyDisconnected");
+                    }
+                    return "Spotify";
+                case ProviderType.AppleMusic:
+                    return "Apple Music";
+                case ProviderType.Both:
+                    return "Spotify + Apple Music";
+                default:
+                    return string.Empty;
+            }
         }
 
         // ── Theme-Wechsel ────────────────────────────────────────────────────────

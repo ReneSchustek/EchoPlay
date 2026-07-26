@@ -1,9 +1,12 @@
+using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
+using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -162,6 +165,67 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.RefreshAsync();
 
             Assert.Equal(1, vm.FinishedEpisodesCount);
+        }
+
+        private static StatusBarViewModel BuildViewModelWithProvider(
+            ProviderType provider,
+            ISpotifyClientCredentialsProvider? credentialsProvider)
+        {
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ =>
+                new FakeAppSettingsDataService(new AppSettings { ActiveProvider = provider }));
+            _ = services.AddSingleton<ILocalizationService>(new FakeLocalizationService());
+            if (credentialsProvider is not null)
+            {
+                _ = services.AddSingleton(credentialsProvider);
+            }
+
+            ServiceProvider sp = services.BuildServiceProvider();
+            return new StatusBarViewModel(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                new FakeThemeService(),
+                new EchoPlay.App.Services.TaskbarProgressService(),
+                new FakeClock());
+        }
+
+        [Fact]
+        public async Task LoadAsync_SpotifyWithoutCredentials_ShowsDisconnectedNotSpotify()
+        {
+            // Arbeitspaket 432: ActiveProvider=Spotify, aber keine Credentials → die Suche läuft effektiv
+            // über Apple Music (ImportService.ResolveProviderAsync). Die Info-Leiste darf dann nicht
+            // fälschlich "Spotify" als verbunden zeigen. FakeLocalizationService.Get liefert den Key.
+            StatusBarViewModel vm = BuildViewModelWithProvider(
+                ProviderType.Spotify, FakeSpotifyClientCredentialsProvider.Missing());
+
+            await vm.LoadAsync();
+
+            Assert.Equal("StatusBarSpotifyDisconnected", vm.ActiveProviderDisplay);
+        }
+
+        [Fact]
+        public async Task LoadAsync_SpotifyWithCredentials_ShowsSpotify()
+        {
+            StatusBarViewModel vm = BuildViewModelWithProvider(
+                ProviderType.Spotify, FakeSpotifyClientCredentialsProvider.WithCredentials());
+
+            await vm.LoadAsync();
+
+            Assert.Equal("Spotify", vm.ActiveProviderDisplay);
+        }
+
+        [Fact]
+        public async Task LoadAsync_AppleMusic_ShowsAppleMusicRegardlessOfCredentials()
+        {
+            // Apple Music ist nicht credential-abhängig – Anzeige bleibt unverändert.
+            StatusBarViewModel vm = BuildViewModelWithProvider(
+                ProviderType.AppleMusic, credentialsProvider: null);
+
+            await vm.LoadAsync();
+
+            Assert.Equal("Apple Music", vm.ActiveProviderDisplay);
         }
     }
 }

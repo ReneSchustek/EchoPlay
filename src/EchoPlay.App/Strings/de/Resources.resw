@@ -1475,5 +1475,8 @@ Die Anwendung wird beendet.</value>
   <data name="MaintenanceStatusError" xml:space="preserve">
     <value>Fehler bei der Bereinigung: {0}</value>
   </data>
+  <data name="StatusBarSpotifyDisconnected" xml:space="preserve">
+    <value>Spotify getrennt – Apple Music aktiv</value>
+  </data>
 
 </root>

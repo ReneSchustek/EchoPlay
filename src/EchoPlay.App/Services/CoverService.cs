@@ -177,6 +177,16 @@ namespace EchoPlay.App.Services
                     _logger.Warning("Cover-DB-Write Retry {Attempt}/3 für {EntityType} {EntityId}: {Reason}", attempt, entityType, entityId, ex.Message);
                     await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken).ConfigureAwait(false);
                 }
+                catch (DbUpdateException ex)
+                {
+                    // Endgültiger Fehlschlag nach 3 Versuchen: nicht mehr still verschlucken.
+                    // Die DB-first-Anzeige bleibt ohne diesen Write dauerhaft leer – der finale WARN
+                    // macht den Cover-Ausfall sichtbar (Zero-Warning-Regel: echtes Signal, kein Rauschen)
+                    // und verhindert zugleich, dass die Exception aus einem Fire-and-forget-Cover-Task
+                    // als unbeobachtete Ausnahme entweicht.
+                    _logger.Warning("Cover-DB-Write endgültig fehlgeschlagen nach 3 Versuchen für {EntityType} {EntityId}: {Reason}", entityType, entityId, ex.Message);
+                    return;
+                }
             }
         }
 

@@ -107,5 +107,34 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
             return Task.FromResult(response);
         }
+
+        /// <summary>
+        /// Batch-Variante: aggregiert die konfigurierten Tracks aller angefragten Alben in
+        /// einer Antwort (je Album ein Collection-Eintrag gefolgt von seinen Tracks).
+        /// </summary>
+        /// <param name="collectionIds">Die iTunes-Collection-IDs des Batches.</param>
+        /// <returns>Die Lookup-Antwort mit Collection- und Track-Einträgen aller Alben.</returns>
+        public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
+        {
+            List<ITunesTrackDto> results = [];
+
+            foreach (long collectionId in collectionIds)
+            {
+                results.Add(new ITunesTrackDto { WrapperType = "collection", CollectionId = collectionId });
+
+                if (_tracksByAlbum.TryGetValue(collectionId, out List<ITunesTrackDto>? tracks))
+                {
+                    results.AddRange(tracks);
+                }
+            }
+
+            ITunesResponseDto<ITunesTrackDto> response = new()
+            {
+                ResultCount = results.Count,
+                Results = results
+            };
+
+            return Task.FromResult(response);
+        }
     }
 }

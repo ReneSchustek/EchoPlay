@@ -211,5 +211,56 @@ namespace EchoPlay.AppleMusic.Tests.Import
             _ = await Assert.ThrowsAsync<ArgumentException>(
                 () => episodeImport.GetEpisodesAsync("keine-gueltige-id", cancellationToken: TestContext.Current.CancellationToken));
         }
+
+        /// <summary>
+        /// Arbeitspaket 433: Die Track-Lookups laufen gebündelt (ein Batch-Request statt N Einzel-Lookups),
+        /// die Episoden-Dauer wird korrekt aus den – über die CollectionId zugeordneten – Tracks
+        /// aufsummiert. Sichert zu, dass die Performance-Umstellung die Dauer nicht verliert.
+        /// </summary>
+        [Fact]
+        public async Task GetEpisodesAsync_BatchedTrackLookup_ComputesDurationPerAlbum()
+        {
+            // ARRANGE
+            ServiceCollection services = new();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
+            _ = services.AddAppleMusicImport();
+
+            const long ArtistId = 777000;
+            const long CollectionA = 7001;
+            const long CollectionB = 7002;
+
+            ConfigurableAppleMusicSearchClient client = new ConfigurableAppleMusicSearchClient()
+                .WithAlbums(ArtistId,
+                [
+                    new ITunesCollectionDto { WrapperType = "collection", CollectionId = CollectionA, CollectionName = "Folge A", ArtistId = ArtistId, ReleaseDate = "2021-01-01T00:00:00Z" },
+                    new ITunesCollectionDto { WrapperType = "collection", CollectionId = CollectionB, CollectionName = "Folge B", ArtistId = ArtistId, ReleaseDate = "2020-01-01T00:00:00Z" }
+                ])
+                .WithTracks(CollectionA,
+                [
+                    new ITunesTrackDto { WrapperType = "track", CollectionId = CollectionA, TrackTimeMillis = (int)TimeSpan.FromMinutes(10).TotalMilliseconds }
+                ])
+                .WithTracks(CollectionB,
+                [
+                    new ITunesTrackDto { WrapperType = "track", CollectionId = CollectionB, TrackTimeMillis = (int)TimeSpan.FromMinutes(20).TotalMilliseconds },
+                    new ITunesTrackDto { WrapperType = "track", CollectionId = CollectionB, TrackTimeMillis = (int)TimeSpan.FromMinutes(5).TotalMilliseconds }
+                ]);
+
+            _ = services.AddSingleton<IAppleMusicSearchClient>(client);
+            ServiceProvider provider = services.BuildServiceProvider();
+            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
+
+            // ACT
+            IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync(
+                ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // ASSERT
+            Assert.Equal(2, episodes.Count);
+            ImportEpisode a = episodes.Single(e => e.SourceEpisodeId == CollectionA.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            ImportEpisode b = episodes.Single(e => e.SourceEpisodeId == CollectionB.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Assert.Equal(TimeSpan.FromMinutes(10), a.Duration);
+            Assert.Equal(TimeSpan.FromMinutes(25), b.Duration);
+        }
     }
 }

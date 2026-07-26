@@ -47,5 +47,17 @@ namespace EchoPlay.AppleMusic.Abstractions
         /// <param name="ct">Abbruchtoken für den HTTP-Aufruf.</param>
         /// <returns>Die Lookup-Antwort mit gemischten Ergebnissen (Album + Tracks).</returns>
         Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksAsync(long collectionId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lädt die Tracks mehrerer Alben in <em>einem</em> Lookup-Request (kommaseparierte IDs).
+        /// Die iTunes-Lookup-API akzeptiert mehrere IDs gleichzeitig und liefert je Album dessen
+        /// Collection-Eintrag gefolgt von seinen Tracks; jeder Track trägt seine
+        /// <c>collectionId</c> zur Zuordnung. So kollabieren N rate-limitierte Einzel-Lookups
+        /// (je ≥ 1,5 s) zu wenigen Batch-Requests – der entscheidende Import-Beschleuniger.
+        /// </summary>
+        /// <param name="collectionIds">Die iTunes-Collection-IDs der Alben (ein Batch, moderat gross halten).</param>
+        /// <param name="ct">Abbruchtoken für den HTTP-Aufruf.</param>
+        /// <returns>Die Lookup-Antwort mit gemischten Ergebnissen (Alben + deren Tracks).</returns>
+        Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default);
     }
 }

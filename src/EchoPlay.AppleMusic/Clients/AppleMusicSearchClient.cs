@@ -95,6 +95,27 @@ namespace EchoPlay.AppleMusic.Clients
         }
 
         /// <summary>
+        /// Lädt die Tracks mehrerer Alben in einem Lookup-Request (kommaseparierte IDs).
+        /// </summary>
+        /// <param name="collectionIds">Die iTunes-Collection-IDs der Alben (ein Batch).</param>
+        /// <param name="ct">Abbruchtoken für den HTTP-Aufruf.</param>
+        /// <returns>Die Lookup-Antwort mit Alben und deren Tracks.</returns>
+        public async Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
+        {
+            ArgumentNullException.ThrowIfNull(collectionIds);
+
+            if (collectionIds.Count == 0)
+            {
+                return new ITunesResponseDto<ITunesTrackDto>();
+            }
+
+            string ids = string.Join(',', collectionIds);
+            string url = $"lookup?id={ids}&entity=song&country={Country}";
+
+            return await GetAsync<ITunesResponseDto<ITunesTrackDto>>(url, ct).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Führt einen GET-Request aus und deserialisiert die JSON-Antwort.
         /// </summary>
         /// <typeparam name="T">Ziel-Typ der Deserialisierung.</typeparam>

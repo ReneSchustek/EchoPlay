@@ -11,6 +11,7 @@ using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
@@ -489,6 +490,49 @@ namespace EchoPlay.App.Tests.ViewModels
 
             SearchResultViewModel result = Assert.Single(vm.Results);
             Assert.Equal("Benjamin Blümchen", result.Title);
+        }
+
+        [Fact]
+        public async Task ImportCommand_ForwardsProgressTextToCard()
+        {
+            // Arbeitspaket 433: SearchResultViewModel muss ein IProgress an ImportService.ImportAsync
+            // durchreichen, damit die Karte während des Imports Fortschritt zeigt statt nur einen
+            // stummen Spinner. Progress<T> marshallt über den SynchronizationContext – für einen
+            // deterministischen Test wird ein Inline-Context installiert, der Reports synchron
+            // ausführt (kein Task.Delay/Polling).
+            List<ImportSeries> results =
+            [
+                new ImportSeries { Title = "Bibi Blocksberg", Source = "Spotify", SourceSeriesId = "bibi-001" }
+            ];
+            SucheViewModel vm = BuildViewModel(results);
+            vm.SearchText = "Bibi";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+            SearchResultViewModel card = Assert.Single(vm.Results);
+
+            SynchronizationContext? original = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(new InlineSynchronizationContext());
+            try
+            {
+                card.ImportCommand.Execute(null);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(original);
+            }
+
+            Assert.True(card.IsImported); // Import lief mit den Fakes synchron durch
+            Assert.NotEqual(string.Empty, card.ImportStatusText); // Fortschritt wurde gemeldet
+        }
+
+        /// <summary>
+        /// SynchronizationContext, der geposteten Rückrufe sofort und synchron ausführt.
+        /// Macht <see cref="System.Progress{T}"/>-Reports in Tests deterministisch beobachtbar.
+        /// </summary>
+        private sealed class InlineSynchronizationContext : SynchronizationContext
+        {
+            public override void Post(SendOrPostCallback d, object? state) => d(state);
+            public override void Send(SendOrPostCallback d, object? state) => d(state);
         }
 
         /// <summary>

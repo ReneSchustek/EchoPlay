@@ -225,6 +225,19 @@ namespace EchoPlay.App.ViewModels
         public Visibility AlreadyImportedVisibility =>
             _isImported ? Visibility.Visible : Visibility.Collapsed;
 
+        private string _importStatusText = string.Empty;
+
+        /// <summary>
+        /// Fortschrittstext während des Imports (z.B. „Lade Episoden …" / „Speichere …").
+        /// Wird über <see cref="IProgress{T}"/> aus <c>ImportService.ImportAsync</c> gespeist,
+        /// damit die Karte bei langen Serien-Importen nicht nur einen stummen Spinner zeigt.
+        /// </summary>
+        public string ImportStatusText
+        {
+            get => _importStatusText;
+            private set => SetProperty(ref _importStatusText, value);
+        }
+
         /// <summary>
         /// Gibt an, ob das Suchergebnis für den Batch-Import ausgewählt ist.
         /// Wird über die Checkbox auf der Kachel gesteuert.
@@ -262,10 +275,14 @@ namespace EchoPlay.App.ViewModels
 
             using IDisposable ua = UserActionScope.BeginUserAction("ImportSeries");
             IsImporting = true;
+            ImportStatusText = string.Empty;
 
             try
             {
-                _ = await _importService.ImportAsync(_importSeries);
+                // Progress<T> wird auf dem UI-Thread konstruiert und marshallt die Berichte
+                // dorthin zurück – der Import selbst läuft mit ConfigureAwait(false) im Hintergrund.
+                IProgress<string> progress = new Progress<string>(text => ImportStatusText = text);
+                _ = await _importService.ImportAsync(_importSeries, progress, _cancellationToken);
                 // Erst nach erfolgreichem Import den Status setzen – kein optimistisches Update
                 IsImported = true;
                 _parentViewModel?.NotifySeriesAdded();

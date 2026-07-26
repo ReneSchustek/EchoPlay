@@ -108,5 +108,18 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
             _lookedUpCollectionIds.Add(collectionId);
             return Task.FromResult(new ITunesResponseDto<ITunesTrackDto>());
         }
+
+        /// <summary>
+        /// Zeichnet die gebatchten Collection-IDs auf (analog zu <see cref="LookupTracksAsync"/>)
+        /// und liefert keine Tracks. Erlaubt Tests zu prüfen, für welche Alben – nach dem
+        /// Delta-Filter – ein Track-Lookup ausgelöst wurde.
+        /// </summary>
+        /// <param name="collectionIds">Die iTunes-Collection-IDs des Batches.</param>
+        /// <returns>Leere Lookup-Antwort.</returns>
+        public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
+        {
+            _lookedUpCollectionIds.AddRange(collectionIds);
+            return Task.FromResult(new ITunesResponseDto<ITunesTrackDto>());
+        }
     }
 }

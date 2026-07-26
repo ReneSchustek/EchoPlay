@@ -296,6 +296,14 @@
                                       IsActive="{x:Bind IsImporting, Mode=OneWay}"
                                       Visibility="{x:Bind IsImporting, Mode=OneWay}"
                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- Fortschrittstext während des Imports (Arbeitspaket 433) -->
+                        <TextBlock Text="{x:Bind ImportStatusText, Mode=OneWay}"
+                                   Visibility="{x:Bind IsImporting, Mode=OneWay}"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                   Margin="4,0,4,4"/>
                         <!-- Gehört-Häkchen nach Import -->
                         <FontIcon Glyph="&#xE73E;" FontSize="24"
                                   Foreground="LimeGreen"

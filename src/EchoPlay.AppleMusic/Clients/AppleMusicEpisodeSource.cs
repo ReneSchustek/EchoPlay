@@ -99,49 +99,70 @@ namespace EchoPlay.AppleMusic.Clients
                 return [];
             }
 
-            List<ImportEpisode> episodes = new();
+            // Track-Lookups gebündelt: Ein Album = eine Folge, die Tracks dienen NUR der
+            // Dauerberechnung. Statt pro Album einen eigenen, host-rate-limitierten Lookup
+            // (je >= 1,5 s → bei 230 Folgen ~6 min) werden mehrere Collection-IDs in einem
+            // Lookup-Request gebündelt. Die iTunes-Lookup-API akzeptiert kommaseparierte IDs;
+            // jeder Track trägt seine CollectionId zur Zuordnung. So kollabieren N rate-limitierte
+            // Requests zu ~N/100 – der Import dauert Sekunden statt Minuten.
+            //
+            // Delta-Abgleich (Arbeitspaket 268): Für bereits bekannte Folgen (Titel = Albumname) entfällt
+            // der Track-Lookup; ihre Album-Metadaten (inkl. Cover-URL) kommen dennoch durch, damit
+            // ein fehlendes Cover einer bestehenden Folge nachgetragen werden kann. Ohne diese
+            // Ersparnis kostet jeder Neu-Folgen-Check einen Track-Lookup pro vorhandener Folge.
+            List<ITunesCollectionDto> albumsNeedingTracks = albums
+                .Where(a => !(knownEpisodeTitles is { Count: > 0 } && knownEpisodeTitles.Contains(a.CollectionName)))
+                .ToList();
+
+            Dictionary<long, List<ITunesTrackDto>> tracksByCollection = [];
+            const int trackLookupBatchSize = 100;
+
+            foreach (ITunesCollectionDto[] batch in albumsNeedingTracks.Chunk(trackLookupBatchSize))
+            {
+                long[] batchIds = [.. batch.Select(a => a.CollectionId)];
+                ITunesResponseDto<ITunesTrackDto> tracksResponse;
+
+                try
+                {
+                    tracksResponse = await _searchClient.LookupTracksBatchAsync(batchIds, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
+                {
+                    // Batch-Fehler unterbricht den Import nicht: die betroffenen Folgen werden ohne
+                    // Dauer importiert (kein Datenverlust), statt komplett zu fehlen.
+                    _logger.Warning(
+                        $"Track-Batch-Lookup für {batchIds.Length} iTunes-Alben fehlgeschlagen – Folgen werden ohne Dauer importiert.");
+                    _logger.Error("Fehlerdetails:", ex);
+                    continue;
+                }
+
+                // Lookup-Antworten enthalten je Album auch dessen Collection-Eintrag – nur Tracks
+                // interessieren, zugeordnet über die CollectionId des Tracks.
+                foreach (ITunesTrackDto track in tracksResponse.Results)
+                {
+                    if (!string.Equals(track.WrapperType, "track", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (!tracksByCollection.TryGetValue(track.CollectionId, out List<ITunesTrackDto>? list))
+                    {
+                        list = [];
+                        tracksByCollection[track.CollectionId] = list;
+                    }
+
+                    list.Add(track);
+                }
+            }
+
+            List<ImportEpisode> episodes = new(albums.Count);
             int orderIndex = 0;
 
             foreach (ITunesCollectionDto album in albums)
             {
-                // Delta-Abgleich: Bei bereits bekannten Folgen (Titel = Albumname) entfällt der
-                // Track-Lookup. Er dient nur der Dauerberechnung und ist für bestehende Folgen
-                // unnötig. Die Album-Metadaten (inkl. Cover-URL) werden trotzdem geliefert, damit
-                // der Delta-Import bei einer bestehenden Folge ein fehlendes Cover nachtragen kann.
-                // Ohne diese Ersparnis kostet jeder Neu-Folgen-Check einen Track-Lookup pro
-                // vorhandener Folge (bei hunderten Folgen und vielen Serien Stunden – der Import
-                // bricht dann beim App-Schließen ab, und genau die neuen Folgen fehlen).
-                bool isKnown = knownEpisodeTitles is { Count: > 0 }
-                    && knownEpisodeTitles.Contains(album.CollectionName);
-
-                List<ITunesTrackDto> tracks;
-
-                if (isKnown)
-                {
-                    tracks = [];
-                }
-                else
-                {
-                    ITunesResponseDto<ITunesTrackDto> tracksResponse;
-
-                    try
-                    {
-                        tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex) when (TransientRequestError.IsTransient(ex))
-                    {
-                        // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
-                        _logger.Warning(
-                            $"Tracks für iTunes-Album '{album.CollectionId}' ('{album.CollectionName}') konnten nicht geladen werden. Album wird übersprungen.");
-                        _logger.Error("Fehlerdetails:", ex);
-                        continue;
-                    }
-
-                    // Lookup-Antworten enthalten das Album als erstes Element
-                    tracks = tracksResponse.Results
-                        .Where(r => string.Equals(r.WrapperType, "track", StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-                }
+                // Bekannte Folgen wurden nicht gebatcht → leere Trackliste, Dauer bleibt wie bisher 0.
+                IReadOnlyList<ITunesTrackDto> tracks =
+                    tracksByCollection.TryGetValue(album.CollectionId, out List<ITunesTrackDto>? found) ? found : [];
 
                 // Ein Album = eine Folge – Tracks werden nur für die Dauerberechnung verwendet
                 ImportEpisode episode = AppleMusicEpisodeMapper.MapAlbumToEpisode(album, tracks, orderIndex);

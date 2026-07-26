@@ -78,30 +78,58 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Lookup-Antwort mit Collection- und Track-Einträgen.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksAsync(long collectionId, CancellationToken ct = default)
         {
-            string albumName = collectionId == 1001 ? "Früheres Album" : "Späteres Album";
-
             ITunesResponseDto<ITunesTrackDto> response = new()
             {
                 ResultCount = 2,
-                Results =
-                [
-                    // Erstes Element ist immer das Album
-                    new ITunesTrackDto { WrapperType = "collection" },
-                    new ITunesTrackDto
-                    {
-                        WrapperType = "track",
-                        TrackId = collectionId * 10,
-                        TrackName = $"Episode aus {albumName}",
-                        TrackTimeMillis = (int)TimeSpan.FromMinutes(45).TotalMilliseconds,
-                        TrackNumber = 1,
-                        ReleaseDate = collectionId == 1001 ? "1979-01-01T07:00:00Z" : "1985-01-01T07:00:00Z",
-                        CollectionId = collectionId,
-                        CollectionName = albumName
-                    }
-                ]
+                Results = [.. BuildAlbumWithTrack(collectionId)]
             };
 
             return Task.FromResult(response);
+        }
+
+        /// <summary>
+        /// Batch-Variante: liefert je angefragtem Album dessen Collection-Eintrag plus Track,
+        /// jeweils mit gesetzter CollectionId zur Zuordnung.
+        /// </summary>
+        /// <param name="collectionIds">Die iTunes-Collection-IDs des Batches.</param>
+        /// <returns>Die Lookup-Antwort mit Collection- und Track-Einträgen aller Alben.</returns>
+        public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
+        {
+            List<ITunesTrackDto> results = [];
+            foreach (long collectionId in collectionIds)
+            {
+                results.AddRange(BuildAlbumWithTrack(collectionId));
+            }
+
+            ITunesResponseDto<ITunesTrackDto> response = new()
+            {
+                ResultCount = results.Count,
+                Results = results
+            };
+
+            return Task.FromResult(response);
+        }
+
+        private static IReadOnlyList<ITunesTrackDto> BuildAlbumWithTrack(long collectionId)
+        {
+            string albumName = collectionId == 1001 ? "Früheres Album" : "Späteres Album";
+
+            return
+            [
+                // Erstes Element ist immer das Album
+                new ITunesTrackDto { WrapperType = "collection", CollectionId = collectionId },
+                new ITunesTrackDto
+                {
+                    WrapperType = "track",
+                    TrackId = collectionId * 10,
+                    TrackName = $"Episode aus {albumName}",
+                    TrackTimeMillis = (int)TimeSpan.FromMinutes(45).TotalMilliseconds,
+                    TrackNumber = 1,
+                    ReleaseDate = collectionId == 1001 ? "1979-01-01T07:00:00Z" : "1985-01-01T07:00:00Z",
+                    CollectionId = collectionId,
+                    CollectionName = albumName
+                }
+            ];
         }
     }
 }

@@ -171,6 +171,21 @@
                                 Foreground="{ThemeResource SystemFillColorSuccessBrush}"
                                 Margin="0,4,0,0"
                                 Visibility="{x:Bind AlreadyImportedVisibility, Mode=OneWay}"/>
+
+                            <!-- Fortschrittsanzeige während des Imports (Arbeitspaket 433) -->
+                            <StackPanel
+                                Grid.Row="2"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                Margin="0,4,0,0"
+                                Visibility="{x:Bind IsImporting, Mode=OneWay}">
+                                <ProgressRing Width="16" Height="16" IsActive="{x:Bind IsImporting, Mode=OneWay}"/>
+                                <TextBlock
+                                    Text="{x:Bind ImportStatusText, Mode=OneWay}"
+                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                    TextTrimming="CharacterEllipsis"
+                                    VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Grid>
                     </DataTemplate>
                 </GridView.ItemTemplate>

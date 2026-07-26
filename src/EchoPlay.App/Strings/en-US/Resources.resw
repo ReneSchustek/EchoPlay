@@ -1473,5 +1473,8 @@ The application will close.</value>
   <data name="MaintenanceStatusError" xml:space="preserve">
     <value>Cleanup failed: {0}</value>
   </data>
+  <data name="StatusBarSpotifyDisconnected" xml:space="preserve">
+    <value>Spotify disconnected – Apple Music active</value>
+  </data>
 
 </root>

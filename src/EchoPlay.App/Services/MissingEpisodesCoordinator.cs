@@ -85,7 +85,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="mode">Parameter <c>mode</c>.</param>
         public async Task<MissingEpisodesReport> CheckAllSeriesAsync(MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
@@ -351,7 +350,6 @@ namespace EchoPlay.App.Services
         /// Analysiert den Serienordner auf fehlende Folgen und gibt Anzeige-Meldungen zurück.
         /// Wird für die Einzelserien-Prüfung verwendet (formatierter Text für den Dialog).
         /// </summary>
-
         /// <param name="seriesFolderPath">Parameter <c>seriesFolderPath</c>.</param>
         private static List<string> AnalyzeMissingEpisodes(string seriesFolderPath)
         {

@@ -116,7 +116,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>Ein einzelner Enrichment-Durchlauf.</summary>
-
         /// <param name="ct">Parameter <c>ct</c>.</param>
         public async Task RunOnceAsync(CancellationToken ct = default)
         {
@@ -190,7 +189,6 @@ namespace EchoPlay.App.Services
         /// Extrahiert die CollectionId aus einer iTunes-URL.
         /// Format: https://music.apple.com/de/album/.../{CollectionId} oder .../id{CollectionId}
         /// </summary>
-
         /// <param name="url">Parameter <c>url</c>.</param>
         internal static string? ExtractITunesCollectionId(string? url)
         {

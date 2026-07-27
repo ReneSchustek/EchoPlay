@@ -83,9 +83,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="clientId">Parameter <c>clientId</c>.</param>
         /// <param name="clientSecret">Parameter <c>clientSecret</c>.</param>
         public async Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default)

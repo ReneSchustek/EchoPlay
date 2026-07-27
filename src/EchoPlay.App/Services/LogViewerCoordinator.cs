@@ -76,7 +76,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc />
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="filePath">Parameter <c>filePath</c>.</param>
         public async Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath, CancellationToken cancellationToken = default)
         {
@@ -97,8 +96,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-
-
         /// <param name="searchText">Parameter <c>searchText</c>.</param>
         /// <param name="minimumLevel">Parameter <c>minimumLevel</c>.</param>
         public IReadOnlyList<string> BuildFilteredLiveEntries(string searchText, LogLevel minimumLevel)

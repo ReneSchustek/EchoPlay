@@ -26,8 +26,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
-
         /// <param name="target">Parameter <c>target</c>.</param>
         /// <param name="parameter">Parameter <c>parameter</c>.</param>
         public void NavigateTo(NavigationTarget target, object? parameter = null)

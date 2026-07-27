@@ -409,8 +409,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Behandelt Codec-Fehler, korrupte Dateien und I/O-Probleme der Media-Pipeline.
         /// </summary>
-
-
         /// <param name="sender">Parameter <c>sender</c>.</param>
         /// <param name="args">Parameter <c>args</c>.</param>
         private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)

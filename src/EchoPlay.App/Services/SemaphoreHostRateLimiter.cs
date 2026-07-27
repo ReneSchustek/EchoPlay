@@ -43,17 +43,12 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
-
         /// <param name="host">Parameter <c>host</c>.</param>
         /// <param name="ct">Parameter <c>ct</c>.</param>
         public Task WaitAsync(string host, CancellationToken ct = default)
             => WaitAsync(host, CoverFetchPriority.Background, ct);
 
         /// <inheritdoc/>
-
-
-
         /// <param name="host">Parameter <c>host</c>.</param>
         /// <param name="priority">Parameter <c>priority</c>.</param>
         /// <param name="ct">Parameter <c>ct</c>.</param>
@@ -90,8 +85,6 @@ namespace EchoPlay.App.Services
         /// Wartet den konfigurierten Mindestabstand seit dem letzten Aufruf für
         /// <paramref name="host"/> ab und setzt den Zeitstempel neu.
         /// </summary>
-
-
         /// <param name="host">Parameter <c>host</c>.</param>
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task WaitForSlotAsync(string host, CancellationToken ct)

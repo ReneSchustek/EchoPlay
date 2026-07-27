@@ -388,7 +388,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Delegiert die Folgennummer-Extraktion an den zentralen Parser in Core.
         /// </summary>
-
         /// <param name="albumName">Parameter <c>albumName</c>.</param>
         internal static int? ExtractEpisodeNumber(string albumName)
         {
@@ -444,8 +443,6 @@ namespace EchoPlay.App.Services
         /// Versucht ein iTunes-Releasedatum zu parsen.
         /// iTunes liefert Daten im ISO-8601-Format (z.B. "2026-04-15T07:00:00Z").
         /// </summary>
-
-
         /// <param name="dateString">Parameter <c>dateString</c>.</param>
         /// <param name="result">Parameter <c>result</c>.</param>
         private static bool TryParseReleaseDate(string? dateString, out DateTime result)

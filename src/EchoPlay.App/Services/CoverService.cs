@@ -33,8 +33,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den CoverService.
         /// </summary>
-
-
         /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
         /// <param name="loggerFactory">Parameter <c>loggerFactory</c>.</param>
         public CoverService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
@@ -49,7 +47,6 @@ namespace EchoPlay.App.Services
         /// Null wenn kein Cover vorhanden.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         public async Task<BitmapImage?> GetSeriesCoverImageAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
@@ -62,7 +59,6 @@ namespace EchoPlay.App.Services
         /// Null wenn kein Cover vorhanden.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="episodeId">Parameter <c>episodeId</c>.</param>
         public async Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
@@ -107,7 +103,6 @@ namespace EchoPlay.App.Services
         /// Prüft ob ein Cover für eine Serie existiert (ohne Blob zu laden).
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         public async Task<bool> HasSeriesCoverAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
@@ -147,11 +142,7 @@ namespace EchoPlay.App.Services
         /// Jeder Versuch öffnet einen frischen DI-Scope, damit ein korrupter DbContext-Zustand
         /// den nächsten Versuch nicht blockiert.
         /// </summary>
-
-
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="entityType">Parameter <c>entityType</c>.</param>
         /// <param name="entityId">Parameter <c>entityId</c>.</param>
         /// <param name="imageData">Parameter <c>imageData</c>.</param>
@@ -189,9 +180,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Lädt Cover-Binärdaten für eine einzelne Entity.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="entityType">Parameter <c>entityType</c>.</param>
         /// <param name="entityId">Parameter <c>entityId</c>.</param>
         private async Task<byte[]?> GetCoverBytesAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)

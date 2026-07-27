@@ -33,7 +33,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
         /// <param name="series">Parameter <c>series</c>.</param>
         public void RaiseSeriesSynced(Series series)
         {

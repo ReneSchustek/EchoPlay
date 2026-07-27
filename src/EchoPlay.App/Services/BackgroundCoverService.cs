@@ -476,7 +476,6 @@ namespace EchoPlay.App.Services
         /// den Counter atomar und wartet in kleinen Ticks; bei Cancel gibt die Methode
         /// die <see cref="OperationCanceledException"/> weiter, die die Run-Schleife beendet.
         /// </summary>
-
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task WaitWhilePriorityInFlightAsync(CancellationToken ct)
         {
@@ -701,7 +700,6 @@ namespace EchoPlay.App.Services
         /// und lädt <c>cover.jpg</c> aus dem Stammordner. ID3-Fallback entfällt bewusst,
         /// weil Serien-Cover nur als Dateien im Stammordner existieren.
         /// </summary>
-
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> LoadMissingLocalSeriesCoversAsync(CancellationToken ct)
         {
@@ -770,7 +768,6 @@ namespace EchoPlay.App.Services
         /// Cover aus dem Dateisystem (cover.jpg / ID3-Tags des ersten Tracks).
         /// Nutzt Batch-Queries, um N+1-DB-Roundtrips zu vermeiden.
         /// </summary>
-
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> LoadMissingLocalEpisodeCoversAsync(CancellationToken ct)
         {
@@ -854,7 +851,6 @@ namespace EchoPlay.App.Services
         /// Lädt fehlende Serien-Cover über Provider-URLs (<see cref="Series.CoverImageUrl"/>)
         /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
         /// </summary>
-
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> DownloadMissingSeriesProviderCoversAsync(CancellationToken ct)
         {
@@ -918,7 +914,6 @@ namespace EchoPlay.App.Services
         /// Lädt fehlende Episoden-Cover über Provider-URLs (<see cref="Episode.CoverImageUrl"/>)
         /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
         /// </summary>
-
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task<int> DownloadMissingEpisodeProviderCoversAsync(CancellationToken ct)
         {
@@ -1063,9 +1058,7 @@ namespace EchoPlay.App.Services
         /// deren persistiertes Cover aus <c>CoverImages</c>. Liefert <see langword="null"/>,
         /// wenn die Serie noch nicht importiert ist oder die Quelle unbekannt ist.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="source">Parameter <c>source</c>.</param>
         /// <param name="sourceSeriesId">Parameter <c>sourceSeriesId</c>.</param>
         private async Task<byte[]?> TryGetCachedSeriesCoverAsync(string source, string sourceSeriesId, CancellationToken cancellationToken = default)

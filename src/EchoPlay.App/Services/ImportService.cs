@@ -482,9 +482,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Sucht eine bestehende Serie anhand der externen ID und Quelle.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="service">Parameter <c>service</c>.</param>
         /// <param name="series">Parameter <c>series</c>.</param>
         private static async Task<Series?> FindExistingSeriesAsync(ISeriesDataService service, ImportSeries series, CancellationToken cancellationToken = default)
@@ -503,7 +501,6 @@ namespace EchoPlay.App.Services
         /// Import und Abonnement sind dasselbe Konzept – jede importierte Serie ist direkt abonniert
         /// und erscheint sofort im Dashboard und in der Mediathek.
         /// </summary>
-
         /// <param name="importSeries">Parameter <c>importSeries</c>.</param>
         /// <param name="watchedTitles">Normalisierte Titel mit früher aktivierter Überwachung.</param>
         private static Series MapToSeries(ImportSeries importSeries, IReadOnlySet<string> watchedTitles)
@@ -526,8 +523,6 @@ namespace EchoPlay.App.Services
         /// Erstellt eine <see cref="Episode"/>-Entität aus einem <see cref="ImportEpisode"/>-Modell.
         /// Setzt die provider-spezifische Album-ID anhand der Source-Bezeichnung.
         /// </summary>
-
-
         /// <param name="importEpisode">Parameter <c>importEpisode</c>.</param>
         /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         private static Episode MapToEpisode(ImportEpisode importEpisode, Guid seriesId)

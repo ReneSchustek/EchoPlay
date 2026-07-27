@@ -51,13 +51,10 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-
         /// <param name="folderPath">Parameter <c>folderPath</c>.</param>
         public string BuildAutoLookupQuery(string? folderPath) => BuildAutoLookupQueryCore(folderPath);
 
         /// <inheritdoc />
-
-
         /// <param name="results">Parameter <c>results</c>.</param>
         /// <param name="loadedTrackCount">Parameter <c>loadedTrackCount</c>.</param>
         public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)

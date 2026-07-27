@@ -49,6 +49,7 @@ namespace EchoPlay.App.ViewModels
         private string _scanProgressText = string.Empty;
         private double _scanProgressValue;
         private bool _isScanActive;
+        private readonly ILanguageSwitchService? _languageSwitchService;
 
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Abhängigkeiten.
@@ -57,12 +58,19 @@ namespace EchoPlay.App.ViewModels
         /// <param name="themeService">Service für den Live-Themewechsel.</param>
         /// <param name="taskbar">Service für den Fortschrittsbalken in der Windows-Taskleiste.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
-        public StatusBarViewModel(IServiceScopeFactory scopeFactory, IThemeService themeService, TaskbarProgressService taskbar, IClock clock)
+        /// <param name="languageSwitchService">Kapselt Persistenz, Sprachpräferenz und Neustart. Nullable für Tests.</param>
+        public StatusBarViewModel(
+            IServiceScopeFactory scopeFactory,
+            IThemeService themeService,
+            TaskbarProgressService taskbar,
+            IClock clock,
+            ILanguageSwitchService? languageSwitchService = null)
         {
             _scopeFactory = scopeFactory;
             _themeService = themeService;
             _taskbar = taskbar;
             _clock = clock;
+            _languageSwitchService = languageSwitchService;
 
             // CommandParameter enthält den Theme-Namen bzw. den Sprachcode als string
             SwitchThemeCommand = new ParameterizedRelayCommand(param => SwitchTheme(param as string ?? string.Empty));
@@ -581,19 +589,21 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            // Persistenz, Sprachpräferenz und Neustart liegen im LanguageSwitchService –
+            // die Einstellungsseite nutzt exakt denselben Weg.
+            if (_languageSwitchService is not null)
+            {
+                _ = await _languageSwitchService.ChangeLanguageAsync(languageCode);
+                return;
+            }
+
+            // Ohne registrierten Service (Tests) nur persistieren.
             using IServiceScope scope = _scopeFactory.CreateScope();
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
 
             AppSettings settings = await settingsService.GetAsync();
             settings.ActiveLanguage = languageCode;
             await settingsService.SaveAsync(settings);
-
-            // PrimaryLanguageOverride muss vor dem Neustart gesetzt werden –
-            // Windows App Runtime liest die Sprache beim Start und kann sie danach nicht wechseln
-            Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = languageCode;
-
-            // Neustart des MSIX-Pakets – danach lädt die App alle .resw-Ressourcen in der neuen Sprache
-            _ = Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
         }
     }
 }

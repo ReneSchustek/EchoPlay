@@ -439,6 +439,15 @@
   <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
     <value>Mark series as favorites to see new episodes here.</value>
   </data>
+  <data name="LanguageRestartTitle" xml:space="preserve">
+    <value>Change language</value>
+  </data>
+  <data name="LanguageRestartMessage" xml:space="preserve">
+    <value>The new language appears after a restart. Restart EchoPlay now? Unsaved changes on this page are saved along the way.</value>
+  </data>
+  <data name="LanguageRestartManualMessage" xml:space="preserve">
+    <value>The language has been saved, but the automatic restart failed. Close EchoPlay and start it again — the new language will be active afterwards.</value>
+  </data>
   <data name="DashboardNoWatchedHint.Text" xml:space="preserve">
     <value>No series is currently monitored for new releases. Turn monitoring on in the library using the eye icon.</value>
   </data>

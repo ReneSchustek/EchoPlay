@@ -35,6 +35,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalizationService _localizationService;
         private readonly LoggerManager _loggerManager;
         private readonly StatusBarViewModel _statusBar;
+        private readonly ILanguageSwitchService? _languageSwitchService;
 
         // Referenz auf die geladene Entität – nötig für SaveAsync, um den EF-Track nicht zu verlieren
         private AppSettings? _loadedSettings;
@@ -58,6 +59,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="logViewerCoordinator">Kapselt Dateisystem- und Live-Puffer-Zugriff für den Log-Viewer.</param>
         /// <param name="loggerManager">Wird nach dem Speichern mit den neuen Werten aktualisiert.</param>
         /// <param name="statusBar">StatusBar-Singleton – wird über <see cref="HasUnsavedChanges"/> informiert.</param>
+        /// <param name="languageSwitchService">Kapselt Persistenz, Sprachpräferenz und Neustart. Nullable für Tests.</param>
         public SettingsViewModel(
             IServiceScopeFactory scopeFactory,
             IThemeService themeService,
@@ -71,8 +73,10 @@ namespace EchoPlay.App.ViewModels
             ISpotifyOptionsProvider optionsProvider,
             ILogViewerCoordinator logViewerCoordinator,
             LoggerManager loggerManager,
-            StatusBarViewModel statusBar)
+            StatusBarViewModel statusBar,
+            ILanguageSwitchService? languageSwitchService = null)
         {
+            _languageSwitchService = languageSwitchService;
             _scopeFactory = scopeFactory;
             _themeService = themeService;
             _errorDialogService = errorDialogService;
@@ -528,38 +532,61 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Speichert alle Einstellungen, setzt die Sprachpräferenz und startet die App neu.
+        /// Speichert alle Einstellungen und wechselt die Oberflächensprache.
         /// WinUI 3 kann Ressourcendateien nicht zur Laufzeit neu laden – der Neustart ist zwingend.
+        /// Der Nutzer bestätigt ihn vorher, damit ungespeicherte Arbeit nicht überrascht verschwindet.
         /// </summary>
         /// <param name="languageCode">Der BCP-47-Sprachcode der gewählten Sprache.</param>
         /// <returns>Asynchrone Ausführung bis zum Neustart.</returns>
         public async Task ChangeLanguageAsync(string languageCode)
         {
-            if (_loadedSettings is null)
+            if (_loadedSettings is null || string.IsNullOrWhiteSpace(languageCode))
             {
                 return;
             }
 
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SettingsLanguageChange");
 
-            // Sub-VM-Werte in Entität schreiben, dann Sprache überschreiben
+            bool confirmed = await _confirmationDialogService.ConfirmAsync(
+                _localizationService.Get("LanguageRestartTitle"),
+                _localizationService.Get("LanguageRestartMessage"));
+
+            if (!confirmed)
+            {
+                return;
+            }
+
+            // Sub-VM-Werte in die Entität schreiben, damit der Neustart keine offenen
+            // Änderungen der Einstellungsseite verwirft.
             GeneralVM.WriteTo(_loadedSettings);
             OnlineVM.WriteTo(_loadedSettings);
             LocalVM.WriteTo(_loadedSettings);
             MaintenanceVM.WriteTo(_loadedSettings);
-
             _loadedSettings.ActiveLanguage = languageCode;
 
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            await settingsService.SaveAsync(_loadedSettings);
+            using (IServiceScope scope = _scopeFactory.CreateScope())
+            {
+                IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+                await settingsService.SaveAsync(_loadedSettings);
+            }
 
-            // PrimaryLanguageOverride muss vor dem Neustart gesetzt werden –
-            // Windows App Runtime liest die Sprache beim Start und kann sie danach nicht wechseln
-            Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = languageCode;
+            HasUnsavedChanges = false;
 
-            // Neustart des MSIX-Pakets – danach lädt die App alle .resw-Ressourcen in der neuen Sprache
-            _ = Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
+            if (_languageSwitchService is null)
+            {
+                return;
+            }
+
+            bool restarted = await _languageSwitchService.ChangeLanguageAsync(languageCode);
+
+            if (!restarted)
+            {
+                // Sprache ist persistiert, nur der Neustart kam nicht zustande – der Nutzer
+                // darf nicht im Glauben bleiben, die Auswahl sei verloren.
+                await _errorDialogService.ShowAsync(
+                    _localizationService.Get("LanguageRestartTitle"),
+                    _localizationService.Get("LanguageRestartManualMessage"));
+            }
         }
 
         // ── Pass-Through-Methoden ──────────────────────────────────────────────

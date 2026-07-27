@@ -439,6 +439,15 @@
   <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
     <value>Markiere Serien als Favorit, um hier neue Folgen zu sehen.</value>
   </data>
+  <data name="LanguageRestartTitle" xml:space="preserve">
+    <value>Sprache wechseln</value>
+  </data>
+  <data name="LanguageRestartMessage" xml:space="preserve">
+    <value>Die neue Sprache wird erst nach einem Neustart angezeigt. EchoPlay jetzt neu starten? Nicht gespeicherte Änderungen auf dieser Seite werden dabei mitgespeichert.</value>
+  </data>
+  <data name="LanguageRestartManualMessage" xml:space="preserve">
+    <value>Die Sprache ist gespeichert, der automatische Neustart hat aber nicht geklappt. Beende EchoPlay und starte es erneut – danach ist die neue Sprache aktiv.</value>
+  </data>
   <data name="DashboardNoWatchedHint.Text" xml:space="preserve">
     <value>Zurzeit wird keine Serie auf Neuerscheinungen überwacht. Aktiviere die Überwachung in der Mediathek über das Auge-Symbol.</value>
   </data>

@@ -173,6 +173,11 @@ namespace EchoPlay.App
                 settingsScope.ServiceProvider.GetRequiredService<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>();
             EchoPlay.Data.Entities.Settings.AppSettings appSettings = await settingsService.GetAsync();
 
+            // Sprachpräferenz bei jedem Start neu setzen. Ohne Paket-Identität überlebt sie den
+            // Prozess nicht – ohne diese Zeile startet die App trotz gewählter Sprache wieder
+            // in Systemsprache, während ActiveLanguage unbenutzt in der Datenbank liegt.
+            _ = Services.GetRequiredService<ILanguageSwitchService>().ApplyOverride(appSettings.ActiveLanguage);
+
             _loggerManager?.UpdateRetentionDays(appSettings.LogRetentionDays);
             _loggerManager?.UpdateMinimumLevel(appSettings.MinimumLogLevel);
 
@@ -818,8 +823,18 @@ namespace EchoPlay.App
             // aus den Pages und kapselt die WinUI3-Window-Handle-Initialisierung.
             _ = builder.Services.AddSingleton<IFilePickerService, FilePickerService>();
 
+            // Sprachwechsel an einer Stelle: Persistenz, Sprachpräferenz und Neustart.
+            // Wird auch im Startpfad gebraucht, deshalb Singleton.
+            _ = builder.Services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+            _ = builder.Services.AddSingleton<ILanguageSwitchService, LanguageSwitchService>();
+
             // StatusBarViewModel als Singleton – Statistiken müssen App-weit konsistent sein.
-            _ = builder.Services.AddSingleton<StatusBarViewModel>();
+            _ = builder.Services.AddSingleton<StatusBarViewModel>(provider => new StatusBarViewModel(
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                provider.GetRequiredService<IThemeService>(),
+                provider.GetRequiredService<TaskbarProgressService>(),
+                provider.GetRequiredService<IClock>(),
+                provider.GetRequiredService<ILanguageSwitchService>()));
 
             // MainWindowViewModel als Singleton – passend zum einzigen Hauptfenster der App.
             _ = builder.Services.AddSingleton<MainWindowViewModel>();
@@ -902,7 +917,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<ISpotifyOptionsProvider>(),
                 provider.GetRequiredService<ILogViewerCoordinator>(),
                 provider.GetRequiredService<LoggerManager>(),
-                provider.GetRequiredService<StatusBarViewModel>()));
+                provider.GetRequiredService<StatusBarViewModel>(),
+                provider.GetRequiredService<ILanguageSwitchService>()));
             _ = builder.Services.AddTransient<MiniPlayerViewModel>();
             _ = builder.Services.AddTransient<ImportViewModel>(provider => new ImportViewModel(
                 provider.GetRequiredService<ImportService>(),

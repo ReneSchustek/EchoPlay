@@ -46,5 +46,58 @@ namespace EchoPlay.App.Helpers
 
             return true;
         }
+
+        /// <summary>
+        /// Öffnet eine Anwendungs-URI eines fest vorgegebenen Schemas, z.B. <c>spotify:album:…</c>.
+        /// Damit landet der Nutzer in der installierten App, in der er angemeldet ist — im
+        /// Browser ist er das meist nicht.
+        /// </summary>
+        /// <param name="uri">Die zu öffnende URI.</param>
+        /// <param name="expectedScheme">Das einzige erlaubte Schema, kleingeschrieben (z.B. <c>spotify</c>).</param>
+        /// <returns>
+        /// <see langword="true"/>, wenn die App gestartet wurde; <see langword="false"/>, wenn das
+        /// Schema nicht passt oder kein Programm dafür registriert ist. Der Aufrufer weicht dann
+        /// auf den Web-Link aus.
+        /// </returns>
+        /// <remarks>
+        /// Bewusst getrennt von <see cref="TryOpenInBrowser"/>: Dort bleibt es bei http/https, damit
+        /// eine aus der Datenbank gelesene Provider-Angabe niemals ein beliebiges Programm startet.
+        /// Hier baut ausschließlich EchoPlay selbst die URI aus geprüften Bestandteilen, und das
+        /// Schema muss exakt dem erwarteten entsprechen.
+        /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Protokoll-Start ist ein Zusatzangebot: Ist die App nicht installiert oder das Protokoll nicht registriert, wirft ShellExecute (Win32Exception) oder das Handler-Programm selbst. Der Aufrufer weicht dann auf den Web-Link aus – ein Absturz wäre die schlechtere Antwort.")]
+        public static bool TryOpenAppLink(string? uri, string expectedScheme)
+        {
+            if (string.IsNullOrWhiteSpace(uri) || string.IsNullOrWhiteSpace(expectedScheme))
+            {
+                return false;
+            }
+
+            if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? parsed))
+            {
+                return false;
+            }
+
+            if (!string.Equals(parsed.Scheme, expectedScheme, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            try
+            {
+                _ = Process.Start(new ProcessStartInfo
+                {
+                    FileName = uri,
+                    UseShellExecute = true
+                });
+
+                return true;
+            }
+            catch (Exception)
+            {
+                // Kein Handler registriert – der Aufrufer nimmt den Web-Link.
+                return false;
+            }
+        }
     }
 }

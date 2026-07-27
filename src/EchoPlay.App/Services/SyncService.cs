@@ -230,6 +230,11 @@ namespace EchoPlay.App.Services
             ISeriesDataService seriesService = sp.GetRequiredService<ISeriesDataService>();
             ILocalCoverService localCoverService = sp.GetRequiredService<ILocalCoverService>();
 
+            // Früher überwachte Titel: gibt neu eingelesenen Serien ihre Überwachung zurück,
+            // nachdem die Mediathek geleert wurde (Series-Zeilen sind dabei physisch weg).
+            IReadOnlyCollection<string> watchedTitles =
+                await seriesService.GetWatchedTitlesAsync(cancellationToken);
+
             List<SeriesPipelineEntry> entries = new(scanResults.Count);
             int matched = 0;
             int unmatched = 0;
@@ -256,7 +261,9 @@ namespace EchoPlay.App.Services
                     {
                         Title = scanResult.SeriesName,
                         LocalFolderPath = scanResult.SeriesFolderPath,
-                        IsSubscribed = true
+                        IsSubscribed = true,
+                        IsWatched = watchedTitles.Contains(
+                            EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(scanResult.SeriesName))
                     };
 
                     await seriesService.AddAsync(importedSeries, cancellationToken);

@@ -39,6 +39,8 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalizationService? _localizationService;
         private readonly ILogger _logger;
         private readonly DashboardDataLoader _dataLoader;
+        private readonly INewReleaseEventService? _newReleaseEventService;
+        private readonly DispatcherQueue? _uiDispatcherQueue;
 
         private bool _isLoading;
         private bool _hasSubscribedSeries = true;
@@ -61,6 +63,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
         /// <param name="backgroundCoverService">Hintergrund-Service, der fehlende Folgen-Cover nach dem Rendern nachlädt. Nullable für Tests.</param>
+        /// <param name="newReleaseEventService">Meldet Änderungen am Neuerscheinungen-Cache. Nullable für Tests.</param>
         public DashboardViewModel(
             IServiceScopeFactory scopeFactory,
             IErrorDialogService errorDialogService,
@@ -70,7 +73,8 @@ namespace EchoPlay.App.ViewModels
             ICoverService? coverService = null,
             ILocalizationService? localizationService = null,
             IClock? clock = null,
-            BackgroundCoverService? backgroundCoverService = null)
+            BackgroundCoverService? backgroundCoverService = null,
+            INewReleaseEventService? newReleaseEventService = null)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
@@ -123,6 +127,15 @@ namespace EchoPlay.App.ViewModels
             // FavoritesChanged löst die Neuberechnung des NoFavoritesHint-Visibility-Flags aus,
             // wenn der Nutzer Favoriten entfernt oder umsortiert.
             FavoritenVM.FavoritesChanged += OnFavoritesChanged;
+
+            // Der Neuerscheinungs-Check läuft nach dem Favorisieren im Hintergrund weiter –
+            // ohne dieses Abo bliebe die schon gerenderte Seite auf dem alten Stand.
+            _uiDispatcherQueue = dispatcherQueue;
+            _newReleaseEventService = newReleaseEventService;
+            if (_newReleaseEventService is not null)
+            {
+                _newReleaseEventService.CacheChanged += OnNewReleaseCacheChanged;
+            }
         }
 
         // ── Sub-VMs ─────────────────────────────────────────────────────────────
@@ -573,6 +586,22 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Lädt die Startseite neu, nachdem sich der Neuerscheinungen-Cache geändert hat.
+        /// Der Auslöser läuft im Hintergrund, deshalb der Wechsel auf den UI-Thread.
+        /// Ohne Dispatcher (Unit-Tests) wird direkt geladen.
+        /// </summary>
+        private void OnNewReleaseCacheChanged()
+        {
+            if (_uiDispatcherQueue is null)
+            {
+                _ = LoadAsync();
+                return;
+            }
+
+            _ = _uiDispatcherQueue.TryEnqueue(() => _ = LoadAsync());
+        }
+
+        /// <summary>
         /// Löst alle Event-Subscriptions und gibt das Favoriten-Sub-VM frei.
         /// </summary>
         public void Dispose()
@@ -589,6 +618,12 @@ namespace EchoPlay.App.ViewModels
             ZuletztGehoertVM.PropertyChanged -= OnSubVmPropertyChanged;
 
             FavoritenVM.FavoritesChanged -= OnFavoritesChanged;
+
+            if (_newReleaseEventService is not null)
+            {
+                _newReleaseEventService.CacheChanged -= OnNewReleaseCacheChanged;
+            }
+
             FavoritenVM.Dispose();
         }
     }

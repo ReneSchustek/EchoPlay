@@ -104,6 +104,10 @@ namespace EchoPlay.App.Services
             }
 
             await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(series, scope.ServiceProvider, cancellationToken);
+
+            // Startseite anstoßen: sie ist zu diesem Zeitpunkt längst gerendert und würde
+            // die frisch gefundenen Folgen sonst erst beim nächsten Besuch zeigen.
+            scope.ServiceProvider.GetService<INewReleaseEventService>()?.RaiseCacheChanged();
         }
     }
 }

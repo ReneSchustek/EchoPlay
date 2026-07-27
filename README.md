@@ -17,7 +17,7 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 ### Dashboard
 
 - **Neuerscheinungen** – Neue Folgen überwachter Serien, monatlich gruppiert. Daten kommen live aus der iTunes-API.
-- **Favoriten** – Schnellzugriff auf Lieblingsserien, per Drag & Drop sortierbar. Favorisieren schaltet die Neuerscheinungs-Überwachung gleich mit ein; abschalten lässt sie sich weiterhin einzeln über das Auge-Symbol.
+- **Favoriten** – Schnellzugriff auf Lieblingsserien, per Drag & Drop sortierbar. Favorisieren schaltet die Neuerscheinungs-Überwachung gleich mit ein; abschalten lässt sie sich weiterhin einzeln über das Auge-Symbol. Überwachte Titel bleiben gemerkt: Nach einem Leeren der Mediathek bekommen gleichnamige Serien ihre Überwachung automatisch zurück.
 - **Weiterhören** – Serien mit angefangenen, aber nicht abgeschlossenen Episoden.
 - **Zuletzt gehört** – Die letzten Wiedergaben auf einen Blick.
 

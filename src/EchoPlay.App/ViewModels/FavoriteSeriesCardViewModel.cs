@@ -60,6 +60,12 @@ namespace EchoPlay.App.ViewModels
         public string SeriesName { get; }
 
         /// <summary>
+        /// Automation-Name der Kontextmenü-Schaltfläche auf der Favoriten-Kachel.
+        /// </summary>
+        public string ActionsAutomationName => AutomationNameFormatter.Format(
+            _localizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", SeriesName);
+
+        /// <summary>
         /// Coverbild der Serie.
         /// <see langword="null"/> wenn weder lokal gespeicherte Bilddaten noch eine Cover-URL vorhanden sind.
         /// </summary>

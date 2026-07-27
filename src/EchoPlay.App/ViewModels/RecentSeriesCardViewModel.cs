@@ -10,6 +10,8 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class RecentSeriesCardViewModel
     {
+        private readonly EchoPlay.App.Services.ILocalizationService? _localizationService;
+
         /// <summary>
         /// Initialisiert das ViewModel mit den nötigen Daten.
         /// </summary>
@@ -17,12 +19,15 @@ namespace EchoPlay.App.ViewModels
         /// <param name="seriesName">Titel der Serie.</param>
         /// <param name="lastEpisodeTitle">Titel der zuletzt gehörten Episode.</param>
         /// <param name="coverImage">Coverbild der Serie, oder <see langword="null"/> wenn keines vorhanden ist.</param>
+        /// <param name="localizationService">Für den Automation-Namen der Kachel. Nullable für Tests.</param>
         public RecentSeriesCardViewModel(
             Guid seriesId,
             string seriesName,
             string lastEpisodeTitle,
-            BitmapImage? coverImage)
+            BitmapImage? coverImage,
+            EchoPlay.App.Services.ILocalizationService? localizationService = null)
         {
+            _localizationService = localizationService;
             SeriesId = seriesId;
             SeriesName = seriesName;
             LastEpisodeTitle = lastEpisodeTitle;
@@ -34,6 +39,12 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Titel der Serie, z.B. "Die drei ???".</summary>
         public string SeriesName { get; }
+
+        /// <summary>
+        /// Automation-Name der Kachel-Schaltfläche: nennt die Aktion und die Serie.
+        /// </summary>
+        public string OpenAutomationName => AutomationNameFormatter.Format(
+            _localizationService, "TileOpenAutomationName", "Öffnen: {0}", SeriesName);
 
         /// <summary>
         /// Titel der zuletzt gehörten Episode.

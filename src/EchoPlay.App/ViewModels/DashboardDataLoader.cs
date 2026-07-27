@@ -433,7 +433,8 @@ namespace EchoPlay.App.ViewModels
                     seriesId: series.Id,
                     seriesName: series.Title,
                     lastEpisodeTitle: episode.Title,
-                    coverImage: cover));
+                    coverImage: cover,
+                    localizationService: _localizationService));
             }
 
             return result;

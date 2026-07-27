@@ -897,7 +897,13 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IPageModeGuard>(),
                 provider.GetRequiredService<BackgroundCoverService>()));
             _ = builder.Services.AddTransient<PlayerViewModel>();
-            _ = builder.Services.AddTransient<SeriesDetailViewModel>();
+            _ = builder.Services.AddTransient<SeriesDetailViewModel>(provider => new SeriesDetailViewModel(
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                provider.GetRequiredService<IPlayerService>(),
+                provider.GetRequiredService<IClock>(),
+                provider.GetRequiredService<ICoverService>(),
+                provider.GetRequiredService<BackgroundCoverService>(),
+                provider.GetRequiredService<ILocalizationService>()));
             // App-Services für Settings: Verbindungstest und Log-Viewer sind als eigenständige
             // Coordinators implementiert, damit das SettingsViewModel stateless Logik nicht selbst trägt.
             _ = builder.Services.AddSingleton<IConnectionTestCoordinator, ConnectionTestCoordinator>();

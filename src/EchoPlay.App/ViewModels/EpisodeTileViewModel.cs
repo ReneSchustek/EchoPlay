@@ -16,6 +16,8 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class EpisodeTileViewModel
     {
+        private readonly EchoPlay.App.Services.ILocalizationService? _localizationService;
+
         /// <summary>
         /// Erstellt ein Kachel-ViewModel für eine Episode.
         /// </summary>
@@ -32,6 +34,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="progressPercent">Wiedergabefortschritt in Prozent (0–100).</param>
         /// <param name="isSpecialEpisode">Ob es sich um eine Sonderfolge handelt.</param>
         /// <param name="coverImage">Vorab geladenes Cover oder null für Platzhalter.</param>
+        /// <param name="localizationService">Für den Automation-Namen der Kontextmenü-Schaltfläche. Nullable für Tests.</param>
         public EpisodeTileViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -42,8 +45,10 @@ namespace EchoPlay.App.ViewModels
             Action playEpisode,
             double progressPercent = 0,
             bool isSpecialEpisode = false,
-            BitmapImage? coverImage = null)
+            BitmapImage? coverImage = null,
+            EchoPlay.App.Services.ILocalizationService? localizationService = null)
         {
+            _localizationService = localizationService;
             EpisodeId = episodeId;
             EpisodeNumber = episodeNumber;
             Title = title;
@@ -98,6 +103,12 @@ namespace EchoPlay.App.ViewModels
         public string DisplayTitle => EpisodeNumber.HasValue
             ? $"{EpisodeNumber.Value:D3} \u2013 {Title}"
             : Title;
+
+        /// <summary>
+        /// Automation-Name der Kontextmen\u00fc-Schaltfl\u00e4che auf der Folgen-Kachel.
+        /// </summary>
+        public string ActionsAutomationName => AutomationNameFormatter.Format(
+            _localizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", DisplayTitle);
 
         /// <summary>
         /// Formatierte Dauer, z.B. "1:23:45".

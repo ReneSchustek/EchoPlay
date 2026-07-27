@@ -28,7 +28,7 @@
                 </Grid.Clip>
 
                 <!-- Cover als klickbare Schaltfläche -->
-                <Button Width="160" Height="160" Padding="0" AutomationProperties.Name="{x:Bind EpisodeTitle}"
+                <Button Width="160" Height="160" Padding="0" AutomationProperties.Name="{x:Bind PlayAutomationName}"
                         Command="{x:Bind PlayCommand}" CornerRadius="8">
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
@@ -48,7 +48,7 @@
                           Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
 
                 <!-- Kontextmenü oben rechts -->
-                <Button Content="&#xE712;" AutomationProperties.Name="{x:Bind EpisodeTitle}" FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                <Button Content="&#xE712;" AutomationProperties.Name="{x:Bind ActionsAutomationName}" FontFamily="{ThemeResource SymbolThemeFontFamily}"
                         Width="28" Height="28" Padding="0"
                         HorizontalAlignment="Right" VerticalAlignment="Top"
                         Margin="0,4,4,0" CornerRadius="4"
@@ -87,7 +87,7 @@
         <DataTemplate x:Key="InProgressTileTemplate" x:DataType="viewmodels:NewEpisodeCardViewModel">
             <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind EpisodeTitle}">
                 <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
-                <Button Width="160" Height="160" Padding="0" AutomationProperties.Name="{x:Bind EpisodeTitle}"
+                <Button Width="160" Height="160" Padding="0" AutomationProperties.Name="{x:Bind PlayAutomationName}"
                         Command="{x:Bind PlayCommand}" CornerRadius="8">
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
@@ -112,7 +112,7 @@
         <DataTemplate x:Key="UnheardSeriesTileTemplate" x:DataType="viewmodels:UnheardSeriesCardViewModel">
             <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind SeriesName}">
                 <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
-                <Button Width="160" Height="160" Padding="0" Background="Transparent" AutomationProperties.Name="{x:Bind SeriesName}"
+                <Button Width="160" Height="160" Padding="0" Background="Transparent" AutomationProperties.Name="{x:Bind OpenAutomationName}"
                         BorderThickness="0" Click="OnUnheardSeriesClick"
                         Tag="{x:Bind SeriesId}" CornerRadius="8">
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
@@ -132,7 +132,7 @@
         <DataTemplate x:Key="RecentSeriesTileTemplate" x:DataType="viewmodels:RecentSeriesCardViewModel">
             <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind SeriesName}">
                 <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
-                <Button Width="160" Height="160" Padding="0" Background="Transparent" AutomationProperties.Name="{x:Bind SeriesName}"
+                <Button Width="160" Height="160" Padding="0" Background="Transparent" AutomationProperties.Name="{x:Bind OpenAutomationName}"
                         BorderThickness="0" Click="OnRecentSeriesClick"
                         Tag="{x:Bind SeriesId}" CornerRadius="8">
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
@@ -296,7 +296,7 @@
                                     </Border>
 
                                     <!-- Kontextmenü oben rechts -->
-                                    <Button Content="&#xE712;" AutomationProperties.Name="{x:Bind SeriesName}" FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                    <Button Content="&#xE712;" AutomationProperties.Name="{x:Bind ActionsAutomationName}" FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                         Width="28" Height="28" Padding="0" HorizontalAlignment="Right" VerticalAlignment="Top"
                                         Margin="0,4,4,0" CornerRadius="4" Background="#88000000" Foreground="White">
                                         <Button.Flyout><MenuFlyout>

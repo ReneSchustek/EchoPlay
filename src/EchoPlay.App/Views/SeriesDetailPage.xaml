@@ -219,7 +219,7 @@
 
                                             <!-- Kontextmenü oben rechts – überlagert den Text-Bereich -->
                                             <Button
-                                        AutomationProperties.Name="{x:Bind DisplayTitle}"
+                                        AutomationProperties.Name="{x:Bind ActionsAutomationName}"
                                                 Content="&#xE712;"
                                                 FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                                 Width="24" Height="24" Padding="0"

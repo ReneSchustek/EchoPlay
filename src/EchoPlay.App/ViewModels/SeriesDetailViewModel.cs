@@ -39,6 +39,8 @@ namespace EchoPlay.App.ViewModels
         // Wird beim Page-Verlassen über Cleanup() gestoppt.
         private readonly CancellationTokenSource _lifecycleCts = new();
 
+        private readonly ILocalizationService? _localizationService;
+
         private string _seriesTitle = string.Empty;
         private string _seriesDescription = string.Empty;
         private Guid _seriesId;
@@ -67,18 +69,21 @@ namespace EchoPlay.App.ViewModels
         /// die Folgen-Cover der geöffneten Serie und pausiert damit den laufenden
         /// Hintergrund-Scan, bis die sichtbare Serie versorgt ist.
         /// </param>
+        /// <param name="localizationService">Für die Automation-Namen der Folgen-Kacheln. Nullable für Tests.</param>
         public SeriesDetailViewModel(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
             IClock clock,
             ICoverService? coverService = null,
-            BackgroundCoverService? backgroundCoverService = null)
+            BackgroundCoverService? backgroundCoverService = null,
+            ILocalizationService? localizationService = null)
         {
             _scopeFactory = scopeFactory;
             _playerService = playerService;
             _clock = clock;
             _coverService = coverService;
             _backgroundCoverService = backgroundCoverService;
+            _localizationService = localizationService;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
         }
@@ -366,7 +371,8 @@ namespace EchoPlay.App.ViewModels
                         playEpisode: () => _ = PlayEpisodeAsync(capturedId),
                         progressPercent: progressPercent,
                         isSpecialEpisode: episode.EpisodeNumber is null or 0,
-                        coverImage: cover);
+                        coverImage: cover,
+                        localizationService: _localizationService);
 
                     tiles.Add(tile);
                 }

@@ -197,6 +197,18 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Episodentitel.</summary>
         public string EpisodeTitle { get; }
 
+        /// <summary>
+        /// Automation-Name der Cover-Schaltfläche: nennt die Aktion und die Folge.
+        /// </summary>
+        public string PlayAutomationName => AutomationNameFormatter.Format(
+            _localizationService, "TilePlayAutomationName", "Abspielen: {0}", EpisodeTitle);
+
+        /// <summary>
+        /// Automation-Name der Kontextmenü-Schaltfläche.
+        /// </summary>
+        public string ActionsAutomationName => AutomationNameFormatter.Format(
+            _localizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", EpisodeTitle);
+
         /// <summary>Episodennummer oder null wenn keine Nummer bekannt ist.</summary>
         public int? EpisodeNumber { get; }
 

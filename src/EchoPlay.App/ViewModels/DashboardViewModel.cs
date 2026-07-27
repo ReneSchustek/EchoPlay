@@ -466,7 +466,7 @@ namespace EchoPlay.App.ViewModels
                 if (completedCount > 0 && unheardCount > 0)
                 {
                     BitmapImage? cover = await _dataLoader.BuildSeriesCoverAsync(series);
-                    unheardList.Add(new UnheardSeriesCardViewModel(series.Id, series.Title, cover, unheardCount));
+                    unheardList.Add(new UnheardSeriesCardViewModel(series.Id, series.Title, cover, unheardCount, _localizationService));
                 }
             }
 

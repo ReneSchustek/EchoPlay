@@ -109,7 +109,7 @@
                 Padding="16,0">
                 <GridView.ItemTemplate>
                     <DataTemplate x:DataType="vm:SearchResultViewModel">
-                        <Grid Width="160" Margin="4">
+                        <Grid Width="160" Margin="4" AutomationProperties.Name="{x:Bind Title, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="160"/>
                                 <RowDefinition Height="Auto"/>

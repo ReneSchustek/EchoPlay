@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="EchoPlay.App.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -271,6 +271,7 @@
 
                 <!-- Theme-Wechsel-Button mit Palette-Icon (E790) -->
                 <Button
+                    x:Uid="MainThemeButton"
                     Padding="8,4"
                     BorderThickness="0"
                     Background="Transparent"

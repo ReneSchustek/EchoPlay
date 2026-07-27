@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.TagManagerPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,7 +9,7 @@
     <Page.Resources>
         <!-- Template für MusicBrainz-Suchergebnisse im Auswahl-Dialog -->
         <DataTemplate x:Key="LookupResultTemplate" x:DataType="models:TagLookupCandidate">
-            <StackPanel Padding="4,2">
+            <StackPanel Padding="4,2" AutomationProperties.Name="{x:Bind Source}">
                 <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold"/>
                 <TextBlock Text="{x:Bind Artist}" Style="{ThemeResource CaptionTextBlockStyle}"/>
                 <TextBlock Text="{x:Bind Year}" Style="{ThemeResource CaptionTextBlockStyle}"/>
@@ -66,7 +66,7 @@
                 Padding="0">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="vm:TagFileItemViewModel">
-                        <StackPanel Padding="4,2">
+                        <StackPanel Padding="4,2" AutomationProperties.Name="{x:Bind FileName}">
                             <TextBlock
                                 Text="{x:Bind RelativePath}"
                                 TextTrimming="CharacterEllipsis"
@@ -294,7 +294,7 @@
                         Margin="0,4,0,0">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="models:RenamePreviewDisplay">
-                                <StackPanel Padding="4,2">
+                                <StackPanel Padding="4,2" AutomationProperties.Name="{x:Bind NewName}">
                                     <!-- Neuer Name prominent, alter Name als Herkunftshinweis -->
                                     <TextBlock Text="{x:Bind NewName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{x:Bind OldName}" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>

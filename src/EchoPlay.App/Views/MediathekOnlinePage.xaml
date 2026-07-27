@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.MediathekOnlinePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -11,6 +11,7 @@
              Vermeidet Duplikation des Kontextmenüs und des SeriesTileControl-Markups. -->
         <DataTemplate x:Key="OnlineSeriesTileTemplate" x:DataType="vm:SeriesCardViewModel">
             <ctrl:SeriesTileControl
+                AutomationProperties.Name="{x:Bind Title, Mode=OneTime}"
                 CoverImage="{x:Bind CoverImage, Mode=OneWay}"
                 Title="{x:Bind Title, Mode=OneTime}"
                 Subtitle="{x:Bind CountText, Mode=OneTime}"
@@ -229,7 +230,7 @@
             </GridView.ItemContainerStyle>
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="vm:SearchResultViewModel">
-                    <Grid Width="140" Height="140" Margin="4" CornerRadius="4">
+                    <Grid Width="140" Height="140" Margin="4" CornerRadius="4" AutomationProperties.Name="{x:Bind Title}">
                         <Grid.Clip>
                             <RectangleGeometry Rect="0,0,140,140"/>
                         </Grid.Clip>
@@ -370,6 +371,7 @@
                     <ctrl:EpisodeAccordionControl.EpisodeTemplate>
                         <DataTemplate x:DataType="vm:OnlineEpisodeCardViewModel">
                             <ctrl:EpisodeTileControl
+                                AutomationProperties.Name="{x:Bind Title, Mode=OneTime}"
                                 CoverImage="{x:Bind CoverImage, Mode=OneWay}"
                                 Title="{x:Bind DisplayText, Mode=OneTime}"
                                 StatusTextValue="{x:Bind ReleaseDateText, Mode=OneTime}"

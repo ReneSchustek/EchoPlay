@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -279,6 +279,9 @@
   <data name="LanguageApplyButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Übernehmen</value>
   </data>
+  <data name="LanguageApplyButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Sprache übernehmen</value>
+  </data>
 
   <!-- MediathekOnlinePage – Statusfilter, Aktionen und Abonnement-Menü -->
   <data name="MediathekOnlineAddButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -438,6 +441,9 @@
   </data>
   <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
     <value>Markiere Serien als Favorit, um hier neue Folgen zu sehen.</value>
+  </data>
+  <data name="DashboardGroupAnnounced" xml:space="preserve">
+    <value>Angekündigt</value>
   </data>
   <data name="LanguageRestartTitle" xml:space="preserve">
     <value>Sprache wechseln</value>
@@ -1491,4 +1497,36 @@ Die Anwendung wird beendet.</value>
     <value>Spotify getrennt – Apple Music aktiv</value>
   </data>
 
+
+  <!-- Barrierefreiheit: Namen fuer Schaltflaechen, die nur ein Icon zeigen -->
+  <data name="MainThemeButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Farbthema wechseln</value>
+  </data>
+  <data name="HelpButtonControlButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Hilfe zu dieser Seite</value>
+  </data>
+  <data name="TileRowScrollLeftButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Nach links blättern</value>
+  </data>
+  <data name="TileRowScrollRightButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Nach rechts blättern</value>
+  </data>
+  <data name="SeriesTileContextMenuButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Weitere Aktionen für diese Serie</value>
+  </data>
+  <data name="DashboardFavoritesScrollLeft.AutomationProperties.Name" xml:space="preserve">
+    <value>Favoriten nach links blättern</value>
+  </data>
+  <data name="DashboardFavoritesScrollRight.AutomationProperties.Name" xml:space="preserve">
+    <value>Favoriten nach rechts blättern</value>
+  </data>
+  <data name="PlayerPreviousButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Vorherige Folge</value>
+  </data>
+  <data name="PlayerNextButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Nächste Folge</value>
+  </data>
+  <data name="SeriesDetailBackButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
 </root>

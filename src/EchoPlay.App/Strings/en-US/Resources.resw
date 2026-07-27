@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -279,6 +279,9 @@
   <data name="LanguageApplyButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="LanguageApplyButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Apply language</value>
+  </data>
 
   <!-- MediathekOnlinePage – status filter, actions and subscription menu -->
   <data name="MediathekOnlineAddButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -438,6 +441,9 @@
   </data>
   <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
     <value>Mark series as favorites to see new episodes here.</value>
+  </data>
+  <data name="DashboardGroupAnnounced" xml:space="preserve">
+    <value>Announced</value>
   </data>
   <data name="LanguageRestartTitle" xml:space="preserve">
     <value>Change language</value>
@@ -1489,4 +1495,36 @@ The application will close.</value>
     <value>Spotify disconnected – Apple Music active</value>
   </data>
 
+
+  <!-- Barrierefreiheit: Namen fuer Schaltflaechen, die nur ein Icon zeigen -->
+  <data name="MainThemeButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Change colour theme</value>
+  </data>
+  <data name="HelpButtonControlButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Help for this page</value>
+  </data>
+  <data name="TileRowScrollLeftButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Scroll left</value>
+  </data>
+  <data name="TileRowScrollRightButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Scroll right</value>
+  </data>
+  <data name="SeriesTileContextMenuButton.AutomationProperties.Name" xml:space="preserve">
+    <value>More actions for this series</value>
+  </data>
+  <data name="DashboardFavoritesScrollLeft.AutomationProperties.Name" xml:space="preserve">
+    <value>Scroll favourites left</value>
+  </data>
+  <data name="DashboardFavoritesScrollRight.AutomationProperties.Name" xml:space="preserve">
+    <value>Scroll favourites right</value>
+  </data>
+  <data name="PlayerPreviousButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Previous episode</value>
+  </data>
+  <data name="PlayerNextButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Next episode</value>
+  </data>
+  <data name="SeriesDetailBackButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Back</value>
+  </data>
 </root>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.SeriesDetailPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -29,6 +29,7 @@
 
             <!-- Zurück-Pfeil -->
             <Button
+                x:Uid="SeriesDetailBackButton"
                 Grid.Column="0"
                 Click="OnBackClick"
                 Style="{ThemeResource SubtleButtonStyle}"
@@ -175,6 +176,7 @@
                         <GridView.ItemTemplate>
                             <DataTemplate x:DataType="vm:EpisodeTileViewModel">
                                 <Border
+                                    AutomationProperties.Name="{x:Bind DisplayTitle}"
                                     Width="220"
                                     Height="100"
                                     CornerRadius="4"
@@ -217,6 +219,7 @@
 
                                             <!-- Kontextmenü oben rechts – überlagert den Text-Bereich -->
                                             <Button
+                                        AutomationProperties.Name="{x:Bind DisplayTitle}"
                                                 Content="&#xE712;"
                                                 FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                                 Width="24" Height="24" Padding="0"
@@ -337,7 +340,7 @@
                         SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:LocalTrackRowViewModel">
-                                <Grid Padding="0,4">
+                                <Grid Padding="0,4" AutomationProperties.Name="{x:Bind FileName}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="32"/>
                                         <ColumnDefinition Width="*"/>

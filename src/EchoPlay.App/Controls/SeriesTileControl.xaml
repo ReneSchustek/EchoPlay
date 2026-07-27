@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Wiederverwendbare Serien-Kachel (140×140) mit Cover, Text-Overlay und optionalen Buttons.
      Wird in lokaler und Online-Mediathek identisch verwendet – DRY statt duplizierter DataTemplates.
      Optionales V-Icon unter der Kachel zeigt die aktive Serie im Akkordeon. -->
@@ -75,6 +75,7 @@
 
             <!-- Kontextmenü-Button oben rechts -->
             <Button
+                    x:Uid="SeriesTileContextMenuButton"
                 x:Name="ContextMenuButton"
                 Content="&#xE712;"
                 FontFamily="{ThemeResource SymbolThemeFontFamily}"

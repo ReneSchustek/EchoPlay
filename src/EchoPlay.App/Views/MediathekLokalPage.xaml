@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.MediathekLokalPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,6 +12,7 @@
              Indikatoren (Favorit, Watched, Auswahl) in beiden Grids konsistent angezeigt werden. -->
         <DataTemplate x:Key="LokalSeriesTileTemplate" x:DataType="vm:LocalArtistCardViewModel">
             <ctrl:SeriesTileControl
+                AutomationProperties.Name="{x:Bind Title, Mode=OneTime}"
                 CoverImage="{x:Bind CoverImage, Mode=OneWay}"
                 Title="{x:Bind Title, Mode=OneTime}"
                 Subtitle="{x:Bind CountText, Mode=OneTime}"
@@ -312,6 +313,7 @@
                         <ctrl:EpisodeAccordionControl.EpisodeTemplate>
                             <DataTemplate x:DataType="vm:LocalEpisodeCardViewModel">
                                 <ctrl:EpisodeTileControl
+                                    AutomationProperties.Name="{x:Bind Title, Mode=OneTime}"
                                     CoverImage="{x:Bind CoverImage, Mode=OneWay}"
                                     Title="{x:Bind Title, Mode=OneTime}"
                                     StatusTextValue="{x:Bind EpisodeNumberText, Mode=OneTime}"
@@ -420,7 +422,7 @@
                             SelectionMode="None">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:LocalTrackRowViewModel">
-                                    <Grid Padding="0,4" ColumnSpacing="8">
+                                    <Grid Padding="0,4" ColumnSpacing="8" AutomationProperties.Name="{x:Bind FileName}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="28"/>
                                             <ColumnDefinition Width="*"/>

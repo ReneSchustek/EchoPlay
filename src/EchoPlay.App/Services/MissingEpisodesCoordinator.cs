@@ -342,28 +342,10 @@ namespace EchoPlay.App.Services
 
             if (episodeFolderNames.Count == 0) return ([], 0);
 
-            EpisodeFolderParser? bestParser = SelectBestParser(episodeFolderNames);
-            if (bestParser is null) return ([], 0);
+            IReadOnlyList<int> numbers = LocalEpisodeNumbers.Scan(episodeFolderNames);
+            if (numbers.Count == 0) return ([], 0);
 
-            HashSet<int> foundNumbers = [];
-            int maxNumber = 0;
-
-            foreach (string name in episodeFolderNames)
-            {
-                if (bestParser.TryParse(name, out int? number, out _) && number is > 0)
-                {
-                    _ = foundNumbers.Add(number.Value);
-                    if (number.Value > maxNumber) maxNumber = number.Value;
-                }
-            }
-
-            List<int> gaps = [];
-            for (int i = 1; i <= maxNumber; i++)
-            {
-                if (!foundNumbers.Contains(i)) gaps.Add(i);
-            }
-
-            return (gaps, maxNumber);
+            return ([.. LocalEpisodeNumbers.FindGaps(numbers)], numbers[^1]);
         }
 
         /// <summary>
@@ -418,46 +400,24 @@ namespace EchoPlay.App.Services
                 return ["Keine Folgenordner mit Audiodateien gefunden."];
             }
 
-            // Wichtig: nur EIN Hauptmuster verwenden, damit Sonderfolgen wie
-            // "000 - Planetarium - 001 - Titel" nicht als Folge 001 gezählt werden.
-            EpisodeFolderParser? bestParser = SelectBestParser(episodeFolderNames);
-            if (bestParser is null)
+            IReadOnlyList<int> numbers = LocalEpisodeNumbers.Scan(episodeFolderNames);
+            if (numbers.Count == 0)
             {
                 return [$"{episodeFolderNames.Count} Folgen vorhanden (keine Nummerierung erkannt)."];
             }
 
-            HashSet<int> foundNumbers = [];
-            int maxNumber = 0;
-
-            foreach (string name in episodeFolderNames)
-            {
-                if (bestParser.TryParse(name, out int? number, out _) && number is > 0)
-                {
-                    _ = foundNumbers.Add(number.Value);
-                    if (number.Value > maxNumber)
-                    {
-                        maxNumber = number.Value;
-                    }
-                }
-            }
-
-            List<int> gaps = [];
-            for (int i = 1; i <= maxNumber; i++)
-            {
-                if (!foundNumbers.Contains(i))
-                {
-                    gaps.Add(i);
-                }
-            }
+            IReadOnlyList<int> gaps = LocalEpisodeNumbers.FindGaps(numbers);
+            int minNumber = numbers[0];
+            int maxNumber = numbers[^1];
 
             if (gaps.Count == 0)
             {
-                return [$"Alle Folgen vorhanden (1\u2013{maxNumber}), keine Lücken."];
+                return [$"Alle Folgen vorhanden ({minNumber}–{maxNumber}), keine Lücken."];
             }
 
             List<string> messages =
             [
-                $"{gaps.Count} fehlende Folge(n) von {maxNumber}:",
+                $"{gaps.Count} fehlende Folge(n) im Bereich {minNumber}–{maxNumber}:",
                 string.Empty
             ];
 
@@ -469,43 +429,5 @@ namespace EchoPlay.App.Services
             return messages;
         }
 
-        /// <summary>
-        /// Wählt aus den Kandidaten-Parsern denjenigen aus, der die meisten
-        /// Episodenordner erfolgreich nummeriert. Liefert <see langword="null"/>
-        /// wenn keine Übereinstimmung gefunden wurde.
-        /// </summary>
-
-        /// <param name="episodeFolderNames">Parameter <c>episodeFolderNames</c>.</param>
-        private static EpisodeFolderParser? SelectBestParser(List<string> episodeFolderNames)
-        {
-            EpisodeFolderParser[] candidateParsers =
-            [
-                new("{number:000} - {title}"),
-                new("{*} - {number:000} - {title}"),
-                new("Folge {number:000} - {title}"),
-                new("{number:000}_{title}"),
-                new("{number} - {title}"),
-                new("{title} - {number:000}"),
-                new("{number:000} {title}"),
-                new("{*} - {number} - {title}")
-            ];
-
-            EpisodeFolderParser? bestParser = null;
-            int bestMatchCount = 0;
-
-            foreach (EpisodeFolderParser parser in candidateParsers)
-            {
-                int matchCount = episodeFolderNames
-                    .Count(name => parser.TryParse(name, out int? num, out _) && num is > 0);
-
-                if (matchCount > bestMatchCount)
-                {
-                    bestMatchCount = matchCount;
-                    bestParser = parser;
-                }
-            }
-
-            return bestParser;
-        }
     }
 }

@@ -26,6 +26,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
 
             // LoadAsync liest auch Episode-, PlaybackState- und AppSettings-Daten
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
@@ -283,6 +284,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<IPlaybackStateDataService>(_ => stateServiceWithCounts);
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(

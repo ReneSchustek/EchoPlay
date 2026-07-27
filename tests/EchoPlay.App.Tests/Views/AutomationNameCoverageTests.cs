@@ -64,11 +64,15 @@ namespace EchoPlay.App.Tests.Views
                     if (!IsIconOnly(button)) continue;
                     if (HasAutomationName(button)) continue;
 
-                    // x:Uid genügt: der Name kommt dann aus der .resw
-                    // (<Uid>.AutomationProperties.Name) und ist damit lokalisiert.
-                    if (button.Attribute(X + "Uid") is not null) continue;
+                    // x:Uid genügt nur, wenn die .resw dazu auch wirklich einen Namen liefert.
+                    // Gegenbeispiel aus dem Smoke-Test: LogRefreshButton hatte ein x:Uid, in der
+                    // .resw aber ausschließlich einen ToolTip — Screenreader lasen nichts vor.
+                    string? uid = button.Attribute(X + "Uid")?.Value;
+                    if (uid is not null && LocalizedNameKeys.Contains(uid)) continue;
 
-                    offenders.Add($"{Path.GetFileName(file)}: Button mit reinem Icon-Inhalt, Zeile {LineOf(button)}");
+                    offenders.Add(uid is null
+                        ? $"{Path.GetFileName(file)}:{LineOf(button)} – Button mit reinem Icon-Inhalt"
+                        : $"{Path.GetFileName(file)}:{LineOf(button)} – x:Uid=\"{uid}\" ohne \"{uid}.AutomationProperties.Name\" in der .resw");
                 }
             }
 
@@ -81,6 +85,27 @@ namespace EchoPlay.App.Tests.Views
         // als Attributnamen "AutomationProperties.Name".
         private static bool HasAutomationName(XElement element) =>
             element.Attribute("AutomationProperties.Name") is not null;
+
+        /// <summary>
+        /// Alle x:Uid-Werte, für die die deutsche .resw einen
+        /// <c>&lt;Uid&gt;.AutomationProperties.Name</c> hinterlegt.
+        /// Die englische Datei wird von <c>checker-i18n-check.sh</c> gegen die deutsche
+        /// abgeglichen — ein Schlüssel hier genügt daher als Beleg für beide Sprachen.
+        /// </summary>
+        private static readonly HashSet<string> LocalizedNameKeys = LoadLocalizedNameKeys();
+
+        private static HashSet<string> LoadLocalizedNameKeys()
+        {
+            string resw = Path.Combine(RepositoryRoot(), "src", "EchoPlay.App", "Strings", "de", "Resources.resw");
+
+            const string suffix = ".AutomationProperties.Name";
+
+            return [.. XDocument.Load(resw)
+                .Descendants("data")
+                .Select(d => d.Attribute("name")?.Value)
+                .Where(n => n is not null && n.EndsWith(suffix, StringComparison.Ordinal))
+                .Select(n => n![..^suffix.Length])];
+        }
 
         /// <summary>
         /// Ein Button gilt als „nur Icon", wenn er weder Content-Attribut noch Textinhalt hat
@@ -107,7 +132,7 @@ namespace EchoPlay.App.Tests.Views
         private static int LineOf(XElement element) =>
             (element as System.Xml.IXmlLineInfo)?.LineNumber ?? 0;
 
-        private static IEnumerable<string> EnumerateXamlFiles()
+        private static string RepositoryRoot()
         {
             string baseDir = AppContext.BaseDirectory;
             DirectoryInfo? dir = new(baseDir);
@@ -116,13 +141,14 @@ namespace EchoPlay.App.Tests.Views
                 dir = dir.Parent;
             }
 
-            if (dir is null)
-            {
-                throw new InvalidOperationException($"EchoPlay.slnx nicht gefunden, ausgehend von '{baseDir}'.");
-            }
+            return dir?.FullName
+                ?? throw new InvalidOperationException($"EchoPlay.slnx nicht gefunden, ausgehend von '{baseDir}'.");
+        }
 
+        private static IEnumerable<string> EnumerateXamlFiles()
+        {
             return Directory
-                .EnumerateFiles(dir.FullName, "*.xaml", SearchOption.AllDirectories)
+                .EnumerateFiles(RepositoryRoot(), "*.xaml", SearchOption.AllDirectories)
                 .Where(p => p.Contains(Path.DirectorySeparatorChar + "EchoPlay.App" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
                     && !p.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
                     && !p.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)

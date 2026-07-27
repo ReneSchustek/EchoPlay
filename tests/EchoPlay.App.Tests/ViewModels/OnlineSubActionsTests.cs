@@ -39,6 +39,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService ?? new FakeEpisodeDataService());
             _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(

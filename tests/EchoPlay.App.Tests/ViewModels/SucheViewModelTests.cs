@@ -53,6 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 "AppleMusic",
                 (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
@@ -97,6 +98,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
         }
 

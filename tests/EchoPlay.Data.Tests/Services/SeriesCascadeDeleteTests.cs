@@ -30,7 +30,7 @@ namespace EchoPlay.Data.Tests.Services
             // Der PlaybackState ist ein rein technisches Kindelement der Episode und muss ebenfalls logisch entfernt werden.
             PlaybackState playbackState = await DataBuilder.PersistPlaybackStateAsync(episode);
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
 
             // Das Löschen der Serie löst bewusst die vollständige Cascade über Episoden bis hin zu PlaybackStates aus.
             await service.DeleteAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);

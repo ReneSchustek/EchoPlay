@@ -76,7 +76,9 @@ namespace EchoPlay.App.Views
 
                 // Erste Log-Einträge laden – der Setter von SelectedLogFile gibt keinen Refresh
                 // aus wenn der Wert sich beim Set nicht geändert hat (SetProperty gibt false zurück).
-                ViewModel.RefreshLogs();
+                // RefreshLogView statt ViewModel.RefreshLogs: Letzteres füllt nur die Liste im
+                // ViewModel, der RichTextBlock bliebe leer bis zum ersten Klick auf Aktualisieren.
+                RefreshLogView();
             });
         }
 
@@ -211,6 +213,10 @@ namespace EchoPlay.App.Views
             if (sender is ComboBox { SelectedItem: LogFileOption option })
             {
                 ViewModel.SelectedLogFile = option;
+
+                // Der Setter lädt nur die Einträge ins ViewModel – die Anzeige muss
+                // getrennt nachgezogen werden, sonst zeigt sie weiter die alte Datei.
+                RefreshLogView();
             }
         }
     }

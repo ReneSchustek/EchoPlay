@@ -69,10 +69,19 @@
   <data name="MiniPlayerPreviousButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Previous track</value>
   </data>
+  <data name="MiniPlayerPreviousButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Previous track</value>
+  </data>
   <data name="MiniPlayerPlayPauseButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Pause</value>
   </data>
+  <data name="MiniPlayerPlayPauseButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Pause</value>
+  </data>
   <data name="MiniPlayerNextButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Next track</value>
+  </data>
+  <data name="MiniPlayerNextButton.AutomationProperties.Name" xml:space="preserve">
     <value>Next track</value>
   </data>
   <data name="MiniPlayerSpeedComboBox.ToolTipService.ToolTip" xml:space="preserve">
@@ -82,6 +91,9 @@
     <value>Sleep timer</value>
   </data>
   <data name="MiniPlayerCloseButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stop playback</value>
+  </data>
+  <data name="MiniPlayerCloseButton.AutomationProperties.Name" xml:space="preserve">
     <value>Stop playback</value>
   </data>
   <data name="SleepTimer15.Text" xml:space="preserve">
@@ -160,6 +172,9 @@
   <data name="TestConnectionButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Test connection</value>
   </data>
+  <data name="TestConnectionButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Test connection</value>
+  </data>
 
   <!-- SettingsPage – controls -->
   <data name="LocalLibraryToggle.Header" xml:space="preserve">
@@ -183,6 +198,9 @@
   <data name="BrowseButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Browse</value>
   </data>
+  <data name="BrowseButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Browse</value>
+  </data>
   <data name="EpisodeFolderPatternBox.Header" xml:space="preserve">
     <value>Episode folder pattern</value>
   </data>
@@ -190,6 +208,9 @@
     <value>{number:000} - {title}</value>
   </data>
   <data name="AnalyzePatternButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Analyze</value>
+  </data>
+  <data name="AnalyzePatternButton.AutomationProperties.Name" xml:space="preserve">
     <value>Analyze</value>
   </data>
   <data name="SyncButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -305,10 +326,16 @@
   <data name="OnlineProviderSearchButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Search for new series at the provider</value>
   </data>
+  <data name="OnlineProviderSearchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Search for new series at the provider</value>
+  </data>
   <data name="OnlineProviderSearchButtonText.Text" xml:space="preserve">
     <value>Search provider</value>
   </data>
   <data name="OnlineAddSelectedButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Add selected series</value>
+  </data>
+  <data name="OnlineAddSelectedButton.AutomationProperties.Name" xml:space="preserve">
     <value>Add selected series</value>
   </data>
   <data name="SeriesDetailsItem.Text" xml:space="preserve">
@@ -362,6 +389,9 @@
   <data name="OnlineRefreshButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Check for new episodes</value>
   </data>
+  <data name="OnlineRefreshButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Check for new episodes</value>
+  </data>
   <data name="OnlineRefreshProgressText" xml:space="preserve">
     <value>Checking series {0}/{1}: {2} …</value>
   </data>
@@ -372,6 +402,15 @@
     <value>Episodes</value>
   </data>
   <data name="OnlineCloseEpisodesButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="OnlineCloseEpisodesButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="LokalCloseEpisodesButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="LokalCloseEpisodesButton.AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
   <data name="OnlineEpisodeOpenBrowserItem.Text" xml:space="preserve">
@@ -505,6 +544,9 @@
   <data name="SucheButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Search</value>
   </data>
+  <data name="SucheButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Search</value>
+  </data>
   <data name="SucheEmptyState.Message" xml:space="preserve">
     <value>No results found.</value>
   </data>
@@ -609,6 +651,9 @@
   <data name="LokalCheckAllSeriesButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Check all series for missing episodes</value>
   </data>
+  <data name="LokalCheckAllSeriesButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Check all series for missing episodes</value>
+  </data>
   <data name="LokalRemoveFromLibraryItem.Text" xml:space="preserve">
     <value>Remove from library</value>
   </data>
@@ -637,6 +682,9 @@
     <value>Search cover</value>
   </data>
   <data name="LokalPlayEpisodeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Play episode</value>
+  </data>
+  <data name="LokalPlayEpisodeButton.AutomationProperties.Name" xml:space="preserve">
     <value>Play episode</value>
   </data>
 
@@ -684,10 +732,19 @@
   <data name="TagManagerOpenFolderButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Open folder</value>
   </data>
+  <data name="TagManagerOpenFolderButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
   <data name="TagManagerSaveButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="TagManagerSaveButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Save</value>
+  </data>
   <data name="TagManagerRemoveAllTagsButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Remove all tags</value>
+  </data>
+  <data name="TagManagerRemoveAllTagsButton.AutomationProperties.Name" xml:space="preserve">
     <value>Remove all tags</value>
   </data>
   <!-- ProtokollPage – live log view -->
@@ -695,6 +752,9 @@
     <value>Live</value>
   </data>
   <data name="ProtokollClearButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear log</value>
+  </data>
+  <data name="ProtokollClearButton.AutomationProperties.Name" xml:space="preserve">
     <value>Clear log</value>
   </data>
 
@@ -710,19 +770,37 @@
   <data name="TagManagerPreviewRenameButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Preview</value>
   </data>
+  <data name="TagManagerPreviewRenameButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Preview</value>
+  </data>
   <data name="TagManagerExecuteRenameButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="TagManagerExecuteRenameButton.AutomationProperties.Name" xml:space="preserve">
     <value>Rename</value>
   </data>
   <data name="TagManagerLookupButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Look up tags</value>
   </data>
+  <data name="TagManagerLookupButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Look up tags</value>
+  </data>
   <data name="TagManagerAutoLookupButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Auto lookup (series + episode from folder names)</value>
+  </data>
+  <data name="TagManagerAutoLookupButton.AutomationProperties.Name" xml:space="preserve">
     <value>Auto lookup (series + episode from folder names)</value>
   </data>
   <data name="TagManagerRemoveCoverButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Remove cover</value>
   </data>
+  <data name="TagManagerRemoveCoverButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Remove cover</value>
+  </data>
   <data name="TagManagerLoadCoverButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Load cover</value>
+  </data>
+  <data name="TagManagerLoadCoverButton.AutomationProperties.Name" xml:space="preserve">
     <value>Load cover</value>
   </data>
   <data name="TagManagerCoverApplyAllButton.ToolTipService.ToolTip" xml:space="preserve">
@@ -816,6 +894,9 @@
     <value>Search …</value>
   </data>
   <data name="LogRefreshButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="LogRefreshButton.AutomationProperties.Name" xml:space="preserve">
     <value>Refresh</value>
   </data>
   <data name="LogLevelAll.Content" xml:space="preserve">
@@ -1285,7 +1366,13 @@
   <data name="ImportSearchButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Search</value>
   </data>
+  <data name="ImportSearchButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Search</value>
+  </data>
   <data name="ImportResultImportButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="ImportResultImportButton.AutomationProperties.Name" xml:space="preserve">
     <value>Import</value>
   </data>
   <data name="ImportResultAlreadyImported.Text" xml:space="preserve">
@@ -1338,24 +1425,45 @@
   <data name="MediathekLokalScanButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Scan library</value>
   </data>
+  <data name="MediathekLokalScanButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Scan library</value>
+  </data>
   <data name="MediathekLokalResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Re-initialize (reset all local assignments)</value>
+  </data>
+  <data name="MediathekLokalResetButton.AutomationProperties.Name" xml:space="preserve">
     <value>Re-initialize (reset all local assignments)</value>
   </data>
   <data name="MediathekLokalAddFolderButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Add folder manually</value>
   </data>
+  <data name="MediathekLokalAddFolderButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Add folder manually</value>
+  </data>
   <data name="MediathekLokalSeriesTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Edit all tracks of this series in the tag manager</value>
+  </data>
+  <data name="MediathekLokalSeriesTagManagerButton.AutomationProperties.Name" xml:space="preserve">
     <value>Edit all tracks of this series in the tag manager</value>
   </data>
   <data name="MediathekLokalEpisodeTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Edit all tracks of this episode in the tag manager</value>
   </data>
+  <data name="MediathekLokalEpisodeTagManagerButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Edit all tracks of this episode in the tag manager</value>
+  </data>
   <data name="MediathekLokalTrackTagManagerButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open in tag manager</value>
+  </data>
+  <data name="MediathekLokalTrackTagManagerButton.AutomationProperties.Name" xml:space="preserve">
     <value>Open in tag manager</value>
   </data>
 
   <!-- SuchePage -->
   <data name="SucheResetButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reset search</value>
+  </data>
+  <data name="SucheResetButton.AutomationProperties.Name" xml:space="preserve">
     <value>Reset search</value>
   </data>
 

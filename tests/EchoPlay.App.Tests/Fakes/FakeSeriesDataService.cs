@@ -17,7 +17,6 @@ namespace EchoPlay.App.Tests.Fakes
     internal sealed class FakeSeriesDataService : ISeriesDataService
     {
         private readonly List<Series> _series = [];
-        private readonly HashSet<string> _watchedTitles = new(StringComparer.Ordinal);
         private int _nextId;
 
         /// <summary>Alle bisher gespeicherten Serien.</summary>
@@ -115,7 +114,6 @@ namespace EchoPlay.App.Tests.Fakes
                 if (isFavorite)
                 {
                     series.IsWatched = true;
-                    _ = _watchedTitles.Add(EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(series.Title));
                 }
             }
 
@@ -131,40 +129,11 @@ namespace EchoPlay.App.Tests.Fakes
             {
                 series.IsWatched = isWatched;
 
-                // Gleiche Merklisten-Pflege wie SeriesDataService.
-                string normalized = EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(series.Title);
-                if (isWatched)
-                {
-                    _ = _watchedTitles.Add(normalized);
-                }
-                else
-                {
-                    _ = _watchedTitles.Remove(normalized);
-                }
+                // Die Merkliste selbst pflegt FakeWatchedTitleDataService – hier zählt
+                // nur das Flag an der Serie.
             }
 
             return Task.CompletedTask;
         }
-
-        /// <inheritdoc/>
-        public Task<IReadOnlySet<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlySet<string>>(_watchedTitles);
-
-        /// <inheritdoc/>
-        public Task<int> SyncWatchedTitlesAsync(CancellationToken cancellationToken = default)
-        {
-            int added = 0;
-
-            foreach (Series series in _series.Where(s => s.IsWatched))
-            {
-                if (_watchedTitles.Add(EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(series.Title)))
-                {
-                    added++;
-                }
-            }
-
-            return Task.FromResult(added);
-        }
-
     }
 }

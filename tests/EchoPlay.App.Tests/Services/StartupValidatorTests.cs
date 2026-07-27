@@ -31,6 +31,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService ?? new FakeAppSettingsDataService());
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => coverImageService ?? new FakeCoverImageDataService());
             // Microsoft.Extensions.Http registriert den Default-IHttpClientFactory.
@@ -187,6 +188,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }));
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<ICachedNewReleaseDataService>(_ => new FakeCachedNewReleaseDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddHttpClient();
@@ -213,6 +215,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }));
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<ICachedNewReleaseDataService>(_ => new FakeCachedNewReleaseDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddHttpClient();
@@ -256,6 +259,7 @@ namespace EchoPlay.App.Tests.Services
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());

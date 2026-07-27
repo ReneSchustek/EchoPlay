@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             IReadOnlyList<Series> result = await service.GetSubscribedAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             await service.SetSubscribedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
             // ChangeTracker leeren, damit der nächste FindAsync wirklich aus der DB liest
@@ -55,7 +55,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             IReadOnlyList<Series> result = await service.GetSubscribedAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
@@ -75,7 +75,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             IReadOnlyList<Series> result = await service.GetSubscribedAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);

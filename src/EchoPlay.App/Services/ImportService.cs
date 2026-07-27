@@ -258,6 +258,7 @@ namespace EchoPlay.App.Services
 
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            IWatchedTitleDataService watchedTitleService = scope.ServiceProvider.GetRequiredService<IWatchedTitleDataService>();
 
             // Früh abbrechen, falls bereits importiert
             Series? existing = await FindExistingSeriesAsync(seriesService, importSeries, cancellationToken);
@@ -272,7 +273,7 @@ namespace EchoPlay.App.Services
 
             // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt.
             // Früher überwachte Titel bekommen ihre Überwachung zurück (überlebt „Mediathek leeren").
-            IReadOnlySet<string> watchedTitles = await seriesService.GetWatchedTitlesAsync(cancellationToken);
+            IReadOnlySet<string> watchedTitles = await watchedTitleService.GetAllAsync(cancellationToken);
             Series series = MapToSeries(importSeries, watchedTitles);
             await seriesService.AddAsync(series, cancellationToken);
 

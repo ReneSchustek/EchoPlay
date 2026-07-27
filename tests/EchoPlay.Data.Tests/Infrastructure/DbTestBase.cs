@@ -47,6 +47,14 @@ namespace EchoPlay.Data.Tests.Infrastructure
         }
 
         /// <summary>
+        /// Erzeugt den Serien-Datenservice samt seiner Merklisten-Abhängigkeit.
+        /// Spart den Aufbau in jedem Test und hält die Konstruktion an einer Stelle,
+        /// falls weitere Abhängigkeiten dazukommen.
+        /// </summary>
+        protected EchoPlay.Data.Services.SeriesDataService CreateSeriesService() =>
+            new(Context, new EchoPlay.Data.Services.WatchedTitleDataService(Context, NullLoggerFactory), NullLoggerFactory);
+
+        /// <summary>
         /// Gibt alle vom Test verwendeten Ressourcen frei.
         /// </summary>
         public void Dispose()

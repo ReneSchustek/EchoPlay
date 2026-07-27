@@ -36,6 +36,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<ILocalTrackDataService>(_ => trackService);
             _ = services.AddScoped<ILocalLibraryScanner>(_ => scanner);

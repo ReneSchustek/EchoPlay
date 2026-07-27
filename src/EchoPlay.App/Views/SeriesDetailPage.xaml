@@ -238,12 +238,17 @@
                                                             Tag="{x:Bind EpisodeId}"
                                                             Click="OnEpisodeMarkUnplayedClick"/>
                                                         <MenuFlyoutSeparator
-                                                            Visibility="{x:Bind OpenInSpotifyVisibility}"/>
+                                                            Visibility="{x:Bind ProviderActionsSeparatorVisibility}"/>
                                                         <MenuFlyoutItem
                                                             x:Uid="EpisodeOpenInSpotifyItem"
                                                             Visibility="{x:Bind OpenInSpotifyVisibility}"
                                                             Tag="{x:Bind EpisodeId}"
                                                             Click="OnOpenInSpotifyClick"/>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="EpisodeOpenInAppleMusicItem"
+                                                            Visibility="{x:Bind OpenInAppleMusicVisibility}"
+                                                            Tag="{x:Bind EpisodeId}"
+                                                            Click="OnOpenInAppleMusicClick"/>
                                                     </MenuFlyout>
                                                 </Button.Flyout>
                                             </Button>

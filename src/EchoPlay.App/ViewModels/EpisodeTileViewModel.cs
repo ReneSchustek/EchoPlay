@@ -38,6 +38,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="localizationService">Für den Automation-Namen der Kontextmenü-Schaltfläche. Nullable für Tests.</param>
         /// <param name="spotifyAlbumId">Spotify-Album-ID der Folge, sofern bekannt.</param>
         /// <param name="hasLocalTrack">Ob mindestens eine lokale Audiodatei vorliegt.</param>
+        /// <param name="appleMusicAlbumId">Apple-Music-Album-ID der Folge, sofern bekannt.</param>
         public EpisodeTileViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -51,9 +52,11 @@ namespace EchoPlay.App.ViewModels
             BitmapImage? coverImage = null,
             EchoPlay.App.Services.ILocalizationService? localizationService = null,
             string? spotifyAlbumId = null,
-            bool hasLocalTrack = true)
+            bool hasLocalTrack = true,
+            string? appleMusicAlbumId = null)
         {
             SpotifyAlbumId = spotifyAlbumId;
+            AppleMusicAlbumId = appleMusicAlbumId;
             HasLocalTrack = hasLocalTrack;
             _localizationService = localizationService;
             EpisodeId = episodeId;
@@ -143,6 +146,38 @@ namespace EchoPlay.App.ViewModels
             return SpotifyAlbumLink.TryBuild(SpotifyAlbumId, out string? url)
                    && SafeUrlLauncher.TryOpenInBrowser(url);
         }
+
+        /// <summary>Apple-Music-Album-ID der Folge, sofern bekannt.</summary>
+        public string? AppleMusicAlbumId { get; }
+
+        /// <summary>
+        /// Sichtbarkeit der Aktion „In Apple Music öffnen" – gleiche Regel wie bei Spotify:
+        /// nur für Folgen ohne lokale Datei und mit bekannter Album-ID.
+        /// </summary>
+        public Visibility OpenInAppleMusicVisibility =>
+            !HasLocalTrack && AppleMusicAlbumLink.TryBuild(AppleMusicAlbumId, out _)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        /// <summary>
+        /// Öffnet das zugehörige Album in Apple Music (App oder Webseite).
+        /// Startet dort nichts — die Wiedergabe löst der Nutzer selbst aus.
+        /// </summary>
+        /// <returns><see langword="true"/>, wenn der Link geöffnet werden konnte.</returns>
+        public bool OpenInAppleMusic()
+        {
+            return AppleMusicAlbumLink.TryBuild(AppleMusicAlbumId, out string? url)
+                   && SafeUrlLauncher.TryOpenInBrowser(url);
+        }
+
+        /// <summary>
+        /// Sichtbarkeit des Trenners vor den Anbieter-Aktionen: nur wenn mindestens eine davon
+        /// sichtbar ist, sonst steht ein Strich ohne Inhalt darunter.
+        /// </summary>
+        public Visibility ProviderActionsSeparatorVisibility =>
+            OpenInSpotifyVisibility == Visibility.Visible || OpenInAppleMusicVisibility == Visibility.Visible
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
         /// <summary>
         /// Formatierte Dauer, z.B. "1:23:45".

@@ -374,7 +374,8 @@ namespace EchoPlay.App.ViewModels
                         coverImage: cover,
                         localizationService: _localizationService,
                         spotifyAlbumId: episode.SpotifyAlbumId,
-                        hasLocalTrack: episode.LocalTrackCount is > 0);
+                        hasLocalTrack: episode.LocalTrackCount is > 0,
+                        appleMusicAlbumId: episode.AppleMusicAlbumId);
 
                     tiles.Add(tile);
                 }

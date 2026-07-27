@@ -12,8 +12,12 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class EpisodeTileSpotifyTests
     {
         private const string ValidAlbumId = "4aawyAB9vmqN3uQ7FjRGTy";
+        private const string ValidAppleAlbumId = "1001105149";
 
-        private static EpisodeTileViewModel Build(string? spotifyAlbumId, bool hasLocalTrack) => new(
+        private static EpisodeTileViewModel Build(
+            string? spotifyAlbumId,
+            bool hasLocalTrack,
+            string? appleMusicAlbumId = null) => new(
             episodeId: Guid.NewGuid(),
             episodeNumber: 1,
             title: "Die Insel der Abenteuer",
@@ -22,7 +26,8 @@ namespace EchoPlay.App.Tests.ViewModels
             releaseDate: null,
             playEpisode: () => { },
             spotifyAlbumId: spotifyAlbumId,
-            hasLocalTrack: hasLocalTrack);
+            hasLocalTrack: hasLocalTrack,
+            appleMusicAlbumId: appleMusicAlbumId);
 
         [Fact]
         public void OpenInSpotify_NoLocalTrackAndAlbumKnown_IsVisible()
@@ -65,6 +70,50 @@ namespace EchoPlay.App.Tests.ViewModels
             EpisodeTileViewModel tile = Build(spotifyAlbumId: null, hasLocalTrack: false);
 
             Assert.False(tile.OpenInSpotify());
+        }
+
+        [Fact]
+        public void OpenInAppleMusic_NoLocalTrackAndAlbumKnown_IsVisible()
+        {
+            // Der reale Bestand trägt ausschließlich Apple-IDs – ohne diese Aktion bliebe
+            // das Kontextmenü dort leer.
+            EpisodeTileViewModel tile = Build(null, hasLocalTrack: false, appleMusicAlbumId: ValidAppleAlbumId);
+
+            Assert.Equal(Visibility.Visible, tile.OpenInAppleMusicVisibility);
+            Assert.Equal(Visibility.Collapsed, tile.OpenInSpotifyVisibility);
+        }
+
+        [Fact]
+        public void OpenInAppleMusic_LocalTrackPresent_IsHidden()
+        {
+            EpisodeTileViewModel tile = Build(null, hasLocalTrack: true, appleMusicAlbumId: ValidAppleAlbumId);
+
+            Assert.Equal(Visibility.Collapsed, tile.OpenInAppleMusicVisibility);
+        }
+
+        [Fact]
+        public void OpenInAppleMusic_WithoutAlbumId_DoesNothing()
+        {
+            EpisodeTileViewModel tile = Build(null, hasLocalTrack: false);
+
+            Assert.False(tile.OpenInAppleMusic());
+        }
+
+        [Fact]
+        public void ProviderSeparator_HiddenWhenNoProviderActionAvailable()
+        {
+            // Ein Trennstrich ohne Einträge darunter sieht nach kaputtem Menü aus.
+            EpisodeTileViewModel tile = Build(null, hasLocalTrack: false);
+
+            Assert.Equal(Visibility.Collapsed, tile.ProviderActionsSeparatorVisibility);
+        }
+
+        [Fact]
+        public void ProviderSeparator_VisibleWhenAnyProviderActionAvailable()
+        {
+            EpisodeTileViewModel tile = Build(null, hasLocalTrack: false, appleMusicAlbumId: ValidAppleAlbumId);
+
+            Assert.Equal(Visibility.Visible, tile.ProviderActionsSeparatorVisibility);
         }
     }
 }

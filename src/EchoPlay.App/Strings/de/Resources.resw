@@ -1548,4 +1548,10 @@ Die Anwendung wird beendet.</value>
   <data name="EpisodeOpenInSpotifyItem.AutomationProperties.Name" xml:space="preserve">
     <value>Album in Spotify öffnen</value>
   </data>
+  <data name="EpisodeOpenInAppleMusicItem.Text" xml:space="preserve">
+    <value>In Apple Music öffnen</value>
+  </data>
+  <data name="EpisodeOpenInAppleMusicItem.AutomationProperties.Name" xml:space="preserve">
+    <value>Album in Apple Music öffnen</value>
+  </data>
 </root>

@@ -43,17 +43,6 @@ namespace EchoPlay.App.Services
         /// Fehlende-Folgen-Analyse (<see cref="EpisodeFolderParser"/>).
         /// </summary>
 
-        private static readonly EpisodeFolderParser[] FolderParsers =
-        [
-            new("{number:000} - {title}"),
-            new("{*} - {number:000} - {title}"),
-            new("Folge {number:000} - {title}"),
-            new("{number:000}_{title}"),
-            new("{number} - {title}"),
-            new("{title} - {number:000}"),
-            new("{number:000} {title}"),
-            new("{*} - {number} - {title}")
-        ];
 
         private readonly IAppleMusicSearchClient _appleMusicClient;
         private readonly ISeriesDataService _seriesDataService;
@@ -463,47 +452,10 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            if (folderNames.Count == 0)
-            {
-                return 0;
-            }
-
-            // Bestes Muster ermitteln (das mit den meisten Treffern für Nummern > 0)
-            EpisodeFolderParser? bestParser = null;
-            int bestMatchCount = 0;
-
-            foreach (EpisodeFolderParser parser in FolderParsers)
-            {
-                int matchCount = folderNames
-                    .Count(name => parser.TryParse(name, out int? num, out _) && num is > 0);
-
-                if (matchCount > bestMatchCount)
-                {
-                    bestMatchCount = matchCount;
-                    bestParser = parser;
-                }
-            }
-
-            if (bestParser is null)
-            {
-                return 0;
-            }
-
-            // Höchste Nummer mit dem besten Parser extrahieren
-            int maxNumber = 0;
-
-            foreach (string name in folderNames)
-            {
-                if (bestParser.TryParse(name, out int? number, out _) && number is > 0)
-                {
-                    if (number.Value > maxNumber)
-                    {
-                        maxNumber = number.Value;
-                    }
-                }
-            }
-
-            return maxNumber;
+            // Gemeinsame Erkennung mit der Fehlende-Folgen-Analyse: jeder Ordner wird gegen alle
+            // Muster geprüft, Jahreszahlen fallen raus. Vorher galt hier ein einziges Gewinner-Muster,
+            // wodurch abweichend benannte Ordner die höchste Nummer verfälschten.
+            return LocalEpisodeNumbers.Highest(folderNames);
         }
 
         /// <summary>

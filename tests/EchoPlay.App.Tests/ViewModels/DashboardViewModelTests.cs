@@ -119,6 +119,36 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task LoadAsync_FavoriteButNotWatched_ShowsNoWatchedHint()
+        {
+            // Altbestand: favorisiert, aber unbeobachtet. Ohne Hinweis verschwände der
+            // Neuerscheinungen-Abschnitt kommentarlos.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(
+                new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = false },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
+            await vm.LoadAsync();
+
+            Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, vm.NoWatchedSeriesHintVisibility);
+        }
+
+        [Fact]
+        public async Task LoadAsync_WatchedSeries_HidesNoWatchedHint()
+        {
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(
+                new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
+            await vm.LoadAsync();
+
+            Assert.Equal(Microsoft.UI.Xaml.Visibility.Collapsed, vm.NoWatchedSeriesHintVisibility);
+        }
+
+        [Fact]
         public async Task LoadAsync_WithCachedReleases_ShowsNewReleases()
         {
             // Gecachte Neuerscheinungen werden sofort als Kacheln angezeigt

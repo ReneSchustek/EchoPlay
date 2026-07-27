@@ -169,13 +169,42 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Setzt den Favoritenstatus einer Serie dauerhaft.
+        /// Favorisieren aktiviert zugleich die Überwachung (<see cref="Series.IsWatched"/>) –
+        /// ein Favorit ohne Überwachung würde nie unter „Neuerscheinungen" auftauchen.
+        /// Das Entfernen aus den Favoriten lässt die Überwachung bewusst unangetastet:
+        /// Der Nutzer schaltet sie separat über das Auge-Symbol ab.
         /// Existiert die Serie nicht, wird der Aufruf mit einer Warnung ignoriert.
         /// </summary>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="isFavorite"><see langword="true"/> zum Favorisieren, <see langword="false"/> zum Entfernen.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public Task SetFavoriteAsync(Guid seriesId, bool isFavorite, CancellationToken cancellationToken = default) =>
-            SetFlagAsync(seriesId, s => s.IsFavorite, isFavorite, nameof(Series.IsFavorite));
+        public async Task SetFavoriteAsync(Guid seriesId, bool isFavorite, CancellationToken cancellationToken = default)
+        {
+            if (!isFavorite)
+            {
+                await SetFlagAsync(seriesId, s => s.IsFavorite, false, nameof(Series.IsFavorite)).ConfigureAwait(false);
+                return;
+            }
+
+            // Beide Flags in einem UPDATE: so kann zwischen Favorit und Überwachung
+            // kein Zustand entstehen, in dem die Serie favorisiert, aber unbeobachtet ist.
+            int updated = await _context.Series
+                .Where(s => s.Id == seriesId)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(s => s.IsFavorite, true)
+                        .SetProperty(s => s.IsWatched, true),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (updated == 0)
+            {
+                _logger.Warning("Serie '{SeriesId}' nicht gefunden – Favoriten-Update übersprungen.", seriesId);
+                return;
+            }
+
+            _logger.Info("Serie (ID: {SeriesId}) favorisiert – Überwachung mit aktiviert.", seriesId);
+        }
 
         /// <inheritdoc/>
         /// <param name="seriesId">Parameter seriesId.</param>

@@ -1,6 +1,6 @@
 # EchoPlay — Datenbank-Migrationen
 
-Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-05-05, 36 Migrationen.
+Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-07-27, 38 Migrationen.
 
 Jede Migration erzeugt drei Artefakte (Pflicht, siehe `memory.md` § EF-Core-Migration-Disziplin): `<Timestamp>_<Name>.cs`, `<Timestamp>_<Name>.Designer.cs`, aktualisierter `EchoPlayDbContextModelSnapshot.cs`. Der Pfad lautet `EchoPlay.Data/Migrations/`.
 
@@ -56,6 +56,8 @@ Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.
 | 34 | 2026-04-16 | AddDbBackupSettings | Backup-Konfiguration in AppSettings |
 | 35 | 2026-04-16 | MigrateLocalCoverDataToCoverImages | **Breaking:** BLOB-Spalten entfernen, Daten ausgelagert |
 | 36 | 2026-05-05 | AddSortIndexesAndSoftDeleteFilters | Sortier-Indizes (`PlaybackStates.LastPlayedAt`, `Episodes.ReleaseDate`) plus `IsDeleted = 0`-Filter auf den UNIQUE-Indizes von `CoverImages` und `SecureSettings` |
+| 37 | 2026-07-21 | AddOnlineEpisodeSortIndex | Gemerkte Folgen-Sortierung der Online-Mediathek in `AppSettings` (Default 0 = Nummer aufsteigend) |
+| 38 | 2026-07-27 | BackfillWatchedForFavorites | Reine Datenmigration: setzt `IsWatched` für alle favorisierten Serien. Favorit impliziert seit dieser Version Überwachung; Bestände aus neu eingelesenen Bibliotheken hatten sonst favorisierte, aber unbeobachtete Serien und damit einen leeren Neuerscheinungen-Abschnitt. Nicht umkehrbar (`Down` bleibt leer) |
 
 ## Prüf-Reflex vor jedem Migrations-Commit
 

@@ -12,7 +12,6 @@ namespace EchoPlay.App.Services
     /// <c>TagManagerPage</c> und <c>MediathekLokalPage</c> jeweils eigene Picker-Konstruktion
     /// mit identischer <c>WindowNative.GetWindowHandle</c> + <c>InitializeWithWindow.Initialize</c>-Sequenz.
     /// </summary>
-
     public interface IFilePickerService
     {
         /// <summary>Öffnet einen Folder-Picker. Liefert <c>null</c>, wenn der Nutzer abbricht.</summary>

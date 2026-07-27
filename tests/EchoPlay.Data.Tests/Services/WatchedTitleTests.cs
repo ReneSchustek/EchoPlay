@@ -11,17 +11,23 @@ namespace EchoPlay.Data.Tests.Services
     /// </summary>
     public sealed class WatchedTitleTests : DbTestBase
     {
+        private WatchedTitleDataService CreateWatchedTitles() => new(Context, NullLoggerFactory);
+
+        private SeriesDataService CreateSeries(WatchedTitleDataService watchedTitles) =>
+            new(Context, watchedTitles, NullLoggerFactory);
+
         [Fact]
         public async Task SetWatched_Enabling_RemembersNormalizedTitle()
         {
             Series series = await DataBuilder.PersistSeriesAsync("Die drei ???");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
-            await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
+            WatchedTitleDataService watchedTitles = CreateWatchedTitles();
+            await CreateSeries(watchedTitles)
+                .SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
-            IReadOnlyCollection<string> titles =
-                await service.GetWatchedTitlesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlySet<string> titles =
+                await watchedTitles.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Contains("die drei ", titles);
         }
@@ -32,12 +38,13 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            WatchedTitleDataService watchedTitles = CreateWatchedTitles();
+            SeriesDataService service = CreateSeries(watchedTitles);
             await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
             await service.SetWatchedAsync(series.Id, false, cancellationToken: TestContext.Current.CancellationToken);
 
-            IReadOnlyCollection<string> titles =
-                await service.GetWatchedTitlesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlySet<string> titles =
+                await watchedTitles.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(titles);
         }
@@ -48,11 +55,12 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("Fünf Freunde");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
-            await service.SetFavoriteAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
+            WatchedTitleDataService watchedTitles = CreateWatchedTitles();
+            await CreateSeries(watchedTitles)
+                .SetFavoriteAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
-            IReadOnlyCollection<string> titles =
-                await service.GetWatchedTitlesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlySet<string> titles =
+                await watchedTitles.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Umlaut wird auf die ASCII-Vergleichsform abgebildet.
             Assert.Contains("fuenf freunde", titles);
@@ -64,7 +72,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeries(CreateWatchedTitles());
             await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
             await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -73,7 +81,19 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task SyncWatchedTitles_AddsMissingEntriesForWatchedSeries()
+        public async Task Remember_UnknownTitle_IsIgnored()
+        {
+            // Leere Titel dürfen keine Merklisten-Zeile erzeugen: die Normalisierung
+            // würde sonst einen leeren Schlüssel gegen den Unique-Index schreiben.
+            WatchedTitleDataService watchedTitles = CreateWatchedTitles();
+
+            await watchedTitles.RememberAsync("   ", cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, await Context.WatchedTitles.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task SyncFromWatchedSeries_AddsMissingEntriesForWatchedSeries()
         {
             // Altbestand: IsWatched steht, die Merkliste kennt den Titel aber noch nicht.
             Series watched = await DataBuilder.PersistSeriesAsync("TKKG");
@@ -83,18 +103,18 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
-            int added = await service.SyncWatchedTitlesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            WatchedTitleDataService watchedTitles = CreateWatchedTitles();
+            int added = await watchedTitles.SyncFromWatchedSeriesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, added);
-            IReadOnlyCollection<string> titles =
-                await service.GetWatchedTitlesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlySet<string> titles =
+                await watchedTitles.GetAllAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Contains("tkkg", titles);
             Assert.DoesNotContain("bibi blocksberg", titles);
         }
 
         [Fact]
-        public async Task SyncWatchedTitles_DuplicateTitles_AddsOnlyOnce()
+        public async Task SyncFromWatchedSeries_DuplicateTitles_AddsOnlyOnce()
         {
             // Die Produktivdatenbank enthält Serien-Duplikate mit identischem Titel –
             // ohne Dedup würde der Unique-Index den ganzen Startlauf abbrechen.
@@ -105,8 +125,8 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
-            int added = await service.SyncWatchedTitlesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            int added = await CreateWatchedTitles()
+                .SyncFromWatchedSeriesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, added);
         }

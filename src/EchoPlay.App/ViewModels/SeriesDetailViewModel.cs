@@ -385,7 +385,11 @@ namespace EchoPlay.App.ViewModels
 
                 // Gesamtfortschritt der Serie
                 ProgressText = episodes.Count > 0
-                    ? $"{completedCount} von {episodes.Count} Folgen gehört"
+                    ? string.Format(
+                        CultureInfo.CurrentCulture,
+                        _localizationService?.Get("SeriesProgressText") ?? "{0} von {1} Folgen gehört",
+                        completedCount,
+                        episodes.Count)
                     : string.Empty;
                 OverallProgressPercent = episodes.Count > 0
                     ? (double)completedCount / episodes.Count * 100

@@ -7,7 +7,6 @@ namespace EchoPlay.App.Services
     /// Definiert den Vertrag für das Anzeigen von Fehler-Dialogen.
     /// Kapselt die WinUI-3-ContentDialog-Logik und entkoppelt sie von den ViewModels.
     /// </summary>
-
     public interface IErrorDialogService
     {
         /// <summary>

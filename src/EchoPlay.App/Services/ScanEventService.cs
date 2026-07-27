@@ -10,7 +10,6 @@ namespace EchoPlay.App.Services
     /// <see cref="IsScanRunning"/> ist thread-sicher via <c>Interlocked</c>,
     /// da <see cref="SyncService"/> den Scan auf einem Hintergrundthread starten kann.
     /// </summary>
-
     public sealed class ScanEventService : IScanEventService
     {
         private int _isRunning;
@@ -34,7 +33,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
         /// <param name="series">Parameter <c>series</c>.</param>
         public void RaiseSeriesSynced(Series series)
         {

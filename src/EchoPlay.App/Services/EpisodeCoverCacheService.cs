@@ -19,7 +19,6 @@ namespace EchoPlay.App.Services
     /// Episoden ohne Treffer erhalten einen Cooldown-Zeitstempel (7 Tage),
     /// damit nicht bei jedem Öffnen der Folgenübersicht erneut gesucht wird.
     /// </summary>
-
     public sealed class EpisodeCoverCacheService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -31,7 +30,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Cooldown in Tagen: Erfolglose Cover-Suchen werden erst nach Ablauf dieser Frist wiederholt.
         /// </summary>
-
         private const int CooldownDays = 7;
 
         /// <summary>
@@ -42,7 +40,6 @@ namespace EchoPlay.App.Services
         /// <param name="coverService">Singleton-Dienst für Cover-Operationen über die CoverImages-Tabelle.</param>
         /// <param name="clock">Zeitquelle für Cooldown-Berechnung.</param>
         /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
-
         public EpisodeCoverCacheService(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
@@ -338,8 +335,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Extrahiert den kurzen Folgentitel ohne Seriennamen-Präfix und Folgennummer.
         /// </summary>
-
-
         /// <param name="fullTitle">Parameter <c>fullTitle</c>.</param>
         /// <param name="seriesName">Parameter <c>seriesName</c>.</param>
         private static string ExtractShortTitle(string fullTitle, string seriesName)
@@ -368,7 +363,6 @@ namespace EchoPlay.App.Services
         /// Wählt das relevanteste Suchergebnis anhand des <see cref="CoverRelevanceScorer"/>.
         /// Ergebnisse unter der Mindest-Schwelle werden verworfen.
         /// </summary>
-
         private static CoverSearchResult? FindBestMatch(
             IReadOnlyList<CoverSearchResult> results,
             string seriesName,

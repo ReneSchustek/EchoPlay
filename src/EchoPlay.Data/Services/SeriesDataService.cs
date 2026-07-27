@@ -15,12 +15,15 @@ namespace EchoPlay.Data.Services
     /// </summary>
     /// <remarks>Initialisiert eine neue Instanz des <see cref="SeriesDataService"/>.</remarks>
     /// <param name="context">Der zu verwendende EF-Core-Datenbankkontext.</param>
+    /// <param name="watchedTitles">Die Merkliste überwachter Serientitel.</param>
     /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
     public sealed class SeriesDataService(
         EchoPlayDbContext context,
+        IWatchedTitleDataService watchedTitles,
         EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory) : ISeriesDataService
     {
         private readonly EchoPlayDbContext _context = context;
+        private readonly IWatchedTitleDataService _watchedTitles = watchedTitles;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger = loggerFactory.CreateLogger("SeriesDataService");
 
         /// <summary>
@@ -203,7 +206,7 @@ namespace EchoPlay.Data.Services
                 return;
             }
 
-            await RememberWatchedTitleAsync(seriesId, cancellationToken).ConfigureAwait(false);
+            await RememberTitleOfAsync(seriesId, cancellationToken).ConfigureAwait(false);
 
             _logger.Info("Serie (ID: {SeriesId}) favorisiert – Überwachung mit aktiviert.", seriesId);
         }
@@ -218,143 +221,54 @@ namespace EchoPlay.Data.Services
 
             if (isWatched)
             {
-                await RememberWatchedTitleAsync(seriesId, cancellationToken).ConfigureAwait(false);
+                await RememberTitleOfAsync(seriesId, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                await ForgetWatchedTitleAsync(seriesId, cancellationToken).ConfigureAwait(false);
+                await ForgetTitleOfAsync(seriesId, cancellationToken).ConfigureAwait(false);
             }
-        }
-
-        /// <inheritdoc/>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<IReadOnlySet<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default)
-        {
-            List<string> titles = await _context.WatchedTitles
-                .Select(w => w.NormalizedTitle)
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-            return new HashSet<string>(titles, StringComparer.Ordinal);
-        }
-
-        /// <inheritdoc/>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<int> SyncWatchedTitlesAsync(CancellationToken cancellationToken = default)
-        {
-            List<string> watchedSeriesTitles = await _context.Series
-                .Where(s => s.IsWatched)
-                .Select(s => s.Title)
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-            if (watchedSeriesTitles.Count == 0)
-            {
-                return 0;
-            }
-
-            HashSet<string> known = new(
-                await _context.WatchedTitles
-                    .Select(w => w.NormalizedTitle)
-                    .ToListAsync(cancellationToken).ConfigureAwait(false),
-                StringComparer.Ordinal);
-
-            List<WatchedTitle> missing = [];
-
-            foreach (string title in watchedSeriesTitles)
-            {
-                string normalized = EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(title);
-
-                // known dient zugleich als Dedup innerhalb dieses Laufs – die Prod-DB
-                // enthält Serien-Duplikate mit identischem Titel.
-                if (string.IsNullOrWhiteSpace(normalized) || !known.Add(normalized))
-                {
-                    continue;
-                }
-
-                missing.Add(new WatchedTitle { Title = title, NormalizedTitle = normalized });
-            }
-
-            if (missing.Count == 0)
-            {
-                return 0;
-            }
-
-            _context.WatchedTitles.AddRange(missing);
-
-            // Gleiche Begründung wie in RememberWatchedTitleAsync: ein parallel laufender
-            // Favoriten-Klick kann denselben Titel bereits eingetragen haben.
-            DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
-            if (conflict is not null)
-            {
-                _logger.Debug(() => $"Merklisten-Abgleich traf auf bereits vorhandene Titel: {conflict.InnerException?.Message}");
-                return 0;
-            }
-
-            _logger.Info("{Count} überwachte Serientitel in die Merkliste übernommen.", missing.Count);
-            return missing.Count;
         }
 
         /// <summary>
-        /// Merkt den Titel einer überwachten Serie, damit die Überwachung ein Leeren der
-        /// Mediathek überlebt (dort verschwinden die <c>Series</c>-Zeilen physisch).
+        /// Merkt den Titel einer Serie, damit die Überwachung ein Leeren der Mediathek überlebt
+        /// (dort verschwinden die <c>Series</c>-Zeilen physisch).
+        /// Die Serien-ID auflösen ist Sache dieses Services, das Merken Sache der Merkliste.
         /// </summary>
-        private async Task RememberWatchedTitleAsync(Guid seriesId, CancellationToken cancellationToken)
+        private async Task RememberTitleOfAsync(Guid seriesId, CancellationToken cancellationToken)
         {
-            string? title = await _context.Series
-                .Where(s => s.Id == seriesId)
-                .Select(s => s.Title)
-                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            string? title = await GetTitleAsync(seriesId, cancellationToken).ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(title))
+            if (title is not null)
             {
-                return;
-            }
-
-            string normalized = EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(title);
-
-            bool exists = await _context.WatchedTitles
-                .AnyAsync(w => w.NormalizedTitle == normalized, cancellationToken).ConfigureAwait(false);
-
-            if (exists)
-            {
-                return;
-            }
-
-            _ = _context.WatchedTitles.Add(new WatchedTitle
-            {
-                Title = title,
-                NormalizedTitle = normalized
-            });
-
-            // Zwischen Prüfung und Insert kann ein paralleler Scope denselben Titel angelegt haben
-            // (Startup-Abgleich und Favoriten-Klick laufen unabhängig voneinander). Der UNIQUE-Index
-            // fängt das ab; der Konflikt ist hier kein Fehler, sondern das gewünschte Ergebnis.
-            DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
-            if (conflict is not null)
-            {
-                _logger.Debug(() => $"Titel '{normalized}' war bereits gemerkt (paralleler Schreibzugriff).");
+                await _watchedTitles.RememberAsync(title, cancellationToken).ConfigureAwait(false);
             }
         }
 
         /// <summary>
         /// Entfernt den gemerkten Titel wieder – der Nutzer hat die Überwachung bewusst abgeschaltet.
         /// </summary>
-        private async Task ForgetWatchedTitleAsync(Guid seriesId, CancellationToken cancellationToken)
+        private async Task ForgetTitleOfAsync(Guid seriesId, CancellationToken cancellationToken)
+        {
+            string? title = await GetTitleAsync(seriesId, cancellationToken).ConfigureAwait(false);
+
+            if (title is not null)
+            {
+                await _watchedTitles.ForgetAsync(title, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Liefert den Titel einer Serie oder <c>null</c>, wenn die Serie fehlt oder keinen
+        /// brauchbaren Titel hat. Beides ist für die Merkliste derselbe Fall: nichts zu tun.
+        /// </summary>
+        private async Task<string?> GetTitleAsync(Guid seriesId, CancellationToken cancellationToken)
         {
             string? title = await _context.Series
                 .Where(s => s.Id == seriesId)
                 .Select(s => s.Title)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return;
-            }
-
-            string normalized = EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(title);
-
-            _ = await _context.WatchedTitles
-                .Where(w => w.NormalizedTitle == normalized)
-                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            return string.IsNullOrWhiteSpace(title) ? null : title;
         }
 
         // ExecuteUpdateAsync spart das einleitende SELECT (1 SQL-Statement statt 2);

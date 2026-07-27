@@ -12,7 +12,6 @@ namespace EchoPlay.App.Services
     /// Die Auswahl-State (aktuell gewählte Datei, Suchtext, Level) bleibt im ViewModel – der
     /// Coordinator bietet reine, testbare Operationen ohne eigenen Zustand.
     /// </summary>
-
     public interface ILogViewerCoordinator
     {
         /// <summary>

@@ -11,7 +11,6 @@ namespace EchoPlay.App.Services
     /// und das Mapping auf das App-Display-Modell <see cref="RestructurePreviewDisplay"/>.
     /// Hält keinen UI-State – das ViewModel kennt nur die zwei Methoden hier.
     /// </summary>
-
     public interface IFolderRestructureCoordinator
     {
         /// <summary>

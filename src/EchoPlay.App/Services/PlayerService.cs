@@ -16,7 +16,6 @@ namespace EchoPlay.App.Services
     /// Kapselt <see cref="MediaPlayer"/> und <see cref="MediaPlaybackList"/> und stellt
     /// eine stabile, ereignisbasierte API für den MiniPlayer und die Episodenliste bereit.
     /// </summary>
-
     public sealed class PlayerService : IPlayerService, IAsyncDisposable, IDisposable
     {
         // Auto-Save alle 30 Sekunden während aktiver Wiedergabe (500 ms × 60 Ticks)
@@ -45,7 +44,6 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Fabrik für DI-Scopes (für PlaybackState-Persistenz).</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="clock">Zeitquelle für Zeitstempel.</param>
-
         public PlayerService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory, IClock clock)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -69,7 +67,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Wird ausgelöst, wenn sich Abspielstatus, Track oder Position geändert haben.
         /// </summary>
-
         public event EventHandler? StateChanged;
 
         /// <inheritdoc/>
@@ -78,33 +75,28 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Gibt an, ob gerade Wiedergabe aktiv ist.
         /// </summary>
-
         public bool IsPlaying => _player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing;
 
         /// <summary>
         /// Titel des aktuell laufenden Tracks (Dateiname ohne Erweiterung).
         /// Null, wenn nichts spielt.
         /// </summary>
-
         public string? CurrentTrackTitle { get; private set; }
 
         /// <summary>
         /// Aktuelle Abspielposition.
         /// </summary>
-
         public TimeSpan Position => _player.PlaybackSession.Position;
 
         /// <summary>
         /// Gesamtdauer des aktuell laufenden Tracks.
         /// </summary>
-
         public TimeSpan Duration => _player.PlaybackSession.NaturalDuration;
 
         /// <summary>
         /// Wiedergabegeschwindigkeit. 1.0 entspricht normaler Geschwindigkeit.
         /// Gültige Werte: 0.25 bis 4.0 (Plattformlimit des MediaPlayer).
         /// </summary>
-
         public double PlaybackRate
         {
             get => _player.PlaybackSession.PlaybackRate;
@@ -115,7 +107,6 @@ namespace EchoPlay.App.Services
         /// Verbleibende Zeit des Einschlaf-Timers.
         /// Null, wenn kein Timer aktiv ist.
         /// </summary>
-
         public TimeSpan? SleepTimerRemaining => _sleepTimerRemaining;
 
         /// <summary>
@@ -180,7 +171,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Pausiert die Wiedergabe und persistiert die aktuelle Position.
         /// </summary>
-
         public void Pause()
         {
             _player.Pause();
@@ -240,7 +230,6 @@ namespace EchoPlay.App.Services
         /// Schlaf-Timer löschen, Titel und Episode-ID leeren.
         /// Muss unter <see cref="_stateLock"/> aufgerufen werden.
         /// </summary>
-
         private void ResetPlaybackState()
         {
             _positionTimer.Stop();
@@ -271,7 +260,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Springt zum nächsten Track in der Wiedergabeliste.
         /// </summary>
-
         public void SkipToNext()
         {
             _ = _playlist.MoveNext();
@@ -280,7 +268,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Springt zum vorherigen Track in der Wiedergabeliste.
         /// </summary>
-
         public void SkipToPrevious()
         {
             _ = _playlist.MovePrevious();
@@ -290,7 +277,6 @@ namespace EchoPlay.App.Services
         /// Springt zu einer bestimmten Position im aktuellen Track.
         /// </summary>
         /// <param name="position">Die Zielposition.</param>
-
         public void SeekTo(TimeSpan position)
         {
             _player.PlaybackSession.Position = position;
@@ -301,7 +287,6 @@ namespace EchoPlay.App.Services
         /// Bei Ablauf wird die Wiedergabe automatisch pausiert.
         /// </summary>
         /// <param name="duration">Zeitspanne bis zum automatischen Stopp. Null deaktiviert den Timer.</param>
-
         public void SetSleepTimer(TimeSpan? duration)
         {
             lock (_stateLock)
@@ -345,7 +330,6 @@ namespace EchoPlay.App.Services
         /// Sync-Fallback für DI-Container und Tests, die ohne Async-Dispose-Pfad arbeiten.
         /// Delegiert auf <see cref="DisposeAsync"/>, damit die Save-Logik nur an einer Stelle gepflegt wird.
         /// </summary>
-
         public void Dispose()
         {
             if (_disposed)
@@ -425,8 +409,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Behandelt Codec-Fehler, korrupte Dateien und I/O-Probleme der Media-Pipeline.
         /// </summary>
-
-
         /// <param name="sender">Parameter <c>sender</c>.</param>
         /// <param name="args">Parameter <c>args</c>.</param>
         private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
@@ -440,7 +422,6 @@ namespace EchoPlay.App.Services
         /// Erstellt einen thread-sicheren Snapshot des aktuellen Zustands und speichert ihn.
         /// Werte werden unter Lock kopiert, die DB-Persistierung erfolgt außerhalb.
         /// </summary>
-
         private async System.Threading.Tasks.Task SavePlaybackStateSnapshotAsync()
         {
             Guid episodeId;

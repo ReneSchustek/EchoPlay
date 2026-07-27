@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             IReadOnlyList<Series> result = await service.GetFavoritesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             await service.SetFavoriteAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
             // ChangeTracker leeren, damit der nächste FindAsync wirklich aus der DB liest
@@ -53,7 +53,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             await service.SetFavoriteAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
             Context.ChangeTracker.Clear();
@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             await service.SetFavoriteAsync(series.Id, false, cancellationToken: TestContext.Current.CancellationToken);
 
             Context.ChangeTracker.Clear();
@@ -92,7 +92,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             IReadOnlyList<Series> result = await service.GetFavoritesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
@@ -112,7 +112,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             IReadOnlyList<Series> result = await service.GetFavoritesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.Count);
@@ -125,7 +125,7 @@ namespace EchoPlay.Data.Tests.Services
         public async Task SetFavorite_UnknownId_DoesNotThrow()
         {
             // Unbekannte ID wird stillschweigend ignoriert – kein Fehler, kein Crash
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
 
             // Kein Assert nötig – der Test schlägt fehl wenn eine Exception geworfen wird
             await service.SetFavoriteAsync(new Guid("99999999-9999-9999-9999-999999999995"), true, cancellationToken: TestContext.Current.CancellationToken);

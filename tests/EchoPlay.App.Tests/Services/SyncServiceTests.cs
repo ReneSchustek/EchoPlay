@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
@@ -36,6 +37,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<ILocalTrackDataService>(_ => trackService);
             _ = services.AddScoped<ILocalLibraryScanner>(_ => scanner);
@@ -452,7 +454,10 @@ namespace EchoPlay.App.Tests.Services
             scanEvents.SeriesSynced += s =>
             {
                 emitCount++;
-                int seen = episodeService.GetBySeriesIdAsync(s.Id).GetAwaiter().GetResult().Count;
+
+                // Der Event ist synchron – kein sync-over-async hier. Der Fake hält die
+                // Folgen im Speicher, die direkte Sicht darauf reicht für die Messung.
+                int seen = episodeService.All.Count(e => e.SeriesId == s.Id);
                 maxEpisodesSeenAtEmit = Math.Max(maxEpisodesSeenAtEmit, seen);
             };
 
@@ -544,23 +549,15 @@ namespace EchoPlay.App.Tests.Services
                 trackMatcher: new FakeTrackMatcher(),
                 metadataReader: new FakeAudioMetadataReader());
 
-            int announcedCount = 0;
-            Progress<Series> progress = new(_ => announcedCount++);
+            // Kein Progress<T>: das stellt seine Rückrufe über den ThreadPool zu, wodurch der
+            // Test unter Last am Zeitverhalten kippte statt an der Sache.
+            SignalingProgress<Series> progress = new();
 
             _ = await service.SyncAsync(onSeriesSynced: progress, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Progress<T> stellt seine Callbacks über den SynchronizationContext bzw. den
-            // ThreadPool zu – ein einzelnes Task.Yield garantiert nicht, dass sie schon gelaufen
-            // sind. Unter Last (parallele Testklassen) kippte der Test genau daran. Deshalb
-            // gebündelt warten statt einmal nachgeben.
-            for (int attempt = 0; attempt < 100 && announcedCount == 0; attempt++)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
-
             // Bekannte Serie wird in der Detection-Phase und (mit aktualisiertem Pfad) erneut
             // in der Materialize-Phase gemeldet — d.h. mindestens 1 Aufruf erwartet.
-            Assert.True(announcedCount >= 1, $"onSeriesSynced wurde {announcedCount}-mal aufgerufen, erwartet >= 1");
+            Assert.True(progress.Count >= 1, $"onSeriesSynced wurde {progress.Count}-mal aufgerufen, erwartet >= 1");
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
@@ -75,10 +76,10 @@ namespace EchoPlay.App.Tests.ViewModels
             events.RaiseCacheChanged();
 
             // Ohne Dispatcher (Unit-Test) lädt das VM direkt – auf den Abschluss warten.
-            for (int attempt = 0; attempt < 100 && vm.NewEpisodeGroups.Count == 0; attempt++)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
+            await ChangeSignals.WaitForCollectionAsync(
+                vm.NewEpisodeGroups,
+                () => vm.NewEpisodeGroups.Count > 0,
+                "Startseite lädt die Neuerscheinungen nach dem Cache-Ereignis nach");
 
             _ = Assert.Single(vm.NewEpisodeGroups);
         }

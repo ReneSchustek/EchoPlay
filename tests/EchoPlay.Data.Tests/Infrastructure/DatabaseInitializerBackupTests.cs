@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             using (EchoPlayDbContext context = CreateFileContext())
             {
                 DatabaseInitializer initializer = new(context);
-                await initializer.InitializeAsync();
+                await initializer.InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             string[] backups = GetBackupFiles();
@@ -88,7 +88,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             using (EchoPlayDbContext first = CreateFileContext())
             {
-                await new DatabaseInitializer(first).InitializeAsync();
+                await new DatabaseInitializer(first).InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             string[] afterFirst = GetBackupFiles();
@@ -97,7 +97,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Beim zweiten Durchlauf gibt es keine pending Migrationen mehr.
             using (EchoPlayDbContext second = CreateFileContext())
             {
-                await new DatabaseInitializer(second).InitializeAsync();
+                await new DatabaseInitializer(second).InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             string[] afterSecond = GetBackupFiles();
@@ -111,12 +111,12 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // das macht später der AppSettingsDataService bei erstem Zugriff. Für den
             // Backup-Check ist das ein valider „noch-keine-Nutzerdaten"-Zustand.
             using EchoPlayDbContext context = CreateFileContext();
-            await new DatabaseInitializer(context).InitializeAsync();
+            await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.Empty(context.AppSettings);
 
             DatabaseInitializer initializer = new(context);
-            (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync();
+            (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.True(enabled);
             Assert.Equal(5, retention);
@@ -126,7 +126,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         public async Task TryReadBackupSettingsAsync_Honors_OptOut()
         {
             using EchoPlayDbContext context = CreateFileContext();
-            await new DatabaseInitializer(context).InitializeAsync();
+            await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
 
             AppSettings settings = new()
             {
@@ -137,7 +137,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = await context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DatabaseInitializer initializer = new(context);
-            (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync();
+            (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.False(enabled);
             Assert.Equal(3, retention);
@@ -147,7 +147,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         public async Task TryReadBackupSettingsAsync_Clamps_RetentionCount()
         {
             using EchoPlayDbContext context = CreateFileContext();
-            await new DatabaseInitializer(context).InitializeAsync();
+            await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
 
             AppSettings settings = new()
             {
@@ -157,7 +157,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = await context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             DatabaseInitializer initializer = new(context);
-            (_, int retention) = await initializer.TryReadBackupSettingsAsync();
+            (_, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.Equal(20, retention);
         }
@@ -176,7 +176,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             using EchoPlayDbContext context = new(builder.Options);
             DatabaseInitializer initializer = new(context);
 
-            (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync();
+            (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.True(enabled);
             Assert.Equal(5, retention);
@@ -188,7 +188,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Initial-Migration erzeugt das erste echte Backup.
             using (EchoPlayDbContext context = CreateFileContext())
             {
-                await new DatabaseInitializer(context).InitializeAsync();
+                await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             // Ältere Backup-Artefakte simulieren (ISO-Zeitstempel sortieren lexikografisch).
@@ -278,7 +278,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Hinweis: MigrateAsync würde die AppSettings-Tabelle noch einmal anzulegen versuchen
             // und scheitern. Wir testen daher gezielt die Backup-Gate-Logik, nicht die
             // vollständige Migration.
-            (bool enabled, _) = await new DatabaseInitializer(context).TryReadBackupSettingsAsync();
+            (bool enabled, _) = await new DatabaseInitializer(context).TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
             Assert.False(enabled);
 
             // Backup wurde nicht angelegt, weil der Aufrufer `enabled=false` bekommt und

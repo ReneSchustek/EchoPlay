@@ -4,7 +4,6 @@ namespace EchoPlay.App.Services
     /// Stellt Zugriff auf lokalisierte UI-Strings bereit.
     /// Intern werden die <c>.resw</c>-Ressourcendateien aus <c>Strings/{sprache}/Resources.resw</c> genutzt.
     /// </summary>
-
     public interface ILocalizationService
     {
         /// <summary>

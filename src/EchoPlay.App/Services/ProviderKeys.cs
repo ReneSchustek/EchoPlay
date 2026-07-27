@@ -8,7 +8,6 @@ namespace EchoPlay.App.Services
     /// <c>EchoPlay.Data.Entities.Settings</c> liegt und die App-Schicht hier keine
     /// Daten-Abhängigkeit aufnehmen will.
     /// </summary>
-
     internal static class ProviderKeys
     {
         public const string Spotify = "Spotify";

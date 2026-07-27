@@ -7,7 +7,6 @@ namespace EchoPlay.App.Services
     /// Kombiniert die öffentlichen Spotify-URLs aus <see cref="SpotifyOptions"/> mit den
     /// DPAPI-verschlüsselten Credentials aus dem <see cref="ISpotifyCredentialStore"/>.
     /// </summary>
-
     public sealed class SpotifyOptionsProvider : ISpotifyOptionsProvider
     {
         private readonly SpotifyOptions _baseOptions;
@@ -20,7 +19,6 @@ namespace EchoPlay.App.Services
         /// Basis-Optionen aus <c>appsettings.json</c> — enthält nur ApiBaseUrl und AuthBaseUrl.
         /// </param>
         /// <param name="credentialStore">Store für die verschlüsselten Credentials.</param>
-
         public SpotifyOptionsProvider(SpotifyOptions baseOptions, ISpotifyCredentialStore credentialStore)
         {
             _baseOptions = baseOptions;

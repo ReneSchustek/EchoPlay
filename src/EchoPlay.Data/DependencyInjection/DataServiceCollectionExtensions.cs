@@ -33,6 +33,7 @@ namespace EchoPlay.Data.DependencyInjection
             _ = services.AddScoped<DatabaseInitializer>();
 
             // Registrierung der Services mit Scoped-Lifetime, passend zum DbContext-Lifecycle.
+            _ = services.AddScoped<IWatchedTitleDataService, WatchedTitleDataService>();
             _ = services.AddScoped<ISeriesDataService, SeriesDataService>();
             _ = services.AddScoped<IEpisodeDataService, EpisodeDataService>();
             _ = services.AddScoped<IPlaybackStateDataService, PlaybackStateDataService>();

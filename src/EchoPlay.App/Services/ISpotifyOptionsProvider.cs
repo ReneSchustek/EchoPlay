@@ -9,7 +9,6 @@ namespace EchoPlay.App.Services
     /// Credentials aus dem Credential-Store. Gibt <see langword="null"/> zurück, wenn
     /// keine Credentials gesetzt sind — der Aufrufer muss dann den Spotify-Flow überspringen.
     /// </summary>
-
     public interface ISpotifyOptionsProvider
     {
         /// <summary>Ob Spotify-Credentials verfügbar sind (kein DB-Zugriff).</summary>

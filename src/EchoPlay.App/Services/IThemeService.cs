@@ -4,7 +4,6 @@ namespace EchoPlay.App.Services
     /// Definiert den Vertrag für Theme-Wechsel zur Laufzeit.
     /// Ermöglicht die Entkopplung von ViewModels und Tests von der konkreten <see cref="ThemeService"/>-Implementierung.
     /// </summary>
-
     public interface IThemeService
     {
         /// <summary>

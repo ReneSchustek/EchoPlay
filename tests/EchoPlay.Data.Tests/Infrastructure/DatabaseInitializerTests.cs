@@ -58,7 +58,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             DatabaseInitializer initializer = new(_context!);
 
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
             IEnumerable<string> pending = await _context.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             DatabaseInitializer initializer = new(_context!);
 
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Reflektiert die Schema-Erweiterungen aus dem Sicherheits-/Provider-Block:
             // - SourceHash-Spalte auf CoverImages (Cover-Integrity per SHA-256)
@@ -98,11 +98,11 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             DatabaseInitializer initializer = new(_context!);
 
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
             int firstAppliedCount = (await _context!.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken)).Count();
 
             // Zweiter Aufruf darf kein neues Schema anwenden und keine Fehler werfen.
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
             int secondAppliedCount = (await _context.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken)).Count();
 
             Assert.Equal(firstAppliedCount, secondAppliedCount);
@@ -115,7 +115,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Regressions-Schutz: die am 2026-04-13 konsolidierte Migration muss als angewandt gelten.
             DatabaseInitializer initializer = new(_context!);
 
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             IEnumerable<string> applied = await _context!.Database.GetAppliedMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken);
             Assert.Contains(applied, id => id.Contains("AddSourceHashSecureSettingsProviderIds", StringComparison.Ordinal));
@@ -128,7 +128,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // exakt die vier neuen Indizes mit ihren WHERE-Klauseln in sqlite_master schreibt.
             DatabaseInitializer initializer = new(_context!);
 
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             using SqliteCommand cmd = _connection!.CreateCommand();
             cmd.CommandText = """
@@ -166,7 +166,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // nicht zerlegen. EnsureCreated würde nur das aktuelle Modell anlegen – wir nutzen
             // bewusst den produktiven Initializer-Pfad, der die volle Migrationskette abspielt.
             DatabaseInitializer initializer = new(_context!);
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             Series series = new() { Title = "Migration-Fixture" };
             _ = _context!.Series.Add(series);
@@ -199,7 +199,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Zweiter InitializeAsync-Aufruf darf an bestehenden Daten nicht scheitern.
-            await initializer.InitializeAsync();
+            await initializer.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.Empty(await _context.Database.GetPendingMigrationsAsync(cancellationToken: TestContext.Current.CancellationToken));
             Assert.Equal(1, await _context.Episodes.CountAsync(cancellationToken: TestContext.Current.CancellationToken));

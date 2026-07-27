@@ -39,6 +39,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService ?? new FakeEpisodeDataService());
             _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
@@ -205,9 +206,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             vm.SetEpisodes(
             [
-                new(Guid.NewGuid(), 1, "Folge 1"),
-                new(Guid.NewGuid(), 3, "Folge 3"),
-                new(Guid.NewGuid(), 2, "Folge 2"),
+                new(Helpers.TestIds.EpisodeA, 1, "Folge 1"),
+                new(Helpers.TestIds.EpisodeC, 3, "Folge 3"),
+                new(Helpers.TestIds.EpisodeB, 2, "Folge 2"),
             ]);
 
             // Sortier-Auswahl bleibt erhalten ...

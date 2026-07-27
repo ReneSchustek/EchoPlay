@@ -7,7 +7,6 @@ namespace EchoPlay.App.Services
     /// Definiert den Vertrag für modale Bestätigungs-Dialoge.
     /// Ermöglicht ViewModels, eine Ja/Abbrechen-Frage zu stellen, ohne direkt von WinUI abhängig zu sein.
     /// </summary>
-
     public interface IConfirmationDialogService
     {
         /// <summary>

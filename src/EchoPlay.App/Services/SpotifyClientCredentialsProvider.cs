@@ -11,7 +11,6 @@ namespace EchoPlay.App.Services
     /// <see cref="ISpotifyClientCredentialsProvider"/>, das der Token-Client in
     /// <c>EchoPlay.Spotify</c> nutzt. Entkoppelt die Spotify-Library vom App-Credential-Store.
     /// </summary>
-
     public sealed class SpotifyClientCredentialsProvider : ISpotifyClientCredentialsProvider
     {
         private readonly ISpotifyOptionsProvider _optionsProvider;
@@ -19,7 +18,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Erstellt den Adapter mit dem App-Options-Provider als Quelle.
         /// </summary>
-
         /// <param name="optionsProvider">Parameter <c>optionsProvider</c>.</param>
         public SpotifyClientCredentialsProvider(ISpotifyOptionsProvider optionsProvider)
         {
@@ -28,7 +26,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<SpotifyClientCredentials?> GetAsync(CancellationToken cancellationToken = default)
         {
             SpotifyOptions? options = await _optionsProvider.GetAsync(cancellationToken).ConfigureAwait(false);

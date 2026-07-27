@@ -13,7 +13,6 @@ namespace EchoPlay.App.Services
     /// CoverImages-Tabelle, das optionale Schreiben von <c>cover.jpg</c> und das
     /// abschließende Update der Card-Bitmap. Aus dem MediathekLokalViewModel ausgelagert.
     /// </summary>
-
     public interface IEpisodeCoverCoordinator
     {
         /// <summary>
@@ -29,7 +28,6 @@ namespace EchoPlay.App.Services
         /// wenn die Karte bereits ein Cover hat.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="card">Parameter <c>card</c>.</param>
         /// <param name="bytes">Parameter <c>bytes</c>.</param>
         Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default);
@@ -37,7 +35,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Übernimmt rohe Bytes als Episoden-Cover. Fragt vor dem Überschreiben nach.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="card">Parameter <c>card</c>.</param>
         /// <param name="bytes">Parameter <c>bytes</c>.</param>
@@ -47,7 +44,6 @@ namespace EchoPlay.App.Services
         /// Lädt das Cover-Bild zum gewählten <see cref="CoverSearchHit"/> herunter
         /// und übernimmt es als Serien-Cover. Bei Download-Fehler erscheint ein Hinweisdialog.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="card">Parameter <c>card</c>.</param>
         /// <param name="hit">Parameter <c>hit</c>.</param>
@@ -57,7 +53,6 @@ namespace EchoPlay.App.Services
         /// Lädt das Cover-Bild zum gewählten <see cref="CoverSearchHit"/> herunter
         /// und übernimmt es als Episoden-Cover. Bei Download-Fehler erscheint ein Hinweisdialog.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="card">Parameter <c>card</c>.</param>
         /// <param name="hit">Parameter <c>hit</c>.</param>

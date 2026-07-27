@@ -20,11 +20,9 @@ namespace EchoPlay.App.Services
     /// Prüft beim App-Start über die GitHub Releases API, ob eine neuere Version verfügbar ist.
     /// Berücksichtigt den Offline-Modus und die vom Nutzer übersprungene Version.
     /// </summary>
-
     public sealed partial class UpdateCheckService
     {
         /// <summary>GitHub-Repository im Format "owner/repo".</summary>
-
         private const string GitHubRepo = "ReneSchustek/EchoPlay";
 
         /// <summary>Maximale Wartezeit für die GitHub-API-Abfrage.</summary>
@@ -45,7 +43,6 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Für scoped AppSettings-Abfrage.</param>
         /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
         /// <param name="loggerFactory">Logger-Fabrik für Job-Scopes und Diagnose.</param>
-
         public UpdateCheckService(IServiceScopeFactory scopeFactory, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -146,7 +143,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="version">Die zu überspringende Versionsnummer.</param>
         /// <param name="cancellationToken">Abbruch-Token (z. B. App-Shutdown).</param>
-
         public async Task SkipVersionAsync(string version, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -164,7 +160,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Ermittelt die aktuelle App-Version aus den Assembly-Metadaten.
         /// </summary>
-
         private static Version? GetCurrentVersion()
         {
             return Assembly.GetExecutingAssembly().GetName().Version;

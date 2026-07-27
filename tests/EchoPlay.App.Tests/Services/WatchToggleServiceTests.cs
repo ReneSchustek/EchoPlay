@@ -76,7 +76,8 @@ namespace EchoPlay.App.Tests.Services
         public async Task ToggleAsync_UnknownSeries_DoesNotThrow()
         {
             (WatchToggleService toggle, _, _) = BuildService();
-            Guid unknown = Guid.NewGuid();
+            // Feste, im Bestand nicht vergebene ID – reproduzierbar statt zufällig.
+            Guid unknown = Helpers.TestIds.SeriesE;
 
             // Toggle einer nicht existierenden Serie darf nicht schmeissen — der Service
             // tolleriert den NotFound-Pfad, weil SeriesDataService.SetWatchedAsync nur

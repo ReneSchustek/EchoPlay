@@ -17,7 +17,6 @@ namespace EchoPlay.App.Services
     /// Die Datei wird unter <c>%TEMP%</c> abgelegt und nach dem Start des Installers
     /// beendet sich die App, damit der Installer die Dateien aktualisieren kann.
     /// </summary>
-
     public sealed partial class UpdateDownloadService
     {
         // Akzeptierte Versions-Tags: 1, 1.2, 1.2.3, 1.2.3.4 — strikt numerisch.
@@ -34,8 +33,6 @@ namespace EchoPlay.App.Services
         /// Client <c>UpdateDownload</c>, der ein längeres Timeout und den passenden
         /// User-Agent trägt.
         /// </summary>
-
-
         /// <param name="httpClientFactory">Parameter <c>httpClientFactory</c>.</param>
         /// <param name="loggerFactory">Parameter <c>loggerFactory</c>.</param>
         public UpdateDownloadService(IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)

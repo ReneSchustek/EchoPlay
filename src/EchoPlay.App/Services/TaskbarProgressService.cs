@@ -12,7 +12,6 @@ namespace EchoPlay.App.Services
     /// Der Service ist als Singleton registriert und wird von <see cref="EchoPlay.App.ViewModels.StatusBarViewModel"/>
     /// bei jedem Scan-Fortschritts-Update aufgerufen.
     /// </summary>
-
     public sealed class TaskbarProgressService
     {
         // Mapping in TaskbarProgressStateExtensions — testbar ohne COM.
@@ -131,7 +130,6 @@ namespace EchoPlay.App.Services
         /// Gibt das Window-Handle (HWND) des Hauptfensters zurück.
         /// 0 wenn das Fenster noch nicht bereit ist.
         /// </summary>
-
         private static nint GetHwnd()
         {
             if (App.MainWindow is null)

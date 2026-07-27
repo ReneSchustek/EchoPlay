@@ -9,7 +9,6 @@ namespace EchoPlay.App.Services
     /// und navigiert über den <see cref="INavigationService"/> zurück.
     /// Vermeidet duplizierten Offline-/Nur-Online-Check in den Mediathek- und Suche-ViewModels.
     /// </summary>
-
     public interface IPageModeGuard
     {
         /// <summary>

@@ -13,7 +13,6 @@ namespace EchoPlay.App.Services
     /// DPAPI ist an den Windows-Benutzer gebunden — die Daten sind nur auf derselben
     /// Maschine und mit demselben Benutzerkonto entschlüsselbar.
     /// </summary>
-
     public sealed class SpotifyCredentialStore : ISpotifyCredentialStore
     {
         private const string KeyClientId = "Spotify:ClientId";
@@ -28,7 +27,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Erstellt einen neuen Credential-Store.
         /// </summary>
-
         public SpotifyCredentialStore(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory)
@@ -85,9 +83,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="clientId">Parameter <c>clientId</c>.</param>
         /// <param name="clientSecret">Parameter <c>clientSecret</c>.</param>
         public async Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default)
@@ -109,7 +105,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task ClearAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -126,7 +121,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();

@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Tests.Services
             // getrackte Entitäten zurückgreift.
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
 
             int expectedCount = 1;
 
@@ -53,7 +53,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             Series? result = await service.GetByIdAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result);
@@ -63,7 +63,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
         {
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
 
             Series? result = await service.GetByIdAsync(new Guid("99999999-9999-9999-9999-999999999997"), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -78,7 +78,7 @@ namespace EchoPlay.Data.Tests.Services
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             Series? result = await service.GetByAppleMusicArtistIdAsync("12345", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result);
@@ -88,7 +88,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task GetByAppleMusicArtistIdAsync_ReturnsNull_WhenNotFound()
         {
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
 
             Series? result = await service.GetByAppleMusicArtistIdAsync("99999", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -101,7 +101,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
 
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
             await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
@@ -112,7 +112,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task SetWatchedAsync_UnknownId_DoesNotThrow()
         {
-            SeriesDataService service = new(Context, NullLoggerFactory);
+            SeriesDataService service = CreateSeriesService();
 
             // Unbekannte ID → kein Fehler, nur Log-Warnung
             await service.SetWatchedAsync(new Guid("99999999-9999-9999-9999-999999999998"), true, cancellationToken: TestContext.Current.CancellationToken);

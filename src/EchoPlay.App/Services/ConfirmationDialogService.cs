@@ -9,7 +9,6 @@ namespace EchoPlay.App.Services
     /// Content-Aufbau (Texte + lokalisierte Buttons) liegt in
     /// <see cref="ConfirmationDialogContent.Build"/>, damit ohne XamlRoot testbar.
     /// </summary>
-
     public sealed class ConfirmationDialogService : IConfirmationDialogService
     {
         /// <inheritdoc />

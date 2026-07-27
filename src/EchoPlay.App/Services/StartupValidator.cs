@@ -20,7 +20,6 @@ namespace EchoPlay.App.Services
     /// Die Ergebnisse werden im <see cref="StartupResult"/> zusammengefasst, damit das Dashboard
     /// direkt auf aktuelle, bereinigte Daten zugreifen kann – ohne eigene Checks.
     /// </summary>
-
     public sealed class StartupValidator : IStartupValidator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -37,7 +36,6 @@ namespace EchoPlay.App.Services
         /// <param name="httpClientFactory">Fabrik für den Online-Check-HttpClient (Named „OnlineCheck").</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="clock">Zeitquelle für Zeitstempel.</param>
-
         public StartupValidator(
             IServiceScopeFactory scopeFactory,
             BackgroundCoverService backgroundCoverService,
@@ -70,6 +68,8 @@ namespace EchoPlay.App.Services
                 scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             ICachedNewReleaseDataService cacheService =
                 scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
+            IWatchedTitleDataService watchedTitleService =
+                scope.ServiceProvider.GetRequiredService<IWatchedTitleDataService>();
 
             AppSettings settings = await settingsService.GetAsync(cancellationToken);
             IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync(cancellationToken);
@@ -139,7 +139,7 @@ namespace EchoPlay.App.Services
 
             // Merkliste der überwachten Titel nachziehen – sie gibt neu eingelesenen Serien
             // ihre Überwachung zurück, nachdem die Mediathek geleert wurde.
-            _ = await seriesService.SyncWatchedTitlesAsync(cancellationToken);
+            _ = await watchedTitleService.SyncFromWatchedSeriesAsync(cancellationToken);
 
             List<Guid> unwatchedSeriesIds = subscribedSeries
                 .Where(s => !s.IsWatched)
@@ -267,7 +267,6 @@ namespace EchoPlay.App.Services
         /// Leichtgewichtig: kein Body, nur Verbindungsaufbau und Antwort.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         private async Task<bool> CheckOnlineConnectivityAsync(CancellationToken cancellationToken)
         {
             try
@@ -296,7 +295,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="path">Pfad zum lokalen Bibliotheksverzeichnis.</param>
         /// <returns><see langword="true"/> wenn das Verzeichnis erreichbar und lesbar ist.</returns>
-
         private bool CheckLocalLibraryAccess(string path)
         {
             try

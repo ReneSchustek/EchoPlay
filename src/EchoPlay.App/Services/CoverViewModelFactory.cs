@@ -20,7 +20,6 @@ namespace EchoPlay.App.Services
     /// Verhindert dass dieselbe Logik in <c>DashboardDataLoader</c> und
     /// <c>SeriesDetailViewModel</c> auseinanderdriftet.
     /// </summary>
-
     public interface ICoverViewModelFactory
     {
         /// <summary>
@@ -51,8 +50,6 @@ namespace EchoPlay.App.Services
         /// in Test-Konstellationen ohne Cover-Service liefert die Factory `null` für
         /// alle DB-Cover-Pfade und fällt sofort auf den Datei-/URL-Pfad zurück.
         /// </summary>
-
-
         /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
         /// <param name="coverService">Parameter <c>coverService</c>.</param>
         public CoverViewModelFactory(IServiceScopeFactory scopeFactory, ICoverService? coverService = null)
@@ -64,7 +61,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="series">Parameter <c>series</c>.</param>
         public async Task<BitmapImage?> BuildSeriesCoverAsync(Series? series, CancellationToken cancellationToken = default)
         {
@@ -109,7 +105,6 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="episode">Parameter <c>episode</c>.</param>
         public async Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode, CancellationToken cancellationToken = default)
         {

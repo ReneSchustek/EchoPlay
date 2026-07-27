@@ -34,11 +34,10 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <summary>
         /// Führt eine reale Künstler-Suche gegen die iTunes Search API aus.
         ///
-        /// Zum Aktivieren den Skip-Parameter temporär entfernen.
+        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) – braucht Netz.
         /// </summary>
 
-        //[Fact]
-        [Fact(Skip = "Manuell ausführen – benötigt Internetzugang")]
+        [Fact(Explicit = true)]
         public async Task ITunesApi_IsReachable_AndReturnsArtists()
         {
             // ACT
@@ -55,11 +54,10 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <summary>
         /// Prüft, ob Alben eines bekannten Künstlers geladen werden können.
         ///
-        /// Zum Aktivieren den Skip-Parameter temporär entfernen.
+        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) – braucht Netz.
         /// </summary>
 
-        //[Fact]
-        [Fact(Skip = "Manuell ausführen – benötigt Internetzugang")]
+        [Fact(Explicit = true)]
         public async Task ITunesApi_LookupAlbums_ReturnsAlbums()
         {
             // ARRANGE – Künstler suchen, um eine gültige Artist-ID zu erhalten
@@ -86,11 +84,10 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <summary>
         /// Prüft, ob Tracks eines bekannten Albums geladen werden können.
         ///
-        /// Zum Aktivieren den Skip-Parameter temporär entfernen.
+        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) – braucht Netz.
         /// </summary>
 
-        //[Fact]
-        [Fact(Skip = "Manuell ausführen – benötigt Internetzugang")]
+        [Fact(Explicit = true)]
         public async Task ITunesApi_LookupTracks_ReturnsTracks()
         {
             // ARRANGE – Künstler und Album suchen

@@ -16,7 +16,6 @@ namespace EchoPlay.App.Services
     /// Wird aufgerufen, wenn der Nutzer die Überwachung für eine Serie aktiviert,
     /// damit die Ergebnisse sofort im Cache liegen und beim nächsten Dashboard-Besuch angezeigt werden.
     /// </summary>
-
     internal static class NewReleaseCheckHelper
     {
         /// <summary>

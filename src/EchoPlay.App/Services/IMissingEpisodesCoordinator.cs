@@ -13,7 +13,6 @@ namespace EchoPlay.App.Services
     /// per iTunes und die Status-Bar-Aktualisierung – das ViewModel sieht nur zwei
     /// Eintrittspunkte und reicht den Modus aus dem UI-Dialog durch.
     /// </summary>
-
     public interface IMissingEpisodesCoordinator
     {
         /// <summary>

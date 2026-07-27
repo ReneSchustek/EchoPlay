@@ -21,7 +21,6 @@ namespace EchoPlay.App.Services
     ///
     /// Provider-Auswahl: Keyed-Services mit "Spotify" bzw. "AppleMusic" als Schlüssel.
     /// </summary>
-
     public sealed class ImportService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -34,7 +33,6 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Fabrik für DI-Scopes.</param>
         /// <param name="coverCacheService">Service zum Herunterladen und Cachen von Episoden-Covern.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-
         public ImportService(
             IServiceScopeFactory scopeFactory,
             EpisodeCoverCacheService coverCacheService,
@@ -131,7 +129,6 @@ namespace EchoPlay.App.Services
         /// <param name="query">Suchbegriff – wird an die Provider-API weitergereicht.</param>
         /// <returns>Album-Treffer plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<SearchOutcome> SearchAlbumsAsync(string query, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -226,7 +223,6 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die zu prüfende ImportSerie.</param>
         /// <returns>True wenn die Serie bereits importiert wurde.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<bool> IsAlreadyImportedAsync(ImportSeries series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -249,7 +245,6 @@ namespace EchoPlay.App.Services
         /// </param>
         /// <returns>Die ID der neuen oder bereits vorhandenen Serie.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<Guid> ImportAsync(ImportSeries importSeries, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(importSeries);
@@ -258,6 +253,7 @@ namespace EchoPlay.App.Services
 
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            IWatchedTitleDataService watchedTitleService = scope.ServiceProvider.GetRequiredService<IWatchedTitleDataService>();
 
             // Früh abbrechen, falls bereits importiert
             Series? existing = await FindExistingSeriesAsync(seriesService, importSeries, cancellationToken);
@@ -272,7 +268,7 @@ namespace EchoPlay.App.Services
 
             // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt.
             // Früher überwachte Titel bekommen ihre Überwachung zurück (überlebt „Mediathek leeren").
-            IReadOnlySet<string> watchedTitles = await seriesService.GetWatchedTitlesAsync(cancellationToken);
+            IReadOnlySet<string> watchedTitles = await watchedTitleService.GetAllAsync(cancellationToken);
             Series series = MapToSeries(importSeries, watchedTitles);
             await seriesService.AddAsync(series, cancellationToken);
 
@@ -316,7 +312,6 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die bestehende Serie mit gesetzter SpotifyArtistId oder AppleMusicArtistId.</param>
         /// <returns>Anzahl der neu angelegten Episoden. 0 wenn kein Provider zugeordnet oder keine Episoden gefunden.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<int> ReImportEpisodesAsync(Series series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -368,7 +363,6 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die bestehende Serie mit gesetzter Provider-ID.</param>
         /// <returns>Anzahl der neu importierten Episoden. 0 wenn keine neuen gefunden.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<int> DeltaImportEpisodesAsync(Series series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -458,7 +452,6 @@ namespace EchoPlay.App.Services
         /// Loggt eine Warnung, wenn Duplikate verworfen wurden, damit Provider-Anomalien
         /// im Triage-Log sichtbar bleiben.
         /// </summary>
-
         private List<ImportEpisode> DeduplicateBySourceEpisodeId(
             IReadOnlyList<ImportEpisode> episodes,
             string seriesTitle)
@@ -489,9 +482,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Sucht eine bestehende Serie anhand der externen ID und Quelle.
         /// </summary>
-
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         /// <param name="service">Parameter <c>service</c>.</param>
         /// <param name="series">Parameter <c>series</c>.</param>
         private static async Task<Series?> FindExistingSeriesAsync(ISeriesDataService service, ImportSeries series, CancellationToken cancellationToken = default)
@@ -510,7 +501,6 @@ namespace EchoPlay.App.Services
         /// Import und Abonnement sind dasselbe Konzept – jede importierte Serie ist direkt abonniert
         /// und erscheint sofort im Dashboard und in der Mediathek.
         /// </summary>
-
         /// <param name="importSeries">Parameter <c>importSeries</c>.</param>
         /// <param name="watchedTitles">Normalisierte Titel mit früher aktivierter Überwachung.</param>
         private static Series MapToSeries(ImportSeries importSeries, IReadOnlySet<string> watchedTitles)
@@ -533,8 +523,6 @@ namespace EchoPlay.App.Services
         /// Erstellt eine <see cref="Episode"/>-Entität aus einem <see cref="ImportEpisode"/>-Modell.
         /// Setzt die provider-spezifische Album-ID anhand der Source-Bezeichnung.
         /// </summary>
-
-
         /// <param name="importEpisode">Parameter <c>importEpisode</c>.</param>
         /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         private static Episode MapToEpisode(ImportEpisode importEpisode, Guid seriesId)

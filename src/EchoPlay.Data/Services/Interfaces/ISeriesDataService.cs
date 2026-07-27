@@ -100,24 +100,6 @@ namespace EchoPlay.Data.Services.Interfaces
         Task SetWatchedAsync(Guid seriesId, bool isWatched, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Liefert die Vergleichsformen aller Serientitel, für die der Nutzer die Überwachung
-        /// aktiviert hat. Die Liste überlebt das Leeren der Mediathek und dient dazu, neu
-        /// eingelesenen Serien ihre frühere Überwachung zurückzugeben.
-        /// </summary>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Normalisierte Titel (<c>HoerspielTextNormalizer.Normalize</c>).</returns>
-        Task<IReadOnlySet<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Gleicht die Merkliste mit den aktuell überwachten Serien ab und ergänzt fehlende
-        /// Einträge. Deckt Bestände ab, die vor Einführung der Merkliste entstanden sind,
-        /// und hält sie robust gegen direkt gesetzte Flags.
-        /// </summary>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Anzahl der neu aufgenommenen Titel.</returns>
-        Task<int> SyncWatchedTitlesAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Führt eine logische Löschung (Soft-Delete) der Serie durch.
         /// </summary>
         /// <param name="id">Die ID der zu löschenden Serie.</param>

@@ -15,7 +15,6 @@ namespace EchoPlay.App.Services
     /// auf ihren Slot wartet oder gerade läuft, pausieren Background-Anfragen, damit die
     /// sichtbare UI das HTTP-Kontingent und Rate-Limit-Fenster zuerst bekommt.
     /// </summary>
-
     public sealed class SemaphoreHostRateLimiter : IHostRateLimiter
     {
         private readonly IReadOnlyDictionary<string, TimeSpan> _intervals;
@@ -35,7 +34,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="intervals">Minimum-Intervall pro Hostname.</param>
         /// <param name="defaultInterval">Fallback-Intervall für unbekannte Hosts.</param>
-
         public SemaphoreHostRateLimiter(
             IReadOnlyDictionary<string, TimeSpan> intervals,
             TimeSpan? defaultInterval = null)
@@ -45,17 +43,12 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-
-
         /// <param name="host">Parameter <c>host</c>.</param>
         /// <param name="ct">Parameter <c>ct</c>.</param>
         public Task WaitAsync(string host, CancellationToken ct = default)
             => WaitAsync(host, CoverFetchPriority.Background, ct);
 
         /// <inheritdoc/>
-
-
-
         /// <param name="host">Parameter <c>host</c>.</param>
         /// <param name="priority">Parameter <c>priority</c>.</param>
         /// <param name="ct">Parameter <c>ct</c>.</param>
@@ -92,8 +85,6 @@ namespace EchoPlay.App.Services
         /// Wartet den konfigurierten Mindestabstand seit dem letzten Aufruf für
         /// <paramref name="host"/> ab und setzt den Zeitstempel neu.
         /// </summary>
-
-
         /// <param name="host">Parameter <c>host</c>.</param>
         /// <param name="ct">Parameter <c>ct</c>.</param>
         private async Task WaitForSlotAsync(string host, CancellationToken ct)
@@ -130,7 +121,6 @@ namespace EchoPlay.App.Services
         /// Gibt alle gehaltenen <see cref="SemaphoreSlim"/>-Handles frei. Nach
         /// Dispose wirft <see cref="WaitAsync(string, CancellationToken)"/> <see cref="ObjectDisposedException"/>.
         /// </summary>
-
         public void Dispose()
         {
             if (_disposed) return;

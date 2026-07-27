@@ -122,6 +122,13 @@ namespace EchoPlay.App.ViewModels
 
             await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, SeriesId, newValue);
             IsFavorite = newValue;
+
+            // Favorisieren aktiviert in der Datenschicht zugleich die Überwachung –
+            // ohne diese Zeile bliebe das Auge auf der Kachel bis zum nächsten Laden aus.
+            if (newValue)
+            {
+                IsWatched = true;
+            }
         }
     }
 }

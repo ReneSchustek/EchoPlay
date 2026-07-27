@@ -1529,4 +1529,15 @@ Die Anwendung wird beendet.</value>
   <data name="SeriesDetailBackButton.AutomationProperties.Name" xml:space="preserve">
     <value>Zurück</value>
   </data>
+
+  <!-- Barrierefreiheit: Kachel-Schaltflaechen nennen Funktion und Bezugsobjekt -->
+  <data name="TilePlayAutomationName" xml:space="preserve">
+    <value>Abspielen: {0}</value>
+  </data>
+  <data name="TileOpenAutomationName" xml:space="preserve">
+    <value>Öffnen: {0}</value>
+  </data>
+  <data name="TileActionsAutomationName" xml:space="preserve">
+    <value>Weitere Aktionen: {0}</value>
+  </data>
 </root>

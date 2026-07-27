@@ -10,6 +10,8 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class UnheardSeriesCardViewModel
     {
+        private readonly EchoPlay.App.Services.ILocalizationService? _localizationService;
+
         /// <summary>
         /// Erstellt eine Kachel für eine angefangene Serie mit ungehörten Folgen.
         /// </summary>
@@ -17,12 +19,15 @@ namespace EchoPlay.App.ViewModels
         /// <param name="seriesName">Titel der Serie.</param>
         /// <param name="coverImage">Serien-Cover oder null.</param>
         /// <param name="unheardCount">Anzahl der noch nicht gehörten Folgen.</param>
+        /// <param name="localizationService">Für den Automation-Namen der Kachel. Nullable für Tests.</param>
         public UnheardSeriesCardViewModel(
             Guid seriesId,
             string seriesName,
             BitmapImage? coverImage,
-            int unheardCount)
+            int unheardCount,
+            EchoPlay.App.Services.ILocalizationService? localizationService = null)
         {
+            _localizationService = localizationService;
             SeriesId = seriesId;
             SeriesName = seriesName;
             CoverImage = coverImage;
@@ -39,6 +44,12 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Titel der Serie.</summary>
         public string SeriesName { get; }
+
+        /// <summary>
+        /// Automation-Name der Kachel-Schaltfläche: nennt die Aktion und die Serie.
+        /// </summary>
+        public string OpenAutomationName => AutomationNameFormatter.Format(
+            _localizationService, "TileOpenAutomationName", "Öffnen: {0}", SeriesName);
 
         /// <summary>Serien-Cover oder null wenn keines vorhanden.</summary>
         public BitmapImage? CoverImage { get; }

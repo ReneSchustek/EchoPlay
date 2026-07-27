@@ -232,7 +232,7 @@ namespace EchoPlay.App.Services
 
             // Früher überwachte Titel: gibt neu eingelesenen Serien ihre Überwachung zurück,
             // nachdem die Mediathek geleert wurde (Series-Zeilen sind dabei physisch weg).
-            IReadOnlyCollection<string> watchedTitles =
+            IReadOnlySet<string> watchedTitles =
                 await seriesService.GetWatchedTitlesAsync(cancellationToken);
 
             List<SeriesPipelineEntry> entries = new(scanResults.Count);

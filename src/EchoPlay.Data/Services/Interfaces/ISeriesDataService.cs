@@ -106,7 +106,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Normalisierte Titel (<c>HoerspielTextNormalizer.Normalize</c>).</returns>
-        Task<IReadOnlyCollection<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlySet<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gleicht die Merkliste mit den aktuell überwachten Serien ab und ergänzt fehlende

@@ -77,11 +77,10 @@ namespace EchoPlay.App.Tests.Views
                 + Environment.NewLine + string.Join(Environment.NewLine, offenders));
         }
 
+        // Attached Properties stehen im XAML ohne Namensraum-Präfix; XLinq liefert sie
+        // als Attributnamen "AutomationProperties.Name".
         private static bool HasAutomationName(XElement element) =>
-            element.Attributes().Any(a => a.Name.LocalName == "Name"
-                && a.Name.NamespaceName.Contains("AutomationProperties", StringComparison.Ordinal))
-            || element.Attributes().Any(a => a.Name.LocalName.EndsWith("AutomationProperties.Name", StringComparison.Ordinal))
-            || element.Attributes().Any(a => a.Name.ToString().Contains("AutomationProperties.Name", StringComparison.Ordinal));
+            element.Attribute("AutomationProperties.Name") is not null;
 
         /// <summary>
         /// Ein Button gilt als „nur Icon", wenn er weder Content-Attribut noch Textinhalt hat

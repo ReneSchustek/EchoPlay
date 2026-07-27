@@ -147,8 +147,8 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<IReadOnlyCollection<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyCollection<string>>(_watchedTitles);
+        public Task<IReadOnlySet<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlySet<string>>(_watchedTitles);
 
         /// <inheritdoc/>
         public Task<int> SyncWatchedTitlesAsync(CancellationToken cancellationToken = default)

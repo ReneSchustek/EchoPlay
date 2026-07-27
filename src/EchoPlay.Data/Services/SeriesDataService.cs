@@ -143,7 +143,7 @@ namespace EchoPlay.Data.Services
         /// <param name="isSubscribed"><see langword="true"/> zum Abonnieren, <see langword="false"/> zum Abbestellen.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public Task SetSubscribedAsync(Guid seriesId, bool isSubscribed, CancellationToken cancellationToken = default) =>
-            SetFlagAsync(seriesId, s => s.IsSubscribed, isSubscribed, nameof(Series.IsSubscribed));
+            SetFlagAsync(seriesId, s => s.IsSubscribed, isSubscribed, nameof(Series.IsSubscribed), cancellationToken);
 
         /// <summary>
         /// Liefert alle favorisierten, nicht gelöschten Serien, sortiert nach Titel.
@@ -182,7 +182,7 @@ namespace EchoPlay.Data.Services
         {
             if (!isFavorite)
             {
-                await SetFlagAsync(seriesId, s => s.IsFavorite, false, nameof(Series.IsFavorite)).ConfigureAwait(false);
+                await SetFlagAsync(seriesId, s => s.IsFavorite, false, nameof(Series.IsFavorite), cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -214,7 +214,7 @@ namespace EchoPlay.Data.Services
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SetWatchedAsync(Guid seriesId, bool isWatched, CancellationToken cancellationToken = default)
         {
-            await SetFlagAsync(seriesId, s => s.IsWatched, isWatched, nameof(Series.IsWatched)).ConfigureAwait(false);
+            await SetFlagAsync(seriesId, s => s.IsWatched, isWatched, nameof(Series.IsWatched), cancellationToken).ConfigureAwait(false);
 
             if (isWatched)
             {
@@ -228,7 +228,7 @@ namespace EchoPlay.Data.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<IReadOnlyCollection<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlySet<string>> GetWatchedTitlesAsync(CancellationToken cancellationToken = default)
         {
             List<string> titles = await _context.WatchedTitles
                 .Select(w => w.NormalizedTitle)
@@ -279,7 +279,15 @@ namespace EchoPlay.Data.Services
             }
 
             _context.WatchedTitles.AddRange(missing);
-            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            // Gleiche Begründung wie in RememberWatchedTitleAsync: ein parallel laufender
+            // Favoriten-Klick kann denselben Titel bereits eingetragen haben.
+            DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
+            if (conflict is not null)
+            {
+                _logger.Debug(() => $"Merklisten-Abgleich traf auf bereits vorhandene Titel: {conflict.InnerException?.Message}");
+                return 0;
+            }
 
             _logger.Info("{Count} überwachte Serientitel in die Merkliste übernommen.", missing.Count);
             return missing.Count;
@@ -317,7 +325,14 @@ namespace EchoPlay.Data.Services
                 NormalizedTitle = normalized
             });
 
-            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            // Zwischen Prüfung und Insert kann ein paralleler Scope denselben Titel angelegt haben
+            // (Startup-Abgleich und Favoriten-Klick laufen unabhängig voneinander). Der UNIQUE-Index
+            // fängt das ab; der Konflikt ist hier kein Fehler, sondern das gewünschte Ergebnis.
+            DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
+            if (conflict is not null)
+            {
+                _logger.Debug(() => $"Titel '{normalized}' war bereits gemerkt (paralleler Schreibzugriff).");
+            }
         }
 
         /// <summary>
@@ -348,11 +363,12 @@ namespace EchoPlay.Data.Services
             Guid seriesId,
             System.Linq.Expressions.Expression<Func<Series, bool>> selector,
             bool value,
-            string flagName)
+            string flagName,
+            CancellationToken cancellationToken = default)
         {
             int updated = await _context.Series
                 .Where(s => s.Id == seriesId)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(selector, value))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(selector, value), cancellationToken)
                 .ConfigureAwait(false);
 
             if (updated == 0)

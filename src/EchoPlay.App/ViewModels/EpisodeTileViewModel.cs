@@ -38,6 +38,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="localizationService">Für den Automation-Namen der Kontextmenü-Schaltfläche. Nullable für Tests.</param>
         /// <param name="spotifyAlbumId">Spotify-Album-ID der Folge, sofern bekannt.</param>
         /// <param name="hasLocalTrack">Ob mindestens eine lokale Audiodatei vorliegt.</param>
+        /// <param name="appleMusicAlbumId">Apple-Music-Album-ID der Folge, sofern bekannt.</param>
+        /// <param name="seriesTitle">Serientitel – Suchbegriff für Spotify, wenn keine Album-ID vorliegt.</param>
         public EpisodeTileViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -51,9 +53,13 @@ namespace EchoPlay.App.ViewModels
             BitmapImage? coverImage = null,
             EchoPlay.App.Services.ILocalizationService? localizationService = null,
             string? spotifyAlbumId = null,
-            bool hasLocalTrack = true)
+            bool hasLocalTrack = true,
+            string? appleMusicAlbumId = null,
+            string? seriesTitle = null)
         {
             SpotifyAlbumId = spotifyAlbumId;
+            AppleMusicAlbumId = appleMusicAlbumId;
+            SeriesTitle = seriesTitle;
             HasLocalTrack = hasLocalTrack;
             _localizationService = localizationService;
             EpisodeId = episodeId;
@@ -123,26 +129,86 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Ob mindestens eine lokale Audiodatei vorliegt.</summary>
         public bool HasLocalTrack { get; }
 
+        /// <summary>Serientitel \u2013 wird f\u00fcr die Spotify-Suche gebraucht, wenn keine Album-ID vorliegt.</summary>
+        public string? SeriesTitle { get; }
+
         /// <summary>
         /// Sichtbarkeit der Aktion \u201eIn Spotify \u00f6ffnen".
         /// Nur f\u00fcr Folgen ohne lokale Datei \u2014 wo lokal abgespielt werden kann, ist der Umweg
-        /// \u00fcber Spotify kein Gewinn.
+        /// \u00fcber Spotify kein Gewinn. Ohne Album-ID greift die Suche, damit Spotify unabh\u00e4ngig
+        /// davon nutzbar bleibt, \u00fcber welchen Anbieter importiert wurde.
         /// </summary>
         public Visibility OpenInSpotifyVisibility =>
-            !HasLocalTrack && SpotifyAlbumLink.TryBuild(SpotifyAlbumId, out _)
+            !HasLocalTrack && TryBuildSpotifyUrl(out _)
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
         /// <summary>
-        /// \u00d6ffnet das zugeh\u00f6rige Album in Spotify (App oder Webseite).
+        /// \u00d6ffnet die Folge in Spotify (App oder Webseite): mit bekannter Album-ID direkt das
+        /// Album, sonst die Spotify-Suche nach Serie und Folge.
         /// Startet dort nichts \u2014 die Wiedergabe l\u00f6st der Nutzer selbst aus.
         /// </summary>
         /// <returns><see langword="true"/>, wenn der Link ge\u00f6ffnet werden konnte.</returns>
         public bool OpenInSpotify()
         {
-            return SpotifyAlbumLink.TryBuild(SpotifyAlbumId, out string? url)
+            // Erst die App: dort ist der Nutzer angemeldet, im Browser meist nicht.
+            // Ist Spotify nicht installiert, meldet der Launcher das und der Web-Link greift.
+            if (SpotifyAlbumLink.TryBuildAppUri(SpotifyAlbumId, out string? appUri)
+                || SpotifyAlbumLink.TrySearchAppUri([SeriesTitle, Title], out appUri))
+            {
+                if (SafeUrlLauncher.TryOpenAppLink(appUri, "spotify"))
+                {
+                    return true;
+                }
+            }
+
+            return TryBuildSpotifyUrl(out string? url) && SafeUrlLauncher.TryOpenInBrowser(url);
+        }
+
+        /// <summary>
+        /// Album-Link bevorzugt, Suchlink als Auffangl\u00f6sung.
+        /// </summary>
+        private bool TryBuildSpotifyUrl(out string? url)
+        {
+            if (SpotifyAlbumLink.TryBuild(SpotifyAlbumId, out url))
+            {
+                return true;
+            }
+
+            return SpotifyAlbumLink.TrySearch([SeriesTitle, Title], out url);
+        }
+
+        /// <summary>Apple-Music-Album-ID der Folge, sofern bekannt.</summary>
+        public string? AppleMusicAlbumId { get; }
+
+        /// <summary>
+        /// Sichtbarkeit der Aktion „In Apple Music öffnen" – gleiche Regel wie bei Spotify:
+        /// nur für Folgen ohne lokale Datei und mit bekannter Album-ID.
+        /// </summary>
+        public Visibility OpenInAppleMusicVisibility =>
+            !HasLocalTrack && AppleMusicAlbumLink.TryBuild(AppleMusicAlbumId, out _)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        /// <summary>
+        /// Öffnet das zugehörige Album in Apple Music (App oder Webseite).
+        /// Startet dort nichts — die Wiedergabe löst der Nutzer selbst aus.
+        /// </summary>
+        /// <returns><see langword="true"/>, wenn der Link geöffnet werden konnte.</returns>
+        public bool OpenInAppleMusic()
+        {
+            return AppleMusicAlbumLink.TryBuild(AppleMusicAlbumId, out string? url)
                    && SafeUrlLauncher.TryOpenInBrowser(url);
         }
+
+        /// <summary>
+        /// Sichtbarkeit des Trenners vor den Anbieter-Aktionen: nur wenn mindestens eine davon
+        /// sichtbar ist, sonst steht ein Strich ohne Inhalt darunter.
+        /// </summary>
+        public Visibility ProviderActionsSeparatorVisibility =>
+            OpenInSpotifyVisibility == Visibility.Visible || OpenInAppleMusicVisibility == Visibility.Visible
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
         /// <summary>
         /// Formatierte Dauer, z.B. "1:23:45".

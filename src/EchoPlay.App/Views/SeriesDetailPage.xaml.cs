@@ -154,5 +154,17 @@ namespace EchoPlay.App.Views
                 _ = tile.OpenInSpotify();
             }
         }
+
+        /// <summary>
+        /// Öffnet das Album der Folge in Apple Music. Wie bei Spotify startet die Wiedergabe
+        /// dort der Nutzer selbst.
+        /// </summary>
+        private void OnOpenInAppleMusicClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem { DataContext: EchoPlay.App.ViewModels.EpisodeTileViewModel tile })
+            {
+                _ = tile.OpenInAppleMusic();
+            }
+        }
     }
 }

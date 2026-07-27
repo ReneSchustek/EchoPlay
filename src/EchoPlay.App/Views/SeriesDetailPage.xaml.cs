@@ -142,5 +142,17 @@ namespace EchoPlay.App.Views
                 await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkAsUnplayedAsync(episodeId));
             }
         }
+
+        /// <summary>
+        /// Öffnet das Album der Folge in Spotify. Die Wiedergabe startet dort der Nutzer selbst –
+        /// EchoPlay bekommt von Spotify keinen Fortschritt zurück.
+        /// </summary>
+        private void OnOpenInSpotifyClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem { DataContext: EchoPlay.App.ViewModels.EpisodeTileViewModel tile })
+            {
+                _ = tile.OpenInSpotify();
+            }
+        }
     }
 }

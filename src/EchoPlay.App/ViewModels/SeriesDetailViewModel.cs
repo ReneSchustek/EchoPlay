@@ -372,7 +372,9 @@ namespace EchoPlay.App.ViewModels
                         progressPercent: progressPercent,
                         isSpecialEpisode: episode.EpisodeNumber is null or 0,
                         coverImage: cover,
-                        localizationService: _localizationService);
+                        localizationService: _localizationService,
+                        spotifyAlbumId: episode.SpotifyAlbumId,
+                        hasLocalTrack: episode.LocalTrackCount is > 0);
 
                     tiles.Add(tile);
                 }

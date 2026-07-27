@@ -124,7 +124,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Ein Fehler bei einer Serie darf den gesamten Durchlauf nicht abbrechen.
             FakeAppleMusicSearchClient client = new(
-                lookupFailure: new InvalidOperationException("iTunes nicht erreichbar"));
+                lookupFailure: () => new InvalidOperationException("iTunes nicht erreichbar"));
 
             OnlineEpisodeChecker checker = BuildChecker(client);
 

@@ -15,18 +15,22 @@ namespace EchoPlay.App.Tests.Fakes
     {
         private readonly List<ITunesArtistDto> _artists;
         private readonly Dictionary<long, List<ITunesCollectionDto>> _albumsByArtist;
-        private readonly Exception? _lookupFailure;
+        private readonly Func<Exception>? _lookupFailure;
 
         /// <summary>
         /// Erstellt den Fake.
         /// </summary>
         /// <param name="artists">Treffer für <see cref="SearchArtistsAsync"/>.</param>
         /// <param name="albumsByArtist">Alben je Künstler-ID für <see cref="LookupAlbumsAsync"/>.</param>
-        /// <param name="lookupFailure">Wird von <see cref="LookupAlbumsAsync"/> geworfen, wenn gesetzt.</param>
+        /// <param name="lookupFailure">
+        /// Erzeugt die Ausnahme, die <see cref="LookupAlbumsAsync"/> wirft. Bewusst eine
+        /// Fabrik statt einer fertigen Instanz: So entsteht bei jedem Aufruf eine frische
+        /// Ausnahme mit eigenem Stacktrace, statt dieselbe erneut zu werfen.
+        /// </param>
         public FakeAppleMusicSearchClient(
             IEnumerable<ITunesArtistDto>? artists = null,
             IReadOnlyDictionary<long, List<ITunesCollectionDto>>? albumsByArtist = null,
-            Exception? lookupFailure = null)
+            Func<Exception>? lookupFailure = null)
         {
             _artists = artists is null ? [] : [.. artists];
             _albumsByArtist = albumsByArtist is null ? [] : new(albumsByArtist);
@@ -64,7 +68,7 @@ namespace EchoPlay.App.Tests.Fakes
 
             if (_lookupFailure is not null)
             {
-                throw _lookupFailure;
+                throw _lookupFailure();
             }
 
             List<ITunesCollectionDto> albums = _albumsByArtist.TryGetValue(artistId, out List<ITunesCollectionDto>? found)

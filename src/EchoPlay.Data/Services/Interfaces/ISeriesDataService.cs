@@ -79,6 +79,9 @@ namespace EchoPlay.Data.Services.Interfaces
 
         /// <summary>
         /// Setzt den Favoritenstatus einer Serie.
+        /// Favorisieren setzt zugleich <see cref="Series.IsWatched"/> auf <see langword="true"/>,
+        /// damit eine favorisierte Serie immer auf Neuerscheinungen geprüft wird.
+        /// Das Entfernen aus den Favoriten lässt die Überwachung unverändert.
         /// Hat keinen Einfluss auf Episoden oder PlaybackStates.
         /// Existiert die Serie nicht, wird der Aufruf ignoriert.
         /// </summary>

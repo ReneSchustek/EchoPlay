@@ -203,6 +203,16 @@
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
+                <!-- Hinweis wenn Favoriten existieren, aber keine Serie überwacht wird:
+                     ohne Überwachung fragt der Start den Provider nicht ab, der Abschnitt bliebe
+                     sonst kommentarlos leer. -->
+                <TextBlock
+                    x:Uid="DashboardNoWatchedHint"
+                    Visibility="{x:Bind ViewModel.NoWatchedSeriesHintVisibility, Mode=OneWay}"
+                    TextWrapping="Wrap"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
                 <!-- Neuerscheinungen: monatlich gruppiert – "Angekündigt" ganz oben,
                      dann Monate absteigend (neuester zuerst). -->
                 <ItemsControl

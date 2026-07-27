@@ -439,6 +439,9 @@
   <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
     <value>Markiere Serien als Favorit, um hier neue Folgen zu sehen.</value>
   </data>
+  <data name="DashboardNoWatchedHint.Text" xml:space="preserve">
+    <value>Zurzeit wird keine Serie auf Neuerscheinungen überwacht. Aktiviere die Überwachung in der Mediathek über das Auge-Symbol.</value>
+  </data>
 
   <!-- DashboardPage – Kachel-Kontextmenü -->
   <data name="DashboardMenuRemoveFavorite.Text" xml:space="preserve">

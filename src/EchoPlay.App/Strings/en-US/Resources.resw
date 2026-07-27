@@ -439,6 +439,9 @@
   <data name="DashboardNoFavoritesHint.Text" xml:space="preserve">
     <value>Mark series as favorites to see new episodes here.</value>
   </data>
+  <data name="DashboardNoWatchedHint.Text" xml:space="preserve">
+    <value>No series is currently monitored for new releases. Turn monitoring on in the library using the eye icon.</value>
+  </data>
 
   <!-- DashboardPage – tile context menu -->
   <data name="DashboardMenuRemoveFavorite.Text" xml:space="preserve">

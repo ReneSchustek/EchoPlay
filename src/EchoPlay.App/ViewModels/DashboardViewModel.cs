@@ -43,6 +43,7 @@ namespace EchoPlay.App.ViewModels
         private bool _isLoading;
         private bool _hasSubscribedSeries = true;
         private bool _hasFavoriteSeries;
+        private bool _hasWatchedSeries;
 
         // Lifecycle-CTS: jeder LoadAsync-Aufruf cancelt die laufende Load-Session
         // und legt eine neue an. Bei Dispose wird der aktuelle gestoppt + entsorgt.
@@ -156,6 +157,7 @@ namespace EchoPlay.App.ViewModels
                 if (SetProperty(ref _hasSubscribedSeries, value))
                 {
                     OnPropertyChanged(nameof(NoFavoritesHintVisibility));
+                    OnPropertyChanged(nameof(NoWatchedSeriesHintVisibility));
                 }
             }
         }
@@ -175,6 +177,19 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public Visibility NoFavoritesHintVisibility =>
             _hasSubscribedSeries && !_hasFavoriteSeries ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Hinweis, wenn Favoriten existieren, aber keine einzige Serie überwacht wird.
+        /// Ohne überwachte Serie fragt der Start gar nicht erst beim Provider nach und der
+        /// Neuerscheinungen-Abschnitt verschwindet komplett – der Hinweis macht diesen
+        /// Zustand sichtbar, statt ihn wie einen Fehler wirken zu lassen.
+        /// Der Fall tritt nur noch bei Altbeständen auf: Favorisieren aktiviert die
+        /// Überwachung inzwischen automatisch (siehe <see cref="ISeriesDataService.SetFavoriteAsync"/>).
+        /// </summary>
+        public Visibility NoWatchedSeriesHintVisibility =>
+            _hasSubscribedSeries && _hasFavoriteSeries && !_hasWatchedSeries
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
         // ── Pass-Through-Eigenschaften ──────────────────────────────────────────
 
@@ -316,7 +331,9 @@ namespace EchoPlay.App.ViewModels
                 // Onboarding: wenn keine abonnierte Serie vorhanden ist, signalisieren wir das der Seite
                 HasSubscribedSeries = subscribedSeries.Count > 0;
                 _hasFavoriteSeries = favoriteSeries.Count > 0;
+                _hasWatchedSeries = subscribedSeries.Any(s => s.IsWatched);
                 OnPropertyChanged(nameof(NoFavoritesHintVisibility));
+                OnPropertyChanged(nameof(NoWatchedSeriesHintVisibility));
 
                 // PlaybackStates einmal komplett laden – wird für Weiterhören, In-Progress
                 // und Zuletzt-gehört benötigt. Vermeidet N+1-Abfragen pro Episode.
@@ -552,6 +569,7 @@ namespace EchoPlay.App.ViewModels
         {
             _hasFavoriteSeries = FavoritenVM.FavoriteSeries.Count > 0;
             OnPropertyChanged(nameof(NoFavoritesHintVisibility));
+            OnPropertyChanged(nameof(NoWatchedSeriesHintVisibility));
         }
 
         /// <summary>

@@ -46,6 +46,43 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
+        public async Task SetFavorite_AlsoEnablesWatching()
+        {
+            // Favorit impliziert Überwachung – sonst prüft der Start die Serie nie
+            // auf Neuerscheinungen und der Dashboard-Abschnitt bleibt leer.
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Context.ChangeTracker.Clear();
+
+            SeriesDataService service = new(Context, NullLoggerFactory);
+            await service.SetFavoriteAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
+
+            Context.ChangeTracker.Clear();
+            Series? updated = await Context.Series.FindAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.True(updated!.IsWatched);
+        }
+
+        [Fact]
+        public async Task SetFavorite_Removing_KeepsWatching()
+        {
+            // Der umgekehrte Weg gilt nicht: Überwachung schaltet der Nutzer separat ab.
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            series.IsFavorite = true;
+            series.IsWatched = true;
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            Context.ChangeTracker.Clear();
+
+            SeriesDataService service = new(Context, NullLoggerFactory);
+            await service.SetFavoriteAsync(series.Id, false, cancellationToken: TestContext.Current.CancellationToken);
+
+            Context.ChangeTracker.Clear();
+            Series? updated = await Context.Series.FindAsync([series.Id], cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.False(updated!.IsFavorite);
+            Assert.True(updated.IsWatched);
+        }
+
+        [Fact]
         public async Task GetFavorites_ExcludesSoftDeleted()
         {
             // Gelöschte Serien dürfen nicht zurückgegeben werden, auch wenn favorisiert

@@ -109,6 +109,12 @@ namespace EchoPlay.App.Tests.Fakes
             if (series is not null)
             {
                 series.IsFavorite = isFavorite;
+
+                // Gleiche Invariante wie SeriesDataService: Favorit impliziert Überwachung.
+                if (isFavorite)
+                {
+                    series.IsWatched = true;
+                }
             }
 
             return Task.CompletedTask;

@@ -549,8 +549,14 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await service.SyncAsync(onSeriesSynced: progress, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Wartet kurz, damit Progress-Callback laeuft (synchroner Pfad sollte sofort feuern).
-            await Task.Yield();
+            // Progress<T> stellt seine Callbacks über den SynchronizationContext bzw. den
+            // ThreadPool zu – ein einzelnes Task.Yield garantiert nicht, dass sie schon gelaufen
+            // sind. Unter Last (parallele Testklassen) kippte der Test genau daran. Deshalb
+            // gebündelt warten statt einmal nachgeben.
+            for (int attempt = 0; attempt < 100 && announcedCount == 0; attempt++)
+            {
+                await Task.Delay(10, TestContext.Current.CancellationToken);
+            }
 
             // Bekannte Serie wird in der Detection-Phase und (mit aktualisiertem Pfad) erneut
             // in der Materialize-Phase gemeldet — d.h. mindestens 1 Aufruf erwartet.

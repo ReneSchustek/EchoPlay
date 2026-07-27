@@ -30,6 +30,12 @@ namespace EchoPlay.App.Services
             _logger = loggerFactory.CreateLogger("WatchToggleService");
         }
 
+        // Startseite anstoßen, damit sie den geänderten Cache übernimmt statt bis zum
+        // nächsten Besuch auf dem alten Stand zu bleiben. Ohne registrierten Service
+        // (z. B. Unit-Tests) passiert nichts.
+        private static void NotifyCacheChanged(IServiceScope scope) =>
+            scope.ServiceProvider.GetService<INewReleaseEventService>()?.RaiseCacheChanged();
+
         /// <inheritdoc/>
         /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
         /// <param name="watch">Parameter <c>watch</c>.</param>
@@ -51,6 +57,8 @@ namespace EchoPlay.App.Services
                 {
                     await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(series, scope.ServiceProvider, cancellationToken);
                 }
+
+                NotifyCacheChanged(scope);
                 return;
             }
 
@@ -58,6 +66,8 @@ namespace EchoPlay.App.Services
             ICachedNewReleaseDataService cacheService =
                 scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
             _ = await cacheService.RemoveBySeriesIdsAsync([seriesId], cancellationToken);
+
+            NotifyCacheChanged(scope);
         }
     }
 }

@@ -136,6 +136,11 @@ namespace EchoPlay.App.Services
 
             // Schritt 3: Cache-Bereinigung für nicht-überwachte Serien
             onStatus?.Invoke("Aktualisiere Serien …");
+
+            // Merkliste der überwachten Titel nachziehen – sie gibt neu eingelesenen Serien
+            // ihre Überwachung zurück, nachdem die Mediathek geleert wurde.
+            _ = await seriesService.SyncWatchedTitlesAsync(cancellationToken);
+
             List<Guid> unwatchedSeriesIds = subscribedSeries
                 .Where(s => !s.IsWatched)
                 .Select(s => s.Id)

@@ -270,8 +270,10 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Import gestartet: \"{Title}\" ({Source})", importSeries.Title, importSeries.Source);
 
-            // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt
-            Series series = MapToSeries(importSeries);
+            // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt.
+            // Früher überwachte Titel bekommen ihre Überwachung zurück (überlebt „Mediathek leeren").
+            IReadOnlyCollection<string> watchedTitles = await seriesService.GetWatchedTitlesAsync(cancellationToken);
+            Series series = MapToSeries(importSeries, watchedTitles);
             await seriesService.AddAsync(series, cancellationToken);
 
             // Episoden laden – bei großen Serien (>100 Episoden) kann dieser HTTP-Aufruf mehrere Sekunden dauern
@@ -510,7 +512,8 @@ namespace EchoPlay.App.Services
         /// </summary>
 
         /// <param name="importSeries">Parameter <c>importSeries</c>.</param>
-        private static Series MapToSeries(ImportSeries importSeries)
+        /// <param name="watchedTitles">Normalisierte Titel mit früher aktivierter Überwachung.</param>
+        private static Series MapToSeries(ImportSeries importSeries, IReadOnlyCollection<string> watchedTitles)
         {
             return new Series
             {
@@ -520,7 +523,9 @@ namespace EchoPlay.App.Services
                 SpotifyArtistId = importSeries.Source == ProviderKeys.Spotify ? importSeries.SourceSeriesId : null,
                 AppleMusicArtistId = importSeries.Source == ProviderKeys.AppleMusic ? importSeries.SourceSeriesId : null,
                 IsOnlineImported = true,
-                IsSubscribed = true
+                IsSubscribed = true,
+                IsWatched = watchedTitles.Contains(
+                    EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(importSeries.Title))
             };
         }
 

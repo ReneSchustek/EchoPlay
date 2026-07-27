@@ -742,6 +742,10 @@ namespace EchoPlay.App
             // Wird von beiden Mediathek-VMs genutzt, statt die Logik im Code-Behind zu duplizieren.
             _ = builder.Services.AddSingleton<IWatchToggleService, WatchToggleService>();
 
+            // Meldet Cache-Änderungen an die bereits gerenderte Startseite. Singleton, weil
+            // Auslöser (kurzlebiger Scope) und Abonnent (Transient-VM) sich sonst nicht finden.
+            _ = builder.Services.AddSingleton<INewReleaseEventService, NewReleaseEventService>();
+
             // LocalLibrary-Services für Scan, Metadaten und Cover.
             _ = builder.Services.AddLocalLibrary();
 
@@ -830,7 +834,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<ICoverService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IClock>(),
-                provider.GetRequiredService<BackgroundCoverService>()));
+                provider.GetRequiredService<BackgroundCoverService>(),
+                provider.GetRequiredService<INewReleaseEventService>()));
             _ = builder.Services.AddTransient<MediathekOnlineViewModel>(provider => new MediathekOnlineViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IConfirmationDialogService>(),

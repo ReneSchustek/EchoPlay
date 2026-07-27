@@ -45,6 +45,9 @@ namespace EchoPlay.Data.Context
         /// <summary>Cover-Binärdaten, getrennt von Metadaten-Tabellen.</summary>
         public DbSet<CoverImage> CoverImages => Set<CoverImage>();
 
+        /// <summary>Gemerkte Serientitel mit aktiver Neuerscheinungs-Überwachung.</summary>
+        public DbSet<WatchedTitle> WatchedTitles => Set<WatchedTitle>();
+
         /// <summary>
         /// Konfiguriert das Modell beim Erstellen.
         /// Wendet Fluent-API-Konfigurationen und globale Filter an.

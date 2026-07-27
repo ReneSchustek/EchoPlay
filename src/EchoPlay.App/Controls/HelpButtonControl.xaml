@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Wiederverwendbarer Hilfe-Button mit angedocktem TeachingTip.
      Wird in allen Hauptseiten (Dashboard, Mediathek, Suche, Player, Settings, Statistik)
      verwendet und kapselt Button + TeachingTip + Click-Handler in einem Element.
@@ -10,6 +10,7 @@
 
     <Grid>
         <Button x:Name="HelpButton"
+                    x:Uid="HelpButtonControlButton"
                 Click="OnHelpClick"
                 Background="Transparent"
                 Padding="6">

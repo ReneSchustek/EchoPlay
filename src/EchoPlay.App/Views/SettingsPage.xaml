@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -56,7 +56,7 @@
                             </GridView.ItemsPanel>
                             <GridView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ThemePreviewViewModel">
-                                    <StackPanel Spacing="4" Padding="4">
+                                    <StackPanel Spacing="4" Padding="4" AutomationProperties.Name="{x:Bind DisplayName}">
                                         <Grid Height="48" CornerRadius="4">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -380,6 +380,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:PatternSuggestionDisplay">
                                     <Button
+                                        AutomationProperties.Name="{x:Bind Pattern}"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
                                         Margin="0,2"

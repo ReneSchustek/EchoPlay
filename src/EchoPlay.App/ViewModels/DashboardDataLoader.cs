@@ -492,8 +492,10 @@ namespace EchoPlay.App.ViewModels
         {
             DateTime today = _clock.UtcNow.Date;
 
-            // Monatsnamen aus der aktuellen Kultur – funktioniert für DE und EN
-            string[] monthNames = CultureInfo.CurrentCulture.DateTimeFormat.MonthNames;
+            // Monatsnamen aus der Oberflächensprache, nicht aus CurrentCulture: die .NET-Kultur
+            // folgt dem Windows-Gebietsschema und lief bei abweichender App-Sprache auseinander
+            // (englische Oberfläche, deutsche Monatsnamen).
+            string[] monthNames = ResolveUiCulture().DateTimeFormat.MonthNames;
 
             // Episoden und PlaybackStates einmal pro Serie laden (vermeidet N+1-Abfragen).
             Dictionary<Guid, IReadOnlyList<Episode>> episodesBySeries = [];
@@ -620,7 +622,16 @@ namespace EchoPlay.App.ViewModels
 
             if (announcedCards.Count > 0)
             {
-                groups.Add(new NewEpisodesGroupViewModel("Angekündigt", 0, announcedCards));
+                // Label über Ressource: das Badge auf derselben Kachel war bereits lokalisiert,
+                // die Gruppenüberschrift blieb deutsch – auf englischer Oberfläche standen beide
+                // Sprachen nebeneinander.
+                string announcedLabel = _localizationService?.Get("DashboardGroupAnnounced") ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(announcedLabel))
+                {
+                    announcedLabel = "Angekündigt";
+                }
+
+                groups.Add(new NewEpisodesGroupViewModel(announcedLabel, 0, announcedCards));
             }
 
             // Nicht-angekündigte Kacheln nach Jahr+Monat gruppieren
@@ -649,6 +660,29 @@ namespace EchoPlay.App.ViewModels
             }
 
             return groups;
+        }
+
+        /// <summary>
+        /// Liefert die Kultur der Oberflächensprache. Grundlage ist die gesetzte
+        /// Sprachpräferenz; erst wenn die fehlt, gilt die Systemkultur.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Reine Anzeige-Kultur für Monatsnamen: ein unbekannter Sprachcode oder eine nicht verfügbare Plattform-API darf den Dashboard-Aufbau nicht abbrechen – Fallback ist die aktuelle Kultur.")]
+        private static CultureInfo ResolveUiCulture()
+        {
+            try
+            {
+                string primary = Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride;
+                if (!string.IsNullOrWhiteSpace(primary))
+                {
+                    return new CultureInfo(primary);
+                }
+            }
+            catch (Exception)
+            {
+                // Fällt unten auf CurrentCulture zurück.
+            }
+
+            return CultureInfo.CurrentCulture;
         }
 
         /// <summary>Sucht eine Serie in einer Liste anhand ihrer ID.</summary>

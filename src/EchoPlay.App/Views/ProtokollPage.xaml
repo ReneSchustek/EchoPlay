@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.ProtokollPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,7 +8,7 @@
 
     <Page.Resources>
         <DataTemplate x:Key="LogEntryTemplate" x:DataType="vm:LogEntryViewModel">
-            <Grid ColumnSpacing="12" Padding="4,2">
+            <Grid ColumnSpacing="12" Padding="4,2" AutomationProperties.Name="{x:Bind Message}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="60"/>
                     <ColumnDefinition Width="60"/>

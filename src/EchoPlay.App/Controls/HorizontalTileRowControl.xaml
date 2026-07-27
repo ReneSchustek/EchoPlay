@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Wiederverwendbare horizontale Kachelreihe mit Pfeil-Buttons.
      Wird im Dashboard für Neuerscheinungen, Weiterhören, In-Progress und
      Zuletzt-gehört verwendet. Pfeile blenden sich automatisch ein,
@@ -30,6 +30,7 @@
         </Grid.ColumnDefinitions>
 
         <Button x:Name="LeftArrow"
+                x:Uid="TileRowScrollLeftButton"
                 Grid.Column="0"
                 Style="{StaticResource HorizontalTileRowArrowButtonStyle}"
                 Click="OnLeftArrowClick"
@@ -54,6 +55,7 @@
         </ScrollViewer>
 
         <Button x:Name="RightArrow"
+                x:Uid="TileRowScrollRightButton"
                 Grid.Column="2"
                 Style="{StaticResource HorizontalTileRowArrowButtonStyle}"
                 Click="OnRightArrowClick"

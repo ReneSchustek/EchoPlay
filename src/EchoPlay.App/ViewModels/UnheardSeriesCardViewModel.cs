@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Globalization;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -33,10 +34,14 @@ namespace EchoPlay.App.ViewModels
             CoverImage = coverImage;
             UnheardCount = unheardCount;
 
-            // Singular/Plural korrekt
+            // Singular und Plural sind eigene Ressourcen – im Englischen unterscheiden
+            // sich die Formen anders als im Deutschen, ein Suffix-Anhängen genügt nicht.
             DisplayText = unheardCount == 1
-                ? "1 ungehörte Folge"
-                : $"{unheardCount} ungehörte Folgen";
+                ? localizationService?.Get("UnheardEpisodesSingular") ?? "1 ungehörte Folge"
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    localizationService?.Get("UnheardEpisodesPlural") ?? "{0} ungehörte Folgen",
+                    unheardCount);
         }
 
         /// <summary>Datenbank-ID der Serie – für Navigation zur Detailseite.</summary>

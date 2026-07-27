@@ -244,12 +244,14 @@ namespace EchoPlay.App.ViewModels
             {
                 // Nach Profil-Migration: korrupte Records wurden automatisch gelöscht,
                 // der Nutzer muss Credentials neu eingeben.
-                SpotifyStatus = "Gespeicherte Credentials konnten nicht entschlüsselt werden. Bitte ClientId und ClientSecret neu eingeben.";
+                SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusDecryptFailed", "Gespeicherte Zugangsdaten konnten nicht entschlüsselt werden. Bitte ClientId und ClientSecret neu eingeben.");
                 _credentialStore.AcknowledgeCorruptionNotice();
                 return;
             }
 
-            SpotifyStatus = IsSpotifyLinked ? "Verknüpft" : "Nicht verknüpft";
+            SpotifyStatus = IsSpotifyLinked
+                ? SafeResourceLoader.Get("SpotifyStatusLinked", "Verknüpft")
+                : SafeResourceLoader.Get("SpotifyStatusNotLinked", "Nicht verknüpft");
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Spotify-Credential-Test: HTTP-/OAuth-/DPAPI-Fehler beim Token-Abruf und beim verschlüsselten Speichern dürfen den Command nicht reißen; der Status wird dem Nutzer in 'SpotifyStatus' angezeigt.")]
@@ -257,24 +259,28 @@ namespace EchoPlay.App.ViewModels
         {
             if (string.IsNullOrWhiteSpace(_spotifyClientId) || string.IsNullOrWhiteSpace(_spotifyClientSecret))
             {
-                SpotifyStatus = "ClientId und ClientSecret dürfen nicht leer sein.";
+                SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusCredentialsEmpty", "ClientId und ClientSecret dürfen nicht leer sein.");
                 return;
             }
 
             IsTestingCredentials = true;
-            SpotifyStatus = "Teste Verbindung…";
+            SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusTesting", "Teste Verbindung …");
 
             try
             {
                 await _credentialStore.SaveAsync(_spotifyClientId.Trim(), _spotifyClientSecret.Trim());
                 IsSpotifyLinked = true;
-                SpotifyStatus = "Verknüpft";
+                SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusLinked", "Verknüpft");
                 SpotifyClientId = string.Empty;
                 SpotifyClientSecret = string.Empty;
             }
             catch (Exception ex)
             {
-                SpotifyStatus = $"Fehler: {ex.Message}";
+                string errorPattern = SafeResourceLoader.Get("SpotifyStatusError", "Fehler: {0}");
+                SpotifyStatus = string.Format(
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    errorPattern,
+                    ex.Message);
             }
             finally
             {
@@ -286,7 +292,7 @@ namespace EchoPlay.App.ViewModels
         {
             await _credentialStore.ClearAsync();
             IsSpotifyLinked = false;
-            SpotifyStatus = "Nicht verknüpft";
+            SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusNotLinked", "Nicht verknüpft");
             SpotifyClientId = string.Empty;
             SpotifyClientSecret = string.Empty;
         }

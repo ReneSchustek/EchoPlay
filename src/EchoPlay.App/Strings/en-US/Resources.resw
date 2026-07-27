@@ -1660,4 +1660,37 @@ The application will close.</value>
   <data name="EpisodeOpenInAppleMusicItem.AutomationProperties.Name" xml:space="preserve">
     <value>Open album in Apple Music</value>
   </data>
+  <data name="SeriesProgressText" xml:space="preserve">
+    <value>{0} of {1} episodes played</value>
+  </data>
+  <data name="StatistikProgressText" xml:space="preserve">
+    <value>{0} of {1} episodes played ({2} %)</value>
+  </data>
+  <data name="StatistikNoEpisodes" xml:space="preserve">
+    <value>No episodes available</value>
+  </data>
+  <data name="UnheardEpisodesSingular" xml:space="preserve">
+    <value>1 unplayed episode</value>
+  </data>
+  <data name="UnheardEpisodesPlural" xml:space="preserve">
+    <value>{0} unplayed episodes</value>
+  </data>
+  <data name="SpotifyStatusLinked" xml:space="preserve">
+    <value>Linked</value>
+  </data>
+  <data name="SpotifyStatusNotLinked" xml:space="preserve">
+    <value>Not linked</value>
+  </data>
+  <data name="SpotifyStatusTesting" xml:space="preserve">
+    <value>Testing connection …</value>
+  </data>
+  <data name="SpotifyStatusCredentialsEmpty" xml:space="preserve">
+    <value>Client ID and client secret must not be empty.</value>
+  </data>
+  <data name="SpotifyStatusDecryptFailed" xml:space="preserve">
+    <value>Stored credentials could not be decrypted. Please enter client ID and client secret again.</value>
+  </data>
+  <data name="SpotifyStatusError" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
 </root>

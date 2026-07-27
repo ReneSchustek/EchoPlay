@@ -1540,4 +1540,12 @@ Die Anwendung wird beendet.</value>
   <data name="TileActionsAutomationName" xml:space="preserve">
     <value>Weitere Aktionen: {0}</value>
   </data>
+
+  <!-- Folgen-Kontextmenue: Wiedergabe ueber Spotify -->
+  <data name="EpisodeOpenInSpotifyItem.Text" xml:space="preserve">
+    <value>In Spotify öffnen</value>
+  </data>
+  <data name="EpisodeOpenInSpotifyItem.AutomationProperties.Name" xml:space="preserve">
+    <value>Album in Spotify öffnen</value>
+  </data>
 </root>

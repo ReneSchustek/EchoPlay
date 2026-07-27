@@ -237,6 +237,13 @@
                                                             x:Uid="DashboardMenuMarkUnplayed"
                                                             Tag="{x:Bind EpisodeId}"
                                                             Click="OnEpisodeMarkUnplayedClick"/>
+                                                        <MenuFlyoutSeparator
+                                                            Visibility="{x:Bind OpenInSpotifyVisibility}"/>
+                                                        <MenuFlyoutItem
+                                                            x:Uid="EpisodeOpenInSpotifyItem"
+                                                            Visibility="{x:Bind OpenInSpotifyVisibility}"
+                                                            Tag="{x:Bind EpisodeId}"
+                                                            Click="OnOpenInSpotifyClick"/>
                                                     </MenuFlyout>
                                                 </Button.Flyout>
                                             </Button>

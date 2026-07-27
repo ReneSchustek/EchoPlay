@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using Microsoft.UI.Xaml;
@@ -35,6 +36,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="isSpecialEpisode">Ob es sich um eine Sonderfolge handelt.</param>
         /// <param name="coverImage">Vorab geladenes Cover oder null für Platzhalter.</param>
         /// <param name="localizationService">Für den Automation-Namen der Kontextmenü-Schaltfläche. Nullable für Tests.</param>
+        /// <param name="spotifyAlbumId">Spotify-Album-ID der Folge, sofern bekannt.</param>
+        /// <param name="hasLocalTrack">Ob mindestens eine lokale Audiodatei vorliegt.</param>
         public EpisodeTileViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -46,8 +49,12 @@ namespace EchoPlay.App.ViewModels
             double progressPercent = 0,
             bool isSpecialEpisode = false,
             BitmapImage? coverImage = null,
-            EchoPlay.App.Services.ILocalizationService? localizationService = null)
+            EchoPlay.App.Services.ILocalizationService? localizationService = null,
+            string? spotifyAlbumId = null,
+            bool hasLocalTrack = true)
         {
+            SpotifyAlbumId = spotifyAlbumId;
+            HasLocalTrack = hasLocalTrack;
             _localizationService = localizationService;
             EpisodeId = episodeId;
             EpisodeNumber = episodeNumber;
@@ -109,6 +116,33 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public string ActionsAutomationName => AutomationNameFormatter.Format(
             _localizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", DisplayTitle);
+
+        /// <summary>Spotify-Album-ID der Folge, sofern bekannt.</summary>
+        public string? SpotifyAlbumId { get; }
+
+        /// <summary>Ob mindestens eine lokale Audiodatei vorliegt.</summary>
+        public bool HasLocalTrack { get; }
+
+        /// <summary>
+        /// Sichtbarkeit der Aktion \u201eIn Spotify \u00f6ffnen".
+        /// Nur f\u00fcr Folgen ohne lokale Datei \u2014 wo lokal abgespielt werden kann, ist der Umweg
+        /// \u00fcber Spotify kein Gewinn.
+        /// </summary>
+        public Visibility OpenInSpotifyVisibility =>
+            !HasLocalTrack && SpotifyAlbumLink.TryBuild(SpotifyAlbumId, out _)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        /// <summary>
+        /// \u00d6ffnet das zugeh\u00f6rige Album in Spotify (App oder Webseite).
+        /// Startet dort nichts \u2014 die Wiedergabe l\u00f6st der Nutzer selbst aus.
+        /// </summary>
+        /// <returns><see langword="true"/>, wenn der Link ge\u00f6ffnet werden konnte.</returns>
+        public bool OpenInSpotify()
+        {
+            return SpotifyAlbumLink.TryBuild(SpotifyAlbumId, out string? url)
+                   && SafeUrlLauncher.TryOpenInBrowser(url);
+        }
 
         /// <summary>
         /// Formatierte Dauer, z.B. "1:23:45".

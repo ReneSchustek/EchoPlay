@@ -272,7 +272,7 @@ namespace EchoPlay.App.Services
 
             // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt.
             // Früher überwachte Titel bekommen ihre Überwachung zurück (überlebt „Mediathek leeren").
-            IReadOnlyCollection<string> watchedTitles = await seriesService.GetWatchedTitlesAsync(cancellationToken);
+            IReadOnlySet<string> watchedTitles = await seriesService.GetWatchedTitlesAsync(cancellationToken);
             Series series = MapToSeries(importSeries, watchedTitles);
             await seriesService.AddAsync(series, cancellationToken);
 
@@ -513,7 +513,7 @@ namespace EchoPlay.App.Services
 
         /// <param name="importSeries">Parameter <c>importSeries</c>.</param>
         /// <param name="watchedTitles">Normalisierte Titel mit früher aktivierter Überwachung.</param>
-        private static Series MapToSeries(ImportSeries importSeries, IReadOnlyCollection<string> watchedTitles)
+        private static Series MapToSeries(ImportSeries importSeries, IReadOnlySet<string> watchedTitles)
         {
             return new Series
             {

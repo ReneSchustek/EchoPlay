@@ -594,11 +594,28 @@ namespace EchoPlay.App.ViewModels
         {
             if (_uiDispatcherQueue is null)
             {
-                _ = LoadAsync();
+                _ = ReloadSafelyAsync();
                 return;
             }
 
-            _ = _uiDispatcherQueue.TryEnqueue(() => _ = LoadAsync());
+            _ = _uiDispatcherQueue.TryEnqueue(() => _ = ReloadSafelyAsync());
+        }
+
+        /// <summary>
+        /// Nachladen ohne Aufrufer: Fehler dürfen weder die Seite reißen noch als unbeobachtete
+        /// Task-Exception erst im Finalizer auftauchen.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Nachladen der Startseite: DB- oder Provider-Fehler dürfen die bereits gerenderte Seite nicht beenden; der nächste Besuch lädt ohnehin neu.")]
+        private async Task ReloadSafelyAsync()
+        {
+            try
+            {
+                await LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning("Nachladen der Startseite fehlgeschlagen: {Reason}", ex.Message);
+            }
         }
 
         /// <summary>

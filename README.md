@@ -1,4 +1,4 @@
-﻿# EchoPlay
+# EchoPlay
 
 **Hörspiel-Verwaltung für Windows** – Serien entdecken, Episoden verfolgen, lokal und online.
 
@@ -26,6 +26,11 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 - Integrierter Audioplayer mit MiniPlayer, Zeitanzeige und Playlist-Unterstützung.
 - 8 Audioformate: MP3, M4A, FLAC, OGG, WMA, WAV, AAC, Opus.
 - Automatische Positionsspeicherung – beim nächsten Start wird an der letzten Stelle fortgesetzt.
+- **Album beim Anbieter öffnen** – Folgen ohne lokale Datei lassen sich per Kontextmenü in Spotify oder Apple Music aufrufen. Ist die Spotify-App installiert, öffnet sie sich statt des Browsers; dort ist der Nutzer bereits angemeldet. Die Wiedergabe selbst steuert der Nutzer beim Anbieter — eine Fortsetzung wie bei lokalen Dateien gibt es dort nicht.
+
+### Fehlende Folgen
+
+- Die Lückensuche vergleicht die vorhandenen Ordner mit dem Bestand beim Anbieter und meldet, welche Nummern fehlen. Sie beginnt bei der kleinsten tatsächlich vorhandenen Folge, damit Serien, deren Sammlung erst später einsetzt, nicht als komplett unvollständig gelten.
 
 ### Tag-Manager
 
@@ -56,7 +61,8 @@ Runtime, da .NET und das Windows App SDK im Paket enthalten sind.
 
 Die App prüft beim Start selbst auf neue Versionen und verifiziert heruntergeladene
 Updates gegen den im Release hinterlegten SHA-256-Hash. Wie der Installer gebaut wird,
-steht in [INSTALLER.md](INSTALLER.md).
+steht in [INSTALLER.md](INSTALLER.md), was sich je Version geändert hat in
+[CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -65,7 +71,7 @@ steht in [INSTALLER.md](INSTALLER.md).
 | Technologie | Einsatz |
 |---|---|
 | .NET 10 / C# | Anwendungsframework |
-| WinUI 3 (Windows App SDK 2.0) | UI-Framework |
+| WinUI 3 (Windows App SDK 2.3) | UI-Framework |
 | Windows SDK BuildTools 10.0.28000 | Manifest-Validierung, XAML-Compiler |
 | Entity Framework Core 10 | ORM mit SQLite (WAL-Modus, Soft-Delete, Migrationen mit `VACUUM INTO`-Backup) |
 | Microsoft.Extensions.Http.Resilience | Polly-basierte Retry-/Timeout-/Circuit-Breaker-Policies für HTTP-Provider |
@@ -144,4 +150,4 @@ Privates Projekt, keine öffentliche Lizenz.
 
 ---
 
-**Stand:** .NET 10 / WinUI 3 (Windows App SDK 2.0), EF Core 10 / SQLite, 36 Migrationen.
+**Stand:** .NET 10 / WinUI 3 (Windows App SDK 2.3), EF Core 10 / SQLite, 39 Migrationen.

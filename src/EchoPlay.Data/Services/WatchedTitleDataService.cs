@@ -91,6 +91,15 @@ namespace EchoPlay.Data.Services
 
             string normalized = HoerspielTextNormalizer.Normalize(title);
 
+            // Ohne diese Prüfung würde ein Titel, von dem die Normalisierung nichts übrig lässt
+            // (etwa „???"), alle Einträge mit leerem Vergleichstitel auf einmal löschen.
+            // RememberAsync legt solche Zeilen zwar nie an — verlassen wollen wir uns darauf
+            // beim Löschen aber nicht.
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return;
+            }
+
             _ = await _context.WatchedTitles
                 .Where(w => w.NormalizedTitle == normalized)
                 .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);

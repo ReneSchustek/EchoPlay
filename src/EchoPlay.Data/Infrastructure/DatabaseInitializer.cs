@@ -40,18 +40,22 @@ namespace EchoPlay.Data.Infrastructure
         /// Ist kein Schema vorhanden, wird es vollständig aufgebaut.
         /// Fehler werden nicht unterdrückt – ohne lauffähiges Schema kann die App nicht starten.
         /// </summary>
+        /// <param name="cancellationToken">
+        /// Abbruch-Token. Greift bei Vorprüfung und Backup; die Migration selbst läuft je
+        /// Schritt in einer Transaktion, ein Abbruch lässt daher kein halbes Schema zurück.
+        /// </param>
         /// <returns>Asynchrone Ausführung.</returns>
-        public async Task InitializeAsync()
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
-            IEnumerable<string> pending = await _context.Database.GetPendingMigrationsAsync().ConfigureAwait(false);
+            IEnumerable<string> pending = await _context.Database.GetPendingMigrationsAsync(cancellationToken).ConfigureAwait(false);
 
             if (pending.Any())
             {
-                (bool enabled, int retentionCount) = await TryReadBackupSettingsAsync().ConfigureAwait(false);
+                (bool enabled, int retentionCount) = await TryReadBackupSettingsAsync(cancellationToken).ConfigureAwait(false);
 
                 if (enabled && retentionCount > 0)
                 {
-                    await TryCreateBackupAsync(retentionCount).ConfigureAwait(false);
+                    await TryCreateBackupAsync(retentionCount, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -59,7 +63,7 @@ namespace EchoPlay.Data.Infrastructure
                 }
             }
 
-            await _context.Database.MigrateAsync().ConfigureAwait(false);
+            await _context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -69,13 +73,15 @@ namespace EchoPlay.Data.Infrastructure
         /// Default-Werte zurückgegeben – Backup an, fünf Kopien.
         /// Intern zum Testen – die öffentliche API bleibt <see cref="InitializeAsync"/>.
         /// </summary>
-        internal async Task<(bool Enabled, int RetentionCount)> TryReadBackupSettingsAsync()
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        internal async Task<(bool Enabled, int RetentionCount)> TryReadBackupSettingsAsync(
+            CancellationToken cancellationToken = default)
         {
             try
             {
                 AppSettings? settings = await _context.AppSettings
                     .AsNoTracking()
-                    .FirstOrDefaultAsync()
+                    .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
 
                 if (settings is null)
@@ -99,9 +105,10 @@ namespace EchoPlay.Data.Infrastructure
         /// fehlender Backup-Schritt ist besser als ein verweigerter App-Start.
         /// </summary>
         /// <param name="retentionCount">Anzahl der zu behaltenden Backups.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
             Justification = "VACUUM INTO akzeptiert keine Parameter-Bindings; der Zielpfad wird explizit durch Verdoppeln der Single Quotes escaped und stammt aus der Connection-String-DataSource-Route (programmatisch ermittelt).")]
-        private async Task TryCreateBackupAsync(int retentionCount)
+        private async Task TryCreateBackupAsync(int retentionCount, CancellationToken cancellationToken)
         {
             string? connectionString = _context.Database.GetConnectionString();
             if (string.IsNullOrEmpty(connectionString))
@@ -146,7 +153,7 @@ namespace EchoPlay.Data.Infrastructure
                 SqliteConnection connection = new(connectionString);
                 await using (connection.ConfigureAwait(false))
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
+                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
                     using SqliteCommand command = connection.CreateCommand();
                     // Grund: VACUUM INTO erlaubt keine Parameter-Bindings; escapedPath
@@ -155,7 +162,7 @@ namespace EchoPlay.Data.Infrastructure
 #pragma warning disable SCS0002
                     command.CommandText = $"VACUUM INTO '{escapedPath}'";
 #pragma warning restore SCS0002
-                    _ = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
                     _logger?.Info("DB-Backup vor Migration erstellt: {BackupFileName}", Path.GetFileName(backupPath));
                 }

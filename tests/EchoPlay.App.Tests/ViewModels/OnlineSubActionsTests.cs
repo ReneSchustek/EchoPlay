@@ -206,9 +206,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             vm.SetEpisodes(
             [
-                new(Guid.NewGuid(), 1, "Folge 1"),
-                new(Guid.NewGuid(), 3, "Folge 3"),
-                new(Guid.NewGuid(), 2, "Folge 2"),
+                new(Helpers.TestIds.EpisodeA, 1, "Folge 1"),
+                new(Helpers.TestIds.EpisodeC, 3, "Folge 3"),
+                new(Helpers.TestIds.EpisodeB, 2, "Folge 2"),
             ]);
 
             // Sortier-Auswahl bleibt erhalten ...

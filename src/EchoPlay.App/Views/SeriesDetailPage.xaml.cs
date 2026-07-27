@@ -105,7 +105,7 @@ namespace EchoPlay.App.Views
         /// <param name="e">Enthält die neue Auswahl.</param>
         private void OnSortOrderChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is ComboBox { SelectedIndex: >= 0 and var index })
+            if (sender is ComboBox { SelectedIndex: >= 0 and int index })
             {
                 ViewModel.SortOrder = (EpisodeSortOrder)index;
             }

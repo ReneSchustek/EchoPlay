@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
 using System;
@@ -19,7 +20,7 @@ namespace EchoPlay.App.Tests.ViewModels
             bool hasLocalTrack,
             string? appleMusicAlbumId = null,
             string? seriesTitle = "Benjamin Blümchen") => new(
-            episodeId: Guid.NewGuid(),
+            episodeId: TestIds.EpisodeA,
             episodeNumber: 1,
             title: "Die Insel der Abenteuer",
             totalDuration: TimeSpan.FromMinutes(41),
@@ -72,7 +73,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Ohne Serien- und Folgentitel gäbe es nichts zu suchen.
             EpisodeTileViewModel tile = new(
-                episodeId: Guid.NewGuid(),
+                episodeId: TestIds.EpisodeB,
                 episodeNumber: null,
                 title: string.Empty,
                 totalDuration: null,

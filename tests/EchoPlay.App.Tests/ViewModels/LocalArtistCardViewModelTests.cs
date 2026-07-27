@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class LocalArtistCardViewModelTests
     {
         private static LocalArtistCardViewModel BuildCard(int local, int total) => new(
-            seriesId: Guid.NewGuid(),
+            seriesId: TestIds.SeriesA,
             title: "TKKG",
             coverImage: null,
             localFolderPath: @"D:\Mp3\Hörspiele\TKKG",

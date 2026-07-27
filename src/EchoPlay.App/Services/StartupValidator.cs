@@ -70,6 +70,8 @@ namespace EchoPlay.App.Services
                 scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
             ICachedNewReleaseDataService cacheService =
                 scope.ServiceProvider.GetRequiredService<ICachedNewReleaseDataService>();
+            IWatchedTitleDataService watchedTitleService =
+                scope.ServiceProvider.GetRequiredService<IWatchedTitleDataService>();
 
             AppSettings settings = await settingsService.GetAsync(cancellationToken);
             IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync(cancellationToken);
@@ -139,9 +141,7 @@ namespace EchoPlay.App.Services
 
             // Merkliste der überwachten Titel nachziehen – sie gibt neu eingelesenen Serien
             // ihre Überwachung zurück, nachdem die Mediathek geleert wurde.
-            _ = await scope.ServiceProvider
-                .GetRequiredService<IWatchedTitleDataService>()
-                .SyncFromWatchedSeriesAsync(cancellationToken);
+            _ = await watchedTitleService.SyncFromWatchedSeriesAsync(cancellationToken);
 
             List<Guid> unwatchedSeriesIds = subscribedSeries
                 .Where(s => !s.IsWatched)

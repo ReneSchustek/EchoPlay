@@ -257,6 +257,10 @@ namespace EchoPlay.Data.Services
             }
         }
 
+        /// <summary>
+        /// Liefert den Titel einer Serie oder <c>null</c>, wenn die Serie fehlt oder keinen
+        /// brauchbaren Titel hat. Beides ist für die Merkliste derselbe Fall: nichts zu tun.
+        /// </summary>
         private async Task<string?> GetTitleAsync(Guid seriesId, CancellationToken cancellationToken)
         {
             string? title = await _context.Series

@@ -1,4 +1,5 @@
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
@@ -15,11 +16,11 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class SeriesFavoriteWatchSyncTests
     {
-        private static (IServiceScopeFactory ScopeFactory, Guid SeriesId) BuildScope()
+        private static async Task<(IServiceScopeFactory ScopeFactory, Guid SeriesId)> BuildScopeAsync()
         {
             FakeSeriesDataService series = new();
             Series s = new() { Title = "TKKG" };
-            series.AddAsync(s).GetAwaiter().GetResult();
+            await series.AddAsync(s, TestContext.Current.CancellationToken);
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => series);
@@ -28,22 +29,10 @@ namespace EchoPlay.App.Tests.ViewModels
             return (provider.GetRequiredService<IServiceScopeFactory>(), s.Id);
         }
 
-        /// <summary>
-        /// Wartet begrenzt auf den Abschluss des per RelayCommand angestoßenen Toggles –
-        /// die Commands sind bewusst „fire and forget", der Test darf darauf nicht blind pollen.
-        /// </summary>
-        private static async Task WaitForWatchedAsync(Func<bool> isWatched)
-        {
-            for (int attempt = 0; attempt < 100 && !isWatched(); attempt++)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
-        }
-
         [Fact]
         public async Task LocalArtistCard_ToggleFavoriteOn_SetsWatchedOnCard()
         {
-            (IServiceScopeFactory scopeFactory, Guid seriesId) = BuildScope();
+            (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             LocalArtistCardViewModel card = new(
                 seriesId: seriesId,
@@ -57,7 +46,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 scopeFactory: scopeFactory);
 
             card.ToggleFavoriteCommand.Execute(null);
-            await WaitForWatchedAsync(() => card.IsWatched);
+            await ChangeSignals.WaitForAsync(card, () => card.IsWatched, "Kachel zieht die Überwachung nach");
 
             Assert.True(card.IsFavorite);
             Assert.True(card.IsWatched);
@@ -66,7 +55,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SeriesCard_ToggleFavoriteOn_SetsWatchedOnCard()
         {
-            (IServiceScopeFactory scopeFactory, Guid seriesId) = BuildScope();
+            (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             SeriesCardViewModel card = new(
                 id: seriesId,
@@ -84,7 +73,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 localizationService: new FakeLocalizationService());
 
             card.ToggleFavoriteCommand.Execute(null);
-            await WaitForWatchedAsync(() => card.IsWatched);
+            await ChangeSignals.WaitForAsync(card, () => card.IsWatched, "Kachel zieht die Überwachung nach");
 
             Assert.True(card.IsFavorite);
             Assert.True(card.IsWatched);
@@ -94,7 +83,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task LocalArtistCard_ToggleFavoriteOff_LeavesWatchedUntouched()
         {
             // Entfavorisieren darf die Überwachung nicht mit abschalten – das bleibt das Auge.
-            (IServiceScopeFactory scopeFactory, Guid seriesId) = BuildScope();
+            (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             LocalArtistCardViewModel card = new(
                 seriesId: seriesId,
@@ -108,10 +97,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 scopeFactory: scopeFactory);
 
             card.ToggleFavoriteCommand.Execute(null);
-            for (int attempt = 0; attempt < 100 && card.IsFavorite; attempt++)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
+            await ChangeSignals.WaitForAsync(card, () => !card.IsFavorite, "Favorit wird abgeschaltet");
 
             Assert.False(card.IsFavorite);
             Assert.True(card.IsWatched);

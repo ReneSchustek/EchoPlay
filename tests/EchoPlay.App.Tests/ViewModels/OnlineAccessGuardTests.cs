@@ -20,19 +20,19 @@ namespace EchoPlay.App.Tests.ViewModels
         // ── IsTemporarilyOnline in StatusBarViewModel ────────────────────────────
 
         [Fact]
-        public void IsTemporarilyOnline_DefaultIsFalse()
+        public async Task IsTemporarilyOnline_DefaultIsFalse()
         {
             // Nach der Initialisierung ist kein temporärer Online-Status aktiv
-            StatusBarViewModel vm = BuildStatusBarViewModel();
+            StatusBarViewModel vm = await BuildStatusBarViewModelAsync();
 
             Assert.False(vm.IsTemporarilyOnline);
         }
 
         [Fact]
-        public void OnlineOfflineText_ShowsOnline_WhenTemporarilyOnlineInOfflineMode()
+        public async Task OnlineOfflineText_ShowsOnline_WhenTemporarilyOnlineInOfflineMode()
         {
             // Offline-Modus + temporär online → Anzeige muss "Online" zeigen
-            StatusBarViewModel vm = BuildStatusBarViewModel(offlineMode: true);
+            StatusBarViewModel vm = await BuildStatusBarViewModelAsync(offlineMode: true);
 
             vm.IsTemporarilyOnline = true;
 
@@ -40,19 +40,19 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OnlineOfflineText_ShowsOffline_WhenNotTemporarilyOnline()
+        public async Task OnlineOfflineText_ShowsOffline_WhenNotTemporarilyOnline()
         {
             // Offline-Modus ohne temporären Status → "Offline"
-            StatusBarViewModel vm = BuildStatusBarViewModel(offlineMode: true);
+            StatusBarViewModel vm = await BuildStatusBarViewModelAsync(offlineMode: true);
 
             Assert.Equal("Offline", vm.OnlineOfflineText);
         }
 
         [Fact]
-        public void OnlineOfflineGlyph_ShowsWifi_WhenTemporarilyOnline()
+        public async Task OnlineOfflineGlyph_ShowsWifi_WhenTemporarilyOnline()
         {
             // Temporär online → Wifi-Symbol statt Flugzeug
-            StatusBarViewModel vm = BuildStatusBarViewModel(offlineMode: true);
+            StatusBarViewModel vm = await BuildStatusBarViewModelAsync(offlineMode: true);
 
             vm.IsTemporarilyOnline = true;
 
@@ -61,20 +61,20 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OnlineOfflineGlyph_ShowsPlane_WhenOfflineAndNotTemporarilyOnline()
+        public async Task OnlineOfflineGlyph_ShowsPlane_WhenOfflineAndNotTemporarilyOnline()
         {
             // Offline-Modus ohne temporären Status → Flugzeug-Symbol
-            StatusBarViewModel vm = BuildStatusBarViewModel(offlineMode: true);
+            StatusBarViewModel vm = await BuildStatusBarViewModelAsync(offlineMode: true);
 
             // E709 = Flugzeug-Icon
             Assert.Equal("\uE709", vm.OnlineOfflineGlyph);
         }
 
         [Fact]
-        public void IsTemporarilyOnline_RaisesPropertyChanged_ForAllVisualProperties()
+        public async Task IsTemporarilyOnline_RaisesPropertyChanged_ForAllVisualProperties()
         {
             // Alle visuellen Properties müssen aktualisiert werden, damit die UI reagiert
-            StatusBarViewModel vm = BuildStatusBarViewModel(offlineMode: true);
+            StatusBarViewModel vm = await BuildStatusBarViewModelAsync(offlineMode: true);
             List<string> changedProperties = [];
             vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName!);
 
@@ -121,7 +121,7 @@ namespace EchoPlay.App.Tests.ViewModels
         /// <summary>
         /// Baut eine <see cref="StatusBarViewModel"/>-Instanz mit optionalem Offline-Modus.
         /// </summary>
-        private static StatusBarViewModel BuildStatusBarViewModel(bool offlineMode = false)
+        private static async Task<StatusBarViewModel> BuildStatusBarViewModelAsync(bool offlineMode = false)
         {
             FakeAppSettingsDataService settingsService = new(new AppSettings { OfflineMode = offlineMode });
 
@@ -140,7 +140,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeClock());
 
             // Offline-Status initial laden
-            vm.LoadAsync().GetAwaiter().GetResult();
+            await vm.LoadAsync();
 
             return vm;
         }

@@ -11,7 +11,6 @@ namespace EchoPlay.App.Services
     /// Vermeidet das Aufflackern bei sehr schnellen App-Starts und gibt dem Branding
     /// genug Sichtzeit.
     /// </summary>
-
     public sealed class SplashLifetimeController
     {
         /// <summary>
@@ -25,7 +24,6 @@ namespace EchoPlay.App.Services
         /// Startet den Stopwatch sofort. Soll im Konstruktor des Splash-Fensters
         /// oder unmittelbar danach aufgerufen werden.
         /// </summary>
-
         public SplashLifetimeController()
         {
             _stopwatch = Stopwatch.StartNew();
@@ -37,7 +35,6 @@ namespace EchoPlay.App.Services
         /// oder wenn das Token gecanceled wird.
         /// </summary>
         /// <param name="cancellationToken">Optionaler Abbruch-Token (Splash-Lebenszyklus).</param>
-
         public async Task WaitForMinimumDurationAsync(CancellationToken cancellationToken = default)
         {
             TimeSpan elapsed = _stopwatch.Elapsed;

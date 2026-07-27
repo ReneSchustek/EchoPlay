@@ -13,7 +13,6 @@ namespace EchoPlay.App.Services
     /// CoverImages-Tabelle, das optionale Schreiben von <c>cover.jpg</c> und das
     /// abschließende Update der Card-Bitmap. Aus dem MediathekLokalViewModel ausgelagert.
     /// </summary>
-
     public interface IEpisodeCoverCoordinator
     {
         /// <summary>

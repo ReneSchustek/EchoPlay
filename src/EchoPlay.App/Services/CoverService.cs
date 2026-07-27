@@ -19,18 +19,15 @@ namespace EchoPlay.App.Services
     /// von Binärdaten zu BitmapImage. Kein ViewModel greift direkt auf
     /// den ICoverImageDataService zu.
     /// </summary>
-
     public sealed class CoverService : ICoverService
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
 
         /// <summary>Entity-Typ für Serien-Cover in der CoverImages-Tabelle.</summary>
-
         public const string EntityTypeSeries = CoverEntityTypes.Series;
 
         /// <summary>Entity-Typ für Episoden-Cover in der CoverImages-Tabelle.</summary>
-
         public const string EntityTypeEpisode = CoverEntityTypes.Episode;
 
         /// <summary>
@@ -77,7 +74,6 @@ namespace EchoPlay.App.Services
         /// Lädt Cover-Binärdaten für mehrere Episoden in einer Query (Batch).
         /// Verhindert N+1-Probleme beim Laden von Episodenlisten.
         /// </summary>
-
         public async Task<IReadOnlyDictionary<Guid, byte[]>> GetEpisodeCoverBytesAsync(
             IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {

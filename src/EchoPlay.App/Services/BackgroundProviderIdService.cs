@@ -18,7 +18,6 @@ namespace EchoPlay.App.Services
     /// für bestehende Serien und Episoden nachträglich über die jeweilige Provider-API ergänzt.
     /// Läuft einmal beim App-Start und danach stündlich. Fehler blockieren nicht andere Serien.
     /// </summary>
-
     internal sealed class BackgroundProviderIdService : IDisposable
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
@@ -43,7 +42,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>Startet den periodischen Enrichment-Lauf. Idempotent — mehrfacher Aufruf ist no-op.</summary>
-
         public void Start()
         {
             if (_runningTask is not null) return;
@@ -60,7 +58,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="timeout">Maximale Wartezeit.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task StopAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (_cts is null || _runningTask is null) return;

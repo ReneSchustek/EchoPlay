@@ -10,7 +10,6 @@ namespace EchoPlay.App.Services
     /// Singleton-Service: nutzt einen eigenen DI-Scope pro Aufruf, weil
     /// <see cref="IAppSettingsDataService"/> Scoped ist.
     /// </summary>
-
     public sealed class PageModeGuard : IPageModeGuard
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -25,7 +24,6 @@ namespace EchoPlay.App.Services
         /// <param name="errorDialogService">Zeigt den Hinweisdialog im Sperrfall.</param>
         /// <param name="localizationService">Liefert Titel und Text des Hinweisdialogs lokalisiert.</param>
         /// <param name="navigationService">Löst die Rücknavigation aus, wenn die Page nicht angezeigt werden darf.</param>
-
         public PageModeGuard(
             IServiceScopeFactory scopeFactory,
             IErrorDialogService errorDialogService,
@@ -74,7 +72,6 @@ namespace EchoPlay.App.Services
         /// Lädt die aktuellen <see cref="AppSettings"/> aus einem frischen Scope.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         private async Task<AppSettings> LoadSettingsAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();

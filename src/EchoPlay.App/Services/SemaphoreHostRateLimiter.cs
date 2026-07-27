@@ -15,7 +15,6 @@ namespace EchoPlay.App.Services
     /// auf ihren Slot wartet oder gerade läuft, pausieren Background-Anfragen, damit die
     /// sichtbare UI das HTTP-Kontingent und Rate-Limit-Fenster zuerst bekommt.
     /// </summary>
-
     public sealed class SemaphoreHostRateLimiter : IHostRateLimiter
     {
         private readonly IReadOnlyDictionary<string, TimeSpan> _intervals;
@@ -35,7 +34,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="intervals">Minimum-Intervall pro Hostname.</param>
         /// <param name="defaultInterval">Fallback-Intervall für unbekannte Hosts.</param>
-
         public SemaphoreHostRateLimiter(
             IReadOnlyDictionary<string, TimeSpan> intervals,
             TimeSpan? defaultInterval = null)
@@ -130,7 +128,6 @@ namespace EchoPlay.App.Services
         /// Gibt alle gehaltenen <see cref="SemaphoreSlim"/>-Handles frei. Nach
         /// Dispose wirft <see cref="WaitAsync(string, CancellationToken)"/> <see cref="ObjectDisposedException"/>.
         /// </summary>
-
         public void Dispose()
         {
             if (_disposed) return;

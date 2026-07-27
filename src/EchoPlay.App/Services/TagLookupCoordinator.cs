@@ -21,7 +21,6 @@ namespace EchoPlay.App.Services
     /// Aufruf aus einem frischen DI-Scope aufgelöst, damit die HttpClient-Lifetime des
     /// <c>HttpMessageHandler</c>s nicht in der Singleton-Referenz einfriert.
     /// </summary>
-
     public sealed class TagLookupCoordinator : ITagLookupCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;

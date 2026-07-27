@@ -8,7 +8,6 @@ namespace EchoPlay.App.Services
     /// Der Hot-Path (<see cref="HasCredentials"/>) prüft nur einen In-Memory-Cache
     /// und verursacht keinen DB-Roundtrip.
     /// </summary>
-
     public interface ISpotifyCredentialStore
     {
         /// <summary>Ob Credentials im Store vorhanden sind (gecachter Wert, kein DB-Zugriff).</summary>

@@ -25,7 +25,6 @@ namespace EchoPlay.App.Services
     /// 2. Cover aus dem Dateisystem laden (cover.jpg / ID3-Tags)
     /// 3. In CoverImages speichern
     /// </summary>
-
     public class BackgroundCoverService : IDisposable
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -54,7 +53,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Background-Cover-Service.
         /// </summary>
-
         public BackgroundCoverService(
             IServiceScopeFactory scopeFactory,
             ICoverService coverService,
@@ -77,7 +75,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Startet den Hintergrund-Task. Idempotent — mehrfacher Aufruf ist no-op.
         /// </summary>
-
         public void Start()
         {
             if (_backgroundTask is not null) return;
@@ -94,7 +91,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="timeout">Maximale Wartezeit.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task StopAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (_cts is null || _backgroundTask is null) return;
@@ -127,7 +123,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <returns>Anzahl der geladenen Cover.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public virtual async Task<int> RunOnceAsync(CancellationToken cancellationToken = default)
         {
             // Eigene CTS, die mit dem externen Token verkettet ist — Aufrufer kann den Lauf
@@ -175,7 +170,6 @@ namespace EchoPlay.App.Services
         /// <param name="isOnlineAvailable">Steuert, ob der Provider-URL-Download laufen darf.</param>
         /// <param name="ct">Cancellation-Token des Splash-Pfades.</param>
         /// <returns>Anzahl der geladenen Serien-Cover.</returns>
-
         public virtual async Task<int> RunSeriesCoversOnceAsync(bool isOnlineAvailable, CancellationToken ct = default)
         {
             int loaded = 0;
@@ -506,7 +500,6 @@ namespace EchoPlay.App.Services
         /// <param name="seriesTitle">Titel der Serie (z.B. "Fünf Freunde").</param>
         /// <returns>Anzahl der neu geladenen Cover.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<int> EnsureLocalCoversForSeriesAsync(string seriesTitle, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -586,7 +579,6 @@ namespace EchoPlay.App.Services
         /// Schnell genug für den Splash (eine SQL-Query pro Online-Serie).
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<int> CopyLocalToOnlineAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();

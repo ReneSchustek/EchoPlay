@@ -13,7 +13,6 @@ namespace EchoPlay.App.Services
     /// werden nur bei tatsächlichem Aufruf instanziiert, damit Unit-Tests ohne
     /// WinUI-Hosting nicht beim Laden des ViewModels eine COM-Exception auslösen.
     /// </summary>
-
     public static class CoverBrightnessAnalyzer
     {
         /// <summary>

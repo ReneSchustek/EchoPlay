@@ -9,7 +9,6 @@ namespace EchoPlay.App.Services
     /// hält den Cache der gemerkten Neuerscheinungen konsistent.
     /// Bündelt eine Logik, die sonst in beiden Mediathek-Pages dupliziert wäre.
     /// </summary>
-
     public interface IWatchToggleService
     {
         /// <summary>

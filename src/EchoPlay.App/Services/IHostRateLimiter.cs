@@ -13,7 +13,6 @@ namespace EchoPlay.App.Services
     /// <see cref="IDisposable"/> Pflicht — der DI-Container gibt die Singleton-Instanz
     /// beim Host-Shutdown frei.
     /// </summary>
-
     public interface IHostRateLimiter : IDisposable
     {
         /// <summary>

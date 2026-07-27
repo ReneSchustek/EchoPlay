@@ -22,7 +22,6 @@ namespace EchoPlay.App.Services
     /// damit die wiederholte Instanziierung des Transient-ViewModels keine Sockets
     /// erschöpft.
     /// </summary>
-
     public sealed class EpisodeCoverCoordinator : IEpisodeCoverCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -36,7 +35,6 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
         /// </summary>
-
         public EpisodeCoverCoordinator(
             IServiceScopeFactory scopeFactory,
             ICoverSearchService coverSearchService,

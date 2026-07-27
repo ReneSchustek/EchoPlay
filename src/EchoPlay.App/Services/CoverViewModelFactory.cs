@@ -20,7 +20,6 @@ namespace EchoPlay.App.Services
     /// Verhindert dass dieselbe Logik in <c>DashboardDataLoader</c> und
     /// <c>SeriesDetailViewModel</c> auseinanderdriftet.
     /// </summary>
-
     public interface ICoverViewModelFactory
     {
         /// <summary>

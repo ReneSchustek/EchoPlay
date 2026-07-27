@@ -16,7 +16,6 @@ namespace EchoPlay.App.Services
     /// Singleton: nutzt pro Aufruf eigene DI-Scopes für AppSettings und den
     /// LocalLibrary-Restructure-Service, weil beide als Scoped registriert sind.
     /// </summary>
-
     public sealed class FolderRestructureCoordinator : IFolderRestructureCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -89,7 +88,6 @@ namespace EchoPlay.App.Services
         /// Lädt das aktuelle Ordnermuster aus den AppSettings.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         private async Task<string> LoadFolderPatternAsync(CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();

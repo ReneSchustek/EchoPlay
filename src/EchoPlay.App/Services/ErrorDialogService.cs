@@ -11,7 +11,6 @@ namespace EchoPlay.App.Services
     /// Zeigt Fehler-Dialoge über den WinUI-3-ContentDialog an.
     /// Content-Aufbau liegt in <see cref="ErrorDialogContent.Build"/> — testbar ohne XamlRoot.
     /// </summary>
-
     public sealed class ErrorDialogService : IErrorDialogService
     {
         private readonly Func<XamlRoot?> _xamlRootProvider;

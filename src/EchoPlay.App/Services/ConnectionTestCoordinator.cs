@@ -16,7 +16,6 @@ namespace EchoPlay.App.Services
     /// Nutzt pro Aufruf einen eigenen <see cref="IServiceScope"/>, damit der
     /// Scoped-API-Client (Spotify-Token-Handling) sauber erzeugt und wieder freigegeben wird.
     /// </summary>
-
     public sealed class ConnectionTestCoordinator : IConnectionTestCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;

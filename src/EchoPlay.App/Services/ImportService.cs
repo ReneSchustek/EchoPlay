@@ -21,7 +21,6 @@ namespace EchoPlay.App.Services
     ///
     /// Provider-Auswahl: Keyed-Services mit "Spotify" bzw. "AppleMusic" als Schlüssel.
     /// </summary>
-
     public sealed class ImportService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -34,7 +33,6 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Fabrik für DI-Scopes.</param>
         /// <param name="coverCacheService">Service zum Herunterladen und Cachen von Episoden-Covern.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-
         public ImportService(
             IServiceScopeFactory scopeFactory,
             EpisodeCoverCacheService coverCacheService,
@@ -131,7 +129,6 @@ namespace EchoPlay.App.Services
         /// <param name="query">Suchbegriff – wird an die Provider-API weitergereicht.</param>
         /// <returns>Album-Treffer plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<SearchOutcome> SearchAlbumsAsync(string query, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -226,7 +223,6 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die zu prüfende ImportSerie.</param>
         /// <returns>True wenn die Serie bereits importiert wurde.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<bool> IsAlreadyImportedAsync(ImportSeries series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -249,7 +245,6 @@ namespace EchoPlay.App.Services
         /// </param>
         /// <returns>Die ID der neuen oder bereits vorhandenen Serie.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<Guid> ImportAsync(ImportSeries importSeries, IProgress<string>? progress = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(importSeries);
@@ -317,7 +312,6 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die bestehende Serie mit gesetzter SpotifyArtistId oder AppleMusicArtistId.</param>
         /// <returns>Anzahl der neu angelegten Episoden. 0 wenn kein Provider zugeordnet oder keine Episoden gefunden.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<int> ReImportEpisodesAsync(Series series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -369,7 +363,6 @@ namespace EchoPlay.App.Services
         /// <param name="series">Die bestehende Serie mit gesetzter Provider-ID.</param>
         /// <returns>Anzahl der neu importierten Episoden. 0 wenn keine neuen gefunden.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task<int> DeltaImportEpisodesAsync(Series series, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -459,7 +452,6 @@ namespace EchoPlay.App.Services
         /// Loggt eine Warnung, wenn Duplikate verworfen wurden, damit Provider-Anomalien
         /// im Triage-Log sichtbar bleiben.
         /// </summary>
-
         private List<ImportEpisode> DeduplicateBySourceEpisodeId(
             IReadOnlyList<ImportEpisode> episodes,
             string seriesTitle)

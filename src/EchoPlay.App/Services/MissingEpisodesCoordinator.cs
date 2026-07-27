@@ -21,7 +21,6 @@ namespace EchoPlay.App.Services
     /// Singleton: nutzt eigene DI-Scopes für die DataServices, hält keinen UI-State.
     /// Aktualisiert die <see cref="StatusBarViewModel"/> während längerer Prüfungen.
     /// </summary>
-
     public sealed class MissingEpisodesCoordinator : IMissingEpisodesCoordinator
     {
         private readonly IServiceScopeFactory _scopeFactory;

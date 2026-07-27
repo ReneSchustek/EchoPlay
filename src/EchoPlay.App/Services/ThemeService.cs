@@ -19,13 +19,11 @@ namespace EchoPlay.App.Services
     /// kein erneutes XAML-Parsen auslöst und zuverlässig funktioniert.
     /// Muss vom UI-Thread aufgerufen werden.
     /// </summary>
-
     public sealed class ThemeService : IThemeService
     {
         /// <summary>
         /// Alle bekannten Theme-Namen – entsprechen den Dateinamen in EchoPlay.App/Themes/.
         /// </summary>
-
         private static readonly IReadOnlyList<string> KnownThemes =
             ["Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey"];
 
@@ -33,7 +31,6 @@ namespace EchoPlay.App.Services
         /// Themes mit fester dunkler Palette – ThemeService setzt RequestedTheme auf Dark,
         /// damit WinUI die richtige ThemeDictionary-Sektion auswählt.
         /// </summary>
-
         private static readonly HashSet<string> DarkThemes =
             new(StringComparer.OrdinalIgnoreCase)
             { "MidnightLibrary", "ForestSignal", "AmberWhiskey" };
@@ -48,7 +45,6 @@ namespace EchoPlay.App.Services
         /// App.xaml lädt alle sechs Themes vorab – wir halten die Instanzen hier,
         /// damit beim Wechsel kein erneutes XAML-Parsen nötig ist.
         /// </summary>
-
         private readonly Dictionary<string, ResourceDictionary> _cache =
             new(StringComparer.OrdinalIgnoreCase);
 
@@ -60,7 +56,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Scope-Fabrik für kurzlebige <see cref="IAppSettingsDataService"/>-Zugriffe.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-
         public ThemeService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
@@ -76,7 +71,6 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <returns>Asynchrone Ausführung.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             using LogScope logScope = _logger.BeginScope(nameof(InitializeAsync));
@@ -108,7 +102,6 @@ namespace EchoPlay.App.Services
         /// Unbekannte Namen werden ignoriert und geloggt.
         /// </summary>
         /// <param name="themeName">Name des gewünschten Themes. Gültig: "Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey".</param>
-
         public void ApplyTheme(string themeName)
         {
             if (!KnownThemes.Contains(themeName))
@@ -150,7 +143,6 @@ namespace EchoPlay.App.Services
         /// Muss nach der Fenstererstellung aufgerufen werden, da <c>InitializeAsync</c> vor dem Erstellen von
         /// <see cref="App.MainWindow"/> läuft und <c>Content</c> dort noch <see langword="null"/> ist.
         /// </summary>
-
         public void SyncRequestedTheme()
         {
             if (App.MainWindow?.Content is FrameworkElement root)
@@ -166,7 +158,6 @@ namespace EchoPlay.App.Services
         /// und speichert ihre Instanzen im Cache.
         /// App.xaml lädt alle sechs Themes vorab – dieser Cache verhindert späteres XAML-Parsen.
         /// </summary>
-
         private void CachePreloadedDictionaries()
         {
             IList<ResourceDictionary> merged = Application.Current.Resources.MergedDictionaries;
@@ -197,7 +188,6 @@ namespace EchoPlay.App.Services
         /// Verwendet die gecachte Instanz, falls vorhanden – andernfalls wird ein neues Dictionary erzeugt.
         /// </summary>
         /// <param name="themeName">Name des Themes.</param>
-
         private void LoadAndApplyTheme(string themeName)
         {
             // Gecachte Instanz wiederverwenden – die ResourceDictionary wurde beim App-Start bereits geparst.
@@ -235,7 +225,6 @@ namespace EchoPlay.App.Services
         /// Entfernt alle bekannten Theme-Dictionaries aus den MergedDictionaries.
         /// Wird beim Start aufgerufen, da App.xaml alle sechs Paletten vorlädt.
         /// </summary>
-
         private static void RemoveAllThemeDictionaries()
         {
             IList<ResourceDictionary> merged = Application.Current.Resources.MergedDictionaries;

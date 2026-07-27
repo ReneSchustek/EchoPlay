@@ -9,7 +9,6 @@ namespace EchoPlay.App.Services
     /// Zeigt einen Bestätigungsdialog und schaltet die StatusBar temporär auf "Online",
     /// solange die Aktion läuft. Im Online-Modus wird die Aktion ohne Dialog durchgelassen.
     /// </summary>
-
     public interface IOnlineAccessGuard
     {
         /// <summary>

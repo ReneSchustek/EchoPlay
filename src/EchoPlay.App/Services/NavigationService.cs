@@ -8,7 +8,6 @@ namespace EchoPlay.App.Services
     /// Hält eine Referenz auf den aktiven <see cref="Frame"/> der MainWindow-Shell;
     /// die Routing-Tabelle Target → Page-Typ liegt in <see cref="NavigationRouteResolver"/>.
     /// </summary>
-
     public sealed class NavigationService : INavigationService
     {
         private Frame? _frame;
@@ -21,7 +20,6 @@ namespace EchoPlay.App.Services
         /// Wird einmalig in <see cref="MainWindow"/> nach <c>InitializeComponent()</c> aufgerufen.
         /// </summary>
         /// <param name="frame">Der ContentFrame des Hauptfensters.</param>
-
         public void Initialize(Frame frame)
         {
             _frame = frame;

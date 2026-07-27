@@ -12,7 +12,6 @@ namespace EchoPlay.App.Services
     /// Singleton-Service: nutzt einen eigenen DI-Scope pro Aufruf, weil
     /// <see cref="ISeriesDataService"/> und <see cref="ICachedNewReleaseDataService"/> Scoped sind.
     /// </summary>
-
     public sealed class WatchToggleService : IWatchToggleService
     {
         private readonly IServiceScopeFactory _scopeFactory;

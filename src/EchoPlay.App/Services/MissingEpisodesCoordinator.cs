@@ -1,4 +1,5 @@
 using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions;
@@ -10,6 +11,7 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -63,7 +65,8 @@ namespace EchoPlay.App.Services
 
             if (string.IsNullOrWhiteSpace(seriesFolderPath) || !Directory.Exists(seriesFolderPath))
             {
-                return ["Kein lokaler Ordner für diese Serie vorhanden."];
+                return [SafeResourceLoader.Get(
+                    "MissingEpisodesNoLocalFolder", "Kein lokaler Ordner für diese Serie vorhanden.")];
             }
 
             // Phase 1: Dateisystem-Lücken im Thread-Pool analysieren
@@ -121,10 +124,15 @@ namespace EchoPlay.App.Services
 
                 List<SeriesMissingEpisodesResult> results = new(localSeries.Count);
 
+                // Dasselbe Muster nutzt der Neuerscheinungs-Abgleich in der Online-Mediathek.
+                string progressPattern = SafeResourceLoader.Get(
+                    "OnlineRefreshProgressText", "Prüfe Serie {0}/{1}: {2} \u2026");
+
                 for (int i = 0; i < localSeries.Count; i++)
                 {
                     Series series = localSeries[i];
-                    _statusBar.SetScanProgress($"Prüfe Serie {i + 1}/{localSeries.Count}: {series.Title} \u2026");
+                    _statusBar.SetScanProgress(string.Format(
+                        CultureInfo.CurrentCulture, progressPattern, i + 1, localSeries.Count, series.Title));
 
                     SeriesMissingEpisodesResult result = await CheckSingleSeriesForReportAsync(series, onlineAvailable, checker, cancellationToken);
                     results.Add(result);
@@ -194,15 +202,27 @@ namespace EchoPlay.App.Services
                     return [];
                 }
 
+                // Muster erst in eine Variable: mit dem Aufruf direkt im string.Format
+                // verlangt der Analyzer ein zwischengespeichertes CompositeFormat, was bei
+                // einem zur Laufzeit wechselnden Sprachtext nichts brächte.
+                string headerPattern = SafeResourceLoader.Get(
+                    "MissingEpisodesOnlineHeader", "Online verfügbar (nach Folge {0}):");
+                string entryPattern = SafeResourceLoader.Get(
+                    "MissingEpisodesOnlineEntry", "  Folge {0} \u2013 {1}");
+
                 List<string> messages =
                 [
-                    $"Online verfügbar (nach Folge {checkResult.LocalHighestNumber}):",
+                    string.Format(CultureInfo.CurrentCulture, headerPattern, checkResult.LocalHighestNumber),
                     string.Empty
                 ];
 
                 foreach (MissingOnlineEpisode ep in checkResult.MissingOnlineEpisodes)
                 {
-                    messages.Add($"  Folge {ep.EpisodeNumber:D3} \u2013 {ep.AlbumTitle}");
+                    messages.Add(string.Format(
+                        CultureInfo.CurrentCulture,
+                        entryPattern,
+                        ep.EpisodeNumber.ToString("D3", CultureInfo.CurrentCulture),
+                        ep.AlbumTitle));
                 }
 
                 return messages;
@@ -360,11 +380,13 @@ namespace EchoPlay.App.Services
             }
             catch (IOException)
             {
-                return ["Ordner konnte nicht gelesen werden."];
+                return [SafeResourceLoader.Get(
+                    "MissingEpisodesFolderUnreadable", "Ordner konnte nicht gelesen werden.")];
             }
             catch (UnauthorizedAccessException)
             {
-                return ["Zugriff auf den Ordner verweigert."];
+                return [SafeResourceLoader.Get(
+                    "MissingEpisodesFolderAccessDenied", "Zugriff auf den Ordner verweigert.")];
             }
 
             // Nur Ordner mit mindestens einer Audiodatei sind echte Folgen.
@@ -394,13 +416,22 @@ namespace EchoPlay.App.Services
 
             if (episodeFolderNames.Count == 0)
             {
-                return ["Keine Folgenordner mit Audiodateien gefunden."];
+                return [SafeResourceLoader.Get(
+                    "MissingEpisodesNoEpisodeFolders", "Keine Folgenordner mit Audiodateien gefunden.")];
             }
 
             IReadOnlyList<int> numbers = LocalEpisodeNumbers.Scan(episodeFolderNames);
             if (numbers.Count == 0)
             {
-                return [$"{episodeFolderNames.Count} Folgen vorhanden (keine Nummerierung erkannt)."];
+                return [string.Format(
+                    CultureInfo.CurrentCulture,
+                    PluralText.Pattern(
+                        episodeFolderNames.Count,
+                        "MissingEpisodesNoNumbersSingular",
+                        "MissingEpisodesNoNumbersPlural",
+                        "{0} Folge vorhanden (keine Nummerierung erkannt).",
+                        "{0} Folgen vorhanden (keine Nummerierung erkannt)."),
+                    episodeFolderNames.Count)];
             }
 
             IReadOnlyList<int> gaps = LocalEpisodeNumbers.FindGaps(numbers);
@@ -409,18 +440,32 @@ namespace EchoPlay.App.Services
 
             if (gaps.Count == 0)
             {
-                return [$"Alle Folgen vorhanden ({minNumber}–{maxNumber}), keine Lücken."];
+                string noGapsPattern = SafeResourceLoader.Get(
+                    "MissingEpisodesNoGaps", "Alle Folgen vorhanden ({0}–{1}), keine Lücken.");
+                return [string.Format(CultureInfo.CurrentCulture, noGapsPattern, minNumber, maxNumber)];
             }
 
             List<string> messages =
             [
-                $"{gaps.Count} fehlende Folge(n) im Bereich {minNumber}–{maxNumber}:",
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    PluralText.Pattern(
+                        gaps.Count,
+                        "MissingEpisodesGapsHeaderSingular",
+                        "MissingEpisodesGapsHeaderPlural",
+                        "{0} fehlende Folge im Bereich {1}–{2}:",
+                        "{0} fehlende Folgen im Bereich {1}–{2}:"),
+                    gaps.Count, minNumber, maxNumber),
                 string.Empty
             ];
 
+            string gapEntryPattern = SafeResourceLoader.Get("MissingEpisodesGapEntry", "  Folge {0}");
             foreach (int gap in gaps)
             {
-                messages.Add($"  Folge {gap:D3}");
+                messages.Add(string.Format(
+                    CultureInfo.CurrentCulture,
+                    gapEntryPattern,
+                    gap.ToString("D3", CultureInfo.CurrentCulture)));
             }
 
             return messages;

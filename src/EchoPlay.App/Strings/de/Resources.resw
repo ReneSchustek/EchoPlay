@@ -1172,7 +1172,10 @@
   <data name="TagManagerApplyToAllConfirmTitle" xml:space="preserve">
     <value>Tags auf alle Dateien anwenden?</value>
   </data>
-  <data name="TagManagerApplyToAllConfirmMessage" xml:space="preserve">
+  <data name="TagManagerApplyToAllConfirmMessageSingular" xml:space="preserve">
+    <value>Album, Künstler, Jahr, Genre und TrackCount werden für {0} Datei überschrieben. Title und Tracknummer bleiben erhalten.</value>
+  </data>
+  <data name="TagManagerApplyToAllConfirmMessagePlural" xml:space="preserve">
     <value>Album, Künstler, Jahr, Genre und TrackCount werden für {0} Dateien überschrieben. Title und Tracknummer bleiben erhalten.</value>
   </data>
   <data name="TagManagerApplyToAllErrorTitle" xml:space="preserve">
@@ -1181,13 +1184,19 @@
   <data name="TagManagerSaveAllConfirmTitle" xml:space="preserve">
     <value>Alle geänderten Dateien speichern?</value>
   </data>
-  <data name="TagManagerSaveAllConfirmMessage" xml:space="preserve">
+  <data name="TagManagerSaveAllConfirmMessageSingular" xml:space="preserve">
+    <value>{0} geänderte Datei wird gespeichert.</value>
+  </data>
+  <data name="TagManagerSaveAllConfirmMessagePlural" xml:space="preserve">
     <value>{0} geänderte Dateien werden gespeichert.</value>
   </data>
   <data name="TagManagerCoverApplyAllConfirmTitle" xml:space="preserve">
     <value>Cover auf alle Dateien anwenden?</value>
   </data>
-  <data name="TagManagerCoverApplyAllConfirmMessage" xml:space="preserve">
+  <data name="TagManagerCoverApplyAllConfirmMessageSingular" xml:space="preserve">
+    <value>Das aktuelle Cover wird in {0} Datei geschrieben.</value>
+  </data>
+  <data name="TagManagerCoverApplyAllConfirmMessagePlural" xml:space="preserve">
     <value>Das aktuelle Cover wird in {0} Dateien geschrieben.</value>
   </data>
   <data name="TagManagerCoverApplyAllErrorTitle" xml:space="preserve">
@@ -1208,13 +1217,19 @@
   <data name="TagManagerRenameConfirmTitle" xml:space="preserve">
     <value>Dateien umbenennen?</value>
   </data>
-  <data name="TagManagerRenameConfirmMessage" xml:space="preserve">
+  <data name="TagManagerRenameConfirmMessageSingular" xml:space="preserve">
+    <value>{0} Datei wird nach dem Muster „{1}" umbenannt. Dieser Vorgang kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="TagManagerRenameConfirmMessagePlural" xml:space="preserve">
     <value>{0} Dateien werden nach dem Muster „{1}" umbenannt. Dieser Vorgang kann nicht rückgängig gemacht werden.</value>
   </data>
   <data name="TagManagerRenamePartialErrorTitle" xml:space="preserve">
     <value>Umbenennung teilweise fehlgeschlagen</value>
   </data>
-  <data name="TagManagerRenamePartialErrorMessage" xml:space="preserve">
+  <data name="TagManagerRenamePartialErrorMessageSingular" xml:space="preserve">
+    <value>{0} von {1} Datei wurde umbenannt. Details im Protokoll.</value>
+  </data>
+  <data name="TagManagerRenamePartialErrorMessagePlural" xml:space="preserve">
     <value>{0} von {1} Dateien wurden umbenannt. Details im Protokoll.</value>
   </data>
   <data name="TagManagerRenameErrorTitle" xml:space="preserve">
@@ -1509,7 +1524,10 @@ Die Anwendung wird beendet.</value>
   <data name="CoverSearchNoResultsFormat" xml:space="preserve">
     <value>Keine Treffer für „{0}“.</value>
   </data>
-  <data name="CoverSearchHitsFoundFormat" xml:space="preserve">
+  <data name="CoverSearchHitsFoundSingular" xml:space="preserve">
+    <value>{0} Treffer gefunden.</value>
+  </data>
+  <data name="CoverSearchHitsFoundPlural" xml:space="preserve">
     <value>{0} Treffer gefunden.</value>
   </data>
   <data name="CoverSearchFailed" xml:space="preserve">
@@ -1662,10 +1680,16 @@ Die Anwendung wird beendet.</value>
   <data name="EpisodeOpenInAppleMusicItem.AutomationProperties.Name" xml:space="preserve">
     <value>Album in Apple Music öffnen</value>
   </data>
-  <data name="SeriesProgressText" xml:space="preserve">
+  <data name="SeriesProgressTextSingular" xml:space="preserve">
+    <value>{0} von {1} Folge gehört</value>
+  </data>
+  <data name="SeriesProgressTextPlural" xml:space="preserve">
     <value>{0} von {1} Folgen gehört</value>
   </data>
-  <data name="StatistikProgressText" xml:space="preserve">
+  <data name="StatistikProgressTextSingular" xml:space="preserve">
+    <value>{0} von {1} Folge gehört ({2} %)</value>
+  </data>
+  <data name="StatistikProgressTextPlural" xml:space="preserve">
     <value>{0} von {1} Folgen gehört ({2} %)</value>
   </data>
   <data name="StatistikNoEpisodes" xml:space="preserve">
@@ -1694,5 +1718,71 @@ Die Anwendung wird beendet.</value>
   </data>
   <data name="SpotifyStatusError" xml:space="preserve">
     <value>Fehler: {0}</value>
+  </data>
+  <data name="MissingEpisodesNoLocalFolder" xml:space="preserve">
+    <value>Kein lokaler Ordner für diese Serie vorhanden.</value>
+  </data>
+  <data name="MissingEpisodesFolderUnreadable" xml:space="preserve">
+    <value>Ordner konnte nicht gelesen werden.</value>
+  </data>
+  <data name="MissingEpisodesFolderAccessDenied" xml:space="preserve">
+    <value>Zugriff auf den Ordner verweigert.</value>
+  </data>
+  <data name="MissingEpisodesNoEpisodeFolders" xml:space="preserve">
+    <value>Keine Folgenordner mit Audiodateien gefunden.</value>
+  </data>
+  <data name="MissingEpisodesNoNumbersSingular" xml:space="preserve">
+    <value>{0} Folge vorhanden (keine Nummerierung erkannt).</value>
+  </data>
+  <data name="MissingEpisodesNoNumbersPlural" xml:space="preserve">
+    <value>{0} Folgen vorhanden (keine Nummerierung erkannt).</value>
+  </data>
+  <data name="MissingEpisodesNoGaps" xml:space="preserve">
+    <value>Alle Folgen vorhanden ({0}–{1}), keine Lücken.</value>
+  </data>
+  <data name="MissingEpisodesGapsHeaderSingular" xml:space="preserve">
+    <value>{0} fehlende Folge im Bereich {1}–{2}:</value>
+  </data>
+  <data name="MissingEpisodesGapsHeaderPlural" xml:space="preserve">
+    <value>{0} fehlende Folgen im Bereich {1}–{2}:</value>
+  </data>
+  <data name="MissingEpisodesGapEntry" xml:space="preserve">
+    <value>  Folge {0}</value>
+  </data>
+  <data name="MissingEpisodesOnlineHeader" xml:space="preserve">
+    <value>Online verfügbar (nach Folge {0}):</value>
+  </data>
+  <data name="MissingEpisodesOnlineEntry" xml:space="preserve">
+    <value>  Folge {0} – {1}</value>
+  </data>
+  <data name="ScanStatusSyncingSeries" xml:space="preserve">
+    <value>Synchronisiere „{0}" …</value>
+  </data>
+  <data name="ScanDetailSeriesProgressSingular" xml:space="preserve">
+    <value>{0} / {1} Serie</value>
+  </data>
+  <data name="ScanDetailSeriesProgressPlural" xml:space="preserve">
+    <value>{0} / {1} Serien</value>
+  </data>
+  <data name="StatusBarSubscribedSeriesSingular" xml:space="preserve">
+    <value>★ {0} Serie</value>
+  </data>
+  <data name="StatusBarSubscribedSeriesPlural" xml:space="preserve">
+    <value>★ {0} Serien</value>
+  </data>
+  <data name="StatusBarFinishedEpisodes" xml:space="preserve">
+    <value>✓ {0} gehört</value>
+  </data>
+  <data name="StatusBarUnfinishedEpisodes" xml:space="preserve">
+    <value>○ {0} offen</value>
+  </data>
+  <data name="StatusBarNewEpisodes" xml:space="preserve">
+    <value>🆕 {0} neu</value>
+  </data>
+  <data name="LocalTrackCountSingular" xml:space="preserve">
+    <value>{0} Track</value>
+  </data>
+  <data name="LocalTrackCountPlural" xml:space="preserve">
+    <value>{0} Tracks</value>
   </data>
 </root>

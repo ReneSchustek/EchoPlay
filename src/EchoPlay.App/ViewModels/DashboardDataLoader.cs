@@ -626,11 +626,7 @@ namespace EchoPlay.App.ViewModels
                 // Label über Ressource: das Badge auf derselben Kachel war bereits lokalisiert,
                 // die Gruppenüberschrift blieb deutsch – auf englischer Oberfläche standen beide
                 // Sprachen nebeneinander.
-                string announcedLabel = _localizationService?.Get("DashboardGroupAnnounced") ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(announcedLabel))
-                {
-                    announcedLabel = "Angekündigt";
-                }
+                string announcedLabel = _localizationService?.Get("DashboardGroupAnnounced") ?? "Angekündigt";
 
                 groups.Add(new NewEpisodesGroupViewModel(announcedLabel, 0, announcedCards));
             }

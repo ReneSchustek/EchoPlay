@@ -145,16 +145,36 @@ namespace EchoPlay.App.ViewModels
         // ── Berechnete Anzeige-Texte ─────────────────────────────────────────────
 
         /// <summary>Formatierter Anzeigetext für abonnierte Serien, z.B. "★ 12 Serien".</summary>
-        public string SubscribedSeriesText => $"\u2605 {_subscribedSeriesCount} Serien";
+        public string SubscribedSeriesText => Zusammensetzen(
+            EchoPlay.App.Helpers.PluralText.Pattern(
+                _subscribedSeriesCount,
+                "StatusBarSubscribedSeriesSingular",
+                "StatusBarSubscribedSeriesPlural",
+                "\u2605 {0} Serie",
+                "\u2605 {0} Serien"),
+            _subscribedSeriesCount);
 
         /// <summary>Formatierter Anzeigetext für gehörte Folgen, z.B. "✓ 234 gehört".</summary>
-        public string FinishedEpisodesText => $"\u2713 {_finishedEpisodesCount} geh\u00f6rt";
+        public string FinishedEpisodesText => Zusammensetzen(
+            EchoPlay.App.Helpers.SafeResourceLoader.Get(
+                "StatusBarFinishedEpisodes", "\u2713 {0} geh\u00f6rt"),
+            _finishedEpisodesCount);
 
         /// <summary>Formatierter Anzeigetext für offene Folgen, z.B. "○ 56 offen".</summary>
-        public string UnfinishedEpisodesText => $"\u25cb {_unfinishedEpisodesCount} offen";
+        public string UnfinishedEpisodesText => Zusammensetzen(
+            EchoPlay.App.Helpers.SafeResourceLoader.Get(
+                "StatusBarUnfinishedEpisodes", "\u25cb {0} offen"),
+            _unfinishedEpisodesCount);
 
         /// <summary>Formatierter Anzeigetext für neue verfügbare Folgen, z.B. "🆕 3 neu".</summary>
-        public string NewEpisodesText => $"\U0001f195 {_newEpisodesCount} neu";
+        public string NewEpisodesText => Zusammensetzen(
+            EchoPlay.App.Helpers.SafeResourceLoader.Get(
+                "StatusBarNewEpisodes", "\U0001f195 {0} neu"),
+            _newEpisodesCount);
+
+        // Die vier Badge-Texte unterscheiden sich nur im Muster und in der Zahl.
+        private static string Zusammensetzen(string pattern, int count)
+            => string.Format(System.Globalization.CultureInfo.CurrentCulture, pattern, count);
 
         /// <summary>
         /// Sichtbarkeit des Neue-Folgen-Badges.

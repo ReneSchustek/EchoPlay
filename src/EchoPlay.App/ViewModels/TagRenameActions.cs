@@ -93,7 +93,12 @@ namespace EchoPlay.App.ViewModels
                 SafeResourceLoader.Get("TagManagerRenameConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    SafeResourceLoader.Get("TagManagerRenameConfirmMessage"),
+                    PluralText.Pattern(
+                        previewCount,
+                        "TagManagerRenameConfirmMessageSingular",
+                        "TagManagerRenameConfirmMessagePlural",
+                        "{0} Datei wird nach dem Muster „{1}\" umbenannt. Dieser Vorgang kann nicht rückgängig gemacht werden.",
+                        "{0} Dateien werden nach dem Muster „{1}\" umbenannt. Dieser Vorgang kann nicht rückgängig gemacht werden."),
                     previewCount, _renameVM.RenamePattern));
 
             if (!confirmed)
@@ -118,7 +123,12 @@ namespace EchoPlay.App.ViewModels
                         SafeResourceLoader.Get("TagManagerRenamePartialErrorTitle"),
                         string.Format(
                             CultureInfo.CurrentCulture,
-                            SafeResourceLoader.Get("TagManagerRenamePartialErrorMessage"),
+                            PluralText.Pattern(
+                                previewCount,
+                                "TagManagerRenamePartialErrorMessageSingular",
+                                "TagManagerRenamePartialErrorMessagePlural",
+                                "{0} von {1} Datei wurde umbenannt. Details im Protokoll.",
+                                "{0} von {1} Dateien wurden umbenannt. Details im Protokoll."),
                             renamedCount, previewCount));
                 }
             }

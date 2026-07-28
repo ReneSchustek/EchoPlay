@@ -18,6 +18,12 @@ namespace EchoPlay.App.Tests.Fakes
         /// </summary>
         public int CallCount { get; private set; }
 
+        /// <summary>Titel des zuletzt angefragten Dialogs.</summary>
+        public string? LastTitle { get; private set; }
+
+        /// <summary>Meldungstext des zuletzt angefragten Dialogs.</summary>
+        public string? LastMessage { get; private set; }
+
         /// <summary>
         /// Initialisiert den Fake mit dem zu liefernden Ergebnis.
         /// </summary>
@@ -34,6 +40,8 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default)
         {
             CallCount++;
+            LastTitle = title;
+            LastMessage = message;
             return Task.FromResult(_result);
         }
     }

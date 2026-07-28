@@ -144,7 +144,12 @@ namespace EchoPlay.App.Helpers
                 currentResults.AddRange(results);
                 statusText.Text = string.Format(
                     CultureInfo.CurrentCulture,
-                    SafeResourceLoader.Get("CoverSearchHitsFoundFormat"),
+                    PluralText.Pattern(
+                        results.Count,
+                        "CoverSearchHitsFoundSingular",
+                        "CoverSearchHitsFoundPlural",
+                        "{0} Treffer gefunden.",
+                        "{0} Treffer gefunden."),
                     results.Count);
 
                 for (int i = 0; i < results.Count; i++)

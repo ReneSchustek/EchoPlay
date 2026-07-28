@@ -14,6 +14,7 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -331,6 +332,12 @@ namespace EchoPlay.App.Services
             int tracksCreated = 0;
             int processedSeries = 0;
 
+            // Muster erst in eine Variable: mit dem Aufruf direkt im string.Format verlangt
+            // der Analyzer ein zwischengespeichertes CompositeFormat, was bei einem zur
+            // Laufzeit wechselnden Sprachtext nichts brächte.
+            string syncStatusPattern = SafeResourceLoader.Get(
+                "ScanStatusSyncingSeries", "Synchronisiere „{0}\" …");
+
             foreach (SeriesPipelineEntry entry in materialization.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -338,8 +345,19 @@ namespace EchoPlay.App.Services
 
                 progress?.Report(new ScanProgress
                 {
-                    StatusText = $"Synchronisiere \"{entry.ScanResult.SeriesName}\" …",
-                    DetailText = $"{processedSeries} / {materialization.Entries.Count} Serien",
+                    StatusText = string.Format(
+                        CultureInfo.CurrentCulture,
+                        syncStatusPattern,
+                        entry.ScanResult.SeriesName),
+                    DetailText = string.Format(
+                        CultureInfo.CurrentCulture,
+                        PluralText.Pattern(
+                            materialization.Entries.Count,
+                            "ScanDetailSeriesProgressSingular",
+                            "ScanDetailSeriesProgressPlural",
+                            "{0} / {1} Serie",
+                            "{0} / {1} Serien"),
+                        processedSeries, materialization.Entries.Count),
                     ProcessedSeries = processedSeries,
                     TotalSeries = materialization.Entries.Count
                 });

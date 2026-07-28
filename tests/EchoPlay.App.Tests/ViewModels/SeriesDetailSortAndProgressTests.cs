@@ -107,13 +107,28 @@ namespace EchoPlay.App.Tests.ViewModels
             // nichts Deutsches stehen bleiben.
             FakeLocalizationService localization = new(new Dictionary<string, string>
             {
-                ["SeriesProgressText"] = "{0} of {1} episodes played"
+                ["SeriesProgressTextPlural"] = "{0} of {1} episodes played"
             });
 
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(
                 localization, (1, "Eins"), (2, "Zwei"));
 
             Assert.Equal("0 of 2 episodes played", viewModel.ProgressText);
+        }
+
+        [Fact]
+        public async Task ProgressText_WithSingleEpisode_UsesSingularResource()
+        {
+            // Eine Serie mit genau einer Folge ist der Grund für die zweite Ressource:
+            // „0 von 1 Folgen gehört" wäre falsch gebeugt.
+            FakeLocalizationService localization = new(new Dictionary<string, string>
+            {
+                ["SeriesProgressTextSingular"] = "{0} of {1} episode played"
+            });
+
+            (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(localization, (1, "Eins"));
+
+            Assert.Equal("0 of 1 episode played", viewModel.ProgressText);
         }
 
         [Fact]

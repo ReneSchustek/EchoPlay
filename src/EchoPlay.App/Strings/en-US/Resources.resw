@@ -1170,7 +1170,10 @@
   <data name="TagManagerApplyToAllConfirmTitle" xml:space="preserve">
     <value>Apply tags to all files?</value>
   </data>
-  <data name="TagManagerApplyToAllConfirmMessage" xml:space="preserve">
+  <data name="TagManagerApplyToAllConfirmMessageSingular" xml:space="preserve">
+    <value>Album, artist, year, genre and track count will be overwritten for {0} file. Title and track number are preserved.</value>
+  </data>
+  <data name="TagManagerApplyToAllConfirmMessagePlural" xml:space="preserve">
     <value>Album, artist, year, genre and track count will be overwritten for {0} files. Title and track number are preserved.</value>
   </data>
   <data name="TagManagerApplyToAllErrorTitle" xml:space="preserve">
@@ -1179,13 +1182,19 @@
   <data name="TagManagerSaveAllConfirmTitle" xml:space="preserve">
     <value>Save all modified files?</value>
   </data>
-  <data name="TagManagerSaveAllConfirmMessage" xml:space="preserve">
+  <data name="TagManagerSaveAllConfirmMessageSingular" xml:space="preserve">
+    <value>{0} modified file will be saved.</value>
+  </data>
+  <data name="TagManagerSaveAllConfirmMessagePlural" xml:space="preserve">
     <value>{0} modified files will be saved.</value>
   </data>
   <data name="TagManagerCoverApplyAllConfirmTitle" xml:space="preserve">
     <value>Apply cover to all files?</value>
   </data>
-  <data name="TagManagerCoverApplyAllConfirmMessage" xml:space="preserve">
+  <data name="TagManagerCoverApplyAllConfirmMessageSingular" xml:space="preserve">
+    <value>The current cover will be written to {0} file.</value>
+  </data>
+  <data name="TagManagerCoverApplyAllConfirmMessagePlural" xml:space="preserve">
     <value>The current cover will be written to {0} files.</value>
   </data>
   <data name="TagManagerCoverApplyAllErrorTitle" xml:space="preserve">
@@ -1206,13 +1215,19 @@
   <data name="TagManagerRenameConfirmTitle" xml:space="preserve">
     <value>Rename files?</value>
   </data>
-  <data name="TagManagerRenameConfirmMessage" xml:space="preserve">
+  <data name="TagManagerRenameConfirmMessageSingular" xml:space="preserve">
+    <value>{0} file will be renamed using the pattern "{1}". This action cannot be undone.</value>
+  </data>
+  <data name="TagManagerRenameConfirmMessagePlural" xml:space="preserve">
     <value>{0} files will be renamed using the pattern "{1}". This action cannot be undone.</value>
   </data>
   <data name="TagManagerRenamePartialErrorTitle" xml:space="preserve">
     <value>Rename partially failed</value>
   </data>
-  <data name="TagManagerRenamePartialErrorMessage" xml:space="preserve">
+  <data name="TagManagerRenamePartialErrorMessageSingular" xml:space="preserve">
+    <value>{0} of {1} file was renamed. Details in the log.</value>
+  </data>
+  <data name="TagManagerRenamePartialErrorMessagePlural" xml:space="preserve">
     <value>{0} of {1} files were renamed. Details in the log.</value>
   </data>
   <data name="TagManagerRenameErrorTitle" xml:space="preserve">
@@ -1507,7 +1522,10 @@ The application will close.</value>
   <data name="CoverSearchNoResultsFormat" xml:space="preserve">
     <value>No matches for "{0}".</value>
   </data>
-  <data name="CoverSearchHitsFoundFormat" xml:space="preserve">
+  <data name="CoverSearchHitsFoundSingular" xml:space="preserve">
+    <value>{0} match found.</value>
+  </data>
+  <data name="CoverSearchHitsFoundPlural" xml:space="preserve">
     <value>{0} matches found.</value>
   </data>
   <data name="CoverSearchFailed" xml:space="preserve">
@@ -1660,10 +1678,16 @@ The application will close.</value>
   <data name="EpisodeOpenInAppleMusicItem.AutomationProperties.Name" xml:space="preserve">
     <value>Open album in Apple Music</value>
   </data>
-  <data name="SeriesProgressText" xml:space="preserve">
+  <data name="SeriesProgressTextSingular" xml:space="preserve">
+    <value>{0} of {1} episode played</value>
+  </data>
+  <data name="SeriesProgressTextPlural" xml:space="preserve">
     <value>{0} of {1} episodes played</value>
   </data>
-  <data name="StatistikProgressText" xml:space="preserve">
+  <data name="StatistikProgressTextSingular" xml:space="preserve">
+    <value>{0} of {1} episode played ({2} %)</value>
+  </data>
+  <data name="StatistikProgressTextPlural" xml:space="preserve">
     <value>{0} of {1} episodes played ({2} %)</value>
   </data>
   <data name="StatistikNoEpisodes" xml:space="preserve">
@@ -1692,5 +1716,71 @@ The application will close.</value>
   </data>
   <data name="SpotifyStatusError" xml:space="preserve">
     <value>Error: {0}</value>
+  </data>
+  <data name="MissingEpisodesNoLocalFolder" xml:space="preserve">
+    <value>No local folder available for this series.</value>
+  </data>
+  <data name="MissingEpisodesFolderUnreadable" xml:space="preserve">
+    <value>The folder could not be read.</value>
+  </data>
+  <data name="MissingEpisodesFolderAccessDenied" xml:space="preserve">
+    <value>Access to the folder was denied.</value>
+  </data>
+  <data name="MissingEpisodesNoEpisodeFolders" xml:space="preserve">
+    <value>No episode folders with audio files found.</value>
+  </data>
+  <data name="MissingEpisodesNoNumbersSingular" xml:space="preserve">
+    <value>{0} episode present (no numbering detected).</value>
+  </data>
+  <data name="MissingEpisodesNoNumbersPlural" xml:space="preserve">
+    <value>{0} episodes present (no numbering detected).</value>
+  </data>
+  <data name="MissingEpisodesNoGaps" xml:space="preserve">
+    <value>All episodes present ({0}–{1}), no gaps.</value>
+  </data>
+  <data name="MissingEpisodesGapsHeaderSingular" xml:space="preserve">
+    <value>{0} missing episode in the range {1}–{2}:</value>
+  </data>
+  <data name="MissingEpisodesGapsHeaderPlural" xml:space="preserve">
+    <value>{0} missing episodes in the range {1}–{2}:</value>
+  </data>
+  <data name="MissingEpisodesGapEntry" xml:space="preserve">
+    <value>  Episode {0}</value>
+  </data>
+  <data name="MissingEpisodesOnlineHeader" xml:space="preserve">
+    <value>Available online (after episode {0}):</value>
+  </data>
+  <data name="MissingEpisodesOnlineEntry" xml:space="preserve">
+    <value>  Episode {0} – {1}</value>
+  </data>
+  <data name="ScanStatusSyncingSeries" xml:space="preserve">
+    <value>Synchronizing "{0}" …</value>
+  </data>
+  <data name="ScanDetailSeriesProgressSingular" xml:space="preserve">
+    <value>{0} / {1} series</value>
+  </data>
+  <data name="ScanDetailSeriesProgressPlural" xml:space="preserve">
+    <value>{0} / {1} series</value>
+  </data>
+  <data name="StatusBarSubscribedSeriesSingular" xml:space="preserve">
+    <value>★ {0} series</value>
+  </data>
+  <data name="StatusBarSubscribedSeriesPlural" xml:space="preserve">
+    <value>★ {0} series</value>
+  </data>
+  <data name="StatusBarFinishedEpisodes" xml:space="preserve">
+    <value>✓ {0} played</value>
+  </data>
+  <data name="StatusBarUnfinishedEpisodes" xml:space="preserve">
+    <value>○ {0} open</value>
+  </data>
+  <data name="StatusBarNewEpisodes" xml:space="preserve">
+    <value>🆕 {0} new</value>
+  </data>
+  <data name="LocalTrackCountSingular" xml:space="preserve">
+    <value>{0} track</value>
+  </data>
+  <data name="LocalTrackCountPlural" xml:space="preserve">
+    <value>{0} tracks</value>
   </data>
 </root>

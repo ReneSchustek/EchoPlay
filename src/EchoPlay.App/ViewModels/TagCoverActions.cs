@@ -79,7 +79,12 @@ namespace EchoPlay.App.ViewModels
                 SafeResourceLoader.Get("TagManagerCoverApplyAllConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    SafeResourceLoader.Get("TagManagerCoverApplyAllConfirmMessage"),
+                    PluralText.Pattern(
+                        _fileListVM.Files.Count,
+                        "TagManagerCoverApplyAllConfirmMessageSingular",
+                        "TagManagerCoverApplyAllConfirmMessagePlural",
+                        "Das aktuelle Cover wird in {0} Datei geschrieben.",
+                        "Das aktuelle Cover wird in {0} Dateien geschrieben."),
                     _fileListVM.Files.Count));
 
             if (!confirmed)

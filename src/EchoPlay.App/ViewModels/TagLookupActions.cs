@@ -229,7 +229,12 @@ namespace EchoPlay.App.ViewModels
                 SafeResourceLoader.Get("TagManagerApplyToAllConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    SafeResourceLoader.Get("TagManagerApplyToAllConfirmMessage"),
+                    PluralText.Pattern(
+                        _fileListVM.Files.Count,
+                        "TagManagerApplyToAllConfirmMessageSingular",
+                        "TagManagerApplyToAllConfirmMessagePlural",
+                        "Album, Künstler, Jahr, Genre und TrackCount werden für {0} Datei überschrieben. Title und Tracknummer bleiben erhalten.",
+                        "Album, Künstler, Jahr, Genre und TrackCount werden für {0} Dateien überschrieben. Title und Tracknummer bleiben erhalten."),
                     _fileListVM.Files.Count));
 
             if (!confirmed)

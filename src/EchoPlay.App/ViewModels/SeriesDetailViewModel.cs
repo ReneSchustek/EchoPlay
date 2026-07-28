@@ -387,7 +387,13 @@ namespace EchoPlay.App.ViewModels
                 ProgressText = episodes.Count > 0
                     ? string.Format(
                         CultureInfo.CurrentCulture,
-                        _localizationService?.Get("SeriesProgressText") ?? "{0} von {1} Folgen gehört",
+                        EchoPlay.App.Helpers.PluralText.Pattern(
+                            _localizationService,
+                            episodes.Count,
+                            "SeriesProgressTextSingular",
+                            "SeriesProgressTextPlural",
+                            "{0} von {1} Folge gehört",
+                            "{0} von {1} Folgen gehört"),
                         completedCount,
                         episodes.Count)
                     : string.Empty;

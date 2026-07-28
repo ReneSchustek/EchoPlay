@@ -118,11 +118,12 @@ namespace EchoPlay.App.ViewModels
 
                 double percent = totalEpisodes > 0 ? (double)completed / totalEpisodes * 100 : 0;
                 ProgressPercent = percent;
-                // Muster erst in eine Variable: mit Literal an dieser Stelle verlangt der
-                // Analyzer ein zwischengespeichertes CompositeFormat, was bei einem zur
-                // Laufzeit wechselnden Sprachtext nichts brächte.
-                string progressPattern = EchoPlay.App.Helpers.SafeResourceLoader.Get(
-                    "StatistikProgressText", "{0} von {1} Folgen gehört ({2} %)");
+                string progressPattern = EchoPlay.App.Helpers.PluralText.Pattern(
+                    totalEpisodes,
+                    "StatistikProgressTextSingular",
+                    "StatistikProgressTextPlural",
+                    "{0} von {1} Folge gehört ({2} %)",
+                    "{0} von {1} Folgen gehört ({2} %)");
 
                 ProgressText = totalEpisodes > 0
                     ? string.Format(

@@ -1,12 +1,15 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
+using EchoPlay.Core.Abstractions;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -26,7 +29,9 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesDataService? seriesService = null,
             FakeCachedNewReleaseDataService? cacheService = null,
             FakeCoverImageDataService? coverImageService = null,
-            BackgroundCoverService? coverServiceOverride = null)
+            BackgroundCoverService? coverServiceOverride = null,
+            FakeOnlineEpisodeChecker? onlineChecker = null,
+            FakeClock? clock = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService ?? new FakeAppSettingsDataService());
@@ -34,6 +39,12 @@ namespace EchoPlay.App.Tests.Services
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cacheService ?? new FakeCachedNewReleaseDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => coverImageService ?? new FakeCoverImageDataService());
+
+            if (onlineChecker is not null)
+            {
+                _ = services.AddScoped<IOnlineEpisodeChecker>(_ => onlineChecker);
+            }
+
             // Microsoft.Extensions.Http registriert den Default-IHttpClientFactory.
             // Die Tests lösen keinen echten Online-Check aus (OfflineMode = true), sodass
             // die Factory nur konstruktor-seitig gebraucht wird und keine Netzwerkzugriffe entstehen.
@@ -53,8 +64,19 @@ namespace EchoPlay.App.Tests.Services
                 coverService,
                 provider.GetRequiredService<IHttpClientFactory>(),
                 new FakeLoggerFactory(),
-                new FakeClock());
+                clock ?? new FakeClock());
         }
+
+        /// <summary>
+        /// Einstellungen ohne Netzzugriff: Ohne aktiven Anbieter überspringt der Validator
+        /// den HTTP-Konnektivitätscheck und gilt trotzdem als online — damit lassen sich die
+        /// Folgeschritte prüfen, ohne dass ein Test ins Netz geht.
+        /// </summary>
+        private static AppSettings OnlineOhneAnbieter() => new()
+        {
+            OfflineMode = false,
+            ActiveProvider = ProviderType.None
+        };
 
         [Fact]
         public async Task ValidateAsync_ReturnsResult_WithDefaults()
@@ -287,6 +309,224 @@ namespace EchoPlay.App.Tests.Services
             (string? FolderPath, string? TrackPath) onlyCall = Assert.Single(coverLoader.LoadCalls);
             Assert.Equal(@"C:\Serien\Testserie", onlyCall.FolderPath);
             Assert.DoesNotContain(coverLoader.LoadCalls, call => call.FolderPath == @"C:\Serien\Testserie\01");
+        }
+
+        // ── Lokales Verzeichnis ──────────────────────────────────────────────────
+
+        [Fact]
+        public async Task ValidateAsync_LocalFolderMissing_ReportsUnavailableWithHint()
+        {
+            // Ein Netzlaufwerk ohne Verbindung sieht genauso aus wie ein gelöschter Ordner:
+            // Die Oberfläche muss die lokalen Funktionen sperren statt ins Leere zu laufen.
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                OfflineMode = true,
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = @"Z:\gibt-es-nicht\EchoPlay"
+            });
+
+            StartupValidator validator = BuildValidator(settingsService: settings);
+
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.False(result.IsLocalLibraryAvailable);
+            Assert.Equal("StartupLocalLibraryUnavailableHint", result.LocalLibraryHintText);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_LocalFolderReadable_ReportsAvailableWithoutHint()
+        {
+            string ordner = Directory.CreateTempSubdirectory("echoplay-start").FullName;
+
+            try
+            {
+                FakeAppSettingsDataService settings = new(new AppSettings
+                {
+                    OfflineMode = true,
+                    LocalLibraryEnabled = true,
+                    LocalLibraryRootPath = ordner
+                });
+
+                StartupValidator validator = BuildValidator(settingsService: settings);
+
+                StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                Assert.True(result.IsLocalLibraryAvailable);
+                Assert.Null(result.LocalLibraryHintText);
+            }
+            finally
+            {
+                Directory.Delete(ordner, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task ValidateAsync_LocalLibraryDisabled_SkipsFolderCheck()
+        {
+            // Ohne aktivierte lokale Bibliothek darf ein ungültiger Pfad kein Thema sein.
+            FakeAppSettingsDataService settings = new(new AppSettings
+            {
+                OfflineMode = true,
+                LocalLibraryEnabled = false,
+                LocalLibraryRootPath = @"Z:\gibt-es-nicht\EchoPlay"
+            });
+
+            StartupValidator validator = BuildValidator(settingsService: settings);
+
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.True(result.IsLocalLibraryAvailable);
+            Assert.Null(result.LocalLibraryHintText);
+        }
+
+        // ── Neuerscheinungen-Cache ───────────────────────────────────────────────
+
+        [Fact]
+        public async Task ValidateAsync_WatchedSeries_FillsCacheFromChecker()
+        {
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Überwacht",
+                IsSubscribed = true,
+                IsWatched = true
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series series = seriesService.All[0];
+
+            FakeOnlineEpisodeChecker checker = new(
+            [
+                new OnlineEpisodeCheckResult
+                {
+                    SeriesId = series.Id,
+                    SeriesTitle = series.Title,
+                    NewReleaseEpisodes =
+                    [
+                        new NewReleaseEpisode
+                        {
+                            Title = "Neue Folge",
+                            EpisodeNumber = 42,
+                            ReleaseDate = TestIds.ReferenceDate.AddDays(-1),
+                            CollectionId = 4711
+                        }
+                    ]
+                }
+            ]);
+
+            FakeCachedNewReleaseDataService cacheService = new();
+
+            StartupValidator validator = BuildValidator(
+                settingsService: new FakeAppSettingsDataService(OnlineOhneAnbieter()),
+                seriesService: seriesService,
+                cacheService: cacheService,
+                onlineChecker: checker);
+
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, checker.CheckCallCount);
+            CachedNewRelease eintrag = Assert.Single(result.CachedReleases);
+            Assert.Equal("Neue Folge", eintrag.Title);
+            Assert.Equal(series.Id, eintrag.SeriesId);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_NoWatchedSeries_SkipsProviderCheck()
+        {
+            // Abonniert, aber nicht überwacht: Für solche Serien gibt es keinen Grund,
+            // den Anbieter zu befragen.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Nur abonniert",
+                IsSubscribed = true,
+                IsWatched = false
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            FakeOnlineEpisodeChecker checker = new();
+
+            StartupValidator validator = BuildValidator(
+                settingsService: new FakeAppSettingsDataService(OnlineOhneAnbieter()),
+                seriesService: seriesService,
+                onlineChecker: checker);
+
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, checker.CheckCallCount);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_RecentCheck_SkipsProviderCheck()
+        {
+            // Der Cache wurde vor weniger als 24 Stunden geprüft – ein erneuter Abruf
+            // beim Anbieter wäre reine Last ohne neuen Erkenntniswert.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Überwacht",
+                IsSubscribed = true,
+                IsWatched = true
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series series = seriesService.All[0];
+
+            FakeCachedNewReleaseDataService cacheService = new(
+            [
+                new CachedNewRelease
+                {
+                    SeriesId = series.Id,
+                    Series = series,
+                    Title = "Frisch geprüft",
+                    CollectionId = 1,
+                    ReleaseDate = TestIds.ReferenceDate,
+                    CheckedAtUtc = TestIds.ReferenceDate.AddHours(-1)
+                }
+            ]);
+
+            FakeOnlineEpisodeChecker checker = new();
+
+            StartupValidator validator = BuildValidator(
+                settingsService: new FakeAppSettingsDataService(OnlineOhneAnbieter()),
+                seriesService: seriesService,
+                cacheService: cacheService,
+                onlineChecker: checker);
+
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, checker.CheckCallCount);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_ExpiredEntries_AreRemoved()
+        {
+            // Einträge älter als das Neuerscheinungs-Fenster gehören nicht mehr auf die Startseite.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Überwacht",
+                IsSubscribed = true,
+                IsWatched = true
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series series = seriesService.All[0];
+
+            FakeCachedNewReleaseDataService cacheService = new(
+            [
+                new CachedNewRelease
+                {
+                    SeriesId = series.Id,
+                    Series = series,
+                    Title = "Uralt",
+                    CollectionId = 7,
+                    ReleaseDate = TestIds.ReferenceDate.AddYears(-1),
+                    CheckedAtUtc = TestIds.ReferenceDate.AddHours(-1)
+                }
+            ]);
+
+            StartupValidator validator = BuildValidator(
+                settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
+                seriesService: seriesService,
+                cacheService: cacheService);
+
+            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Empty(result.CachedReleases);
         }
 
         /// <summary>

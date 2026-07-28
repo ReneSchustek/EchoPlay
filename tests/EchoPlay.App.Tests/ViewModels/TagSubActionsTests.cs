@@ -138,6 +138,40 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("Neuer Titel", written?.Title);
         }
 
+        [Theory]
+        [InlineData(1, "1 geänderte Datei wird gespeichert.")]
+        [InlineData(2, "2 geänderte Dateien werden gespeichert.")]
+        public async Task TagSaveActions_SaveAllAsync_AsksWithMatchingPluralForm(int fileCount, string erwartet)
+        {
+            // Die Rückfrage nennt eine Anzahl – bei genau einer Datei muss die
+            // Einzahlform stehen, sonst liest sich der Dialog falsch.
+            List<(string, AudioTag)> folderFiles = [];
+            for (int i = 1; i <= fileCount; i++)
+            {
+                folderFiles.Add(($@"D:\test\track{i}.mp3", new AudioTag { Title = $"Kapitel {i}" }));
+            }
+
+            FakeTagService tagService = new(folderFiles);
+            FakeConfirmationDialogService confirmation = new(result: false);
+            TagManagerActionsContext ctx = BuildContext(tagService) with { ConfirmationDialogService = confirmation };
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
+
+            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
+                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            await loader.LoadFolderAsync(@"D:\test");
+            foreach (TagFileItemViewModel file in fileList.Files)
+            {
+                file.IsModified = true;
+            }
+
+            TagSaveActions sut = new(ctx, fileList, editor, cover,
+                setIsLoading: _ => { }, setBatchProgress: _ => { }, setHasUnsavedChanges: _ => { });
+
+            await sut.SaveAllAsync();
+
+            Assert.Equal(erwartet, confirmation.LastMessage);
+        }
+
         // ── TagLookupActions ─────────────────────────────────────────────────────
 
         [Fact]

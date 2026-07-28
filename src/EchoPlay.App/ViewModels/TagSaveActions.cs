@@ -118,7 +118,12 @@ namespace EchoPlay.App.ViewModels
                 SafeResourceLoader.Get("TagManagerSaveAllConfirmTitle"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    SafeResourceLoader.Get("TagManagerSaveAllConfirmMessage"),
+                    PluralText.Pattern(
+                        modifiedFiles.Count,
+                        "TagManagerSaveAllConfirmMessageSingular",
+                        "TagManagerSaveAllConfirmMessagePlural",
+                        "{0} geänderte Datei wird gespeichert.",
+                        "{0} geänderte Dateien werden gespeichert."),
                     modifiedFiles.Count));
 
             if (!confirmed)

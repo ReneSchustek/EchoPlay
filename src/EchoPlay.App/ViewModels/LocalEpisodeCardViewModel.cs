@@ -86,7 +86,11 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Anzeige-Text der Track-Anzahl, z.B. "3 Tracks".
         /// </summary>
-        public string TrackCountText => $"{LocalTrackCount} Tracks";
+        public string TrackCountText => string.Format(
+            System.Globalization.CultureInfo.CurrentCulture,
+            EchoPlay.App.Helpers.PluralText.Pattern(
+                LocalTrackCount, "LocalTrackCountSingular", "LocalTrackCountPlural", "{0} Track", "{0} Tracks"),
+            LocalTrackCount);
 
         /// <summary>
         /// Formatierte Episodennummer für die Kachelansicht, z.B. "001".

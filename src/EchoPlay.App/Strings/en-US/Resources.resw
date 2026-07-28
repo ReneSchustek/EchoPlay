@@ -1623,6 +1623,12 @@ The application will close.</value>
 
 
   <!-- Barrierefreiheit: Namen fuer Schaltflaechen, die nur ein Icon zeigen -->
+  <data name="MainLanguageButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Change language</value>
+  </data>
+  <data name="MainLanguageButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Change language</value>
+  </data>
   <data name="MainThemeButton.AutomationProperties.Name" xml:space="preserve">
     <value>Change colour theme</value>
   </data>
@@ -1782,5 +1788,11 @@ The application will close.</value>
   </data>
   <data name="LocalTrackCountPlural" xml:space="preserve">
     <value>{0} tracks</value>
+  </data>
+  <data name="LogViewNoEntries" xml:space="preserve">
+    <value>No log entries.</value>
+  </data>
+  <data name="LogViewUnavailable" xml:space="preserve">
+    <value>The log buffer is unavailable. Restart the application to enable the live view.</value>
   </data>
 </root>

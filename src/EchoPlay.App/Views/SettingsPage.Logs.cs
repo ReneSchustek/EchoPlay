@@ -62,7 +62,8 @@ namespace EchoPlay.App.Views
 
             Microsoft.UI.Xaml.Documents.Paragraph paragraph = new();
 
-            foreach (string entry in ViewModel.LogEntries)
+            foreach (string entry in EchoPlay.App.Helpers.LogViewBuilder.BuildLines(
+                ViewModel.LogEntries, ViewModel.IsLogViewerAvailable))
             {
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = entry });
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());

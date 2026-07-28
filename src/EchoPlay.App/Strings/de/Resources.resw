@@ -1625,6 +1625,12 @@ Die Anwendung wird beendet.</value>
 
 
   <!-- Barrierefreiheit: Namen fuer Schaltflaechen, die nur ein Icon zeigen -->
+  <data name="MainLanguageButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Sprache wechseln</value>
+  </data>
+  <data name="MainLanguageButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sprache wechseln</value>
+  </data>
   <data name="MainThemeButton.AutomationProperties.Name" xml:space="preserve">
     <value>Farbthema wechseln</value>
   </data>
@@ -1784,5 +1790,11 @@ Die Anwendung wird beendet.</value>
   </data>
   <data name="LocalTrackCountPlural" xml:space="preserve">
     <value>{0} Tracks</value>
+  </data>
+  <data name="LogViewNoEntries" xml:space="preserve">
+    <value>Keine Protokolleinträge vorhanden.</value>
+  </data>
+  <data name="LogViewUnavailable" xml:space="preserve">
+    <value>Der Protokoll-Puffer ist nicht verfügbar. Starte die Anwendung neu, um die Live-Ansicht zu aktivieren.</value>
   </data>
 </root>

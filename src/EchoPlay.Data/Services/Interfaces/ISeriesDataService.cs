@@ -100,6 +100,16 @@ namespace EchoPlay.Data.Services.Interfaces
         Task SetWatchedAsync(Guid seriesId, bool isWatched, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Setzt den Zeitstempel der letzten Cover-Suche.
+        /// Wird nach jeder automatischen Suche gesetzt, unabhängig vom Ergebnis.
+        /// Verhindert wiederholtes Anfragen bei Serien ohne Treffer (Cooldown).
+        /// </summary>
+        /// <param name="seriesId">Die ID der Serie.</param>
+        /// <param name="checkedAt">Zeitpunkt der Prüfung (UTC).</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task SetCoverLastCheckedAsync(Guid seriesId, DateTime checkedAt, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Führt eine logische Löschung (Soft-Delete) der Serie durch.
         /// </summary>
         /// <param name="id">Die ID der zu löschenden Serie.</param>

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.Data.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="DatabaseMaintenanceService"/> – Schwerpunkt Arbeitspaket 432:
+    /// Tests für <see cref="DatabaseMaintenanceService"/> – Schwerpunkt:
     /// Der Bibliotheks-Reset (alle drei Scopes) darf weder <see cref="AppSettings"/>
     /// (insb. <c>ActiveProvider</c>) noch die <c>SecureSettings</c> (Spotify-Credentials)
     /// anfassen. Nur Bibliothek-Entitäten werden geleert.

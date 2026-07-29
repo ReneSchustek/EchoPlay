@@ -54,9 +54,9 @@ namespace EchoPlay.App.Services
         /// Client <c>UpdateDownload</c>, der ein längeres Timeout und den passenden
         /// User-Agent trägt.
         /// </summary>
-        /// <param name="httpClientFactory">Parameter <c>httpClientFactory</c>.</param>
+        /// <param name="httpClientFactory">Liefert den Named-Client <c>UpdateDownload</c> mit langem Timeout für den großen Setup-Download.</param>
         /// <param name="installerLauncher">Startet die geprüfte Setup-Datei.</param>
-        /// <param name="loggerFactory">Parameter <c>loggerFactory</c>.</param>
+        /// <param name="loggerFactory">Erzeugt den Logger für Ablehnungsgründe und Download-Fehler.</param>
         public UpdateDownloadService(
             IHttpClientFactory httpClientFactory,
             IInstallerLauncher installerLauncher,

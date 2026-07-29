@@ -4,7 +4,7 @@ namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
     /// Tests für <see cref="SpotifyAlbumLink"/>. Prüfen ausschließlich den Linkbau —
-    /// geöffnet wird nichts (siehe Arbeitspaket 437: kein echter Prozessstart aus Tests).
+    /// geöffnet wird nichts (kein echter Prozessstart aus Tests).
     /// </summary>
     public sealed class SpotifyAlbumLinkTests
     {

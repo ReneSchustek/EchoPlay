@@ -104,8 +104,8 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="clientId">Parameter <c>clientId</c>.</param>
-        /// <param name="clientSecret">Parameter <c>clientSecret</c>.</param>
+        /// <param name="clientId">Die vom Nutzer bei Spotify registrierte Client-ID.</param>
+        /// <param name="clientSecret">Das zugehörige Client-Secret; wird nur verschlüsselt abgelegt.</param>
         public async Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default)
         {
             byte[] encryptedId = Encrypt(clientId);

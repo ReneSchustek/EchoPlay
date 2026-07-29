@@ -194,7 +194,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_SpotifyWithoutCredentials_ShowsDisconnectedNotSpotify()
         {
-            // Arbeitspaket 432: ActiveProvider=Spotify, aber keine Credentials → die Suche läuft effektiv
+            // ActiveProvider=Spotify, aber keine Credentials → die Suche läuft effektiv
             // über Apple Music (ImportService.ResolveProviderAsync). Die Info-Leiste darf dann nicht
             // fälschlich "Spotify" als verbunden zeigen. FakeLocalizationService.Get liefert den Key.
             StatusBarViewModel vm = BuildViewModelWithProvider(

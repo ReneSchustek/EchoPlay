@@ -213,7 +213,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
         }
 
         /// <summary>
-        /// Arbeitspaket 433: Die Track-Lookups laufen gebündelt (ein Batch-Request statt N Einzel-Lookups),
+        /// Die Track-Lookups laufen gebündelt (ein Batch-Request statt N Einzel-Lookups),
         /// die Episoden-Dauer wird korrekt aus den – über die CollectionId zugeordneten – Tracks
         /// aufsummiert. Sichert zu, dass die Performance-Umstellung die Dauer nicht verliert.
         /// </summary>

@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.Services
     /// Tests für <see cref="LanguageSwitchService"/>.
     /// Der Neustart läuft ausschließlich über <see cref="FakeProcessLauncher"/> — es wird nie
     /// ein echter Prozess gestartet. Genau daran scheiterte ein früherer Versuch: der Testhost
-    /// startete sich selbst und vervielfältigte sich (siehe Arbeitspaket 437).
+    /// startete sich selbst und vervielfältigte sich.
     /// </summary>
     public sealed class LanguageSwitchServiceTests
     {

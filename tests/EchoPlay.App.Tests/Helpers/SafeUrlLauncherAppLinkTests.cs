@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Helpers
     /// <summary>
     /// Tests für den Schema-Wächter in <see cref="SafeUrlLauncher.TryOpenAppLink"/>.
     /// Geprüft werden nur die Ablehnungspfade — sie kehren zurück, bevor irgendein Programm
-    /// gestartet wird (siehe Arbeitspaket 437: kein echter Prozessstart aus Tests).
+    /// gestartet wird (kein echter Prozessstart aus Tests).
     /// </summary>
     public sealed class SafeUrlLauncherAppLinkTests
     {

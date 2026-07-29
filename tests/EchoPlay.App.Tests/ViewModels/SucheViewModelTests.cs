@@ -439,7 +439,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SearchAsync_OnlineThrows_LocalResultsStillReturned()
         {
-            // Arbeitspaket 431, Hyp. A (der ungetestete Kernpfad): Wirft der Online-Zweig (kein Netz,
+            // Der ungetestete Kernpfad: Wirft der Online-Zweig (kein Netz,
             // Provider-Timeout, Parser-Fehler), dürfen die lokalen Treffer nicht mehr
             // verschluckt werden. "Benjamin" muss die lokale "Benjamin Blümchen" liefern.
             FakeSeriesDataService localSeries = new();
@@ -497,7 +497,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ImportCommand_ForwardsProgressTextToCard()
         {
-            // Arbeitspaket 433: SearchResultViewModel muss ein IProgress an ImportService.ImportAsync
+            // SearchResultViewModel muss ein IProgress an ImportService.ImportAsync
             // durchreichen, damit die Karte während des Imports Fortschritt zeigt statt nur einen
             // stummen Spinner. Progress<T> marshallt über den SynchronizationContext – für einen
             // deterministischen Test wird ein Inline-Context installiert, der Reports synchron

@@ -297,7 +297,7 @@
                                       IsActive="{x:Bind IsImporting, Mode=OneWay}"
                                       Visibility="{x:Bind IsImporting, Mode=OneWay}"
                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <!-- Fortschrittstext während des Imports (Arbeitspaket 433) -->
+                        <!-- Fortschrittstext während des Imports -->
                         <TextBlock Text="{x:Bind ImportStatusText, Mode=OneWay}"
                                    Visibility="{x:Bind IsImporting, Mode=OneWay}"
                                    Style="{ThemeResource CaptionTextBlockStyle}"

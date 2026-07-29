@@ -15,8 +15,8 @@ using AppCoverService = EchoPlay.App.Services.CoverService;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="AppCoverService"/> – Schwerpunkt auf dem Diagnose-Schutzgitter
-    /// aus Arbeitspaket 430: Ein endgültig fehlgeschlagener Cover-DB-Write darf nicht mehr still
+    /// Tests für <see cref="AppCoverService"/> – Schwerpunkt auf dem Diagnose-Schutzgitter:
+    /// Ein endgültig fehlgeschlagener Cover-DB-Write darf nicht mehr still
     /// verschluckt werden, sondern wird als WARN sichtbar und wirft nicht mehr nach außen.
     /// </summary>
     public sealed class CoverServiceTests

@@ -106,7 +106,7 @@ namespace EchoPlay.AppleMusic.Clients
             // jeder Track trägt seine CollectionId zur Zuordnung. So kollabieren N rate-limitierte
             // Requests zu ~N/100 – der Import dauert Sekunden statt Minuten.
             //
-            // Delta-Abgleich (Arbeitspaket 268): Für bereits bekannte Folgen (Titel = Albumname) entfällt
+            // Delta-Abgleich: Für bereits bekannte Folgen (Titel = Albumname) entfällt
             // der Track-Lookup; ihre Album-Metadaten (inkl. Cover-URL) kommen dennoch durch, damit
             // ein fehlendes Cover einer bestehenden Folge nachgetragen werden kann. Ohne diese
             // Ersparnis kostet jeder Neu-Folgen-Check einen Track-Lookup pro vorhandener Folge.

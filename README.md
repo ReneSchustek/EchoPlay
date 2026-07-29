@@ -45,7 +45,7 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 - **Cover-System** – 5 Online-Anbieter, lokaler Fallback, DB-Cache.
 - **6 Themes** – Ruhrcoder, ModernClassic, PaperCoffee, MidnightLibrary, ForestSignal, AmberWhiskey.
 - **Lokalisierung** – Deutsch und Englisch, zur Laufzeit umschaltbar.
-- **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases. Heruntergeladene Setup-Dateien werden gegen einen SHA-256-Hash aus dem Release-Body verifiziert.
+- **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases. Der Download läuft nur über HTTPS von einem GitHub-Release-Host, und die Setup-Datei muss gegen den SHA-256-Hash aus dem Release-Body passen. Fehlt der Hash, wird nicht installiert.
 - **Statistik** – Sammlungsübersicht, Hörfortschritt, Kennzahlen.
 - **Kontexthilfe** – TeachingTips auf jeder Seite für neue Nutzer.
 
@@ -63,6 +63,33 @@ Die App prüft beim Start selbst auf neue Versionen und verifiziert heruntergela
 Updates gegen den im Release hinterlegten SHA-256-Hash. Wie der Installer gebaut wird,
 steht in [INSTALLER.md](INSTALLER.md), was sich je Version geändert hat in
 [CHANGELOG.md](CHANGELOG.md).
+
+Beim **manuellen** Download lohnt der Hash-Vergleich, weil das Setup nicht signiert ist
+und SmartScreen deshalb warnt. Der erwartete Wert steht im Text des Releases:
+
+```powershell
+Get-FileHash .\EchoPlay-Setup-vX.Y.Z.exe -Algorithm SHA256
+```
+
+---
+
+## Sicherheit
+
+Ohne Server-Backend und ohne Nutzerkonten bleibt die Angriffsfläche klein. Die Stellen,
+an denen fremde Daten ins Programm gelangen, sind trotzdem abgesichert:
+
+| Bereich | Maßnahme |
+|---|---|
+| Auto-Update | HTTPS-Zwang, Host-Bindung an GitHub-Release-Hosts, SHA-256-Pflichtprüfung mit zeitkonstantem Vergleich, Versionsformat als Whitelist |
+| Spotify-Zugangsdaten | Windows DPAPI im `CurrentUser`-Scope mit anwendungsspezifischer Entropie; nie im Code, in `appsettings.json` oder in User Secrets |
+| Dateizugriffe | Jede schreibende Stelle prüft über `SecurePathHelper.IsPathInside`, dass der Zielpfad im erlaubten Verzeichnis bleibt — auch nach Auflösung von `..` und Verknüpfungen |
+| Links öffnen | Nur `http`/`https` oder ein exakt erwartetes Anwendungsschema; eine Adresse aus der Datenbank startet damit kein beliebiges Programm |
+| Datenbankzugriff | EF Core mit LINQ; die wenigen Roh-SQL-Stellen nutzen ausschließlich feste Fragmente und Parameter |
+| Protokolle | Verzeichnisse werden durch einen Kurz-Hash ersetzt, Geheimnisse in Abfrageparametern und Zugangsdaten in Adressen durch `***` |
+| Abhängigkeiten | `dotnet list package --vulnerable`/`--deprecated` als hartes Gate, CodeQL und gitleaks in der CI |
+
+Der Build läuft mit `TreatWarningsAsErrors=true` und `AnalysisMode=All`; die
+Sicherheitsanalyse (Roslyn-Analyzer, SecurityCodeScan) ist damit Teil jedes Builds.
 
 ---
 

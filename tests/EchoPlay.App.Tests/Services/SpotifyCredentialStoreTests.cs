@@ -4,6 +4,8 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
@@ -134,6 +136,58 @@ namespace EchoPlay.App.Tests.Services
             Assert.Null(await fakeService.GetAsync("Spotify:ClientId", cancellationToken: TestContext.Current.CancellationToken));
             Assert.Null(await fakeService.GetAsync("Spotify:ClientSecret", cancellationToken: TestContext.Current.CancellationToken));
         }
+
+        [Fact]
+        public async Task SaveAsync_BlobIsNotReadableWithoutApplicationEntropy()
+        {
+            // Belegt, dass die zusätzliche DPAPI-Entropie wirklich greift: Ein Prozess im
+            // selben Benutzerkontext, der den Blob blind entschlüsseln will, scheitert.
+            (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
+
+            await store.SaveAsync("meine-client-id", "mein-secret", cancellationToken: TestContext.Current.CancellationToken);
+
+            byte[]? stored = await fakeService.GetAsync("Spotify:ClientSecret", cancellationToken: TestContext.Current.CancellationToken);
+            Assert.NotNull(stored);
+
+            _ = Assert.Throws<CryptographicException>(
+                () => { _ = ProtectedData.Unprotect(stored, null, DataProtectionScope.CurrentUser); });
+        }
+
+        [Fact]
+        public async Task GetAsync_ReadsLegacyBlobWithoutEntropy_AndRewritesIt()
+        {
+            // Credentials, die vor der Entropie-Umstellung gespeichert wurden, müssen
+            // weiterhin lesbar sein — und beim ersten Lesen auf das neue Format wandern,
+            // damit der schwächere Blob nicht dauerhaft liegen bleibt.
+            (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
+
+            byte[] legacyId = ProtectLegacy("alte-client-id");
+            byte[] legacySecret = ProtectLegacy("altes-secret");
+            await fakeService.SaveAsync("Spotify:ClientId", legacyId, cancellationToken: TestContext.Current.CancellationToken);
+            await fakeService.SaveAsync("Spotify:ClientSecret", legacySecret, cancellationToken: TestContext.Current.CancellationToken);
+
+            (string ClientId, string ClientSecret)? result = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            _ = Assert.NotNull(result);
+            Assert.Equal("alte-client-id", result.Value.ClientId);
+            Assert.Equal("altes-secret", result.Value.ClientSecret);
+            Assert.False(store.LastLoadFailedDueToCorruption);
+
+            // Der Altbestand wurde ersetzt und ist ohne Entropie nicht mehr lesbar.
+            byte[]? rewritten = await fakeService.GetAsync("Spotify:ClientSecret", cancellationToken: TestContext.Current.CancellationToken);
+            Assert.NotNull(rewritten);
+            Assert.NotEqual(legacySecret, rewritten);
+            _ = Assert.Throws<CryptographicException>(
+                () => { _ = ProtectedData.Unprotect(rewritten, null, DataProtectionScope.CurrentUser); });
+
+            // Und über den Store bleibt er lesbar.
+            (string ClientId, string ClientSecret)? again = await store.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
+            _ = Assert.NotNull(again);
+            Assert.Equal("altes-secret", again.Value.ClientSecret);
+        }
+
+        private static byte[] ProtectLegacy(string plainText) =>
+            ProtectedData.Protect(Encoding.UTF8.GetBytes(plainText), null, DataProtectionScope.CurrentUser);
 
         [Fact]
         public async Task AcknowledgeCorruptionNotice_ResetsFlag()

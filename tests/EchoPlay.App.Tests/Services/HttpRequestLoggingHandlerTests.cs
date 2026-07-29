@@ -165,6 +165,28 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public void RedactUrl_UrlWithUserInfo_MasksCredentials()
+        {
+            // Cover- und Provider-URLs stammen aus fremden APIs und aus der Datenbank.
+            // Eine URL mit eingebetteten Zugangsdaten darf nicht im Klartext ins Log.
+            Uri uri = new("https://benutzer:geheim@example.com/bild.jpg");
+
+            string redacted = HttpRequestLoggingHandler.RedactUrl(uri);
+
+            Assert.Equal("https://***@example.com/bild.jpg", redacted);
+            Assert.DoesNotContain("geheim", redacted, StringComparison.Ordinal);
+            Assert.DoesNotContain("benutzer", redacted, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void RedactUrl_UrlWithPort_KeepsPort()
+        {
+            Uri uri = new("https://example.com:8443/api/resource");
+
+            Assert.Equal("https://example.com:8443/api/resource", HttpRequestLoggingHandler.RedactUrl(uri));
+        }
+
+        [Fact]
         public void RedactUrl_MixedQuery_PreservesNonSensitiveAndMasksSecrets()
         {
             Uri uri = new("https://example.com/search?term=abc&token=geheim&country=DE&password=pwd");

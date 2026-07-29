@@ -299,7 +299,8 @@ namespace EchoPlay.App.Tests.Services
                 provider.GetRequiredService<IHttpClientFactory>(),
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions(),
-                loggerFactory);
+                loggerFactory,
+                new FakeClock());
 
             // Act: Splash-Phase aufrufen — isOnlineAvailable=false verhindert Provider-Calls.
             _ = await realService.RunSeriesCoversOnceAsync(isOnlineAvailable: false, CancellationToken.None);

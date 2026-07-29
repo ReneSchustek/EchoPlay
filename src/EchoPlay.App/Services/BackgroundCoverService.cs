@@ -1,5 +1,7 @@
 using EchoPlay.Core.Abstractions.Import;
+using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Scoring;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
@@ -33,6 +35,7 @@ namespace EchoPlay.App.Services
         private readonly ISpotifyCredentialStore _credentialStore;
         private readonly BackgroundCoverServiceOptions _options;
         private readonly ILogger _logger;
+        private readonly IClock _clock;
         private readonly IHostRateLimiter? _rateLimiter;
         private CancellationTokenSource? _cts;
         private Task? _backgroundTask;
@@ -49,6 +52,16 @@ namespace EchoPlay.App.Services
         // zu saturieren.
         private const int ForegroundLocalParallelism = 4;
 
+        // Cooldown der Serien-Cover-Suche. Gleicher Wert wie im EpisodeCoverCacheService —
+        // eine Serie, für die heute kein Cover zu finden war, hat eine Woche später
+        // realistischerweise auch keins, und die Anbieter sehen nicht bei jedem Durchlauf
+        // dieselbe erfolglose Anfrage.
+        private const int SeriesCoverSearchCooldownDays = 7;
+
+        // Pause zwischen zwei Serien-Suchen. Entspricht dem Episoden-Pfad und verteilt die
+        // Last, statt alle coverlosen Serien in einem Burst abzufeuern.
+        private static readonly TimeSpan SeriesSearchPause = TimeSpan.FromMilliseconds(200);
+
 
         /// <summary>
         /// Initialisiert den Background-Cover-Service.
@@ -60,6 +73,7 @@ namespace EchoPlay.App.Services
             ISpotifyCredentialStore credentialStore,
             BackgroundCoverServiceOptions options,
             ILoggerFactory loggerFactory,
+            IClock clock,
             IHostRateLimiter? rateLimiter = null)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -69,6 +83,7 @@ namespace EchoPlay.App.Services
             _credentialStore = credentialStore;
             _options = options;
             _logger = loggerFactory.CreateLogger("BackgroundCoverService");
+            _clock = clock;
             _rateLimiter = rateLimiter;
         }
 
@@ -165,6 +180,13 @@ namespace EchoPlay.App.Services
             loaded += searched;
             _logger.Info("RunOnce Phase 3 (Online-Suche): {Searched} Serien mit fehlenden Episoden-Covern angestoßen.", searched);
 
+            // Phase 4: Dasselbe für die Serien selbst. Ohne diesen Schritt bleibt eine Serie
+            // ohne lokale cover.jpg und ohne Provider-URL dauerhaft leer — der URL-Nachtrag
+            // in Phase 2a füllt ausschließlich Episoden.
+            int seriesFound = await SearchMissingSeriesCoversOnlineAsync(ct);
+            loaded += seriesFound;
+            _logger.Info("RunOnce Phase 4 (Serien-Online-Suche): {Found} Serien-Cover gefunden.", seriesFound);
+
             return loaded;
         }
 
@@ -220,14 +242,17 @@ namespace EchoPlay.App.Services
                     int seriesProviderLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
                     int episodeProviderLoaded = await DownloadMissingEpisodeProviderCoversAsync(ct);
                     _ = await SearchMissingEpisodeCoversOnlineAsync(ct);
+                    int seriesSearchFound = await SearchMissingSeriesCoversOnlineAsync(ct);
 
                     int localLoaded = seriesLocalLoaded + episodeLocalLoaded;
                     int providerLoaded = seriesProviderLoaded + episodeProviderLoaded;
-                    int total = localLoaded + copied + providerLoaded;
+                    int total = localLoaded + copied + providerLoaded + seriesSearchFound;
 
                     if (total > 0)
                     {
-                        _logger.Info("Hintergrund: {LocalLoaded} lokal, {Copied} kopiert, {ProviderLoaded} Provider.", localLoaded, copied, providerLoaded);
+                        _logger.Info(
+                            "Hintergrund: {LocalLoaded} lokal, {Copied} kopiert, {ProviderLoaded} Provider, {SeriesSearchFound} Serien-Suche.",
+                            localLoaded, copied, providerLoaded, seriesSearchFound);
                     }
                 }
                 catch (OperationCanceledException)
@@ -844,6 +869,163 @@ namespace EchoPlay.App.Services
             }
 
             return angestossen;
+        }
+
+        /// <summary>
+        /// Sucht Cover für Serien, die keines haben, über dieselbe Online-Kette wie die Episoden.
+        /// </summary>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
+        /// <returns>Anzahl der neu gefundenen Serien-Cover.</returns>
+        /// <remarks>
+        /// Für Episoden übernimmt der <see cref="EpisodeCoverCacheService"/> den Cooldown; für
+        /// Serien gibt es keinen solchen Dienst, deshalb prüft dieser Schritt
+        /// <see cref="Series.CoverLastChecked"/> selbst und setzt den Zeitstempel nach jedem
+        /// Versuch — auch ohne Treffer. Ohne das würde jeder Durchlauf dieselben coverlosen
+        /// Serien erneut bei den Anbietern anfragen.
+        /// </remarks>
+        private async Task<int> SearchMissingSeriesCoversOnlineAsync(CancellationToken ct)
+        {
+            DateTime cooldownThreshold = _clock.UtcNow.AddDays(-SeriesCoverSearchCooldownDays);
+            List<Series> candidates = [];
+
+            using (IServiceScope scope = _scopeFactory.CreateScope())
+            {
+                ISeriesDataService seriesService = scope.ServiceProvider
+                    .GetRequiredService<ISeriesDataService>();
+                ICoverImageDataService coverImageService = scope.ServiceProvider
+                    .GetRequiredService<ICoverImageDataService>();
+
+                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
+                if (allSeries.Count == 0)
+                {
+                    return 0;
+                }
+
+                List<Guid> seriesIds = [.. allSeries.Select(s => s.Id)];
+                IReadOnlyDictionary<Guid, byte[]> existing =
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds, ct);
+
+                foreach (Series series in allSeries)
+                {
+                    if (existing.ContainsKey(series.Id)) continue;
+                    if (string.IsNullOrWhiteSpace(series.Title)) continue;
+
+                    if (series.CoverLastChecked.HasValue
+                        && series.CoverLastChecked.Value > cooldownThreshold)
+                    {
+                        continue;
+                    }
+
+                    candidates.Add(series);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                return 0;
+            }
+
+            _logger.Info("Serien-Cover-Suche: {CandidateCount} Serien ohne Cover und ohne aktiven Cooldown.", candidates.Count);
+
+            int found = 0;
+
+            foreach (Series series in candidates)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                byte[]? coverBytes = await SearchSeriesCoverOnlineAsync(series.Title, ct).ConfigureAwait(false);
+
+                if (coverBytes is not null)
+                {
+                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, cancellationToken: ct);
+                    found++;
+                    _logger.Debug(() => $"Serien-Cover über Online-Suche gefunden: \"{series.Title}\" ({coverBytes.Length} Bytes)");
+                }
+
+                // Zeitstempel immer setzen – auch ohne Treffer, sonst greift der Cooldown nicht.
+                using IServiceScope writeScope = _scopeFactory.CreateScope();
+                ISeriesDataService writeService = writeScope.ServiceProvider
+                    .GetRequiredService<ISeriesDataService>();
+                await writeService.SetCoverLastCheckedAsync(series.Id, _clock.UtcNow, ct).ConfigureAwait(false);
+
+                await Task.Delay(SeriesSearchPause, ct).ConfigureAwait(false);
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// Fragt die Suchkette nach einem Cover für einen Seriennamen und lädt den besten
+        /// Treffer herunter. <see langword="null"/>, wenn nichts über der Relevanzschwelle liegt.
+        /// </summary>
+        /// <param name="seriesTitle">Titel der Serie, zugleich Suchbegriff.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
+            Justification = "Online-Suche für ein einzelnes Serien-Cover: HTTP-, Rate-Limit- oder Parser-Fehler der externen Quellen werden zu 'null' normalisiert, damit die Schleife über die übrigen Serien weiterläuft.")]
+        private async Task<byte[]?> SearchSeriesCoverOnlineAsync(string seriesTitle, CancellationToken ct)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ICoverSearchService? coverSearch = scope.ServiceProvider.GetService<ICoverSearchService>();
+
+            if (coverSearch is null) return null;
+
+            try
+            {
+                IReadOnlyList<CoverSearchResult> results = await coverSearch.SearchAsync(seriesTitle, ct).ConfigureAwait(false);
+
+                CoverSearchResult? best = null;
+                int bestScore = 0;
+
+                foreach (CoverSearchResult result in results)
+                {
+                    // Weder Folgennummer noch Folgentitel: Für ein Serien-Cover zählt allein,
+                    // ob der Treffer zur Serie gehört. Genau dafür vergibt der Scorer 50 Punkte
+                    // und trifft damit die Mindestschwelle — jede Folge der Serie taugt als
+                    // Serienbild, eine bestimmte muss es nicht sein.
+                    int score = CoverRelevanceScorer.CalculateScore(result.ReleaseTitle, seriesTitle, null, null);
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        best = result;
+                    }
+                }
+
+                if (best is null || bestScore < CoverRelevanceScorer.MinimumThreshold)
+                {
+                    return null;
+                }
+
+                return await DownloadThrottledAsync(best.FullUrl, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug(() => $"Serien-Cover-Suche fehlgeschlagen: {ex.Message} Serie=\"{seriesTitle}\"");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Lädt ein Cover wie <c>DownloadSafeAsync</c>, wartet davor aber auf den
+        /// <see cref="IHostRateLimiter"/> — mit <see cref="CoverFetchPriority.Background"/>,
+        /// damit sichtbare UI-Anfragen Vorrang behalten.
+        /// </summary>
+        /// <param name="url">Absolute Cover-URL aus dem Suchtreffer.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "Cover-URL stammt aus dem Suchergebnis der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie DownloadSafeAsync).")]
+        private async Task<byte[]?> DownloadThrottledAsync(string url, CancellationToken ct)
+        {
+            if (_rateLimiter is not null && Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+            {
+                await _rateLimiter.WaitAsync(uri.Host, CoverFetchPriority.Background, ct).ConfigureAwait(false);
+            }
+
+            return await DownloadSafeAsync(url, ct).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -24,7 +24,8 @@ namespace EchoPlay.App.Tests.Fakes
                 httpClientFactory,
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions(),
-                new FakeLoggerFactory())
+                new FakeLoggerFactory(),
+                new FakeClock())
         {
         }
 

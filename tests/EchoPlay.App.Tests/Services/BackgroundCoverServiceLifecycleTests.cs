@@ -90,7 +90,8 @@ namespace EchoPlay.App.Tests.Services
                 httpClientFactory,
                 credentialStore,
                 options,
-                loggerFactory);
+                loggerFactory,
+                new FakeClock());
         }
 
         /// <summary>

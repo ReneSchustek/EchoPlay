@@ -229,6 +229,25 @@ namespace EchoPlay.Data.Services
             }
         }
 
+        /// <inheritdoc/>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
+        /// <param name="checkedAt">Zeitpunkt der letzten Cover-Prüfung — verhindert, dass dieselbe Serie ständig erneut bei den Anbietern angefragt wird.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task SetCoverLastCheckedAsync(Guid seriesId, DateTime checkedAt, CancellationToken cancellationToken = default)
+        {
+            // ExecuteUpdateAsync statt Laden-und-Speichern: Der Aufrufer hat die Serie
+            // ohnehin schon in der Hand, ein zweites SELECT wäre reine Verschwendung.
+            int updated = await _context.Series
+                .Where(s => s.Id == seriesId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(s => s.CoverLastChecked, checkedAt), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (updated == 0)
+            {
+                _logger.Warning("Serie '{SeriesId}' nicht gefunden – CoverLastChecked-Update übersprungen.", seriesId);
+            }
+        }
+
         /// <summary>
         /// Merkt den Titel einer Serie, damit die Überwachung ein Leeren der Mediathek überlebt
         /// (dort verschwinden die <c>Series</c>-Zeilen physisch).

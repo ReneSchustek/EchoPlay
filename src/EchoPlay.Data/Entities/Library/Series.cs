@@ -27,6 +27,16 @@ namespace EchoPlay.Data.Entities.Library
         public string? CoverImageUrl { get; set; }
 
         /// <summary>
+        /// Zeitpunkt der letzten automatischen Cover-Suche.
+        /// Gegenstück zu <see cref="Episode.CoverLastChecked"/> und aus demselben Grund da:
+        /// Ohne den Zeitstempel würde der Hintergrunddienst bei jedem Durchlauf dieselben
+        /// coverlosen Serien erneut bei den Anbietern anfragen.
+        /// Null bedeutet: noch nie geprüft. Nach einer Suche wird der Zeitpunkt gesetzt —
+        /// auch ohne Treffer — und erst nach Ablauf des Cooldowns (7 Tage) erneut gesucht.
+        /// </summary>
+        public DateTime? CoverLastChecked { get; set; }
+
+        /// <summary>
         /// Artist-ID der Serie bei Spotify.
         /// Wird gesetzt, wenn die Serie von Spotify importiert wurde.
         /// </summary>

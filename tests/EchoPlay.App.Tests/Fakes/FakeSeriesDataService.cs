@@ -135,5 +135,18 @@ namespace EchoPlay.App.Tests.Fakes
 
             return Task.CompletedTask;
         }
+
+        /// <inheritdoc/>
+        public Task SetCoverLastCheckedAsync(Guid seriesId, DateTime checkedAt, CancellationToken cancellationToken = default)
+        {
+            Series? series = _series.FirstOrDefault(s => s.Id == seriesId);
+
+            if (series is not null)
+            {
+                series.CoverLastChecked = checkedAt;
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

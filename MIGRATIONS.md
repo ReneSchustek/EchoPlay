@@ -1,6 +1,6 @@
 # EchoPlay — Datenbank-Migrationen
 
-Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-07-27, 39 Migrationen.
+Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-07-29, 40 Migrationen.
 
 Jede Migration erzeugt drei Artefakte (Pflicht, siehe `memory.md` § EF-Core-Migration-Disziplin): `<Timestamp>_<Name>.cs`, `<Timestamp>_<Name>.Designer.cs`, aktualisierter `EchoPlayDbContextModelSnapshot.cs`. Der Pfad lautet `EchoPlay.Data/Migrations/`.
 
@@ -59,11 +59,12 @@ Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.
 | 37 | 2026-07-21 | AddOnlineEpisodeSortIndex | Gemerkte Folgen-Sortierung der Online-Mediathek in `AppSettings` (Default 0 = Nummer aufsteigend) |
 | 38 | 2026-07-27 | BackfillWatchedForFavorites | Reine Datenmigration: setzt `IsWatched` für alle favorisierten Serien. Favorit impliziert seit dieser Version Überwachung; Bestände aus neu eingelesenen Bibliotheken hatten sonst favorisierte, aber unbeobachtete Serien und damit einen leeren Neuerscheinungen-Abschnitt. Nicht umkehrbar (`Down` bleibt leer) |
 | 39 | 2026-07-27 | AddWatchedTitles | Merkliste `WatchedTitles` (UNIQUE auf `NormalizedTitle`, gefiltert auf aktive Zeilen). Überlebt „Mediathek leeren" und gibt neu eingelesenen Serien ihre Überwachung zurück. Erstbestand wird nicht per SQL befüllt, sondern beim Start über `IWatchedTitleDataService.SyncFromWatchedSeriesAsync` mit dem echten Normalizer abgeglichen |
+| 40 | 2026-07-29 | AddSeriesCoverLastChecked | Spalte `Series.CoverLastChecked` (nullable TEXT), Gegenstück zu `Episodes.CoverLastChecked`. Der Hintergrunddienst sucht seit dieser Version auch Serien-Cover online; ohne den Zeitstempel fragte er bei jedem Durchlauf dieselben coverlosen Serien erneut bei den Anbietern an. NULL für den Bestand bedeutet „noch nie geprüft" – die erste Suche läuft also für alle bestehenden Serien |
 
 ## Prüf-Reflex vor jedem Migrations-Commit
 
 ```bash
-ls EchoPlay.Data/Migrations/<Name>*
+ls src/EchoPlay.Data/Migrations/<Name>*
 # muss ZWEI Dateien zeigen: <Name>.cs UND <Name>.Designer.cs
 ```
 
@@ -79,8 +80,20 @@ und fasst Migrationen nie an — diese eine Testklasse ist der Wächter.
 ## Neue Migration anlegen
 
 ```bash
-cd EchoPlay.Data
-dotnet ef migrations add <MigrationName> --startup-project ../EchoPlay.App/EchoPlay.App.csproj
+dotnet ef migrations add <MigrationName> --project src/EchoPlay.Data/EchoPlay.Data.csproj
 ```
+
+Kein `--startup-project`: `Microsoft.EntityFrameworkCore.Design` liegt in `EchoPlay.Data` selbst,
+nicht in `EchoPlay.App`. Zeigt man auf die App als Startup-Projekt, bricht der Befehl mit
+*„Your startup project 'EchoPlay.App' doesn't reference Microsoft.EntityFrameworkCore.Design"* ab.
+
+Zwei Nacharbeiten sind Pflicht, weil der Generator sie nicht kennt:
+
+- **Analyzer-Konventionen** — `TreatWarningsAsErrors` gilt auch für Migrationen. Der erzeugte Code
+  scheitert an CA1062 und IDE0058; also `ArgumentNullException.ThrowIfNull(migrationBuilder);` an
+  den Anfang von `Up` und `Down` und die Rückgabewerte per `_ =` verwerfen.
+- **BOM entfernen** — EF schreibt die Datei mit UTF-8-BOM, `dotnet format whitespace` lehnt sie
+  dann mit `error CHARSET` ab. Prüfen mit
+  `dotnet format whitespace EchoPlay.slnx --verify-no-changes`.
 
 Danach Drei-Artefakt-Check, dann commit. Die Migration wird beim nächsten App-Start automatisch ausgeführt — `DatabaseInitializer` erzeugt vorher das VACUUM-INTO-Backup.

@@ -138,7 +138,8 @@ namespace EchoPlay.App.Tests.Services
                     InitialDelay = TimeSpan.FromMinutes(5),
                     Interval = TimeSpan.FromMinutes(30)
                 },
-                loggerFactory);
+                loggerFactory,
+                new FakeClock());
 
             // Eine echte Iteration (RunOnceAsync) durchläuft sämtliche Scope-erzeugenden Phasen.
             _ = await service.RunOnceAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -194,40 +195,104 @@ namespace EchoPlay.App.Tests.Services
         {
             // Weder lokale Datei noch Provider-URL: Vor dieser Phase blieb so eine Episode
             // dauerhaft ohne Cover, weil die Suchkette nur beim Import lief.
-            (BackgroundCoverService service, FakeCoverImageDataService covers, FakeEpisodeDataService episodeService, Episode episode) =
-                BuildServiceMitSuche();
+            SuchKontext k = BuildServiceMitSuche();
 
-            _ = await service.RunOnceAsync(TestContext.Current.CancellationToken);
+            _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
             // CoverLastChecked setzt ausschliesslich der EpisodeCoverCacheService. Ist der
             // Zeitstempel gesetzt, wurde die Suchkette tatsaechlich durchlaufen. Auf CallCount
             // des Kopierdienstes darf man sich hier NICHT stuetzen - den ruft die Phase
             // "CopyLocalToOnline" ohnehin bei jedem Lauf auf, der Test waere immer gruen.
-            _ = Assert.NotNull(episodeService.All[0].CoverLastChecked);
+            _ = Assert.NotNull(k.Episodes.All[0].CoverLastChecked);
             Assert.False(
-                await covers.ExistsAsync(CoverEntityTypes.Episode, episode.Id, cancellationToken: TestContext.Current.CancellationToken),
+                await k.Covers.ExistsAsync(CoverEntityTypes.Episode, k.Episode.Id, cancellationToken: TestContext.Current.CancellationToken),
                 "Ohne Treffer darf kein Cover entstehen.");
         }
 
         [Fact]
         public async Task RunOnce_KeineSucheWennCoverVorhanden()
         {
-            (BackgroundCoverService service, FakeCoverImageDataService covers, FakeEpisodeDataService episodeService, Episode episode) =
-                BuildServiceMitSuche();
+            SuchKontext k = BuildServiceMitSuche();
 
-            await covers.SetCoverAsync(
-                CoverEntityTypes.Episode, episode.Id, CoverBytes, null, TestContext.Current.CancellationToken);
+            await k.Covers.SetCoverAsync(
+                CoverEntityTypes.Episode, k.Episode.Id, CoverBytes, null, TestContext.Current.CancellationToken);
 
-            _ = await service.RunOnceAsync(TestContext.Current.CancellationToken);
+            _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
             // Kein Zeitstempel: Die Serie hatte keine Luecke, die Suche blieb aus.
-            Assert.Null(episodeService.All[0].CoverLastChecked);
+            Assert.Null(k.Episodes.All[0].CoverLastChecked);
+        }
+
+        [Fact]
+        public async Task RunOnce_StoesstSucheFuerSerieOhneCoverAn()
+        {
+            // Eine Serie ohne lokale cover.jpg und ohne CoverImageUrl wurde vor dieser Phase
+            // nie gesucht - der URL-Nachtrag fuellt ausschliesslich Episoden.
+            SuchKontext k = BuildServiceMitSuche();
+
+            _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            // Zeitstempel gesetzt heisst: gesucht. Er wird auch ohne Treffer gesetzt,
+            // genau das ist der Cooldown.
+            _ = Assert.NotNull(k.SeriesService.All[0].CoverLastChecked);
+        }
+
+        [Fact]
+        public async Task RunOnce_TrefferLandetAlsSerienCoverInDerDatenbank()
+        {
+            byte[] gefunden = [0x42, 0x43, 0x44];
+            RecordingHttpMessageHandler handler = new(gefunden);
+
+            SuchKontext k = BuildServiceMitSuche(
+                new FakeCoverSearchService("Ohne Cover - Folge 1", "https://coverartarchive.org/release/abc/front"),
+                new RecordingHttpClientFactory(handler));
+
+            _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            CoverImage? gespeichert = await k.Covers.GetByEntityAsync(
+                CoverEntityTypes.Series, k.Series.Id, TestContext.Current.CancellationToken);
+
+            Assert.NotNull(gespeichert);
+            Assert.Equal(gefunden, gespeichert.ImageData);
+        }
+
+        [Fact]
+        public async Task RunOnce_KeineSerienSucheWaehrendCooldown()
+        {
+            SuchKontext k = BuildServiceMitSuche();
+
+            // Gestern schon erfolglos gesucht - der Cooldown laeuft noch sechs Tage.
+            DateTime gestern = k.Clock.UtcNow.AddDays(-1);
+            k.SeriesService.All[0].CoverLastChecked = gestern;
+
+            _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            // Unveraendert: Waere erneut gesucht worden, stuende hier die aktuelle Zeit.
+            Assert.Equal(gestern, k.SeriesService.All[0].CoverLastChecked);
+        }
+
+        [Fact]
+        public async Task RunOnce_SerienSucheLaeuftNachAblaufDesCooldownsWieder()
+        {
+            SuchKontext k = BuildServiceMitSuche();
+
+            DateTime vorAchtTagen = k.Clock.UtcNow.AddDays(-8);
+            k.SeriesService.All[0].CoverLastChecked = vorAchtTagen;
+
+            _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            // Der Cooldown betraegt sieben Tage - nach acht ist die Serie wieder faellig.
+            Assert.Equal(k.Clock.UtcNow, k.SeriesService.All[0].CoverLastChecked);
         }
 
         // Baut den Dienst samt EpisodeCoverCacheService, damit die Online-Phase erreichbar ist.
         // Eine Serie, eine Episode, kein lokaler Ordner, keine Provider-URL.
-        private static (BackgroundCoverService Service, FakeCoverImageDataService Covers, FakeEpisodeDataService Episodes, Episode Episode)
-            BuildServiceMitSuche()
+        // Ohne coverSearch liefert GetService<ICoverSearchService>() null - die Suche laeuft
+        // dann bis zum Zeitstempel durch, findet aber nichts. Das ist der Normalfall der Tests;
+        // nur der Treffer-Test registriert einen Suchdienst.
+        private static SuchKontext BuildServiceMitSuche(
+            ICoverSearchService? coverSearch = null,
+            IHttpClientFactory? httpClientFactory = null)
         {
             FakeSeriesDataService seriesService = new();
             seriesService.AddAsync(new Series { Title = "Ohne Cover" }).GetAwaiter().GetResult();
@@ -244,6 +309,12 @@ namespace EchoPlay.App.Tests.Services
 
             FakeCoverImageDataService coverImageService = new();
             FakeCoverCopyService coverCopy = new();
+            FakeClock clock = new();
+
+            // Kein echter HttpClient als Rueckfallwert: Die Suchphasen wuerden sonst gegen das
+            // echte Netz laufen. Der Recording-Handler beantwortet jede Anfrage lokal.
+            IHttpClientFactory httpFactory = httpClientFactory
+                ?? new RecordingHttpClientFactory(new RecordingHttpMessageHandler(CoverBytes));
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
@@ -252,12 +323,18 @@ namespace EchoPlay.App.Tests.Services
             _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
             _ = services.AddScoped<ICoverCopyService>(_ => coverCopy);
             _ = services.AddScoped<ILocalCoverLoader>(_ => new RecordingLocalCoverLoader(null));
-            _ = services.AddHttpClient();
+            _ = services.AddSingleton(httpFactory);
+
+            if (coverSearch is not null)
+            {
+                _ = services.AddScoped(_ => coverSearch);
+            }
+
             _ = services.AddSingleton(sp => new EpisodeCoverCacheService(
                 sp.GetRequiredService<IServiceScopeFactory>(),
                 new FakeLoggerFactory(),
                 new FakeCoverService(),
-                new FakeClock(),
+                clock,
                 sp.GetRequiredService<IHttpClientFactory>()));
 
             ServiceProvider provider = services.BuildServiceProvider();
@@ -268,7 +345,7 @@ namespace EchoPlay.App.Tests.Services
             BackgroundCoverService service = new(
                 scopeFactory,
                 coverService,
-                new FakeHttpClientFactory(),
+                httpFactory,
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions
                 {
@@ -276,9 +353,47 @@ namespace EchoPlay.App.Tests.Services
                     Interval = TimeSpan.FromMinutes(30)
                 },
                 loggerFactory,
+                clock,
                 rateLimiter: null);
 
-            return (service, coverImageService, episodeService, episode);
+            return new SuchKontext
+            {
+                Service = service,
+                Covers = coverImageService,
+                SeriesService = seriesService,
+                Episodes = episodeService,
+                Series = series,
+                Episode = episode,
+                Clock = clock
+            };
+        }
+
+        // Bündelt, was die Suchtests gemeinsam brauchen. Als Klasse statt Tupel, weil sich
+        // sonst bei jedem zusätzlichen Feld sämtliche Destrukturierungen ändern.
+        private sealed class SuchKontext
+        {
+            public required BackgroundCoverService Service { get; init; }
+            public required FakeCoverImageDataService Covers { get; init; }
+            public required FakeSeriesDataService SeriesService { get; init; }
+            public required FakeEpisodeDataService Episodes { get; init; }
+            public required Series Series { get; init; }
+            public required Episode Episode { get; init; }
+            public required FakeClock Clock { get; init; }
+        }
+
+        // Liefert immer denselben Treffer. Der ReleaseTitle muss den Seriennamen enthalten,
+        // sonst verwirft der CoverRelevanceScorer das Ergebnis unter der Mindestschwelle.
+        private sealed class FakeCoverSearchService : ICoverSearchService
+        {
+            private readonly CoverSearchResult _result;
+
+            public FakeCoverSearchService(string releaseTitle, string fullUrl)
+            {
+                _result = new CoverSearchResult(fullUrl, fullUrl, releaseTitle, "Test");
+            }
+
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
+                => Task.FromResult<IReadOnlyList<CoverSearchResult>>([_result]);
         }
 
         private static BackgroundCoverService BuildService(
@@ -321,6 +436,7 @@ namespace EchoPlay.App.Tests.Services
                     Interval = TimeSpan.FromMinutes(30)
                 },
                 loggerFactory,
+                new FakeClock(),
                 rateLimiter);
         }
 

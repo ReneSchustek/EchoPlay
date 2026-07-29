@@ -123,6 +123,7 @@ EchoPlay.Logger.Abstractions  → ILogger/ILoggerFactory-Interfaces (Domänen re
 EchoPlay.TagManager           → Audio-Tag-Editor (TagLib#, MusicBrainz-Lookup)
 EchoPlay.Core                 → Fachkern, Heuristiken, Scoring-Interfaces
 EchoPlay.*.Tests              → Unit-, Integrations- und Smoke-Tests
+EchoPlay.Fuzz                 → Property-based-Tests (FsCheck) für Parser und Redaktion
 EchoPlay.Setup                → Inno-Setup-Skripte für den Windows-Installer
 ```
 
@@ -141,7 +142,7 @@ EchoPlay.Setup                → Inno-Setup-Skripte für den Windows-Installer
 ```bash
 git clone <repo-url>
 cd EchoPlay
-dotnet build EchoPlay.slnx -p:Platform=x64
+dotnet build EchoPlay.slnx
 dotnet run --project src/EchoPlay.App
 ```
 
@@ -152,8 +153,8 @@ Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche übe
 ## Erste Schritte für Entwickler
 
 1. **Solution öffnen:** `EchoPlay.slnx` in Visual Studio 2022. Startprojekt ist `EchoPlay.App`.
-2. **Build-Plattform:** Immer `x64` — WinUI 3 und die Tests laufen nicht unter `AnyCPU`.
-3. **Tests ausführen:** `dotnet test -p:Platform=x64` (Solution-weit) oder pro Projekt. Live-API-Tests (Spotify, iTunes) sind per Default skipped.
+2. **Build-Plattform:** WinUI 3 und die Tests laufen nicht unter `AnyCPU` — die Plattform kommt aber aus dem Projekt-Mapping in der `EchoPlay.slnx`, nicht von der Kommandozeile. **Kein `-p:Platform=x64` an die Solution geben:** Die `.slnx` kennt keine Konfiguration `Debug|x64` und bricht mit `MSB4126` ab. `dotnet build EchoPlay.slnx` genügt.
+3. **Tests ausführen:** `dotnet test EchoPlay.slnx` (Solution-weit) oder pro Projekt. Live-API-Tests (Spotify, iTunes) sind per Default skipped.
 4. **Migrationen:** Nach Entity-Änderung `dotnet ef migrations add <Name> --project src/EchoPlay.Data --startup-project src/EchoPlay.App`. `.Designer.cs` muss committed werden — sonst erkennt EF die Migration nicht. Historie und Breaking-Change-Liste in `MIGRATIONS.md`.
 5. **Warnungen = Fehler:** Das Projekt fährt mit `TreatWarningsAsErrors=true` und `AnalysisMode=All`. Neue CA-Warnungen müssen entweder gelöst oder mit Methoden-Begründung suppressed werden.
 6. **DI-Lifetimes:** ViewModels sind `Transient`, `DbContext` ist `Scoped`. ViewModels nutzen `IServiceScopeFactory` für DB-Zugriff — direkte `DbContext`-Injektion in ViewModels ist ein Captive-Dependency-Muster und wird im Review abgelehnt.

@@ -20,7 +20,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="startLocation">Parameter <c>startLocation</c>.</param>
+        /// <param name="startLocation">Startort des Dialogs, z. B. die Musikbibliothek.</param>
         public async Task<StorageFolder?> PickFolderAsync(PickerLocationId startLocation = PickerLocationId.Unspecified, CancellationToken cancellationToken = default)
         {
             FolderPicker picker = new()

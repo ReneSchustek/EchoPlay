@@ -453,14 +453,14 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Lädt alle Statistiken und die aktuellen Einstellungen aus der Datenbank.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn Statistiken und Einstellungen geladen sind.</returns>
         public Task LoadAsync() => RefreshAsync();
 
         /// <summary>
         /// Aktualisiert die Statistiken und kann von anderen ViewModels nach Statusänderungen aufgerufen werden.
         /// Öffnet einen eigenen DI-Scope, um die Singleton-Lifetime mit den Scoped-Services zu vereinbaren.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Statistiken neu berechnet sind.</returns>
         public async Task RefreshAsync()
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -601,7 +601,7 @@ namespace EchoPlay.App.ViewModels
         /// WinUI 3 kann Ressourcendateien nicht zur Laufzeit nachladen – der Neustart ist zwingend.
         /// </summary>
         /// <param name="languageCode">BCP-47-Sprachcode der gewünschten Sprache, z.B. "de" oder "en".</param>
-        /// <returns>Asynchrone Ausführung bis zum Neustart.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Sprache gespeichert und der Neustart angestoßen ist.</returns>
         public async Task ChangeLanguageAsync(string languageCode)
         {
             if (string.IsNullOrWhiteSpace(languageCode))

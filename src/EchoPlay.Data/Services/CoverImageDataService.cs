@@ -26,8 +26,8 @@ namespace EchoPlay.Data.Services
         private readonly ILogger _logger = loggerFactory.CreateLogger("CoverImageDataService");
 
         /// <inheritdoc/>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
@@ -68,10 +68,10 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityId">Parameter entityId.</param>
-        /// <param name="imageData">Parameter imageData.</param>
-        /// <param name="sourceUrl">Parameter sourceUrl.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
+        /// <param name="imageData">Die Bilddaten des Covers.</param>
+        /// <param name="sourceUrl">Adresse, von der das Cover stammt; <see langword="null"/>, wenn es aus einer lokalen Datei kommt.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
         {
@@ -161,8 +161,8 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<bool> ExistsAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
@@ -194,8 +194,8 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityIds">Parameter entityIds.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityIds">Datenbank-IDs der Entitäten, deren Cover entfernt werden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<int> DeleteByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default)
         {
@@ -233,7 +233,7 @@ namespace EchoPlay.Data.Services
         /// <summary>
         /// Berechnet den SHA-256-Hash der Bilddaten als Hex-String (64 Zeichen).
         /// </summary>
-        /// <param name="data">Parameter data.</param>
+        /// <param name="data">Die Bilddaten, über die der Hash gebildet wird.</param>
         private static string ComputeHash(byte[] data)
         {
             Span<byte> hash = stackalloc byte[32];

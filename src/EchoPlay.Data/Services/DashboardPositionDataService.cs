@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Services
             loggerFactory.CreateLogger("DashboardPositionDataService");
 
         /// <inheritdoc />
-        /// <param name="section">Parameter section.</param>
+        /// <param name="section">Name des Dashboard-Abschnitts, z. B. der Favoriten-Bereich.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section, CancellationToken cancellationToken = default)
         {
@@ -39,8 +39,8 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="section">Parameter section.</param>
-        /// <param name="seriesIds">Parameter seriesIds.</param>
+        /// <param name="section">Name des Dashboard-Abschnitts, z. B. der Favoriten-Bereich.</param>
+        /// <param name="seriesIds">Datenbank-IDs der betroffenen Serien.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {

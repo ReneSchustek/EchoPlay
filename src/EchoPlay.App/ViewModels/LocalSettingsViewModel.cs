@@ -186,7 +186,7 @@ namespace EchoPlay.App.ViewModels
         /// Bei einem einzigen Treffer mit hoher Konfidenz wird das Muster direkt übernommen.
         /// Andernfalls wird <see cref="PatternSelectionRequested"/> ausgelöst.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Vorschläge stehen oder ein Muster direkt übernommen wurde.</returns>
         public async Task AnalyzePatternAsync()
         {
             if (string.IsNullOrWhiteSpace(_localLibraryRootPath))
@@ -224,7 +224,7 @@ namespace EchoPlay.App.ViewModels
         /// Läuft ein Sync bereits oder ist kein Pfad konfiguriert, wird der Aufruf mit einem
         /// erklärenden Statustext beantwortet, ohne den Service zu belasten.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Abgleich durch ist oder mit einem Statustext abgelehnt wurde.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Manueller Bibliotheks-Sync über die Einstellungen: IO-/DB-/TagLib-Fehler werden in 'StatusMessage' als Nutzer-Fehlermeldung gespiegelt, damit der Sync-Command nicht abbricht.")]
         public async Task SyncAsync()
         {
@@ -274,7 +274,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="windowHandle">HWND des Hauptfensters – der WinRT-FolderPicker muss per
         /// <c>InitializeWithWindow</c> an ein Fenster gebunden werden.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Nutzer gewählt oder abgebrochen hat.</returns>
         public async Task BrowseLibraryFolderAsync(nint windowHandle)
         {
             FolderPicker picker = new();

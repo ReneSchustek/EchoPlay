@@ -40,7 +40,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        /// <param name="query">Parameter <c>query</c>.</param>
+        /// <param name="query">Suchbegriff für die MusicBrainz-Abfrage.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<TagLookupResult>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
@@ -51,12 +51,12 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        /// <param name="folderPath">Parameter <c>folderPath</c>.</param>
+        /// <param name="folderPath">Ordner, aus dessen Namen die Suchanfrage gebaut wird.</param>
         public string BuildAutoLookupQuery(string? folderPath) => BuildAutoLookupQueryCore(folderPath);
 
         /// <inheritdoc />
-        /// <param name="results">Parameter <c>results</c>.</param>
-        /// <param name="loadedTrackCount">Parameter <c>loadedTrackCount</c>.</param>
+        /// <param name="results">Die Treffer des Anbieters, aus denen der beste gewählt wird.</param>
+        /// <param name="loadedTrackCount">Anzahl der im Ordner geladenen Tracks — der beste Treffer hat genau so viele.</param>
         public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
             => SelectBestMatchCore(results, loadedTrackCount);
 

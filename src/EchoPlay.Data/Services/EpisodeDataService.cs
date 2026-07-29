@@ -43,7 +43,7 @@ namespace EchoPlay.Data.Services
                        }));
 
         /// <inheritdoc/>
-        /// <param name="seriesIds">Parameter seriesIds.</param>
+        /// <param name="seriesIds">Datenbank-IDs der betroffenen Serien.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<Episode>> GetBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
@@ -141,7 +141,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="ids">Parameter ids.</param>
+        /// <param name="ids">Datenbank-IDs der gesuchten Episoden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyDictionary<Guid, Episode>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
         {
@@ -185,7 +185,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="episodes">Parameter episodes.</param>
+        /// <param name="episodes">Die zu speichernden Episoden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task AddRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default)
         {
@@ -217,7 +217,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="episodes">Parameter episodes.</param>
+        /// <param name="episodes">Die zu speichernden Episoden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task UpdateRangeAsync(IReadOnlyList<Episode> episodes, CancellationToken cancellationToken = default)
         {
@@ -234,8 +234,8 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="episodeId">Parameter episodeId.</param>
-        /// <param name="checkedAt">Parameter checkedAt.</param>
+        /// <param name="episodeId">Datenbank-ID der Episode.</param>
+        /// <param name="checkedAt">Zeitpunkt der letzten Cover-Prüfung — verhindert, dass dieselbe Episode ständig erneut geprüft wird.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {

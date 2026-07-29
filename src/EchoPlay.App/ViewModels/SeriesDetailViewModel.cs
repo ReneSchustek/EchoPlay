@@ -296,7 +296,7 @@ namespace EchoPlay.App.ViewModels
         /// den Hintergrund-Scan, bis die sichtbare Liste versorgt ist.
         /// </summary>
         /// <param name="seriesId">ID der anzuzeigenden Serie.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Episodenliste samt Wiedergabestatus steht.</returns>
         public async Task LoadAsync(Guid seriesId)
         {
             // Priorität einer vorherigen Detailansicht sauber beenden, bevor wir neu starten.
@@ -478,7 +478,7 @@ namespace EchoPlay.App.ViewModels
         /// Wählt eine Episode aus und lädt ihre lokalen Tracks.
         /// </summary>
         /// <param name="episode">Die gewählte Episode.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die lokalen Tracks der Episode geladen sind.</returns>
         public async Task SelectEpisodeAsync(EpisodeTileViewModel episode)
         {
             ArgumentNullException.ThrowIfNull(episode);
@@ -516,7 +516,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Startet die Wiedergabe aller Tracks der aktuell gewählten Episode.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Wiedergabe angestoßen ist.</returns>
         public Task PlaySelectedEpisodeAsync()
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesPlaySelectedEpisode");
@@ -532,7 +532,7 @@ namespace EchoPlay.App.ViewModels
         /// Wechselt den Favoritenstatus der aktuellen Serie und persistiert die Änderung.
         /// Existiert noch keine geladene Serie (Guid.Empty), wird der Aufruf ignoriert.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der neue Favoritenstatus gespeichert ist.</returns>
         private async Task ToggleFavoriteAsync()
         {
             if (_seriesId == Guid.Empty)
@@ -555,7 +555,7 @@ namespace EchoPlay.App.ViewModels
         /// und lädt die Kachelliste neu, damit Haken und Fortschritt sofort stimmen.
         /// </summary>
         /// <param name="episodeId">ID der zu markierenden Episode.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Wiedergabestatus gespeichert und die Kachel aktualisiert ist.</returns>
         public async Task MarkAsPlayedAsync(Guid episodeId)
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesMarkPlayed");
@@ -573,7 +573,7 @@ namespace EchoPlay.App.ViewModels
         /// Entfernt den gespeicherten PlaybackState und lädt die Kachelliste neu.
         /// </summary>
         /// <param name="episodeId">ID der zurückzusetzenden Episode.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Wiedergabestatus entfernt und die Kachel aktualisiert ist.</returns>
         public async Task MarkAsUnplayedAsync(Guid episodeId)
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesMarkUnplayed");
@@ -594,7 +594,7 @@ namespace EchoPlay.App.ViewModels
         /// Existiert ein gespeicherter Fortschritt, wird die Wiedergabe dort fortgesetzt.
         /// </summary>
         /// <param name="episodeId">ID der abzuspielenden Episode.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Wiedergabe angestoßen ist.</returns>
         public async Task PlayEpisodeAsync(Guid episodeId)
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SeriesPlayEpisode");

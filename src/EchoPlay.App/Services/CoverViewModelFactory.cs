@@ -26,14 +26,14 @@ namespace EchoPlay.App.Services
         /// Liefert ein Cover für die Serie. Priorität: DB-Cover → cover.jpg im Serienordner → URL → null.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="series">Parameter <c>series</c>.</param>
+        /// <param name="series">Die Serie, deren Cover aufgebaut wird; <see langword="null"/> liefert <see langword="null"/>.</param>
         Task<BitmapImage?> BuildSeriesCoverAsync(Series? series, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert ein Cover für die Episode. Priorität: DB-Cover → cover.jpg im Ordner → ID3-Tag → null.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="episode">Parameter <c>episode</c>.</param>
+        /// <param name="episode">Die Episode, deren Cover aufgebaut wird.</param>
         Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode, CancellationToken cancellationToken = default);
     }
 
@@ -50,8 +50,8 @@ namespace EchoPlay.App.Services
         /// in Test-Konstellationen ohne Cover-Service liefert die Factory `null` für
         /// alle DB-Cover-Pfade und fällt sofort auf den Datei-/URL-Pfad zurück.
         /// </summary>
-        /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
-        /// <param name="coverService">Parameter <c>coverService</c>.</param>
+        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes — jeder Datenbankzugriff läuft in einem eigenen.</param>
+        /// <param name="coverService">Optionaler Cover-Dienst; fehlt er, wird der Datenbank-Pfad übersprungen.</param>
         public CoverViewModelFactory(IServiceScopeFactory scopeFactory, ICoverService? coverService = null)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
@@ -61,7 +61,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="series">Parameter <c>series</c>.</param>
+        /// <param name="series">Die Serie, deren Cover aufgebaut wird; <see langword="null"/> liefert <see langword="null"/>.</param>
         public async Task<BitmapImage?> BuildSeriesCoverAsync(Series? series, CancellationToken cancellationToken = default)
         {
             if (series is null)
@@ -105,7 +105,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="episode">Parameter <c>episode</c>.</param>
+        /// <param name="episode">Die Episode, deren Cover aufgebaut wird.</param>
         public async Task<BitmapImage?> BuildEpisodeCoverAsync(Episode episode, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episode);

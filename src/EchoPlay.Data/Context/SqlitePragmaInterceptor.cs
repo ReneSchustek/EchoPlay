@@ -40,7 +40,7 @@ namespace EchoPlay.Data.Context
         /// <param name="connection">Die geöffnete Datenbankverbindung.</param>
         /// <param name="eventData">Diagnosedaten zum Verbindungsereignis.</param>
         /// <param name="cancellationToken">Abbruch-Token.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die PRAGMA-Anweisungen auf der Verbindung gesetzt sind.</returns>
         public override Task ConnectionOpenedAsync(
             DbConnection connection,
             ConnectionEndEventData eventData,

@@ -26,8 +26,8 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="target">Parameter <c>target</c>.</param>
-        /// <param name="parameter">Parameter <c>parameter</c>.</param>
+        /// <param name="target">Die Seite, zu der navigiert werden soll.</param>
+        /// <param name="parameter">Optionaler Wert, den die Zielseite in <c>OnNavigatedTo</c> erhält.</param>
         public void NavigateTo(NavigationTarget target, object? parameter = null)
         {
             Frame frame = _frame

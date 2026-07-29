@@ -208,7 +208,7 @@ namespace EchoPlay.App.ViewModels
         /// und spiegelt das Ergebnis in <see cref="ConnectionTestSuccess"/> und
         /// <see cref="ConnectionTestResultText"/>. Läuft bereits ein Test, wird der Aufruf ignoriert.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn das Testergebnis in der Oberfläche steht.</returns>
         public async Task TestConnectionAsync()
         {
             if (_isTestingConnection || _activeProvider == ProviderType.None)

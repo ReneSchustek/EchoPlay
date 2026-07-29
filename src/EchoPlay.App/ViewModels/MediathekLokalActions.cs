@@ -182,7 +182,7 @@ namespace EchoPlay.App.ViewModels
         /// Wählt eine Episode aus und lädt deren Tracks in die rechte Spalte.
         /// </summary>
         /// <param name="episode">Die ausgewählte Episode.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Tracks der Episode in der rechten Spalte stehen.</returns>
         public async Task SelectEpisodeAsync(LocalEpisodeCardViewModel episode)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -226,7 +226,7 @@ namespace EchoPlay.App.ViewModels
         /// Statistiken in der Statusleiste werden nach dem Vorgang aktualisiert.
         /// </summary>
         /// <param name="seriesId">ID der betroffenen Serie.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn alle Episoden der Serie als gehört gespeichert sind.</returns>
         public async Task MarkAllAsReadAsync(Guid seriesId)
         {
             using IDisposable ua = UserActionScope.BeginUserAction("MarkAllAsRead");

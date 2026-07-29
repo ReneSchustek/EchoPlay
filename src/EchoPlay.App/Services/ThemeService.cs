@@ -69,7 +69,7 @@ namespace EchoPlay.App.Services
         /// Unbekannte Theme-Namen fallen auf "Ruhrcoder" zurück.
         /// Muss einmalig beim App-Start vom UI-Thread aufgerufen werden, bevor das Fenster sichtbar wird.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn das Theme angewendet ist und das Fenster gezeigt werden darf.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {

@@ -16,7 +16,7 @@ namespace EchoPlay.App.Services
     {
         /// <summary>Öffnet einen Folder-Picker. Liefert <c>null</c>, wenn der Nutzer abbricht.</summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="startLocation">Parameter <c>startLocation</c>.</param>
+        /// <param name="startLocation">Startort des Dialogs, z. B. die Musikbibliothek.</param>
         Task<StorageFolder?> PickFolderAsync(PickerLocationId startLocation = PickerLocationId.Unspecified, CancellationToken cancellationToken = default);
 
         /// <summary>Öffnet einen File-Open-Picker mit Mehrfachauswahl.</summary>

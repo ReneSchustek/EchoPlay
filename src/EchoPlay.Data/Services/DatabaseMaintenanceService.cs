@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Services
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger = loggerFactory.CreateLogger("DatabaseMaintenanceService");
 
         /// <inheritdoc/>
-        /// <param name="retentionDays">Parameter retentionDays.</param>
+        /// <param name="retentionDays">Aufbewahrungsdauer in Tagen; ältere soft-gelöschte Einträge werden physisch entfernt.</param>
         public async Task PurgeAsync(int retentionDays)
         {
             DateTime cutoff = EntityClock.Current.UtcNow.AddDays(-retentionDays);

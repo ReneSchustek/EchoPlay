@@ -271,7 +271,7 @@ namespace EchoPlay.App.ViewModels
         /// Die zuvor gewählte Datei wird beibehalten, sofern sie noch existiert; andernfalls
         /// fällt die Auswahl auf die Live-Option zurück.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Liste steht und eine Auswahl gesetzt ist.</returns>
         public async Task LoadLogFilesAsync()
         {
             IReadOnlyList<LogFileOption> options = await _logViewerCoordinator.LoadLogFileOptionsAsync();
@@ -305,7 +305,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Live-Option (FilePath <see langword="null"/>) zeigt den MemorySink-Puffer.
         /// </summary>
         /// <param name="option">Die gewählte Option.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Einträge in der Anzeige stehen.</returns>
         private async Task LoadLogContentAsync(LogFileOption? option)
         {
             if (option?.FilePath is null)
@@ -362,7 +362,7 @@ namespace EchoPlay.App.ViewModels
         /// und kompaktiert anschließend die SQLite-Datei mit VACUUM.
         /// Läuft bereits eine Wartung, wird der Aufruf ignoriert.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn Bereinigung und VACUUM durchgelaufen sind.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DB-Wartung (Purge/VACUUM): SQLite-Locks, Migration-Fehler oder IO-Fehler während Vacuum werden als Nutzer-Status angezeigt; der Command darf nicht reißen, das IsMaintaining-Flag wird im finally zurückgesetzt.")]
         public async Task RunMaintenanceAsync()
         {
@@ -403,7 +403,7 @@ namespace EchoPlay.App.ViewModels
         /// 2 = Alle (kompletter Reset).
         /// </summary>
         /// <param name="scopeIndex">0 = Online, 1 = Lokal, 2 = Alle.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der gewählte Bereich zurückgesetzt ist.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliothek-Reset: bulk-delete aller Serien/Episoden/Tracks und Cover-Dateien kann IO-/DB-Fehler werfen; der Command darf nicht reißen, der Status wird angezeigt und IsMaintaining im finally zurückgesetzt.")]
         public async Task ResetLibraryAsync(int scopeIndex)
         {

@@ -33,7 +33,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="series">Parameter <c>series</c>.</param>
+        /// <param name="series">Die Serie, deren Abgleich gerade fertig wurde.</param>
         public void RaiseSeriesSynced(Series series)
         {
             SeriesSynced?.Invoke(series);

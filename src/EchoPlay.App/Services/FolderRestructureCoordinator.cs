@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Koordinator mit der Scope-Fabrik der Anwendung.
         /// </summary>
-        /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
+        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes — jeder Datenbankzugriff läuft in einem eigenen.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public FolderRestructureCoordinator(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
@@ -34,7 +34,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="seriesFolderPath">Parameter <c>seriesFolderPath</c>.</param>
+        /// <param name="seriesFolderPath">Stammordner der Serie, dessen Unterordner ausgewertet werden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath, CancellationToken cancellationToken = default)
         {
@@ -67,7 +67,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="preview">Parameter <c>preview</c>.</param>
+        /// <param name="preview">Die zuvor erzeugte Vorschau, die jetzt tatsächlich ausgeführt wird.</param>
         public async Task<int> ExecuteAsync(RestructurePreviewDisplay preview, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(preview);

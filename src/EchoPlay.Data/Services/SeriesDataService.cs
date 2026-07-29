@@ -212,8 +212,8 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="seriesId">Parameter seriesId.</param>
-        /// <param name="isWatched">Parameter isWatched.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
+        /// <param name="isWatched">Neuer Status: <see langword="true"/> aktiviert die Überwachung.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SetWatchedAsync(Guid seriesId, bool isWatched, CancellationToken cancellationToken = default)
         {

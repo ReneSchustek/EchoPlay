@@ -44,7 +44,7 @@ namespace EchoPlay.Data.Infrastructure
         /// Abbruch-Token. Greift bei Vorprüfung und Backup; die Migration selbst läuft je
         /// Schritt in einer Transaktion, ein Abbruch lässt daher kein halbes Schema zurück.
         /// </param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn alle ausstehenden Migrationen angewendet sind.</returns>
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             IEnumerable<string> pending = await _context.Database.GetPendingMigrationsAsync(cancellationToken).ConfigureAwait(false);

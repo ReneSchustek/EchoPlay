@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="seriesId">ID der Serie, deren Watch-Status geändert werden soll.</param>
         /// <param name="watch">Neuer Status: <see langword="true"/> aktiviert die Überwachung.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der neue Status gespeichert und der Cache angepasst ist.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task ToggleAsync(Guid seriesId, bool watch, CancellationToken cancellationToken = default);
     }

@@ -37,7 +37,7 @@ namespace EchoPlay.App.Services
         /// <param name="imageData">Die Bilddaten.</param>
         /// <param name="sourceUrl">Optionale Quell-URL.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn das Cover in der Datenbank steht oder alle Wiederholungen gescheitert sind.</returns>
         [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
         Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default);
 
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Services
         /// <param name="imageData">Die Bilddaten.</param>
         /// <param name="sourceUrl">Optionale Quell-URL.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn das Cover in der Datenbank steht oder alle Wiederholungen gescheitert sind.</returns>
         [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
         Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default);
 

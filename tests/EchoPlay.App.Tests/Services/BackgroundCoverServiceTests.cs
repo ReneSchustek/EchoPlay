@@ -189,6 +189,98 @@ namespace EchoPlay.App.Tests.Services
             _ = Assert.Single(handler.RequestedUris);
         }
 
+        [Fact]
+        public async Task RunOnce_StoesstSucheFuerEpisodeOhneCoverAn()
+        {
+            // Weder lokale Datei noch Provider-URL: Vor dieser Phase blieb so eine Episode
+            // dauerhaft ohne Cover, weil die Suchkette nur beim Import lief.
+            (BackgroundCoverService service, FakeCoverImageDataService covers, FakeEpisodeDataService episodeService, Episode episode) =
+                BuildServiceMitSuche();
+
+            _ = await service.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            // CoverLastChecked setzt ausschliesslich der EpisodeCoverCacheService. Ist der
+            // Zeitstempel gesetzt, wurde die Suchkette tatsaechlich durchlaufen. Auf CallCount
+            // des Kopierdienstes darf man sich hier NICHT stuetzen - den ruft die Phase
+            // "CopyLocalToOnline" ohnehin bei jedem Lauf auf, der Test waere immer gruen.
+            _ = Assert.NotNull(episodeService.All[0].CoverLastChecked);
+            Assert.False(
+                await covers.ExistsAsync(CoverEntityTypes.Episode, episode.Id, cancellationToken: TestContext.Current.CancellationToken),
+                "Ohne Treffer darf kein Cover entstehen.");
+        }
+
+        [Fact]
+        public async Task RunOnce_KeineSucheWennCoverVorhanden()
+        {
+            (BackgroundCoverService service, FakeCoverImageDataService covers, FakeEpisodeDataService episodeService, Episode episode) =
+                BuildServiceMitSuche();
+
+            await covers.SetCoverAsync(
+                CoverEntityTypes.Episode, episode.Id, CoverBytes, null, TestContext.Current.CancellationToken);
+
+            _ = await service.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            // Kein Zeitstempel: Die Serie hatte keine Luecke, die Suche blieb aus.
+            Assert.Null(episodeService.All[0].CoverLastChecked);
+        }
+
+        // Baut den Dienst samt EpisodeCoverCacheService, damit die Online-Phase erreichbar ist.
+        // Eine Serie, eine Episode, kein lokaler Ordner, keine Provider-URL.
+        private static (BackgroundCoverService Service, FakeCoverImageDataService Covers, FakeEpisodeDataService Episodes, Episode Episode)
+            BuildServiceMitSuche()
+        {
+            FakeSeriesDataService seriesService = new();
+            seriesService.AddAsync(new Series { Title = "Ohne Cover" }).GetAwaiter().GetResult();
+            Series series = seriesService.All[0];
+
+            FakeEpisodeDataService episodeService = new();
+            episodeService.AddAsync(new Episode
+            {
+                SeriesId = series.Id,
+                Title = "Folge 1",
+                EpisodeNumber = 1
+            }).GetAwaiter().GetResult();
+            Episode episode = episodeService.All[0];
+
+            FakeCoverImageDataService coverImageService = new();
+            FakeCoverCopyService coverCopy = new();
+
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<ICoverImageDataService>(_ => coverImageService);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+            _ = services.AddScoped<ICoverCopyService>(_ => coverCopy);
+            _ = services.AddScoped<ILocalCoverLoader>(_ => new RecordingLocalCoverLoader(null));
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton(sp => new EpisodeCoverCacheService(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                new FakeLoggerFactory(),
+                new FakeCoverService(),
+                new FakeClock(),
+                sp.GetRequiredService<IHttpClientFactory>()));
+
+            ServiceProvider provider = services.BuildServiceProvider();
+            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            FakeLoggerFactory loggerFactory = new();
+            AppCoverService coverService = new(scopeFactory, loggerFactory);
+
+            BackgroundCoverService service = new(
+                scopeFactory,
+                coverService,
+                new FakeHttpClientFactory(),
+                new FakeSpotifyCredentialStore(),
+                new BackgroundCoverServiceOptions
+                {
+                    InitialDelay = TimeSpan.FromMinutes(5),
+                    Interval = TimeSpan.FromMinutes(30)
+                },
+                loggerFactory,
+                rateLimiter: null);
+
+            return (service, coverImageService, episodeService, episode);
+        }
+
         private static BackgroundCoverService BuildService(
             FakeSeriesDataService seriesService,
             FakeEpisodeDataService episodeService,

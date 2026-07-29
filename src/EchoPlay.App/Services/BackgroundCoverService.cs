@@ -158,6 +158,13 @@ namespace EchoPlay.App.Services
                 "RunOnce Phase 2b (Provider-URL Download): {TotalLoaded} Cover geladen ({SeriesLoaded} Serien, {EpisodeLoaded} Episoden).",
                 seriesProviderLoaded + episodeProviderLoaded, seriesProviderLoaded, episodeProviderLoaded);
 
+            // Phase 3: Was weder lokal noch über eine Provider-URL erreichbar war, bleibt ohne
+            // die Online-Suche für immer ohne Cover. Die Suchkette steckt im
+            // EpisodeCoverCacheService und lief bisher nur beim Import.
+            int searched = await SearchMissingEpisodeCoversOnlineAsync(ct);
+            loaded += searched;
+            _logger.Info("RunOnce Phase 3 (Online-Suche): {Searched} Serien mit fehlenden Episoden-Covern angestoßen.", searched);
+
             return loaded;
         }
 
@@ -212,6 +219,7 @@ namespace EchoPlay.App.Services
                     int urlsUpdated = await UpdateMissingCoverUrlsAsync(ct);
                     int seriesProviderLoaded = await DownloadMissingSeriesProviderCoversAsync(ct);
                     int episodeProviderLoaded = await DownloadMissingEpisodeProviderCoversAsync(ct);
+                    _ = await SearchMissingEpisodeCoversOnlineAsync(ct);
 
                     int localLoaded = seriesLocalLoaded + episodeLocalLoaded;
                     int providerLoaded = seriesProviderLoaded + episodeProviderLoaded;
@@ -761,6 +769,81 @@ namespace EchoPlay.App.Services
             }
 
             return loaded;
+        }
+
+        /// <summary>
+        /// Stößt für jede Serie, die noch Episoden ohne Cover hat, die Online-Suchkette an.
+        /// </summary>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
+        /// <returns>Anzahl der Serien, für die eine Suche angestoßen wurde.</returns>
+        /// <remarks>
+        /// Die Kette selbst liegt im <see cref="EpisodeCoverCacheService"/> und lief bisher nur
+        /// beim Import. Wer eine Serie vor dessen Einführung importiert hat oder wessen Suche
+        /// damals scheiterte, bekam nie ein Cover nachgereicht — genau das schließt dieser Schritt.
+        /// <para>
+        /// Der Dienst filtert selbst auf Episoden ohne Cover und respektiert dabei seinen
+        /// Cooldown, damit erfolglose Suchen nicht bei jedem Durchlauf wiederholt werden. Hier
+        /// wird deshalb nur vorselektiert, welche Serien überhaupt in Frage kommen — das spart
+        /// die Scope-Erzeugung für Serien, die vollständig versorgt sind.
+        /// </para>
+        /// </remarks>
+        private async Task<int> SearchMissingEpisodeCoversOnlineAsync(CancellationToken ct)
+        {
+            List<Guid> seriesWithGaps = [];
+
+            using (IServiceScope scope = _scopeFactory.CreateScope())
+            {
+                ISeriesDataService seriesService = scope.ServiceProvider
+                    .GetRequiredService<ISeriesDataService>();
+                IEpisodeDataService episodeService = scope.ServiceProvider
+                    .GetRequiredService<IEpisodeDataService>();
+                ICoverImageDataService coverImageService = scope.ServiceProvider
+                    .GetRequiredService<ICoverImageDataService>();
+
+                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
+                List<Guid> allSeriesIds = [.. allSeries.Select(s => s.Id)];
+
+                IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds, ct);
+                if (allEpisodes.Count == 0)
+                {
+                    return 0;
+                }
+
+                List<Guid> episodeIds = [.. allEpisodes.Select(e => e.Id)];
+                IReadOnlyDictionary<Guid, byte[]> existing =
+                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, episodeIds, ct);
+
+                HashSet<Guid> gaps = [];
+                foreach (Episode episode in allEpisodes)
+                {
+                    if (!existing.ContainsKey(episode.Id))
+                    {
+                        _ = gaps.Add(episode.SeriesId);
+                    }
+                }
+
+                seriesWithGaps.AddRange(gaps);
+            }
+
+            if (seriesWithGaps.Count == 0)
+            {
+                return 0;
+            }
+
+            int angestossen = 0;
+            foreach (Guid seriesId in seriesWithGaps)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                using IServiceScope searchScope = _scopeFactory.CreateScope();
+                EpisodeCoverCacheService cacheService = searchScope.ServiceProvider
+                    .GetRequiredService<EpisodeCoverCacheService>();
+
+                await cacheService.CacheCoversAsync(seriesId, ct: ct).ConfigureAwait(false);
+                angestossen++;
+            }
+
+            return angestossen;
         }
 
         /// <summary>

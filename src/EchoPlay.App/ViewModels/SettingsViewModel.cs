@@ -418,7 +418,7 @@ namespace EchoPlay.App.ViewModels
         /// Das Laden markiert <see cref="HasUnsavedChanges"/> nicht als geändert.
         /// Zusätzlich werden die verfügbaren Log-Dateien neu eingelesen.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn alle Sub-ViewModels befüllt sind.</returns>
         public async Task LoadAsync()
         {
             IsLoading = true;
@@ -481,7 +481,7 @@ namespace EchoPlay.App.ViewModels
         /// Ohne vorherigen <see cref="LoadAsync"/>-Aufruf wird nichts gespeichert, um versehentliches
         /// Überschreiben vorhandener Daten zu vermeiden.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn alle Felder in der Datenbank stehen.</returns>
         public async Task SaveAsync()
         {
             if (_loadedSettings is null)
@@ -537,7 +537,7 @@ namespace EchoPlay.App.ViewModels
         /// Der Nutzer bestätigt ihn vorher, damit ungespeicherte Arbeit nicht überrascht verschwindet.
         /// </summary>
         /// <param name="languageCode">Der BCP-47-Sprachcode der gewählten Sprache.</param>
-        /// <returns>Asynchrone Ausführung bis zum Neustart.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn gespeichert wurde und der Neustart angestoßen ist.</returns>
         public async Task ChangeLanguageAsync(string languageCode)
         {
             if (_loadedSettings is null || string.IsNullOrWhiteSpace(languageCode))

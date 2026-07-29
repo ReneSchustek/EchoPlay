@@ -86,7 +86,7 @@ namespace EchoPlay.Data.Services
             """;
 
         /// <inheritdoc/>
-        /// <param name="targetSeriesId">Parameter targetSeriesId.</param>
+        /// <param name="targetSeriesId">Die Serie, deren Episoden ein Cover bekommen sollen.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId, CancellationToken cancellationToken = default)
         {

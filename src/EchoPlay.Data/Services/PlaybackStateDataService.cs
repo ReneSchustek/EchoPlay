@@ -185,7 +185,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="episodeIds">Parameter episodeIds.</param>
+        /// <param name="episodeIds">Datenbank-IDs der zu prüfenden Episoden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {

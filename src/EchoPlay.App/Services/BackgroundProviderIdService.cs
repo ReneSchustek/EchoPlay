@@ -116,7 +116,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>Ein einzelner Enrichment-Durchlauf.</summary>
-        /// <param name="ct">Parameter <c>ct</c>.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public async Task RunOnceAsync(CancellationToken ct = default)
         {
             using EchoPlay.Logger.Scoping.LogScope jobScope = _logger.BeginScope(EchoPlay.App.Logging.JobScopes.ProviderIdEnrichment);
@@ -189,7 +189,7 @@ namespace EchoPlay.App.Services
         /// Extrahiert die CollectionId aus einer iTunes-URL.
         /// Format: https://music.apple.com/de/album/.../{CollectionId} oder .../id{CollectionId}
         /// </summary>
-        /// <param name="url">Parameter <c>url</c>.</param>
+        /// <param name="url">Adresse des herunterzuladenden Bildes.</param>
         internal static string? ExtractITunesCollectionId(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;

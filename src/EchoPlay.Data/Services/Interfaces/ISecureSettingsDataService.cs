@@ -11,18 +11,18 @@ namespace EchoPlay.Data.Services.Interfaces
     {
         /// <summary>Liest den verschlüsselten Wert für den Schlüssel. Null wenn nicht vorhanden.</summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="key">Parameter key.</param>
+        /// <param name="key">Schlüssel des Eintrags, z. B. <c>Spotify:ClientId</c>.</param>
         Task<byte[]?> GetAsync(string key, CancellationToken cancellationToken = default);
 
         /// <summary>Speichert oder aktualisiert den verschlüsselten Wert.</summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="key">Parameter key.</param>
-        /// <param name="encryptedValue">Parameter encryptedValue.</param>
+        /// <param name="key">Schlüssel des Eintrags, z. B. <c>Spotify:ClientId</c>.</param>
+        /// <param name="encryptedValue">Der bereits verschlüsselte Wert; dieser Dienst verschlüsselt selbst nicht.</param>
         Task SaveAsync(string key, byte[] encryptedValue, CancellationToken cancellationToken = default);
 
         /// <summary>Löscht den Eintrag für den Schlüssel.</summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="key">Parameter key.</param>
+        /// <param name="key">Schlüssel des Eintrags, z. B. <c>Spotify:ClientId</c>.</param>
         Task DeleteAsync(string key, CancellationToken cancellationToken = default);
     }
 }

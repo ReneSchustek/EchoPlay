@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
         /// <param name="playerService">Der Player-Service, der die Wiedergabe startet.</param>
         /// <param name="episodeId">Die ID der abzuspielenden Episode.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Wiedergabe angestoßen ist — nicht erst am Ende der Episode.</returns>
         public static async Task PlayEpisodeAsync(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,

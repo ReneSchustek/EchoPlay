@@ -37,7 +37,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="seriesId">Parameter seriesId.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<CachedNewRelease>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
@@ -63,7 +63,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="entries">Parameter entries.</param>
+        /// <param name="entries">Die zu schreibenden Einträge; vorhandene werden anhand ihrer Kennung aktualisiert.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task UpsertRangeAsync(IReadOnlyList<CachedNewRelease> entries, CancellationToken cancellationToken = default)
         {
@@ -139,7 +139,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="cutoff">Parameter cutoff.</param>
+        /// <param name="cutoff">Stichtag — alles davor wird entfernt.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<int> RemoveOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default)
         {
@@ -171,7 +171,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="seriesIds">Parameter seriesIds.</param>
+        /// <param name="seriesIds">Datenbank-IDs der betroffenen Serien.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<int> RemoveBySeriesIdsAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {

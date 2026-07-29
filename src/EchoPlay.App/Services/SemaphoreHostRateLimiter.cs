@@ -43,15 +43,15 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="host">Parameter <c>host</c>.</param>
-        /// <param name="ct">Parameter <c>ct</c>.</param>
+        /// <param name="host">Hostname des Anbieters — die Begrenzung gilt pro Host, nicht global.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public Task WaitAsync(string host, CancellationToken ct = default)
             => WaitAsync(host, CoverFetchPriority.Background, ct);
 
         /// <inheritdoc/>
-        /// <param name="host">Parameter <c>host</c>.</param>
-        /// <param name="priority">Parameter <c>priority</c>.</param>
-        /// <param name="ct">Parameter <c>ct</c>.</param>
+        /// <param name="host">Hostname des Anbieters — die Begrenzung gilt pro Host, nicht global.</param>
+        /// <param name="priority">Vorrang der Anfrage: Vordergrund-Anfragen bekommen einen eigenen Slot.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public async Task WaitAsync(string host, CoverFetchPriority priority, CancellationToken ct = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -85,8 +85,8 @@ namespace EchoPlay.App.Services
         /// Wartet den konfigurierten Mindestabstand seit dem letzten Aufruf für
         /// <paramref name="host"/> ab und setzt den Zeitstempel neu.
         /// </summary>
-        /// <param name="host">Parameter <c>host</c>.</param>
-        /// <param name="ct">Parameter <c>ct</c>.</param>
+        /// <param name="host">Hostname des Anbieters — die Begrenzung gilt pro Host, nicht global.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         private async Task WaitForSlotAsync(string host, CancellationToken ct)
         {
             SemaphoreSlim semaphore = _semaphores.GetOrAdd(host, _ => new SemaphoreSlim(1, 1));

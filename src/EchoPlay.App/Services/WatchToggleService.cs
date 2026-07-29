@@ -36,8 +36,8 @@ namespace EchoPlay.App.Services
             scope.ServiceProvider.GetService<INewReleaseEventService>()?.RaiseCacheChanged();
 
         /// <inheritdoc/>
-        /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
-        /// <param name="watch">Parameter <c>watch</c>.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
+        /// <param name="watch">Neuer Status: <see langword="true"/> aktiviert die Überwachung.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task ToggleAsync(Guid seriesId, bool watch, CancellationToken cancellationToken = default)
         {

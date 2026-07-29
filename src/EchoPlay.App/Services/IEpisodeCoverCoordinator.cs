@@ -28,16 +28,16 @@ namespace EchoPlay.App.Services
         /// wenn die Karte bereits ein Cover hat.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="bytes">Die Bilddaten des Covers.</param>
         Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Übernimmt rohe Bytes als Episoden-Cover. Fragt vor dem Überschreiben nach.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="bytes">Die Bilddaten des Covers.</param>
         Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -45,8 +45,8 @@ namespace EchoPlay.App.Services
         /// und übernimmt es als Serien-Cover. Bei Download-Fehler erscheint ein Hinweisdialog.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="hit">Parameter <c>hit</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Treffer der Cover-Suche.</param>
         Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -54,8 +54,8 @@ namespace EchoPlay.App.Services
         /// und übernimmt es als Episoden-Cover. Bei Download-Fehler erscheint ein Hinweisdialog.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="hit">Parameter <c>hit</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Treffer der Cover-Suche.</param>
         Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default);
     }
 }

@@ -54,8 +54,8 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="query">Parameter <c>query</c>.</param>
-        /// <param name="ct">Parameter <c>ct</c>.</param>
+        /// <param name="query">Suchbegriff für die Cover-Suche.</param>
+        /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct)
         {
             IReadOnlyList<CoverSearchResult> results = await _coverSearchService.SearchAsync(query, ct);
@@ -69,8 +69,8 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="bytes">Die Bilddaten des Covers.</param>
         public async Task ApplySeriesCoverFromBytesAsync(LocalArtistCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(card);
@@ -87,8 +87,8 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="bytes">Die Bilddaten des Covers.</param>
         public async Task ApplyEpisodeCoverFromBytesAsync(LocalEpisodeCardViewModel card, byte[] bytes, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(card);
@@ -105,8 +105,8 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="hit">Parameter <c>hit</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Treffer der Cover-Suche.</param>
         public async Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(hit);
@@ -122,8 +122,8 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="card">Parameter <c>card</c>.</param>
-        /// <param name="hit">Parameter <c>hit</c>.</param>
+        /// <param name="card">Die Kachel, deren Cover gesetzt wird.</param>
+        /// <param name="hit">Der vom Nutzer gewählte Treffer der Cover-Suche.</param>
         public async Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(hit);
@@ -142,7 +142,7 @@ namespace EchoPlay.App.Services
         /// Liefert <see langword="true"/>, wenn die Operation fortgesetzt werden darf.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="hasExistingCover">Parameter <c>hasExistingCover</c>.</param>
+        /// <param name="hasExistingCover"><see langword="true"/>, wenn bereits ein Cover vorhanden ist und deshalb nachgefragt werden muss.</param>
         private async Task<bool> ConfirmOverwriteIfNeededAsync(bool hasExistingCover, CancellationToken cancellationToken = default)
         {
             if (!hasExistingCover)
@@ -159,8 +159,8 @@ namespace EchoPlay.App.Services
         /// wurde bereits in der DB persistiert.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="folderPath">Parameter <c>folderPath</c>.</param>
-        /// <param name="bytes">Parameter <c>bytes</c>.</param>
+        /// <param name="folderPath">Zielordner für die <c>cover.jpg</c>; fehlt er oder existiert er nicht, passiert nichts.</param>
+        /// <param name="bytes">Die Bilddaten des Covers.</param>
         private async Task SaveCoverToDirectoryAsync(string? folderPath, byte[] bytes, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
@@ -206,7 +206,7 @@ namespace EchoPlay.App.Services
         /// Liefert <see langword="null"/> bei Netzwerk- oder HTTP-Fehlern – kein Throw.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="url">Parameter <c>url</c>.</param>
+        /// <param name="url">Adresse des herunterzuladenden Bildes.</param>
         private async Task<byte[]?> DownloadCoverBytesAsync(string url, CancellationToken cancellationToken = default)
         {
             try

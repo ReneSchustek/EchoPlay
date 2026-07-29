@@ -254,7 +254,7 @@ namespace EchoPlay.App.ViewModels
         /// Lädt alle Abschnitte der Startseite und verteilt die Ergebnisse an die Sub-VMs.
         /// Neuerscheinungen werden im Offline-Modus übersprungen.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn alle Abschnitte gefüllt und an die Sub-ViewModels verteilt sind.</returns>
         public async Task LoadAsync()
         {
             // Lifecycle-Cancellation: laufenden Lade-Lauf abbrechen, Token erneuern.

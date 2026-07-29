@@ -149,7 +149,7 @@ namespace EchoPlay.App.ViewModels
         /// Speichert die aktuelle Reihenfolge der Favoriten-Kacheln über den
         /// <see cref="IDashboardPositionDataService"/> in der Datenbank.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die neue Reihenfolge in der Datenbank steht.</returns>
         public async Task SaveFavoriteSeriesOrderAsync()
         {
             try

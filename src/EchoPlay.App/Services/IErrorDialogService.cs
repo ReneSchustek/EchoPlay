@@ -15,7 +15,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="title">Titel des Dialogs.</param>
         /// <param name="message">Fehlermeldung für den Benutzer.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Nutzer den Dialog geschlossen hat.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task ShowAsync(string title, string message, CancellationToken cancellationToken = default);
     }

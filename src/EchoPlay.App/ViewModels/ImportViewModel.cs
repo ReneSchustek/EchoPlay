@@ -112,7 +112,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Sucht nach Hörspielserien beim aktiven Provider.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Trefferliste steht oder ein Fehlertext gesetzt ist.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Provider-Suche im ImportViewModel: HTTP-/Parser-/Timeout-Fehler der Online-Provider (Spotify/AppleMusic) werden als Nutzer-Fehlermeldung gespiegelt, damit der Import-Workflow nicht abbricht.")]
         public async Task SearchAsync()
         {
@@ -170,7 +170,7 @@ namespace EchoPlay.App.ViewModels
         /// globalen Info-Leiste (<see cref="StatusBarViewModel"/>) angezeigt.
         /// </summary>
         /// <param name="series">Die zu importierende Serie.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Serie importiert und das Ereignis gefeuert ist.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Import eines Serien-Datensatzes: HTTP-Fehler beim Cover-Download, DB-Concurrency-Fehler oder Provider-Parser-Probleme werden als Nutzer-Fehlermeldung angezeigt, damit der Nutzer den Import erneut anstoßen kann.")]
         public async Task ImportAsync(ImportSeries series)
         {

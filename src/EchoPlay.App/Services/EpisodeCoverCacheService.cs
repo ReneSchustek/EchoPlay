@@ -335,8 +335,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Extrahiert den kurzen Folgentitel ohne Seriennamen-Präfix und Folgennummer.
         /// </summary>
-        /// <param name="fullTitle">Parameter <c>fullTitle</c>.</param>
-        /// <param name="seriesName">Parameter <c>seriesName</c>.</param>
+        /// <param name="fullTitle">Vollständiger Folgentitel, meist mit Seriennamen und Nummer davor.</param>
+        /// <param name="seriesName">Name der Serie, der aus dem Titel entfernt wird.</param>
         private static string ExtractShortTitle(string fullTitle, string seriesName)
         {
             string title = fullTitle;

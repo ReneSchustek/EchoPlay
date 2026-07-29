@@ -34,7 +34,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        /// <param name="provider">Parameter <c>provider</c>.</param>
+        /// <param name="provider">Der Anbieter, dessen Erreichbarkeit geprüft wird.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<ConnectionTestResult> TestAsync(ProviderType provider, CancellationToken cancellationToken = default)
         {

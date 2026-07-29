@@ -483,8 +483,8 @@ namespace EchoPlay.App.Services
         /// Sucht eine bestehende Serie anhand der externen ID und Quelle.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="service">Parameter <c>service</c>.</param>
-        /// <param name="series">Parameter <c>series</c>.</param>
+        /// <param name="service">Datendienst, über den nach der bestehenden Serie gesucht wird.</param>
+        /// <param name="series">Das Anbieter-Modell mit Quelle und externer ID.</param>
         private static async Task<Series?> FindExistingSeriesAsync(ISeriesDataService service, ImportSeries series, CancellationToken cancellationToken = default)
         {
             return series.Source switch
@@ -501,7 +501,7 @@ namespace EchoPlay.App.Services
         /// Import und Abonnement sind dasselbe Konzept – jede importierte Serie ist direkt abonniert
         /// und erscheint sofort im Dashboard und in der Mediathek.
         /// </summary>
-        /// <param name="importSeries">Parameter <c>importSeries</c>.</param>
+        /// <param name="importSeries">Das Anbieter-Modell, aus dem die Entität entsteht.</param>
         /// <param name="watchedTitles">Normalisierte Titel mit früher aktivierter Überwachung.</param>
         private static Series MapToSeries(ImportSeries importSeries, IReadOnlySet<string> watchedTitles)
         {
@@ -523,8 +523,8 @@ namespace EchoPlay.App.Services
         /// Erstellt eine <see cref="Episode"/>-Entität aus einem <see cref="ImportEpisode"/>-Modell.
         /// Setzt die provider-spezifische Album-ID anhand der Source-Bezeichnung.
         /// </summary>
-        /// <param name="importEpisode">Parameter <c>importEpisode</c>.</param>
-        /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
+        /// <param name="importEpisode">Das Anbieter-Modell, aus dem die Entität entsteht.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
         private static Episode MapToEpisode(ImportEpisode importEpisode, Guid seriesId)
         {
             return new Episode

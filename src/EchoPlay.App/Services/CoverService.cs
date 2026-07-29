@@ -33,8 +33,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den CoverService.
         /// </summary>
-        /// <param name="scopeFactory">Parameter <c>scopeFactory</c>.</param>
-        /// <param name="loggerFactory">Parameter <c>loggerFactory</c>.</param>
+        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes — jeder Datenbankzugriff läuft in einem eigenen.</param>
+        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public CoverService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Services
         /// Null wenn kein Cover vorhanden.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
         public async Task<BitmapImage?> GetSeriesCoverImageAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             byte[]? bytes = await GetCoverBytesAsync(EntityTypeSeries, seriesId, cancellationToken);
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Services
         /// Null wenn kein Cover vorhanden.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="episodeId">Parameter <c>episodeId</c>.</param>
+        /// <param name="episodeId">Datenbank-ID der Episode.</param>
         public async Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
             byte[]? bytes = await GetCoverBytesAsync(EntityTypeEpisode, episodeId, cancellationToken);
@@ -103,7 +103,7 @@ namespace EchoPlay.App.Services
         /// Prüft ob ein Cover für eine Serie existiert (ohne Blob zu laden).
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="seriesId">Parameter <c>seriesId</c>.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
         public async Task<bool> HasSeriesCoverAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
@@ -143,10 +143,10 @@ namespace EchoPlay.App.Services
         /// den nächsten Versuch nicht blockiert.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="entityType">Parameter <c>entityType</c>.</param>
-        /// <param name="entityId">Parameter <c>entityId</c>.</param>
-        /// <param name="imageData">Parameter <c>imageData</c>.</param>
-        /// <param name="sourceUrl">Parameter <c>sourceUrl</c>.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
+        /// <param name="imageData">Die Bilddaten des Covers.</param>
+        /// <param name="sourceUrl">Adresse, von der das Cover stammt; <see langword="null"/>, wenn es aus einer lokalen Datei kommt.</param>
         private async Task WriteWithRetryAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl, CancellationToken cancellationToken = default)
         {
             for (int attempt = 1; attempt <= 3; attempt++)
@@ -181,8 +181,8 @@ namespace EchoPlay.App.Services
         /// Lädt Cover-Binärdaten für eine einzelne Entity.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="entityType">Parameter <c>entityType</c>.</param>
-        /// <param name="entityId">Parameter <c>entityId</c>.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
         private async Task<byte[]?> GetCoverBytesAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();

@@ -18,7 +18,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Anzahl Tage nach der Soft-Löschung, nach denen ein Eintrag physisch entfernt wird.
         /// 0 bedeutet sofortige Bereinigung aller soft-gelöschten Einträge.
         /// </param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die alten Einträge physisch entfernt sind.</returns>
         Task PurgeAsync(int retentionDays);
 
         /// <summary>
@@ -27,7 +27,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// nur sinnvoll nach größeren Löschvorgängen oder auf expliziten Nutzerwunsch.
         /// Nicht für den App-Start empfohlen, da der Vorgang bei großen DBs spürbar dauern kann.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Datenbankdatei neu geschrieben ist.</returns>
         Task VacuumAsync();
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Sollte beim App-Shutdown aufgerufen werden – die gesammelten Statistiken einer Sitzung
         /// verbessern die Abfrageplanung beim nächsten Start.
         /// </summary>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn SQLite seine Statistiken aktualisiert hat.</returns>
         Task OptimizeAsync();
 
         /// <summary>

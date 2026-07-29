@@ -18,7 +18,7 @@ namespace EchoPlay.Data.Services
         private readonly ILogger _logger = loggerFactory.CreateLogger("SecureSettingsDataService");
 
         /// <inheritdoc/>
-        /// <param name="key">Parameter key.</param>
+        /// <param name="key">Schlüssel des Eintrags, z. B. <c>Spotify:ClientId</c>.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<byte[]?> GetAsync(string key, CancellationToken cancellationToken = default)
         {
@@ -30,8 +30,8 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="key">Parameter key.</param>
-        /// <param name="encryptedValue">Parameter encryptedValue.</param>
+        /// <param name="key">Schlüssel des Eintrags, z. B. <c>Spotify:ClientId</c>.</param>
+        /// <param name="encryptedValue">Der bereits verschlüsselte Wert; dieser Dienst verschlüsselt selbst nicht.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SaveAsync(string key, byte[] encryptedValue, CancellationToken cancellationToken = default)
         {
@@ -58,7 +58,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="key">Parameter key.</param>
+        /// <param name="key">Schlüssel des Eintrags, z. B. <c>Spotify:ClientId</c>.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
         {

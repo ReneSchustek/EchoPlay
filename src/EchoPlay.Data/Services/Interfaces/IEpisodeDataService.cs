@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Die Episoden werden standardmäßig nach Episodennummer und anschließend nach Titel sortiert.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="seriesId">Parameter seriesId.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
         Task<IReadOnlyList<Episode>> GetBySeriesIdAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Liefert eine Episode anhand ihrer eindeutigen ID.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="id">Parameter id.</param>
+        /// <param name="id">Datenbank-ID der Episode.</param>
         Task<Episode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Fügt eine neue Episode dauerhaft hinzu.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="episode">Parameter episode.</param>
+        /// <param name="episode">Die betroffene Episode.</param>
         Task AddAsync(Episode episode, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Aktualisiert eine bestehende Episode.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="episode">Parameter episode.</param>
+        /// <param name="episode">Die betroffene Episode.</param>
         Task UpdateAsync(Episode episode, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Markiert eine Episode als gelöscht (Soft-Delete).
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="id">Parameter id.</param>
+        /// <param name="id">Datenbank-ID der Episode.</param>
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

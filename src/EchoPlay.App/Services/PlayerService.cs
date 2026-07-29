@@ -409,8 +409,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Behandelt Codec-Fehler, korrupte Dateien und I/O-Probleme der Media-Pipeline.
         /// </summary>
-        /// <param name="sender">Parameter <c>sender</c>.</param>
-        /// <param name="args">Parameter <c>args</c>.</param>
+        /// <param name="sender">Der auslösende <see cref="MediaPlayer"/>.</param>
+        /// <param name="args">Fehlerdetails der Media-Pipeline, u. a. die Fehlermeldung.</param>
         private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
         {
             string message = args.ErrorMessage ?? "Unbekannter Wiedergabefehler";

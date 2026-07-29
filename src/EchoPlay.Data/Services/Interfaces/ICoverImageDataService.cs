@@ -60,8 +60,8 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Schneller als GetByEntityAsync, da kein Blob geladen wird.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="entityType">Parameter entityType.</param>
-        /// <param name="entityId">Parameter entityId.</param>
+        /// <param name="entityType">Art der Entität, zu der das Cover gehört: <c>Series</c> oder <c>Episode</c>.</param>
+        /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
         Task<bool> ExistsAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default);
 
         /// <summary>

@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Erstellt den Adapter mit dem App-Options-Provider als Quelle.
         /// </summary>
-        /// <param name="optionsProvider">Parameter <c>optionsProvider</c>.</param>
+        /// <param name="optionsProvider">Quelle der Spotify-Optionen inklusive der hinterlegten Zugangsdaten.</param>
         public SpotifyClientCredentialsProvider(ISpotifyOptionsProvider optionsProvider)
         {
             _optionsProvider = optionsProvider;

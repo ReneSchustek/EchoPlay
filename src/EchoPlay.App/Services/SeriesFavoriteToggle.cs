@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="isFavorite">Der neue Favoriten-Status.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Favoritenstatus gespeichert ist; das Nachziehen der Neuerscheinungen läuft danach im Hintergrund weiter.</returns>
         public static async Task SetFavoriteAsync(
             IServiceScopeFactory scopeFactory,
             Guid seriesId,
@@ -88,7 +88,7 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Die Scope-Factory des aufrufenden ViewModels.</param>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Asynchrone Ausführung.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn der Neuerscheinungen-Cache dieser Serie steht.</returns>
         internal static async Task RefreshNewReleasesAsync(
             IServiceScopeFactory scopeFactory,
             Guid seriesId,

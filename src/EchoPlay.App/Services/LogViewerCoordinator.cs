@@ -76,7 +76,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc />
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="filePath">Parameter <c>filePath</c>.</param>
+        /// <param name="filePath">Vollständiger Pfad der zu lesenden Protokolldatei.</param>
         public async Task<IReadOnlyList<string>> LoadFileLinesAsync(string filePath, CancellationToken cancellationToken = default)
         {
             try
@@ -96,8 +96,8 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc />
-        /// <param name="searchText">Parameter <c>searchText</c>.</param>
-        /// <param name="minimumLevel">Parameter <c>minimumLevel</c>.</param>
+        /// <param name="searchText">Freitextfilter; leer zeigt alle Einträge.</param>
+        /// <param name="minimumLevel">Untere Grenze der angezeigten Protokollstufe.</param>
         public IReadOnlyList<string> BuildFilteredLiveEntries(string searchText, LogLevel minimumLevel)
         {
             if (_memorySink is null)

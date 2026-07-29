@@ -169,7 +169,7 @@ namespace EchoPlay.App.Services
             }
 
             string baseUrl = uri.IsAbsoluteUri
-                ? uri.GetLeftPart(UriPartial.Path)
+                ? BuildBaseUrl(uri)
                 : uri.ToString();
 
             string query = uri.IsAbsoluteUri ? uri.Query : string.Empty;
@@ -220,6 +220,27 @@ namespace EchoPlay.App.Services
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Baut den Teil der URL bis einschließlich des Pfads — ohne Benutzerinformationen.
+        /// </summary>
+        /// <param name="uri">Absolute Ziel-URI der Anfrage.</param>
+        /// <returns>Schema, Host, Port und Pfad; ein vorhandenes <c>user:kennwort@</c> als <c>***@</c>.</returns>
+        /// <remarks>
+        /// <see cref="Uri.GetLeftPart(UriPartial)"/> nimmt den UserInfo-Teil mit. Cover- und
+        /// Provider-URLs stammen aus fremden APIs und aus der Datenbank; eine URL der Form
+        /// <c>https://name:kennwort@host/bild.jpg</c> hätte das Kennwort im Klartext ins
+        /// Support-Log geschrieben.
+        /// </remarks>
+        private static string BuildBaseUrl(Uri uri)
+        {
+            // Authority ist Host + Port, ohne UserInfo.
+            string withoutUserInfo = $"{uri.Scheme}://{uri.Authority}{uri.AbsolutePath}";
+
+            return string.IsNullOrEmpty(uri.UserInfo)
+                ? withoutUserInfo
+                : $"{uri.Scheme}://***@{uri.Authority}{uri.AbsolutePath}";
         }
     }
 }

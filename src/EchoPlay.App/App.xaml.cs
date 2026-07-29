@@ -815,7 +815,10 @@ namespace EchoPlay.App
             _ = builder.Services.AddSingleton<TaskbarProgressService>();
 
             // Update-Services: prüft auf neue Versionen und lädt die Setup-Datei herunter.
+            // Der Installer-Start liegt hinter einer eigenen Schnittstelle, damit Tests den
+            // Download-Pfad komplett durchlaufen können, ohne eine echte Datei zu starten.
             _ = builder.Services.AddSingleton<UpdateCheckService>();
+            _ = builder.Services.AddSingleton<IInstallerLauncher, InstallerLauncher>();
             _ = builder.Services.AddSingleton<UpdateDownloadService>();
             _ = builder.Services.AddSingleton<UpdateInteractionService>();
 

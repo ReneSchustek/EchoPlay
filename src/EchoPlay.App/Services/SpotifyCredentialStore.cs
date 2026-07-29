@@ -18,6 +18,16 @@ namespace EchoPlay.App.Services
         private const string KeyClientId = "Spotify:ClientId";
         private const string KeyClientSecret = "Spotify:ClientSecret";
 
+        // Zusätzliche Entropie für DPAPI. Ohne sie kann jeder Prozess im selben
+        // Benutzerkontext den Blob mit einem blanken Unprotect-Aufruf entschlüsseln —
+        // genau das tun handelsübliche Credential-Stealer, die reihum über bekannte
+        // Ablageorte laufen. Mit Entropie muss ein Angreifer diesen Wert kennen, also
+        // gezielt gegen EchoPlay arbeiten. Die Entropie ist kein Geheimnis (sie steht im
+        // Programmcode) und ersetzt keine Schlüsselverwaltung; sie hebt nur die Hürde
+        // von "nebenbei mitgenommen" auf "gezielt gebaut".
+        private static readonly byte[] ProtectionEntropy =
+            Encoding.UTF8.GetBytes("EchoPlay.SpotifyCredentials.v1");
+
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
 
@@ -62,8 +72,18 @@ namespace EchoPlay.App.Services
 
             try
             {
-                string clientId = Decrypt(encryptedId);
-                string clientSecret = Decrypt(encryptedSecret);
+                (string clientId, bool idWasLegacy) = Decrypt(encryptedId);
+                (string clientSecret, bool secretWasLegacy) = Decrypt(encryptedSecret);
+
+                // Altbestand ohne Entropie: einmalig auf das neue Format heben, damit der
+                // schwächere Blob nicht dauerhaft in der Datenbank liegen bleibt.
+                if (idWasLegacy || secretWasLegacy)
+                {
+                    _logger.Info("Spotify-Credentials lagen im alten DPAPI-Format vor und werden neu verschlüsselt.");
+                    await service.SaveAsync(KeyClientId, Encrypt(clientId), cancellationToken).ConfigureAwait(false);
+                    await service.SaveAsync(KeyClientSecret, Encrypt(clientSecret), cancellationToken).ConfigureAwait(false);
+                }
+
                 return (clientId, clientSecret);
             }
             catch (CryptographicException ex)
@@ -134,13 +154,29 @@ namespace EchoPlay.App.Services
         private static byte[] Encrypt(string plainText)
         {
             byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-            return ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+            return ProtectedData.Protect(plainBytes, ProtectionEntropy, DataProtectionScope.CurrentUser);
         }
 
-        private static string Decrypt(byte[] encryptedBytes)
+        /// <summary>
+        /// Entschlüsselt einen Credential-Blob und meldet, ob er noch im alten Format
+        /// ohne zusätzliche Entropie vorlag.
+        /// </summary>
+        /// <param name="encryptedBytes">Der gespeicherte Cipher-Blob.</param>
+        /// <returns>Klartext und ein Kennzeichen, ob der Blob aus dem Altbestand stammt.</returns>
+        private static (string PlainText, bool WasLegacyFormat) Decrypt(byte[] encryptedBytes)
         {
-            byte[] plainBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
-            return Encoding.UTF8.GetString(plainBytes);
+            try
+            {
+                byte[] plainBytes = ProtectedData.Unprotect(encryptedBytes, ProtectionEntropy, DataProtectionScope.CurrentUser);
+                return (Encoding.UTF8.GetString(plainBytes), false);
+            }
+            catch (CryptographicException)
+            {
+                // Vor der Entropie-Umstellung gespeicherte Credentials. Schlägt auch dieser
+                // Versuch fehl, fliegt die Exception zum Aufrufer, der die Records aufräumt.
+                byte[] plainBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
+                return (Encoding.UTF8.GetString(plainBytes), true);
+            }
         }
     }
 }

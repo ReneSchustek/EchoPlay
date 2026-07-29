@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
@@ -25,7 +24,29 @@ namespace EchoPlay.App.Services
         [GeneratedRegex(@"^\d+(\.\d+){0,3}$")]
         private static partial Regex VersionPattern();
 
+        // Hosts, von denen eine Setup-Datei bezogen werden darf. Die Download-URL stammt
+        // aus dem Feld "browser_download_url" der GitHub-Release-API und ist damit ein
+        // Wert aus einer fremden Antwort — sie landet aber als ausführbare Datei auf dem
+        // Rechner des Nutzers. Ohne Bindung an bekannte Hosts würde eine manipulierte
+        // Antwort (DNS-Hijack auf api.github.com, TLS-Interception über ein eingeschleustes
+        // Root-Zertifikat, kompromittierter Release-Eintrag) genügen, um den Download auf
+        // einen beliebigen Server umzulenken.
+        //
+        // Geprüft wird nur die Start-URL: Folge-Redirects laufen weiterhin über TLS und
+        // .NET verweigert einen Redirect von HTTPS auf HTTP von sich aus.
+        private static readonly string[] AllowedDownloadHosts =
+        [
+            "github.com",
+            "objects.githubusercontent.com",
+            "release-assets.githubusercontent.com"
+        ];
+
+        // SHA-256 als Hex: genau 64 Zeichen, nichts anderes.
+        private const int Sha256HexLength = 64;
+        private const int Sha256ByteLength = 32;
+
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IInstallerLauncher _installerLauncher;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -34,28 +55,33 @@ namespace EchoPlay.App.Services
         /// User-Agent trägt.
         /// </summary>
         /// <param name="httpClientFactory">Parameter <c>httpClientFactory</c>.</param>
+        /// <param name="installerLauncher">Startet die geprüfte Setup-Datei.</param>
         /// <param name="loggerFactory">Parameter <c>loggerFactory</c>.</param>
-        public UpdateDownloadService(IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
+        public UpdateDownloadService(
+            IHttpClientFactory httpClientFactory,
+            IInstallerLauncher installerLauncher,
+            ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _httpClientFactory = httpClientFactory;
+            _installerLauncher = installerLauncher;
             _logger = loggerFactory.CreateLogger(nameof(UpdateDownloadService));
         }
 
         /// <summary>
         /// Lädt die Setup-Datei herunter und startet den Installer.
         /// </summary>
-        /// <param name="downloadUrl">Direkte Download-URL der Setup-Datei.</param>
+        /// <param name="downloadUrl">Direkte Download-URL der Setup-Datei. Muss HTTPS sein und auf einen GitHub-Release-Host zeigen.</param>
         /// <param name="version">Versionsnummer für den Dateinamen (muss <c>^\d+(\.\d+){0,3}$</c> matchen).</param>
         /// <param name="expectedFileSize">Erwartete Größe der Setup-Datei in Bytes laut Release-Asset (0 = Vergleich überspringen).</param>
-        /// <param name="expectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Leer = ohne Integritätsprüfung installieren (Backwards-Compat mit Releases ohne Hash im Body).</param>
+        /// <param name="expectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Pflichtangabe — fehlt sie, wird nicht installiert.</param>
         /// <param name="onProgress">Fortschritts-Callback (0.0–1.0). Null wenn kein Fortschritt gewünscht.</param>
         /// <param name="cancellationToken">Abbruch-Token für den Download.</param>
         /// <returns>True wenn der Installer gestartet wurde, false bei Fehler.</returns>
         [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
             Justification = "downloadUrl kommt aus externem Release-Feed (GitHub) und wird als string weitergereicht.")]
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-            Justification = "Setup-Download+Start: HTTP-Fehler, IO-Fehler beim Schreiben der Temp-Datei oder Win32Exception aus 'Process.Start' dürfen den App-Start nicht stören – false signalisiert 'Download fehlgeschlagen, Nutzer kann später erneut versuchen'.")]
+            Justification = "Setup-Download+Start: HTTP-Fehler oder IO-Fehler beim Schreiben der Temp-Datei dürfen den App-Start nicht stören – false signalisiert 'Download fehlgeschlagen, Nutzer kann später erneut versuchen'.")]
         public async Task<bool> DownloadAndInstallAsync(
             string downloadUrl,
             string version,
@@ -69,6 +95,18 @@ namespace EchoPlay.App.Services
             if (!VersionPattern().IsMatch(version))
             {
                 _logger.Warning("Ungültiges Versionsformat im Update-Tag — Download abgelehnt: \"{Version}\"", version);
+                return false;
+            }
+
+            if (!TryParseDownloadUrl(downloadUrl, out Uri? downloadUri))
+            {
+                return false;
+            }
+
+            // Der Hash wird vor dem Download geprüft, nicht danach: Fehlt oder taugt er nicht,
+            // gibt es keinen Grund, überhaupt 80 MB zu laden.
+            if (!TryParseExpectedHash(expectedSha256, out byte[]? expectedHashBytes))
+            {
                 return false;
             }
 
@@ -88,7 +126,7 @@ namespace EchoPlay.App.Services
 
                 HttpClient httpClient = _httpClientFactory.CreateClient("UpdateDownload");
                 using HttpResponseMessage response = await httpClient
-                    .GetAsync(new Uri(downloadUrl, UriKind.Absolute), HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                    .GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                     .ConfigureAwait(false);
 
                 _ = response.EnsureSuccessStatusCode();
@@ -128,24 +166,17 @@ namespace EchoPlay.App.Services
                     return false;
                 }
 
-                // SHA-256-Hash-Pin: zweite Verteidigungslinie gegen Inhalts-Manipulation
-                // (kompromittierter GitHub-Account, MITM mit aufgebrochenem TLS, CDN-Vergiftung).
-                // Hash und Datei kommen aus derselben Quelle — schützt nicht gegen vollen
-                // Account-Compromise, aber gegen alle anderen Angriffsszenarien auf dem Transport.
-                if (!await VerifyFileHashAsync(tempPath, expectedSha256, cancellationToken).ConfigureAwait(false))
+                // SHA-256-Hash-Pin: die eigentliche Integritätsprüfung. EchoPlay wird nicht
+                // per Authenticode signiert — der Hash aus dem Release-Body ist damit die
+                // einzige Kontrolle, die eine manipulierte Setup-Datei erkennt.
+                if (!await VerifyFileHashAsync(tempPath, expectedHashBytes, cancellationToken).ConfigureAwait(false))
                 {
                     TryDelete(tempPath);
                     return false;
                 }
 
                 // Installer starten – die App beendet sich danach
-                _ = Process.Start(new ProcessStartInfo
-                {
-                    FileName = tempPath,
-                    UseShellExecute = true
-                });
-
-                return true;
+                return _installerLauncher.Start(tempPath);
             }
             catch (Exception ex)
             {
@@ -156,27 +187,69 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Verifiziert den SHA-256-Hash der heruntergeladenen Setup-Datei gegen den
-        /// im GitHub-Release-Body gepflegten Erwartungswert. Vergleich läuft Timing-Safe
-        /// über <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>.
+        /// Prüft die Download-URL auf HTTPS und einen erlaubten GitHub-Release-Host.
         /// </summary>
-        /// <param name="filePath">Vollständiger Pfad zur fertig heruntergeladenen Setup-Datei.</param>
-        /// <param name="expectedSha256">Erwarteter Hex-Hash (64 Zeichen). Leer = Prüfung überspringen.</param>
-        /// <param name="cancellationToken">Abbruch-Token für die Hash-Berechnung.</param>
-        /// <returns>True bei Match oder leerem Erwartungswert; false bei Mismatch oder ungültigem Hex.</returns>
-        private async Task<bool> VerifyFileHashAsync(string filePath, string expectedSha256, CancellationToken cancellationToken)
+        /// <param name="downloadUrl">Rohwert aus dem Release-Feed.</param>
+        /// <param name="downloadUri">Die geprüfte URI, wenn die Prüfung besteht.</param>
+        /// <returns>True, wenn von dieser URL geladen werden darf.</returns>
+        private bool TryParseDownloadUrl(string downloadUrl, [NotNullWhen(true)] out Uri? downloadUri)
         {
-            if (string.IsNullOrWhiteSpace(expectedSha256))
+            downloadUri = null;
+
+            if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out Uri? parsed))
             {
-                // Backwards-Compat: alte Releases ohne Hash im Body — Warning, aber Installation läuft weiter.
-                _logger.Warning("Kein SHA-256-Hash im Release-Body gepflegt — Update wird ohne Integritätsprüfung installiert.");
-                return true;
+                _logger.Warning("Update-Download-URL ist keine absolute URL — Download abgelehnt.");
+                return false;
             }
 
-            byte[] expectedBytes;
+            if (parsed.Scheme != Uri.UriSchemeHttps)
+            {
+                _logger.Warning("Update-Download-URL nutzt nicht HTTPS (\"{Scheme}\") — Download abgelehnt.", parsed.Scheme);
+                return false;
+            }
+
+            if (!Array.Exists(AllowedDownloadHosts, host => string.Equals(host, parsed.Host, StringComparison.OrdinalIgnoreCase)))
+            {
+                _logger.Warning("Update-Download-URL zeigt auf einen fremden Host (\"{Host}\") — Download abgelehnt.", parsed.Host);
+                return false;
+            }
+
+            downloadUri = parsed;
+            return true;
+        }
+
+        /// <summary>
+        /// Wandelt den Hash aus dem Release-Body in Bytes um und lehnt fehlende oder
+        /// unbrauchbare Angaben ab.
+        /// </summary>
+        /// <param name="expectedSha256">Hex-Hash aus dem Release-Body.</param>
+        /// <param name="expectedHashBytes">Die 32 Hash-Bytes, wenn die Angabe taugt.</param>
+        /// <returns>True, wenn ein verwertbarer Hash vorliegt.</returns>
+        /// <remarks>
+        /// Früher lief die Installation weiter, wenn im Release-Body kein Hash stand
+        /// ("Backwards-Compat"). Das hebelte den Schutz aber genau dort aus, wo er zählt:
+        /// Wer den Body manipulieren kann, streicht einfach die SHA-Zeile und die Prüfung
+        /// entfällt. Ohne Hash wird deshalb nicht mehr installiert.
+        /// </remarks>
+        private bool TryParseExpectedHash(string expectedSha256, [NotNullWhen(true)] out byte[]? expectedHashBytes)
+        {
+            expectedHashBytes = null;
+
+            if (string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                _logger.Warning("Kein SHA-256-Hash im Release-Body gepflegt — Update wird nicht installiert.");
+                return false;
+            }
+
+            if (expectedSha256.Length != Sha256HexLength)
+            {
+                _logger.Warning("SHA-256 im Release-Body hat falsche Länge ({ActualLength} Zeichen statt {ExpectedLength}) — Update abgelehnt.", expectedSha256.Length, Sha256HexLength);
+                return false;
+            }
+
             try
             {
-                expectedBytes = Convert.FromHexString(expectedSha256);
+                expectedHashBytes = Convert.FromHexString(expectedSha256);
             }
             catch (FormatException ex)
             {
@@ -184,21 +257,29 @@ namespace EchoPlay.App.Services
                 return false;
             }
 
-            if (expectedBytes.Length != 32)
-            {
-                _logger.Warning("SHA-256 im Release-Body hat falsche Länge ({ActualLength} Bytes statt 32) — Update abgelehnt.", expectedBytes.Length);
-                return false;
-            }
+            return expectedHashBytes.Length == Sha256ByteLength;
+        }
 
+        /// <summary>
+        /// Verifiziert den SHA-256-Hash der heruntergeladenen Setup-Datei gegen den
+        /// im GitHub-Release-Body gepflegten Erwartungswert. Vergleich läuft Timing-Safe
+        /// über <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>.
+        /// </summary>
+        /// <param name="filePath">Vollständiger Pfad zur fertig heruntergeladenen Setup-Datei.</param>
+        /// <param name="expectedHashBytes">Die 32 erwarteten Hash-Bytes.</param>
+        /// <param name="cancellationToken">Abbruch-Token für die Hash-Berechnung.</param>
+        /// <returns>True bei Match; false bei Mismatch.</returns>
+        private async Task<bool> VerifyFileHashAsync(string filePath, byte[] expectedHashBytes, CancellationToken cancellationToken)
+        {
             byte[] actualBytes;
             await using (FileStream verifyStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 actualBytes = await SHA256.HashDataAsync(verifyStream, cancellationToken).ConfigureAwait(false);
             }
 
-            if (!CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes))
+            if (!CryptographicOperations.FixedTimeEquals(actualBytes, expectedHashBytes))
             {
-                _logger.Warning("SHA-256 der Setup-Datei stimmt nicht mit dem Release-Body überein — erwartet {ExpectedHash}, berechnet {ActualHash}. Datei wird gelöscht.", Convert.ToHexString(expectedBytes), Convert.ToHexString(actualBytes));
+                _logger.Warning("SHA-256 der Setup-Datei stimmt nicht mit dem Release-Body überein — erwartet {ExpectedHash}, berechnet {ActualHash}. Datei wird gelöscht.", Convert.ToHexString(expectedHashBytes), Convert.ToHexString(actualBytes));
                 return false;
             }
 

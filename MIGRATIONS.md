@@ -58,7 +58,7 @@ Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.
 | 36 | 2026-05-05 | AddSortIndexesAndSoftDeleteFilters | Sortier-Indizes (`PlaybackStates.LastPlayedAt`, `Episodes.ReleaseDate`) plus `IsDeleted = 0`-Filter auf den UNIQUE-Indizes von `CoverImages` und `SecureSettings` |
 | 37 | 2026-07-21 | AddOnlineEpisodeSortIndex | Gemerkte Folgen-Sortierung der Online-Mediathek in `AppSettings` (Default 0 = Nummer aufsteigend) |
 | 38 | 2026-07-27 | BackfillWatchedForFavorites | Reine Datenmigration: setzt `IsWatched` für alle favorisierten Serien. Favorit impliziert seit dieser Version Überwachung; Bestände aus neu eingelesenen Bibliotheken hatten sonst favorisierte, aber unbeobachtete Serien und damit einen leeren Neuerscheinungen-Abschnitt. Nicht umkehrbar (`Down` bleibt leer) |
-| 39 | 2026-07-27 | AddWatchedTitles | Merkliste `WatchedTitles` (UNIQUE auf `NormalizedTitle`, gefiltert auf aktive Zeilen). Überlebt „Mediathek leeren" und gibt neu eingelesenen Serien ihre Überwachung zurück. Erstbestand wird nicht per SQL befüllt, sondern beim Start über `SyncWatchedTitlesAsync` mit dem echten Normalizer abgeglichen |
+| 39 | 2026-07-27 | AddWatchedTitles | Merkliste `WatchedTitles` (UNIQUE auf `NormalizedTitle`, gefiltert auf aktive Zeilen). Überlebt „Mediathek leeren" und gibt neu eingelesenen Serien ihre Überwachung zurück. Erstbestand wird nicht per SQL befüllt, sondern beim Start über `IWatchedTitleDataService.SyncFromWatchedSeriesAsync` mit dem echten Normalizer abgeglichen |
 
 ## Prüf-Reflex vor jedem Migrations-Commit
 

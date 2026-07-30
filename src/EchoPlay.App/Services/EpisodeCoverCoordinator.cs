@@ -54,10 +54,11 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="query">Suchbegriff für die Cover-Suche.</param>
+        /// <param name="page">Welcher Abschnitt der Trefferliste geholt wird.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct)
+        public async Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CoverSearchPage page, CancellationToken ct)
         {
-            IReadOnlyList<CoverSearchResult> results = await _coverSearchService.SearchAsync(query, ct);
+            IReadOnlyList<CoverSearchResult> results = await _coverSearchService.SearchAsync(query, page, ct);
             List<CoverSearchHit> hits = new(results.Count);
             foreach (CoverSearchResult r in results)
             {

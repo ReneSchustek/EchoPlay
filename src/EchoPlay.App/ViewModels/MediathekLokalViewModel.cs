@@ -647,7 +647,7 @@ namespace EchoPlay.App.ViewModels
         /// Sucht Cover-Kandidaten für den angegebenen Begriff.
         /// Delegiert an den <see cref="MediathekLokalActions"/>.
         /// </summary>
-        public Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct) => _actions.SearchCoversAsync(query, ct);
+        public Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, EchoPlay.LocalLibrary.Cover.CoverSearchPage page, CancellationToken ct) => _actions.SearchCoversAsync(query, page, ct);
 
         /// <summary>
         /// Übernimmt rohe Bytes als Serien-Cover.

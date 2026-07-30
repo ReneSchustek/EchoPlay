@@ -1531,6 +1531,12 @@ The application will close.</value>
   <data name="CoverSearchHitsFoundPlural" xml:space="preserve">
     <value>{0} matches found.</value>
   </data>
+  <data name="CoverSearchLoadMore" xml:space="preserve">
+    <value>Load more results</value>
+  </data>
+  <data name="CoverSearchNoMoreResults" xml:space="preserve">
+    <value>No further results.</value>
+  </data>
   <data name="CoverSearchFailed" xml:space="preserve">
     <value>Search failed.</value>
   </data>

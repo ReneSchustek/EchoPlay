@@ -227,6 +227,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 await OnlineEpisodePipeline.SearchEpisodeCoversAsync(
                     coverSearchService: null,
                     query: "X",
+                    page: EchoPlay.LocalLibrary.Cover.CoverSearchPage.First,
                     ct: System.Threading.CancellationToken.None);
 
             Assert.Empty(hits);

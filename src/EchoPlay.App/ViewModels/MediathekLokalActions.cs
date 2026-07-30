@@ -432,14 +432,14 @@ namespace EchoPlay.App.ViewModels
         /// Sucht Cover-Kandidaten für den angegebenen Begriff. Delegiert an den
         /// <see cref="IEpisodeCoverCoordinator"/>.
         /// </summary>
-        public Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct)
+        public Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, EchoPlay.LocalLibrary.Cover.CoverSearchPage page, CancellationToken ct)
         {
             if (_coverCoordinator is null)
             {
                 return Task.FromResult<IReadOnlyList<CoverSearchHit>>([]);
             }
 
-            return _coverCoordinator.SearchCoversAsync(query, ct);
+            return _coverCoordinator.SearchCoversAsync(query, page, ct);
         }
 
         /// <summary>

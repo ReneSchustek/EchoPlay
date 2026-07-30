@@ -72,7 +72,7 @@ namespace EchoPlay.App.Views
 
                 CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                     card.Title,
-                    (query, ct) => ViewModel.SearchCoversAsync(query, ct),
+                    (query, page, ct) => ViewModel.SearchCoversAsync(query, page, ct),
                     Content.XamlRoot);
 
                 if (selected is not null)
@@ -135,7 +135,7 @@ namespace EchoPlay.App.Views
 
                 CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                     card.Title,
-                    (query, ct) => ViewModel.SearchCoversAsync(query, ct),
+                    (query, page, ct) => ViewModel.SearchCoversAsync(query, page, ct),
                     Content.XamlRoot);
 
                 if (selected is not null)

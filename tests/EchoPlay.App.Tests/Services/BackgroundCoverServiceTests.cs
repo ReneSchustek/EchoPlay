@@ -393,7 +393,10 @@ namespace EchoPlay.App.Tests.Services
             }
 
             public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
-                => Task.FromResult<IReadOnlyList<CoverSearchResult>>([_result]);
+                => SearchAsync(title, CoverSearchPage.First, ct);
+
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CoverSearchPage page, CancellationToken ct = default)
+                => Task.FromResult<IReadOnlyList<CoverSearchResult>>(page.Index == 0 ? [_result] : []);
         }
 
         private static BackgroundCoverService BuildService(

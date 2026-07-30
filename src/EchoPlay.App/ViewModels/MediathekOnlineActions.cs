@@ -92,8 +92,9 @@ namespace EchoPlay.App.ViewModels
         public static Task<IReadOnlyList<CoverSearchHit>> SearchEpisodeCoversAsync(
             EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService,
             string query,
+            EchoPlay.LocalLibrary.Cover.CoverSearchPage page,
             CancellationToken ct)
-            => OnlineEpisodePipeline.SearchEpisodeCoversAsync(coverSearchService, query, ct);
+            => OnlineEpisodePipeline.SearchEpisodeCoversAsync(coverSearchService, query, page, ct);
 
         /// <inheritdoc cref="OnlineEpisodePipeline.ApplySelectedEpisodeCoverAsync"/>
         public async Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)

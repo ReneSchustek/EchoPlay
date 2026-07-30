@@ -41,8 +41,15 @@ namespace EchoPlay.LocalLibrary.Cover
         }
 
         /// <inheritdoc/>
+        public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+            string title,
+            CancellationToken ct = default) =>
+            SearchAsync(title, CoverSearchPage.First, ct);
+
+        /// <inheritdoc/>
         public async Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
+            CoverSearchPage page,
             CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -50,13 +57,16 @@ namespace EchoPlay.LocalLibrary.Cover
                 return [];
             }
 
+            // MusicBrainz kennt offset — Nachladen ist hier eine echte Folgeabfrage.
+            CoverSearchWindow window = page.ToWindow(MaxResults, supportsOffset: true);
+
             MusicBrainzReleaseSearchResponse? searchResponse;
 
             try
             {
                 string encodedTitle = Uri.EscapeDataString(title);
                 // MaxResults ist ein int – bei URI-Werten ist Kulturunabhängigkeit garantiert
-                string url = $"https://musicbrainz.org/ws/2/release?query={encodedTitle}&limit={MaxResults}&fmt=json";
+                string url = $"https://musicbrainz.org/ws/2/release?query={encodedTitle}&limit={window.Limit}&offset={window.Offset}&fmt=json";
 
                 searchResponse = await _httpClient.GetFromJsonAsync<MusicBrainzReleaseSearchResponse>(
                     url, ct).ConfigureAwait(false);

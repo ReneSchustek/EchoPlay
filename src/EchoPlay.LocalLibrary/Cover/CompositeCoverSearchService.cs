@@ -25,8 +25,15 @@ namespace EchoPlay.LocalLibrary.Cover
         }
 
         /// <inheritdoc/>
+        public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+            string title,
+            CancellationToken ct = default) =>
+            SearchAsync(title, CoverSearchPage.First, ct);
+
+        /// <inheritdoc/>
         public async Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
+            CoverSearchPage page,
             CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -40,7 +47,7 @@ namespace EchoPlay.LocalLibrary.Cover
 
             for (int i = 0; i < _providers.Count; i++)
             {
-                tasks[i] = SafeSearchAsync(_providers[i], title, ct);
+                tasks[i] = SafeSearchAsync(_providers[i], title, page, ct);
             }
 
             IReadOnlyList<CoverSearchResult>[] allResults = await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -64,11 +71,12 @@ namespace EchoPlay.LocalLibrary.Cover
         private static async Task<IReadOnlyList<CoverSearchResult>> SafeSearchAsync(
             ICoverSearchService provider,
             string title,
+            CoverSearchPage page,
             CancellationToken ct)
         {
             try
             {
-                return await provider.SearchAsync(title, ct).ConfigureAwait(false);
+                return await provider.SearchAsync(title, page, ct).ConfigureAwait(false);
             }
             catch (Exception)
             {

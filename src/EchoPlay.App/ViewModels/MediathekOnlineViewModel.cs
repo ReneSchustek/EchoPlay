@@ -401,8 +401,8 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Sucht Cover-Kandidaten für einen Episoden-Titel über den Cover-Suchdienst.
         /// </summary>
-        public Task<IReadOnlyList<CoverSearchHit>> SearchEpisodeCoversAsync(string query, CancellationToken ct)
-            => MediathekOnlineActions.SearchEpisodeCoversAsync(_coverSearchService, query, ct);
+        public Task<IReadOnlyList<CoverSearchHit>> SearchEpisodeCoversAsync(string query, EchoPlay.LocalLibrary.Cover.CoverSearchPage page, CancellationToken ct)
+            => MediathekOnlineActions.SearchEpisodeCoversAsync(_coverSearchService, query, page, ct);
 
         /// <inheritdoc cref="MediathekOnlineActions.ApplySelectedEpisodeCoverAsync"/>
         public Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)

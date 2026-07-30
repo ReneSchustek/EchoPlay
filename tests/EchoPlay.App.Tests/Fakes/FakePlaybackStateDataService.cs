@@ -104,6 +104,16 @@ namespace EchoPlay.App.Tests.Fakes
             }
         }
 
+        /// <summary>
+        /// Der quellenübergreifende Abgleich braucht Episoden und Serien; dieser Fake kennt nur
+        /// Wiedergabestände. Er meldet deshalb „nichts korrigiert" — geprüft wird der Abgleich
+        /// gegen eine echte SQLite-Datenbank in <c>EchoPlay.Data.Tests</c>.
+        /// </summary>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <returns>Immer 0.</returns>
+        public Task<int> SynchronizeCompletionAcrossSourcesAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
         /// <inheritdoc/>
         public Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {

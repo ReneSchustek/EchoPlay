@@ -63,6 +63,19 @@ namespace EchoPlay.Data.Services.Interfaces
         Task MarkNotStartedAsync(Guid episodeId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Übernimmt „gehört" auf Folgen, die dieselbe Folge aus der anderen Quelle sind
+        /// (gleicher Serientitel, gleiche Folgennummer, gleicher Folgentitel).
+        /// </summary>
+        /// <remarks>
+        /// Für den Altbestand: Vor der Spiegelung in <see cref="MarkCompletedAsync"/> blieb die
+        /// jeweils andere Quelle auf „offen" stehen. Der Aufruf ist idempotent — ohne Rückstand
+        /// tut er nichts und braucht deshalb keinen Einmal-Schalter in den Einstellungen.
+        /// </remarks>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <returns>Anzahl der neu als gehört übernommenen Folgen.</returns>
+        Task<int> SynchronizeCompletionAcrossSourcesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Berechnet aggregierte Wiedergabe-Zähler für alle Episoden einer Serie in einer einzigen DB-Abfrage.
         /// Ersetzt das N+1-Muster, bei dem für jede Episode ein separater <c>GetByEpisodeIdAsync</c>-Aufruf
         /// nötig wäre.

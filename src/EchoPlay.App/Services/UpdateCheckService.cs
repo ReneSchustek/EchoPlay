@@ -33,6 +33,10 @@ namespace EchoPlay.App.Services
         [GeneratedRegex(@"^\s*SHA-?256\s*[:=]\s*([0-9a-fA-F]{64})\b", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
         private static partial Regex Sha256Pattern();
 
+        // Drei oder mehr Zeilenumbrüche in Folge — bleibt übrig, wo die Hash-Zeile stand.
+        [GeneratedRegex(@"(\r?\n){3,}")]
+        private static partial Regex BlankLineRunPattern();
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
@@ -123,13 +127,26 @@ namespace EchoPlay.App.Services
                 }
 
                 string releaseBody = release.Body ?? string.Empty;
+                string expectedSha256 = ExtractSha256(releaseBody);
+
+                // Ohne brauchbaren Hash ist das Release nicht installierbar — der Downloader
+                // lehnt es ohnehin ab. Es trotzdem anzubieten heißt, den Nutzer zu einem
+                // Update einzuladen, das systematisch scheitert. Die Warnung bleibt, damit ein
+                // Release mit vergessener Hash-Zeile diagnostizierbar ist.
+                if (string.IsNullOrEmpty(expectedSha256))
+                {
+                    _logger.Warning(
+                        "Release {Version} hat keine gültige SHA-256-Zeile im Body — wird nicht als Update angeboten.",
+                        remoteVersion);
+                    return null;
+                }
 
                 return new UpdateInfo(
                     Version: remoteVersion,
-                    ReleaseNotes: releaseBody,
+                    ReleaseNotes: StripSha256Line(releaseBody),
                     DownloadUrl: setupAsset.BrowserDownloadUrl,
                     FileSizeBytes: setupAsset.Size,
-                    ExpectedSha256: ExtractSha256(releaseBody));
+                    ExpectedSha256: expectedSha256);
             }
             catch
             {
@@ -168,8 +185,8 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Extrahiert den SHA-256-Hash der Setup-Datei aus dem Release-Body.
         /// Erwartete Konvention: eine Zeile <c>SHA256: &lt;64-hex&gt;</c> oder <c>SHA-256 = &lt;64-hex&gt;</c>.
-        /// Liefert leeren String, wenn kein Hash gefunden wurde — der Updater
-        /// installiert dann ohne Integritätsprüfung (Backwards-Compat mit alten Releases).
+        /// Liefert leeren String, wenn kein Hash gefunden wurde. Ein solches Release wird
+        /// seit 1.2.0 nicht installiert und seit Arbeitspaket 454 gar nicht mehr angeboten.
         /// </summary>
         /// <param name="releaseBody">Markdown-Body des GitHub-Releases.</param>
         /// <returns>Hex-String (64 Zeichen, beliebige Groß-/Kleinschreibung) oder leer. Der Vergleich im Updater nutzt <c>Convert.FromHexString</c> und ist daher case-insensitive — eine Normalisierung an dieser Stelle wäre Overhead und würde CA1308 auslösen.</returns>
@@ -182,6 +199,33 @@ namespace EchoPlay.App.Services
 
             Match match = Sha256Pattern().Match(releaseBody);
             return match.Success ? match.Groups[1].Value : string.Empty;
+        }
+
+        /// <summary>
+        /// Entfernt die <c>SHA256:</c>-Zeile aus dem Release-Body, damit sie nicht im
+        /// Update-Dialog landet.
+        /// </summary>
+        /// <remarks>
+        /// Der Hash ist eine Angabe für den Updater, keine Release-Notiz: 64 Hex-Zeichen sagen
+        /// dem Nutzer nichts und verdrängen im Dialog, was ihn interessiert. Er wird separat in
+        /// <see cref="UpdateInfo.ExpectedSha256"/> geführt und dort geprüft — hier fällt nur die
+        /// Anzeige weg. Die Überschrift „Integritätsprüfung", unter der die Zeile im
+        /// Release-Text steht, verliert damit ihren Inhalt und fliegt als leer gewordener
+        /// Absatz mit heraus.
+        /// </remarks>
+        /// <param name="releaseBody">Markdown-Body des GitHub-Releases.</param>
+        /// <returns>Der Body ohne Hash-Zeile, ohne verwaiste Leerzeilen am Rand.</returns>
+        internal static string StripSha256Line(string releaseBody)
+        {
+            if (string.IsNullOrEmpty(releaseBody))
+            {
+                return string.Empty;
+            }
+
+            string ohneHash = Sha256Pattern().Replace(releaseBody, string.Empty);
+
+            // Mehr als eine Leerzeile in Folge entsteht genau dort, wo die Zeile stand.
+            return BlankLineRunPattern().Replace(ohneHash, "\n\n").Trim();
         }
 
         // ── GitHub-API-DTOs ─────────────────────────────────────────────────────

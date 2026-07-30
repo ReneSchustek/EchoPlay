@@ -495,11 +495,26 @@ namespace EchoPlay.App
                         return;
                     }
 
-                    // Download fehlgeschlagen → Hinweis, dann normal weiter
-                    IErrorDialogService errorDialog = Services.GetRequiredService<IErrorDialogService>();
-                    await errorDialog.ShowAsync(
+                    // Download fehlgeschlagen → Hinweis, dann normal weiter.
+                    //
+                    // Bewusst nicht über IErrorDialogService: Dessen XamlRoot kommt aus
+                    // App.MainWindow, und das Fenster entsteht erst nach dieser Methode. Der
+                    // Dienst hätte den Hinweis stumm in den EmergencyTrace geschrieben — genau
+                    // so ist der Fall 2026-07-30 aufgefallen. Der Splash ist hier das einzige
+                    // sichtbare Fenster, also zeigt der Hinweis auf dessen XamlRoot.
+                    ErrorDialogContent failureContent = ErrorDialogContent.Build(
                         EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateDownloadFailedTitle"),
                         EchoPlay.App.Helpers.SafeResourceLoader.Get("UpdateDownloadFailedMessage"));
+
+                    ContentDialog failureDialog = new()
+                    {
+                        Title = failureContent.Title,
+                        Content = failureContent.Message,
+                        CloseButtonText = failureContent.CloseButtonText,
+                        XamlRoot = splash.Content.XamlRoot
+                    };
+
+                    _ = await failureDialog.ShowAsync();
                 }
                 else if (result == ContentDialogResult.None)
                 {

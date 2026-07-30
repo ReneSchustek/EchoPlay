@@ -50,13 +50,29 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Aktualisiert den RichTextBlock mit den aktuellen Log-Einträgen
-        /// und scrollt ans Ende. Wird bei manuellem Refresh und Live-Updates aufgerufen.
+        /// Holt die Einträge neu aus dem Puffer und zeichnet sie. Für manuellen Refresh,
+        /// Live-Timer und den ersten Aufbau der Seite.
         /// </summary>
         private void RefreshLogView()
         {
             ViewModel.RefreshLogs();
+            RenderLogView();
+        }
 
+        /// <summary>
+        /// Zeichnet <see cref="ViewModel"/>.<c>LogEntries</c> in den RichTextBlock und scrollt
+        /// ans Ende.
+        /// </summary>
+        /// <remarks>
+        /// Getrennt von <see cref="RefreshLogView"/>, weil es zwei verschiedene Anlässe gibt:
+        /// Der Filter lässt das ViewModel schon selbst neu filtern (Setter von
+        /// <c>LogSearchText</c>) und braucht danach nur noch das Zeichnen — sonst würde jeder
+        /// Tastendruck den Puffer zweimal durchlaufen. Ohne diese Trennung blieb der Filter
+        /// wirkungslos, bis jemand „Aktualisieren" drückte: Die Anzeige hängt nicht am
+        /// ViewModel, sie wird hier von Hand gefüllt.
+        /// </remarks>
+        private void RenderLogView()
+        {
             // RichTextBlock mit den aktuellen Einträgen befüllen
             LogRichTextBlock.Blocks.Clear();
 
@@ -74,6 +90,29 @@ namespace EchoPlay.App.Views
             // Ans Ende scrollen – neueste Einträge sind unten
             LogScrollViewer.UpdateLayout();
             LogScrollViewer.ScrollToVerticalOffset(LogScrollViewer.ScrollableHeight);
+        }
+
+        /// <summary>
+        /// Zeichnet die Protokollanzeige neu, wenn sich Suchtext oder Mindest-Level geändert
+        /// haben. Ohne das wirkte der Filter erst nach einem Klick auf „Aktualisieren", weil die
+        /// Anzeige nicht am ViewModel hängt, sondern von Hand gefüllt wird.
+        /// </summary>
+        /// <remarks>
+        /// Hier steht bewusst <see cref="RefreshLogView"/> und nicht das reine
+        /// <see cref="RenderLogView"/>, obwohl der Setter im ViewModel selbst schon neu filtert:
+        /// <c>SetProperty</c> meldet die Änderung, <b>bevor</b> es <c>RefreshLogs()</c> aufruft.
+        /// Wer hier nur zeichnet, malt den vorherigen Filterstand — die Anzeige hängt dann
+        /// dauerhaft eine Eingabe zurück. Der zweite Filterlauf über maximal 100 gepufferte
+        /// Zeilen ist der Preis dafür, nicht von dieser Reihenfolge abzuhängen.
+        /// </remarks>
+        /// <param name="sender">Das ViewModel.</param>
+        /// <param name="e">Enthält den Namen der geänderten Eigenschaft.</param>
+        private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(ViewModel.LogSearchText) or nameof(ViewModel.LogMinimumLevel))
+            {
+                RefreshLogView();
+            }
         }
 
         /// <summary>

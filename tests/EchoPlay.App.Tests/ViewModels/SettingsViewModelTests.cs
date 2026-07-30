@@ -366,6 +366,29 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public void LogFilter_MeldetPropertyChanged_DamitDieAnzeigeNeuZeichnet()
+        {
+            // Die Protokollanzeige der Einstellungsseite hängt nicht per Binding am ViewModel —
+            // der RichTextBlock wird im Code-Behind von Hand gefüllt. Es gibt also nur ein
+            // Signal, an dem die Seite ein Neuzeichnen erkennen kann: diese Meldungen. Fehlen
+            // sie, wirkt der Filter erst beim nächsten Klick auf "Aktualisieren".
+            FakeLogViewerCoordinator coordinator = new();
+            coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Spotify gestartet", "Import", []));
+
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+
+            List<string?> gemeldet = [];
+            vm.PropertyChanged += (_, e) => gemeldet.Add(e.PropertyName);
+
+            vm.LogSearchText = "spotify";
+            vm.LogMinimumLevel = LogLevel.Warning;
+
+            Assert.Contains(nameof(SettingsViewModel.LogSearchText), gemeldet);
+            Assert.Contains(nameof(SettingsViewModel.LogMinimumLevel), gemeldet);
+        }
+
+        [Fact]
         public void RefreshLogs_FiltersByMinimumLevel()
         {
             // Level-Filter: nur Einträge ab Warning sichtbar

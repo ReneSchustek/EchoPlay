@@ -160,6 +160,13 @@ namespace EchoPlay.App.Services
                         _logger.Debug(() => $"URL-Nachtrag \"{series.Title}\": {missingUrl.Count} geprüft, {updatedForSeries} URLs gesetzt.");
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    // Abbruch ist kein Serien-Fehler. Ohne diesen Zweig hätte der catch darunter
+                    // ihn als Warnung protokolliert und die Schleife wäre bis zur
+                    // IsCancellationRequested-Prüfung der nächsten Runde weitergelaufen.
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     // Einzelne Serien-Fehler nicht abbrechen

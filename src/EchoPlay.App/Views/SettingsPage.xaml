@@ -575,10 +575,14 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
+                        <!-- UpdateSourceTrigger=PropertyChanged ist hier Pflicht, kein Feinschliff:
+                             x:Bind überträgt TextBox.Text sonst erst beim Fokusverlust. Der Filter
+                             hätte dann während des Tippens keine Wirkung, und wer nach der Eingabe
+                             direkt in die Liste schaut, sieht den alten Stand. -->
                         <TextBox
                             x:Uid="LogSearchBox"
                             Grid.Column="0"
-                            Text="{x:Bind ViewModel.LogSearchText, Mode=TwoWay}"/>
+                            Text="{x:Bind ViewModel.LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <ComboBox
                             Grid.Column="1"
                             SelectedIndex="{x:Bind ViewModel.LogLevelFilterIndex, Mode=TwoWay}"

@@ -289,6 +289,12 @@ namespace EchoPlay.App.Services
                             await _coverService.SetEpisodeCoverAsync(episode.Id, bytes, episode.CoverImageUrl, ct);
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        // Gleiche Behandlung wie in Phase 1 darüber: Der Nutzer hat die
+                        // Detailseite verlassen, das ist kein Fehlschlag dieser Folge.
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         _logger.Debug(() => $"Priority Provider-Cover fehlgeschlagen für \"{episode.Title}\": {ex.Message}");

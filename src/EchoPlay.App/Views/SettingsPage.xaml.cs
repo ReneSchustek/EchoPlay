@@ -59,6 +59,7 @@ namespace EchoPlay.App.Views
             base.OnNavigatedTo(e);
 
             ViewModel.PatternSelectionRequested += OnPatternSelectionRequested;
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
@@ -93,6 +94,9 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatingFrom(e);
             ViewModel.PatternSelectionRequested -= OnPatternSelectionRequested;
+            // Vor dem Dispose abmelden: Der Handler schreibt in den RichTextBlock, der nach der
+            // Navigation nicht mehr geladen ist - gleiche Falle wie beim Live-Timer unten.
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.Dispose();
         }
 

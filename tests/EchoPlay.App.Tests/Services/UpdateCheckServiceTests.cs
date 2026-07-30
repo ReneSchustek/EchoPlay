@@ -172,6 +172,96 @@ namespace EchoPlay.App.Tests.Services
             return (service, handler);
         }
 
+        [Fact]
+        public async Task CheckForUpdateAsync_ReleaseOhneHashZeile_BietetKeinUpdateAn()
+        {
+            // Ein Release ohne brauchbaren Hash ist nicht installierbar — der Downloader lehnt
+            // es ohnehin ab. Es anzubieten hieße, zu einem Update einzuladen, das systematisch
+            // scheitert; genau das ist am 30.07.2026 an der laufenden App aufgefallen.
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings, new ReleaseJsonHandler(ReleaseJson("v99.0.0", body: "Kein Hash hier drin.")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_ReleaseMitHashZeile_BietetUpdateAn()
+        {
+            // Gegenstück: Mit gültiger Hash-Zeile kommt das Angebot durch — sonst würde der
+            // Test darüber auch bei einem kaputten Update-Check bestehen.
+            const string hash = "d3811116eb3683555d77374287d21a44286c78f2818057b43a20e402ec57c172";
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings, new ReleaseJsonHandler(ReleaseJson("v99.0.0", body: $"Neue Version.\n\nSHA256: {hash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result);
+            Assert.Equal("99.0.0", result.Version);
+            Assert.Equal(hash, result.ExpectedSha256);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_HashZeileErscheintNichtInDenReleaseNotes()
+        {
+            // 64 Hex-Zeichen sagen dem Nutzer nichts und verdrängen im Dialog, was ihn
+            // interessiert. Der Hash bleibt als ExpectedSha256 erhalten, nur die Anzeige nicht.
+            const string hash = "d3811116eb3683555d77374287d21a44286c78f2818057b43a20e402ec57c172";
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings,
+                new ReleaseJsonHandler(ReleaseJson(
+                    "v99.0.0",
+                    body: $"Neue Version mit zwei Korrekturen.\n\n**Integritätsprüfung**\n\nSHA256: {hash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result);
+            Assert.Equal(hash, result.ExpectedSha256);
+            Assert.DoesNotContain(hash, result.ReleaseNotes, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("SHA", result.ReleaseNotes, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("zwei Korrekturen", result.ReleaseNotes, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("Nur Text ohne Hash.", "Nur Text ohne Hash.")]
+        [InlineData("", "")]
+        public void StripSha256Line_OhneHash_LaesstDenTextUnveraendert(string body, string erwartet)
+        {
+            Assert.Equal(erwartet, UpdateCheckService.StripSha256Line(body));
+        }
+
+        private static string ReleaseJson(string tag, string body) =>
+            $$"""
+            {
+              "tag_name": "{{tag}}",
+              "body": {{System.Text.Json.JsonSerializer.Serialize(body)}},
+              "assets": [
+                {
+                  "name": "EchoPlay-Setup-{{tag}}.exe",
+                  "browser_download_url": "https://github.com/ReneSchustek/EchoPlay/releases/download/{{tag}}/EchoPlay-Setup-{{tag}}.exe",
+                  "size": 80000000
+                }
+              ]
+            }
+            """;
+
+        private sealed class ReleaseJsonHandler : HttpMessageHandler
+        {
+            private readonly string _json;
+
+            public ReleaseJsonHandler(string json) => _json = json;
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+                => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(_json, System.Text.Encoding.UTF8, "application/json")
+                });
+        }
+
         private static UpdateCheckService BuildServiceWithHandler(
             FakeAppSettingsDataService settings,
             HttpMessageHandler handler)

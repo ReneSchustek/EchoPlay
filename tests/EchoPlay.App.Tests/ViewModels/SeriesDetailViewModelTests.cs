@@ -6,7 +6,6 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -300,7 +299,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeBackgroundCoverService fakeBackground = new(
                 scopeFactory,
-                new TestHttpClientFactory())
+                new FakeCoverDownloader())
             {
                 PriorityHold = new TaskCompletionSource()
             };
@@ -370,15 +369,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Position = TimeSpan.Zero bedeutet: von vorne starten
             Assert.Equal(TimeSpan.Zero, playerService.PlayCalls[0].ResumePosition);
-        }
-
-        /// <summary>
-        /// HttpClientFactory-Fake, den der <see cref="FakeBackgroundCoverService"/>
-        /// beim Konstruieren der Basisklasse erwartet.
-        /// </summary>
-        private sealed class TestHttpClientFactory : IHttpClientFactory
-        {
-            public HttpClient CreateClient(string name) => new();
         }
     }
 }

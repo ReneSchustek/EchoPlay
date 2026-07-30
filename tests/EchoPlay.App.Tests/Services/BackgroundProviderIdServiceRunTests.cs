@@ -44,7 +44,6 @@ namespace EchoPlay.App.Tests.Services
 
             BackgroundProviderIdService service = new(
                 provider2.GetRequiredService<IServiceScopeFactory>(),
-                new FakeSpotifyCredentialStore(),
                 new SemaphoreHostRateLimiter(new Dictionary<string, TimeSpan>()),
                 new FakeLoggerFactory());
 

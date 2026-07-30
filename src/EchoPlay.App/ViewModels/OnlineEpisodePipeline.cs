@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -277,21 +276,19 @@ namespace EchoPlay.App.ViewModels
         {
             ApplyEpisodeCoverCallCount++;
 
-            try
+            // Netzwerkfehler ergeben null — dann bleibt der Platzhalter stehen.
+            byte[]? coverBytes = await _ctx.CoverDownloader.DownloadAsync(hit.FullUrl);
+            if (coverBytes is null)
             {
-                HttpClient client = _ctx.HttpClientFactory.CreateClient("CoverDownload");
-                byte[] coverBytes = await client.GetByteArrayAsync(new Uri(hit.FullUrl, UriKind.Absolute));
-                await _ctx.CoverService.SetEpisodeCoverAsync(card.EpisodeId, coverBytes);
-
-                BitmapImage? image = await CoverService.ConvertToBitmapAsync(coverBytes);
-                if (image is not null)
-                {
-                    card.CoverImage = image;
-                }
+                return;
             }
-            catch (HttpRequestException)
+
+            await _ctx.CoverService.SetEpisodeCoverAsync(card.EpisodeId, coverBytes);
+
+            BitmapImage? image = await CoverService.ConvertToBitmapAsync(coverBytes);
+            if (image is not null)
             {
-                // Netzwerkfehler → Platzhalter bleibt
+                card.CoverImage = image;
             }
         }
 

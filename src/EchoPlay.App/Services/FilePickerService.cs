@@ -19,9 +19,8 @@ namespace EchoPlay.App.Services
                 "FilePickerService: MainWindow ist nicht gesetzt — Picker kann ohne aktiviertes Fenster nicht laufen.");
 
         /// <inheritdoc/>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="startLocation">Startort des Dialogs, z. B. die Musikbibliothek.</param>
-        public async Task<StorageFolder?> PickFolderAsync(PickerLocationId startLocation = PickerLocationId.Unspecified, CancellationToken cancellationToken = default)
+        public async Task<StorageFolder?> PickFolderAsync(PickerLocationId startLocation = PickerLocationId.Unspecified)
         {
             FolderPicker picker = new()
             {
@@ -38,7 +37,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task<IReadOnlyList<StorageFile>> PickFilesAsync(
             IReadOnlyList<string> fileTypeFilters,
-            PickerLocationId startLocation = PickerLocationId.Unspecified, CancellationToken cancellationToken = default)
+            PickerLocationId startLocation = PickerLocationId.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(fileTypeFilters);
 
@@ -60,7 +59,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public async Task<StorageFile?> PickFileAsync(
             IReadOnlyList<string> fileTypeFilters,
-            PickerLocationId startLocation = PickerLocationId.Unspecified, CancellationToken cancellationToken = default)
+            PickerLocationId startLocation = PickerLocationId.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(fileTypeFilters);
 
@@ -84,7 +83,7 @@ namespace EchoPlay.App.Services
             string suggestedFileName,
             string fileTypeDescription,
             IReadOnlyList<string> fileTypeFilters,
-            PickerLocationId startLocation = PickerLocationId.Unspecified, CancellationToken cancellationToken = default)
+            PickerLocationId startLocation = PickerLocationId.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(fileTypeFilters);
 

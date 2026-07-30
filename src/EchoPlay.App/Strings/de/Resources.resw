@@ -1115,6 +1115,9 @@
   <data name="ConnectionFailed" xml:space="preserve">
     <value>Verbindung fehlgeschlagen</value>
   </data>
+  <data name="ConnectionTestNoProvider" xml:space="preserve">
+    <value>Kein Anbieter konfiguriert</value>
+  </data>
   <data name="ResetRunning" xml:space="preserve">
     <value>Bibliothek wird zurückgesetzt …</value>
   </data>

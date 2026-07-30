@@ -61,6 +61,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddHttpClient();
             _ = services.AddSingleton<CoverService>();
             _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
+            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
             _ = services.AddSingleton<EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();
@@ -80,7 +81,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 CoverService: provider.GetRequiredService<CoverService>(),
                 BackgroundCoverService: null,
                 WatchToggleService: null,
-                HttpClientFactory: provider.GetRequiredService<System.Net.Http.IHttpClientFactory>(),
+                CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
                 RateLimiter: null);
         }
 

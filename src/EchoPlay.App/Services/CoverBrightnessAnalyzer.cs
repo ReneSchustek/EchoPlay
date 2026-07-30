@@ -24,9 +24,15 @@ namespace EchoPlay.App.Services
         /// <see langword="true"/> wenn der Bereich hell ist (Helligkeit > 128),
         /// <see langword="false"/> wenn dunkel. Null bei Fehler.
         /// </returns>
+        /// <exception cref="ArgumentNullException">Wenn <paramref name="coverBytes"/> null ist.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Helligkeitsanalyse via WinRT BitmapDecoder: kaputte JPEG/PNG-Header, unsupportete Pixel-Formate oder COM-Fehler aus dem WIC-Stack werden zu 'null' normalisiert – der Aufrufer behandelt das als 'Helligkeit unbekannt'.")]
         public static async Task<bool?> AnalyzeBrightnessFromBytesAsync(byte[] coverBytes)
         {
+            // Guard vor dem try: ohne ihn wäre die NullReferenceException aus AsBuffer()
+            // vom CA1031-Catch zu "Helligkeit unbekannt" verschluckt worden — der Aufrufer
+            // hätte den Programmierfehler nie gesehen.
+            ArgumentNullException.ThrowIfNull(coverBytes);
+
             try
             {
                 using InMemoryRandomAccessStream stream = new();

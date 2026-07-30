@@ -131,7 +131,7 @@ namespace EchoPlay.App.Tests.Services
             BackgroundCoverService service = new(
                 scopeFactory,
                 coverService,
-                new FakeHttpClientFactory(),
+                new CoverDownloader(new FakeHttpClientFactory(), loggerFactory),
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions
                 {
@@ -335,7 +335,7 @@ namespace EchoPlay.App.Tests.Services
                 new FakeLoggerFactory(),
                 new FakeCoverService(),
                 clock,
-                sp.GetRequiredService<IHttpClientFactory>()));
+                new CoverDownloader(sp.GetRequiredService<IHttpClientFactory>(), new FakeLoggerFactory())));
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
@@ -345,7 +345,7 @@ namespace EchoPlay.App.Tests.Services
             BackgroundCoverService service = new(
                 scopeFactory,
                 coverService,
-                httpFactory,
+                new CoverDownloader(httpFactory, loggerFactory),
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions
                 {
@@ -428,7 +428,7 @@ namespace EchoPlay.App.Tests.Services
             return new BackgroundCoverService(
                 scopeFactory,
                 coverService,
-                httpClientFactory,
+                new CoverDownloader(httpClientFactory, loggerFactory),
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions
                 {

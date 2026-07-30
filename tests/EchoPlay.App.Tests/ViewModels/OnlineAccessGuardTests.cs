@@ -170,6 +170,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddHttpClient();
             _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
             _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
+            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
             _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();

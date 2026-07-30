@@ -8,13 +8,13 @@
        nach dist\setup-publish — eine lauffähige App ohne vorinstallierte Runtime, ohne MSIX,
        ohne Code-Signing-Zertifikat.
     2. Kompiliert EchoPlay.Setup\EchoPlay.Setup.iss mit Inno Setup 6 zur Setup.exe.
-    3. Spiegelt den Publish nach <Distribution>\EchoPlay und kopiert die Setup.exe nach
-       <Distribution>\EchoPlay-Setup-v<Version>.exe.
+    3. Spiegelt den Publish nach <Distribution>\EchoPlay und legt die Setup.exe
+       dazu — beides im selben Ordner.
     4. Berechnet den SHA-256 der Setup.exe (für den GitHub-Release-Body — der Auto-Updater
        verifiziert die heruntergeladene Datei gegen diesen Hash).
 
     Ergebnis:
-        <Distribution>\EchoPlay-Setup-v<Version>.exe
+        <Distribution>\EchoPlay\EchoPlay-Setup-v<Version>.exe
         <Distribution>\EchoPlay\...   (alle relevanten App-Dateien)
 
 .PARAMETER Version
@@ -84,7 +84,10 @@ $setupName = "EchoPlay-Setup-v$Version.exe"
 $setupBuilt = Join-Path $distInternal $setupName
 if (-not (Test-Path $setupBuilt)) { throw "Setup.exe nicht gefunden: $setupBuilt" }
 
-# Verteilung: App-Dateien nach <Distribution>\EchoPlay spiegeln, Setup.exe daneben legen.
+# Verteilung: App-Dateien und Setup.exe zusammen nach <Distribution>\EchoPlay. Im
+# Verteilverzeichnis liegen die Auslieferungen mehrerer Projekte nebeneinander; eine
+# Setup.exe an der Wurzel gehoert optisch zu keinem davon und wird beim Aufraeumen
+# leicht uebersehen.
 Write-Host "Verteile nach $Distribution ..." -ForegroundColor Cyan
 $distApp = Join-Path $Distribution 'EchoPlay'
 if (-not (Test-Path $Distribution)) { New-Item -ItemType Directory -Force $Distribution | Out-Null }
@@ -92,7 +95,7 @@ if (Test-Path $distApp) { Remove-Item -Recurse -Force $distApp }
 New-Item -ItemType Directory -Force $distApp | Out-Null
 Copy-Item -Path (Join-Path $publishDir '*') -Destination $distApp -Recurse -Force
 
-$setupDist = Join-Path $Distribution $setupName
+$setupDist = Join-Path $distApp $setupName
 Copy-Item -Path $setupBuilt -Destination $setupDist -Force
 
 # SHA-256 für den GitHub-Release-Body.

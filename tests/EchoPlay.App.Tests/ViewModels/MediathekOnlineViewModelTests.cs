@@ -49,6 +49,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddHttpClient();
             _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
             _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
+            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
             _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();
@@ -64,7 +65,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeErrorDialogService(),
                 new FakeLocalizationService(),
                 new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<System.Net.Http.IHttpClientFactory>());
+                provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>());
         }
 
         [Fact]
@@ -303,6 +304,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddHttpClient();
             _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
             _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
+            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
             _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
 
             ServiceProvider provider = services.BuildServiceProvider();
@@ -318,7 +320,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeErrorDialogService(),
                 new FakeLocalizationService(),
                 new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<System.Net.Http.IHttpClientFactory>());
+                provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>());
 
             await vm.LoadAsync();
             vm.StatusFilter = SeriesStatusFilter.Neu;

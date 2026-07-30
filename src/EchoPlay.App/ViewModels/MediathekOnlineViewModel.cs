@@ -6,7 +6,6 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
-using System.Net.Http;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
@@ -46,7 +45,7 @@ namespace EchoPlay.App.ViewModels
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
             IOnlineAccessGuard onlineAccessGuard,
-            IHttpClientFactory httpClientFactory,
+            ICoverDownloader coverDownloader,
             EpisodeCoverCacheService? coverCacheService = null,
             ICoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null,
@@ -76,7 +75,7 @@ namespace EchoPlay.App.ViewModels
                 coverService!,
                 backgroundCoverService,
                 watchToggleService,
-                httpClientFactory,
+                coverDownloader,
                 rateLimiter);
 
             _actions = new MediathekOnlineActions(

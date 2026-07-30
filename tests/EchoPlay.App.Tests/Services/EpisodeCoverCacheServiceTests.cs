@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.Services
                 new FakeLoggerFactory(),
                 new FakeCoverService(),
                 clock ?? new FakeClock(),
-                provider.GetRequiredService<System.Net.Http.IHttpClientFactory>());
+                new CoverDownloader(provider.GetRequiredService<System.Net.Http.IHttpClientFactory>(), new FakeLoggerFactory()));
 
             SeriesId = series.Id;
             return (service, coverCopy, episodeService);

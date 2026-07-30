@@ -1,6 +1,5 @@
 using EchoPlay.App.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -19,6 +18,6 @@ namespace EchoPlay.App.ViewModels
         ICoverService CoverService,
         BackgroundCoverService? BackgroundCoverService,
         IWatchToggleService? WatchToggleService,
-        IHttpClientFactory HttpClientFactory,
+        ICoverDownloader CoverDownloader,
         IHostRateLimiter? RateLimiter);
 }

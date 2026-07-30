@@ -53,6 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddHttpClient();
             _ = services.AddSingleton<CoverService>();
             _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
+            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
             _ = services.AddSingleton<EpisodeCoverCacheService>();
             ServiceProvider provider = services.BuildServiceProvider();
             ImportService importService = new(

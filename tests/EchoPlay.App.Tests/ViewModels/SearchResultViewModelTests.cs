@@ -129,16 +129,15 @@ namespace EchoPlay.App.Tests.ViewModels
 
         private static FakeBackgroundCoverService BuildFakeBackgroundCoverService()
         {
-            // Minimale DI-Infrastruktur: BackgroundCoverService verlangt einen Scope-Factory
-            // und einen HttpClientFactory, beide werden vom Such-Treffer-Pfad nicht erreicht
+            // Minimale DI-Infrastruktur: BackgroundCoverService verlangt eine Scope-Factory
+            // und einen Cover-Downloader, beide werden vom Such-Treffer-Pfad nicht erreicht
             // (der Fake überschreibt RequestCoverForSearchResultAsync vollständig).
             ServiceCollection services = new();
-            _ = services.AddHttpClient();
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new FakeBackgroundCoverService(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>());
+                new FakeCoverDownloader());
         }
     }
 }

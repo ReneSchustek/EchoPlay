@@ -12,6 +12,16 @@ namespace EchoPlay.App.Tests.Services
     public sealed class CoverBrightnessAnalyzerTests
     {
         [Fact]
+        public async Task AnalyzeBrightnessFromBytesAsync_Null_WirftArgumentNullException()
+        {
+            // Abgrenzung zu den drei Tests darunter: kaputte Bilddaten sind ein Betriebsfall
+            // und ergeben null. Kein Array ist ein Programmierfehler und muss auffallen,
+            // statt still als "Helligkeit unbekannt" durchzugehen.
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(
+                () => CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(null!));
+        }
+
+        [Fact]
         public async Task AnalyzeBrightnessFromBytesAsync_EmptyArray_ReturnsNull()
         {
             bool? result = await CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(Array.Empty<byte>());

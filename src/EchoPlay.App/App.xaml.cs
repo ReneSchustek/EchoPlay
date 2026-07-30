@@ -583,7 +583,7 @@ namespace EchoPlay.App
             // ihren Client über IHttpClientFactory, statt eigene statische Instanzen
             // zu halten. Damit greifen einheitliche Timeouts, User-Agent-Header und
             // einheitliche Polly-Resilience-Policies an einer Stelle.
-            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder coverDownloadBuilder = builder.Services.AddHttpClient("CoverDownload", client =>
+            Microsoft.Extensions.DependencyInjection.IHttpClientBuilder coverDownloadBuilder = builder.Services.AddHttpClient(CoverDownloader.HttpClientName, client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-CoverDownload/1.0");
@@ -767,6 +767,10 @@ namespace EchoPlay.App
             // ImportService als Singleton – nutzt eigenen DI-Scope intern via IServiceScopeFactory.
             _ = builder.Services.AddSingleton<ImportService>();
 
+            // CoverDownloader als Singleton – einzige Stelle, die Cover-Bytes per HTTP holt.
+            // Vier Dienste hatten den Abruf vorher je selbst implementiert (Arbeitspaket 451).
+            _ = builder.Services.AddSingleton<ICoverDownloader, CoverDownloader>();
+
             // EpisodeCoverCacheService als Singleton – lädt fehlende Episoden-Cover im Hintergrund.
             // Eigener Service statt Teil von ImportService, damit die LocalLibrary-Assembly
             // nicht beim Laden des ImportService-Typs geladen wird (COM-Problem in Tests).
@@ -861,7 +865,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<ILocalizationService>(),
                 provider.GetRequiredService<IOnlineAccessGuard>(),
-                provider.GetRequiredService<IHttpClientFactory>(),
+                provider.GetRequiredService<ICoverDownloader>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<ICoverService>(),
                 provider.GetRequiredService<BackgroundCoverService>(),

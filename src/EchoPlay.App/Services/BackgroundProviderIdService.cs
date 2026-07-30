@@ -23,7 +23,6 @@ namespace EchoPlay.App.Services
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ISpotifyCredentialStore _credentialStore;
         private readonly IHostRateLimiter _rateLimiter;
         private readonly ILogger _logger;
         private CancellationTokenSource? _cts;
@@ -31,12 +30,10 @@ namespace EchoPlay.App.Services
 
         public BackgroundProviderIdService(
             IServiceScopeFactory scopeFactory,
-            ISpotifyCredentialStore credentialStore,
             IHostRateLimiter rateLimiter,
             ILoggerFactory loggerFactory)
         {
             _scopeFactory = scopeFactory;
-            _credentialStore = credentialStore;
             _rateLimiter = rateLimiter;
             _logger = loggerFactory.CreateLogger("BackgroundProviderIdService");
         }
@@ -140,11 +137,8 @@ namespace EchoPlay.App.Services
                 await EnrichAppleMusicIdsAsync(subscribedSeries, episodeService, ct);
             }
 
-            // Spotify-IDs nur mit Credentials
-            if (provider.Includes(ProviderType.Spotify) && _credentialStore.HasCredentials)
-            {
-                _logger.Info("Spotify-ID-Enrichment übersprungen (noch nicht implementiert, kommt mit Spotify-Search-Integration).");
-            }
+            // Spotify-IDs werden hier nicht ergänzt: die Spotify-Web-API-Suche ist bewusst
+            // nicht gebaut (Nutzer-Entscheidung), und die Album-IDs kommen beim Import mit.
         }
 
         private async Task EnrichAppleMusicIdsAsync(

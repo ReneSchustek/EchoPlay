@@ -8,7 +8,6 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -25,12 +24,19 @@ namespace EchoPlay.App.Services
         private readonly ILogger _logger;
         private readonly ICoverService _coverService;
         private readonly IClock _clock;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ICoverDownloader _coverDownloader;
 
         /// <summary>
         /// Cooldown in Tagen: Erfolglose Cover-Suchen werden erst nach Ablauf dieser Frist wiederholt.
         /// </summary>
         private const int CooldownDays = 7;
+
+        /// <summary>
+        /// Pause zwischen zwei Online-Suchen. Verteilt die Last auf die Anbieter, statt alle
+        /// coverlosen Folgen einer Serie in einem Burst abzufeuern. Gleicher Wert wie
+        /// <c>BackgroundCoverService.SeriesSearchPause</c>.
+        /// </summary>
+        private static readonly TimeSpan OnlineSearchPause = TimeSpan.FromMilliseconds(200);
 
         /// <summary>
         /// Initialisiert den Cover-Cache-Service.
@@ -39,20 +45,20 @@ namespace EchoPlay.App.Services
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="coverService">Singleton-Dienst für Cover-Operationen über die CoverImages-Tabelle.</param>
         /// <param name="clock">Zeitquelle für Cooldown-Berechnung.</param>
-        /// <param name="httpClientFactory">Fabrik für benannte HTTP-Clients.</param>
+        /// <param name="coverDownloader">Lädt die Bilddaten hinter einer Cover-URL.</param>
         public EpisodeCoverCacheService(
             IServiceScopeFactory scopeFactory,
             ILoggerFactory loggerFactory,
             ICoverService coverService,
             IClock clock,
-            IHttpClientFactory httpClientFactory)
+            ICoverDownloader coverDownloader)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("EpisodeCoverCacheService");
             _coverService = coverService;
             _clock = clock;
-            _httpClientFactory = httpClientFactory;
+            _coverDownloader = coverDownloader;
         }
 
         /// <summary>
@@ -185,11 +191,13 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Cover-Suche für {EpisodeCount} Episoden von \"{SeriesName}\"", needsCheck.Count, seriesName);
 
-            // ── Phase 2: Provider-URLs herunterladen (parallel, schnell) ────────
+            // ── Phase 2: Provider-URLs herunterladen (sequentiell) ─────────────
 
             int downloaded = 0;
 
-            // Erst alle Provider-Downloads sammeln (kein Rate-Limiting nötig)
+            // Sequentiell und ohne Rate-Limiter: die URLs stehen schon fest, es ist ein
+            // Abruf je Folge, und die Bilder liegen auf den CDN-Hosts der Anbieter — nicht
+            // auf deren API-Endpunkten, für die das Wartelimit gilt.
             foreach (Episode episode in needsCheck)
             {
                 ct.ThrowIfCancellationRequested();
@@ -197,7 +205,7 @@ namespace EchoPlay.App.Services
 
                 try
                 {
-                    byte[]? coverBytes = await DownloadSafeAsync(providerUrl, ct);
+                    byte[]? coverBytes = await _coverDownloader.DownloadAsync(providerUrl, ct);
 
                     if (coverBytes is not null)
                     {
@@ -258,7 +266,7 @@ namespace EchoPlay.App.Services
                     await writeService.SetCoverLastCheckedAsync(episode.Id, _clock.UtcNow, ct);
 
                     // Rate-Limiting nur bei Online-Suche (HTTP-Requests gegen externe APIs)
-                    await Task.Delay(200, ct).ConfigureAwait(false);
+                    await Task.Delay(OnlineSearchPause, ct).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -319,7 +327,7 @@ namespace EchoPlay.App.Services
 
                     if (best is not null)
                     {
-                        byte[]? bytes = await DownloadSafeAsync(best.FullUrl, cancellationToken);
+                        byte[]? bytes = await _coverDownloader.DownloadAsync(best.FullUrl, cancellationToken);
                         if (bytes is not null) return bytes;
                     }
                 }
@@ -386,25 +394,6 @@ namespace EchoPlay.App.Services
 
             // Nur Treffer über der Mindest-Schwelle zurückgeben
             return bestScore >= CoverRelevanceScorer.MinimumThreshold ? best : null;
-        }
-
-        /// <summary>
-        /// Lädt ein Bild von einer URL. Null bei Fehler.
-        /// </summary>
-        /// <param name="url">Absolute Cover-URL.</param>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, TLS-, Redirect- oder Timeout-Fehler beim Laden einzelner Cover-URLs werden zu 'null' normalisiert; der Aufrufer überspringt diese Episode und fährt mit der nächsten fort.")]
-        private async Task<byte[]?> DownloadSafeAsync(string url, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute), cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
         }
     }
 }

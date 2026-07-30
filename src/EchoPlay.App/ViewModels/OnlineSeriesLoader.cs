@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
@@ -154,7 +153,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Lädt fehlende Serien-Cover von der Provider-URL herunter und speichert sie in der DB.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cache-Aufbau für Serien-Cover: HTTP-/IO-/DB-Fehler einer einzelnen Serie dürfen die Kachel-Ansicht nicht stören; Fehler werden lediglich geloggt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Cache-Aufbau für Serien-Cover: IO-/DB-/Decoder-Fehler einer einzelnen Serie dürfen die Kachel-Ansicht nicht stören. HTTP-Fehler normalisiert bereits der ICoverDownloader.")]
         private async Task CacheSeriesCoversAsync(IReadOnlyList<Series> seriesList)
         {
             CacheCallCount++;
@@ -182,15 +181,14 @@ namespace EchoPlay.App.ViewModels
                     continue;
                 }
 
+                byte[]? coverBytes = await _ctx.CoverDownloader.DownloadAsync(series.CoverImageUrl);
+                if (coverBytes is null)
+                {
+                    continue;
+                }
+
                 try
                 {
-                    HttpClient client = _ctx.HttpClientFactory.CreateClient("CoverDownload");
-                    byte[] coverBytes = await client.GetByteArrayAsync(new Uri(series.CoverImageUrl, UriKind.Absolute));
-                    if (coverBytes.Length == 0)
-                    {
-                        continue;
-                    }
-
                     await _ctx.CoverService.SetSeriesCoverAsync(series.Id, coverBytes, series.CoverImageUrl);
 
                     SeriesCardViewModel? card = _seriesVM.AllSeries.FirstOrDefault(c => c.Id == series.Id);
@@ -205,7 +203,7 @@ namespace EchoPlay.App.ViewModels
                 }
                 catch (Exception)
                 {
-                    // Netzwerkfehler oder abgelaufene URL → Platzhalter bleibt
+                    // DB-Schreibfehler oder ein Bild, das der Decoder nicht mag → Platzhalter bleibt
                 }
             }
         }

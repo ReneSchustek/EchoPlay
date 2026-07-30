@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Services
                 new AppCoverService(scopeFactory, new FakeLoggerFactory()),
                 new FakeConfirmationDialogService(),
                 new FakeErrorDialogService(),
-                provider.GetRequiredService<IHttpClientFactory>(),
+                new FakeCoverDownloader(),
                 new FakeLocalizationService());
         }
 

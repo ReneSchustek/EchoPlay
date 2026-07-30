@@ -57,7 +57,7 @@ namespace EchoPlay.App.Tests.Services
             // (keine DB-/Dateisystem-Arbeit). Tests, die den echten Pfad prüfen wollen, übergeben coverServiceOverride.
             BackgroundCoverService coverService = coverServiceOverride ?? new FakeBackgroundCoverService(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>());
+                new FakeCoverDownloader());
 
             return new StartupValidator(
                 provider.GetRequiredService<IServiceScopeFactory>(),
@@ -218,7 +218,7 @@ namespace EchoPlay.App.Tests.Services
 
             FakeBackgroundCoverService fakeCover = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>());
+                new FakeCoverDownloader());
 
             StartupValidator validator = BuildValidator(
                 settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
@@ -245,7 +245,7 @@ namespace EchoPlay.App.Tests.Services
 
             FakeBackgroundCoverService fakeCover = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>());
+                new FakeCoverDownloader());
 
             StartupValidator validator = BuildValidator(
                 settingsService: new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
@@ -296,7 +296,7 @@ namespace EchoPlay.App.Tests.Services
             BackgroundCoverService realService = new(
                 scopeFactory,
                 new CoverService(scopeFactory, loggerFactory),
-                provider.GetRequiredService<IHttpClientFactory>(),
+                new CoverDownloader(provider.GetRequiredService<IHttpClientFactory>(), loggerFactory),
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions(),
                 loggerFactory,

@@ -26,12 +26,14 @@ namespace EchoPlay.App.Tests.Services
         {
             ServiceCollection services = new();
             ServiceProvider provider = services.BuildServiceProvider();
-            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory());
+            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLocalizationService(), new FakeLoggerFactory());
 
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.None, CancellationToken.None);
 
             Assert.False(result.Success);
-            Assert.Equal("No provider configured", result.ErrorDetail);
+            // FakeLocalizationService liefert den Schlüssel selbst zurück — genau das ist hier
+            // der Beweis: der Text kommt aus den Ressourcen, nicht mehr hartkodiert aus dem Code.
+            Assert.Equal("ConnectionTestNoProvider", result.ErrorDetail);
         }
 
         [Fact]
@@ -40,7 +42,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<ISpotifyApiClient>(_ => new ThrowingSpotifyClient(new HttpRequestException("offline")));
             ServiceProvider provider = services.BuildServiceProvider();
-            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory());
+            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLocalizationService(), new FakeLoggerFactory());
 
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.Spotify, CancellationToken.None);
 
@@ -54,7 +56,7 @@ namespace EchoPlay.App.Tests.Services
             ServiceCollection services = new();
             _ = services.AddScoped<ISpotifyApiClient>(_ => new EmptyResultSpotifyClient());
             ServiceProvider provider = services.BuildServiceProvider();
-            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory());
+            ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLocalizationService(), new FakeLoggerFactory());
 
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.Spotify, CancellationToken.None);
 

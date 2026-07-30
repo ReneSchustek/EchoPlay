@@ -1113,6 +1113,9 @@
   <data name="ConnectionFailed" xml:space="preserve">
     <value>Connection failed</value>
   </data>
+  <data name="ConnectionTestNoProvider" xml:space="preserve">
+    <value>No provider configured</value>
+  </data>
   <data name="ResetRunning" xml:space="preserve">
     <value>Resetting library …</value>
   </data>

@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
             return new BackgroundCoverService(
                 scopeFactory,
                 coverService,
-                httpClientFactory,
+                new CoverDownloader(httpClientFactory, loggerFactory),
                 credentialStore,
                 options,
                 loggerFactory,

@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +30,7 @@ namespace EchoPlay.App.Services
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICoverService _coverService;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ICoverDownloader _coverDownloader;
         private readonly ISpotifyCredentialStore _credentialStore;
         private readonly BackgroundCoverServiceOptions _options;
         private readonly ILogger _logger;
@@ -69,7 +68,7 @@ namespace EchoPlay.App.Services
         public BackgroundCoverService(
             IServiceScopeFactory scopeFactory,
             ICoverService coverService,
-            IHttpClientFactory httpClientFactory,
+            ICoverDownloader coverDownloader,
             ISpotifyCredentialStore credentialStore,
             BackgroundCoverServiceOptions options,
             ILoggerFactory loggerFactory,
@@ -79,7 +78,7 @@ namespace EchoPlay.App.Services
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _coverService = coverService;
-            _httpClientFactory = httpClientFactory;
+            _coverDownloader = coverDownloader;
             _credentialStore = credentialStore;
             _options = options;
             _logger = loggerFactory.CreateLogger("BackgroundCoverService");
@@ -157,7 +156,7 @@ namespace EchoPlay.App.Services
                 seriesLocalLoaded + episodeLocalLoaded, seriesLocalLoaded, episodeLocalLoaded);
 
             // Phase 1c: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
-            int copied = await CopyLocalToOnlineAsync(cancellationToken);
+            int copied = await CopyLocalToOnlineAsync(ct);
             loaded += copied;
             _logger.Info("RunOnce Phase 1b (lokal→online Kopie): {Copied} Cover kopiert.", copied);
 
@@ -383,7 +382,7 @@ namespace EchoPlay.App.Services
 
                 if (loaded is null && !string.IsNullOrEmpty(episode.CoverImageUrl))
                 {
-                    loaded = await DownloadSafeAsync(episode.CoverImageUrl, cancellationToken);
+                    loaded = await _coverDownloader.DownloadAsync(episode.CoverImageUrl, cancellationToken);
                 }
 
                 if (loaded is not null)
@@ -482,7 +481,7 @@ namespace EchoPlay.App.Services
 
                     try
                     {
-                        byte[]? bytes = await DownloadSafeAsync(episode.CoverImageUrl, ct);
+                        byte[]? bytes = await _coverDownloader.DownloadAsync(episode.CoverImageUrl, ct);
                         if (bytes is not null)
                         {
                             await _coverService.SetEpisodeCoverAsync(episode.Id, bytes, episode.CoverImageUrl, ct);
@@ -703,19 +702,25 @@ namespace EchoPlay.App.Services
                     }
 
                     // Bestehende Episoden updaten
+                    int updatedForSeries = 0;
                     foreach (Episode episode in missingUrl)
                     {
                         if (titleToUrl.TryGetValue(episode.Title, out string? coverUrl))
                         {
                             episode.CoverImageUrl = coverUrl;
                             await episodeService.UpdateAsync(episode, ct);
-                            totalUpdated++;
+                            updatedForSeries++;
                         }
                     }
 
-                    if (totalUpdated > 0)
+                    totalUpdated += updatedForSeries;
+
+                    // Serien-lokal zählen: am akkumulierten Zähler hätte ab der ersten
+                    // erfolgreichen Serie jede weitere "URLs gesetzt" geloggt, auch die
+                    // ohne einen einzigen Treffer.
+                    if (updatedForSeries > 0)
                     {
-                        _logger.Debug(() => $"URL-Nachtrag \"{series.Title}\": {missingUrl.Count} geprüft, URLs gesetzt.");
+                        _logger.Debug(() => $"URL-Nachtrag \"{series.Title}\": {missingUrl.Count} geprüft, {updatedForSeries} URLs gesetzt.");
                     }
                 }
                 catch (Exception ex)
@@ -1010,14 +1015,14 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Lädt ein Cover wie <c>DownloadSafeAsync</c>, wartet davor aber auf den
+        /// Lädt ein Cover über den <see cref="ICoverDownloader"/>, wartet davor aber auf den
         /// <see cref="IHostRateLimiter"/> — mit <see cref="CoverFetchPriority.Background"/>,
         /// damit sichtbare UI-Anfragen Vorrang behalten.
         /// </summary>
         /// <param name="url">Absolute Cover-URL aus dem Suchtreffer.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Cover-URL stammt aus dem Suchergebnis der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie DownloadSafeAsync).")]
+            Justification = "Cover-URL stammt aus dem Suchergebnis der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie ICoverDownloader).")]
         private async Task<byte[]?> DownloadThrottledAsync(string url, CancellationToken ct)
         {
             if (_rateLimiter is not null && Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
@@ -1025,7 +1030,7 @@ namespace EchoPlay.App.Services
                 await _rateLimiter.WaitAsync(uri.Host, CoverFetchPriority.Background, ct).ConfigureAwait(false);
             }
 
-            return await DownloadSafeAsync(url, ct).ConfigureAwait(false);
+            return await _coverDownloader.DownloadAsync(url, ct).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1158,7 +1163,7 @@ namespace EchoPlay.App.Services
                 if (ct.IsCancellationRequested) break;
                 if (existingSeries.ContainsKey(series.Id)) continue;
 
-                byte[]? coverBytes = await DownloadSafeAsync(series.CoverImageUrl!, cancellationToken: ct);
+                byte[]? coverBytes = await _coverDownloader.DownloadAsync(series.CoverImageUrl!, cancellationToken: ct);
 
                 if (coverBytes is not null)
                 {
@@ -1226,7 +1231,7 @@ namespace EchoPlay.App.Services
                     if (ct.IsCancellationRequested) break;
                     if (existing.ContainsKey(episode.Id)) continue;
 
-                    byte[]? coverBytes = await DownloadSafeAsync(episode.CoverImageUrl!, cancellationToken: ct);
+                    byte[]? coverBytes = await _coverDownloader.DownloadAsync(episode.CoverImageUrl!, cancellationToken: ct);
 
                     if (coverBytes is not null)
                     {
@@ -1244,27 +1249,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Lädt Bilddaten von einer URL. Null bei Fehler.
-        /// </summary>
-        /// <param name="url">Absolute Cover-URL.</param>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download-Wrapper: HTTP-, Timeout-, TLS- oder Redirect-Fehler beim Laden einzelner Cover-URLs werden alle zu 'null' normalisiert, damit der Aufrufer die Episode überspringen und mit anderen weitermachen kann.")]
-        private async Task<byte[]?> DownloadSafeAsync(string url, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                byte[] data = await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute), cancellationToken).ConfigureAwait(false);
-                return data.Length > 0 ? data : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.Debug(() => $"Cover-Download fehlgeschlagen: {ex.Message} URL={url}");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Lädt das Cover für ein Such-Treffer-Element. Erst DB-First (falls die Serie
         /// bereits in der lokalen Bibliothek existiert und dort ein Cover hinterlegt ist),
         /// danach Provider-URL über <see cref="IHostRateLimiter"/> mit
@@ -1278,9 +1262,7 @@ namespace EchoPlay.App.Services
         /// <param name="ct">Abbruch-Token der laufenden Suche.</param>
         /// <returns>Cover-Bytes oder <see langword="null"/> bei Fehler/Abbruch ohne Daten.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Cover-URL stammt aus DTO der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie DownloadSafeAsync).")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types",
-            Justification = "Such-Treffer-Cover: HTTP-/Timeout-/TLS-Fehler einer einzelnen Provider-URL werden zu null normalisiert, damit die Trefferkachel den Platzhalter behält und die anderen Treffer weiterlaufen.")]
+            Justification = "Cover-URL stammt aus DTO der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie ICoverDownloader).")]
         public virtual async Task<byte[]?> RequestCoverForSearchResultAsync(
             string source, string sourceSeriesId, string coverUrl, CancellationToken ct = default)
         {
@@ -1299,18 +1281,7 @@ namespace EchoPlay.App.Services
                     await _rateLimiter.WaitAsync(uri.Host, CoverFetchPriority.Foreground, ct).ConfigureAwait(false);
                 }
 
-                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                byte[] data = await client.GetByteArrayAsync(uri, ct).ConfigureAwait(false);
-                return data.Length > 0 ? data : null;
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.Debug(() => $"Such-Treffer-Cover-Download fehlgeschlagen: {ex.Message} URL={coverUrl}");
-                return null;
+                return await _coverDownloader.DownloadAsync(coverUrl, ct).ConfigureAwait(false);
             }
             finally
             {

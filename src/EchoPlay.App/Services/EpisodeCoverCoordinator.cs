@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,9 +17,9 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Standard-Implementierung von <see cref="IEpisodeCoverCoordinator"/>.
-    /// Singleton: nutzt eigene DI-Scopes und einen statischen <see cref="HttpClient"/>,
-    /// damit die wiederholte Instanziierung des Transient-ViewModels keine Sockets
-    /// erschöpft.
+    /// Singleton: eigene DI-Scopes, und der Download läuft über den
+    /// <see cref="ICoverDownloader"/> mit gepooltem HTTP-Client — die wiederholte
+    /// Instanziierung des Transient-ViewModels erschöpft so keine Sockets.
     /// </summary>
     public sealed class EpisodeCoverCoordinator : IEpisodeCoverCoordinator
     {
@@ -29,7 +28,7 @@ namespace EchoPlay.App.Services
         private readonly ICoverService _coverService;
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly IErrorDialogService _errorDialogService;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ICoverDownloader _coverDownloader;
         private readonly ILocalizationService _localizationService;
 
         /// <summary>
@@ -41,7 +40,7 @@ namespace EchoPlay.App.Services
             ICoverService coverService,
             IConfirmationDialogService confirmationDialogService,
             IErrorDialogService errorDialogService,
-            IHttpClientFactory httpClientFactory,
+            ICoverDownloader coverDownloader,
             ILocalizationService localizationService)
         {
             _scopeFactory = scopeFactory;
@@ -49,7 +48,7 @@ namespace EchoPlay.App.Services
             _coverService = coverService;
             _confirmationDialogService = confirmationDialogService;
             _errorDialogService = errorDialogService;
-            _httpClientFactory = httpClientFactory;
+            _coverDownloader = coverDownloader;
             _localizationService = localizationService;
         }
 
@@ -110,7 +109,7 @@ namespace EchoPlay.App.Services
         public async Task ApplySelectedSeriesCoverAsync(LocalArtistCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(hit);
-            byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl, cancellationToken);
+            byte[]? bytes = await _coverDownloader.DownloadAsync(hit.FullUrl, cancellationToken);
             if (bytes is null)
             {
                 await _errorDialogService.ShowAsync(_localizationService.Get("CoverDownloadFailedTitle"), _localizationService.Get("CoverDownloadFailedMessage"), cancellationToken);
@@ -127,7 +126,7 @@ namespace EchoPlay.App.Services
         public async Task ApplySelectedEpisodeCoverAsync(LocalEpisodeCardViewModel card, CoverSearchHit hit, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(hit);
-            byte[]? bytes = await DownloadCoverBytesAsync(hit.FullUrl, cancellationToken);
+            byte[]? bytes = await _coverDownloader.DownloadAsync(hit.FullUrl, cancellationToken);
             if (bytes is null)
             {
                 await _errorDialogService.ShowAsync(_localizationService.Get("CoverDownloadFailedTitle"), _localizationService.Get("CoverDownloadFailedMessage"), cancellationToken);
@@ -198,29 +197,6 @@ namespace EchoPlay.App.Services
             catch (UnauthorizedAccessException)
             {
                 // Schreibrechte fehlen – kein kritisches Problem
-            }
-        }
-
-        /// <summary>
-        /// Lädt Bilddaten von der angegebenen URL als Byte-Array herunter.
-        /// Liefert <see langword="null"/> bei Netzwerk- oder HTTP-Fehlern – kein Throw.
-        /// </summary>
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <param name="url">Adresse des herunterzuladenden Bildes.</param>
-        private async Task<byte[]?> DownloadCoverBytesAsync(string url, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                HttpClient client = _httpClientFactory.CreateClient("CoverDownload");
-                return await client.GetByteArrayAsync(new Uri(url, UriKind.Absolute), cancellationToken);
-            }
-            catch (HttpRequestException)
-            {
-                return null;
-            }
-            catch (TaskCanceledException)
-            {
-                return null;
             }
         }
     }

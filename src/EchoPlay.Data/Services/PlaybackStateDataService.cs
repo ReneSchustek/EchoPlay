@@ -233,6 +233,25 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc />
         public async Task MarkCompletedAsync(Guid episodeId, DateTime completedAt, CancellationToken cancellationToken = default)
         {
+            await MarkOneCompletedAsync(episodeId, completedAt, cancellationToken).ConfigureAwait(false);
+
+            // Dieselbe Folge kann zweimal in der Bibliothek stehen — einmal lokal eingelesen,
+            // einmal vom Anbieter importiert. Wer sie hört, hat sie gehört, egal über welche
+            // Quelle. Ohne diesen Abgleich zeigt die andere Ansicht sie weiter als offen.
+            foreach (Guid counterpartId in await GetCounterpartIdsAsync(episodeId, cancellationToken).ConfigureAwait(false))
+            {
+                await MarkOneCompletedAsync(counterpartId, completedAt, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Setzt den Wiedergabestand einer einzelnen Folge auf „gehört".
+        /// </summary>
+        /// <param name="episodeId">Die betroffene Folge.</param>
+        /// <param name="completedAt">Zeitpunkt des Abschlusses.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        private async Task MarkOneCompletedAsync(Guid episodeId, DateTime completedAt, CancellationToken cancellationToken)
+        {
             PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken).ConfigureAwait(false);
 
             if (existing is not null)
@@ -250,6 +269,138 @@ namespace EchoPlay.Data.Services
 
         /// <inheritdoc />
         public async Task MarkNotStartedAsync(Guid episodeId, CancellationToken cancellationToken = default)
+        {
+            await MarkOneNotStartedAsync(episodeId, cancellationToken).ConfigureAwait(false);
+
+            // Gegenrichtung zum Abgleich in MarkCompletedAsync: Ohne sie würde der nächste
+            // Abgleich wiederherstellen, was der Nutzer gerade zurückgenommen hat.
+            foreach (Guid counterpartId in await GetCounterpartIdsAsync(episodeId, cancellationToken).ConfigureAwait(false))
+            {
+                await MarkOneNotStartedAsync(counterpartId, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<int> SynchronizeCompletionAcrossSourcesAsync(CancellationToken cancellationToken = default)
+        {
+            // Altbestand: Wer vor dieser Änderung lokal gehört hat, hat 900+ Folgen, die
+            // online weiter als offen gelten. Die Abfrage ist bewusst idempotent — beim
+            // ersten Lauf korrigiert sie den Rückstand, danach findet sie nichts mehr. Das
+            // ersetzt einen Einmal-Schalter samt Migration: Ein Zustand, der sich selbst
+            // erkennt, braucht kein Merkmal in den Einstellungen.
+            HashSet<Guid> completedIds = [.. await _context.PlaybackStates
+                .Where(state => state.IsCompleted)
+                .Select(state => state.EpisodeId)
+                .ToListAsync(cancellationToken).ConfigureAwait(false)];
+
+            if (completedIds.Count == 0)
+            {
+                return 0;
+            }
+
+            // Zuordnung über Serientitel + Folgennummer. Der Folgentitel wäre strenger, traf
+            // aber bei 0 von 925 Paaren der Produktivbibliothek zu — Begründung an
+            // GetCounterpartIdsAsync. Die Schlagwort-Stufe des Cover-Abgleichs bleibt trotzdem
+            // draußen: serienübergreifend zu raten ist eine andere Größenordnung.
+            List<EpisodeIdentityRow> rows = await _context.Episodes
+                .Where(episode => episode.EpisodeNumber != null)
+                .Select(episode => new EpisodeIdentityRow(
+                    episode.Id,
+                    episode.Series.Title,
+                    episode.EpisodeNumber!.Value))
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            DateTime uebernommenAm = DateTime.UtcNow;
+            int korrigiert = 0;
+
+            foreach (IGrouping<(string SeriesTitle, int Number), EpisodeIdentityRow> gruppe in rows
+                .GroupBy(row => (row.SeriesTitle, row.Number)))
+            {
+                if (!gruppe.Any(row => completedIds.Contains(row.EpisodeId)))
+                {
+                    continue;
+                }
+
+                foreach (EpisodeIdentityRow row in gruppe)
+                {
+                    if (completedIds.Contains(row.EpisodeId))
+                    {
+                        continue;
+                    }
+
+                    await MarkOneCompletedAsync(row.EpisodeId, uebernommenAm, cancellationToken).ConfigureAwait(false);
+                    korrigiert++;
+                }
+            }
+
+            if (korrigiert > 0)
+            {
+                _logger.Info(
+                    "Hörstatus-Abgleich: {Corrected} Folgen als gehört übernommen, weil dieselbe Folge über die andere Quelle gehört wurde.",
+                    korrigiert);
+            }
+
+            return korrigiert;
+        }
+
+        /// <summary>
+        /// Liefert die Folgen, die dieselbe Folge aus der anderen Quelle darstellen —
+        /// gleicher Serientitel, gleiche Folgennummer.
+        /// </summary>
+        /// <remarks>
+        /// Der Vergleich läuft über den Serien<em>titel</em>, nicht über die SeriesId: Genau
+        /// darum geht es, denn lokale und importierte Fassung derselben Serie sind zwei Zeilen.
+        /// <para>
+        /// <b>Der Folgentitel gehört bewusst nicht dazu.</b> Er wäre die strengere Zuordnung,
+        /// trifft in echten Daten aber nie: In der Produktivbibliothek stimmte er bei
+        /// <b>0 von 925</b> Paaren überein, weil die Quellen anders benennen — lokal
+        /// „Fünf Freunde beim Wanderzirkus", online „Folge 1: beim Wanderzirkus". Ein Abgleich
+        /// mit Titelvergleich lief nachweislich ins Leere.
+        /// </para>
+        /// <para>
+        /// Folgen ohne Nummer bleiben außen vor — bei ihnen bliebe nur der Titel, und der taugt
+        /// nach dem oben Gesagten nicht. Umgekehrt kann eine Nummer mehrfach belegt sein
+        /// (Kinofilm-Hörspiel neben der regulären Folge); dann werden beide mitgesetzt. Das ist
+        /// gewollt: Wer die Folge kennt, kennt die Auflösung, egal in welcher Fassung.
+        /// </para>
+        /// </remarks>
+        /// <param name="episodeId">Die gehörte Folge.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        private async Task<IReadOnlyList<Guid>> GetCounterpartIdsAsync(Guid episodeId, CancellationToken cancellationToken)
+        {
+            EpisodeIdentityRow? quelle = await _context.Episodes
+                .Where(episode => episode.Id == episodeId && episode.EpisodeNumber != null)
+                .Select(episode => new EpisodeIdentityRow(
+                    episode.Id,
+                    episode.Series.Title,
+                    episode.EpisodeNumber!.Value))
+                .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+            if (quelle is null)
+            {
+                return [];
+            }
+
+            return await _context.Episodes
+                .Where(episode => episode.Id != episodeId
+                    && episode.EpisodeNumber == quelle.Number
+                    && episode.Series.Title == quelle.SeriesTitle)
+                .Select(episode => episode.Id)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>Identität einer Folge für den quellenübergreifenden Abgleich.</summary>
+        /// <param name="EpisodeId">Die Folgen-Id.</param>
+        /// <param name="SeriesTitle">Titel der Serie — nicht deren Id, denn die unterscheidet die Quellen.</param>
+        /// <param name="Number">Folgennummer.</param>
+        private sealed record EpisodeIdentityRow(Guid EpisodeId, string SeriesTitle, int Number);
+
+        /// <summary>
+        /// Entfernt den Wiedergabestand einer einzelnen Folge.
+        /// </summary>
+        /// <param name="episodeId">Die betroffene Folge.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        private async Task MarkOneNotStartedAsync(Guid episodeId, CancellationToken cancellationToken)
         {
             PlaybackState? existing = await GetByEpisodeIdAsync(episodeId, cancellationToken).ConfigureAwait(false);
 

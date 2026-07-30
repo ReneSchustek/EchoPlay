@@ -205,6 +205,14 @@ namespace EchoPlay.App
                     IDatabaseMaintenanceService maintenance =
                         purgeScope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
                     await maintenance.PurgeAsync(dbPurgeDays);
+
+                    // Hörstatus quellenübergreifend abgleichen. Läuft hier mit, weil es
+                    // dieselbe Bedingung erfüllt: Wartungsarbeit, die den Start nicht aufhalten
+                    // darf. Der Aufruf ist idempotent — nach dem ersten Lauf findet er nichts
+                    // mehr und kostet eine Abfrage.
+                    IPlaybackStateDataService playbackStates =
+                        purgeScope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
+                    _ = await playbackStates.SynchronizeCompletionAcrossSourcesAsync();
                 }
                 catch (Exception ex)
                 {

@@ -32,10 +32,13 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <inheritdoc/>
         public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
+            CoverSearchPage page,
             CancellationToken ct = default) =>
             SearchJsonAsync<DiscogsSearchResponse, DiscogsRelease>(
                 title,
-                static (encodedTitle, maxResults) => $"https://api.discogs.com/database/search?q={encodedTitle}&type=release&per_page={maxResults}",
+                page,
+                // Discogs blättert über page, und zwar einsbasiert — daher Offset/Limit + 1.
+                static (encodedTitle, window) => $"https://api.discogs.com/database/search?q={encodedTitle}&type=release&per_page={window.Limit}&page={(window.Offset / window.Limit) + 1}",
                 static response => response.Results,
                 MapRelease,
                 ct);

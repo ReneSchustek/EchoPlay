@@ -32,8 +32,19 @@ namespace EchoPlay.LocalLibrary.Cover
             HttpClient = httpClient;
         }
 
+        /// <summary>
+        /// Kennt die API einen Versatz? MusicBrainz (<c>offset</c>) und Deezer (<c>index</c>)
+        /// tun es, die iTunes Search API nicht — dort wird mehr geholt und der bereits gezeigte
+        /// Anfang verworfen. Ableitungen ohne Versatz überschreiben das mit <c>false</c>.
+        /// </summary>
+        protected virtual bool SupportsOffset => true;
+
         /// <inheritdoc/>
-        public abstract Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default);
+        public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default) =>
+            SearchAsync(title, CoverSearchPage.First, ct);
+
+        /// <inheritdoc/>
+        public abstract Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CoverSearchPage page, CancellationToken ct = default);
 
         /// <summary>
         /// Führt eine Cover-Suche gegen eine JSON-API durch: kodiert den Titel, ruft die URL ab,
@@ -43,14 +54,16 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <typeparam name="TResponse">Der deserialisierte API-Antworttyp.</typeparam>
         /// <typeparam name="TItem">Der Typ eines einzelnen Treffers.</typeparam>
         /// <param name="title">Der Suchbegriff.</param>
-        /// <param name="buildUrl">Baut aus kodiertem Titel und <see cref="MaxResults"/> die Anfrage-URL.</param>
+        /// <param name="page">Welcher Abschnitt der Trefferliste geholt wird.</param>
+        /// <param name="buildUrl">Baut aus kodiertem Titel und Abschnitt die Anfrage-URL.</param>
         /// <param name="getItems">Liefert die Trefferliste aus der Antwort.</param>
         /// <param name="mapItem">Bildet einen Treffer ab oder liefert <c>null</c>, um ihn zu verwerfen.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Die abgebildeten Cover-Treffer.</returns>
         protected async Task<IReadOnlyList<CoverSearchResult>> SearchJsonAsync<TResponse, TItem>(
             string title,
-            Func<string, int, string> buildUrl,
+            CoverSearchPage page,
+            Func<string, CoverSearchWindow, string> buildUrl,
             Func<TResponse, IReadOnlyList<TItem>?> getItems,
             Func<TItem, string, CoverSearchResult?> mapItem,
             CancellationToken ct)
@@ -70,7 +83,7 @@ namespace EchoPlay.LocalLibrary.Cover
             try
             {
                 string encodedTitle = Uri.EscapeDataString(title);
-                string url = buildUrl(encodedTitle, MaxResults);
+                string url = buildUrl(encodedTitle, page.ToWindow(MaxResults, SupportsOffset));
 
                 response = await HttpClient.GetFromJsonAsync<TResponse>(url, ct).ConfigureAwait(false);
             }
@@ -93,8 +106,19 @@ namespace EchoPlay.LocalLibrary.Cover
 
             List<CoverSearchResult> results = [];
 
+            // Bei APIs ohne Versatz enthält die Antwort die schon gezeigten Treffer erneut —
+            // die fallen hier weg. Gezählt wird vor dem Abbilden, damit verworfene Treffer
+            // (kein Bild hinterlegt) die Zählung nicht verschieben.
+            int zuUeberspringen = page.ToWindow(MaxResults, SupportsOffset).SkipLocally;
+            int gesehen = 0;
+
             foreach (TItem item in items)
             {
+                if (gesehen++ < zuUeberspringen)
+                {
+                    continue;
+                }
+
                 CoverSearchResult? result = mapItem(item, title);
                 if (result is not null)
                 {

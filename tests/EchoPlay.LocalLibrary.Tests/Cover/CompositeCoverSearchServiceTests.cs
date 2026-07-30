@@ -71,6 +71,35 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             Assert.Equal(0, provider.CallCount);
         }
 
+        [Fact]
+        public async Task SearchAsync_ReichtDieSeiteAnAlleAnbieterDurch()
+        {
+            // Ohne das würden alle Anbieter beim Nachladen wieder die erste Seite liefern und
+            // der Dialog bekäme nur Dubletten zu sehen.
+            StubCoverSearchService ersterAnbieter = new([Treffer("A")]);
+            StubCoverSearchService zweiterAnbieter = new([Treffer("B")]);
+            CompositeCoverSearchService composite = new([ersterAnbieter, zweiterAnbieter]);
+
+            _ = await composite.SearchAsync("TKKG", new CoverSearchPage(2), TestContext.Current.CancellationToken);
+
+            Assert.Equal(2, ersterAnbieter.LastPage.Index);
+            Assert.Equal(2, zweiterAnbieter.LastPage.Index);
+        }
+
+        [Fact]
+        public async Task SearchAsync_OhneSeite_FragtDieErsteSeite()
+        {
+            StubCoverSearchService anbieter = new([Treffer("A")]);
+            CompositeCoverSearchService composite = new([anbieter]);
+
+            _ = await composite.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, anbieter.LastPage.Index);
+        }
+
+        private static CoverSearchResult Treffer(string name) =>
+            new($"https://example.invalid/{name}-thumb.jpg", $"https://example.invalid/{name}.jpg", name, "Test");
+
         // ── Test-Doubles ────────────────────────────────────────────────────────
 
         private sealed class StubCoverSearchService : ICoverSearchService
@@ -83,14 +112,23 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             }
 
             public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
+                => SearchAsync(title, CoverSearchPage.First, ct);
+
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CoverSearchPage page, CancellationToken ct = default)
             {
+                LastPage = page;
                 return Task.FromResult(_results);
             }
+
+            public CoverSearchPage LastPage { get; private set; }
         }
 
         private sealed class ThrowingCoverSearchService : ICoverSearchService
         {
             public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
+                => SearchAsync(title, CoverSearchPage.First, ct);
+
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CoverSearchPage page, CancellationToken ct = default)
             {
                 throw new InvalidOperationException("Simulierter Provider-Fehler");
             }
@@ -101,6 +139,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             public int CallCount { get; private set; }
 
             public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
+                => SearchAsync(title, CoverSearchPage.First, ct);
+
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CoverSearchPage page, CancellationToken ct = default)
             {
                 CallCount++;
                 return Task.FromResult<IReadOnlyList<CoverSearchResult>>([]);

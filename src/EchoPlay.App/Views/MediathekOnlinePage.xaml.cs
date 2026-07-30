@@ -224,7 +224,7 @@ namespace EchoPlay.App.Views
             {
                 CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                     card.Title,
-                    (query, ct) => ViewModel.SearchEpisodeCoversAsync(query, ct),
+                    (query, page, ct) => ViewModel.SearchEpisodeCoversAsync(query, page, ct),
                     Content.XamlRoot);
 
                 if (selected is null) return;

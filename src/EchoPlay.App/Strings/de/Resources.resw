@@ -1533,6 +1533,12 @@ Die Anwendung wird beendet.</value>
   <data name="CoverSearchHitsFoundPlural" xml:space="preserve">
     <value>{0} Treffer gefunden.</value>
   </data>
+  <data name="CoverSearchLoadMore" xml:space="preserve">
+    <value>Weitere Ergebnisse laden</value>
+  </data>
+  <data name="CoverSearchNoMoreResults" xml:space="preserve">
+    <value>Keine weiteren Treffer.</value>
+  </data>
   <data name="CoverSearchFailed" xml:space="preserve">
     <value>Fehler bei der Suche.</value>
   </data>

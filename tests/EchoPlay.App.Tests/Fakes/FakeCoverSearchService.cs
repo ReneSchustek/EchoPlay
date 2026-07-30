@@ -33,9 +33,23 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
             CancellationToken ct = default)
+            => SearchAsync(title, CoverSearchPage.First, ct);
+
+        /// <inheritdoc/>
+        public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
+            string title,
+            CoverSearchPage page,
+            CancellationToken ct = default)
         {
             LastSearchTitle = title;
-            return Task.FromResult(_results);
+            LastPage = page;
+
+            // Nachladen liefert nichts mehr — Tests, die nur die erste Seite brauchen, bleiben
+            // damit unverändert, und der Dialog blendet das Nachladen korrekt aus.
+            return Task.FromResult(page.Index == 0 ? _results : []);
         }
+
+        /// <summary>Letzte angefragte Seite. Für Assertions zum Nachladen.</summary>
+        public CoverSearchPage LastPage { get; private set; }
     }
 }

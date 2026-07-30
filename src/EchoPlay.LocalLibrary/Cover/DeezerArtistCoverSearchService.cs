@@ -34,10 +34,12 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <inheritdoc/>
         public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
+            CoverSearchPage page,
             CancellationToken ct = default) =>
             SearchJsonAsync<DeezerSearchResponse, DeezerArtist>(
                 title,
-                static (encodedTitle, maxResults) => $"https://api.deezer.com/search/artist?q={encodedTitle}&limit={maxResults}",
+                page,
+                static (encodedTitle, window) => $"https://api.deezer.com/search/artist?q={encodedTitle}&limit={window.Limit}&index={window.Offset}",
                 static response => response.Data,
                 MapArtist,
                 ct);

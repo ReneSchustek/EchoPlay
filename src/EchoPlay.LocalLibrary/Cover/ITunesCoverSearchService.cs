@@ -28,13 +28,21 @@ namespace EchoPlay.LocalLibrary.Cover
         {
         }
 
+        /// <summary>
+        /// Die iTunes Search API kennt keinen Versatz — nur <c>limit</c>. Nachladen holt deshalb
+        /// mehr und verwirft den bereits gezeigten Anfang.
+        /// </summary>
+        protected override bool SupportsOffset => false;
+
         /// <inheritdoc/>
         public override Task<IReadOnlyList<CoverSearchResult>> SearchAsync(
             string title,
+            CoverSearchPage page,
             CancellationToken ct = default) =>
             SearchJsonAsync<ITunesSearchResponse, ITunesAlbumResult>(
                 title,
-                static (encodedTitle, maxResults) => $"https://itunes.apple.com/search?term={encodedTitle}&media=music&entity=album&limit={maxResults}",
+                page,
+                static (encodedTitle, window) => $"https://itunes.apple.com/search?term={encodedTitle}&media=music&entity=album&limit={window.Limit}",
                 static response => response.Results,
                 MapAlbum,
                 ct);

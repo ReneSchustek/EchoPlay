@@ -250,6 +250,7 @@ namespace EchoPlay.App.ViewModels
         public static async Task<IReadOnlyList<CoverSearchHit>> SearchEpisodeCoversAsync(
             EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService,
             string query,
+            EchoPlay.LocalLibrary.Cover.CoverSearchPage page,
             CancellationToken ct)
         {
             if (coverSearchService is null)
@@ -258,7 +259,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             IReadOnlyList<EchoPlay.LocalLibrary.Cover.CoverSearchResult> results =
-                await coverSearchService.SearchAsync(query, ct);
+                await coverSearchService.SearchAsync(query, page, ct);
 
             List<CoverSearchHit> hits = new(results.Count);
             foreach (EchoPlay.LocalLibrary.Cover.CoverSearchResult r in results)

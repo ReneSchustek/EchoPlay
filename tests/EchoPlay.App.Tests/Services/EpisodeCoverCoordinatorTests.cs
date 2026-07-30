@@ -43,7 +43,7 @@ namespace EchoPlay.App.Tests.Services
             EpisodeCoverCoordinator coordinator = BuildCoordinator(searchService);
 
             IReadOnlyList<CoverSearchHit> hits = await coordinator.SearchCoversAsync(
-                "Die drei Fragezeichen", CancellationToken.None);
+                "Die drei Fragezeichen", EchoPlay.LocalLibrary.Cover.CoverSearchPage.First, CancellationToken.None);
 
             Assert.Empty(hits);
             Assert.Equal("Die drei Fragezeichen", searchService.LastSearchTitle);
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.Services
             EpisodeCoverCoordinator coordinator = BuildCoordinator(searchService);
 
             IReadOnlyList<CoverSearchHit> hits = await coordinator.SearchCoversAsync(
-                "Hörspiel", CancellationToken.None);
+                "Hörspiel", EchoPlay.LocalLibrary.Cover.CoverSearchPage.First, CancellationToken.None);
 
             Assert.Equal(2, hits.Count);
             Assert.Equal("https://thumb/1", hits[0].ThumbnailUrl);

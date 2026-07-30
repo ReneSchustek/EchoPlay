@@ -35,14 +35,17 @@ namespace EchoPlay.App.Helpers
         /// Null wenn der Dialog abgebrochen wurde oder kein Cover ausgewählt.
         /// </summary>
         /// <param name="initialQuery">Vorbelegter Suchbegriff (z.B. Folgentitel).</param>
-        /// <param name="searchFunc">Suchfunktion – meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.</param>
+        /// <param name="searchFunc">
+        /// Suchfunktion – meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.
+        /// Bekommt die gewünschte Seite mit; eine leere Antwort heißt „nichts mehr da".
+        /// </param>
         /// <param name="xamlRoot">XamlRoot für den ContentDialog – kommt von der aufrufenden Page.</param>
         /// <returns>Das ausgewählte Cover oder null bei Abbruch.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne TriggerSearchAsync-Wrapper-Funktion fängt alle Fehler der externen Cover-Suche (HTTP/iTunes/CoverArtArchive-Provider) ab und zeigt lediglich eine neutrale Statusmeldung, damit der Dialog offen bleibt.")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt.")]
         public static async Task<CoverSearchHit?> ShowAsync(
             string initialQuery,
-            Func<string, CancellationToken, Task<IReadOnlyList<CoverSearchHit>>> searchFunc,
+            Func<string, EchoPlay.LocalLibrary.Cover.CoverSearchPage, CancellationToken, Task<IReadOnlyList<CoverSearchHit>>> searchFunc,
             XamlRoot xamlRoot)
         {
             // UI-Elemente aufbauen
@@ -108,6 +111,13 @@ namespace EchoPlay.App.Helpers
             List<CoverSearchHit> currentResults = [];
             int selectedIndex = -1;
 
+            // Zustand des Nachladens. Die Adressen dienen der Dubletten-Abwehr: Anbieter ohne
+            // Versatz liefern beim Nachladen dieselben Treffer erneut, und zwei Anbieter können
+            // dasselbe Bild kennen.
+            EchoPlay.LocalLibrary.Cover.CoverSearchPage currentPage = EchoPlay.LocalLibrary.Cover.CoverSearchPage.First;
+            HashSet<string> shownUrls = new(StringComparer.OrdinalIgnoreCase);
+            Border? loadMoreTile = null;
+
             // Schließt der Anwender den Dialog während einer laufenden Suche, bricht die
             // Cover-Suche (HTTP-Request) über das Token früh ab – sonst läuft sie ungesehen weiter.
             using CancellationTokenSource dialogCts = new();
@@ -126,9 +136,12 @@ namespace EchoPlay.App.Helpers
                 resultsPanel.Children.Clear();
                 selectedIndex = -1;
                 dialog.IsPrimaryButtonEnabled = false;
+                currentPage = EchoPlay.LocalLibrary.Cover.CoverSearchPage.First;
+                shownUrls.Clear();
+                loadMoreTile = null;
 
                 IReadOnlyList<CoverSearchHit> results =
-                    await searchFunc(query.Trim(), dialogCts.Token);
+                    await searchFunc(query.Trim(), currentPage, dialogCts.Token);
 
                 progressRing.IsActive = false;
 
@@ -141,21 +154,28 @@ namespace EchoPlay.App.Helpers
                     return;
                 }
 
-                currentResults.AddRange(results);
-                statusText.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        results.Count,
-                        "CoverSearchHitsFoundSingular",
-                        "CoverSearchHitsFoundPlural",
-                        "{0} Treffer gefunden.",
-                        "{0} Treffer gefunden."),
-                    results.Count);
+                int neu = AppendResults(results);
+                ShowHitCount();
+                EnsureLoadMoreTile(neu > 0);
+            }
 
-                for (int i = 0; i < results.Count; i++)
+            // Haengt Treffer an und liefert, wie viele davon neu waren. Gemeinsam genutzt von
+            // der ersten Suche und vom Nachladen — sonst waere die Kachel-Erzeugung samt
+            // Auswahl-Logik zweimal da.
+            int AppendResults(IReadOnlyList<CoverSearchHit> results)
+            {
+                int neu = 0;
+
+                foreach (CoverSearchHit r in results)
                 {
-                    CoverSearchHit r = results[i];
-                    int tileIndex = i;
+                    if (!shownUrls.Add(r.FullUrl))
+                    {
+                        continue;
+                    }
+
+                    currentResults.Add(r);
+                    int tileIndex = currentResults.Count - 1;
+                    neu++;
 
                     Border tileBorder = CreateCoverTile(r);
 
@@ -177,6 +197,82 @@ namespace EchoPlay.App.Helpers
                     };
 
                     resultsPanel.Children.Add(tileBorder);
+                }
+
+                return neu;
+            }
+
+            void ShowHitCount()
+            {
+                statusText.Text = string.Format(
+                    CultureInfo.CurrentCulture,
+                    PluralText.Pattern(
+                        currentResults.Count,
+                        "CoverSearchHitsFoundSingular",
+                        "CoverSearchHitsFoundPlural",
+                        "{0} Treffer gefunden.",
+                        "{0} Treffer gefunden."),
+                    currentResults.Count);
+            }
+
+            // Die Nachlade-Kachel steht immer als letzte im Raster. Bleibt eine Runde ohne neue
+            // Treffer, verschwindet sie — ein Knopf, der nichts mehr tut, ist schlimmer als
+            // keiner.
+            void EnsureLoadMoreTile(bool weitereMoeglich)
+            {
+                if (loadMoreTile is not null)
+                {
+                    _ = resultsPanel.Children.Remove(loadMoreTile);
+                    loadMoreTile = null;
+                }
+
+                if (!weitereMoeglich)
+                {
+                    return;
+                }
+
+                Border tile = CreateLoadMoreTile();
+                tile.PointerPressed += async (_, _) => await LoadMoreAsync();
+                loadMoreTile = tile;
+                resultsPanel.Children.Add(tile);
+            }
+
+            async Task LoadMoreAsync()
+            {
+                EnsureLoadMoreTile(weitereMoeglich: false);
+                progressRing.IsActive = true;
+                statusText.Text = searchingText;
+
+                try
+                {
+                    currentPage = currentPage.Next;
+
+                    IReadOnlyList<CoverSearchHit> weitere =
+                        await searchFunc(queryBox.Text.Trim(), currentPage, dialogCts.Token);
+
+                    int neu = AppendResults(weitere);
+                    ShowHitCount();
+
+                    if (neu == 0)
+                    {
+                        statusText.Text = SafeResourceLoader.Get(
+                            "CoverSearchNoMoreResults", "Keine weiteren Treffer.");
+                    }
+
+                    EnsureLoadMoreTile(neu > 0);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Dialog geschlossen — nichts zu tun.
+                }
+                catch (Exception)
+                {
+                    statusText.Text = SafeResourceLoader.Get("CoverSearchFailed");
+                    EnsureLoadMoreTile(weitereMoeglich: true);
+                }
+                finally
+                {
+                    progressRing.IsActive = false;
                 }
             }
 
@@ -256,6 +352,48 @@ namespace EchoPlay.App.Helpers
             searchRow.Children.Add(searchButton);
 
             return (searchRow, queryBox, searchButton);
+        }
+
+        /// <summary>
+        /// Baut die Kachel „Weitere Ergebnisse laden" — bewusst im Raster und nicht als Knopf
+        /// darunter: Sie steht dort, wo die Treffer aufhören, und wird genau dann gesehen, wenn
+        /// keiner gepasst hat.
+        /// </summary>
+        /// <returns>Die Kachel, ohne Klick-Behandlung.</returns>
+        private static Border CreateLoadMoreTile()
+        {
+            FontIcon icon = new()
+            {
+                Glyph = "",
+                FontSize = 28,
+                Width = CoverImageSize,
+                Height = CoverImageSize
+            };
+
+            TextBlock label = new()
+            {
+                Text = SafeResourceLoader.Get("CoverSearchLoadMore", "Weitere Ergebnisse laden"),
+                MaxLines = 2,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 10,
+                Width = CoverImageSize,
+                Margin = new Thickness(4, 4, 4, 0),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            };
+
+            StackPanel tile = new();
+            tile.Children.Add(icon);
+            tile.Children.Add(label);
+
+            return new Border
+            {
+                BorderThickness = new Thickness(1),
+                BorderBrush = (Brush)Application.Current.Resources["DividerStrokeColorDefaultBrush"],
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(2),
+                Child = tile
+            };
         }
 
         /// <summary>

@@ -20,8 +20,9 @@ namespace EchoPlay.App.Services
         /// als App-eigene <see cref="CoverSearchHit"/>-Wrapper.
         /// </summary>
         /// <param name="query">Suchbegriff – meist der Serien- oder Folgentitel.</param>
+        /// <param name="page">Welcher Abschnitt der Trefferliste geholt wird; leere Antwort heißt „nichts mehr da".</param>
         /// <param name="ct">Abbruchtoken, z.B. für Dialog-Schließen.</param>
-        Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, CancellationToken ct);
+        Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, EchoPlay.LocalLibrary.Cover.CoverSearchPage page, CancellationToken ct);
 
         /// <summary>
         /// Übernimmt rohe Bytes als Serien-Cover. Fragt vor dem Überschreiben nach,

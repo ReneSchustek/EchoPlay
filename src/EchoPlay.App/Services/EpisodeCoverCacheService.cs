@@ -213,6 +213,12 @@ namespace EchoPlay.App.Services
                         downloaded++;
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    // Wie in Phase 3: Abbruch ist kein Fehlschlag dieser Folge und darf nicht
+                    // als Warnung im Protokoll landen.
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     _logger.Warning("Provider-Cover für \"{EpisodeTitle}\" fehlgeschlagen: {Reason}", episode.Title, ex.Message);
@@ -267,6 +273,14 @@ namespace EchoPlay.App.Services
 
                     // Rate-Limiting nur bei Online-Suche (HTTP-Requests gegen externe APIs)
                     await Task.Delay(OnlineSearchPause, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Abbruch ist kein Fehlschlag dieser Folge. Ohne diesen Zweig hätte der
+                    // catch darunter ihn als Warnung protokolliert — und weil er die Ausnahme
+                    // schluckt, wäre die Schleife noch eine Runde weitergelaufen, bis das
+                    // ThrowIfCancellationRequested am Anfang greift.
+                    throw;
                 }
                 catch (Exception ex)
                 {

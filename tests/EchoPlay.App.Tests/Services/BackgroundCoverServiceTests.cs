@@ -199,10 +199,10 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // CoverLastChecked setzt ausschliesslich der EpisodeCoverCacheService. Ist der
-            // Zeitstempel gesetzt, wurde die Suchkette tatsaechlich durchlaufen. Auf CallCount
-            // des Kopierdienstes darf man sich hier NICHT stuetzen - den ruft die Phase
-            // "CopyLocalToOnline" ohnehin bei jedem Lauf auf, der Test waere immer gruen.
+            // CoverLastChecked setzt ausschließlich der EpisodeCoverCacheService. Ist der
+            // Zeitstempel gesetzt, wurde die Suchkette tatsächlich durchlaufen. Auf CallCount
+            // des Kopierdienstes darf man sich hier NICHT stützen - den ruft die Phase
+            // "CopyLocalToOnline" ohnehin bei jedem Lauf auf, der Test wäre immer grün.
             _ = Assert.NotNull(k.Episodes.All[0].CoverLastChecked);
             Assert.False(
                 await k.Covers.ExistsAsync(CoverEntityTypes.Episode, k.Episode.Id, cancellationToken: TestContext.Current.CancellationToken),
@@ -219,7 +219,7 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // Kein Zeitstempel: Die Serie hatte keine Luecke, die Suche blieb aus.
+            // Kein Zeitstempel: Die Serie hatte keine Lücke, die Suche blieb aus.
             Assert.Null(k.Episodes.All[0].CoverLastChecked);
         }
 
@@ -227,12 +227,12 @@ namespace EchoPlay.App.Tests.Services
         public async Task RunOnce_StoesstSucheFuerSerieOhneCoverAn()
         {
             // Eine Serie ohne lokale cover.jpg und ohne CoverImageUrl wurde vor dieser Phase
-            // nie gesucht - der URL-Nachtrag fuellt ausschliesslich Episoden.
+            // nie gesucht - der URL-Nachtrag füllt ausschließlich Episoden.
             SuchKontext k = BuildServiceMitSuche();
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // Zeitstempel gesetzt heisst: gesucht. Er wird auch ohne Treffer gesetzt,
+            // Zeitstempel gesetzt heißt: gesucht. Er wird auch ohne Treffer gesetzt,
             // genau das ist der Cooldown.
             _ = Assert.NotNull(k.SeriesService.All[0].CoverLastChecked);
         }
@@ -261,13 +261,13 @@ namespace EchoPlay.App.Tests.Services
         {
             SuchKontext k = BuildServiceMitSuche();
 
-            // Gestern schon erfolglos gesucht - der Cooldown laeuft noch sechs Tage.
+            // Gestern schon erfolglos gesucht - der Cooldown läuft noch sechs Tage.
             DateTime gestern = k.Clock.UtcNow.AddDays(-1);
             k.SeriesService.All[0].CoverLastChecked = gestern;
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // Unveraendert: Waere erneut gesucht worden, stuende hier die aktuelle Zeit.
+            // Unverändert: Wäre erneut gesucht worden, stünde hier die aktuelle Zeit.
             Assert.Equal(gestern, k.SeriesService.All[0].CoverLastChecked);
         }
 
@@ -281,13 +281,13 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // Der Cooldown betraegt sieben Tage - nach acht ist die Serie wieder faellig.
+            // Der Cooldown beträgt sieben Tage - nach acht ist die Serie wieder fällig.
             Assert.Equal(k.Clock.UtcNow, k.SeriesService.All[0].CoverLastChecked);
         }
 
         // Baut den Dienst samt EpisodeCoverCacheService, damit die Online-Phase erreichbar ist.
         // Eine Serie, eine Episode, kein lokaler Ordner, keine Provider-URL.
-        // Ohne coverSearch liefert GetService<ICoverSearchService>() null - die Suche laeuft
+        // Ohne coverSearch liefert GetService<ICoverSearchService>() null - die Suche läuft
         // dann bis zum Zeitstempel durch, findet aber nichts. Das ist der Normalfall der Tests;
         // nur der Treffer-Test registriert einen Suchdienst.
         private static SuchKontext BuildServiceMitSuche(
@@ -311,7 +311,7 @@ namespace EchoPlay.App.Tests.Services
             FakeCoverCopyService coverCopy = new();
             FakeClock clock = new();
 
-            // Kein echter HttpClient als Rueckfallwert: Die Suchphasen wuerden sonst gegen das
+            // Kein echter HttpClient als Rückfallwert: Die Suchphasen würden sonst gegen das
             // echte Netz laufen. Der Recording-Handler beantwortet jede Anfrage lokal.
             IHttpClientFactory httpFactory = httpClientFactory
                 ?? new RecordingHttpClientFactory(new RecordingHttpMessageHandler(CoverBytes));

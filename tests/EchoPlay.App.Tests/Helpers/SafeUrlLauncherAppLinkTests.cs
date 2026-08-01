@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Helpers
         [InlineData("")]
         [InlineData("   ")]
         [InlineData("kein-uri")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "Testparameter spiegelt die string-Signatur der geprueften Methode; ein Uri-Objekt koennte die ungueltigen Eingaben gar nicht darstellen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "Testparameter spiegelt die string-Signatur der geprüften Methode; ein Uri-Objekt könnte die ungültigen Eingaben gar nicht darstellen.")]
         public void TryOpenAppLink_InvalidUri_ReturnsFalse(string? uri)
         {
             Assert.False(SafeUrlLauncher.TryOpenAppLink(uri, "spotify"));
@@ -24,7 +24,7 @@ namespace EchoPlay.App.Tests.Helpers
         [InlineData("https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy")]
         [InlineData("file:///C:/Windows/System32/calc.exe")]
         [InlineData("itunes:album:123")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "Testparameter spiegelt die string-Signatur der geprueften Methode.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "Testparameter spiegelt die string-Signatur der geprüften Methode.")]
         public void TryOpenAppLink_ForeignScheme_IsRejected(string uri)
         {
             // Nur das erwartete Schema darf durch — sonst startet ein fremdes Protokoll

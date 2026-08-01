@@ -310,7 +310,7 @@ namespace EchoPlay.Data.Services
                     episode.EpisodeNumber!.Value))
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            DateTime uebernommenAm = DateTime.UtcNow;
+            DateTime übernommenAm = DateTime.UtcNow;
             int korrigiert = 0;
 
             foreach (IGrouping<(string SeriesTitle, int Number), EpisodeIdentityRow> gruppe in rows
@@ -328,7 +328,7 @@ namespace EchoPlay.Data.Services
                         continue;
                     }
 
-                    await MarkOneCompletedAsync(row.EpisodeId, uebernommenAm, cancellationToken).ConfigureAwait(false);
+                    await MarkOneCompletedAsync(row.EpisodeId, übernommenAm, cancellationToken).ConfigureAwait(false);
                     korrigiert++;
                 }
             }

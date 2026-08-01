@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für <see cref="ConnectionTestCoordinator"/>. Verwendet inline definierte
-    /// Stub-API-Clients für Spotify und Apple Music, damit kein Netzwerk noetig ist.
+    /// Stub-API-Clients für Spotify und Apple Music, damit kein Netzwerk nötig ist.
     /// </summary>
     public sealed class ConnectionTestCoordinatorTests
     {
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Services
             private readonly Exception _ex;
             public ThrowingSpotifyClient(Exception ex) => _ex = ex;
             // Task.FromException liefert ein faulted Task — semantisch identisch zu 'throw',
-            // aber ohne den throw-Variable-Pattern, der in synchronen Pfaden den Stacktrace verlieren wuerde.
+            // aber ohne den throw-Variable-Pattern, der in synchronen Pfaden den Stacktrace verlieren würde.
             public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyArtistDto>>(_ex);
             public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);
             public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);

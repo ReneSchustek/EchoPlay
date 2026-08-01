@@ -597,9 +597,9 @@ namespace EchoPlay.App.Tests.Services
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.SeriesMatched);
-            // Keine neue Serie angelegt — Count unveraendert.
+            // Keine neue Serie angelegt — Count unverändert.
             Assert.Equal(seriesCountBefore, seriesService.All.Count);
-            // Die bestehende Serie behaelt ihre Id.
+            // Die bestehende Serie behält ihre Id.
             Assert.Equal(existingId, seriesService.All[0].Id);
             // LocalFolderPath wurde aktualisiert.
             Assert.Equal("/music/Die drei ???", seriesService.All[0].LocalFolderPath);

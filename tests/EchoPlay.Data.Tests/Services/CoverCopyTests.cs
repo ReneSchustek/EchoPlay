@@ -159,7 +159,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Anderer Serienname, Folgentitel als Schlagwort enthalten → Stufe 3
             Series source = await DataBuilder.PersistSeriesAsync("Die drei Fragezeichen");
-            source.LocalFolderPath = @"C:\Hoerspiele\Die drei Fragezeichen";
+            source.LocalFolderPath = @"C:\Hörspiele\Die drei Fragezeichen";
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der Super-Papagei");
             sourceEp.EpisodeNumber = 1;
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -182,7 +182,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Gleiche Nummer aber völlig anderer Titel → kein Schlagwort-Match
             Series source = await DataBuilder.PersistSeriesAsync("TKKG");
-            source.LocalFolderPath = @"C:\Hoerspiele\TKKG";
+            source.LocalFolderPath = @"C:\Hörspiele\TKKG";
             Episode sourceEp = await DataBuilder.PersistEpisodeAsync(source, "Der blinde Hellseher");
             sourceEp.EpisodeNumber = 1;
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);

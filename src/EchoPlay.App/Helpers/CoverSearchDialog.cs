@@ -159,8 +159,8 @@ namespace EchoPlay.App.Helpers
                 EnsureLoadMoreTile(neu > 0);
             }
 
-            // Haengt Treffer an und liefert, wie viele davon neu waren. Gemeinsam genutzt von
-            // der ersten Suche und vom Nachladen — sonst waere die Kachel-Erzeugung samt
+            // Hängt Treffer an und liefert, wie viele davon neu waren. Gemeinsam genutzt von
+            // der ersten Suche und vom Nachladen — sonst wäre die Kachel-Erzeugung samt
             // Auswahl-Logik zweimal da.
             int AppendResults(IReadOnlyList<CoverSearchHit> results)
             {

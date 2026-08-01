@@ -10,8 +10,8 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <param name="Title">Titel des Dialogs.</param>
     /// <param name="Message">Die eigentliche Frage/Erklärung.</param>
-    /// <param name="PrimaryButtonText">Beschriftung der Bestätigen-Schaltflaeche (Default: "CommonYes"-Resource).</param>
-    /// <param name="CloseButtonText">Beschriftung der Abbrechen-Schaltflaeche (Default: "CommonCancel"-Resource).</param>
+    /// <param name="PrimaryButtonText">Beschriftung der Bestätigen-Schaltfläche (Default: "CommonYes"-Resource).</param>
+    /// <param name="CloseButtonText">Beschriftung der Abbrechen-Schaltfläche (Default: "CommonCancel"-Resource).</param>
     public sealed record ConfirmationDialogContent(
         string Title,
         string Message,

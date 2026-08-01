@@ -6,13 +6,13 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// <summary>
     /// Programmatischer Kultur-Pin als Defense-in-Depth für den
     /// xunit.runner.json-Eintrag <c>"culture": "de-DE"</c>. Auf GitHub-Windows-Runnern
-    /// (en-US-Default) hat sich gezeigt, dass die JSON-Variante nicht zuverlaessig
+    /// (en-US-Default) hat sich gezeigt, dass die JSON-Variante nicht zuverlässig
     /// greift, weil der VSTest-Adapter den Pfad zur JSON-Datei je nach Build-Konfig
     /// nicht findet. Der ModuleInitializer wird vom CLR vor jedem Test-Lauf in
     /// dieser Assembly ausgeführt — unabhängig davon, ob xunit.runner.json
     /// kopiert wurde oder nicht.
     ///
-    /// Nur für App.Tests bewusst gepinnt: andere Test-Projekte koennten kulturneutral
+    /// Nur für App.Tests bewusst gepinnt: andere Test-Projekte könnten kulturneutral
     /// laufen und sollen sich nicht den Default abdrehen lassen.
     /// </summary>
     internal static class TestCultureModuleInitializer

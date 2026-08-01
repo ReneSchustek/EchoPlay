@@ -4,9 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- CA1062: FsCheck-Generatoren liefern Werte gemaess Constraint (NonNull, PositiveInt) - explizite Null-Validierung im Test-Body ist redundant.
-         CA1515: Test-Klassen in xunit-Projekten muessen nach Konvention public sein, damit der Runner sie discovern kann.
-                 xunit.v3 setzt fuer Fuzz (IsTestProject=true) implizit OutputType=Exe, wodurch CA1515 sonst greifen wuerde. -->
+    <!-- CA1062: FsCheck-Generatoren liefern Werte gemäß Constraint (NonNull, PositiveInt) - explizite Null-Validierung im Test-Body ist redundant.
+         CA1515: Test-Klassen in xunit-Projekten müssen nach Konvention public sein, damit der Runner sie discovern kann.
+                 xunit.v3 setzt für Fuzz (IsTestProject=true) implizit OutputType=Exe, wodurch CA1515 sonst greifen würde. -->
     <NoWarn>$(NoWarn);CA1707;CA1062;CA1515</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>

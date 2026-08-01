@@ -35,7 +35,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             ITunesResponseDto<ITunesCollectionDto> result = await client.LookupAlbumsAsync(artistId: 100, ct: TestContext.Current.CancellationToken);
 
             Assert.NotNull(result.Results);
-            // ResultCount entspricht dem JSON-Header "resultCount", nicht der tatsaechlichen Listenlaenge.
+            // ResultCount entspricht dem JSON-Header "resultCount", nicht der tatsächlichen Listenlänge.
             Assert.Equal(2, result.ResultCount);
         }
 

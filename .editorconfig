@@ -68,13 +68,13 @@ dotnet_diagnostic.IDE0060.severity = error
 dotnet_diagnostic.CA2007.severity = warning
 
 # =========================
-# Security (security.md)
+# Security
 # =========================
 
 # SQL-Injection
 dotnet_diagnostic.CA2100.severity = error
 
-# Schwacher Zufallsgenerator (System.Random fuer Security)
+# Schwacher Zufallsgenerator (System.Random für Security)
 dotnet_diagnostic.CA5394.severity = error
 
 # Unsichere Deserialisierung
@@ -82,7 +82,7 @@ dotnet_diagnostic.CA2300.severity = error
 dotnet_diagnostic.CA2301.severity = error
 dotnet_diagnostic.CA2302.severity = error
 
-# Hardcodierte Verschluesselung
+# Hardcodierte Verschlüsselung
 dotnet_diagnostic.CA5350.severity = error
 dotnet_diagnostic.CA5351.severity = error
 
@@ -103,7 +103,7 @@ dotnet_diagnostic.CA3003.severity = error
 dotnet_diagnostic.CA3002.severity = error
 
 # =========================
-# Resilience (resilience.md)
+# Resilience
 # =========================
 
 # async void (Prozess-Absturz bei unbehandelter Exception)
@@ -116,7 +116,7 @@ dotnet_diagnostic.CA1849.severity = error
 dotnet_diagnostic.CA1816.severity = warning
 
 # =========================
-# Architecture (architecture.md)
+# Architecture
 # =========================
 
 # Nicht verwendete private Member entfernen
@@ -128,7 +128,7 @@ dotnet_diagnostic.IDE0058.severity = warning
 # Kein generischer Exception-Catch
 dotnet_diagnostic.CA1031.severity = warning
 
-# Static-faehige Methoden
+# Static-fähige Methoden
 dotnet_diagnostic.CA1822.severity = suggestion
 
 # Logger-Performance

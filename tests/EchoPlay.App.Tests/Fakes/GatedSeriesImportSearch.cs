@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <summary>
-        /// Schließt den <paramref name="index"/>-ten Suchaufruf mit den uebergebenen
+        /// Schließt den <paramref name="index"/>-ten Suchaufruf mit den übergebenen
         /// Treffern ab. Erlaubt Tests, eine veraltete Suche bewusst zuerst auszuliefern,
         /// um zu prüfen, dass das ViewModel ihre Treffer verwirft.
         /// </summary>

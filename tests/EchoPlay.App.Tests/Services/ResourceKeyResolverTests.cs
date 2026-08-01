@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für die Fallback-Logik des Ressourcen-Resolvers.
-    /// Der Loader wird per Lambda gemockt, damit kein WinUI-ResourceLoader noetig ist.
+    /// Der Loader wird per Lambda gemockt, damit kein WinUI-ResourceLoader nötig ist.
     /// </summary>
     public sealed class ResourceKeyResolverTests
     {

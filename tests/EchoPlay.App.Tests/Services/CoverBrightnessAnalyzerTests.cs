@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Smoke-Tests für den Cover-Helligkeits-Analyzer.
-    /// Vollstaendige Pixel-Tests brauchen einen WinUI-Test-Host und ein gueltiges
+    /// Vollständige Pixel-Tests brauchen einen WinUI-Test-Host und ein gültiges
     /// PNG/JPEG — hier nur die robusten Null-Pfade, die ohne BitmapDecoder-Setup laufen.
     /// </summary>
     public sealed class CoverBrightnessAnalyzerTests
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task AnalyzeBrightnessFromBytesAsync_TruncatedJpegHeader_ReturnsNull()
         {
-            // JPEG-Magic-Header ohne Datenrest — BitmapDecoder muss das als ungueltig erkennen.
+            // JPEG-Magic-Header ohne Datenrest — BitmapDecoder muss das als ungültig erkennen.
             byte[] truncated = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
 
             bool? result = await CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(truncated);

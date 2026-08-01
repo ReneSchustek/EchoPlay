@@ -39,7 +39,7 @@ namespace EchoPlay.App.Tests.ViewModels
             seriesId: TestIds.SeriesA,
             title: "TKKG",
             coverImage: null,
-            localFolderPath: @"C:\Hoerspiele\TKKG",
+            localFolderPath: @"C:\Hörspiele\TKKG",
             localEpisodeCount: 0,
             totalEpisodeCount: 0,
             isFavorite: false,
@@ -56,7 +56,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SeriesId = TestIds.SeriesA,
             EpisodeNumber = number,
             Title = title,
-            LocalFolderPath = $@"C:\Hoerspiele\TKKG\{title}"
+            LocalFolderPath = $@"C:\Hörspiele\TKKG\{title}"
         };
 
         private static async Task<LocalEpisodesViewModel> LoadAsync(

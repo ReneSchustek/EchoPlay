@@ -121,7 +121,7 @@ namespace EchoPlay.Data.Tests.Services
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
 
             Episode active = new() { SeriesId = series.Id, Title = "Aktiv", LocalFolderPath = @"C:\Aktiv" };
-            Episode deleted = new() { SeriesId = series.Id, Title = "Gelöscht", LocalFolderPath = @"C:\Geloescht" };
+            Episode deleted = new() { SeriesId = series.Id, Title = "Gelöscht", LocalFolderPath = @"C:\Gelöscht" };
             Context.Episodes.AddRange(active, deleted);
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 

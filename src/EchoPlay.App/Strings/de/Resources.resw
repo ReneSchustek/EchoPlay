@@ -1633,7 +1633,7 @@ Die Anwendung wird beendet.</value>
   </data>
 
 
-  <!-- Barrierefreiheit: Namen fuer Schaltflaechen, die nur ein Icon zeigen -->
+  <!-- Barrierefreiheit: Namen für Schaltflächen, die nur ein Icon zeigen -->
   <data name="MainLanguageButton.AutomationProperties.Name" xml:space="preserve">
     <value>Sprache wechseln</value>
   </data>
@@ -1671,7 +1671,7 @@ Die Anwendung wird beendet.</value>
     <value>Zurück</value>
   </data>
 
-  <!-- Barrierefreiheit: Kachel-Schaltflaechen nennen Funktion und Bezugsobjekt -->
+  <!-- Barrierefreiheit: Kachel-Schaltflächen nennen Funktion und Bezugsobjekt -->
   <data name="TilePlayAutomationName" xml:space="preserve">
     <value>Abspielen: {0}</value>
   </data>
@@ -1682,7 +1682,7 @@ Die Anwendung wird beendet.</value>
     <value>Weitere Aktionen: {0}</value>
   </data>
 
-  <!-- Folgen-Kontextmenue: Wiedergabe ueber Spotify -->
+  <!-- Folgen-Kontextmenü: Wiedergabe über Spotify -->
   <data name="EpisodeOpenInSpotifyItem.Text" xml:space="preserve">
     <value>In Spotify öffnen</value>
   </data>

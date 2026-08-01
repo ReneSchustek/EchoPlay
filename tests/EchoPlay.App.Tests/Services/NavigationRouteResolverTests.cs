@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void Resolve_AllEnumValues_AreRegistered()
         {
-            // Waechter: jedes Enum-Mitglied muss ein Mapping haben, damit Hinzufuegen
+            // Wächter: jedes Enum-Mitglied muss ein Mapping haben, damit Hinzufügen
             // einer neuen Seite ohne Routing-Eintrag den Test sofort kippt.
             foreach (NavigationTarget target in Enum.GetValues<NavigationTarget>())
             {

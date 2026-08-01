@@ -81,7 +81,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
             await seriesService.AddAsync(new Series
             {
@@ -95,7 +95,7 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 Title = "Folge 1",
                 SeriesId = tkkg,
-                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
                 LocalTrackCount = 2
             }, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -118,7 +118,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Folge 1",
                 SeriesId = tkkg,
                 EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
                 LocalTrackCount = 2
             }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode
@@ -159,7 +159,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
@@ -169,7 +169,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Folge 1",
                 SeriesId = tkkg,
                 EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
                 LocalTrackCount = 2
             }, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -227,7 +227,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
@@ -248,7 +248,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
@@ -271,7 +271,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
@@ -281,7 +281,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Folge 1",
                 SeriesId = tkkg,
                 EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
                 LocalTrackCount = 1
             }, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -311,7 +311,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
@@ -321,7 +321,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Folge 1",
                 SeriesId = tkkg,
                 EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
                 LocalTrackCount = 1
             }, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -348,7 +348,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid tkkg = seriesService.All[0].Id;
@@ -358,7 +358,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "Folge 1",
                 SeriesId = tkkg,
                 EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hoerspiele\TKKG\001",
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
                 LocalTrackCount = 2
             }, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -401,7 +401,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             MediathekLokalViewModel vm = BuildViewModel(seriesService, episodeService);
@@ -485,7 +485,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                LocalFolderPath = @"C:\Hoerspiele\TKKG"
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             Guid seriesId = seriesService.All[0].Id;

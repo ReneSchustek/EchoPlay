@@ -6,7 +6,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <param name="Title">Titel des Dialogs.</param>
     /// <param name="Message">Fehlermeldung für den Benutzer.</param>
-    /// <param name="CloseButtonText">Beschriftung der Schließen-Schaltflaeche (Default: "OK").</param>
+    /// <param name="CloseButtonText">Beschriftung der Schließen-Schaltfläche (Default: "OK").</param>
     public sealed record ErrorDialogContent(
         string Title,
         string Message,

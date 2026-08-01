@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-    Laedt gitleaks (portable Windows-x64 .exe) nach tools/.
+    Lädt gitleaks (portable Windows-x64 .exe) nach tools/.
 
 .DESCRIPTION
-    Pruefe Versionsangabe, lade ZIP von GitHub-Releases, entpacke gitleaks.exe.
-    Existierende tools/gitleaks.exe wird nur ueberschrieben, wenn die Version abweicht.
+    Prüfe Versionsangabe, lade ZIP von GitHub-Releases, entpacke gitleaks.exe.
+    Existierende tools/gitleaks.exe wird nur überschrieben, wenn die Version abweicht.
 
     Aufruf vom Repo-Root:
         powershell tools/install-gitleaks.ps1
@@ -25,7 +25,7 @@ $exePath  = Join-Path $toolsDir 'gitleaks.exe'
 if (Test-Path $exePath) {
     $existing = & $exePath version 2>$null
     if ($existing -eq $Version) {
-        Write-Host "[install-gitleaks] gitleaks v$Version bereits vorhanden — uebersprungen." -ForegroundColor Green
+        Write-Host "[install-gitleaks] gitleaks v$Version bereits vorhanden — übersprungen." -ForegroundColor Green
         exit 0
     }
 }
@@ -35,7 +35,7 @@ $tmpZip = Join-Path $env:TEMP "gitleaks_${Version}.zip"
 
 Write-Host "[install-gitleaks] Lade $url ..." -ForegroundColor Cyan
 
-# .NET-Default schlaegt teilweise auf Cert-Revocation-Check fehl; ein direkter
+# .NET-Default schlägt teilweise auf Cert-Revocation-Check fehl; ein direkter
 # WebRequest mit erlaubtem Skip-Revocation-Status umgeht das.
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 Invoke-WebRequest -Uri $url -OutFile $tmpZip -UseBasicParsing

@@ -365,7 +365,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SearchText_WhenCleared_TriggersReset()
         {
             // Setzt der Nutzer den Suchtext (X-Button im AutoSuggestBox oder Tastatur) auf leer,
-            // muss der Setter selbsttaetig die Trefferliste leeren – sonst bleiben Karten stehen.
+            // muss der Setter selbsttätig die Trefferliste leeren – sonst bleiben Karten stehen.
             List<ImportSeries> results =
             [
                 new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "tkkg-1" }
@@ -414,7 +414,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SearchAsync_BackToBack_DiscardsOlderResults()
         {
-            // Zwei Suchen ohne Pause: die zweite verdraengt die erste, die spät eintreffenden
+            // Zwei Suchen ohne Pause: die zweite verdrängt die erste, die spät eintreffenden
             // Stale-Treffer der ersten dürfen die UI nicht mehr überschreiben.
             GatedSeriesImportSearch gated = new();
             SucheViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
@@ -425,7 +425,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchText = "second";
             vm.SearchCommand.Execute(null);
 
-            // Aelteren Aufruf zuerst abschliessen – seine Treffer sind veraltet
+            // Älteren Aufruf zuerst abschließen – seine Treffer sind veraltet
             gated.CompleteCall(0,
                 [new ImportSeries { Title = "stale", Source = "Spotify", SourceSeriesId = "s1" }]);
             gated.CompleteCall(1,

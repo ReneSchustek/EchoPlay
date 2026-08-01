@@ -10,7 +10,7 @@ namespace EchoPlay.Spotify.Tests.Live
     /// Die Tests sind bewusst deaktiviert, da:
     /// - sie echte Netzwerkzugriffe benötigen
     /// - Firewall, Proxy oder VPN den Zugriff verhindern können
-    /// - dies keinen Rueckschluss auf die Codequalitaet zulaesst
+    /// - dies keinen Rückschluss auf die Codequalität zulässt
     ///
     /// Die Tests dienen ausschließlich der manuellen Verifikation
     /// in einer kontrollierten Umgebung.
@@ -34,9 +34,9 @@ namespace EchoPlay.Spotify.Tests.Live
         }
 
         /// <summary>
-        /// Führt eine reale Kuenstler-Suche gegen Spotify aus.
+        /// Führt eine reale Künstler-Suche gegen Spotify aus.
         ///
-        /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
+        /// Zum Aktivieren den Skip-Parameter temporär entfernen.
         /// </summary>
 
         [Fact(Explicit = true)]
@@ -53,15 +53,15 @@ namespace EchoPlay.Spotify.Tests.Live
         }
 
         /// <summary>
-        /// Prüft, ob Alben eines bekannten Kuenstlers geladen werden können.
+        /// Prüft, ob Alben eines bekannten Künstlers geladen werden können.
         ///
-        /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
+        /// Zum Aktivieren den Skip-Parameter temporär entfernen.
         /// </summary>
 
         [Fact(Explicit = true)]
         public async Task SpotifyApi_GetArtistAlbums_ReturnsAlbums()
         {
-            // ARRANGE – Kuenstler suchen, um eine gueltige Artist-ID zu erhalten
+            // ARRANGE – Künstler suchen, um eine gültige Artist-ID zu erhalten
             IReadOnlyList<SpotifyArtistDto> artists =
                 await _apiClient.SearchArtistsAsync("Die drei ???", 1, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -81,13 +81,13 @@ namespace EchoPlay.Spotify.Tests.Live
         /// <summary>
         /// Prüft, ob Tracks eines bekannten Albums geladen werden können.
         ///
-        /// Zum Aktivieren den Skip-Parameter temporaer entfernen.
+        /// Zum Aktivieren den Skip-Parameter temporär entfernen.
         /// </summary>
 
         [Fact(Explicit = true)]
         public async Task SpotifyApi_GetAlbumTracks_ReturnsTracks()
         {
-            // ARRANGE – Kuenstler und Album suchen
+            // ARRANGE – Künstler und Album suchen
             IReadOnlyList<SpotifyArtistDto> artists =
                 await _apiClient.SearchArtistsAsync("Die drei ???", 1, cancellationToken: TestContext.Current.CancellationToken);
 

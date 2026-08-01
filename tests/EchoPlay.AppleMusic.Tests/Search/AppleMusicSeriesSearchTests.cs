@@ -83,7 +83,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             // Der Fake-Search-Client liefert einen Künstler, der namentlich zum Suchbegriff passt.
             _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(
-                    artists: [AppleMusicTestData.UngeeigneterKuenstler]));
+                    artists: [AppleMusicTestData.UngeeigneterKünstler]));
 
             // Der Fake-Scorer lehnt den Künstler ab, obwohl die API-Suche ihn findet.
             _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(

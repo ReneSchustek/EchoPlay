@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Tests.Migrations
 
             _context = new EchoPlayDbContext(builder.Options);
 
-            // Schema bis zum Vorgaenger-Stand aufbauen,
+            // Schema bis zum Vorgänger-Stand aufbauen,
             // damit die Spalten Series.LocalCoverData und Episodes.LocalCoverData noch existieren.
             IMigrator migrator = _context.GetService<IMigrator>();
             await migrator.MigrateAsync(PreviousMigration, cancellationToken: TestContext.Current.CancellationToken);

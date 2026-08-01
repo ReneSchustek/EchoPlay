@@ -36,7 +36,7 @@ namespace EchoPlay.Logger.Sinks
         protected override string FormatLine(LogEntry entry) => Serialize(entry);
 
         /// <summary>
-        /// Serialisiert einen <see cref="LogEntry"/> in eine JSON-Zeile. Oeffentlich, damit Tests
+        /// Serialisiert einen <see cref="LogEntry"/> in eine JSON-Zeile. Öffentlich, damit Tests
         /// den Roundtrip ohne Datei-IO prüfen können.
         /// </summary>
         /// <param name="entry">Der Log-Eintrag.</param>

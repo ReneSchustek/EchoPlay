@@ -14,7 +14,7 @@ namespace EchoPlay.App.Services
     public sealed class SplashLifetimeController
     {
         /// <summary>
-        /// Mindest-Anzeigedauer gemäß <c>splashscreen.md</c>.
+        /// Mindest-Anzeigedauer des Startbilds.
         /// </summary>
         public static readonly TimeSpan MinimumDuration = TimeSpan.FromMilliseconds(1500);
 

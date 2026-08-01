@@ -14,10 +14,10 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void Build_PassesTitleAndMessageThrough()
         {
-            ConfirmationDialogContent content = ConfirmationDialogContent.Build("Loeschen?", "Wirklich loeschen?");
+            ConfirmationDialogContent content = ConfirmationDialogContent.Build("Löschen?", "Wirklich löschen?");
 
-            Assert.Equal("Loeschen?", content.Title);
-            Assert.Equal("Wirklich loeschen?", content.Message);
+            Assert.Equal("Löschen?", content.Title);
+            Assert.Equal("Wirklich löschen?", content.Message);
         }
 
         [Fact]

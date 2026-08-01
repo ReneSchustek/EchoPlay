@@ -70,7 +70,7 @@ if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish fehlgeschlagen ($LASTEXITCODE)." }
 
 # Verteil-Konvention absichern: keine Debug-Symbole in der Distribution. Der Release-Build
-# setzt DebugType=none, hier nur der deterministische Guard gegen Drift (siehe INSTALLER.md).
+# setzt DebugType=none, hier nur der deterministische Guard gegen Drift.
 $pdb = @(Get-ChildItem -Path $publishDir -Recurse -Filter '*.pdb' -File -ErrorAction SilentlyContinue)
 if ($pdb.Count -gt 0) {
     throw "Publish enthält $($pdb.Count) *.pdb-Datei(en) — Debug-Symbole gehören nicht in die Distribution (DebugType in Release prüfen)."
@@ -86,8 +86,8 @@ if (-not (Test-Path $setupBuilt)) { throw "Setup.exe nicht gefunden: $setupBuilt
 
 # Verteilung: App-Dateien und Setup.exe zusammen nach <Distribution>\EchoPlay. Im
 # Verteilverzeichnis liegen die Auslieferungen mehrerer Projekte nebeneinander; eine
-# Setup.exe an der Wurzel gehoert optisch zu keinem davon und wird beim Aufraeumen
-# leicht uebersehen.
+# Setup.exe an der Wurzel gehört optisch zu keinem davon und wird beim Aufräumen
+# leicht übersehen.
 Write-Host "Verteile nach $Distribution ..." -ForegroundColor Cyan
 $distApp = Join-Path $Distribution 'EchoPlay'
 if (-not (Test-Path $Distribution)) { New-Item -ItemType Directory -Force $Distribution | Out-Null }

@@ -208,7 +208,7 @@ namespace EchoPlay.App.Tests.ViewModels
             (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build(
                 syncService: null,
                 confirmReset: true,
-                new Series { Title = "Nur lokal", LocalFolderPath = @"C:\Hoerspiele\Test" });
+                new Series { Title = "Nur lokal", LocalFolderPath = @"C:\Hörspiele\Test" });
 
             viewModel.ReInitializeCommand.Execute(null);
             await ChangeSignals.WaitForAsync(

@@ -77,7 +77,7 @@ namespace EchoPlay.App.Tests.Infrastructure
             Assert.Equal("Error", logger.Entries[0].Level);
             Assert.Contains("UnobservedTaskException", logger.Entries[0].Message, StringComparison.Ordinal);
             Assert.Contains("unobserved", logger.Entries[0].Message, StringComparison.Ordinal);
-            Assert.True(IsObserved(args), "SetObserved muss aufgerufen werden, sonst wuerde der Prozess beim GC abgebrochen.");
+            Assert.True(IsObserved(args), "SetObserved muss aufgerufen werden, sonst würde der Prozess beim GC abgebrochen.");
         }
 
         [Fact]
@@ -119,9 +119,9 @@ namespace EchoPlay.App.Tests.Infrastructure
         }
 
         /// <summary>
-        /// <see cref="UnobservedTaskExceptionEventArgs"/> hat keinen oeffentlichen Observed-Getter,
-        /// aber Reflection zeigt das interne Feld. Alternative waere ein Provoke + GC-Kollektion,
-        /// das ist im Test unzuverlaessig.
+        /// <see cref="UnobservedTaskExceptionEventArgs"/> hat keinen öffentlichen Observed-Getter,
+        /// aber Reflection zeigt das interne Feld. Alternative wäre ein Provoke + GC-Kollektion,
+        /// das ist im Test unzuverlässig.
         /// </summary>
         private static bool IsObserved(UnobservedTaskExceptionEventArgs args)
         {

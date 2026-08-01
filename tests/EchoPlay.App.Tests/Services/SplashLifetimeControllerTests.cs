@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task WaitForMinimumDurationAsync_ElapsedAlreadyExceedsMinimum_ReturnsImmediately()
         {
             SplashLifetimeController controller = new();
-            // Mindestdauer bewusst ueberschreiten, damit die Wartezeit entfaellt.
+            // Mindestdauer bewusst überschreiten, damit die Wartezeit entfällt.
             await Task.Delay(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
@@ -35,7 +35,7 @@ namespace EchoPlay.App.Tests.Services
             await controller.WaitForMinimumDurationAsync(cancellationToken: TestContext.Current.CancellationToken);
             sw.Stop();
 
-            // Der Test toleriert Scheduler-Jitter, prueft aber, dass die Wartezeit signifikant
+            // Der Test toleriert Scheduler-Jitter, prüft aber, dass die Wartezeit signifikant
             // über 1000 ms liegt (Default-Mindestdauer ist 1500 ms).
             Assert.True(sw.ElapsedMilliseconds >= 1000,
                 $"Erwartet >= 1000 ms Wartezeit, tatsächlich {sw.ElapsedMilliseconds} ms.");

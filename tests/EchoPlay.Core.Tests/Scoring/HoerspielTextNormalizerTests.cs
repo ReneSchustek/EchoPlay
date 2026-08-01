@@ -41,7 +41,7 @@ namespace EchoPlay.Core.Tests.Scoring
             // ü → ue
             string result = HoerspielTextNormalizer.Normalize("Über");
 
-            Assert.Equal("ueber", result);
+            Assert.Equal("über", result);
         }
 
         [Fact]

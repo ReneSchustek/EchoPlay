@@ -14,8 +14,8 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für <see cref="LogViewerCoordinator"/> — Filterlogik (BuildFilteredLiveEntries)
-    /// und IsLiveViewAvailable. Datei-IO-Pfade werden uebersprungen, weil sie LoggerManager
-    /// mit echtem Filesystem benötigen wuerden.
+    /// und IsLiveViewAvailable. Datei-IO-Pfade werden übersprungen, weil sie LoggerManager
+    /// mit echtem Filesystem benötigen würden.
     /// </summary>
     public sealed class LogViewerCoordinatorTests
     {

@@ -296,7 +296,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task OnlineProviderSearchActions_SearchProviderAsync_BackToBack_DiscardsOlderResults()
         {
             // Back-to-Back-Suche in der Online-Mediathek: die zweite Suche muss die erste
-            // verdraengen, die spät eintreffenden Stale-Treffer dürfen die UI nicht mehr fuellen.
+            // verdrängen, die spät eintreffenden Stale-Treffer dürfen die UI nicht mehr füllen.
             GatedSeriesImportSearch gated = new();
             MediathekOnlineActionsContext ctx = BuildContext(spotifySearch: gated);
             OnlineSeriesViewModel seriesVM = new();

@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.ViewModels
             StatistikViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            // Auch bei leerer Liste: ein Aufruf, der intern auf leere Antwort kurzschliesst.
+            // Auch bei leerer Liste: ein Aufruf, der intern auf leere Antwort kurzschließt.
             Assert.Equal(1, episodeService.GetEpisodeCountsForSeriesAsyncCallCount);
             Assert.Equal(0, vm.SeriesCount);
             Assert.Equal(0, vm.EpisodeCount);

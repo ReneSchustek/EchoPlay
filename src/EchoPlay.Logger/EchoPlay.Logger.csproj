@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    EchoPlay.Logger ist bewusst als eigenstaendige Logger-Implementierung gehalten
+    EchoPlay.Logger ist bewusst als eigenständige Logger-Implementierung gehalten
     (Abweichung von logging.md-Vorgabe "Microsoft.Extensions.Logging als Standard").
-    Gruende: In-App-Log-Ansicht mit MemorySink und Live-Refresh, eigene Cleanup-
+    Gründe: In-App-Log-Ansicht mit MemorySink und Live-Refresh, eigene Cleanup-
     Semantik (Retention-Days, Max-File-Size, Max-Total-Size), Lehrfokus des
     Projekts. Eine Migration auf ILogger<T> + Serilog bleibt einem Major-Release
-    vorbehalten und wuerde die genannten Eigenheiten neu bewerten.
+    vorbehalten und würde die genannten Eigenheiten neu bewerten.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

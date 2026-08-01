@@ -82,7 +82,7 @@ internal static class Program
             Out.Line($"\n=== {Path.GetFileNameWithoutExtension(csproj)} ===");
             // Properties bewusst gesetzt, damit App.Tests (SelfContained=true,
             // RuntimeIdentifier=win-x64) auch die Referenz auf EchoPlay.App im selben
-            // Modus laedt und der MSBuild NETSDK1150-Check nicht zuschlaegt.
+            // Modus lädt und der MSBuild NETSDK1150-Check nicht zuschlägt.
             Dictionary<string, string> wsProps = new(StringComparer.OrdinalIgnoreCase)
             {
                 ["Configuration"] = "Release",
@@ -114,7 +114,7 @@ internal static class Program
             Compilation? compilation = await project.GetCompilationAsync();
             if (compilation is null)
             {
-                Out.Err("  Compilation null, ueberspringe.");
+                Out.Err("  Compilation null, überspringe.");
                 continue;
             }
             int patches = await FixProjectAsync(project, compilation, diagLocations);
@@ -158,9 +158,9 @@ internal static class Program
                 IParameterSymbol? ctParam = method.Parameters.FirstOrDefault(p =>
                     p.Type.ToDisplayString() == CtFqn);
 
-                // Wenn die genutzte Ueberladung selbst keinen CT-Param hat: pruefen, ob
-                // EINE andere Ueberladung mit CT existiert. Der xunit-Analyzer fordert
-                // dann den Wechsel auf diese Ueberladung.
+                // Wenn die genutzte Überladung selbst keinen CT-Param hat: prüfen, ob
+                // EINE andere Überladung mit CT existiert. Der xunit-Analyzer fordert
+                // dann den Wechsel auf diese Überladung.
                 if (ctParam is null)
                 {
                     IMethodSymbol? overload = FindCtOverload(method);
@@ -223,7 +223,7 @@ internal static class Program
 
     private static bool HasCtArgument(InvocationExpressionSyntax inv, IParameterSymbol ctParam, SemanticModel model)
     {
-        // Schnell-Vorab: irgendein Argument ist vom Typ CancellationToken oder traegt
+        // Schnell-Vorab: irgendein Argument ist vom Typ CancellationToken oder trägt
         // den ctParam-Namen als NameColon. Konservativ: lieber nicht patchen, wenn
         // schon ein CT durchgereicht wird.
         foreach (ArgumentSyntax arg in inv.ArgumentList.Arguments)
@@ -237,7 +237,7 @@ internal static class Program
             {
                 return true;
             }
-            // Text-Fallback fuer den Fall, dass die Compilation unvollstaendig geladen
+            // Text-Fallback für den Fall, dass die Compilation unvollständig geladen
             // wurde (z. B. EchoPlay.App.Tests mit WorkspaceFailure NETSDK1150 referenziert
             // EchoPlay.App self-contained — Symbol-Resolution liefert dann kein Type).
             string exprText = arg.Expression.ToString();
@@ -282,7 +282,7 @@ internal static class Program
     }
 }
 
-// DocumentEditor wird hier neu eingefuehrt, weil wir den public-Reference-Pfad
+// DocumentEditor wird hier neu eingeführt, weil wir den public-Reference-Pfad
 // vermeiden wollen. Sein Pendant aus Microsoft.CodeAnalysis.Editing benutzt
 // Workspaces.Common — bei uns reicht ein simpler ReplaceNode-Wrapper.
 internal sealed class DocumentEditor

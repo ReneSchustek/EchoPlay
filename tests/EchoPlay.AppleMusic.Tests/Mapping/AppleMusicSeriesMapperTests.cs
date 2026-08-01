@@ -34,7 +34,7 @@ namespace EchoPlay.AppleMusic.Tests.Mapping
         public void Map_NoHoerspiel_PassesScoreThrough()
         {
             ITunesArtistDto artist = new() { ArtistId = 1, ArtistName = "Pop-Artist" };
-            HoerspielScoreResult score = HoerspielScoreResult.No("1", HoerspielDecisionReason.NegativeMusicGenre, 10, "non-hoerspiel");
+            HoerspielScoreResult score = HoerspielScoreResult.No("1", HoerspielDecisionReason.NegativeMusicGenre, 10, "non-audiodrama");
 
             ImportSeries result = AppleMusicSeriesMapper.Map(artist, score);
 

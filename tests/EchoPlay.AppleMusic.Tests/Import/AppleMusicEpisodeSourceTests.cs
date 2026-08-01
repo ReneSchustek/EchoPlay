@@ -209,7 +209,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
 
             // ACT & ASSERT
             _ = await Assert.ThrowsAsync<ArgumentException>(
-                () => episodeImport.GetEpisodesAsync("keine-gueltige-id", cancellationToken: TestContext.Current.CancellationToken));
+                () => episodeImport.GetEpisodesAsync("keine-gültige-id", cancellationToken: TestContext.Current.CancellationToken));
         }
 
         /// <summary>

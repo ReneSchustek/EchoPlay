@@ -81,13 +81,13 @@ namespace EchoPlay.Spotify.Tests.Search
             // Der Fake-API-Client liefert einen Künstler, der namentlich zum Suchbegriff passt.
             _ = services.AddSingleton<ISpotifyApiClient>(
                 new FakeSpotifyApiClient(
-                    artists: [SpotifyTestData.UngeeigneterKuenstler]));
+                    artists: [SpotifyTestData.UngeeigneterKünstler]));
 
             // Der Fake-Scorer lehnt den Künstler ab, obwohl die API-Suche ihn findet.
             _ = services.AddSingleton<IHoerspielScorer<SpotifyArtistDto>>(
                 new FakeHoerspielScorer(
                     HoerspielScoreResult.No(
-                        "spotify-artist-non-hoerspiel",
+                        "spotify-artist-non-audiodrama",
                         HoerspielDecisionReason.NegativeMusicGenre,
                         0,
                         "Test: fachlich ungeeigneter Künstler")));

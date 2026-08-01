@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Tests für <see cref="WatchToggleService"/>.
     /// Verwendet eine echte ServiceCollection mit Fake-Implementierungen, um den
-    /// Scope-Factory-Pfad realitaetsnah zu prüfen.
+    /// Scope-Factory-Pfad realitätsnah zu prüfen.
     /// </summary>
     public sealed class WatchToggleServiceTests
     {
@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.Services
             (WatchToggleService toggle, FakeSeriesDataService series, FakeCachedNewReleaseDataService cache) = BuildService();
             Guid seriesId = await AddSeriesAsync(series, watched: true);
 
-            // Cache pre-fuellen, damit der Toggle-Pfad einen Eintrag findet, den er entfernen muss.
+            // Cache pre-füllen, damit der Toggle-Pfad einen Eintrag findet, den er entfernen muss.
             await cache.UpsertRangeAsync([new() { SeriesId = seriesId, CollectionId = 12345L, Title = "Folge", EpisodeNumber = 1 }], cancellationToken: TestContext.Current.CancellationToken);
             IReadOnlyList<CachedNewRelease> before = await cache.GetBySeriesIdAsync(seriesId, cancellationToken: TestContext.Current.CancellationToken);
             _ = Assert.Single(before);

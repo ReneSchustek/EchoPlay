@@ -7,15 +7,15 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für die internen pure-Funktion-Helper des <see cref="TagLookupCoordinator"/>.
-    /// Wir testen den Core direkt — der HttpClient-Pfad waere ohne Live-API nicht sinnvoll
-    /// abdeckbar; die SearchAsync-Funktion delegiert ohnehin an einen DI-aufgeloesten Service.
+    /// Wir testen den Core direkt — der HttpClient-Pfad wäre ohne Live-API nicht sinnvoll
+    /// abdeckbar; die SearchAsync-Funktion delegiert ohnehin an einen DI-aufgelösten Service.
     /// </summary>
     public sealed class TagLookupCoordinatorTests
     {
         [Fact]
         public void BuildAutoLookupQueryCore_FullPath_ReturnsSeriesAndEpisode()
         {
-            string folder = @"C:\Hoerspiele\Die drei ???\003 - Der Karpatenhund";
+            string folder = @"C:\Hörspiele\Die drei ???\003 - Der Karpatenhund";
 
             string query = TagLookupCoordinator.BuildAutoLookupQueryCore(folder);
 

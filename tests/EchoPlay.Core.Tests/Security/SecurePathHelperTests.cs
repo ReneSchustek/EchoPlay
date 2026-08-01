@@ -39,7 +39,7 @@ namespace EchoPlay.Core.Tests.Security
         public void IsPathInside_RelativeDotDotEscape_ReturnsFalse()
         {
             string root = Path.Combine(Path.GetTempPath(), "echoplay-root");
-            // Aufloesung von ..-Anteilen muss erkennen, dass das Ergebnis ausserhalb des Roots liegt.
+            // Auflösung von ..-Anteilen muss erkennen, dass das Ergebnis ausserhalb des Roots liegt.
             string candidate = Path.Combine(root, "..", "geheim", "cover.jpg");
 
             Assert.False(SecurePathHelper.IsPathInside(candidate, root));
@@ -72,7 +72,7 @@ namespace EchoPlay.Core.Tests.Security
         {
             string root = Path.Combine(Path.GetTempPath(), "echoplay-root");
 
-            // Wurzel selbst gilt als "innen" — sonst koennten Cleanup-Routinen ihren eigenen Root nicht prüfen.
+            // Wurzel selbst gilt als "innen" — sonst könnten Cleanup-Routinen ihren eigenen Root nicht prüfen.
             Assert.True(SecurePathHelper.IsPathInside(root, root));
         }
 

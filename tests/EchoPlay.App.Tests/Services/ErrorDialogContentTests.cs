@@ -28,9 +28,9 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void Record_CustomCloseButtonText_OverridesDefault()
         {
-            ErrorDialogContent content = new("T", "M", "Schliessen");
+            ErrorDialogContent content = new("T", "M", "Schließen");
 
-            Assert.Equal("Schliessen", content.CloseButtonText);
+            Assert.Equal("Schließen", content.CloseButtonText);
         }
     }
 }

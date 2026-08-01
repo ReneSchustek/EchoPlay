@@ -229,7 +229,7 @@ namespace EchoPlay.App.Tests.Services
         [Theory]
         [InlineData("Nur Text ohne Hash.", "Nur Text ohne Hash.")]
         [InlineData("", "")]
-        public void StripSha256Line_OhneHash_LaesstDenTextUnveraendert(string body, string erwartet)
+        public void StripSha256Line_OhneHash_LaesstDenTextUnverändert(string body, string erwartet)
         {
             Assert.Equal(erwartet, UpdateCheckService.StripSha256Line(body));
         }

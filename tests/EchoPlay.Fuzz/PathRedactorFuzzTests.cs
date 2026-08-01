@@ -6,7 +6,7 @@ namespace EchoPlay.Fuzz
 {
     /// <summary>
     /// Property-based-Fuzz-Tests für <see cref="PathRedactor.Redact"/>.
-    /// Property: Egal welcher Eingabe-String — der Redactor darf nicht abstuerzen
+    /// Property: Egal welcher Eingabe-String — der Redactor darf nicht abstürzen
     /// und gibt einen nicht-leeren String zurück. Der Datei-/Verzeichnisname
     /// muss redacted erscheinen (kein voller Original-Pfad mehr).
     /// </summary>

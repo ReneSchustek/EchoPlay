@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Reine Abstractions-Schicht fuer EchoPlay.Logger. Enthaelt ausschliesslich
+    Reine Abstractions-Schicht für EchoPlay.Logger. enthält ausschließlich
     Interfaces, Records, Enums und die Scope-Primitive. Hat keine NuGet- oder
-    Projekt-Abhaengigkeiten, damit die Domain-Schicht (EchoPlay.Core) hier
+    Projekt-Abhängigkeiten, damit die Domain-Schicht (EchoPlay.Core) hier
     gefahrlos dagegen arbeiten kann, ohne sich die komplette Logger-Pipeline
     (File-Sinks, Cleanup, Configuration) einzuladen.
   -->

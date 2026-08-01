@@ -11,7 +11,7 @@ namespace EchoPlay.Spotify.Tests.Live
     /// <summary>
     /// Gemeinsame Test-Infrastruktur für alle Spotify-Live-Smoke-Tests.
     ///
-    /// Die Fixture erstellt manuell eine vollstaendige HTTP-Pipeline
+    /// Die Fixture erstellt manuell eine vollständige HTTP-Pipeline
     /// mit Token-Handling und stellt den API-Client allen Tests bereit.
     ///
     /// Der bewusste Verzicht auf IHttpClientFactory vermeidet

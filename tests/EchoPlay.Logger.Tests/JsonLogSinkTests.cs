@@ -17,7 +17,7 @@ namespace EchoPlay.Logger.Tests
     /// 4. Datei-Ausgabe: WriteAsync erzeugt eine .jsonl-Datei mit einer Zeile pro Eintrag.
     /// </summary>
     /// <remarks>
-    /// <c>Guid.NewGuid()</c> als Verzeichnis-Suffix ist bewusst: xUnit fuehrt Tests in
+    /// <c>Guid.NewGuid()</c> als Verzeichnis-Suffix ist bewusst: xUnit führt Tests in
     /// derselben Klasse parallel aus. Filesystem-basierte Sinks brauchen physische
     /// Isolation pro Lauf, sonst greifen Datei-Locks ineinander. Determinismus ist hier
     /// auf Verzeichnis-Eindeutigkeit beschränkt — Test-Ausgaben sind unabhängig vom Suffix.

@@ -7,7 +7,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Zentralisiert das WinUI3-spezifische Picker-Setup (Window-Handle, InitializeWithWindow)
-    /// und entlässt die Pages aus Boilerplate-Code. Pre-Arbeitspaket-293 hatten <c>PlayerPage</c>,
+    /// und entlässt die Pages aus Boilerplate-Code. Vor Arbeitspaket 293 hatten <c>PlayerPage</c>,
     /// <c>TagManagerPage</c> und <c>MediathekLokalPage</c> jeweils eigene Picker-Konstruktion
     /// mit identischer <c>WindowNative.GetWindowHandle</c> + <c>InitializeWithWindow.Initialize</c>-Sequenz.
     /// </summary>

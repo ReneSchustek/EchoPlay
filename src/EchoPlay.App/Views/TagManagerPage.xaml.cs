@@ -69,7 +69,7 @@ namespace EchoPlay.App.Views
             ViewModel.LoadCoverRequested -= OnLoadCoverRequested;
             ViewModel.RenamePreviewReady -= OnRenamePreviewReady;
             // TagManagerViewModel implementiert aktuell kein IDisposable — hält aber mehrere
-            // Subscriptions auf _actions und Sub-VMs. Eigener Follow-up-Arbeitspaket dokumentiert.
+            // Subscriptions auf _actions und Sub-VMs. Eigenes Follow-up-Arbeitspaket ist dokumentiert.
         }
 
         /// <summary>

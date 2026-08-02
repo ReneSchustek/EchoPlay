@@ -324,11 +324,11 @@ namespace EchoPlay.App
             // Hintergrund-Services graceful stoppen, bevor der Host die Singletons disposed.
             // Jeder Service bekommt 5 Sekunden, um seine laufende Iteration zu beenden —
             // danach wird hart abgebrochen (StopAsync loggt die Überschreitung selbst).
-            // Sync-over-async ist hier der einzige Weg, weil OnWindowClosed im Shutdown nicht
-            // async sein kann und kein UI-SynchronizationContext mehr existiert (kein Deadlock).
             try
             {
                 TimeSpan stopTimeout = TimeSpan.FromSeconds(5);
+                // Blockierend: OnWindowClosed kann nicht async sein. Unkritisch,
+                // weil im Shutdown kein UI-SynchronizationContext mehr existiert.
                 _host!.Services.GetRequiredService<BackgroundCoverService>()
                     .StopAsync(stopTimeout).GetAwaiter().GetResult();
                 _host!.Services.GetRequiredService<BackgroundProviderIdService>()
@@ -346,9 +346,8 @@ namespace EchoPlay.App
                 using IServiceScope scope = _host!.Services.CreateScope();
                 IDatabaseMaintenanceService maintenance = scope.ServiceProvider
                     .GetRequiredService<IDatabaseMaintenanceService>();
-                // GetAwaiter().GetResult() ist hier bewusst gewählt:
-                // OnWindowClosed kann nicht async sein, und beim Shutdown gibt es
-                // keinen UI-SynchronizationContext der deadlocken könnte.
+                // Blockierend, weil OnWindowClosed nicht async sein kann und beim Shutdown
+                // kein UI-SynchronizationContext mehr existiert, der deadlocken könnte.
                 maintenance.OptimizeAsync().GetAwaiter().GetResult();
             }
             catch (Exception)
@@ -366,6 +365,8 @@ namespace EchoPlay.App
             // IHost selbst deklariert nur IDisposable — die konkrete Host-Implementierung implementiert IAsyncDisposable.
             if (_host is IAsyncDisposable asyncHost)
             {
+                // Blockierend, weil OnWindowClosed nicht async sein kann und im Shutdown
+                // kein UI-SynchronizationContext mehr existiert, der deadlocken könnte.
                 asyncHost.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
             else

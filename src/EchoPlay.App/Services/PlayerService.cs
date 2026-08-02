@@ -337,7 +337,8 @@ namespace EchoPlay.App.Services
                 return;
             }
 
-            // Sync-Fallback im Dispose-Pfad – kein UI-Sync-Context vorhanden, daher kein Deadlock-Risiko.
+            // Blockierend, weil dieser Sync-Fallback nur im Dispose-Pfad läuft: dort gibt es
+            // keinen UI-SynchronizationContext, an dem das Warten deadlocken könnte.
             DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
 

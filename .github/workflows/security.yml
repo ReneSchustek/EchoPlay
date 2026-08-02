@@ -7,7 +7,7 @@ on:
     branches: [main]
   schedule:
     # Wöchentlicher Security-Scan, damit neue CVEs in unveränderten Abhängigkeiten
-    # auch ohne Push gefunden werden. Sonntag 04:00 UTC = außerhalb der Arbeitspaket-Arbeitszeit.
+    # auch ohne Push gefunden werden. Sonntag 04:00 UTC = außerhalb der üblichen Arbeitszeit.
     - cron: '0 4 * * 0'
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           dotnet-version: '10.x'
 
       - name: CodeQL initialisieren
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: csharp
           queries: security-extended,security-and-quality
@@ -40,7 +40,7 @@ jobs:
           dotnet build EchoPlay.slnx --no-restore
 
       - name: CodeQL-Analyse durchführen
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: '/language:csharp'
 
@@ -104,7 +104,7 @@ jobs:
           fetch-depth: 0
 
       - name: gitleaks ausführen
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: true

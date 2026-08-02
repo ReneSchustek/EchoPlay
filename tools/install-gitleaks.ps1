@@ -7,8 +7,11 @@
     Existierende tools/gitleaks.exe wird nur überschrieben, wenn die Version abweicht.
 
     Aufruf vom Repo-Root:
-        powershell tools/install-gitleaks.ps1
-        powershell tools/install-gitleaks.ps1 -Version 8.30.1
+        pwsh tools/install-gitleaks.ps1
+        pwsh tools/install-gitleaks.ps1 -Version 8.30.1
+
+    pwsh und nicht powershell: Die Datei ist UTF-8 ohne BOM. Windows PowerShell 5.1
+    liest sie als ANSI und bricht an den Gedankenstrichen in den Ausgabezeilen ab.
 #>
 
 [CmdletBinding()]

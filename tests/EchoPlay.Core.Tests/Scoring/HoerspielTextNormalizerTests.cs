@@ -39,9 +39,13 @@ namespace EchoPlay.Core.Tests.Scoring
         public void Normalize_ReplacesUmlautUe()
         {
             // ü → ue
+            // Der erwartete Wert steht bewusst in ASCII-Schreibung — er ist das
+            // Ergebnis der Umwandlung und damit der Prüfgegenstand des Tests.
+            const string Erwartet = "ueber";
+
             string result = HoerspielTextNormalizer.Normalize("Über");
 
-            Assert.Equal("über", result);
+            Assert.Equal(Erwartet, result);
         }
 
         [Fact]

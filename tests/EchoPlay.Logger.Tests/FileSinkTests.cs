@@ -92,7 +92,7 @@ namespace EchoPlay.Logger.Tests
         /// und überschreibt vorhandene Einträge nicht.
         /// </summary>
         [Fact]
-        public async Task WriteAsync_HängtMehrereMeldungenAnSelbeTagesdatei()
+        public async Task WriteAsync_HaengtMehrereMeldungenAnSelbeTagesdatei()
         {
             string testDir = Path.Combine(_tempDirectory, "test_append");
             _ = Directory.CreateDirectory(testDir);

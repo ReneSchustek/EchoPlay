@@ -8,9 +8,9 @@ namespace EchoPlay.Logger.Tests
     /// Prüft Bereinigung nach Alter und Größe sowie Deaktivierungsverhalten.
     /// Da der Dienst auf das Dateisystem zugreift, verwendet jede Testinstanz ein eigenes temporäres Verzeichnis.
     /// </summary>
-    // Bewusst DateTime.Now: LogCleanupService selbst benutzt DateTime.Now (Logger-Verzicht
-    // auf IClock — siehe memory.md). Die Cutoff-Berechnung ist relativ zu „jetzt", deshalb
-    // müssen Test-Dateien ebenfalls relativ zu „jetzt" datiert werden.
+    // Bewusst DateTime.Now: Der Logger bleibt ohne IClock, damit er von keiner anderen
+    // Schicht abhängt — LogCleanupService benutzt deshalb selbst DateTime.Now. Die
+    // Cutoff-Berechnung ist relativ zu „jetzt", also müssen die Test-Dateien es auch sein.
     public sealed class LogCleanupServiceTests : IDisposable
     {
         private readonly string _tempDirectory = Path.Combine(

@@ -2,18 +2,18 @@
 
 Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-07-29, 40 Migrationen.
 
-Jede Migration erzeugt drei Artefakte (Pflicht, siehe `memory.md` § EF-Core-Migration-Disziplin): `<Timestamp>_<Name>.cs`, `<Timestamp>_<Name>.Designer.cs`, aktualisierter `EchoPlayDbContextModelSnapshot.cs`. Der Pfad lautet `EchoPlay.Data/Migrations/`.
+Jede Migration erzeugt drei Artefakte, die zusammen in denselben Commit gehören: `<Timestamp>_<Name>.cs`, `<Timestamp>_<Name>.Designer.cs` und den aktualisierten `EchoPlayDbContextModelSnapshot.cs`. Der Pfad lautet `src/EchoPlay.Data/Migrations/`.
 
 ## Backup vor Migration
 
-Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.TryCreateBackupAsync` automatisch einen VACUUM-INTO-Snapshot in `db-backups/` an, bevor pending Migrationen ausgeführt werden. Opt-Out und Retention sind über `AppSettings.DbBackupEnabled` und `AppSettings.DbBackupRetentionCount` konfigurierbar. Rollback-Pfad: `runbook.md` §2 und §4.
+Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.TryCreateBackupAsync` automatisch einen VACUUM-INTO-Snapshot in `db-backups/` an, bevor pending Migrationen ausgeführt werden. Opt-Out und Retention sind über `AppSettings.DbBackupEnabled` und `AppSettings.DbBackupRetentionCount` konfigurierbar. Der Weg zurück führt über diesen Snapshot: App beenden, `echoplay.db` durch die gewünschte Datei aus `db-backups/` ersetzen, App starten. Ein `Down`-Weg steht nicht für jede Migration zur Verfügung — Migration 38 etwa ist nicht umkehrbar.
 
 ## Breaking Changes für Major-Upgrades
 
 | Migration | Wirkung | Was tun beim Upgrade |
 |---|---|---|
 | 28 — `AddCoverImagesTable` (2026-04-02) | Cover wandern von entity-gebundenen BLOB-Feldern (`Series.LocalCoverData`, `Episode.LocalCoverData`) in eine eigene `CoverImages`-Tabelle | Erst nach Migration 35 vollständig. Zwischenstände (v28–v34) haben beide Quellen parallel — UI nutzt `CoverService`. |
-| 33 — `AddSourceHashSecureSettingsProviderIds` (2026-04-13) | Cover-Integrity per SHA-256, Spotify-Secrets als DPAPI-Blob, Series-ProviderIds strukturiert | Bestehende Spotify-Credentials werden beim ersten Start mit neuer Spalte migriert. DPAPI-Corruption-Recovery siehe `runbook.md` §1. |
+| 33 — `AddSourceHashSecureSettingsProviderIds` (2026-04-13) | Cover-Integrity per SHA-256, Spotify-Secrets als DPAPI-Blob, Series-ProviderIds strukturiert | Bestehende Spotify-Credentials werden beim ersten Start mit neuer Spalte migriert. Lässt sich der DPAPI-Blob nicht mehr entschlüsseln — nach Profilwechsel oder Passwort-Reset durch einen Administrator —, löscht die App den Eintrag und fragt die Zugangsdaten neu ab. |
 | 35 — `MigrateLocalCoverDataToCoverImages` (2026-04-16) | Move-Migration: BLOB aus Entitäten → `CoverImages`-Tabelle, alte Spalten gelöscht | **Ohne Backup vor Migration potenziell zerstörerisch**: Migrationen 28–34 haben BLOB-Schatten; 35 löscht sie. `DatabaseInitializer`-Backup ist Pflicht-Vorbedingung. |
 
 ## Migrationen (chronologisch)
@@ -68,7 +68,7 @@ ls src/EchoPlay.Data/Migrations/<Name>*
 # muss ZWEI Dateien zeigen: <Name>.cs UND <Name>.Designer.cs
 ```
 
-Fehlt die Designer-Datei, kennt EF Core die Migration nicht, `GetPendingMigrationsAsync()` liefert sie nicht, `MigrateAsync()` läuft leer durch — die App startet, jeder DB-Zugriff auf neue Spalten wirft erst zur Laufzeit `SQLite Error 1: no such column`. Weder Build noch Tests fangen das (siehe `memory.md` § Silent-Failure-Falle, aufgetreten 2026-04-13).
+Fehlt die Designer-Datei, kennt EF Core die Migration nicht, `GetPendingMigrationsAsync()` liefert sie nicht, `MigrateAsync()` läuft leer durch — die App startet, jeder DB-Zugriff auf neue Spalten wirft erst zur Laufzeit `SQLite Error 1: no such column`. Weder Build noch Tests fangen das — zuletzt aufgetreten am 2026-04-13.
 
 Fix: `dotnet ef migrations remove` + `dotnet ef migrations add <Name>` — dann liegen beide Dateien vor.
 

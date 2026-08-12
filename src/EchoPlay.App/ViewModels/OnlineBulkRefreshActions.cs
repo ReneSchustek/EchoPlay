@@ -15,7 +15,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     internal sealed class OnlineBulkRefreshActions
     {
-        private readonly MediathekOnlineActionsContext _ctx;
+        private readonly OnlineLibraryActionsContext _ctx;
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineEpisodesViewModel _episodesVM;
         private readonly Action<bool> _setIsLoading;
@@ -32,7 +32,7 @@ namespace EchoPlay.App.ViewModels
         public int ToggleWatchCallCount { get; private set; }
 
         public OnlineBulkRefreshActions(
-            MediathekOnlineActionsContext context,
+            OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,
             OnlineEpisodesViewModel episodesVM,
             Action<bool> setIsLoading,

@@ -65,7 +65,7 @@ namespace EchoPlay.Logger.Tests
         /// WriteAsync schreibt Kategorie, Level und Nachricht in die Log-Datei.
         /// </summary>
         [Fact]
-        public async Task WriteAsync_InhaltEnthältKategorieUndNachricht()
+        public async Task WriteAsync_ContentContainsCategoryAndMessage()
         {
             string testDir = Path.Combine(_tempDirectory, "test_inhalt");
             _ = Directory.CreateDirectory(testDir);
@@ -199,7 +199,7 @@ namespace EchoPlay.Logger.Tests
         /// WriteAsync ruft den Formatter für jeden Eintrag auf.
         /// </summary>
         [Fact]
-        public async Task WriteAsync_RuftFormatterFürJedenEintragAuf()
+        public async Task WriteAsync_CallsFormatterForEachEntry()
         {
             string testDir = Path.Combine(_tempDirectory, "test_formatter");
             _ = Directory.CreateDirectory(testDir);

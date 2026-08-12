@@ -80,6 +80,12 @@ logs/
 *.binlog
 solution_dump.txt
 
+# Aider-Tool-Artefakte
+.aider*
+
+# Lokale Werkzeug-Artefakte mit Projektkarte: enthalten Pfade und Textauszüge aus
+# Arbeitsunterlagen, die nicht ins Repository gehören.
+.localpilot/
 
 # Build-Output
 AppPackages/
@@ -87,3 +93,4 @@ BundleArtifacts/
 # Setup-Publish-Artefakte (self-contained Publish + kompilierte Setup.exe, ~300 MB)
 dist/
 
+**/.ai/

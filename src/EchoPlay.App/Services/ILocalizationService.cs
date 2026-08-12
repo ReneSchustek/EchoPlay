@@ -10,7 +10,7 @@ namespace EchoPlay.App.Services
         /// Gibt den lokalisierten String für den angegebenen Schlüssel zurück.
         /// Ist der Schlüssel nicht vorhanden, wird ein leerer String zurückgegeben.
         /// </summary>
-        /// <param name="key">Der Ressourcenschlüssel, z.B. <c>"NavStartseite.Content"</c>.</param>
+        /// <param name="key">Der Ressourcenschlüssel, z.B. <c>"NavDashboard.Content"</c>.</param>
         /// <returns>Der lokalisierte String oder <see cref="string.Empty"/> wenn der Schlüssel fehlt.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Folgt ResourceLoader.GetString / IStringLocalizer-Konvention; 'Get' ist der etablierte Name für Ressourcen-Zugriff.")]
         string Get(string key);

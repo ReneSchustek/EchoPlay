@@ -14,7 +14,7 @@ namespace EchoPlay.Logger.Tests
         /// CreateLogger gibt eine nicht-null ILogger-Instanz zurück.
         /// </summary>
         [Fact]
-        public void CreateLogger_GibtNichtNullILoggerZurück()
+        public void CreateLogger_ReturnsNonNullLogger()
         {
             EchoPlay.Logger.Core.LoggerFactory factory = new([], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
 

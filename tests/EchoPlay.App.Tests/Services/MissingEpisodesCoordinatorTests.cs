@@ -185,7 +185,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task CheckSingleSeriesAsync_SammlungBeginntSpaet_MeldetKeineLücken()
+        public async Task CheckSingleSeriesAsync_SammlungBeginntSpaet_MeldetKeineLuecken()
         {
             // Kernpunkt der Lückensuche: Wer erst ab Folge 50 sammelt, hat keine 49 Lücken.
             MissingEpisodesCoordinator coordinator = BuildCoordinator();

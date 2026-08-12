@@ -23,7 +23,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalizationService _localizationService;
         private readonly BackgroundCoverService? _backgroundCoverService;
         private readonly CancellationToken _cancellationToken;
-        private readonly SucheViewModel? _parentViewModel;
+        private readonly SearchViewModel? _parentViewModel;
         private readonly Func<Task>? _onImportCompleted;
 
         private bool _isImported;
@@ -48,7 +48,7 @@ namespace EchoPlay.App.ViewModels
         /// der Page abgebrochen wird. Hält verwaiste HTTP-Requests aus alten Suchläufen draußen.
         /// </param>
         /// <param name="parentViewModel">
-        /// Optionale Referenz auf das übergeordnete SucheViewModel – wird nach
+        /// Optionale Referenz auf das übergeordnete SearchViewModel – wird nach
         /// erfolgreichem Hinzufügen benachrichtigt, um den Erfolgshinweis zu zeigen.
         /// </param>
         /// <param name="onImportCompleted">
@@ -62,7 +62,7 @@ namespace EchoPlay.App.ViewModels
             IErrorDialogService errorDialogService,
             ILocalizationService localizationService,
             BackgroundCoverService? backgroundCoverService = null,
-            SucheViewModel? parentViewModel = null,
+            SearchViewModel? parentViewModel = null,
             Func<Task>? onImportCompleted = null,
             CancellationToken cancellationToken = default)
         {

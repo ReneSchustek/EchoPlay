@@ -18,17 +18,17 @@ namespace EchoPlay.App.Services
             new()
             {
                 [NavigationTarget.Dashboard] = typeof(DashboardPage),
-                [NavigationTarget.MediathekOnline] = typeof(MediathekOnlinePage),
-                [NavigationTarget.MediathekLokal] = typeof(MediathekLokalPage),
-                [NavigationTarget.Suche] = typeof(SuchePage),
+                [NavigationTarget.OnlineLibrary] = typeof(OnlineLibraryPage),
+                [NavigationTarget.LocalLibrary] = typeof(LocalLibraryPage),
+                [NavigationTarget.Search] = typeof(SearchPage),
                 [NavigationTarget.Player] = typeof(PlayerPage),
                 [NavigationTarget.Settings] = typeof(SettingsPage),
                 [NavigationTarget.TagManager] = typeof(TagManagerPage),
                 [NavigationTarget.SeriesDetail] = typeof(SeriesDetailPage),
                 [NavigationTarget.Import] = typeof(ImportPage),
-                [NavigationTarget.Statistik] = typeof(StatistikPage),
-                [NavigationTarget.Protokoll] = typeof(ProtokollPage),
-                [NavigationTarget.Über] = typeof(UeberPage)
+                [NavigationTarget.Statistics] = typeof(StatistikPage),
+                [NavigationTarget.Log] = typeof(LogPage),
+                [NavigationTarget.About] = typeof(AboutPage)
             };
 
         /// <summary>

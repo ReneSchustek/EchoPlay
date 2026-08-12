@@ -13,6 +13,8 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 - **Online-Mediathek** – Serien aus Spotify und Apple Music durchsuchen, importieren und verwalten. Kachelansicht mit Cover, Favoriten-Stern und Überwachungs-Icon.
 - **Lokale Mediathek** – Audiodateien scannen und automatisch zu Serien/Episoden zuordnen. Drei-Spalten-Navigation (Serien | Folgen | Tracks).
 - **Nur-Online-Modus** – Für Nutzer ohne lokale Sammlung: lokale Mediathek komplett ausblendbar.
+- **Buchstaben-Abschnitte mit Sprungleiste** – Beide Mediatheken gliedern ihre Serien nach Anfangsbuchstaben. Die Leiste darüber springt zum gewählten Buchstaben, statt zu filtern: Der übrige Bestand bleibt sichtbar. Buchstaben ohne Einträge sind erkennbar, aber nicht anwählbar. In der Online-Mediathek erscheint die Gliederung nur bei Sortierung nach Namen — nach Folgenanzahl sortiert gäbe es keine Buchstabenordnung, auf die eine Sprungmarke zeigen könnte.
+- **Folgenbereich zuklappen ohne Zurückscrollen** – Ist eine Serie aufgeklappt, steht unten rechts ein Knopf, der beim Scrollen stehen bleibt. Er schließt den Bereich und bringt die Serie zurück ins Blickfeld, statt einen irgendwo in der Liste stehen zu lassen.
 
 ### Dashboard
 
@@ -42,8 +44,9 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 
 ### Weitere Features
 
+- **Suche und Filter auf jeder Listenseite** – Mediatheken, Serien-Detail, Suche, Protokoll und Tag-Manager tragen denselben Aufbau: Seitenkopf, Suchfeld, Filter als Chips. Die Suche wirkt beim Tippen. Findet sie nichts, sagt die Seite das anders als bei leerem Bestand — und bietet den Weg zurück zum vollständigen Bestand an. Such- und Filtereinstellungen überstehen den Wechsel auf eine andere Seite und zurück.
 - **Cover-System** – 5 Online-Anbieter, lokaler Fallback, DB-Cache.
-- **6 Themes** – Ruhrcoder, ModernClassic, PaperCoffee, MidnightLibrary, ForestSignal, AmberWhiskey.
+- **6 Themes** – Ruhrcoder, ModernClassic, PaperCoffee, MidnightLibrary, ForestSignal, AmberWhiskey. Aufbau, Kachelform und Abstände sind über alle Themes gleich; die Farbe bleibt Sache des gewählten Themes. Für Text ist in jedem Theme ein Kontrast von mindestens 4,5:1 sichergestellt.
 - **Lokalisierung** – Deutsch und Englisch, zur Laufzeit umschaltbar.
 - **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases. Der Download läuft nur über HTTPS von einem GitHub-Release-Host, und die Setup-Datei muss gegen den SHA-256-Hash aus dem Release-Body passen. Fehlt der Hash, wird nicht installiert.
 - **Statistik** – Sammlungsübersicht, Hörfortschritt, Kennzahlen.

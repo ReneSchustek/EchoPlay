@@ -14,7 +14,7 @@
 
         <FontIcon
             x:Name="IconElement"
-            FontSize="48"
+            FontSize="{StaticResource TileHeaderIconSize}"
             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
             HorizontalAlignment="Center"/>
 

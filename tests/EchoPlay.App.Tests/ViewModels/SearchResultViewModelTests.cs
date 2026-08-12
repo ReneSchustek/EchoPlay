@@ -57,7 +57,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task ClearCoverImage_NullsBitmap()
         {
             // Memory-Hygiene: Trefferkachel muss ihre BitmapImage-Referenz freigeben, sobald
-            // SucheViewModel.Reset oder eine neue Suche die Liste austauscht. Sonst hängt
+            // SearchViewModel.Reset oder eine neue Suche die Liste austauscht. Sonst hängt
             // jede Karte die Cover-Bytes bis zum nächsten GC-Lauf am Heap.
             FakeBackgroundCoverService coverService = BuildFakeBackgroundCoverService();
             coverService.SearchCoverResponse = null;

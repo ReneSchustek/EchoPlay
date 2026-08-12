@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Filterleiste der Gestaltungslinie: Filter als Chips zum Umschalten, nicht als
+    Aufklappliste. Was gewählt ist, sieht man ohne zu klicken.
+
+    Ein Filter, der wirkt, aber nicht zu sehen ist, erzeugt den Eindruck fehlender Daten —
+    und man sucht den Fehler dann in den Daten.
+-->
+<UserControl
+    x:Class="EchoPlay.App.Controls.FilterBarControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EchoPlay.App.Controls"
+    IsTabStop="False">
+
+    <ItemsControl x:Name="ChipItems">
+
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <!-- Waagerecht ohne feste Zellenbreite: Ein Raster mit fester Zelle zwingt
+                     allen Chips die Breite des ersten auf, und längere Beschriftungen wie
+                     „Ungespeicherte Änderungen" werden abgeschnitten. Die Chips sind wenige
+                     und kurz genug, dass sie ohne Umbruch nebeneinander passen. -->
+                <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+
+        <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="controls:FilterChip">
+                <ToggleButton
+                    AutomationProperties.Name="{x:Bind Label}"
+                    Content="{x:Bind Label}"
+                    IsChecked="{x:Bind IsActive, Mode=TwoWay}"
+                    Tag="{x:Bind Key}"
+                    Click="OnChipClick"
+                    Margin="0,0,8,0"
+                    Padding="{StaticResource ControlPadding}"
+                    MinWidth="40"
+                    MinHeight="40"
+                    FontSize="{StaticResource FontSizeCaption}"
+                    FontWeight="{x:Bind LabelWeight, Mode=OneWay}"
+                    BorderBrush="{ThemeResource AccentPrimaryBrush}"
+                    BorderThickness="{x:Bind BorderStrength, Mode=OneWay}"
+                    CornerRadius="{StaticResource ControlCornerRadius}"/>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+</UserControl>

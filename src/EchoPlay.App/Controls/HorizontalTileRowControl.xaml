@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Wiederverwendbare horizontale Kachelreihe mit Pfeil-Buttons.
      Wird im Dashboard für Neuerscheinungen, Weiterhören, In-Progress und
      Zuletzt-gehört verwendet. Pfeile blenden sich automatisch ein,
@@ -36,7 +36,7 @@
                 Click="OnLeftArrowClick"
                 Visibility="Collapsed"
                 VerticalAlignment="Center">
-            <FontIcon Glyph="&#xE76B;" FontSize="14"/>
+            <FontIcon Glyph="&#xE76B;" FontSize="{StaticResource IconSizeS}"/>
         </Button>
 
         <ScrollViewer x:Name="TilesScrollViewer"
@@ -61,7 +61,7 @@
                 Click="OnRightArrowClick"
                 Visibility="Collapsed"
                 VerticalAlignment="Center">
-            <FontIcon Glyph="&#xE76C;" FontSize="14"/>
+            <FontIcon Glyph="&#xE76C;" FontSize="{StaticResource IconSizeS}"/>
         </Button>
     </Grid>
 </UserControl>

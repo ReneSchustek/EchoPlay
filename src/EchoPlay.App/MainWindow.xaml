@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="EchoPlay.App.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -33,9 +33,9 @@
 
             <NavigationView.MenuItems>
                 <NavigationViewItem
-                    x:Name="NavStartseite"
-                    x:Uid="NavStartseite"
-                    Tag="Startseite">
+                    x:Name="NavDashboard"
+                    x:Uid="NavDashboard"
+                    Tag="Dashboard">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;" />
                     </NavigationViewItem.Icon>
@@ -43,25 +43,25 @@
 
                 <!-- Mediathek ist ein expandierbarer Eintrag mit zwei Unterseiten -->
                 <NavigationViewItem
-                    x:Uid="NavMediathek"
-                    Tag="Mediathek">
+                    x:Uid="NavLibrary"
+                    Tag="Library">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7EE;" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.MenuItems>
                         <NavigationViewItem
-                            x:Name="NavMediathekOnline"
-                            x:Uid="NavMediathekOnline"
-                            Tag="MediathekOnline"
+                            x:Name="NavOnlineLibrary"
+                            x:Uid="NavOnlineLibrary"
+                            Tag="OnlineLibrary"
                             Visibility="{x:Bind StatusBar.OnlineMediathekVisibility, Mode=OneWay}">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE774;" />
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
                         <NavigationViewItem
-                            x:Name="NavMediathekLokal"
-                            x:Uid="NavMediathekLokal"
-                            Tag="MediathekLokal">
+                            x:Name="NavLocalLibrary"
+                            x:Uid="NavLocalLibrary"
+                            Tag="LocalLibrary">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE8B7;" />
                             </NavigationViewItem.Icon>
@@ -79,9 +79,9 @@
                 </NavigationViewItem>
 
                 <NavigationViewItem
-                    x:Name="NavSuche"
-                    x:Uid="NavSuche"
-                    Tag="Suche">
+                    x:Name="NavSearch"
+                    x:Uid="NavSearch"
+                    Tag="Search">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE721;" />
                     </NavigationViewItem.Icon>
@@ -97,9 +97,9 @@
                 </NavigationViewItem>
 
                 <NavigationViewItem
-                    x:Name="NavStatistik"
-                    x:Uid="NavStatistik"
-                    Tag="Statistik">
+                    x:Name="NavStatistics"
+                    x:Uid="NavStatistics"
+                    Tag="Statistics">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D9;" />
                     </NavigationViewItem.Icon>
@@ -107,7 +107,7 @@
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem x:Name="NavUeber" x:Uid="NavUeber" Tag="Über">
+                <NavigationViewItem x:Name="NavAbout" x:Uid="NavAbout" Tag="About">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE946;" />
                     </NavigationViewItem.Icon>
@@ -372,7 +372,7 @@
                     x:Uid="UnsavedSettingsHint"
                     VerticalAlignment="Center"
                     Style="{ThemeResource CaptionTextBlockStyle}"
-                    Foreground="#E53935"
+                    Foreground="{ThemeResource StatusWarningBrush}"
                     Margin="8,0"
                     Visibility="{x:Bind StatusBar.UnsavedSettingsVisibility, Mode=OneWay}"/>
 
@@ -458,7 +458,7 @@
         <Grid
             x:Name="ThemeLoadingOverlay"
             Grid.RowSpan="4"
-            Background="#CC1A1A1A"
+            Background="{StaticResource ThemeSwitchOverlayBrush}"
             Visibility="Collapsed">
             <StackPanel
                 HorizontalAlignment="Center"

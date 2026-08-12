@@ -100,7 +100,7 @@ namespace EchoPlay.App
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                NavView.SelectedItem = NavStartseite;
+                NavView.SelectedItem = NavDashboard;
                 await ViewModel.LoadAsync();
                 ApplyNavigationItemVisibility();
             });
@@ -112,10 +112,10 @@ namespace EchoPlay.App
         /// </summary>
         private void ApplyNavigationItemVisibility()
         {
-            NavMediathekOnline.Visibility = ViewModel.IsMediathekOnlineVisible
+            NavOnlineLibrary.Visibility = ViewModel.IsMediathekOnlineVisible
                 ? Visibility.Visible
                 : Visibility.Collapsed;
-            NavMediathekLokal.Visibility = ViewModel.IsMediathekLokalVisible
+            NavLocalLibrary.Visibility = ViewModel.IsMediathekLokalVisible
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             NavTagManager.Visibility = ViewModel.IsTagManagerVisible

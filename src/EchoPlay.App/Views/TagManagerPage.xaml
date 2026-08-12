@@ -1,9 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.TagManagerPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:EchoPlay.App.ViewModels"
+    xmlns:ctrl="using:EchoPlay.App.Controls"
     xmlns:models="using:EchoPlay.App.Models">
 
     <Page.Resources>
@@ -18,22 +19,33 @@
     </Page.Resources>
 
     <Grid>
+        <!-- Aufbau der Gestaltungslinie, von oben: Seitenkopf, Suchfeld, Filterleiste,
+             dann Dateiliste und Editor. -->
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Toolbar: Ordner öffnen, Fortschritt und Ladeindikator -->
-        <StackPanel
+        <!-- Seitenkopf: Titel, Zweck der Seite, rechts das Öffnen eines Ordners -->
+        <ctrl:PageHeaderControl
+            x:Name="TagManagerHeader"
             Grid.Row="0"
+            Margin="16,12,16,0"
+            ActionClick="OnOpenFolderClick"/>
+
+        <!-- Suchfeld, Fortschritt und Ladeindikator -->
+        <StackPanel
+            Grid.Row="1"
             Orientation="Horizontal"
             Spacing="8"
-            Padding="16,12,16,8">
-            <Button
-                x:Uid="TagManagerOpenFolderButton"
-                Click="OnOpenFolderClick">
-                <FontIcon Glyph="&#xE838;" FontSize="16"/>
-            </Button>
+            Padding="16,8,16,4">
+            <ctrl:SearchBoxControl
+                x:Name="TagManagerSearchField"
+                Width="260"
+                VerticalAlignment="Center"
+                SearchText="{x:Bind ViewModel.SearchText, Mode=TwoWay}"/>
             <ProgressRing
                 Width="20"
                 Height="20"
@@ -47,12 +59,29 @@
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
         </StackPanel>
 
+        <!-- Filter: zeigt nur Dateien mit ungespeicherten Änderungen -->
+        <ctrl:FilterBarControl
+            x:Name="TagManagerFilterBar"
+            Grid.Row="2"
+            Margin="16,0,16,4"
+            FilterToggled="OnFilterToggled"/>
+
         <!-- Zweispaltiges Layout: Dateiliste | Tag-Editor -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="260" MinWidth="180"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+
+            <!-- Nichts gefunden: eigener Hinweis, wenn der Ordner Dateien enthält, aber
+                 Suche oder Filter keine übrig lassen. -->
+            <ctrl:EmptyStatePanel
+                x:Name="TagManagerNoResultsPanel"
+                Grid.Column="0"
+                Glyph="&#xE721;"
+                VerticalAlignment="Top"
+                Margin="8,32,8,0"
+                Visibility="{x:Bind ViewModel.NoResultsVisibility, Mode=OneWay}"/>
 
             <!-- Linke Spalte: Dateiliste mit Mehrfachauswahl -->
             <ListView
@@ -168,20 +197,20 @@
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <Button
                                     x:Uid="TagManagerLoadCoverButton"
-                                    Command="{x:Bind ViewModel.LoadCoverCommand}">
-                                    <FontIcon Glyph="&#xE8E5;" FontSize="16"/>
+                                    Command="{x:Bind ViewModel.LoadCoverCommand}" Style="{StaticResource IconButtonStyle}">
+                                    <FontIcon Glyph="&#xE8E5;" FontSize="{StaticResource IconSizeM}"/>
                                 </Button>
                                 <Button
                                     x:Uid="TagManagerRemoveCoverButton"
-                                    Command="{x:Bind ViewModel.RemoveCoverCommand}">
-                                    <FontIcon Glyph="&#xE711;" FontSize="16"/>
+                                    Command="{x:Bind ViewModel.RemoveCoverCommand}" Style="{StaticResource IconButtonStyle}">
+                                    <FontIcon Glyph="&#xE711;" FontSize="{StaticResource IconSizeM}"/>
                                 </Button>
                             </StackPanel>
                             <Button
                                 x:Uid="TagManagerCoverApplyAllButton"
                                 Command="{x:Bind ViewModel.ApplyCoverToAllCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
-                                    <FontIcon Glyph="&#xE8B9;" FontSize="14"/>
+                                    <FontIcon Glyph="&#xE8B9;" FontSize="{StaticResource IconSizeS}"/>
                                     <TextBlock x:Uid="TagManagerCoverApplyAllText" Style="{ThemeResource CaptionTextBlockStyle}"/>
                                 </StackPanel>
                             </Button>
@@ -195,20 +224,20 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button
                             x:Uid="TagManagerLookupButton"
-                            Command="{x:Bind ViewModel.LookupOnlineCommand}">
-                            <FontIcon Glyph="&#xE774;" FontSize="16"/>
+                            Command="{x:Bind ViewModel.LookupOnlineCommand}" Style="{StaticResource IconButtonStyle}">
+                            <FontIcon Glyph="&#xE774;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                         <Button
                             x:Uid="TagManagerAutoLookupButton"
-                            Command="{x:Bind ViewModel.AutoLookupCommand}">
-                            <FontIcon Glyph="&#xE721;" FontSize="16"/>
+                            Command="{x:Bind ViewModel.AutoLookupCommand}" Style="{StaticResource IconButtonStyle}">
+                            <FontIcon Glyph="&#xE721;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                         <Button
                             x:Uid="TagManagerApplyToAllButton"
                             Command="{x:Bind ViewModel.ApplyToAllCommand}"
-                            Style="{ThemeResource AccentButtonStyle}">
+                            Style="{ThemeResource PrimaryActionButtonStyle}">
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <FontIcon Glyph="&#xE8D3;" FontSize="14"/>
+                                <FontIcon Glyph="&#xE8D3;" FontSize="{StaticResource IconSizeS}"/>
                                 <TextBlock x:Uid="TagManagerApplyToAllText" Style="{ThemeResource CaptionTextBlockStyle}"/>
                             </StackPanel>
                         </Button>
@@ -235,21 +264,21 @@
                         <Button
                             x:Uid="TagManagerSaveButton"
                             Command="{x:Bind ViewModel.SaveCommand}"
-                            Style="{ThemeResource AccentButtonStyle}">
-                            <FontIcon Glyph="&#xE74E;" FontSize="16"/>
+                            Style="{ThemeResource PrimaryActionButtonStyle}">
+                            <FontIcon Glyph="&#xE74E;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                         <Button
                             x:Uid="TagManagerSaveAllButton"
                             Command="{x:Bind ViewModel.SaveAllCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <FontIcon Glyph="&#xE78C;" FontSize="14"/>
+                                <FontIcon Glyph="&#xE78C;" FontSize="{StaticResource IconSizeS}"/>
                                 <TextBlock x:Uid="TagManagerSaveAllText" Style="{ThemeResource CaptionTextBlockStyle}"/>
                             </StackPanel>
                         </Button>
                         <Button
                             x:Uid="TagManagerRemoveAllTagsButton"
-                            Command="{x:Bind ViewModel.RemoveAllTagsCommand}">
-                            <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                            Command="{x:Bind ViewModel.RemoveAllTagsCommand}" Style="{StaticResource IconButtonStyle}">
+                            <FontIcon Glyph="&#xE74D;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                     </StackPanel>
 
@@ -275,14 +304,14 @@
                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
                         <Button
                             x:Uid="TagManagerPreviewRenameButton"
-                            Command="{x:Bind ViewModel.PreviewRenameCommand}">
-                            <FontIcon Glyph="&#xE890;" FontSize="16"/>
+                            Command="{x:Bind ViewModel.PreviewRenameCommand}" Style="{StaticResource IconButtonStyle}">
+                            <FontIcon Glyph="&#xE890;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                         <Button
                             x:Uid="TagManagerExecuteRenameButton"
                             Command="{x:Bind ViewModel.ExecuteRenameCommand}"
-                            Style="{ThemeResource AccentButtonStyle}">
-                            <FontIcon Glyph="&#xE8AC;" FontSize="16"/>
+                            Style="{ThemeResource PrimaryActionButtonStyle}">
+                            <FontIcon Glyph="&#xE8AC;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                     </StackPanel>
 

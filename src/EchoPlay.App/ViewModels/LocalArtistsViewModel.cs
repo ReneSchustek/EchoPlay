@@ -17,7 +17,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Sub-ViewModel für die Künstler-/Serien-Spalte der lokalen Mediathek. Hält die
     /// Liste der lokalen Serienkacheln, den clientseitigen Suchfilter, die Auswahl-State
-    /// und die Cover-Aufbau-Logik. Wird vom <see cref="MediathekLokalViewModel"/> als
+    /// und die Cover-Aufbau-Logik. Wird vom <see cref="LocalLibraryViewModel"/> als
     /// Pass-Through-Ziel eingebunden, damit bestehende XAML-Bindings unverändert funktionieren.
     /// </summary>
     public sealed class LocalArtistsViewModel : ObservableObject
@@ -25,9 +25,10 @@ namespace EchoPlay.App.ViewModels
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICoverService? _coverService;
 
-        private IReadOnlyList<LocalArtistCardViewModel> _allArtists = [];
+        private readonly LocalArtistFilter _filter;
+
+        private List<LocalArtistCardViewModel> _allArtists = [];
         private IReadOnlyList<LocalArtistCardViewModel> _artists = [];
-        private string _localSearchText = string.Empty;
         private LocalArtistCardViewModel? _selectedArtist;
         private int _selectedArtistIndex = -1;
 
@@ -36,12 +37,18 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="scopeFactory">Für Datenbankzugriffe beim Laden und beim Cover-Aufbau.</param>
         /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. In Tests <see langword="null"/>.</param>
+        /// <param name="filter">
+        /// Die Filterkriterien. Wird eine Ablage übergeben, überlebt der Filter den Wechsel auf
+        /// eine andere Seite; ohne Angabe gilt er nur für dieses ViewModel.
+        /// </param>
         public LocalArtistsViewModel(
             IServiceScopeFactory scopeFactory,
-            ICoverService? coverService = null)
+            ICoverService? coverService = null,
+            LocalArtistFilter? filter = null)
         {
             _scopeFactory = scopeFactory;
             _coverService = coverService;
+            _filter = filter ?? new LocalArtistFilter();
         }
 
         /// <summary>
@@ -55,6 +62,7 @@ namespace EchoPlay.App.ViewModels
                 if (SetProperty(ref _artists, value))
                 {
                     OnPropertyChanged(nameof(ArtistsEmptyVisibility));
+                    OnPropertyChanged(nameof(NoResultsVisibility));
                 }
             }
         }
@@ -65,14 +73,64 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public string LocalSearchText
         {
-            get => _localSearchText;
-            set
+            get => _filter.SearchText;
+            set => SetFilter(value, f => f.SearchText = value, nameof(LocalSearchText), _filter.SearchText);
+        }
+
+        /// <summary>Zeigt nur Serien, die als Favorit markiert sind.</summary>
+        public bool FavoritesOnly
+        {
+            get => _filter.FavoritesOnly;
+            set => SetFilter(value, f => f.FavoritesOnly = value, nameof(FavoritesOnly), _filter.FavoritesOnly);
+        }
+
+        /// <summary>Zeigt nur Serien, die auf neue Folgen geprüft werden.</summary>
+        public bool WatchedOnly
+        {
+            get => _filter.WatchedOnly;
+            set => SetFilter(value, f => f.WatchedOnly = value, nameof(WatchedOnly), _filter.WatchedOnly);
+        }
+
+        /// <summary>Zeigt nur Serien, denen lokal Folgen fehlen.</summary>
+        public bool IncompleteOnly
+        {
+            get => _filter.IncompleteOnly;
+            set => SetFilter(value, f => f.IncompleteOnly = value, nameof(IncompleteOnly), _filter.IncompleteOnly);
+        }
+
+        /// <summary>
+        /// Übernimmt ein geändertes Filterkriterium, meldet es und wendet den Filter neu an.
+        /// Unveränderte Werte lösen nichts aus — sonst baute jede Zuweisung die Liste neu auf.
+        /// </summary>
+        private void SetFilter<T>(T neu, Action<LocalArtistFilter> assign, string name, T alt)
+        {
+            if (EqualityComparer<T>.Default.Equals(alt, neu))
             {
-                if (SetProperty(ref _localSearchText, value))
-                {
-                    ApplyLocalSearchFilter();
-                }
+                return;
             }
+
+            assign(_filter);
+            OnPropertyChanged(name);
+            ApplyFilters();
+        }
+
+        /// <summary>Ob Suche oder Filter die Sicht gerade einschränken.</summary>
+        public bool HasActiveFilter => _filter.IsActive;
+
+        /// <summary>
+        /// Nimmt Suche und Filter zurück. Nach einem Treffer ohne Ergebnis führt das den
+        /// Nutzer in einem Schritt zum vollständigen Bestand zurück.
+        /// </summary>
+        public void ResetFilters()
+        {
+            _filter.Reset();
+
+            OnPropertyChanged(nameof(LocalSearchText));
+            OnPropertyChanged(nameof(FavoritesOnly));
+            OnPropertyChanged(nameof(WatchedOnly));
+            OnPropertyChanged(nameof(IncompleteOnly));
+
+            ApplyFilters();
         }
 
         /// <summary>Aktuell gewählte Serie – steuert die mittlere Spalte.</summary>
@@ -105,10 +163,23 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des "Keine Serien"-Platzhalters – erscheint wenn die Bibliothek leer ist.
+        /// Sichtbarkeit des „Noch keine Serien"-Platzhalters – erscheint nur, wenn die
+        /// Bibliothek wirklich leer ist.
         /// </summary>
         public Visibility ArtistsEmptyVisibility =>
-            _artists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            _allArtists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Sichtbarkeit des „Nichts gefunden"-Platzhalters – erscheint, wenn der Bestand
+        /// gefüllt ist und erst Suche oder Filter ihn leer räumen.
+        /// <para>
+        /// Die Unterscheidung zum leeren Bestand ist der eigentliche Punkt: „Nichts da" führt
+        /// zum Einlesen der Bibliothek, „nichts gefunden" zum Zurücknehmen der Suche. Ein
+        /// gemeinsamer Text schickte die Hälfte der Nutzer in die falsche Richtung.
+        /// </para>
+        /// </summary>
+        public Visibility NoResultsVisibility =>
+            _allArtists.Count > 0 && _artists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
         /// Sichtbarkeit des Folgen-Akkordeons – eingeblendet sobald eine Serie ausgewählt ist.
@@ -169,7 +240,7 @@ namespace EchoPlay.App.ViewModels
             SelectedArtist = null;
             SelectedArtistIndex = -1;
             _allArtists = artistCards;
-            ApplyLocalSearchFilter();
+            ApplyFilters();
 
             // Cover progressiv im Hintergrund laden – Kacheln sind bereits sichtbar
             foreach ((LocalArtistCardViewModel card, Series series) in artistCards.Zip(localSeries))
@@ -234,7 +305,7 @@ namespace EchoPlay.App.ViewModels
                     scopeFactory: _scopeFactory);
 
                 _allArtists = [.. _allArtists, card];
-                ApplyLocalSearchFilter();
+                ApplyFilters();
             }
             catch (IOException)
             {
@@ -293,27 +364,29 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Filtert <see cref="_allArtists"/> nach dem aktuellen Suchtext und aktualisiert
-        /// die <see cref="Artists"/>-Liste. Leerer Suchtext zeigt alle Serien.
+        /// Wendet Suchtext und Filter auf <see cref="_allArtists"/> an und aktualisiert die
+        /// <see cref="Artists"/>-Liste. Ohne Suchtext und ohne Filter stehen alle Serien.
         /// </summary>
-        private void ApplyLocalSearchFilter()
+        private void ApplyFilters()
         {
-            if (string.IsNullOrWhiteSpace(_localSearchText))
+            if (!_filter.IsActive)
             {
                 Artists = _allArtists;
+                OnPropertyChanged(nameof(HasActiveFilter));
                 return;
             }
 
             List<LocalArtistCardViewModel> filtered = [];
             foreach (LocalArtistCardViewModel card in _allArtists)
             {
-                if (card.Title.Contains(_localSearchText, StringComparison.OrdinalIgnoreCase))
+                if (_filter.Matches(card))
                 {
                     filtered.Add(card);
                 }
             }
 
             Artists = filtered;
+            OnPropertyChanged(nameof(HasActiveFilter));
         }
 
         /// <summary>

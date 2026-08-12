@@ -68,45 +68,36 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task WaitAsync_ForegroundGoesBeforeBackground()
         {
-            // Host-Intervall bewusst lang: der erste Background-Call setzt den Zeitstempel,
-            // der nächste Background-Call muss das volle Intervall abwarten. In dieses
-            // Zeitfenster schalten wir eine Foreground-Anfrage — sie darf sofort durch,
-            // der Background-Call hinter ihr wartet zusätzlich, bis der Foreground-Slot
-            // wieder frei ist.
-            TimeSpan interval = TimeSpan.FromMilliseconds(300);
+            // Zwei verschiedene Hosts, damit wirklich der Vorrang geprüft wird und nicht die
+            // Reihenfolge am gemeinsamen Semaphore: Die Background-Anfrage geht auf einen Host,
+            // der noch nie aufgerufen wurde und kein Intervall kennt — sie liefe also sofort
+            // durch. Sie muss trotzdem warten, solange eine Foreground-Anfrage im Flug ist.
             SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
             {
-                ["mixed.host"] = interval
+                ["foreground.host"] = TimeSpan.FromMilliseconds(300),
+                ["background.host"] = TimeSpan.Zero
             });
 
-            // Erster Aufruf: setzt den letzten Aufruf-Zeitstempel sofort.
-            await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
+            // Setzt den Zeitstempel: Die nächste Anfrage an diesen Host wartet das volle
+            // Intervall ab und hält den Vorrang so lange offen.
+            await limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
 
-            // Foreground-Anfrage im Hintergrund starten; sie darf wegen des Intervalls
-            // erst nach ca. 300 ms zurückkehren, blockiert aber während ihrer Laufzeit
-            // jede Background-Anfrage.
-            Stopwatch sw = Stopwatch.StartNew();
-            Task<long> foregroundTask = Task.Run(async () =>
-            {
-                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
-                return sw.ElapsedMilliseconds;
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            // Direkt aufrufen und nicht über Task.Run: WaitAsync zählt den Foreground-Vorrang
+            // synchron hoch, bevor es das erste Mal wartet. Damit steht die Reservierung fest,
+            // sobald der Aufruf zurückkehrt — eine über Task.Run gestartete Anfrage kann unter
+            // Last später anlaufen, und dann sieht die Background-Anfrage keinen Vorrang.
+            Task foreground = limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
+            Task background = limiter.WaitAsync("background.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
 
-            // Kurzer Abstand, damit der Foreground-Call seinen Slot reserviert hat.
-            await Task.Delay(30, cancellationToken: TestContext.Current.CancellationToken);
+            // Deutlich vor Ablauf des Foreground-Intervalls nachsehen: Ohne Vorrangregel wäre
+            // die Background-Anfrage zu diesem Zeitpunkt längst durch.
+            await Task.Delay(100, cancellationToken: TestContext.Current.CancellationToken);
 
-            Task<long> backgroundTask = Task.Run(async () =>
-            {
-                await limiter.WaitAsync("mixed.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
-                return sw.ElapsedMilliseconds;
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.False(background.IsCompleted,
+                "Die Background-Anfrage darf nicht durchlaufen, solange eine Foreground-Anfrage wartet.");
 
-            long foregroundMs = await foregroundTask;
-            long backgroundMs = await backgroundTask;
-            sw.Stop();
-
-            Assert.True(foregroundMs < backgroundMs,
-                $"Foreground muss vor Background zurückkehren — tatsächlich FG={foregroundMs} ms, BG={backgroundMs} ms.");
+            await foreground;
+            await background;
         }
 
         [Fact]

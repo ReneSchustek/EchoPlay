@@ -20,7 +20,7 @@ namespace EchoPlay.App.ViewModels
     /// Sub-ViewModel für die Scan- und Status-Logik der lokalen Mediathek.
     /// Kapselt den Ablauf von Scan und Neu-Initialisierung, verwaltet den Einrichtungszustand
     /// der Bibliothek und bedient den Ordnerpicker zum Auswählen oder Hinzufügen von Ordnern.
-    /// Die eigentliche Anzeige der Serien übernimmt weiterhin <see cref="MediathekLokalViewModel"/>;
+    /// Die eigentliche Anzeige der Serien übernimmt weiterhin <see cref="LocalLibraryViewModel"/>;
     /// diese Klasse meldet Fortschritt und Abschluss über <see cref="LibraryReloaded"/> und den
     /// Konstruktor-Callback für einzelne synchronisierte Serien zurück.
     /// </summary>

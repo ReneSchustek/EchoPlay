@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.DashboardPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -17,33 +17,33 @@
             <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
             <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}"/>
         </Style>
 
         <!-- Tile-Template für Neuerscheinungen: Cover, Badge, Kontextmenü, Progress, Overlay. -->
         <DataTemplate x:Key="NewEpisodeTileTemplate" x:DataType="viewmodels:NewEpisodeCardViewModel">
-            <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind EpisodeTitle}">
+            <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}" AutomationProperties.Name="{x:Bind EpisodeTitle}">
                 <Grid.Clip>
                     <RectangleGeometry Rect="0,0,160,160"/>
                 </Grid.Clip>
 
                 <!-- Cover als klickbare Schaltfläche -->
                 <Button Width="160" Height="160" Padding="0" AutomationProperties.Name="{x:Bind PlayAutomationName}"
-                        Command="{x:Bind PlayCommand}" CornerRadius="8">
+                        Command="{x:Bind PlayCommand}" CornerRadius="{StaticResource CardCornerRadius}">
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
 
                 <!-- Badge oben links: "Angekündigt" (blau) oder "Neu" (grün) -->
                 <Border HorizontalAlignment="Left" VerticalAlignment="Top"
-                        Margin="4,4,0,0" CornerRadius="4"
+                        Margin="4,4,0,0" CornerRadius="{StaticResource ControlCornerRadius}"
                         Background="{x:Bind BadgeBrush}" Padding="6,2"
                         Visibility="{x:Bind BadgeVisibility}">
-                    <TextBlock Text="{x:Bind BadgeText}" Foreground="White"
+                    <TextBlock Text="{x:Bind BadgeText}" Foreground="{StaticResource TextOnMediaBrush}"
                                FontSize="10" FontWeight="SemiBold"/>
                 </Border>
 
                 <!-- Grüner Haken (nur wenn gehört) -->
-                <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="LimeGreen"
+                <FontIcon Glyph="&#xE73E;" FontSize="{StaticResource IconSizeM}" Foreground="LimeGreen"
                           HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
                           Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
 
@@ -51,8 +51,8 @@
                 <Button Content="&#xE712;" AutomationProperties.Name="{x:Bind ActionsAutomationName}" FontFamily="{ThemeResource SymbolThemeFontFamily}"
                         Width="28" Height="28" Padding="0"
                         HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Margin="0,4,4,0" CornerRadius="4"
-                        Background="#88000000" Foreground="White">
+                        Margin="0,4,4,0" CornerRadius="{StaticResource ControlCornerRadius}"
+                        Background="{StaticResource MediaScrimSoftBrush}" Foreground="{StaticResource TextOnMediaBrush}">
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem x:Uid="DashboardMenuMarkPlayed"
@@ -64,14 +64,14 @@
                 </Button>
 
                 <!-- Text-Overlay -->
-                <Border VerticalAlignment="Bottom" Background="#AA000000"
-                        CornerRadius="0,0,8,8" Padding="6,4">
+                <Border VerticalAlignment="Bottom" Background="{StaticResource MediaScrimStrongBrush}"
+                        CornerRadius="{StaticResource CardBodyCornerRadius}" Padding="6,4">
                     <StackPanel>
-                        <TextBlock Text="{x:Bind SeriesName}" Foreground="#BBFFFFFF" FontSize="10"
+                        <TextBlock Text="{x:Bind SeriesName}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"
                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{x:Bind InfoLineText}" Foreground="#BBFFFFFF" FontSize="10"
+                        <TextBlock Text="{x:Bind InfoLineText}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"
                                    Visibility="{x:Bind InfoLineVisibility}"/>
-                        <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="White" FontSize="12"
+                        <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="{StaticResource TextOnMediaBrush}" FontSize="12"
                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Border>
@@ -85,20 +85,20 @@
 
         <!-- Tile-Template für In-Progress: kein Badge, kein Kontextmenü, sonst wie Neuerscheinungen. -->
         <DataTemplate x:Key="InProgressTileTemplate" x:DataType="viewmodels:NewEpisodeCardViewModel">
-            <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind EpisodeTitle}">
+            <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}" AutomationProperties.Name="{x:Bind EpisodeTitle}">
                 <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
                 <Button Width="160" Height="160" Padding="0" AutomationProperties.Name="{x:Bind PlayAutomationName}"
-                        Command="{x:Bind PlayCommand}" CornerRadius="8">
+                        Command="{x:Bind PlayCommand}" CornerRadius="{StaticResource CardCornerRadius}">
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
-                <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="LimeGreen"
+                <FontIcon Glyph="&#xE73E;" FontSize="{StaticResource IconSizeM}" Foreground="LimeGreen"
                           HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
                           Visibility="{x:Bind CompletedCheckVisibility, Mode=OneWay}"/>
-                <Border VerticalAlignment="Bottom" Background="#AA000000"
-                        CornerRadius="0,0,8,8" Padding="6,4">
+                <Border VerticalAlignment="Bottom" Background="{StaticResource MediaScrimStrongBrush}"
+                        CornerRadius="{StaticResource CardBodyCornerRadius}" Padding="6,4">
                     <StackPanel>
-                        <TextBlock Text="{x:Bind EpisodeNumberText}" Foreground="#BBFFFFFF" FontSize="10"/>
-                        <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="White" FontSize="12"
+                        <TextBlock Text="{x:Bind EpisodeNumberText}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"/>
+                        <TextBlock Text="{x:Bind EpisodeTitle}" Foreground="{StaticResource TextOnMediaBrush}" FontSize="12"
                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Border>
@@ -110,19 +110,19 @@
 
         <!-- Tile-Template für "Weiterhören": Serie + Restanzeige. -->
         <DataTemplate x:Key="UnheardSeriesTileTemplate" x:DataType="viewmodels:UnheardSeriesCardViewModel">
-            <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind SeriesName}">
+            <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}" AutomationProperties.Name="{x:Bind SeriesName}">
                 <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
                 <Button Width="160" Height="160" Padding="0" Background="Transparent" AutomationProperties.Name="{x:Bind OpenAutomationName}"
                         BorderThickness="0" Click="OnUnheardSeriesClick"
-                        Tag="{x:Bind SeriesId}" CornerRadius="8">
+                        Tag="{x:Bind SeriesId}" CornerRadius="{StaticResource CardCornerRadius}">
                     <Image Source="{x:Bind CoverImage, Mode=OneTime}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
-                <Border VerticalAlignment="Bottom" Background="#AA000000"
-                        CornerRadius="0,0,8,8" Padding="6,4">
+                <Border VerticalAlignment="Bottom" Background="{StaticResource MediaScrimStrongBrush}"
+                        CornerRadius="{StaticResource CardBodyCornerRadius}" Padding="6,4">
                     <StackPanel>
-                        <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
+                        <TextBlock Text="{x:Bind SeriesName}" Foreground="{StaticResource TextOnMediaBrush}" FontSize="12"
                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{x:Bind DisplayText}" Foreground="#BBFFFFFF" FontSize="10"/>
+                        <TextBlock Text="{x:Bind DisplayText}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -130,19 +130,19 @@
 
         <!-- Tile-Template für "Zuletzt gehört": Serie + letzte Episode. -->
         <DataTemplate x:Key="RecentSeriesTileTemplate" x:DataType="viewmodels:RecentSeriesCardViewModel">
-            <Grid Width="160" Height="160" CornerRadius="8" AutomationProperties.Name="{x:Bind SeriesName}">
+            <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}" AutomationProperties.Name="{x:Bind SeriesName}">
                 <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
                 <Button Width="160" Height="160" Padding="0" Background="Transparent" AutomationProperties.Name="{x:Bind OpenAutomationName}"
                         BorderThickness="0" Click="OnRecentSeriesClick"
-                        Tag="{x:Bind SeriesId}" CornerRadius="8">
+                        Tag="{x:Bind SeriesId}" CornerRadius="{StaticResource CardCornerRadius}">
                     <Image Source="{x:Bind CoverImage, Mode=OneTime}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
-                <Border VerticalAlignment="Bottom" Background="#AA000000"
-                        CornerRadius="0,0,8,8" Padding="6,4">
+                <Border VerticalAlignment="Bottom" Background="{StaticResource MediaScrimStrongBrush}"
+                        CornerRadius="{StaticResource CardBodyCornerRadius}" Padding="6,4">
                     <StackPanel>
-                        <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
+                        <TextBlock Text="{x:Bind SeriesName}" Foreground="{StaticResource TextOnMediaBrush}" FontSize="12"
                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{x:Bind LastEpisodeTitle}" Foreground="#BBFFFFFF" FontSize="10"
+                        <TextBlock Text="{x:Bind LastEpisodeTitle}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"
                                    MaxLines="1" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Border>
@@ -250,7 +250,7 @@
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0" x:Uid="DashboardFavoritesScrollLeft" Style="{StaticResource ScrollArrowButtonStyle}"
                         Tag="left" Click="OnFavoritesArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76B;" FontSize="14"/>
+                        <FontIcon Glyph="&#xE76B;" FontSize="{StaticResource IconSizeS}"/>
                     </Button>
                     <ListView Grid.Column="1"
                         ItemsSource="{x:Bind ViewModel.FavoriteSeries, Mode=OneWay}"
@@ -283,7 +283,7 @@
                                 <!-- Kein Button als Wrapper – ein Full-Size-Button schluckt alle Pointer-Events
                                      und verhindert, dass das ListView den Drag starten kann.
                                      Navigation zur Detailseite läuft über ListView.ItemClick. -->
-                                <Grid Width="160" Height="160" CornerRadius="8"
+                                <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}"
                                       AutomationProperties.Name="{x:Bind SeriesName, Mode=OneTime}">
                                     <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
                                     <Image Source="{x:Bind CoverImage, Mode=OneTime}" Width="160" Height="160" Stretch="UniformToFill"/>
@@ -291,20 +291,20 @@
                                     <!-- Drag-Handle oben links: signalisiert Verschiebbarkeit.
                                          Gleicher Gripper wie bei den Neuerscheinungen (E700). -->
                                     <Border HorizontalAlignment="Left" VerticalAlignment="Top"
-                                        Margin="4,4,0,0" CornerRadius="4" Background="#88000000" Padding="4,2">
-                                        <FontIcon Glyph="&#xE700;" FontSize="10" Foreground="White"/>
+                                        Margin="4,4,0,0" CornerRadius="{StaticResource ControlCornerRadius}" Background="{StaticResource MediaScrimSoftBrush}" Padding="4,2">
+                                        <FontIcon Glyph="&#xE700;" FontSize="10" Foreground="{StaticResource TextOnMediaBrush}"/>
                                     </Border>
 
                                     <!-- Kontextmenü oben rechts -->
                                     <Button Content="&#xE712;" AutomationProperties.Name="{x:Bind ActionsAutomationName}" FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                         Width="28" Height="28" Padding="0" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                        Margin="0,4,4,0" CornerRadius="4" Background="#88000000" Foreground="White">
+                                        Margin="0,4,4,0" CornerRadius="{StaticResource ControlCornerRadius}" Background="{StaticResource MediaScrimSoftBrush}" Foreground="{StaticResource TextOnMediaBrush}">
                                         <Button.Flyout><MenuFlyout>
                                             <MenuFlyoutItem x:Uid="DashboardMenuRemoveFavorite" Command="{x:Bind RemoveFromFavoritesCommand}"/>
                                         </MenuFlyout></Button.Flyout>
                                     </Button>
-                                    <Border VerticalAlignment="Bottom" Background="#AA000000" CornerRadius="0,0,8,8" Padding="6,4">
-                                        <TextBlock Text="{x:Bind SeriesName}" Foreground="White" FontSize="12"
+                                    <Border VerticalAlignment="Bottom" Background="{StaticResource MediaScrimStrongBrush}" CornerRadius="{StaticResource CardBodyCornerRadius}" Padding="6,4">
+                                        <TextBlock Text="{x:Bind SeriesName}" Foreground="{StaticResource TextOnMediaBrush}" FontSize="12"
                                             MaxLines="2" TextTrimming="CharacterEllipsis"/>
                                     </Border>
                                 </Grid>
@@ -313,7 +313,7 @@
                     </ListView>
                     <Button Grid.Column="2" x:Uid="DashboardFavoritesScrollRight" Style="{StaticResource ScrollArrowButtonStyle}"
                         Tag="right" Click="OnFavoritesArrowClick" Visibility="Collapsed" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE76C;" FontSize="14"/>
+                        <FontIcon Glyph="&#xE76C;" FontSize="{StaticResource IconSizeS}"/>
                     </Button>
                 </Grid>
 

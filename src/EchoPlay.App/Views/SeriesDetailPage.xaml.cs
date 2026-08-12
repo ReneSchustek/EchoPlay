@@ -32,6 +32,68 @@ namespace EchoPlay.App.Views
 
             // Sortierung initial auf Episodennummer (Index 0) vorauswählen
             SortComboBox.SelectedIndex = 0;
+
+            InitializeSearchAndFilters();
+        }
+
+        private static readonly Helpers.SafeResourceStrings _resources = new();
+
+        /// <summary>Schlüssel des Filters für noch nicht begonnene Folgen.</summary>
+        private const string FilterKeyUnheard = "unheard";
+
+        /// <summary>Schlüssel des Filters für angefangene Folgen.</summary>
+        private const string FilterKeyInProgress = "inprogress";
+
+        /// <summary>Schlüssel des Filters für durchgehörte Folgen.</summary>
+        private const string FilterKeyHeard = "heard";
+
+        /// <summary>Die Chips des Hörzustands — gehalten, weil sie einander ausschließen.</summary>
+        private Controls.FilterChip[] _stateChips = [];
+
+        /// <summary>
+        /// Beschriftet Suchfeld und Filterleiste. Die Texte stehen im Quelltext und nicht als
+        /// x:Uid, weil x:Uid nur die Eigenschaften eingebauter Steuerelemente bedient.
+        /// </summary>
+        private void InitializeSearchAndFilters()
+        {
+            EpisodeSearchField.PlaceholderText = _resources.GetString("SeriesDetailSearchPlaceholder");
+
+            _stateChips =
+            [
+                new Controls.FilterChip(FilterKeyUnheard, _resources.GetString("SeriesDetailFilterUnheard")),
+                new Controls.FilterChip(FilterKeyInProgress, _resources.GetString("SeriesDetailFilterInProgress")),
+                new Controls.FilterChip(FilterKeyHeard, _resources.GetString("SeriesDetailFilterHeard"))
+            ];
+
+            EpisodeFilterBar.Chips = _stateChips;
+        }
+
+        /// <summary>
+        /// Übernimmt einen umgeschalteten Hörzustand. Die Zustände schließen einander aus,
+        /// deshalb geht mit dem neuen Chip jeder andere aus; ein zweiter Klick auf den aktiven
+        /// Chip führt zurück zu „alle".
+        /// </summary>
+        private void OnFilterToggled(object? sender, Controls.FilterToggledEventArgs e)
+        {
+            foreach (Controls.FilterChip chip in _stateChips)
+            {
+                if (!ReferenceEquals(chip, e.Chip))
+                {
+                    chip.IsActive = false;
+                }
+            }
+
+            // Die Indizes entsprechen der früheren Aufklappliste: 1 = ungehört,
+            // 2 = gehört, 3 = angefangen.
+            ViewModel.EpisodeFilterIndex = e.Chip.IsActive
+                ? e.Chip.Key switch
+                {
+                    FilterKeyUnheard => 1,
+                    FilterKeyHeard => 2,
+                    FilterKeyInProgress => 3,
+                    _ => 0
+                }
+                : 0;
         }
 
         /// <summary>

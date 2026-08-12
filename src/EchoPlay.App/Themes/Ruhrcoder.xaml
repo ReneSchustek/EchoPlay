@@ -150,6 +150,11 @@
             <!-- Typografie: Roboto – technisch, sachlich, direkt -->
             <!-- Download: https://fonts.google.com/specimen/Roboto -->
             <!-- TTF nach Assets/Fonts/ kopieren und im .csproj als Content deklarieren -->
+
+            <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#1E7A45"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#8A5A00"/>
+            <SolidColorBrush x:Key="StatusErrorBrush"   Color="#B3261E"/>
             <FontFamily x:Key="ThemeFontFamily">Roboto</FontFamily>
             <FontFamily x:Key="ThemeMonoFontFamily">Roboto Mono</FontFamily>
             <!-- ContentControlThemeFontFamily überschreibt den WinUI-3-Standard,
@@ -246,6 +251,11 @@
             <SolidColorBrush x:Key="ActiveBackgroundBrush"                 Color="#D6E8F5"/>
             <SolidColorBrush x:Key="SelectionBackgroundBrush"              Color="#D6E8F5"/>
             <SolidColorBrush x:Key="SelectionBorderBrush"                  Color="#2E6DA4"/>
+
+            <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#1E7A45"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#8A5A00"/>
+            <SolidColorBrush x:Key="StatusErrorBrush"   Color="#B3261E"/>
             <FontFamily x:Key="ThemeFontFamily">Roboto</FontFamily>
             <FontFamily x:Key="ThemeMonoFontFamily">Roboto Mono</FontFamily>
             <FontFamily x:Key="ContentControlThemeFontFamily">Roboto</FontFamily>

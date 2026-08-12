@@ -170,5 +170,15 @@ namespace EchoPlay.App.Controls
             get => (Visibility)GetValue(SelectedIndicatorVisibilityProperty);
             set => SetValue(SelectedIndicatorVisibilityProperty, value);
         }
+
+        // ── Kachelform: Rand statt Anheben ──────────────────────────────────────
+
+        // Die Zustände stehen im XAML, damit die Farben aus der Palette kommen und nicht
+        // hier im Quelltext stehen. Der Code schaltet nur um.
+        private void OnTilePointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) =>
+            _ = VisualStateManager.GoToState(this, "PointerOver", true);
+
+        private void OnTilePointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) =>
+            _ = VisualStateManager.GoToState(this, "Normal", true);
     }
 }

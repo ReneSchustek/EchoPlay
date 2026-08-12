@@ -63,7 +63,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach Beenden des inneren Scopes ist nur noch der äußere sichtbar.
         /// </summary>
         [Fact]
-        public void InnerenScopeDispose_NurÄußererBleibt()
+        public void InnerScopeDispose_OnlyOuterRemains()
         {
             using (LogScope outer = new("Äußerer"))
             {
@@ -98,7 +98,7 @@ namespace EchoPlay.Logger.Tests
         /// Die Reihenfolge in CurrentScopes entspricht der Öffnungsreihenfolge (ältester Scope zuerst).
         /// </summary>
         [Fact]
-        public void GeschachtelteScopes_ReihenfolgeKorrekt_ÄltesterZuerst()
+        public void NestedScopes_CorrectOrder_OldestFirst()
         {
             using (LogScope outer = new("Erster"))
             {
@@ -141,7 +141,7 @@ namespace EchoPlay.Logger.Tests
         /// Zwischen beiden Scopes ist CurrentScopes leer.
         /// </summary>
         [Fact]
-        public void SequentielleScopes_UnabhängigVoneinander()
+        public void SequentialScopes_IndependentOfEachOther()
         {
             using (LogScope first = new("Erster"))
             {

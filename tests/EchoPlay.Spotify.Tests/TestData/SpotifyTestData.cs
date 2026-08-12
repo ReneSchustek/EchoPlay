@@ -54,7 +54,7 @@ namespace EchoPlay.Spotify.Tests.TestData
         /// Dieser Datensatz wird bewusst generisch gehalten, da es nicht um Spotify-spezifische Details geht,
         /// sondern um die Ablehnung durch die Seriensuche.
         /// </summary>
-        internal static SpotifyArtistDto UngeeigneterKünstler => new()
+        internal static SpotifyArtistDto UnsuitableArtist => new()
         {
             SpotifyArtistId = "spotify-artist-non-audiodrama",
             Name = "Random Pop Artist",

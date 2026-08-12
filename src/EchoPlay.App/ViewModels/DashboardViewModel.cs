@@ -116,7 +116,7 @@ namespace EchoPlay.App.ViewModels
             FavoritenVM = new DashboardFavoritenViewModel(scopeFactory, _logger);
             WeiterhoerenVM = new DashboardWeiterhoerenViewModel();
             InProgressVM = new DashboardInProgressViewModel();
-            ZuletztGehoertVM = new DashboardZuletztGehoertViewModel();
+            ZuletztGehoertVM = new DashboardRecentlyPlayedViewModel();
 
             NeuerscheinungenVM.PropertyChanged += OnSubVmPropertyChanged;
             FavoritenVM.PropertyChanged += OnSubVmPropertyChanged;
@@ -153,7 +153,7 @@ namespace EchoPlay.App.ViewModels
         public DashboardInProgressViewModel InProgressVM { get; }
 
         /// <summary>Sub-VM für den „Zuletzt gehört"-Abschnitt.</summary>
-        public DashboardZuletztGehoertViewModel ZuletztGehoertVM { get; }
+        public DashboardRecentlyPlayedViewModel ZuletztGehoertVM { get; }
 
         // ── Top-VM-Zustand ──────────────────────────────────────────────────────
 
@@ -547,7 +547,7 @@ namespace EchoPlay.App.ViewModels
                 case DashboardInProgressViewModel:
                     ForwardSectionChange(e.PropertyName, nameof(InProgressEpisodes), nameof(InProgressSectionVisibility));
                     break;
-                case DashboardZuletztGehoertViewModel:
+                case DashboardRecentlyPlayedViewModel:
                     ForwardSectionChange(e.PropertyName, nameof(RecentSeries), nameof(RecentSectionVisibility));
                     break;
                 default:

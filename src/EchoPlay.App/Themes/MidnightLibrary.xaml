@@ -34,7 +34,7 @@
             <SolidColorBrush x:Key="SurfaceHoverBrush"                    Color="#22263A"/>
             <SolidColorBrush x:Key="TextPrimaryBrush"                     Color="#E2E4F3"/>
             <SolidColorBrush x:Key="TextSecondaryBrush"                   Color="#9499C3"/>
-            <SolidColorBrush x:Key="TextTertiaryBrush"                    Color="#7577A5"/>
+            <SolidColorBrush x:Key="TextTertiaryBrush"                    Color="#8A8DBE"/>
             <SolidColorBrush x:Key="TextDisabledBrush"                    Color="#555B86"/>
             <SolidColorBrush x:Key="TextOnAccentBrush"                    Color="#FFFFFF"/>
             <SolidColorBrush x:Key="AccentPrimaryBrush"                   Color="#5B4DFF"/>
@@ -60,6 +60,47 @@
             <SolidColorBrush x:Key="ActiveBackgroundBrush"                Color="#232756"/>
             <SolidColorBrush x:Key="SelectionBackgroundBrush"             Color="#2A2F63"/>
             <SolidColorBrush x:Key="SelectionBorderBrush"                 Color="#5B4DFF"/>
+
+            <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#6FBF8A"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#E0A94F"/>
+            <SolidColorBrush x:Key="StatusErrorBrush"   Color="#E8736B"/>
+
+            <!-- Seitenleiste: der aktive Punkt hebt sich über die Fläche ab, nicht über die Schrift allein. -->
+            <SolidColorBrush x:Key="NavigationViewPaneBorderBrush" Color="#2A2F4A"/>
+            <SolidColorBrush x:Key="NavigationViewItemForeground"                    Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"         Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundPressed"             Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelected"            Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPressed"     Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundDisabled"            Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedDisabled"    Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForeground"                    Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundPointerOver"         Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundPressed"             Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelected"            Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelectedPointerOver" Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelectedPressed"     Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundDisabled"            Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelectedDisabled"    Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackground"                    Color="Transparent"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"         Color="#22263A"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed"             Color="#12141D"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"            Color="#2A2F4A"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#444860"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed"     Color="#12141D"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundDisabled"            Color="Transparent"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedDisabled"    Color="#22263A"/>
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground"      Color="#5B4DFF"/>
+            <SolidColorBrush x:Key="NavigationViewButtonForegroundPointerOver"       Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewButtonForegroundPressed"           Color="#9499C3"/>
+
+            <!-- Kachel der Linie: Kopf farbig, Körper hell — nicht umgekehrt. -->
+            <SolidColorBrush x:Key="CardHeaderBackgroundBrush" Color="#5B4DFF"/>
+            <SolidColorBrush x:Key="CardHeaderForegroundBrush" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="CardBodyBackgroundBrush"   Color="#1B1E2B"/>
+            <SolidColorBrush x:Key="CardBodyForegroundBrush"   Color="#E2E4F3"/>
             <FontFamily x:Key="ThemeFontFamily">Source Sans 3</FontFamily>
             <FontFamily x:Key="ThemeMonoFontFamily">JetBrains Mono</FontFamily>
             <!-- ContentControlThemeFontFamily überschreibt den WinUI-3-Standard,
@@ -99,7 +140,7 @@
             <!-- Text -->
             <SolidColorBrush x:Key="TextPrimaryBrush"   Color="#E2E4F3"/>
             <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9499C3"/>
-            <SolidColorBrush x:Key="TextTertiaryBrush"  Color="#7577A5"/>
+            <SolidColorBrush x:Key="TextTertiaryBrush"  Color="#8A8DBE"/>
             <SolidColorBrush x:Key="TextDisabledBrush"  Color="#555B86"/>
             <SolidColorBrush x:Key="TextOnAccentBrush"  Color="#FFFFFF"/>
 
@@ -139,6 +180,47 @@
             <!-- Typografie: Source Sans 3 (ruhig, hochwertig, leicht editorial) -->
             <!-- Download: https://fonts.google.com/specimen/Source+Sans+3 -->
             <!-- TTF nach Assets/Fonts/ kopieren und im .csproj als Content deklarieren -->
+
+            <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#6FBF8A"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#E0A94F"/>
+            <SolidColorBrush x:Key="StatusErrorBrush"   Color="#E8736B"/>
+
+            <!-- Seitenleiste: der aktive Punkt hebt sich über die Fläche ab, nicht über die Schrift allein. -->
+            <SolidColorBrush x:Key="NavigationViewPaneBorderBrush" Color="#2A2F4A"/>
+            <SolidColorBrush x:Key="NavigationViewItemForeground"                    Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver"         Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundPressed"             Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelected"            Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPressed"     Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundDisabled"            Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedDisabled"    Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForeground"                    Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundPointerOver"         Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundPressed"             Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelected"            Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelectedPointerOver" Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelectedPressed"     Color="#9499C3"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundDisabled"            Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemIconForegroundSelectedDisabled"    Color="#555B86"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackground"                    Color="Transparent"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver"         Color="#22263A"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed"             Color="#12141D"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected"            Color="#2A2F4A"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#444860"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed"     Color="#12141D"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundDisabled"            Color="Transparent"/>
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedDisabled"    Color="#22263A"/>
+            <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground"      Color="#5B4DFF"/>
+            <SolidColorBrush x:Key="NavigationViewButtonForegroundPointerOver"       Color="#E2E4F3"/>
+            <SolidColorBrush x:Key="NavigationViewButtonForegroundPressed"           Color="#9499C3"/>
+
+            <!-- Kachel der Linie: Kopf farbig, Körper hell — nicht umgekehrt. -->
+            <SolidColorBrush x:Key="CardHeaderBackgroundBrush" Color="#5B4DFF"/>
+            <SolidColorBrush x:Key="CardHeaderForegroundBrush" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="CardBodyBackgroundBrush"   Color="#1B1E2B"/>
+            <SolidColorBrush x:Key="CardBodyForegroundBrush"   Color="#E2E4F3"/>
             <FontFamily x:Key="ThemeFontFamily">Source Sans 3</FontFamily>
             <FontFamily x:Key="ThemeMonoFontFamily">JetBrains Mono</FontFamily>
             <FontFamily x:Key="ContentControlThemeFontFamily">Source Sans 3</FontFamily>

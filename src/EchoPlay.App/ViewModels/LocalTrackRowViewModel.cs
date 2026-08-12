@@ -9,7 +9,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Zeilen-ViewModel für einen lokalen Track in der rechten Spalte der lokalen Mediathek.
     /// Der "Im Tag-Manager bearbeiten"-Befehl delegiert die Navigation über einen Callback
-    /// an <see cref="MediathekLokalViewModel"/>, der das <see cref="MediathekLokalViewModel.NavigateToTagManagerRequested"/>-Event feuert.
+    /// an <see cref="LocalLibraryViewModel"/>, der das <see cref="LocalLibraryViewModel.NavigateToTagManagerRequested"/>-Event feuert.
     /// ViewModels sollen nicht direkt navigieren – die Page-Ebene übernimmt das.
     /// </summary>
     public sealed class LocalTrackRowViewModel

@@ -134,34 +134,20 @@ namespace EchoPlay.App.ViewModels
                 ReleaseDateText = null;
             }
 
-            // Akzentfarbe für Ankündigungen, halbtransparentes Weiß für reguläre Neuerscheinungen.
-            // try/catch: WinUI-Ressourcen sind in Unit-Tests ohne App-Instanz nicht verfügbar.
-            try
-            {
-                InfoLineForeground = isAnnounced
-                    ? (Microsoft.UI.Xaml.Media.Brush)Microsoft.UI.Xaml.Application.Current.Resources["SystemAccentColorLight2Brush"]
-                    : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) { Opacity = 0.73 };
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                // In Unit-Tests ohne WinUI-Runtime: Fallback auf null
-                InfoLineForeground = null!;
-            }
-
-            // Badge-Logik: Angekündigt (blau) > Neu ≤7 Tage (grün) > kein Badge.
-            // Text und Visibility werden unabhängig von WinUI gesetzt.
-            // Nur der Brush braucht den try/catch (WinUI-Ressourcen in Unit-Tests nicht verfügbar).
+            // Badge-Logik: Angekündigt > Neu ≤7 Tage > kein Badge. Text und Sichtbarkeit
+            // stehen unabhängig von WinUI; nur die Farbe kommt aus der Palette und ist
+            // deshalb ohne laufende Anwendung nicht auflösbar.
             if (isAnnounced)
             {
                 BadgeText = localizationService?.Get("BadgeAnnounced") ?? "Angekündigt";
                 BadgeVisibility = Visibility.Visible;
-                BadgeBrush = TryResolveAccentBrush();
+                BadgeBrush = TryResolveThemeBrush("AccentPrimaryBrush");
             }
             else if (releaseDate.HasValue && (_clock.UtcNow.Date - releaseDate.Value.Date).TotalDays <= 7)
             {
                 BadgeText = localizationService?.Get("BadgeNew") ?? "Neu";
                 BadgeVisibility = Visibility.Visible;
-                BadgeBrush = TryCreateBrush(255, 76, 175, 80);
+                BadgeBrush = TryResolveThemeBrush("StatusSuccessBrush");
             }
             else
             {
@@ -239,14 +225,6 @@ namespace EchoPlay.App.ViewModels
         /// Steuert die Anzeige von "online" in der Info-Zeile und die Akzentfarbe bei Ankündigungen.
         /// </summary>
         public bool IsOnlineOnly { get; }
-
-        /// <summary>
-        /// Vordergrundfarbe der Info-Zeile auf der Kachel.
-        /// Ankündigungen (Datum in der Zukunft) werden in der Akzentfarbe angezeigt,
-        /// reguläre Neuerscheinungen in halbtransparentem Weiß.
-        /// </summary>
-        public Microsoft.UI.Xaml.Media.Brush InfoLineForeground { get; }
-
 
         /// <summary>
         /// Cover-Bild – bevorzugt Episoden-Cover, dann Serien-Cover, oder null.
@@ -431,36 +409,26 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Versucht die WinUI-Akzentfarbe als Brush aufzulösen.
-        /// Gibt null zurück wenn keine WinUI-Runtime verfügbar ist (Unit-Tests).
+        /// Löst einen Farbschlüssel der Palette auf.
+        /// <para>
+        /// Über den Schlüssel und nicht über einen Farbwert im Quelltext: Der Nutzer wählt
+        /// zwischen sechs Paletten, und eine hier fest verdrahtete Farbe stünde in fünf davon
+        /// daneben. Der Schlüsselsatz ist in allen Paletten vollständig — dass er hier zur
+        /// Laufzeit gesucht wird, ändert daran nichts.
+        /// </para>
         /// </summary>
-        private static Microsoft.UI.Xaml.Media.Brush TryResolveAccentBrush()
+        /// <param name="key">Schlüssel aus der Palette, etwa <c>AccentPrimaryBrush</c>.</param>
+        /// <returns>Der Pinsel, oder <see langword="null"/> ohne laufende Anwendung (Tests).</returns>
+        private static Microsoft.UI.Xaml.Media.Brush? TryResolveThemeBrush(string key)
         {
             try
             {
-                return (Microsoft.UI.Xaml.Media.Brush)Microsoft.UI.Xaml.Application.Current
-                    .Resources["SystemAccentColorLight2Brush"];
+                return Microsoft.UI.Xaml.Application.Current.Resources[key] as Microsoft.UI.Xaml.Media.Brush;
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                return null!;
-            }
-        }
-
-        /// <summary>
-        /// Erstellt einen SolidColorBrush aus ARGB-Werten.
-        /// Gibt null zurück wenn keine WinUI-Runtime verfügbar ist (Unit-Tests).
-        /// </summary>
-        private static Microsoft.UI.Xaml.Media.SolidColorBrush? TryCreateBrush(byte a, byte r, byte g, byte b)
-        {
-            try
-            {
-                return new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Microsoft.UI.ColorHelper.FromArgb(a, r, g, b));
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                return null!;
+                // Ohne WinUI-Runtime gibt es keine Palette — die Kachel bleibt ohne Farbe.
+                return null;
             }
         }
 

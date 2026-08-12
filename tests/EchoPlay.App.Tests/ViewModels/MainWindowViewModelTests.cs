@@ -65,14 +65,14 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Theory]
-        [InlineData("Startseite", NavigationTarget.Dashboard)]
-        [InlineData("MediathekOnline", NavigationTarget.MediathekOnline)]
-        [InlineData("MediathekLokal", NavigationTarget.MediathekLokal)]
+        [InlineData("Dashboard", NavigationTarget.Dashboard)]
+        [InlineData("OnlineLibrary", NavigationTarget.OnlineLibrary)]
+        [InlineData("LocalLibrary", NavigationTarget.LocalLibrary)]
         [InlineData("TagManager", NavigationTarget.TagManager)]
-        [InlineData("Suche", NavigationTarget.Suche)]
+        [InlineData("Search", NavigationTarget.Search)]
         [InlineData("Player", NavigationTarget.Player)]
-        [InlineData("Statistik", NavigationTarget.Statistik)]
-        [InlineData("Über", NavigationTarget.Über)]
+        [InlineData("Statistics", NavigationTarget.Statistics)]
+        [InlineData("About", NavigationTarget.About)]
         public void NavigateToMenuTag_KnownTag_NavigatesToTarget(string menuTag, NavigationTarget expected)
         {
             (MainWindowViewModel viewModel, FakeNavigationService navigation) = Build();

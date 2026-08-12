@@ -243,7 +243,7 @@ namespace EchoPlay.Logger.Tests
         /// Der Log-Eintrag enthält die korrekte Kategorie des Loggers.
         /// </summary>
         [Fact]
-        public void Info_EnthältKorrektKategorie()
+        public void Info_ContainsCorrectCategory()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("MeineKlasse", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -271,7 +271,7 @@ namespace EchoPlay.Logger.Tests
         /// Der Log-Eintrag enthält das korrekte Log-Level.
         /// </summary>
         [Fact]
-        public void Info_EnthältKorrektemLevel()
+        public void Info_ContainsCorrectLevel()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -363,7 +363,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach Beenden des Scopes enthält der nächste Log-Eintrag keine Scope-Informationen mehr.
         /// </summary>
         [Fact]
-        public void Debug_NachScopeDispose_KeinScopeImNächstenEintrag()
+        public void Debug_AfterScopeDispose_NoScopeInNextEntry()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });

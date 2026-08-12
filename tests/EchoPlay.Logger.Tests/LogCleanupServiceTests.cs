@@ -45,7 +45,7 @@ namespace EchoPlay.Logger.Tests
         /// unabhängig von Alter und Größe.
         /// </summary>
         [Fact]
-        public void Cleanup_MitDeaktiviertemAutoCleanup_LöschtKeineDateien()
+        public void Cleanup_WithAutoCleanupDisabled_DeletesNoFiles()
         {
             string logFile = Path.Combine(_tempDirectory, "2025-01-01.log");
             File.WriteAllText(logFile, "Alter Log-Eintrag");
@@ -87,7 +87,7 @@ namespace EchoPlay.Logger.Tests
         /// Cleanup löscht Log-Dateien, deren Schreibzeit die konfigurierte Aufbewahrungsdauer überschreitet.
         /// </summary>
         [Fact]
-        public void Cleanup_ÜberschritteneRetentionDays_LöschtAlteDateien()
+        public void Cleanup_BeyondRetentionDays_DeletesOldFiles()
         {
             // Datei ist 10 Tage alt – überschreitet die konfigurierte Aufbewahrung von 7 Tagen
             string alteDatei = Path.Combine(_tempDirectory, "2026-02-01.log");
@@ -112,7 +112,7 @@ namespace EchoPlay.Logger.Tests
         /// Cleanup lässt Log-Dateien unangetastet, die innerhalb der Aufbewahrungsdauer liegen.
         /// </summary>
         [Fact]
-        public void Cleanup_EinhaltungRetentionDays_LöschtKeineDateien()
+        public void Cleanup_WithinRetentionDays_DeletesNoFiles()
         {
             // Datei ist 1 Tag alt – liegt innerhalb der Aufbewahrung von 7 Tagen
             string aktuelleLogDatei = Path.Combine(_tempDirectory, "2026-03-01.log");
@@ -137,7 +137,7 @@ namespace EchoPlay.Logger.Tests
         /// Cleanup löscht keine Dateien, wenn die Gesamtgröße weit unterhalb des konfigurierten Limits liegt.
         /// </summary>
         [Fact]
-        public void Cleanup_UnterSizelimit_LöschtKeineDateien()
+        public void Cleanup_BelowSizeLimit_DeletesNoFiles()
         {
             // Kleine Testdateien (wenige Bytes) liegen weit unter dem Limit von 100 MB
             string logDatei1 = Path.Combine(_tempDirectory, "2026-03-01.log");
@@ -164,7 +164,7 @@ namespace EchoPlay.Logger.Tests
         /// Cleanup löscht alte Dateien und lässt neue Dateien stehen, wenn beide vorhanden sind.
         /// </summary>
         [Fact]
-        public void Cleanup_MitAltenUndNeuenDateien_LöschtNurAlte()
+        public void Cleanup_WithOldAndNewFiles_DeletesOnlyOld()
         {
             string alteDatei = Path.Combine(_tempDirectory, "alt.log");
             string neueDatei = Path.Combine(_tempDirectory, "neu.log");

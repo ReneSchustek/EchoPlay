@@ -1,0 +1,60 @@
+<!--
+    Farben, die bewusst nicht mit dem Theme wechseln.
+
+    Zwei Fälle, und beide haben einen Grund, der über Geschmack hinausgeht:
+
+    1. Das Startbild erscheint, bevor eine Palette geladen ist. Es kann gar keine
+       Theme-Farbe binden — bände es eine, stünde dort beim Start nichts.
+    2. Die Deckfolie beim Theme-Wechsel liegt über der Oberfläche, während genau
+       diese Oberfläche ihre Farben tauscht. Eine Theme-Farbe würde mitwechseln
+       und die Folie im selben Moment aufleuchten lassen, den sie verdecken soll.
+
+    Alles andere gehört in die sechs Paletten. Wer hier eine Farbe ergänzt, muss
+    sagen können, warum sie den Theme-Wechsel überleben soll.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ── Startbild ──────────────────────────────────────────────────────────
+         Die Farben des Programmzeichens. Gegen die weiße Fläche tragen alle drei
+         Textstufen mindestens 4,5:1 — nachgemessen, nicht geschätzt: 8,4 / 4,7 / 4,9.
+         Der gedämpfteste Ton stand zuvor auf #6A9AB8 und kam damit nur auf 3,0:1;
+         die Versionszeile war im Startbild kaum lesbar. -->
+    <SolidColorBrush x:Key="BrandSurfaceBrush"   Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BrandPrimaryBrush"   Color="#1D5274"/>
+    <SolidColorBrush x:Key="BrandSecondaryBrush" Color="#3A7A9C"/>
+    <SolidColorBrush x:Key="BrandMutedBrush"     Color="#447695"/>
+
+    <!-- ── Deckfolie beim Theme-Wechsel ───────────────────────────────────────
+         Dunkler Schleier mit fester Deckkraft, damit der Wechsel dahinter nicht
+         sichtbar flackert. -->
+    <SolidColorBrush x:Key="ThemeSwitchOverlayBrush" Color="#CC1A1A1A"/>
+
+    <!-- ── Über Cover-Bildern ─────────────────────────────────────────────────
+         Was auf einem Cover liegt, steht nicht auf einer Theme-Fläche, sondern auf
+         einem Foto in unbekannter Farbe. Eine Theme-Farbe hilft dort nicht: Sie
+         verschwindet auf dem einen Cover und blendet auf dem nächsten. Deshalb ein
+         dunkler Schleier und feste Schrift darauf — das trägt über jedem Bild und
+         in jedem der sechs Themes gleich.
+
+         Der weiche Schleier liegt hinter einzelnen Bedienelementen, der kräftige
+         hinter Textblöcken, die vollständig lesbar sein müssen. -->
+    <SolidColorBrush x:Key="MediaScrimSoftBrush"   Color="#88000000"/>
+    <SolidColorBrush x:Key="MediaScrimStrongBrush" Color="#AA000000"/>
+
+    <SolidColorBrush x:Key="TextOnMediaBrush"      Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TextOnMediaMutedBrush" Color="#BBFFFFFF"/>
+
+    <!-- Bedienelemente ohne Schleier direkt auf dem Cover: Die Anwendung entscheidet
+         zur Laufzeit anhand der Cover-Helligkeit, welche der beiden Fassungen sie
+         zeigt — hell auf dunklem Bild, dunkel auf hellem. -->
+    <SolidColorBrush x:Key="ControlOnDarkMediaBrush"  Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ControlOnLightMediaBrush" Color="#000000"/>
+
+    <!-- Der Favoritenstern liegt ebenfalls auf dem Cover. Sein Gold ist gesetzt und
+         nicht Sache des Themes — die Bedeutung hängt am Zeichen, nicht an der Farbe,
+         weshalb ein Stern-Glyph und nicht bloß ein farbiger Punkt dort steht. -->
+    <SolidColorBrush x:Key="FavoriteMarkerBrush" Color="#FFD700"/>
+
+</ResourceDictionary>

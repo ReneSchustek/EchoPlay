@@ -14,9 +14,9 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void Resolve_KeyExistsInLoader_ReturnsLoaderValue()
         {
-            Dictionary<string, string> table = new() { ["NavStartseite"] = "Startseite" };
+            Dictionary<string, string> table = new() { ["NavDashboard"] = "Startseite" };
 
-            string result = ResourceKeyResolver.Resolve("NavStartseite", k => table.GetValueOrDefault(k, string.Empty));
+            string result = ResourceKeyResolver.Resolve("NavDashboard", k => table.GetValueOrDefault(k, string.Empty));
 
             Assert.Equal("Startseite", result);
         }

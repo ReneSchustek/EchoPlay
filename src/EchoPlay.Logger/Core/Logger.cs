@@ -130,7 +130,7 @@ namespace EchoPlay.Logger.Core
             }
 
             // UTC-Quelle hält Timestamps stabil über DST-Wechsel und Multi-Region-Container.
-            // Display-Formatter (DefaultLogFormatter, LogViewerCoordinator, ProtokollViewModel) konvertieren beim Rendern auf Lokalzeit.
+            // Display-Formatter (DefaultLogFormatter, LogViewerCoordinator, LogViewModel) konvertieren beim Rendern auf Lokalzeit.
             LogEntry entry = new(
                 Timestamp: DateTime.UtcNow,
                 Level: level,

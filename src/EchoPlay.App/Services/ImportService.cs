@@ -1,3 +1,4 @@
+using EchoPlay.App.Infrastructure;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Library;
@@ -297,8 +298,12 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Import abgeschlossen: \"{Title}\", {EpisodeCount} Episoden", importSeries.Title, uniqueEpisodes.Count);
 
-            // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
-            _ = _coverCacheService.CacheCoversAsync(series.Id, uniqueEpisodes, ct: cancellationToken);
+            // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar.
+            // Beobachtet statt verworfen: Beim Beenden bricht der Token diese Aufgabe ab,
+            // und eine unbeobachtete Abbruch-Ausnahme schlägt sonst erst später auf.
+            DetachedTask.Observe(
+                _coverCacheService.CacheCoversAsync(series.Id, uniqueEpisodes, ct: cancellationToken),
+                _logger);
 
             return series.Id;
         }
@@ -349,7 +354,9 @@ namespace EchoPlay.App.Services
             // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
             if (count > 0)
             {
-                _ = _coverCacheService.CacheCoversAsync(series.Id, episodes, ct: cancellationToken);
+                DetachedTask.Observe(
+                    _coverCacheService.CacheCoversAsync(series.Id, episodes, ct: cancellationToken),
+                    _logger);
             }
 
             return count;
@@ -438,7 +445,9 @@ namespace EchoPlay.App.Services
                 _logger.Info("Delta-Import: {NewCount} neue Episoden für \"{Title}\"", newCount, series.Title);
 
                 // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
-                _ = _coverCacheService.CacheCoversAsync(series.Id, providerEpisodes, ct: cancellationToken);
+                DetachedTask.Observe(
+                    _coverCacheService.CacheCoversAsync(series.Id, providerEpisodes, ct: cancellationToken),
+                    _logger);
             }
 
             return newCount;

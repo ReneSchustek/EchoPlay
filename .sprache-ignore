@@ -1,0 +1,9 @@
+# Projektausnahmen der Sprachprüfung. Ein Wort je Zeile; `path:<muster>` nimmt eine
+# ganze Datei aus.
+
+# Das Segment-Wörterbuch führt links Bezeichner-Segmente, nicht Prosa — Wörter wie
+# Abkühlung, Schlüssel oder Höhe stehen dort in der Schreibweise, die ein Bezeichner
+# haben darf. Bezeichner bleiben nach der Sprachregel ASCII; die Ersatzschreibung ist
+# dort also richtig und nicht zu beheben. Rechts steht ohnehin Englisch. Ohne diese
+# Zeile meldet die Prüfung jede der rund 1700 Zeilen einzeln.
+path:*glossar-segmente.txt

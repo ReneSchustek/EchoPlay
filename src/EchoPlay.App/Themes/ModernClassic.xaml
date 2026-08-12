@@ -102,7 +102,7 @@
             <!-- Text -->
             <SolidColorBrush x:Key="TextPrimaryBrush"   Color="#1F2937"/>
             <SolidColorBrush x:Key="TextSecondaryBrush" Color="#6B7280"/>
-            <SolidColorBrush x:Key="TextTertiaryBrush"  Color="#9CA3AF"/>
+            <SolidColorBrush x:Key="TextTertiaryBrush"  Color="#6F7783"/>
             <SolidColorBrush x:Key="TextDisabledBrush"  Color="#D1D5DB"/>
             <SolidColorBrush x:Key="TextOnAccentBrush"  Color="#FFFFFF"/>
 
@@ -153,6 +153,11 @@
             <!-- Typografie: Inter – modern, neutral, hervorragende Lesbarkeit bei kleinen Größen -->
             <!-- Download: https://fonts.google.com/specimen/Inter -->
             <!-- TTF nach Assets/Fonts/ kopieren und im .csproj als Content deklarieren -->
+
+            <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#1E7A45"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#8A5A00"/>
+            <SolidColorBrush x:Key="StatusErrorBrush"   Color="#B3261E"/>
             <FontFamily x:Key="ThemeFontFamily">Inter</FontFamily>
             <FontFamily x:Key="ThemeMonoFontFamily">JetBrains Mono</FontFamily>
             <!-- ContentControlThemeFontFamily überschreibt den WinUI-3-Standard,
@@ -219,7 +224,7 @@
             <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"          Color="#364FD1"/>
             <SolidColorBrush x:Key="TextPrimaryBrush"                      Color="#1F2937"/>
             <SolidColorBrush x:Key="TextSecondaryBrush"                    Color="#6B7280"/>
-            <SolidColorBrush x:Key="TextTertiaryBrush"                     Color="#9CA3AF"/>
+            <SolidColorBrush x:Key="TextTertiaryBrush"                     Color="#6F7783"/>
             <SolidColorBrush x:Key="TextDisabledBrush"                     Color="#D1D5DB"/>
             <SolidColorBrush x:Key="TextOnAccentBrush"                     Color="#FFFFFF"/>
             <SolidColorBrush x:Key="AccentPrimaryBrush"                    Color="#4361EE"/>
@@ -249,6 +254,11 @@
             <SolidColorBrush x:Key="ActiveBackgroundBrush"                 Color="#EEF2FF"/>
             <SolidColorBrush x:Key="SelectionBackgroundBrush"              Color="#EEF2FF"/>
             <SolidColorBrush x:Key="SelectionBorderBrush"                  Color="#4361EE"/>
+
+            <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
+            <SolidColorBrush x:Key="StatusSuccessBrush" Color="#1E7A45"/>
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="#8A5A00"/>
+            <SolidColorBrush x:Key="StatusErrorBrush"   Color="#B3261E"/>
             <FontFamily x:Key="ThemeFontFamily">Inter</FontFamily>
             <FontFamily x:Key="ThemeMonoFontFamily">JetBrains Mono</FontFamily>
             <FontFamily x:Key="ContentControlThemeFontFamily">Inter</FontFamily>

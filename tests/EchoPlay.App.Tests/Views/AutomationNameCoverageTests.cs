@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -132,18 +133,7 @@ namespace EchoPlay.App.Tests.Views
         private static int LineOf(XElement element) =>
             (element as System.Xml.IXmlLineInfo)?.LineNumber ?? 0;
 
-        private static string RepositoryRoot()
-        {
-            string baseDir = AppContext.BaseDirectory;
-            DirectoryInfo? dir = new(baseDir);
-            while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EchoPlay.slnx")))
-            {
-                dir = dir.Parent;
-            }
-
-            return dir?.FullName
-                ?? throw new InvalidOperationException($"EchoPlay.slnx nicht gefunden, ausgehend von '{baseDir}'.");
-        }
+        private static string RepositoryRoot() => RepositoryPaths.Root();
 
         private static IEnumerable<string> EnumerateXamlFiles()
         {

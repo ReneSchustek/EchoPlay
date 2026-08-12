@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// Serien und Episoden. Kapselt die Bestätigungs-Dialoge beim Überschreiben,
     /// den HTTP-Download eines gewählten Cover-Hits, das Speichern in der
     /// CoverImages-Tabelle, das optionale Schreiben von <c>cover.jpg</c> und das
-    /// abschließende Update der Card-Bitmap. Aus dem MediathekLokalViewModel ausgelagert.
+    /// abschließende Update der Card-Bitmap. Aus dem LocalLibraryViewModel ausgelagert.
     /// </summary>
     public interface IEpisodeCoverCoordinator
     {

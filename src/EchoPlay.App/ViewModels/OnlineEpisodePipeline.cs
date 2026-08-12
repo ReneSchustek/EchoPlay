@@ -18,7 +18,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     internal sealed class OnlineEpisodePipeline : IDisposable
     {
-        private readonly MediathekOnlineActionsContext _ctx;
+        private readonly OnlineLibraryActionsContext _ctx;
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineEpisodesViewModel _episodesVM;
         private readonly OnlineActionsState _state;
@@ -33,7 +33,7 @@ namespace EchoPlay.App.ViewModels
         public int ApplyEpisodeCoverCallCount { get; private set; }
 
         public OnlineEpisodePipeline(
-            MediathekOnlineActionsContext context,
+            OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,
             OnlineEpisodesViewModel episodesVM,
             OnlineActionsState state)

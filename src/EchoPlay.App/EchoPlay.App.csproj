@@ -102,14 +102,16 @@
 
   <ItemGroup>
     <!-- Theme-Dictionaries sind reine ResourceDictionaries (kein x:Class).
-         Page Remove verhindert, dass der XAML-Compiler sie als Pages behandelt. -->
+         Page Remove verhindert, dass der XAML-Compiler sie als Pages behandelt.
+
+         Als Muster und nicht als Einzelliste: Die Liste war einzeln gepflegt, und ein neu
+         angelegtes Wörterbuch fehlte darin — es wurde damit nie ins Ausgabeverzeichnis
+         kopiert, während App.xaml es weiterhin lud. Der Start brach dann genau so ab, wie
+         es beim Publish-Ziel oben beschrieben steht: noch vor der Logger-Initialisierung,
+         ohne eine Zeile im Protokoll. Das Publish-Ziel arbeitet längst mit demselben
+         Muster; beide Stellen sind jetzt gleich. -->
     <Page Remove="Themes\*.xaml" />
-    <Content Include="Themes\Ruhrcoder.xaml" />
-    <Content Include="Themes\ModernClassic.xaml" />
-    <Content Include="Themes\MidnightLibrary.xaml" />
-    <Content Include="Themes\PaperCoffee.xaml" />
-    <Content Include="Themes\ForestSignal.xaml" />
-    <Content Include="Themes\AmberWhiskey.xaml" />
+    <Content Include="Themes\*.xaml" />
   </ItemGroup>
 
   <ItemGroup>

@@ -39,7 +39,7 @@ namespace EchoPlay.Logger.Tests
         /// Format enthält den Zeitstempel im Format yyyy-MM-dd HH:mm:ss.fff.
         /// </summary>
         [Fact]
-        public void Format_EnthältZeitstempelInKorrektemFormat()
+        public void Format_ContainsTimestampInCorrectFormat()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -58,7 +58,7 @@ namespace EchoPlay.Logger.Tests
         /// Format enthält den Level-Text in eckigen Klammern.
         /// </summary>
         [Fact]
-        public void Format_EnthältLevel()
+        public void Format_ContainsLevel()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -77,7 +77,7 @@ namespace EchoPlay.Logger.Tests
         /// Format enthält Kategorie in eckigen Klammern und die Nachricht.
         /// </summary>
         [Fact]
-        public void Format_EnthältKategorieUndNachricht()
+        public void Format_ContainsCategoryAndMessage()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -175,7 +175,7 @@ namespace EchoPlay.Logger.Tests
         /// mit der Fehlermeldung.
         /// </summary>
         [Fact]
-        public void Format_MitException_EnthältExceptionUndMeldung()
+        public void Format_WithException_ContainsExceptionAndMessage()
         {
             DefaultLogFormatter formatter = new();
             InvalidOperationException exception = new("Testfehler-Ursache");

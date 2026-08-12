@@ -11,13 +11,13 @@ namespace EchoPlay.App.Services
         Dashboard,
 
         /// <summary>Online-Mediathek (Provider-Inhalte).</summary>
-        MediathekOnline,
+        OnlineLibrary,
 
         /// <summary>Lokale Mediathek (gescannte Audiodateien).</summary>
-        MediathekLokal,
+        LocalLibrary,
 
         /// <summary>Online-Suche nach Serien.</summary>
-        Suche,
+        Search,
 
         /// <summary>Vollständiger Player mit Playlist-Verwaltung.</summary>
         Player,
@@ -35,12 +35,12 @@ namespace EchoPlay.App.Services
         Import,
 
         /// <summary>Statistik-Seite.</summary>
-        Statistik,
+        Statistics,
 
         /// <summary>Protokoll/Log-Anzeige.</summary>
-        Protokoll,
+        Log,
 
         /// <summary>Über-Seite (Version, Autoren, Lizenz).</summary>
-        Über
+        About
     }
 }

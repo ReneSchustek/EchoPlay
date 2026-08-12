@@ -51,6 +51,7 @@ namespace EchoPlay.App.ViewModels
         private EpisodeTileViewModel? _selectedEpisode;
         private EpisodeSortOrder _sortOrder = EpisodeSortOrder.EpisodeNumber;
         private int _episodeFilterIndex;
+        private string _episodeSearchText = string.Empty;
         private int _episodeTabIndex;
         private bool _isLoading;
         private bool _hasLocalTracks;
@@ -234,6 +235,47 @@ namespace EchoPlay.App.ViewModels
                     ApplySortOrder();
                 }
             }
+        }
+
+        /// <summary>
+        /// Freitextsuche über die Folgentitel. Wirkt beim Tippen und zusätzlich zum
+        /// Status-Filter; leerer Text zeigt wieder alle Folgen des Reiters.
+        /// </summary>
+        public string EpisodeSearchText
+        {
+            get => _episodeSearchText;
+            set
+            {
+                if (SetProperty(ref _episodeSearchText, value))
+                {
+                    ApplySortOrder();
+                }
+            }
+        }
+
+        /// <summary>Ob Suche oder Status-Filter die Folgenliste gerade einschränken.</summary>
+        public bool HasActiveFilter =>
+            !string.IsNullOrWhiteSpace(_episodeSearchText) || _episodeFilterIndex != 0;
+
+        /// <summary>
+        /// Sichtbarkeit des „Nichts gefunden"-Hinweises – die Serie hat Folgen, aber Suche
+        /// oder Filter lassen keine übrig.
+        /// </summary>
+        public Visibility NoResultsVisibility =>
+            _allEpisodes.Count > 0 && Episodes.Count == 0 && HasActiveFilter
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        /// <summary>Nimmt Suche und Status-Filter zurück.</summary>
+        public void ResetFilters()
+        {
+            _episodeSearchText = string.Empty;
+            _episodeFilterIndex = 0;
+
+            OnPropertyChanged(nameof(EpisodeSearchText));
+            OnPropertyChanged(nameof(EpisodeFilterIndex));
+
+            ApplySortOrder();
         }
 
         /// <summary>
@@ -622,6 +664,13 @@ namespace EchoPlay.App.ViewModels
                 _ => tabFiltered
             };
 
+            // Schritt 1b: Freitextsuche über die Folgentitel
+            if (!string.IsNullOrWhiteSpace(_episodeSearchText))
+            {
+                filtered = filtered.Where(e =>
+                    e.Title.Contains(_episodeSearchText, StringComparison.CurrentCultureIgnoreCase));
+            }
+
             // Schritt 2: Sortieren
             IEnumerable<EpisodeTileViewModel> sorted = _sortOrder switch
             {
@@ -635,6 +684,9 @@ namespace EchoPlay.App.ViewModels
             };
 
             Episodes = sorted.ToList();
+
+            OnPropertyChanged(nameof(HasActiveFilter));
+            OnPropertyChanged(nameof(NoResultsVisibility));
         }
 
         // ── Cover-Ladelogik ──────────────────────────────────────────────────────

@@ -113,14 +113,14 @@ namespace EchoPlay.App.ViewModels
         {
             NavigationTarget? target = menuTag switch
             {
-                "Startseite" => NavigationTarget.Dashboard,
-                "MediathekOnline" => NavigationTarget.MediathekOnline,
-                "MediathekLokal" => NavigationTarget.MediathekLokal,
+                "Dashboard" => NavigationTarget.Dashboard,
+                "OnlineLibrary" => NavigationTarget.OnlineLibrary,
+                "LocalLibrary" => NavigationTarget.LocalLibrary,
                 "TagManager" => NavigationTarget.TagManager,
-                "Suche" => NavigationTarget.Suche,
+                "Search" => NavigationTarget.Search,
                 "Player" => NavigationTarget.Player,
-                "Statistik" => NavigationTarget.Statistik,
-                "Über" => NavigationTarget.Über,
+                "Statistics" => NavigationTarget.Statistics,
+                "About" => NavigationTarget.About,
                 _ => null
             };
 

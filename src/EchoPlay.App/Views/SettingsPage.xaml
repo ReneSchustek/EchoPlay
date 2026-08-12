@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -57,7 +57,7 @@
                             <GridView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ThemePreviewViewModel">
                                     <StackPanel Spacing="4" Padding="4" AutomationProperties.Name="{x:Bind DisplayName}">
-                                        <Grid Height="48" CornerRadius="4">
+                                        <Grid Height="48" CornerRadius="{StaticResource ControlCornerRadius}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
@@ -93,7 +93,7 @@
                             x:Uid="LanguageApplyButton"
                             Margin="0,4,0,0"
                             Click="OnLanguageApplyClick">
-                            <FontIcon Glyph="&#xE73E;" FontSize="16"/>
+                            <FontIcon Glyph="&#xE73E;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
@@ -223,7 +223,7 @@
                             <Button
                                 x:Uid="TestConnectionButton"
                                 Command="{x:Bind ViewModel.TestConnectionCommand}">
-                                <FontIcon Glyph="&#xE703;" FontSize="16"/>
+                                <FontIcon Glyph="&#xE703;" FontSize="{StaticResource IconSizeM}"/>
                             </Button>
                             <ProgressRing
                                 IsActive="{x:Bind ViewModel.IsTestingConnection, Mode=OneWay}"
@@ -239,12 +239,12 @@
                             Visibility="{x:Bind ViewModel.ConnectionTestResultVisibility, Mode=OneWay}">
                             <FontIcon
                                 Glyph="&#xE73E;"
-                                FontSize="16"
+                                FontSize="{StaticResource IconSizeM}"
                                 VerticalAlignment="Center"
                                 Visibility="{x:Bind ViewModel.ConnectionTestSuccessVisibility, Mode=OneWay}"/>
                             <FontIcon
                                 Glyph="&#xE711;"
-                                FontSize="16"
+                                FontSize="{StaticResource IconSizeM}"
                                 VerticalAlignment="Center"
                                 Visibility="{x:Bind ViewModel.ConnectionTestFailureVisibility, Mode=OneWay}"/>
                             <TextBlock
@@ -318,7 +318,7 @@
                                 Grid.Column="1"
                                 VerticalAlignment="Bottom"
                                 Click="OnBrowseClick">
-                                <FontIcon Glyph="&#xE838;" FontSize="16"/>
+                                <FontIcon Glyph="&#xE838;" FontSize="{StaticResource IconSizeM}"/>
                             </Button>
                             <Button
                                 x:Uid="SyncButton"
@@ -327,7 +327,7 @@
                                 IsEnabled="{x:Bind ViewModel.IsSyncEnabled, Mode=OneWay}"
                                 Click="OnSyncClick">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <FontIcon Glyph="&#xE72C;" FontSize="16"/>
+                                    <FontIcon Glyph="&#xE72C;" FontSize="{StaticResource IconSizeM}"/>
                                     <TextBlock x:Uid="SyncButtonLabel" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -362,7 +362,7 @@
                                 x:Uid="AnalyzePatternButton"
                                 VerticalAlignment="Bottom"
                                 Click="OnAnalyzePatternClick">
-                                <FontIcon Glyph="&#xE9F9;" FontSize="16"/>
+                                <FontIcon Glyph="&#xE9F9;" FontSize="{StaticResource IconSizeM}"/>
                             </Button>
                         </Grid>
 
@@ -451,7 +451,7 @@
                                 IsEnabled="{x:Bind ViewModel.IsNotMaintaining, Mode=OneWay}"
                                 Click="OnDbMaintenanceClick">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <FontIcon Glyph="&#xEF90;" FontSize="16"/>
+                                    <FontIcon Glyph="&#xEF90;" FontSize="{StaticResource IconSizeM}"/>
                                     <TextBlock x:Uid="DbMaintenanceButtonLabel" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -525,7 +525,7 @@
                             Margin="0,4,0,0"
                             Click="OnResetClick">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE777;" FontSize="16"/>
+                                <FontIcon Glyph="&#xE777;" FontSize="{StaticResource IconSizeM}"/>
                                 <TextBlock x:Uid="DbResetButtonLabel" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -596,7 +596,7 @@
                             x:Uid="LogRefreshButton"
                             Grid.Column="2"
                             Click="OnRefreshLogsClick">
-                            <FontIcon Glyph="&#xE72C;" FontSize="16"/>
+                            <FontIcon Glyph="&#xE72C;" FontSize="{StaticResource IconSizeM}"/>
                         </Button>
                     </Grid>
 
@@ -605,7 +605,7 @@
                         Grid.Row="2"
                         BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                         BorderThickness="1"
-                        CornerRadius="4">
+                        CornerRadius="{StaticResource ControlCornerRadius}">
                         <ScrollViewer
                             x:Name="LogScrollViewer"
                             VerticalScrollBarVisibility="Visible"

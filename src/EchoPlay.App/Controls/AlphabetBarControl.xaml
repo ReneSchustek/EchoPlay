@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Buchstabenleiste über der Mediathek: A B C … Z #
+
+    Sie springt, sie filtert nicht. Ein Klick auf M scrollt zur Gruppe M; der übrige
+    Bestand bleibt sichtbar. Wer beim Stöbern filtert, verliert den Überblick über den
+    Bestand — und genau den will man dabei behalten.
+
+    Buchstaben ohne Einträge sind deaktiviert, nicht ausgeblendet: Eine Leiste, die ihre
+    Breite je nach Bestand ändert, ist kein verlässlicher Anlaufpunkt.
+
+    Die Fächer tragen eine abgesetzte Fläche und nicht nur ihren Buchstaben: Ein
+    Bedienelement ohne Fläche sieht aus wie Text und lädt nicht zum Klicken ein.
+
+    Abgesetzt und nicht in der Farbe der Schaltflächen: Die Leiste ist ein Wegweiser, keine
+    Reihe von Aktionen. In Akzentfarbe stünden hier siebenundzwanzig Knöpfe, die mit der
+    einen Primäraktion der Seite um Aufmerksamkeit ringen.
+
+    Der aktive Buchstabe ist am Schriftschnitt und am Rahmen zu erkennen, nicht allein an
+    der Farbe.
+
+    Die Schaltflächen messen 40 Punkte in einer Zelle von 44 — die Untergrenze für ein
+    Bedienziel, das sich mit dem Finger treffen lässt, plus Luft dazwischen. Enger gesetzt
+    wäre die Leiste zwar einzeilig, aber für einen Teil der Nutzer nicht mehr bedienbar.
+-->
+<UserControl
+    x:Class="EchoPlay.App.Controls.AlphabetBarControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:EchoPlay.App.Controls"
+    IsTabStop="False">
+
+    <ItemsControl x:Name="LetterItems" XYFocusKeyboardNavigation="Enabled">
+
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <!-- Umbruch statt Abschneiden: In einem schmalen Fenster steht die Leiste
+                     lieber zweizeilig, als dass Buchstaben unerreichbar werden. -->
+                <VariableSizedWrapGrid
+                    Orientation="Horizontal"
+                    ItemWidth="44"
+                    ItemHeight="44"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+
+        <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="controls:AlphabetBucket">
+                <Button
+                    AutomationProperties.Name="{x:Bind AutomationName}"
+                    Content="{x:Bind Label}"
+                    IsEnabled="{x:Bind IsOccupied}"
+                    Tag="{x:Bind Letter}"
+                    Click="OnLetterClick"
+                    Width="{StaticResource TouchTargetMinSize}"
+                    Height="{StaticResource TouchTargetMinSize}"
+                    Padding="0"
+                    FontSize="{StaticResource FontSizeCaption}"
+                    FontWeight="{x:Bind LabelWeight}"
+                    Background="{ThemeResource SurfaceElevatedBrush}"
+                    BorderBrush="{ThemeResource AccentPrimaryBrush}"
+                    BorderThickness="{x:Bind BorderStrength}"
+                    CornerRadius="{StaticResource ControlCornerRadius}"/>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+</UserControl>

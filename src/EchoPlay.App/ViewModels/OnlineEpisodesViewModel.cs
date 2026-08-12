@@ -10,7 +10,7 @@ namespace EchoPlay.App.ViewModels
     /// Sub-ViewModel für die Episoden-Sektion der Online-Mediathek.
     /// Hält die Episodenliste der gewählten Serie, das Sortierkriterium und den
     /// Lade-Zustand. Die Async-Logik zum Laden und Nachladen der Cover liegt im Top-VM
-    /// bzw. im <see cref="MediathekOnlineActions"/>-Helfer; dieses Sub-VM ist ein
+    /// bzw. im <see cref="OnlineLibraryActions"/>-Helfer; dieses Sub-VM ist ein
     /// reiner Daten- und Sortier-Halter.
     /// </summary>
     public sealed class OnlineEpisodesViewModel : ObservableObject

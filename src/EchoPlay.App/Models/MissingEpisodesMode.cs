@@ -2,7 +2,7 @@ namespace EchoPlay.App.Models
 {
     /// <summary>
     /// Mögliche Ergebnisse des Drei-Optionen-Dialogs für die Fehlende-Folgen-Prüfung.
-    /// Wird vom <see cref="EchoPlay.App.ViewModels.MediathekLokalViewModel"/> über
+    /// Wird vom <see cref="EchoPlay.App.ViewModels.LocalLibraryViewModel"/> über
     /// das <c>MissingEpisodesModeRequested</c>-Event vom Code-Behind angefordert.
     /// </summary>
     public enum MissingEpisodesMode

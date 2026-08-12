@@ -26,7 +26,7 @@ namespace EchoPlay.AppleMusic.Tests.TestData
         /// Dieser Datensatz wird bewusst generisch gehalten, da es nicht um iTunes-spezifische Details geht,
         /// sondern um die Ablehnung durch die Seriensuche.
         /// </summary>
-        public static ITunesArtistDto UngeeigneterKünstler => new()
+        public static ITunesArtistDto UnsuitableArtist => new()
         {
             WrapperType = "artist",
             ArtistId = 999999999,

@@ -11,7 +11,7 @@ namespace EchoPlay.App.ViewModels
     /// Sub-ViewModel für die Serienliste der Online-Mediathek.
     /// Hält die gefilterte und sortierte Serienliste, die aktuelle Auswahl im Akkordeon
     /// und die Filter-Kriterien (Suchtext, Statusfilter, Sortierindex). Das Top-VM
-    /// <see cref="MediathekOnlineViewModel"/> steuert über diese Properties, welche Serien
+    /// <see cref="OnlineLibraryViewModel"/> steuert über diese Properties, welche Serien
     /// sichtbar sind.
     /// </summary>
     public sealed class OnlineSeriesViewModel : ObservableObject

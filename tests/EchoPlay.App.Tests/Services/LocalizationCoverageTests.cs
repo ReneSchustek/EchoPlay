@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -89,17 +90,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Ausgehend vom Solution-Root das App-Projekt suchen, statt den
             // Ordner-Layout (src/) fest zu verdrahten — so übersteht der Test Umzüge.
-            string baseDir = AppContext.BaseDirectory;
-            DirectoryInfo? dir = new(baseDir);
-            while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EchoPlay.slnx")))
-            {
-                dir = dir.Parent;
-            }
-
-            if (dir is null)
-            {
-                throw new InvalidOperationException($"EchoPlay.slnx nicht gefunden, ausgehend von '{baseDir}'.");
-            }
+            DirectoryInfo dir = new(RepositoryPaths.Root());
 
             string relativePath = Path.Combine("Strings", culture, "Resources.resw");
             string path = Directory

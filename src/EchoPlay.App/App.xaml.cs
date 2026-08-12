@@ -823,12 +823,12 @@ namespace EchoPlay.App
             _ = builder.Services.AddSingleton<IPageModeGuard, PageModeGuard>();
 
             // FolderRestructureCoordinator als Singleton – kapselt AppSettings-Lookup, den
-            // LocalLibrary-Restructure-Service und das Display-Mapping aus dem MediathekLokalViewModel.
+            // LocalLibrary-Restructure-Service und das Display-Mapping aus dem LocalLibraryViewModel.
             _ = builder.Services.AddSingleton<IFolderRestructureCoordinator, FolderRestructureCoordinator>();
 
             // MissingEpisodesCoordinator als Singleton – kapselt Datei-System-Analyse,
             // Live-Online-Abgleich per iTunes und StatusBar-Aktualisierung für die
-            // Fehlende-Folgen-Prüfung. Aus dem MediathekLokalViewModel ausgelagert.
+            // Fehlende-Folgen-Prüfung. Aus dem LocalLibraryViewModel ausgelagert.
             _ = builder.Services.AddSingleton<IMissingEpisodesCoordinator, MissingEpisodesCoordinator>();
 
             // EpisodeCoverCoordinator als Singleton – kapselt Cover-Suche, Bestätigungs-
@@ -859,6 +859,11 @@ namespace EchoPlay.App
             _ = builder.Services.AddSingleton<IProcessLauncher, ProcessLauncher>();
             _ = builder.Services.AddSingleton<ILanguageSwitchService, LanguageSwitchService>();
 
+            // Such- und Filterkriterien der Seiten als Singleton: Die Seiten-ViewModels sind
+            // kurzlebig und werden beim Verlassen freigegeben. Ohne diese Ablage stünde jede
+            // Liste nach einem Ausflug in eine Detailansicht wieder ungefiltert da.
+            _ = builder.Services.AddSingleton<FilterStateStore>();
+
             // StatusBarViewModel als Singleton – Statistiken müssen App-weit konsistent sein.
             _ = builder.Services.AddSingleton<StatusBarViewModel>(provider => new StatusBarViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
@@ -882,7 +887,7 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IClock>(),
                 provider.GetRequiredService<BackgroundCoverService>(),
                 provider.GetRequiredService<INewReleaseEventService>()));
-            _ = builder.Services.AddTransient<MediathekOnlineViewModel>(provider => new MediathekOnlineViewModel(
+            _ = builder.Services.AddTransient<OnlineLibraryViewModel>(provider => new OnlineLibraryViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<IConfirmationDialogService>(),
                 provider.GetRequiredService<ImportService>(),
@@ -898,8 +903,8 @@ namespace EchoPlay.App
                 provider.GetRequiredService<IPageModeGuard>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
                 provider.GetRequiredService<INavigationService>()));
-            _ = builder.Services.AddTransient<MediathekLokalViewModel>(provider => new MediathekLokalViewModel(
-                new MediathekLokalViewModelContext(
+            _ = builder.Services.AddTransient<LocalLibraryViewModel>(provider => new LocalLibraryViewModel(
+                new LocalLibraryViewModelContext(
                     provider.GetRequiredService<IServiceScopeFactory>(),
                     provider.GetRequiredService<ISyncService>(),
                     provider.GetRequiredService<IPlayerService>(),
@@ -918,8 +923,9 @@ namespace EchoPlay.App
                     provider.GetRequiredService<IFolderRestructureCoordinator>(),
                     provider.GetRequiredService<IMissingEpisodesCoordinator>(),
                     provider.GetRequiredService<IEpisodeCoverCoordinator>(),
-                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("MediathekLokal"))));
-            _ = builder.Services.AddTransient<SucheViewModel>(provider => new SucheViewModel(
+                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("LocalLibrary"),
+                    provider.GetRequiredService<FilterStateStore>())));
+            _ = builder.Services.AddTransient<SearchViewModel>(provider => new SearchViewModel(
                 provider.GetRequiredService<ImportService>(),
                 provider.GetRequiredService<IErrorDialogService>(),
                 provider.GetRequiredService<ILocalizationService>(),
@@ -970,9 +976,9 @@ namespace EchoPlay.App
             _ = builder.Services.AddSingleton<ITagLookupCoordinator, TagLookupCoordinator>();
             _ = builder.Services.AddTransient<TagManagerViewModel>();
 
-            // ProtokollViewModel als Transient – jede Navigation erzeugt eine frische Instanz
+            // LogViewModel als Transient – jede Navigation erzeugt eine frische Instanz
             // und meldet sich sauber beim MemorySink ab.
-            _ = builder.Services.AddTransient<ProtokollViewModel>(provider => new ProtokollViewModel(
+            _ = builder.Services.AddTransient<LogViewModel>(provider => new LogViewModel(
                 provider.GetService<MemorySink>()));
 
             _ = builder.Services.AddTransient<StatistikViewModel>();

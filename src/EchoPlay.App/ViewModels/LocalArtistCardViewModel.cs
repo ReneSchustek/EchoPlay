@@ -94,6 +94,12 @@ namespace EchoPlay.App.ViewModels
         public string CountText => $"{LocalEpisodeCount} / {TotalEpisodeCount}";
 
         /// <summary>
+        /// Ob der Serie lokal Folgen fehlen. Eine Serie ohne bekannte Folgen zählt nicht als
+        /// unvollständig — dort fehlt die Auskunft, nicht der Bestand.
+        /// </summary>
+        public bool IsIncomplete => TotalEpisodeCount > 0 && LocalEpisodeCount < TotalEpisodeCount;
+
+        /// <summary>
         /// Aktualisiert die Episodenzähler nachträglich – z.B. wenn der Scan die Episoden einer
         /// Serie erst nach dem Anlegen der Kachel persistiert. Meldet zusätzlich <see cref="CountText"/>
         /// als geändert, damit die gebundene Anzeige live nachzieht statt auf "0 / 0" zu verharren.

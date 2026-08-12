@@ -8,6 +8,12 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <!-- Form vor Farbe: Tokens und Markenfarben stehen vor den Paletten, damit eine
+                     Palette im Zweifel gewinnt. Beide bleiben dauerhaft eingehängt – ThemeService
+                     entfernt nur Wörterbücher, deren Quelle einen Theme-Namen trägt. -->
+                <ResourceDictionary Source="Themes/Tokens.xaml"/>
+                <ResourceDictionary Source="Themes/Brand.xaml"/>
+                <ResourceDictionary Source="Themes/ControlStyles.xaml"/>
                 <!-- Alle sechs Farbpaletten sind deklariert. Aktiv ist zur Laufzeit immer nur eine –
                      ThemeService entfernt beim Start die inaktiven und tauscht sie bei Theme-Wechsel. -->
                 <ResourceDictionary Source="Themes/Ruhrcoder.xaml"/>

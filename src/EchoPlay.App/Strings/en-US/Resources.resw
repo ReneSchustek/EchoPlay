@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -14,31 +14,31 @@
   </resheader>
 
   <!-- NavigationView – main menu -->
-  <data name="NavUeber.Content" xml:space="preserve">
+  <data name="NavAbout.Content" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="NavTagManager.Content" xml:space="preserve">
     <value>Tag Manager</value>
   </data>
-  <data name="NavStartseite.Content" xml:space="preserve">
+  <data name="NavDashboard.Content" xml:space="preserve">
     <value>Home</value>
   </data>
-  <data name="NavMediathek.Content" xml:space="preserve">
+  <data name="NavLibrary.Content" xml:space="preserve">
     <value>Media Library</value>
   </data>
-  <data name="NavMediathekOnline.Content" xml:space="preserve">
+  <data name="NavOnlineLibrary.Content" xml:space="preserve">
     <value>Online</value>
   </data>
-  <data name="NavMediathekLokal.Content" xml:space="preserve">
+  <data name="NavLocalLibrary.Content" xml:space="preserve">
     <value>Local</value>
   </data>
-  <data name="NavSuche.Content" xml:space="preserve">
+  <data name="NavSearch.Content" xml:space="preserve">
     <value>Search</value>
   </data>
   <data name="NavPlayer.Content" xml:space="preserve">
     <value>Player</value>
   </data>
-  <data name="NavStatistik.Content" xml:space="preserve">
+  <data name="NavStatistics.Content" xml:space="preserve">
     <value>Statistics</value>
   </data>
 
@@ -594,6 +594,176 @@
   <!-- MediathekLokalPage – controls -->
   <data name="LokalSearchBox.PlaceholderText" xml:space="preserve">
     <value>Search series …</value>
+  </data>
+  <data name="LokalAlphabetJumpFormat" xml:space="preserve">
+    <value>Jump to {0}</value>
+    <comment>Screen reader label for the alphabet bar. {0} is the letter.</comment>
+  </data>
+  <data name="LokalLetterSectionFormat" xml:space="preserve">
+    <value>Section {0}</value>
+    <comment>Screen reader label for a letter section. {0} is the letter.</comment>
+  </data>
+  <data name="LokalCollapseEpisodesFloatingButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Collapse episodes</value>
+  </data>
+  <data name="LokalCollapseEpisodesFloatingButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Collapse episodes</value>
+  </data>
+  <data name="OnlineCollapseEpisodesFloatingButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Collapse episodes</value>
+  </data>
+  <data name="OnlineCollapseEpisodesFloatingButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Collapse episodes</value>
+  </data>
+  <data name="StatistikPageTitle" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="StatistikPageSubtitle" xml:space="preserve">
+    <value>Size of the collection and listening progress</value>
+  </data>
+  <data name="TagManagerPageTitle" xml:space="preserve">
+    <value>Tag manager</value>
+  </data>
+  <data name="TagManagerPageSubtitle" xml:space="preserve">
+    <value>Edit title, artist and cover of the audio files in a folder</value>
+  </data>
+  <data name="TagManagerOpenFolderAction" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="TagManagerSearchPlaceholder" xml:space="preserve">
+    <value>Search file …</value>
+  </data>
+  <data name="TagManagerFilterModified" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="TagManagerFileListNoResultsMessage" xml:space="preserve">
+    <value>No file matches the search and filter.</value>
+  </data>
+  <data name="TagManagerResetFiltersAction" xml:space="preserve">
+    <value>Reset search</value>
+  </data>
+  <data name="ProtokollPageTitle" xml:space="preserve">
+    <value>Log</value>
+  </data>
+  <data name="ProtokollPageSubtitle" xml:space="preserve">
+    <value>Messages from the current session, newest first</value>
+  </data>
+  <data name="ProtokollClearAction" xml:space="preserve">
+    <value>Clear view</value>
+  </data>
+  <data name="ProtokollSearchPlaceholder" xml:space="preserve">
+    <value>Search message or area …</value>
+  </data>
+  <data name="ProtokollLevelError" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="ProtokollLevelWarning" xml:space="preserve">
+    <value>Warnings</value>
+  </data>
+  <data name="ProtokollLevelInformation" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="ProtokollLevelDebug" xml:space="preserve">
+    <value>Debug details</value>
+  </data>
+  <data name="ProtokollNoResultsMessage" xml:space="preserve">
+    <value>No message matches the search and level.</value>
+  </data>
+  <data name="ProtokollResetFiltersAction" xml:space="preserve">
+    <value>Reset search</value>
+  </data>
+  <data name="SuchePageTitle" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="SuchePageSubtitle" xml:space="preserve">
+    <value>Find audio dramas in your own collection and at the provider</value>
+  </data>
+  <data name="SucheAction" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="SucheSearchPlaceholder" xml:space="preserve">
+    <value>Enter a title or series, press Enter to search …</value>
+  </data>
+  <data name="SucheScopeBothLabel" xml:space="preserve">
+    <value>All sources</value>
+  </data>
+  <data name="SucheScopeOnlineLabel" xml:space="preserve">
+    <value>At the provider</value>
+  </data>
+  <data name="SucheScopeLocalLabel" xml:space="preserve">
+    <value>Own collection</value>
+  </data>
+  <data name="SeriesDetailSearchPlaceholder" xml:space="preserve">
+    <value>Search episode …</value>
+  </data>
+  <data name="SeriesDetailFilterUnheard" xml:space="preserve">
+    <value>Unheard</value>
+  </data>
+  <data name="SeriesDetailFilterInProgress" xml:space="preserve">
+    <value>In progress</value>
+  </data>
+  <data name="SeriesDetailFilterHeard" xml:space="preserve">
+    <value>Finished</value>
+  </data>
+  <data name="OnlinePageTitle" xml:space="preserve">
+    <value>Online library</value>
+  </data>
+  <data name="OnlinePageSubtitle" xml:space="preserve">
+    <value>Search series at the provider and keep track of your own collection</value>
+  </data>
+  <data name="OnlineRefreshAction" xml:space="preserve">
+    <value>Check for new episodes</value>
+  </data>
+  <data name="OnlineSearchPlaceholder" xml:space="preserve">
+    <value>Search series, press Enter to search the provider …</value>
+  </data>
+  <data name="OnlineFilterNew" xml:space="preserve">
+    <value>New episodes</value>
+  </data>
+  <data name="OnlineFilterInProgress" xml:space="preserve">
+    <value>In progress</value>
+  </data>
+  <data name="OnlineFilterFinished" xml:space="preserve">
+    <value>Finished</value>
+  </data>
+  <data name="OnlineAlphabetJumpFormat" xml:space="preserve">
+    <value>Jump to {0}</value>
+    <comment>Screen reader label for the alphabet bar. {0} is the letter.</comment>
+  </data>
+  <data name="OnlineLetterSectionFormat" xml:space="preserve">
+    <value>Section {0}</value>
+    <comment>Screen reader label for a letter section. {0} is the letter.</comment>
+  </data>
+  <data name="OnlineSeriesListName" xml:space="preserve">
+    <value>Series</value>
+    <comment>Screen reader label for the series list when it is not grouped by letter.</comment>
+  </data>
+  <data name="LokalPageTitle" xml:space="preserve">
+    <value>Local library</value>
+  </data>
+  <data name="LokalPageSubtitle" xml:space="preserve">
+    <value>All series whose episodes are stored as files on this computer</value>
+  </data>
+  <data name="LokalScanAction" xml:space="preserve">
+    <value>Scan library</value>
+  </data>
+  <data name="LokalSearchPlaceholder" xml:space="preserve">
+    <value>Search series …</value>
+  </data>
+  <data name="LokalFilterFavorites" xml:space="preserve">
+    <value>Favourites</value>
+  </data>
+  <data name="LokalFilterWatched" xml:space="preserve">
+    <value>Watched</value>
+  </data>
+  <data name="LokalFilterIncomplete" xml:space="preserve">
+    <value>Incomplete</value>
+  </data>
+  <data name="LokalNoResultsMessage" xml:space="preserve">
+    <value>No series matches the search and filters.</value>
+  </data>
+  <data name="LokalResetFiltersAction" xml:space="preserve">
+    <value>Reset search</value>
   </data>
   <data name="LokalLibraryPathLabel.Text" xml:space="preserve">
     <value>Library path</value>
@@ -1804,4 +1974,14 @@ The application will close.</value>
   <data name="LogViewUnavailable" xml:space="preserve">
     <value>The log buffer is unavailable. Restart the application to enable the live view.</value>
   </data>
-</root>
+  <data name="SearchBoxClearButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
+  <data name="SearchBoxClearButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear search</value>
+  </data>  <data name="SeriesTileFavoriteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Mark as favourite</value>
+  </data>
+  <data name="SeriesTileWatchedIndicator.AutomationProperties.Name" xml:space="preserve">
+    <value>This series is checked for new episodes</value>
+  </data></root>

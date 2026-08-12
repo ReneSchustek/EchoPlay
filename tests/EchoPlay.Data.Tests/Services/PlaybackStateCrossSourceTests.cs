@@ -29,7 +29,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task MarkCompleted_UeberträgtAuchBeiAbweichendemFolgentitel()
+        public async Task MarkCompleted_TransfersWithDifferentEpisodeTitle()
         {
             // Der Folgentitel darf nicht Teil der Zuordnung sein: Lokal und online benennen
             // dieselbe Folge unterschiedlich — in der Produktivbibliothek bei 0 von 925 Paaren
@@ -52,7 +52,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task MarkCompleted_UeberträgtNichtBeiAbweichenderFolgennummer()
+        public async Task MarkCompleted_DoesNotTransferWithDifferentEpisodeNumber()
         {
             Series lokaleSerie = await DataBuilder.PersistSeriesAsync("TKKG");
             Series onlineSerie = await DataBuilder.PersistSeriesAsync("TKKG");

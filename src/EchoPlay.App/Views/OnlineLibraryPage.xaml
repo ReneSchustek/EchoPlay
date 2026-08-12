@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="EchoPlay.App.Views.OnlineLibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:EchoPlay.App.ViewModels"
+    xmlns:ctrl="using:EchoPlay.App.Controls"
+    xmlns:helpers="using:EchoPlay.App.Helpers">
+
+    <Page.Resources>
+        <!-- Gemeinsamer ItemTemplate für Top- und Bottom-Grid der Online-Mediathek.
+             Vermeidet Duplikation des Kontextmenüs und des SeriesTileControl-Markups. -->
+        <DataTemplate x:Key="OnlineSeriesTileTemplate" x:DataType="vm:SeriesCardViewModel">
+            <ctrl:SeriesTileControl
+                AutomationProperties.Name="{x:Bind Title, Mode=OneTime}"
+                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
+                Title="{x:Bind Title, Mode=OneTime}"
+                Subtitle="{x:Bind CountText, Mode=OneTime}"
+                FavoriteVisibility="Visible"
+                FavoriteGlyph="{x:Bind FavoriteGlyph, Mode=OneWay}"
+                FavoriteCommand="{x:Bind ToggleFavoriteCommand}"
+                WatchedVisibility="{x:Bind WatchedVisibility, Mode=OneWay}"
+                WatchedGlyph="{x:Bind WatchedGlyph, Mode=OneTime}"
+                SelectedIndicatorVisibility="{x:Bind SelectedIndicatorVisibility, Mode=OneWay}">
+                <ctrl:SeriesTileControl.ContextFlyoutMenu>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Uid="SeriesDetailsItem"
+                                        Tag="{x:Bind Id, Mode=OneTime}"
+                                        Click="OnSeriesDetailsClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE946;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <ToggleMenuFlyoutItem
+                            x:Uid="WatchSeriesItem"
+                            Tag="{x:Bind Id, Mode=OneTime}"
+                            IsChecked="{x:Bind IsWatched, Mode=OneWay}"
+                            Click="OnToggleWatchSeriesClick">
+                            <ToggleMenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE7B3;"/>
+                            </ToggleMenuFlyoutItem.Icon>
+                        </ToggleMenuFlyoutItem>
+                        <MenuFlyoutItem x:Uid="OnlineRemoveSeriesItem"
+                                        Tag="{x:Bind Id, Mode=OneTime}"
+                                        Click="OnRemoveOnlineSeriesClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE74D;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </ctrl:SeriesTileControl.ContextFlyoutMenu>
+            </ctrl:SeriesTileControl>
+        </DataTemplate>
+
+        <!-- Ein Buchstaben-Abschnitt der Bibliothek. Die Vorlage steht hier und nicht in einem
+             eigenen Control, weil das Kachel-Menü oben an Handler dieser Seite gebunden ist. -->
+        <DataTemplate x:Key="OnlineLetterSectionTemplate" x:DataType="helpers:LetterSection">
+            <StackPanel AutomationProperties.Name="{x:Bind AutomationName}">
+                <TextBlock
+                    Text="{x:Bind Header}"
+                    Visibility="{x:Bind HeaderVisibility}"
+                    Style="{StaticResource SectionHeaderTextStyle}"
+                    Margin="20,8,4,4"/>
+                <GridView
+                    ItemsSource="{x:Bind Items}"
+                    SelectionMode="None"
+                    IsItemClickEnabled="True"
+                    ItemClick="OnSeriesItemClick"
+                    Padding="16,0,16,0"
+                    ScrollViewer.VerticalScrollMode="Disabled"
+                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                    ScrollViewer.HorizontalScrollMode="Disabled"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ItemTemplate="{StaticResource OnlineSeriesTileTemplate}">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="166"/>
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemContainerStyle>
+                        <Style TargetType="GridViewItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                        </Style>
+                    </GridView.ItemContainerStyle>
+                </GridView>
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <!-- Aufbau der Gestaltungslinie, von oben: Seitenkopf, Suchfeld, Filterleiste,
+             Buchstabenleiste, dann die Liste. -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Fallback-Hinweis: Spotify-Credentials fehlen, Treffer kommen von Apple Music.
+             Sitzt als Overlay in der Content-Row und weicht dem Scroll-Inhalt über
+             VerticalAlignment Top aus; verschwindet, sobald das VM die Results leert. -->
+        <InfoBar
+            Grid.Row="5"
+            x:Uid="OnlineSpotifyFallbackHint"
+            IsOpen="{x:Bind ViewModel.IsSpotifyFallbackHintVisible, Mode=OneWay}"
+            IsClosable="False"
+            Severity="Informational"
+            Margin="16,4,16,0"
+            VerticalAlignment="Top"
+            Canvas.ZIndex="10"/>
+
+        <!-- Seitenkopf: Titel, Zweck der Seite, rechts die Primäraktion -->
+        <ctrl:PageHeaderControl
+            x:Name="OnlineHeader"
+            Grid.Row="0"
+            Margin="16,12,16,0"
+            ActionCommand="{x:Bind ViewModel.RefreshCommand}"/>
+
+        <!-- Suche und Werkzeuge -->
+        <Grid Grid.Row="1" Padding="16,8" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Filtert die Bibliothek beim Tippen; die Eingabetaste sucht darüber hinaus
+                 beim Anbieter weiter. -->
+            <ctrl:SearchBoxControl
+                x:Name="SearchBox"
+                Grid.Column="0"
+                Width="300"
+                VerticalAlignment="Center"
+                SearchText="{x:Bind ViewModel.SearchText, Mode=TwoWay}"
+                Submitted="OnSearchSubmitted"/>
+
+            <!-- Beim Anbieter suchen – nur Icon, Tooltip erklärt die Funktion -->
+            <Button
+                Grid.Column="1"
+                x:Uid="OnlineProviderSearchButton"
+                Command="{x:Bind ViewModel.ProviderSearchCommand}" Style="{StaticResource IconButtonStyle}">
+                <FontIcon Glyph="&#xE721;" FontSize="{StaticResource IconSizeS}"/>
+            </Button>
+
+            <!-- Ausgewählte Suchergebnisse importieren -->
+            <Button
+                Grid.Column="2"
+                x:Uid="OnlineAddSelectedButton"
+                Command="{x:Bind ViewModel.AddSelectedCommand}"
+                Visibility="{x:Bind ViewModel.ProviderSearchResultsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                <FontIcon Glyph="&#xE710;" FontSize="{StaticResource IconSizeS}"/>
+            </Button>
+
+            <!-- Suchtyp-Filter: nur sichtbar bei Provider-Suchergebnissen -->
+            <ComboBox
+                Grid.Column="3"
+                SelectedIndex="{x:Bind ViewModel.SearchTypeIndex, Mode=TwoWay}"
+                Width="120"
+                Visibility="{x:Bind ViewModel.SearchTypeFilterVisibility, Mode=OneWay}">
+                <ComboBoxItem x:Uid="OnlineSearchTypeAll"/>
+                <ComboBoxItem x:Uid="OnlineSearchTypeSeries"/>
+                <ComboBoxItem x:Uid="OnlineSearchTypeEpisodes"/>
+            </ComboBox>
+
+            <!-- Serien-Sortierung: nur sichtbar in der Bibliothek -->
+            <ComboBox
+                Grid.Column="3"
+                SelectedIndex="{x:Bind ViewModel.SeriesSortIndex, Mode=TwoWay}"
+                Width="150"
+                Visibility="{x:Bind ViewModel.StatusFilterVisibility, Mode=OneWay}">
+                <ComboBoxItem x:Uid="OnlineSortByName"/>
+                <ComboBoxItem x:Uid="OnlineSortByEpisodeCount"/>
+                <ComboBoxItem x:Uid="OnlineSortByProgress"/>
+            </ComboBox>
+
+            <!-- Hilfe: hier statt über dem Seitenkopf, sonst läge sie auf dessen Aktion -->
+            <ctrl:HelpButtonControl
+                TipUid="HelpTipOnline"
+                Grid.Column="6"
+                VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- Statusfilter als Chips. Sie schließen einander aus: Eine Serie ist neu, am Hören
+             oder durchgehört — kein Zustand, den man mehrfach ankreuzt. Kein aktiver Chip
+             heißt „alle". -->
+        <ctrl:FilterBarControl
+            x:Name="OnlineFilterBar"
+            Grid.Row="2"
+            Margin="16,0,16,4"
+            Visibility="{x:Bind ViewModel.StatusFilterVisibility, Mode=OneWay}"
+            FilterToggled="OnFilterToggled"/>
+
+        <!-- Buchstabenleiste: springt zum Abschnitt. Sie erscheint nur bei Sortierung nach
+             Namen — bei „Meiste Folgen" gäbe es keine Buchstaben-Ordnung, auf die sie zeigen
+             könnte. Ebenso nicht über Suchergebnissen, die keine Bibliothek sind. -->
+        <ctrl:AlphabetBarControl
+            x:Name="SeriesAlphabetBar"
+            Grid.Row="3"
+            Margin="16,0,16,4"
+            LetterSelected="OnLetterSelected"/>
+
+        <!-- Episoden-Header: fixiert außerhalb des ScrollViewers, scrollt nicht mit -->
+        <Grid Grid.Row="4" Padding="28,4,16,4" ColumnSpacing="8"
+              Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock x:Uid="OnlineEpisodesHeader"
+                           Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                <Button Click="OnCloseEpisodePanelClick"
+                        x:Uid="OnlineCloseEpisodesButton"
+                        Background="Transparent" BorderThickness="0"
+                        VerticalAlignment="Center" Style="{StaticResource IconButtonStyle}">
+                    <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                </Button>
+            </StackPanel>
+            <ComboBox Grid.Column="1"
+                      SelectedIndex="{x:Bind ViewModel.EpisodeSortIndex, Mode=TwoWay}"
+                      MinWidth="160">
+                <ComboBoxItem x:Uid="OnlineEpisodeSortByNumber"/>
+                <ComboBoxItem x:Uid="OnlineEpisodeSortByNumberDesc"/>
+                <ComboBoxItem x:Uid="OnlineEpisodeSortByDate"/>
+            </ComboBox>
+        </Grid>
+
+        <!-- Leer-Zustand: zwei Varianten je nach VM-Sichtbarkeit -->
+        <Grid Grid.Row="5"
+              Visibility="{x:Bind ViewModel.EmptyStateVisibility, Mode=OneWay}">
+
+            <ctrl:EmptyStatePanel
+                x:Uid="OnlineNoProviderEmptyState"
+                Glyph="&#xE783;"
+                Visibility="{x:Bind ViewModel.NoProviderVisibility, Mode=OneWay}"
+                ActionCommand="{x:Bind ViewModel.GoToSettingsCommand}"/>
+
+            <ctrl:EmptyStatePanel
+                x:Uid="OnlineNoSeriesEmptyState"
+                Glyph="&#xE8F1;"
+                Visibility="{x:Bind ViewModel.NoSeriesVisibility, Mode=OneWay}"
+                ActionCommand="{x:Bind ViewModel.FocusSearchCommand}"/>
+        </Grid>
+
+        <!-- Provider-Suchergebnisse – Layout 1:1 wie Serien-Kacheln -->
+        <GridView
+            Grid.Row="5"
+            ItemsSource="{x:Bind ViewModel.ProviderSearchResults, Mode=OneWay}"
+            SelectionMode="None"
+            Visibility="{x:Bind ViewModel.ProviderSearchResultsVisibility, Mode=OneWay}"
+            Padding="16"
+            ScrollViewer.HorizontalScrollMode="Disabled"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal" ItemWidth="148" ItemHeight="148"/>
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="0"/>
+                </Style>
+            </GridView.ItemContainerStyle>
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="vm:SearchResultViewModel">
+                    <Grid Width="140" Height="140" Margin="4" CornerRadius="{StaticResource ControlCornerRadius}" AutomationProperties.Name="{x:Bind Title}">
+                        <Grid.Clip>
+                            <RectangleGeometry Rect="0,0,140,140"/>
+                        </Grid.Clip>
+                        <Image Source="{x:Bind CoverImage, Mode=OneWay}" Stretch="UniformToFill"/>
+                        <!-- Platzhalter wenn kein Cover -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            Visibility="{x:Bind NoCoverVisibility, Mode=OneWay}">
+                            <FontIcon
+                                Glyph="&#xE8D6;"
+                                FontSize="{StaticResource TileHeaderIconSize}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+                        </Border>
+                        <!-- Text-Overlay unten -->
+                        <Border
+                            VerticalAlignment="Bottom"
+                            Background="{StaticResource MediaScrimStrongBrush}"
+                            CornerRadius="0,0,4,4"
+                            Padding="6,4">
+                            <StackPanel>
+                                <TextBlock
+                                    Text="{x:Bind Title, Mode=OneTime}"
+                                    Foreground="{StaticResource TextOnMediaBrush}"
+                                    FontSize="12"
+                                    MaxLines="1"
+                                    TextTrimming="CharacterEllipsis"/>
+                                <TextBlock
+                                    Text="{x:Bind SourceLabel, Mode=OneTime}"
+                                    Foreground="{StaticResource TextOnMediaMutedBrush}"
+                                    FontSize="10"/>
+                            </StackPanel>
+                        </Border>
+                        <!-- Checkbox oben links – weiß auf dunklem Cover.
+                             Lightweight Styling: lokale Theme-Overrides für die Checkbox-Umrandung -->
+                        <CheckBox
+                            IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                            Visibility="{x:Bind LightBorderVisibility, Mode=OneWay}"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="4,4,0,0"
+                            MinWidth="0" MinHeight="0">
+                            <CheckBox.Resources>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="ControlOnDarkMediaBrush"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="ControlOnDarkMediaBrush"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" ResourceKey="ControlOnDarkMediaBrush"/>
+                            </CheckBox.Resources>
+                        </CheckBox>
+                        <!-- Checkbox oben links – schwarz auf hellem Cover -->
+                        <CheckBox
+                            IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                            Visibility="{x:Bind DarkBorderVisibility, Mode=OneWay}"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="4,4,0,0"
+                            MinWidth="0" MinHeight="0">
+                            <CheckBox.Resources>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUnchecked" ResourceKey="ControlOnLightMediaBrush"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" ResourceKey="ControlOnLightMediaBrush"/>
+                                <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" ResourceKey="ControlOnLightMediaBrush"/>
+                            </CheckBox.Resources>
+                        </CheckBox>
+                        <!-- Lade-Indikator während des Imports -->
+                        <ProgressRing Width="24" Height="24"
+                                      IsActive="{x:Bind IsImporting, Mode=OneWay}"
+                                      Visibility="{x:Bind IsImporting, Mode=OneWay}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- Fortschrittstext während des Imports -->
+                        <TextBlock Text="{x:Bind ImportStatusText, Mode=OneWay}"
+                                   Visibility="{x:Bind IsImporting, Mode=OneWay}"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                   Margin="4,0,4,4"/>
+                        <!-- Gehört-Häkchen nach Import -->
+                        <FontIcon Glyph="&#xE73E;" FontSize="24"
+                                  Foreground="LimeGreen"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Visibility="{x:Bind AlreadyImportedVisibility, Mode=OneWay}"/>
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+
+        <!-- Such-Ladeindikator -->
+        <ProgressRing
+            Grid.Row="5"
+            IsActive="{x:Bind ViewModel.IsSearchingProvider, Mode=OneWay}"
+            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- Zuklappen, ohne zurückzuscrollen: Der Folgenbereich kann weit unten aufgehen,
+             und der Weg zum Schließen-Zeichen im Kopf wäre dann eine halbe Bildschirmhöhe.
+             Der Knopf schwebt über der Liste und bleibt beim Scrollen stehen. -->
+        <Button
+            x:Name="CollapseEpisodesButton"
+            x:Uid="OnlineCollapseEpisodesFloatingButton"
+            Grid.Row="5"
+            Click="OnCloseEpisodePanelClick"
+            Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,28,24"
+            Canvas.ZIndex="10"
+            Width="48"
+            Height="48"
+            Background="{ThemeResource SurfaceElevatedBrush}"
+            BorderBrush="{ThemeResource CardBorderBrush}"
+            BorderThickness="{StaticResource HairlineBorderThickness}"
+            CornerRadius="{StaticResource CardCornerRadius}" Style="{StaticResource IconButtonStyle}">
+            <FontIcon Glyph="&#xE70E;" FontSize="{StaticResource IconSizeM}"/>
+        </Button>
+
+        <!-- Bibliothek: Akkordeon-Layout (sichtbar wenn keine Suchergebnisse) -->
+        <ScrollViewer
+            Grid.Row="5"
+            Visibility="{x:Bind ViewModel.LibraryVisibility, Mode=OneWay}"
+            VerticalScrollBarVisibility="Auto">
+
+            <StackPanel Padding="0,16,0,0">
+                <!-- Serien – Abschnitte oberhalb der Aufklappstelle -->
+                <ItemsControl
+                    x:Name="TopSectionsHost"
+                    ItemTemplate="{StaticResource OnlineLetterSectionTemplate}"/>
+
+                <!-- Lade-Indikator: sichtbar solange Episoden geladen werden -->
+                <ProgressRing
+                    IsActive="{x:Bind ViewModel.IsLoadingEpisodes, Mode=OneWay}"
+                    Width="24" Height="24"
+                    HorizontalAlignment="Center"
+                    Margin="0,8,0,0"
+                    Visibility="{x:Bind ViewModel.LoadingEpisodesVisibility, Mode=OneWay}"/>
+
+                <!-- Akkordeon: Folgen-Bereich – wiederverwendbares Control -->
+                <!-- Episoden-Kacheln ohne Header – Header ist fixiert in Row 2 -->
+                <ctrl:EpisodeAccordionControl
+                    x:Name="EpisodeExpansionPanel"
+                    Margin="16,0,0,0"
+                    Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}"
+                    EpisodesSource="{x:Bind ViewModel.Episodes, Mode=OneWay}">
+                    <ctrl:EpisodeAccordionControl.EpisodeTemplate>
+                        <DataTemplate x:DataType="vm:OnlineEpisodeCardViewModel">
+                            <ctrl:EpisodeTileControl
+                                AutomationProperties.Name="{x:Bind Title, Mode=OneTime}"
+                                CoverImage="{x:Bind CoverImage, Mode=OneWay}"
+                                Title="{x:Bind DisplayText, Mode=OneTime}"
+                                StatusTextValue="{x:Bind ReleaseDateText, Mode=OneTime}"
+                                CompletedVisibility="{x:Bind CompletedVisibility, Mode=OneWay}"
+                                TileCommand="{x:Bind OpenInBrowserCommand}"
+                                ActionGlyph="&#xE712;">
+                                <ctrl:EpisodeTileControl.ActionFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem x:Uid="OnlineEpisodeOpenBrowserItem"
+                                                        Command="{x:Bind OpenInBrowserCommand}">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE774;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutSeparator/>
+                                        <MenuFlyoutItem x:Uid="OnlineEpisodeCoverSearchItem"
+                                                        Tag="{x:Bind EpisodeId, Mode=OneTime}"
+                                                        Click="OnOnlineEpisodeCoverSearchClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE721;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                    </MenuFlyout>
+                                </ctrl:EpisodeTileControl.ActionFlyout>
+                            </ctrl:EpisodeTileControl>
+                        </DataTemplate>
+                    </ctrl:EpisodeAccordionControl.EpisodeTemplate>
+                </ctrl:EpisodeAccordionControl>
+
+                <!-- Serien – Fortsetzung unterhalb der Aufklappstelle -->
+                <ItemsControl
+                    x:Name="BottomSectionsHost"
+                    Margin="0,0,0,16"
+                    ItemTemplate="{StaticResource OnlineLetterSectionTemplate}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Lade-Indikator mit optionalem Statustext (z.B. beim automatischen Episoden-Nachladen) -->
+        <StackPanel
+            Grid.Row="5"
+            HorizontalAlignment="Center" VerticalAlignment="Center"
+            Spacing="12"
+            Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}">
+
+            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"/>
+
+            <TextBlock
+                Text="{x:Bind ViewModel.LoadingStatusText, Mode=OneWay}"
+                Style="{ThemeResource BodyTextBlockStyle}"
+                HorizontalAlignment="Center"
+                TextAlignment="Center"
+                Opacity="0.7"/>
+        </StackPanel>
+
+    </Grid>
+</Page>

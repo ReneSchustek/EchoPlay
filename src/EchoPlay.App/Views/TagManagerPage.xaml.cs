@@ -35,6 +35,47 @@ namespace EchoPlay.App.Views
             ViewModel = App.Services.GetRequiredService<TagManagerViewModel>();
             _filePickerService = App.Services.GetRequiredService<IFilePickerService>();
             InitializeComponent();
+
+            InitializeHeaderAndFilters();
+        }
+
+        private static readonly Helpers.SafeResourceStrings _resources = new();
+
+        /// <summary>Schlüssel des Filters für ungespeicherte Änderungen.</summary>
+        private const string FilterKeyModified = "modified";
+
+        /// <summary>
+        /// Beschriftet Seitenkopf, Suchfeld, Filterleiste und den „Nichts gefunden"-Hinweis.
+        /// Die Texte stehen im Quelltext und nicht als x:Uid, weil x:Uid nur die Eigenschaften
+        /// eingebauter Steuerelemente bedient.
+        /// </summary>
+        private void InitializeHeaderAndFilters()
+        {
+            TagManagerHeader.Title = _resources.GetString("TagManagerPageTitle");
+            TagManagerHeader.Subtitle = _resources.GetString("TagManagerPageSubtitle");
+            TagManagerHeader.ActionText = _resources.GetString("TagManagerOpenFolderAction");
+
+            TagManagerSearchField.PlaceholderText = _resources.GetString("TagManagerSearchPlaceholder");
+
+            TagManagerFilterBar.Chips =
+            [
+                new Controls.FilterChip(FilterKeyModified, _resources.GetString("TagManagerFilterModified"))
+            ];
+
+            TagManagerNoResultsPanel.Message = _resources.GetString("TagManagerFileListNoResultsMessage");
+            TagManagerNoResultsPanel.ActionText = _resources.GetString("TagManagerResetFiltersAction");
+            TagManagerNoResultsPanel.ActionCommand = ViewModel.ResetFiltersCommand;
+        }
+
+        /// <summary>
+        /// Übernimmt den umgeschalteten Filter ins ViewModel.
+        /// </summary>
+        private void OnFilterToggled(object? sender, Controls.FilterToggledEventArgs e)
+        {
+            if (e.Chip.Key == FilterKeyModified)
+            {
+                ViewModel.ModifiedOnly = e.Chip.IsActive;
+            }
         }
 
         /// <summary>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Suchfeld der Gestaltungslinie: Lupe links, Platzhalter, der sagt was durchsucht wird,
+    rechts ein Löschen-Zeichen, das nur bei gefülltem Feld erscheint.
+
+    Die Suche filtert beim Tippen — ohne Schaltfläche daneben. Eine Suche, die erst auf
+    einen Klick reagiert, fühlt sich langsam an, auch wenn sie schnell ist.
+-->
+<UserControl
+    x:Class="EchoPlay.App.Controls.SearchBoxControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border
+        Background="{ThemeResource InputBackgroundBrush}"
+        BorderBrush="{ThemeResource InputBorderBrush}"
+        BorderThickness="{StaticResource HairlineBorderThickness}"
+        CornerRadius="{StaticResource ControlCornerRadius}"
+        Padding="{StaticResource ControlPadding}">
+
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <FontIcon
+                Grid.Column="0"
+                Glyph="&#xE721;"
+                FontSize="{StaticResource IconSizeS}"
+                Foreground="{ThemeResource TextSecondaryBrush}"/>
+
+            <!-- Ohne eigenen Rahmen: Der Rahmen kommt vom umgebenden Border, damit Lupe,
+                 Eingabe und Löschen-Zeichen als ein Feld wahrgenommen werden. -->
+            <TextBox
+                x:Name="InputBox"
+                Grid.Column="1"
+                BorderThickness="0"
+                Background="Transparent"
+                Padding="0"
+                MinHeight="0"
+                VerticalAlignment="Center"
+                TextChanged="OnTextChanged"
+                KeyDown="OnKeyDown"/>
+
+            <!-- Der Name für die Sprachausgabe kommt aus der Ressourcendatei und nicht aus
+                 einer Eigenschaft des Bausteins: Eine Eigenschaft, die jede Seite selbst
+                 setzen müsste, bleibt irgendwo leer — und dort liest die Sprachausgabe dann
+                 nichts vor. -->
+            <Button
+                x:Name="ClearButton"
+                x:Uid="SearchBoxClearButton"
+                Grid.Column="2"
+                Content="&#xE711;"
+                FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                FontSize="{StaticResource IconSizeS}"
+                Background="Transparent"
+                BorderThickness="0"
+                Padding="4"
+                MinWidth="0"
+                MinHeight="0"
+                Visibility="Collapsed"
+                Click="OnClearClick"/>
+        </Grid>
+    </Border>
+
+</UserControl>

@@ -15,7 +15,7 @@
         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
         BorderThickness="1"
-        CornerRadius="8">
+        CornerRadius="{StaticResource CardCornerRadius}">
 
         <StackPanel>
             <!-- Episoden-Kachelgrid – kein eigenes Scrolling, äußerer ScrollViewer übernimmt.

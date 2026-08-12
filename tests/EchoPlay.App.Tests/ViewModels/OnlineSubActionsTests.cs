@@ -28,7 +28,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         // ── Gemeinsames Setup ────────────────────────────────────────────────────
 
-        private static MediathekOnlineActionsContext BuildContext(
+        private static OnlineLibraryActionsContext BuildContext(
             FakeSeriesDataService? seriesService = null,
             FakeEpisodeDataService? episodeService = null,
             FakePlaybackStateDataService? stateService = null,
@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
 
-            return new MediathekOnlineActionsContext(
+            return new OnlineLibraryActionsContext(
                 ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
                 ConfirmationDialogService: new FakeConfirmationDialogService(),
                 ImportService: importService,
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task OnlineSeriesLoader_LoadAsync_IncrementsCallCount_AndSetsNoProviderFlag()
         {
-            MediathekOnlineActionsContext ctx = BuildContext(activeProvider: ProviderType.None);
+            OnlineLibraryActionsContext ctx = BuildContext(activeProvider: ProviderType.None);
             OnlineSeriesViewModel seriesVM = new();
             OnlineActionsState state = new();
 
@@ -118,7 +118,7 @@ namespace EchoPlay.App.Tests.ViewModels
                     }
                 ]);
 
-            MediathekOnlineActionsContext ctx = BuildContext(stateService: stateService);
+            OnlineLibraryActionsContext ctx = BuildContext(stateService: stateService);
             OnlineSeriesViewModel seriesVM = new();
             OnlineActionsState state = new();
 
@@ -139,7 +139,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
             await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
-            MediathekOnlineActionsContext ctx = BuildContext(seriesService: seriesService);
+            OnlineLibraryActionsContext ctx = BuildContext(seriesService: seriesService);
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineActionsState state = new();
@@ -168,7 +168,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
             await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
-            MediathekOnlineActionsContext ctx = BuildContext(seriesService: seriesService);
+            OnlineLibraryActionsContext ctx = BuildContext(seriesService: seriesService);
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineActionsState state = new();
@@ -238,7 +238,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task OnlineProviderSearchActions_SearchProviderAsync_EmptyQuery_SkipsSearch()
         {
-            MediathekOnlineActionsContext ctx = BuildContext();
+            OnlineLibraryActionsContext ctx = BuildContext();
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineProviderSearchViewModel searchVM = new();
@@ -255,7 +255,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void OnlineProviderSearchActions_AddSelected_EmptyList_IsNoOp()
         {
-            MediathekOnlineActionsContext ctx = BuildContext();
+            OnlineLibraryActionsContext ctx = BuildContext();
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineProviderSearchViewModel searchVM = new();
@@ -276,7 +276,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 [new ImportSeries { Title = "Apple", Source = "AppleMusic", SourceSeriesId = "am1" }],
                 "AppleMusic");
 
-            MediathekOnlineActionsContext ctx = BuildContext(
+            OnlineLibraryActionsContext ctx = BuildContext(
                 credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing(),
                 appleMusicSearch: appleMusicSearch);
             OnlineSeriesViewModel seriesVM = new();
@@ -298,7 +298,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Back-to-Back-Suche in der Online-Mediathek: die zweite Suche muss die erste
             // verdrängen, die spät eintreffenden Stale-Treffer dürfen die UI nicht mehr füllen.
             GatedSeriesImportSearch gated = new();
-            MediathekOnlineActionsContext ctx = BuildContext(spotifySearch: gated);
+            OnlineLibraryActionsContext ctx = BuildContext(spotifySearch: gated);
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineProviderSearchViewModel searchVM = new()
@@ -343,7 +343,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task OnlineBulkRefreshActions_ToggleWatchAsync_NullService_IncrementsButSkips()
         {
-            MediathekOnlineActionsContext ctx = BuildContext();
+            OnlineLibraryActionsContext ctx = BuildContext();
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
 
@@ -359,7 +359,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task OnlineBulkRefreshActions_RemoveSeriesAsync_UnknownId_IsNoOp()
         {
-            MediathekOnlineActionsContext ctx = BuildContext();
+            OnlineLibraryActionsContext ctx = BuildContext();
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
 

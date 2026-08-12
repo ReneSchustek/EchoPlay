@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,6 +20,11 @@ namespace EchoPlay.App.ViewModels
         private IReadOnlyList<TagFileItemViewModel> _selectedFiles = [];
         private string? _currentFolderPath;
 
+        // Vollständiger Bestand des geöffneten Ordners hinter der angezeigten Liste.
+        private List<TagFileItemViewModel> _allFiles = [];
+        private string _searchText = string.Empty;
+        private bool _modifiedOnly;
+
         /// <summary>Liste aller Audiodateien im geöffneten Ordner.</summary>
         public ObservableCollection<TagFileItemViewModel> Files
         {
@@ -30,6 +36,90 @@ namespace EchoPlay.App.ViewModels
                     OnPropertyChanged(nameof(HasFiles));
                 }
             }
+        }
+
+        /// <summary>
+        /// Freitextsuche über Dateiname und Unterordner. Wirkt beim Tippen.
+        /// </summary>
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                {
+                    ApplyFilters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Zeigt nur Dateien mit noch nicht gespeicherten Änderungen — der Blick vor dem
+        /// Sichern, wenn ein ganzer Ordner bearbeitet wurde.
+        /// </summary>
+        public bool ModifiedOnly
+        {
+            get => _modifiedOnly;
+            set
+            {
+                if (SetProperty(ref _modifiedOnly, value))
+                {
+                    ApplyFilters();
+                }
+            }
+        }
+
+        /// <summary>Ob Suche oder Filter die Dateiliste gerade einschränken.</summary>
+        public bool HasActiveFilter => !string.IsNullOrWhiteSpace(_searchText) || _modifiedOnly;
+
+        /// <summary>
+        /// Sichtbarkeit des „Nichts gefunden"-Hinweises – der Ordner enthält Dateien, aber
+        /// Suche oder Filter lassen keine übrig.
+        /// </summary>
+        public Visibility NoResultsVisibility =>
+            _allFiles.Count > 0 && _files.Count == 0 && HasActiveFilter
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        /// <summary>Nimmt Suche und Filter zurück.</summary>
+        public void ResetFilters()
+        {
+            _searchText = string.Empty;
+            _modifiedOnly = false;
+
+            OnPropertyChanged(nameof(SearchText));
+            OnPropertyChanged(nameof(ModifiedOnly));
+
+            ApplyFilters();
+        }
+
+        /// <summary>
+        /// Wendet Suche und Filter auf den Bestand an und aktualisiert <see cref="Files"/>.
+        /// </summary>
+        private void ApplyFilters()
+        {
+            List<TagFileItemViewModel> visible = [];
+
+            foreach (TagFileItemViewModel file in _allFiles)
+            {
+                if (_modifiedOnly && !file.IsModified)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(_searchText)
+                    && !file.RelativePath.Contains(_searchText, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    continue;
+                }
+
+                visible.Add(file);
+            }
+
+            Files = new ObservableCollection<TagFileItemViewModel>(visible);
+
+            OnPropertyChanged(nameof(HasActiveFilter));
+            OnPropertyChanged(nameof(NoResultsVisibility));
         }
 
         /// <summary>
@@ -97,9 +187,10 @@ namespace EchoPlay.App.ViewModels
         public void SetFiles(IReadOnlyList<TagFileItemViewModel> files, string folderPath)
         {
             CurrentFolderPath = folderPath;
-            Files = new ObservableCollection<TagFileItemViewModel>(files);
+            _allFiles = [.. files];
             SelectedFile = null;
             SelectedFiles = [];
+            ApplyFilters();
         }
 
         /// <summary>
@@ -108,6 +199,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public void Clear()
         {
+            _allFiles = [];
             Files = [];
             SelectedFile = null;
             SelectedFiles = [];

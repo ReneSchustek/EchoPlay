@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="EchoPlay.App.Views.ImportPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -23,7 +23,7 @@
                 x:Uid="ImportSearchButton"
                 Click="OnSearchClick"
                 IsEnabled="{x:Bind ViewModel.IsSearchEnabled, Mode=OneWay}">
-                <FontIcon Glyph="&#xE721;" FontSize="16"/>
+                <FontIcon Glyph="&#xE721;" FontSize="{StaticResource IconSizeM}"/>
             </Button>
         </StackPanel>
 
@@ -59,7 +59,7 @@
                             x:Uid="ImportResultImportButton"
                             Command="{x:Bind ImportCommand}"
                             Visibility="{x:Bind ImportButtonVisibility}">
-                            <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                            <FontIcon Glyph="&#xE710;" FontSize="{StaticResource IconSizeS}"/>
                         </Button>
 
                         <TextBlock

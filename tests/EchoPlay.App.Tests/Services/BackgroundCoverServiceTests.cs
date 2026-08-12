@@ -195,7 +195,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Weder lokale Datei noch Provider-URL: Vor dieser Phase blieb so eine Episode
             // dauerhaft ohne Cover, weil die Suchkette nur beim Import lief.
-            SuchKontext k = BuildServiceMitSuche();
+            SearchContext k = BuildServiceMitSuche();
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
@@ -212,7 +212,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task RunOnce_KeineSucheWennCoverVorhanden()
         {
-            SuchKontext k = BuildServiceMitSuche();
+            SearchContext k = BuildServiceMitSuche();
 
             await k.Covers.SetCoverAsync(
                 CoverEntityTypes.Episode, k.Episode.Id, CoverBytes, null, TestContext.Current.CancellationToken);
@@ -228,7 +228,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Eine Serie ohne lokale cover.jpg und ohne CoverImageUrl wurde vor dieser Phase
             // nie gesucht - der URL-Nachtrag füllt ausschließlich Episoden.
-            SuchKontext k = BuildServiceMitSuche();
+            SearchContext k = BuildServiceMitSuche();
 
             _ = await k.Service.RunOnceAsync(TestContext.Current.CancellationToken);
 
@@ -243,7 +243,7 @@ namespace EchoPlay.App.Tests.Services
             byte[] gefunden = [0x42, 0x43, 0x44];
             RecordingHttpMessageHandler handler = new(gefunden);
 
-            SuchKontext k = BuildServiceMitSuche(
+            SearchContext k = BuildServiceMitSuche(
                 new FakeCoverSearchService("Ohne Cover - Folge 1", "https://coverartarchive.org/release/abc/front"),
                 new RecordingHttpClientFactory(handler));
 
@@ -259,7 +259,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task RunOnce_KeineSerienSucheWaehrendCooldown()
         {
-            SuchKontext k = BuildServiceMitSuche();
+            SearchContext k = BuildServiceMitSuche();
 
             // Gestern schon erfolglos gesucht - der Cooldown läuft noch sechs Tage.
             DateTime gestern = k.Clock.UtcNow.AddDays(-1);
@@ -274,7 +274,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task RunOnce_SerienSucheLaeuftNachAblaufDesCooldownsWieder()
         {
-            SuchKontext k = BuildServiceMitSuche();
+            SearchContext k = BuildServiceMitSuche();
 
             DateTime vorAchtTagen = k.Clock.UtcNow.AddDays(-8);
             k.SeriesService.All[0].CoverLastChecked = vorAchtTagen;
@@ -290,7 +290,7 @@ namespace EchoPlay.App.Tests.Services
         // Ohne coverSearch liefert GetService<ICoverSearchService>() null - die Suche läuft
         // dann bis zum Zeitstempel durch, findet aber nichts. Das ist der Normalfall der Tests;
         // nur der Treffer-Test registriert einen Suchdienst.
-        private static SuchKontext BuildServiceMitSuche(
+        private static SearchContext BuildServiceMitSuche(
             ICoverSearchService? coverSearch = null,
             IHttpClientFactory? httpClientFactory = null)
         {
@@ -356,7 +356,7 @@ namespace EchoPlay.App.Tests.Services
                 clock,
                 rateLimiter: null);
 
-            return new SuchKontext
+            return new SearchContext
             {
                 Service = service,
                 Covers = coverImageService,
@@ -370,7 +370,7 @@ namespace EchoPlay.App.Tests.Services
 
         // Bündelt, was die Suchtests gemeinsam brauchen. Als Klasse statt Tupel, weil sich
         // sonst bei jedem zusätzlichen Feld sämtliche Destrukturierungen ändern.
-        private sealed class SuchKontext
+        private sealed class SearchContext
         {
             public required BackgroundCoverService Service { get; init; }
             public required FakeCoverImageDataService Covers { get; init; }

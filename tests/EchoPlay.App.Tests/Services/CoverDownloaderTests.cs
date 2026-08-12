@@ -58,7 +58,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task DownloadAsync_Zeitüberschreitung_LiefertNull()
+        public async Task DownloadAsync_Timeout_ReturnsNull()
         {
             // HttpClient meldet eine Zeitüberschreitung als TaskCanceledException, obwohl
             // niemand abgebrochen hat. Sie darf nicht als Abbruch durchgeworfen werden —

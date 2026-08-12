@@ -294,13 +294,15 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Farbpinsel für das Online/Offline-Symbol und den zugehörigen Text.
-        /// Grün (<c>#4CAF50</c>) wenn online oder temporär online, Grau (<c>TextFillColorSecondaryBrush</c>) wenn offline.
-        /// Ein Brush statt Converter, weil das Projekt keine IValueConverter-Infrastruktur hat.
+        /// <para>
+        /// Beide Farben kommen aus der Palette: Ein fester Grünwert stünde in fünf der sechs
+        /// Paletten daneben. Ein Brush statt Converter, weil das Projekt keine
+        /// IValueConverter-Infrastruktur hat.
+        /// </para>
         /// </summary>
         public Brush OnlineOfflineBrush =>
-            _isOffline && !_isTemporarilyOnline
-                ? (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
-                : new SolidColorBrush(ColorHelper.FromArgb(255, 76, 175, 80));
+            (Brush)Application.Current.Resources[
+                _isOffline && !_isTemporarilyOnline ? "TextFillColorSecondaryBrush" : "StatusSuccessBrush"];
 
         // ── Ungespeicherte Einstellungen ─────────────────────────────────────────
 
@@ -388,7 +390,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Aktualisiert Text und numerischen Fortschritt des laufenden Scans.
-        /// Wird aus <see cref="MediathekLokalViewModel"/> im Progress-Callback aufgerufen.
+        /// Wird aus <see cref="LocalLibraryViewModel"/> im Progress-Callback aufgerufen.
         /// Aktualisiert zusätzlich den Fortschrittsbalken im Taskleisten-Symbol.
         /// </summary>
         /// <param name="progress">Aktueller Scan-Fortschritt mit Text und Prozentwert.</param>

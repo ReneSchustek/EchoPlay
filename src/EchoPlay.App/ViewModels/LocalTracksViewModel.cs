@@ -12,7 +12,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Sub-ViewModel für die Track-Spalte der lokalen Mediathek. Hält die Trackliste
     /// der aktuell gewählten Episode, die Wiedergabe-Steuerung und die Tag-Manager-Sprünge
-    /// für ganze Serien- bzw. Episoden-Ordner. Wird vom <see cref="MediathekLokalViewModel"/>
+    /// für ganze Serien- bzw. Episoden-Ordner. Wird vom <see cref="LocalLibraryViewModel"/>
     /// als Pass-Through-Ziel eingebunden, damit bestehende XAML-Bindings unverändert funktionieren.
     /// </summary>
     public sealed class LocalTracksViewModel : ObservableObject

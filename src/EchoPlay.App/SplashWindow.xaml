@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="EchoPlay">
 
-    <Grid Background="#FFFFFF">
+    <Grid Background="{StaticResource BrandSurfaceBrush}">
         <StackPanel
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
@@ -22,31 +22,31 @@
                 Text="EchoPlay"
                 FontSize="30"
                 FontWeight="Bold"
-                Foreground="#1D5274"
+                Foreground="{StaticResource BrandPrimaryBrush}"
                 HorizontalAlignment="Center"/>
 
             <TextBlock
                 x:Uid="SplashTagline"
                 FontSize="13"
-                Foreground="#3A7A9C"
+                Foreground="{StaticResource BrandSecondaryBrush}"
                 HorizontalAlignment="Center"/>
 
             <TextBlock
                 x:Name="VersionTextBlock"
                 FontSize="11"
-                Foreground="#6A9AB8"
+                Foreground="{StaticResource BrandMutedBrush}"
                 HorizontalAlignment="Center"/>
 
             <ProgressBar
                 IsIndeterminate="True"
                 Width="200"
                 Margin="0,8,0,0"
-                Foreground="#1D5274"/>
+                Foreground="{StaticResource BrandPrimaryBrush}"/>
 
             <TextBlock
                 x:Name="StatusTextBlock"
                 FontSize="11"
-                Foreground="#3A7A9C"
+                Foreground="{StaticResource BrandSecondaryBrush}"
                 HorizontalAlignment="Center"
                 Margin="0,4,0,0"/>
 

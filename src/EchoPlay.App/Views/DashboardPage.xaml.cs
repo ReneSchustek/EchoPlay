@@ -331,7 +331,7 @@ namespace EchoPlay.App.Views
             // Keine abonnierte Serie → direkt zur Suche, damit der Nutzer loslegen kann
             if (!ViewModel.HasSubscribedSeries)
             {
-                _navigationService.NavigateTo(NavigationTarget.Suche, "onboarding");
+                _navigationService.NavigateTo(NavigationTarget.Search, "onboarding");
                 return;
             }
 

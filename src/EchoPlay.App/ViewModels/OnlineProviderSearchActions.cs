@@ -12,7 +12,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     internal sealed class OnlineProviderSearchActions : IDisposable
     {
-        private readonly MediathekOnlineActionsContext _ctx;
+        private readonly OnlineLibraryActionsContext _ctx;
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineEpisodesViewModel _episodesVM;
         private readonly OnlineProviderSearchViewModel _providerSearchVM;
@@ -29,7 +29,7 @@ namespace EchoPlay.App.ViewModels
         public int AddSelectedCallCount { get; private set; }
 
         public OnlineProviderSearchActions(
-            MediathekOnlineActionsContext context,
+            OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,
             OnlineEpisodesViewModel episodesVM,
             OnlineProviderSearchViewModel providerSearchVM,

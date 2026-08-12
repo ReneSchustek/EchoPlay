@@ -97,6 +97,7 @@ namespace EchoPlay.App.ViewModels
             // Auswahländerung in der Dateiliste → Tag-Felder neu laden
             FileListVM.SelectionChanged += OnFileSelectionChanged;
 
+            ResetFiltersCommand = new RelayCommand(FileListVM.ResetFilters);
             _saveCommand = new RelayCommand(() => _ = _actions.SaveAsync());
             _saveAllCommand = new RelayCommand(() => _ = _actions.SaveAllAsync());
             _removeAllTagsCommand = new RelayCommand(() => _ = _actions.RemoveAllTagsAsync());
@@ -172,6 +173,28 @@ namespace EchoPlay.App.ViewModels
 
         /// <inheritdoc cref="TagFileListViewModel.HasFiles"/>
         public bool HasFiles => FileListVM.HasFiles;
+
+        /// <summary>Freitextsuche über Dateiname und Unterordner – Pass-Through zum <see cref="FileListVM"/>.</summary>
+        public string SearchText
+        {
+            get => FileListVM.SearchText;
+            set => FileListVM.SearchText = value;
+        }
+
+        /// <summary>Filter „nur geänderte Dateien" – Pass-Through zum <see cref="FileListVM"/>.</summary>
+        public bool ModifiedOnly
+        {
+            get => FileListVM.ModifiedOnly;
+            set => FileListVM.ModifiedOnly = value;
+        }
+
+        /// <summary>
+        /// Sichtbarkeit des „Nichts gefunden"-Hinweises – Pass-Through zum <see cref="FileListVM"/>.
+        /// </summary>
+        public Visibility NoResultsVisibility => FileListVM.NoResultsVisibility;
+
+        /// <summary>Nimmt Suche und Filter der Dateiliste zurück.</summary>
+        public ICommand ResetFiltersCommand { get; }
 
         /// <inheritdoc cref="TagFileListViewModel.HasSelectedFile"/>
         public bool HasSelectedFile => FileListVM.HasSelectedFile;

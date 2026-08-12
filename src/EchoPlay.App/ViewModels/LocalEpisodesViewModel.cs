@@ -22,7 +22,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Sub-ViewModel für die Episoden-Spalte der lokalen Mediathek.
     /// Verwaltet Episodenliste, Filter, Sortierung, Sonderfolgen-Tab, Cover-Ladevorgänge und
-    /// den Gehört-/Ungehört-Status einzelner Folgen. Wird vom <see cref="MediathekLokalViewModel"/>
+    /// den Gehört-/Ungehört-Status einzelner Folgen. Wird vom <see cref="LocalLibraryViewModel"/>
     /// als Pass-Through-Ziel eingebunden, damit bestehende XAML-Bindings unverändert funktionieren.
     /// </summary>
     public sealed class LocalEpisodesViewModel : ObservableObject, IDisposable

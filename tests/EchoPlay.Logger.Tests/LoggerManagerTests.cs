@@ -14,7 +14,7 @@ namespace EchoPlay.Logger.Tests
         /// Die Factory-Property gibt dieselbe Instanz zurück, die im Konstruktor übergeben wurde.
         /// </summary>
         [Fact]
-        public void Factory_GibtRegistrierteFactory_Zurück()
+        public void Factory_ReturnsRegisteredFactory()
         {
             EchoPlay.Logger.Core.LoggerFactory loggerFactory = new([], new LoggerOptions { MinimumLevel = LogLevel.Debug });
             LogCleanupService cleanupService = new(new LoggerOptions());
@@ -42,7 +42,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach Dispose ist die Factory-Property weiterhin zugänglich.
         /// </summary>
         [Fact]
-        public void Factory_NachDispose_WeiterhinZugänglich()
+        public void Factory_AfterDispose_StillAccessible()
         {
             EchoPlay.Logger.Core.LoggerFactory loggerFactory = new([], new LoggerOptions { MinimumLevel = LogLevel.Debug });
             LogCleanupService cleanupService = new(new LoggerOptions());

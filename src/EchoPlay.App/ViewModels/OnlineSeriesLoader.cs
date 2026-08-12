@@ -21,7 +21,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     internal sealed class OnlineSeriesLoader
     {
-        private readonly MediathekOnlineActionsContext _ctx;
+        private readonly OnlineLibraryActionsContext _ctx;
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineActionsState _state;
         private readonly Action<bool> _setIsLoading;
@@ -35,7 +35,7 @@ namespace EchoPlay.App.ViewModels
         public int CacheCallCount { get; private set; }
 
         public OnlineSeriesLoader(
-            MediathekOnlineActionsContext context,
+            OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,
             OnlineActionsState state,
             Action<bool> setIsLoading,

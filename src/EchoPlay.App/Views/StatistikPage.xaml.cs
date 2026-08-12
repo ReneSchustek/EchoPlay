@@ -21,7 +21,12 @@ namespace EchoPlay.App.Views
         {
             ViewModel = App.Services.GetRequiredService<StatistikViewModel>();
             InitializeComponent();
+
+            StatistikHeader.Title = _resources.GetString("StatistikPageTitle");
+            StatistikHeader.Subtitle = _resources.GetString("StatistikPageSubtitle");
         }
+
+        private static readonly Helpers.SafeResourceStrings _resources = new();
 
         /// <summary>
         /// Lädt die Statistiken beim Navigieren zur Seite. Standard-Pattern aller

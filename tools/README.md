@@ -2,6 +2,18 @@
 
 Portable Werkzeuge die NICHT als NuGet-Pakete kommen.
 
+## SymbolRenamer/
+
+Benennt Bezeichner über eine ganze Projektmappe um — Typen, Member, Parameter und lokale
+Namen — ohne Kommentare, Zeichenketten und Ressourcenschlüssel anzufassen. Aufträge kommen als
+JSON-Datei, `--dry-run` zeigt vorher, was passieren würde: siehe `SymbolRenamer/README.md`.
+
+## demo-data/
+
+Baut eine Demo-Bibliothek aus gemeinfreien Titeln und nimmt daraus Bilder der Anwendung auf —
+für Webseite, Tutorials und Release-Notizen, ohne die private Sammlung zu zeigen. Fünf
+Schritte mit eigener Anleitung: siehe `demo-data/README.md`.
+
 ## gitleaks
 
 Secret-Scanner (nutzt Shannon-Entropie zur Erkennung hochentroper Strings).

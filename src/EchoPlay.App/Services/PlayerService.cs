@@ -32,14 +32,13 @@ namespace EchoPlay.App.Services
         private readonly ILogger _logger;
         private readonly IClock _clock;
 
-        // Synchronisierung: _stateLock schützt alle mutable Felder (synchron),
-        // _saveLock serialisiert die async DB-Persistierung.
+        // _stateLock schützt die veränderlichen Felder dieses Dienstes.
         private readonly object _stateLock = new();
         private IReadOnlyList<string> _currentTrackPaths = [];
-        private readonly SemaphoreSlim _saveLock = new(1, 1);
+        private readonly PlaybackStateWriter _stateWriter;
 
         private Guid _currentEpisodeId;
-        private TimeSpan? _sleepTimerRemaining;
+        private readonly SleepTimer _sleepTimer = new();
         private int _autoSaveTick;
         private bool _disposed;
 
@@ -55,6 +54,7 @@ namespace EchoPlay.App.Services
             _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("PlayerService");
             _clock = clock;
+            _stateWriter = new PlaybackStateWriter(scopeFactory, _logger, clock);
 
             _player = new();
             _playlist = new();
@@ -212,7 +212,7 @@ namespace EchoPlay.App.Services
         /// Verbleibende Zeit des Einschlaf-Timers.
         /// Null, wenn kein Timer aktiv ist.
         /// </summary>
-        public TimeSpan? SleepTimerRemaining => _sleepTimerRemaining;
+        public TimeSpan? SleepTimerRemaining => _sleepTimer.Remaining;
 
         /// <summary>
         /// Startet die Wiedergabe einer Trackliste ab dem angegebenen Index.
@@ -333,7 +333,7 @@ namespace EchoPlay.App.Services
 
             if (episodeToSave != Guid.Empty)
             {
-                _ = SavePlaybackStateForEpisodeAsync(episodeToSave, positionToSave);
+                _ = _stateWriter.SaveAsync(episodeToSave, positionToSave);
             }
 
             StateChanged?.Invoke(this, EventArgs.Empty);
@@ -364,7 +364,7 @@ namespace EchoPlay.App.Services
         private void ResetPlaybackState()
         {
             _positionTimer.Stop();
-            _sleepTimerRemaining = null;
+            _sleepTimer.Set(null);
             _autoSaveTick = 0;
 
             CurrentTrackTitle = null;
@@ -423,10 +423,7 @@ namespace EchoPlay.App.Services
         /// <param name="duration">Zeitspanne bis zum automatischen Stopp. Null deaktiviert den Timer.</param>
         public void SetSleepTimer(TimeSpan? duration)
         {
-            lock (_stateLock)
-            {
-                _sleepTimerRemaining = duration;
-            }
+            _sleepTimer.Set(duration);
 
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -455,7 +452,7 @@ namespace EchoPlay.App.Services
                 _logger.Error("Abspielposition konnte beim App-Ende nicht gespeichert werden.", ex);
             }
 
-            _saveLock.Dispose();
+            _stateWriter.Dispose();
             _positionTimer.Dispose();
             _player.Dispose();
         }
@@ -479,29 +476,22 @@ namespace EchoPlay.App.Services
         private void OnPositionTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             bool shouldSave = false;
-            bool shouldPause = false;
 
             lock (_stateLock)
             {
-                // Auto-Save alle 30 Sekunden: Position geht auch bei Force-Close nicht verloren
+                // Alle dreißig Sekunden sichern: Die Stelle geht auch dann nicht
+                // verloren, wenn die Anwendung hart beendet wird.
                 _autoSaveTick++;
                 if (_autoSaveTick >= AutoSaveIntervalTicks)
                 {
                     _autoSaveTick = 0;
                     shouldSave = true;
                 }
-
-                // Sleep-Timer runterzählen; bei Ablauf Wiedergabe anhalten
-                if (_sleepTimerRemaining.HasValue)
-                {
-                    _sleepTimerRemaining = _sleepTimerRemaining.Value - TimeSpan.FromMilliseconds(500);
-                    if (_sleepTimerRemaining.Value <= TimeSpan.Zero)
-                    {
-                        _sleepTimerRemaining = null;
-                        shouldPause = true;
-                    }
-                }
             }
+
+            // Der Einschlaf-Zeitgeber hängt am selben Takt, gehört aber nicht unter
+            // die Sperre des Wiedergabezustands.
+            bool shouldPause = _sleepTimer.Tick(TimeSpan.FromMilliseconds(500));
 
             if (shouldSave)
             {
@@ -569,66 +559,7 @@ namespace EchoPlay.App.Services
                 position = _timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
             }
 
-            await SavePlaybackStateForEpisodeAsync(episodeId, position);
-        }
-
-        /// <summary>
-        /// Speichert die Position für eine bestimmte Episode in der Datenbank.
-        /// Wird von <see cref="SavePlaybackStateSnapshotAsync"/> und <see cref="Stop"/> verwendet.
-        /// <see cref="_saveLock"/> stellt sicher, dass nie zwei Saves gleichzeitig laufen.
-        /// </summary>
-        /// <param name="episodeId">Die Episode, für die gespeichert wird.</param>
-        /// <param name="position">Die aktuelle Abspielposition.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Persistenz der Abspielposition im Hintergrund: DbContext-/Concurrency-/Migration-Fehler dürfen die Wiedergabe nicht stören – bei Scheitern wird der Verlust geloggt und der nächste Autosave-Tick versucht es erneut.")]
-        private async System.Threading.Tasks.Task SavePlaybackStateForEpisodeAsync(Guid episodeId, TimeSpan position)
-        {
-            if (episodeId == Guid.Empty)
-            {
-                return;
-            }
-
-            // Bereits ein Save aktiv → diesen Durchlauf überspringen
-            if (!await _saveLock.WaitAsync(0))
-            {
-                return;
-            }
-
-            try
-            {
-                using IServiceScope scope = _scopeFactory.CreateScope();
-                IPlaybackStateDataService service = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
-
-                // Wiedergabe-Persistierung darf nicht durch externen CT abgebrochen werden — eigener _saveLock.
-                PlaybackState? existing = await service.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
-
-                if (existing is null)
-                {
-                    PlaybackState newState = new()
-                    {
-                        EpisodeId = episodeId,
-                        LastPosition = position,
-                        LastPlayedAt = _clock.UtcNow
-                    };
-
-                    // Wiedergabe-Persistierung darf nicht durch externen CT abgebrochen werden — eigener _saveLock.
-                    await service.AddAsync(newState, CancellationToken.None);
-                }
-                else
-                {
-                    existing.LastPosition = position;
-                    existing.LastPlayedAt = _clock.UtcNow;
-                    // Wiedergabe-Persistierung darf nicht durch externen CT abgebrochen werden — eigener _saveLock.
-                    await service.UpdateAsync(existing, CancellationToken.None);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Warning("Wiedergabestatus konnte nicht gespeichert werden: {Reason}", ex.Message);
-            }
-            finally
-            {
-                _ = _saveLock.Release();
-            }
+            await _stateWriter.SaveAsync(episodeId, position);
         }
     }
 }

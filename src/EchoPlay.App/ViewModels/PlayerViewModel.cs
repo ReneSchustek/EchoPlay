@@ -31,19 +31,8 @@ namespace EchoPlay.App.ViewModels
         private BitmapImage? _coverImage;
         private bool _isPlaying;
         private string _currentTitle = string.Empty;
-        private double _positionSeconds;
-        private double _durationSeconds;
-        private double _episodeProgressPercent;
-        private string _episodeProgressText = string.Empty;
 
         // Einmal zerlegt statt bei jedem Positions-Tick.
-        private static readonly System.Text.CompositeFormat EpisodeProgressFormat =
-            System.Text.CompositeFormat.Parse(
-                EchoPlay.App.Helpers.SafeResourceLoader.Get("PlayerEpisodeProgressFormat", "Ganze Folge: {0} von {1}"));
-        private bool _isSeeking;
-        private bool _showRemainingTime = true;
-        private string _elapsedText = "0:00";
-        private string _remainingOrTotalText = "-0:00";
         private string _playlistTitle = string.Empty;
         private string _playlistSubtitle = string.Empty;
 
@@ -58,6 +47,7 @@ namespace EchoPlay.App.ViewModels
             _playerService = playerService;
             _scopeFactory = scopeFactory;
             Volume = new VolumeControl(playerService, scopeFactory);
+            Time = new PlaybackTimeDisplay(playerService);
 
             // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests) – daher try-catch.
             try
@@ -74,11 +64,6 @@ namespace EchoPlay.App.ViewModels
             PlayPauseCommand = new RelayCommand(() => TogglePlayPause());
             NextCommand = new RelayCommand(() => _playerService.SkipToNext());
             PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
-            ToggleTimeDisplayCommand = new RelayCommand(() =>
-            {
-                _showRemainingTime = !_showRemainingTime;
-                UpdateTimeDisplay();
-            });
 
             // Initialen Zustand aus dem PlayerService übernehmen – er läuft vielleicht schon
             RefreshFromPlayerService();
@@ -147,84 +132,12 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public VolumeControl Volume { get; }
 
-        /// <summary>Aktuelle Abspielposition in Sekunden – für den Slider-Wert.</summary>
-        public double PositionSeconds
-        {
-            get => _positionSeconds;
-            set
-            {
-                // Nur während manuellem Seek schreiben – verhindert Rückkopplung vom PlayerService
-                if (_isSeeking)
-                {
-                    _ = SetProperty(ref _positionSeconds, value);
-                }
-            }
-        }
-
-        /// <summary>Gesamtdauer in Sekunden – Maximum des Sliders.</summary>
-        public double DurationSeconds
-        {
-            get => _durationSeconds;
-            private set => SetProperty(ref _durationSeconds, value);
-        }
-
         /// <summary>
-        /// Fortschritt in der ganzen Folge, in Prozent (0–100).
+        /// Alles, was an Zeit angezeigt wird: Position, verstrichene und verbleibende
+        /// Zeit, der Fortschritt der Folge und der Suchlauf am Regler. Die Anzeige bindet
+        /// direkt auf diesen Bereich.
         /// </summary>
-        /// <remarks>
-        /// Der Regler darüber zeigt die laufende Datei. Bei einer Folge aus vier Dateien
-        /// sagt „Minute 12" allein aber nichts — erst dieser Wert beantwortet, wie weit man
-        /// im Hörspiel ist.
-        /// </remarks>
-        public double EpisodeProgressPercent
-        {
-            get => _episodeProgressPercent;
-            private set => SetProperty(ref _episodeProgressPercent, value);
-        }
-
-        /// <summary>
-        /// Fortschritt der Folge als Text, etwa „1:12:30 von 4:41:44".
-        /// </summary>
-        public string EpisodeProgressText
-        {
-            get => _episodeProgressText;
-            private set => SetProperty(ref _episodeProgressText, value);
-        }
-
-        /// <summary>
-        /// Sichtbarkeit des Folgen-Fortschritts. Er erscheint nur, wenn die Gesamtdauer
-        /// bekannt ist und die Folge aus mehr als einer Datei besteht — sonst doppelte er
-        /// nur den Regler darüber.
-        /// </summary>
-        public Microsoft.UI.Xaml.Visibility EpisodeProgressVisibility =>
-            _playerService.OverallDuration > TimeSpan.Zero && _playerService.CurrentTrackPaths.Count > 1
-                ? Microsoft.UI.Xaml.Visibility.Visible
-                : Microsoft.UI.Xaml.Visibility.Collapsed;
-
-        /// <summary>
-        /// Formatierte bereits gespielte Zeit, z.B. "3:45" oder "1:03:45".
-        /// Wird alle 500 ms aktualisiert.
-        /// </summary>
-        public string ElapsedText
-        {
-            get => _elapsedText;
-            private set => SetProperty(ref _elapsedText, value);
-        }
-
-        /// <summary>
-        /// Formatierte verbleibende Zeit oder Gesamtdauer, je nach <see cref="_showRemainingTime"/>.
-        /// Verbleibend: "-23:45", Gesamt: "1:00:00". Per Klick umschaltbar.
-        /// </summary>
-        public string RemainingOrTotalText
-        {
-            get => _remainingOrTotalText;
-            private set => SetProperty(ref _remainingOrTotalText, value);
-        }
-
-        /// <summary>
-        /// Wechselt die rechte Zeitanzeige zwischen verbleibender Zeit und Gesamtdauer.
-        /// </summary>
-        public ICommand ToggleTimeDisplayCommand { get; }
+        public PlaybackTimeDisplay Time { get; }
 
         /// <summary>
         /// Titel der Playlist – Episodentitel oder Ordnername.
@@ -253,25 +166,6 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Zum vorherigen Track springen.</summary>
         public ICommand PreviousCommand { get; }
-
-        /// <summary>
-        /// Muss aufgerufen werden, wenn der Slider-Drag beginnt.
-        /// Setzt das Anti-Feedback-Flag, damit eingehende Position-Updates den Slider nicht zurücksetzen.
-        /// </summary>
-        public void BeginSeek()
-        {
-            _isSeeking = true;
-        }
-
-        /// <summary>
-        /// Muss aufgerufen werden, wenn der Slider-Drag endet.
-        /// Übergibt die neue Position an den <see cref="IPlayerService"/> und setzt das Flag zurück.
-        /// </summary>
-        public void CommitSeek()
-        {
-            _playerService.SeekTo(TimeSpan.FromSeconds(_positionSeconds));
-            _isSeeking = false;
-        }
 
         /// <summary>
         /// Lädt alle Audiodateien aus dem angegebenen Ordner als Playlist.
@@ -339,15 +233,7 @@ namespace EchoPlay.App.ViewModels
             AdoptRunningPlaylist();
 
             IsPlaying = _playerService.IsPlaying;
-            DurationSeconds = _playerService.Duration.TotalSeconds;
-
-            // Slider nur aktualisieren wenn kein Drag läuft – sonst springt der Slider zurück
-            if (!_isSeeking)
-            {
-                _ = SetProperty(ref _positionSeconds, _playerService.Position.TotalSeconds, nameof(PositionSeconds));
-            }
-
-            UpdateTimeDisplay();
+            Time.Refresh();
             UpdateCurrentTrackHighlight();
             UpdateCurrentTitle();
         }
@@ -444,69 +330,6 @@ namespace EchoPlay.App.ViewModels
                 item.IsCurrentTrack = currentPath is not null
                     && string.Equals(item.FullPath, currentPath, StringComparison.OrdinalIgnoreCase);
             }
-        }
-
-        /// <summary>
-        /// Zieht den Fortschritt über die ganze Folge nach.
-        /// </summary>
-        private void UpdateEpisodeProgress()
-        {
-            TimeSpan overallPosition = _playerService.OverallPosition;
-            TimeSpan overallDuration = _playerService.OverallDuration;
-
-            EpisodeProgressPercent = overallDuration > TimeSpan.Zero
-                ? Math.Min(100, overallPosition.TotalSeconds / overallDuration.TotalSeconds * 100)
-                : 0;
-
-            EpisodeProgressText = overallDuration > TimeSpan.Zero
-                ? string.Format(
-                    System.Globalization.CultureInfo.CurrentCulture,
-                    EpisodeProgressFormat,
-                    FormatTime(overallPosition),
-                    FormatTime(overallDuration))
-                : string.Empty;
-
-            OnPropertyChanged(nameof(EpisodeProgressVisibility));
-        }
-
-        /// <summary>
-        /// Aktualisiert die Zeitanzeige-Texte basierend auf der aktuellen Position und Dauer.
-        /// </summary>
-        private void UpdateTimeDisplay()
-        {
-            TimeSpan position = _playerService.Position;
-            TimeSpan duration = _playerService.Duration;
-
-            ElapsedText = FormatTime(position);
-            UpdateEpisodeProgress();
-
-            if (_showRemainingTime)
-            {
-                TimeSpan remaining = duration - position;
-                if (remaining < TimeSpan.Zero)
-                {
-                    remaining = TimeSpan.Zero;
-                }
-                RemainingOrTotalText = "-" + FormatTime(remaining);
-            }
-            else
-            {
-                RemainingOrTotalText = FormatTime(duration);
-            }
-        }
-
-        /// <summary>
-        /// Formatiert eine Zeitspanne als lesbaren Text.
-        /// Bei Werten unter einer Stunde: "m:ss", ab einer Stunde: "h:mm:ss".
-        /// </summary>
-        private static string FormatTime(TimeSpan time)
-        {
-            if (time.TotalHours >= 1)
-            {
-                return $"{(int)time.TotalHours}:{time.Minutes:D2}:{time.Seconds:D2}";
-            }
-
-            return $"{(int)time.TotalMinutes}:{time.Seconds:D2}";
         }
 
         private void OnPlayerStateChanged(object? sender, EventArgs e)

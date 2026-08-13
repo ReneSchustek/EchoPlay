@@ -120,7 +120,7 @@ namespace EchoPlay.App.Views
 
         private void OnSliderPointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            ViewModel.BeginSeek();
+            ViewModel.Time.BeginSeek();
         }
 
         /// <summary>
@@ -130,10 +130,10 @@ namespace EchoPlay.App.Views
         {
             if (sender is Slider slider)
             {
-                ViewModel.PositionSeconds = slider.Value;
+                ViewModel.Time.PositionSeconds = slider.Value;
             }
 
-            ViewModel.CommitSeek();
+            ViewModel.Time.CommitSeek();
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnTimeDisplayTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            ViewModel.ToggleTimeDisplayCommand.Execute(null);
+            ViewModel.Time.ToggleTimeDisplayCommand.Execute(null);
         }
 
     }

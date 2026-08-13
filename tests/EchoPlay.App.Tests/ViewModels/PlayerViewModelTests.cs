@@ -39,7 +39,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.True(vm.IsPlaying);
             Assert.Equal("Track A", vm.CurrentTitle);
-            Assert.Equal(120.0, vm.DurationSeconds);
+            Assert.Equal(120.0, vm.Time.DurationSeconds);
         }
 
         [Fact]

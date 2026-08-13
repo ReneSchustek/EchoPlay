@@ -72,6 +72,9 @@
   <data name="MiniPlayerPreviousButton.AutomationProperties.Name" xml:space="preserve">
     <value>Vorheriger Track</value>
   </data>
+  <data name="PlayerPlayPauseButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Wiedergabe oder Pause</value>
+  </data>
   <data name="MiniPlayerPlayPauseButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Pause</value>
   </data>

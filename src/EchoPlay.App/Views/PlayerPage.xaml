@@ -62,8 +62,8 @@
             <Slider
                 x:Name="PositionSlider"
                 Minimum="0"
-                Maximum="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
-                Value="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
+                Maximum="{x:Bind ViewModel.Time.DurationSeconds, Mode=OneWay}"
+                Value="{x:Bind ViewModel.Time.PositionSeconds, Mode=OneWay}"
                 PointerPressed="OnSliderPointerPressed"
                 PointerReleased="OnSliderPointerReleased"
                 HorizontalAlignment="Stretch"/>
@@ -73,12 +73,12 @@
                  damit die Zeiten bündig unter den Slider-Endpunkten stehen. -->
             <Grid Margin="12,-4,12,0">
                 <TextBlock
-                    Text="{x:Bind ViewModel.ElapsedText, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.Time.ElapsedText, Mode=OneWay}"
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     HorizontalAlignment="Left"/>
                 <TextBlock
-                    Text="{x:Bind ViewModel.RemainingOrTotalText, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.Time.RemainingOrTotalText, Mode=OneWay}"
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     HorizontalAlignment="Right"
@@ -91,14 +91,14 @@
             <StackPanel
                 Margin="12,8,12,0"
                 Spacing="2"
-                Visibility="{x:Bind ViewModel.EpisodeProgressVisibility, Mode=OneWay}">
+                Visibility="{x:Bind ViewModel.Time.EpisodeProgressVisibility, Mode=OneWay}">
                 <ProgressBar
                     x:Uid="PlayerEpisodeProgress"
-                    Value="{x:Bind ViewModel.EpisodeProgressPercent, Mode=OneWay}"
+                    Value="{x:Bind ViewModel.Time.EpisodeProgressPercent, Mode=OneWay}"
                     Maximum="100"
                     IsIndeterminate="False"/>
                 <TextBlock
-                    Text="{x:Bind ViewModel.EpisodeProgressText, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.Time.EpisodeProgressText, Mode=OneWay}"
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     HorizontalAlignment="Center"/>
@@ -115,6 +115,7 @@
                     Command="{x:Bind ViewModel.PreviousCommand}"/>
 
                 <Button
+                    x:Uid="PlayerPlayPauseButton"
                     Content="{x:Bind ViewModel.PlayPauseGlyph, Mode=OneWay}"
                     FontFamily="{ThemeResource SymbolThemeFontFamily}"
                     Width="56" Height="56"

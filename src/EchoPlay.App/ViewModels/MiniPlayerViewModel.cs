@@ -295,14 +295,17 @@ namespace EchoPlay.App.ViewModels
             // Zeitanzeige: gespielt und verbleibend
             TimeSpan position = _playerService.Position;
             TimeSpan duration = _playerService.Duration;
-            ElapsedText = FormatTime(position);
-            TimeSpan remaining = duration - position;
-            RemainingText = remaining > TimeSpan.Zero ? "-" + FormatTime(remaining) : FormatTime(duration);
+            ElapsedText = PlaybackTimeFormat.Format(position);
+
+            // Bleibt nichts mehr übrig, steht dort die Gesamtdauer statt „-0:00".
+            TimeSpan remaining = PlaybackTimeFormat.Remaining(position, duration);
+            RemainingText = remaining > TimeSpan.Zero
+                ? "-" + PlaybackTimeFormat.Format(remaining)
+                : PlaybackTimeFormat.Format(duration);
 
             TimeSpan overallDuration = _playerService.OverallDuration;
-            EpisodeProgressPercent = overallDuration > TimeSpan.Zero
-                ? Math.Min(100, _playerService.OverallPosition.TotalSeconds / overallDuration.TotalSeconds * 100)
-                : 0;
+            EpisodeProgressPercent = PlaybackTimeFormat.Percent(
+                _playerService.OverallPosition, overallDuration);
 
             EpisodeProgressText = overallDuration > TimeSpan.Zero
                 ? string.Format(
@@ -358,20 +361,6 @@ namespace EchoPlay.App.ViewModels
             {
                 TrackTitle = titles[0];
             }
-        }
-
-        /// <summary>
-        /// Formatiert eine Zeitspanne als lesbaren Text.
-        /// Unter einer Stunde: "m:ss", ab einer Stunde: "h:mm:ss".
-        /// </summary>
-        private static string FormatTime(TimeSpan time)
-        {
-            if (time.TotalHours >= 1)
-            {
-                return $"{(int)time.TotalHours}:{time.Minutes:D2}:{time.Seconds:D2}";
-            }
-
-            return $"{(int)time.TotalMinutes}:{time.Seconds:D2}";
         }
 
         /// <summary>

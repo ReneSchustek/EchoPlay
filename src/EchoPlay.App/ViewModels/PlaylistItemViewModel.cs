@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Services;
+using EchoPlay.Core.Parsing;
 using Microsoft.UI.Xaml;
-using System.IO;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -8,9 +9,10 @@ namespace EchoPlay.App.ViewModels
     /// Repräsentiert einen einzelnen Track in der Playlist des Players.
     /// Enthält Anzeigename, Pfad und den Hervorhebungsstatus für den aktuell spielenden Track.
     /// </summary>
-    public sealed class PlaylistItemViewModel : ObservableObject
+    public sealed class PlaylistItemViewModel : ObservableObject, ITrackTitleTarget
     {
         private bool _isCurrentTrack;
+        private string _title;
 
         /// <summary>
         /// Initialisiert das Playlist-Element.
@@ -21,13 +23,10 @@ namespace EchoPlay.App.ViewModels
         {
             Index = index;
             FullPath = fullPath;
-            // Nur der Dateiname ohne Erweiterung wird angezeigt – der Pfad ist für die Playlist irrelevant.
-            // Erster Buchstabe wird großgeschrieben, weil Kassetten-Rips und manche Dateinamen
-            // mit Kleinbuchstaben beginnen (z.B. "01a spuk in der werkstatt").
-            string rawName = Path.GetFileNameWithoutExtension(fullPath);
-            FileName = rawName.Length > 0 && char.IsLower(rawName[0])
-                ? char.ToUpperInvariant(rawName[0]) + rawName[1..]
-                : rawName;
+
+            // Bis der Titel aus der Kennzeichnung gelesen ist, steht hier der aufgeräumte
+            // Dateiname – ohne Endung und ohne die Zeilennummer, die links daneben steht.
+            _title = TrackDisplayTitle.FromFilePath(fullPath, index + 1);
         }
 
         /// <summary>Nullbasierter Index in der Playlist.</summary>
@@ -36,11 +35,24 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Einsbasierte Zeilennummer für die Anzeige in der UI.</summary>
         public int DisplayIndex => Index + 1;
 
-        /// <summary>Anzeigename des Tracks (Dateiname ohne Erweiterung).</summary>
-        public string FileName { get; }
+        /// <summary>
+        /// Angezeigter Titel des Tracks: der Titel aus der Kennzeichnung der Datei,
+        /// ersatzweise der Dateiname ohne Endung und ohne die daneben stehende Nummer.
+        /// </summary>
+        public string Title
+        {
+            get => _title;
+            private set => SetProperty(ref _title, value);
+        }
 
         /// <summary>Vollständiger Dateipfad – wird für die Wiedergabe benötigt.</summary>
         public string FullPath { get; }
+
+        /// <inheritdoc/>
+        string ITrackTitleTarget.FilePath => FullPath;
+
+        /// <inheritdoc/>
+        int ITrackTitleTarget.TrackNumber => DisplayIndex;
 
         /// <summary>
         /// Gibt an, ob dieser Track gerade abgespielt wird.
@@ -66,5 +78,18 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sichtbarkeit der Zeilennummer: sichtbar wenn dieser Track nicht aktiv ist.</summary>
         public Visibility NotCurrentTrackVisibility =>
             _isCurrentTrack ? Visibility.Collapsed : Visibility.Visible;
+
+        /// <summary>
+        /// Übernimmt den aus der Kennzeichnung gelesenen Titel.
+        /// Ein leerer Wert wird verworfen, damit die Zeile nie ohne Text dasteht.
+        /// </summary>
+        /// <param name="resolvedTitle">Der gelesene Titel oder <see langword="null"/>.</param>
+        public void ApplyTitle(string? resolvedTitle)
+        {
+            if (!string.IsNullOrWhiteSpace(resolvedTitle))
+            {
+                Title = resolvedTitle;
+            }
+        }
     }
 }

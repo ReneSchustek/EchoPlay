@@ -140,7 +140,7 @@
         <InfoBar
             Grid.Row="0"
             x:Uid="LokalScanningHint"
-            IsOpen="{x:Bind ViewModel.IsScanning, Mode=OneWay}"
+            IsOpen="{x:Bind ViewModel.ScanVM.IsScanning, Mode=OneWay}"
             IsClosable="False"
             Severity="Informational"
             Margin="8,8,8,0"/>
@@ -149,7 +149,7 @@
         <InfoBar
             Grid.Row="1"
             x:Uid="LokalNoFolderHint"
-            IsOpen="{x:Bind ViewModel.NeedsLibraryFolderSetup, Mode=OneWay}"
+            IsOpen="{x:Bind ViewModel.ScanVM.NeedsLibraryFolderSetup, Mode=OneWay}"
             IsClosable="False"
             Severity="Informational"
             Margin="8,4,8,0">
@@ -163,7 +163,7 @@
             x:Name="LokalHeader"
             Grid.Row="2"
             Margin="16,12,16,0"
-            ActionCommand="{x:Bind ViewModel.ScanCommand}"/>
+            ActionCommand="{x:Bind ViewModel.ScanVM.ScanCommand}"/>
 
         <!-- Bibliothekspfad, Suche und Scan-Aktionen -->
         <Grid Grid.Row="3" Padding="16,8,16,4" ColumnSpacing="8">
@@ -181,7 +181,7 @@
                 Grid.Column="0"
                 Width="250"
                 VerticalAlignment="Center"
-                SearchText="{x:Bind ViewModel.LocalSearchText, Mode=TwoWay}"/>
+                SearchText="{x:Bind ViewModel.ArtistsVM.LocalSearchText, Mode=TwoWay}"/>
 
             <!-- Pfadanzeige: zeigt den konfigurierten Wurzelpfad der lokalen Bibliothek -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -190,17 +190,17 @@
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                 <TextBlock
-                    Text="{x:Bind ViewModel.LibraryRootPath, Mode=OneWay}"
+                    Text="{x:Bind ViewModel.ScanVM.LibraryRootPath, Mode=OneWay}"
                     TextTrimming="CharacterEllipsis"
-                    ToolTipService.ToolTip="{x:Bind ViewModel.LibraryRootPath, Mode=OneWay}"/>
+                    ToolTipService.ToolTip="{x:Bind ViewModel.ScanVM.LibraryRootPath, Mode=OneWay}"/>
             </StackPanel>
 
             <!-- Neu-Initialisierung: löscht alle Zuordnungen und baut sie komplett neu auf -->
             <Button
                 Grid.Column="2"
                 x:Uid="MediathekLokalResetButton"
-                Command="{x:Bind ViewModel.ReInitializeCommand}"
-                IsEnabled="{x:Bind ViewModel.IsNotScanning, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                Command="{x:Bind ViewModel.ScanVM.ReInitializeCommand}"
+                IsEnabled="{x:Bind ViewModel.ScanVM.IsNotScanning, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
                 <FontIcon Glyph="&#xE777;" FontSize="{StaticResource IconSizeM}"/>
             </Button>
 
@@ -209,7 +209,7 @@
                 Grid.Column="3"
                 x:Uid="MediathekLokalAddFolderButton"
                 Click="OnAddFolderClick"
-                IsEnabled="{x:Bind ViewModel.IsNotScanning, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                IsEnabled="{x:Bind ViewModel.ScanVM.IsNotScanning, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
                 <FontIcon Glyph="&#xE8F4;" FontSize="{StaticResource IconSizeM}"/>
             </Button>
 
@@ -218,7 +218,7 @@
                 Grid.Column="4"
                 x:Uid="LokalCheckAllSeriesButton"
                 Command="{x:Bind ViewModel.CheckAllSeriesCommand}"
-                IsEnabled="{x:Bind ViewModel.IsNotScanning, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                IsEnabled="{x:Bind ViewModel.ScanVM.IsNotScanning, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
                 <FontIcon Glyph="&#xE762;" FontSize="{StaticResource IconSizeM}"/>
             </Button>
         </Grid>
@@ -234,9 +234,9 @@
              sonst indeterministisch. Sichtbar nur während eines aktiven Scans. -->
         <ProgressBar
             Grid.Row="5"
-            IsIndeterminate="{x:Bind ViewModel.IsScanIndeterminate, Mode=OneWay}"
-            Value="{x:Bind ViewModel.ScanProgressPercent, Mode=OneWay}"
-            Visibility="{x:Bind ViewModel.IsScanningVisibility, Mode=OneWay}"
+            IsIndeterminate="{x:Bind ViewModel.ScanVM.IsScanIndeterminate, Mode=OneWay}"
+            Value="{x:Bind ViewModel.ScanVM.ScanProgressPercent, Mode=OneWay}"
+            Visibility="{x:Bind ViewModel.ScanVM.IsScanningVisibility, Mode=OneWay}"
             Margin="8,0,8,4"/>
 
         <!-- Buchstabenleiste: springt zum Abschnitt, filtert nicht. Sie steht über der
@@ -250,7 +250,7 @@
         <!-- Akkordeon-Inhalt – Serien-Abschnitte aufgeteilt um das Folgen-Panel -->
         <!-- Episoden-Header: fixiert außerhalb des ScrollViewers, scrollt nicht mit -->
         <StackPanel Grid.Row="7" Padding="16,4,16,4"
-                    Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}">
+                    Visibility="{x:Bind ViewModel.ArtistsVM.EpisodesAccordionVisibility, Mode=OneWay}">
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -269,42 +269,42 @@
                     </Button>
                 </StackPanel>
                 <ComboBox Grid.Column="1" MinWidth="120"
-                          SelectedIndex="{x:Bind ViewModel.EpisodeFilterIndex, Mode=TwoWay}"
-                          Visibility="{x:Bind ViewModel.EpisodesLoadedVisibility, Mode=OneWay}">
+                          SelectedIndex="{x:Bind ViewModel.EpisodesVM.EpisodeFilterIndex, Mode=TwoWay}"
+                          Visibility="{x:Bind ViewModel.EpisodesVM.EpisodesLoadedVisibility, Mode=OneWay}">
                     <ComboBoxItem x:Uid="LokalFilterAll"/>
                     <ComboBoxItem x:Uid="LokalFilterUnheard"/>
                     <ComboBoxItem x:Uid="LokalFilterHeard"/>
                     <ComboBoxItem x:Uid="LokalFilterInProgress"/>
                 </ComboBox>
                 <ComboBox Grid.Column="2" MinWidth="140"
-                          SelectedIndex="{x:Bind ViewModel.EpisodeSortIndex, Mode=TwoWay}"
-                          Visibility="{x:Bind ViewModel.EpisodesLoadedVisibility, Mode=OneWay}">
+                          SelectedIndex="{x:Bind ViewModel.EpisodesVM.EpisodeSortIndex, Mode=TwoWay}"
+                          Visibility="{x:Bind ViewModel.EpisodesVM.EpisodesLoadedVisibility, Mode=OneWay}">
                     <ComboBoxItem x:Uid="LokalSortByNumber"/>
                     <ComboBoxItem x:Uid="LokalSortByNumberDesc"/>
                     <ComboBoxItem x:Uid="LokalSortByTitle"/>
                 </ComboBox>
                 <Button Grid.Column="3"
                         x:Uid="MediathekLokalSeriesTagManagerButton"
-                        Command="{x:Bind ViewModel.OpenAllSeriesTracksCommand}"
-                        Visibility="{x:Bind ViewModel.SeriesActionsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                        Command="{x:Bind ViewModel.TracksVM.OpenAllSeriesTracksCommand}"
+                        Visibility="{x:Bind ViewModel.ArtistsVM.SeriesActionsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
                     <FontIcon Glyph="&#xE8EC;" FontSize="{StaticResource IconSizeS}"/>
                 </Button>
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="4" Padding="0,0"
-                        Visibility="{x:Bind ViewModel.HasSpecialEpisodes, Mode=OneWay}">
+                        Visibility="{x:Bind ViewModel.EpisodesVM.HasSpecialEpisodes, Mode=OneWay}">
                 <RadioButton x:Uid="LokalTabEpisodes" GroupName="EpisodeTab"
                              IsChecked="True" Checked="OnEpisodeTabRegularChecked"/>
                 <RadioButton GroupName="EpisodeTab" Checked="OnEpisodeTabSpecialChecked">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBlock x:Uid="LokalTabSpecial"/>
                         <TextBlock Text="("/>
-                        <TextBlock Text="{x:Bind ViewModel.SpecialEpisodeCount, Mode=OneWay}"/>
+                        <TextBlock Text="{x:Bind ViewModel.EpisodesVM.SpecialEpisodeCount, Mode=OneWay}"/>
                         <TextBlock Text=")"/>
                     </StackPanel>
                 </RadioButton>
             </StackPanel>
             <TextBlock x:Uid="LokalEpisodesEmpty"
-                       Visibility="{x:Bind ViewModel.EpisodesEmptyVisibility, Mode=OneWay}"
+                       Visibility="{x:Bind ViewModel.EpisodesVM.EpisodesEmptyVisibility, Mode=OneWay}"
                        Style="{ThemeResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        HorizontalAlignment="Center" Margin="16,16,16,0" TextWrapping="Wrap"/>
@@ -318,7 +318,7 @@
             x:Uid="LokalCollapseEpisodesFloatingButton"
             Grid.Row="8"
             Click="OnCloseEpisodePanelClick"
-            Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}"
+            Visibility="{x:Bind ViewModel.ArtistsVM.EpisodesAccordionVisibility, Mode=OneWay}"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
             Margin="0,0,28,24"
@@ -338,7 +338,7 @@
                 <!-- Leer-Hinweis wenn noch kein Scan durchgeführt -->
                 <TextBlock
                     x:Uid="LokalArtistsEmpty"
-                    Visibility="{x:Bind ViewModel.ArtistsEmptyVisibility, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.ArtistsVM.ArtistsEmptyVisibility, Mode=OneWay}"
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     HorizontalAlignment="Center"
@@ -350,7 +350,7 @@
                 <ctrl:EmptyStatePanel
                     x:Name="LokalNoResultsPanel"
                     Glyph="&#xE721;"
-                    Visibility="{x:Bind ViewModel.NoResultsVisibility, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.ArtistsVM.NoResultsVisibility, Mode=OneWay}"
                     Margin="16,32,16,0"/>
 
                 <!-- Serien – Abschnitte oberhalb der Aufklappstelle -->
@@ -361,7 +361,7 @@
                 <!-- Akkordeon: EpisodeAccordionControl + Track-Panel nebeneinander -->
                 <Grid
                     x:Name="EpisodeExpansionPanel"
-                    Visibility="{x:Bind ViewModel.EpisodesAccordionVisibility, Mode=OneWay}">
+                    Visibility="{x:Bind ViewModel.ArtistsVM.EpisodesAccordionVisibility, Mode=OneWay}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -371,7 +371,7 @@
                     <ctrl:EpisodeAccordionControl
                         x:Name="EpisodeAccordion"
                         Grid.Column="0"
-                        EpisodesSource="{x:Bind ViewModel.Episodes, Mode=OneWay}"
+                        EpisodesSource="{x:Bind ViewModel.EpisodesVM.Episodes, Mode=OneWay}"
                         SelectionMode="Single">
                         <ctrl:EpisodeAccordionControl.EpisodeTemplate>
                             <DataTemplate x:DataType="vm:LocalEpisodeCardViewModel">
@@ -408,7 +408,7 @@
                     <Grid
                         Grid.Column="1"
                         Width="300"
-                        Visibility="{x:Bind ViewModel.TracksAccordionVisibility, Mode=OneWay}">
+                        Visibility="{x:Bind ViewModel.TracksVM.TracksAccordionVisibility, Mode=OneWay}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -431,7 +431,7 @@
                                 Grid.Row="0"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="3"
-                                Text="{x:Bind ViewModel.TrackPanelSubtitle, Mode=OneWay}"
+                                Text="{x:Bind ViewModel.TracksVM.TrackPanelSubtitle, Mode=OneWay}"
                                 Style="{ThemeResource CaptionTextBlockStyle}"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                 Margin="0,0,0,2"/>
@@ -440,7 +440,7 @@
                             <TextBlock
                                 Grid.Row="1"
                                 Grid.Column="0"
-                                Text="{x:Bind ViewModel.SelectedEpisodeTitle, Mode=OneWay}"
+                                Text="{x:Bind ViewModel.TracksVM.SelectedEpisodeTitle, Mode=OneWay}"
                                 Style="{ThemeResource SubtitleTextBlockStyle}"
                                 TextTrimming="CharacterEllipsis"
                                 VerticalAlignment="Center"/>
@@ -450,8 +450,8 @@
                                 Grid.Row="1"
                                 Grid.Column="1"
                                 x:Uid="LokalPlayEpisodeButton"
-                                Command="{x:Bind ViewModel.PlayEpisodeCommand}"
-                                Visibility="{x:Bind ViewModel.TrackActionsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                                Command="{x:Bind ViewModel.TracksVM.PlayEpisodeCommand}"
+                                Visibility="{x:Bind ViewModel.TracksVM.TrackActionsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
                                 <FontIcon Glyph="&#xE768;" FontSize="{StaticResource IconSizeS}"/>
                             </Button>
 
@@ -460,8 +460,8 @@
                                 Grid.Row="1"
                                 Grid.Column="2"
                                 x:Uid="MediathekLokalEpisodeTagManagerButton"
-                                Command="{x:Bind ViewModel.OpenAllEpisodeTracksCommand}"
-                                Visibility="{x:Bind ViewModel.TrackActionsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
+                                Command="{x:Bind ViewModel.TracksVM.OpenAllEpisodeTracksCommand}"
+                                Visibility="{x:Bind ViewModel.TracksVM.TrackActionsVisibility, Mode=OneWay}" Style="{StaticResource IconButtonStyle}">
                                 <FontIcon Glyph="&#xE8EC;" FontSize="{StaticResource IconSizeS}"/>
                             </Button>
                         </Grid>
@@ -470,7 +470,7 @@
                         <TextBlock
                             Grid.Row="1"
                             x:Uid="LokalTracksEmpty"
-                            Visibility="{x:Bind ViewModel.TracksEmptyVisibility, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.TracksVM.TracksEmptyVisibility, Mode=OneWay}"
                             Style="{ThemeResource CaptionTextBlockStyle}"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             HorizontalAlignment="Center"
@@ -481,11 +481,11 @@
                         <!-- Track-Liste -->
                         <ListView
                             Grid.Row="1"
-                            ItemsSource="{x:Bind ViewModel.Tracks, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.TracksVM.Tracks, Mode=OneWay}"
                             SelectionMode="None">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="vm:LocalTrackRowViewModel">
-                                    <Grid Padding="0,4" ColumnSpacing="8" AutomationProperties.Name="{x:Bind FileName}">
+                                    <Grid Padding="0,4" ColumnSpacing="8" AutomationProperties.Name="{x:Bind Title, Mode=OneWay}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="28"/>
                                             <ColumnDefinition Width="*"/>
@@ -501,7 +501,7 @@
                                             HorizontalAlignment="Right"/>
                                         <TextBlock
                                             Grid.Column="1"
-                                            Text="{x:Bind FileName, Mode=OneTime}"
+                                            Text="{x:Bind Title, Mode=OneWay}"
                                             VerticalAlignment="Center"
                                             TextTrimming="CharacterEllipsis"
                                             ToolTipService.ToolTip="{x:Bind FilePath, Mode=OneTime}"/>

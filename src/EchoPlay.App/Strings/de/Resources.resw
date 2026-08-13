@@ -416,6 +416,9 @@
   <data name="OnlineEpisodeOpenBrowserItem.Text" xml:space="preserve">
     <value>Im Browser öffnen</value>
   </data>
+  <data name="EpisodeTileActionButton" xml:space="preserve">
+    <value>Weitere Aktionen</value>
+  </data>
   <data name="OnlineEpisodeCoverSearchItem.Text" xml:space="preserve">
     <value>Cover suchen</value>
   </data>
@@ -640,36 +643,6 @@
     <value>Keine Datei passt zu Suche und Filter.</value>
   </data>
   <data name="TagManagerResetFiltersAction" xml:space="preserve">
-    <value>Suche zurücksetzen</value>
-  </data>
-  <data name="ProtokollPageTitle" xml:space="preserve">
-    <value>Protokoll</value>
-  </data>
-  <data name="ProtokollPageSubtitle" xml:space="preserve">
-    <value>Meldungen der laufenden Sitzung, neueste zuerst</value>
-  </data>
-  <data name="ProtokollClearAction" xml:space="preserve">
-    <value>Anzeige leeren</value>
-  </data>
-  <data name="ProtokollSearchPlaceholder" xml:space="preserve">
-    <value>Meldung oder Bereich suchen …</value>
-  </data>
-  <data name="ProtokollLevelError" xml:space="preserve">
-    <value>Fehler</value>
-  </data>
-  <data name="ProtokollLevelWarning" xml:space="preserve">
-    <value>Warnungen</value>
-  </data>
-  <data name="ProtokollLevelInformation" xml:space="preserve">
-    <value>Hinweise</value>
-  </data>
-  <data name="ProtokollLevelDebug" xml:space="preserve">
-    <value>Ablaufdetails</value>
-  </data>
-  <data name="ProtokollNoResultsMessage" xml:space="preserve">
-    <value>Keine Meldung passt zu Suche und Stufe.</value>
-  </data>
-  <data name="ProtokollResetFiltersAction" xml:space="preserve">
     <value>Suche zurücksetzen</value>
   </data>
   <data name="SuchePageTitle" xml:space="preserve">
@@ -916,16 +889,6 @@
   </data>
   <data name="TagManagerRemoveAllTagsButton.AutomationProperties.Name" xml:space="preserve">
     <value>Alle Tags löschen</value>
-  </data>
-  <!-- ProtokollPage – Live-Log-Ansicht -->
-  <data name="ProtokollLiveToggle.Header" xml:space="preserve">
-    <value>Live</value>
-  </data>
-  <data name="ProtokollClearButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Protokoll leeren</value>
-  </data>
-  <data name="ProtokollClearButton.AutomationProperties.Name" xml:space="preserve">
-    <value>Protokoll leeren</value>
   </data>
 
   <data name="TagManagerRenameSectionLabel.Text" xml:space="preserve">
@@ -1986,4 +1949,40 @@ Die Anwendung wird beendet.</value>
   </data>
   <data name="SeriesTileWatchedIndicator.AutomationProperties.Name" xml:space="preserve">
     <value>Diese Serie wird auf neue Folgen geprüft</value>
-  </data></root>
+  </data>  <data name="PlayerEpisodeProgress.AutomationProperties.Name" xml:space="preserve">
+    <value>Fortschritt der Folge</value>
+  </data>
+  <data name="MiniPlayerEpisodeProgress.AutomationProperties.Name" xml:space="preserve">
+    <value>Fortschritt der Folge</value>
+  </data>
+  <data name="MiniPlayerVolumeButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Lautstärke</value>
+  </data>
+  <data name="MiniPlayerVolumeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Lautstärke</value>
+  </data>
+  <data name="MiniPlayerVolumeSlider.AutomationProperties.Name" xml:space="preserve">
+    <value>Lautstärke</value>
+  </data>
+  <data name="MiniPlayerMuteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Stumm schalten</value>
+  </data>
+  <data name="MiniPlayerMuteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stumm schalten</value>
+  </data>
+  <data name="PlayerVolumeSlider.AutomationProperties.Name" xml:space="preserve">
+    <value>Lautstärke</value>
+  </data>
+  <data name="PlayerMuteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Stumm schalten</value>
+  </data>
+  <data name="PlayerMuteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Stumm schalten</value>
+  </data>
+  <data name="MiniPlayerEpisodeProgressFormat" xml:space="preserve">
+    <value>Folge {0} %</value>
+  </data>
+  <data name="PlayerEpisodeProgressFormat" xml:space="preserve">
+    <value>Ganze Folge: {0} von {1}</value>
+  </data>
+</root>

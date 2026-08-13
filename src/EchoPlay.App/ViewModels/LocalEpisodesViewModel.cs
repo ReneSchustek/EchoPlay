@@ -46,6 +46,9 @@ namespace EchoPlay.App.ViewModels
         private HashSet<Guid> _inProgressEpisodeIds = [];
         private CancellationTokenSource? _coverCts;
 
+        // Das Nachladen der Cover: eigene Aufgabe mit eigenen Stufen und zwei Fäden.
+        private readonly LocalEpisodeCoverLoader _coverLoaderRunner;
+
         private int _episodeSortIndex;
         private int _episodeFilterIndex;
         private int _episodeTabIndex;
@@ -81,6 +84,9 @@ namespace EchoPlay.App.ViewModels
             {
                 _dispatcherQueue = null;
             }
+
+            _coverLoaderRunner = new LocalEpisodeCoverLoader(
+                scopeFactory, coverLoader, coverService, logger, _dispatcherQueue);
         }
 
         // ── Episoden-Daten ───────────────────────────────────────────────────────
@@ -258,7 +264,7 @@ namespace EchoPlay.App.ViewModels
             for (int i = 0; i < firstBatchSize; i++)
             {
                 if (coverToken.IsCancellationRequested) return;
-                await LoadCoverForEpisodeCardAsync(coverQueue[i].Card, coverQueue[i].Episode);
+                await _coverLoaderRunner.LoadSingleAsync(coverQueue[i].Card, coverQueue[i].Episode);
             }
 
             // Rest im Hintergrund – ab Position 60, in 60er-Chargen nachladend.
@@ -266,7 +272,7 @@ namespace EchoPlay.App.ViewModels
             {
                 List<(LocalEpisodeCardViewModel Card, Episode Episode)> remaining =
                     coverQueue.GetRange(firstBatchSize, coverQueue.Count - firstBatchSize);
-                _ = LoadCoversBatchedAsync(remaining, coverToken);
+                _ = _coverLoaderRunner.LoadRestAsync(remaining, coverToken);
             }
         }
 
@@ -323,203 +329,6 @@ namespace EchoPlay.App.ViewModels
             OnPropertyChanged(nameof(Episodes));
             OnPropertyChanged(nameof(EpisodesEmptyVisibility));
             OnPropertyChanged(nameof(EpisodesLoadedVisibility));
-        }
-
-        // ── Cover-Laden ──────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Lädt Cover in 60er-Chargen sequenziell nach. Jede Charge wird komplett abgearbeitet
-        /// bevor die nächste startet. Erzeugt einen Infinite-Scrolling-Effekt: Cover erscheinen blockweise.
-        /// Bei Abbruch (Serienwechsel) wird sofort aufgehört.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Batch-Cover-Loader-Schleife: IO-/DB-/Dekodier-Fehler einzelner Episoden dürfen das Nachladen der restlichen Kacheln nicht stoppen; Fehler werden in Trace geschrieben.")]
-        private async Task LoadCoversBatchedAsync(
-            List<(LocalEpisodeCardViewModel Card, Episode Episode)> queue,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                int batchSize = 60;
-
-                for (int offset = 0; offset < queue.Count; offset += batchSize)
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
-
-                    int count = Math.Min(batchSize, queue.Count - offset);
-                    List<(LocalEpisodeCardViewModel Card, Episode Episode)> batch =
-                        queue.GetRange(offset, count);
-
-                    await LoadCoversThrottledAsync(batch, cancellationToken);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Erwarteter Abbruch bei Seitenwechsel
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error("Hintergrund-Cover-Laden fehlgeschlagen", ex);
-            }
-        }
-
-        /// <summary>
-        /// Lädt die Cover aller Episodenkarten mit begrenzter Parallelität.
-        /// Die Byte-Daten werden auf Hintergrundthreads geladen (IO-bound),
-        /// die BitmapImage-Erstellung erfolgt auf dem UI-Thread (WinRT-COM-Pflicht).
-        /// Maximal 8 Cover werden gleichzeitig geladen, damit der UI-Thread nicht
-        /// mit hunderten PropertyChanged-Notifications gleichzeitig überflutet wird.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Parallele Cover-Lade-Tasks und UI-Thread-BitmapImage-Konvertierung: native COM-Fehler (SetSourceAsync) oder TagLib-Fehler dürfen weder die Task-Gruppe noch den UI-Thread reißen; ein Platzhalter bleibt stehen.")]
-        private async Task LoadCoversThrottledAsync(
-            List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue,
-            CancellationToken cancellationToken)
-        {
-            // 8 parallele Ladevorgänge – genug für flüssiges Nachladen, ohne den UI-Thread zu überlasten
-            SemaphoreSlim throttle = new(8);
-            List<Task> tasks = new(coverQueue.Count);
-
-            foreach ((LocalEpisodeCardViewModel card, Episode episode) in coverQueue)
-            {
-                if (cancellationToken.IsCancellationRequested) break;
-
-                await throttle.WaitAsync(cancellationToken);
-
-                // Byte-Laden auf Hintergrundthread, BitmapImage-Erstellung danach auf UI-Thread.
-                // Task.Run ist nötig, weil File.Exists und TagLib# synchron blockieren würden.
-                tasks.Add(Task.Run(async () =>
-                {
-                    try
-                    {
-                        byte[]? bytes = await LoadCoverBytesAsync(episode);
-
-                        if (bytes is not null && !cancellationToken.IsCancellationRequested)
-                        {
-                            // BitmapImage ist ein WinRT-COM-Objekt – Erstellung nur auf dem UI-Thread erlaubt.
-                            // Ohne dieses Marshalling schlägt SetSourceAsync mit einer COM-Exception fehl,
-                            // die der catch-Block verschluckt und das Cover bleibt ein Platzhalter.
-                            if (_dispatcherQueue is not null)
-                            {
-                                TaskCompletionSource tcs = new();
-
-                                // TryEnqueue gibt false zurück wenn der Dispatcher herunterfährt –
-                                // ohne Prüfung würde die TaskCompletionSource nie abgeschlossen
-                                // und der Task hängt ewig.
-                                bool enqueued = _dispatcherQueue.TryEnqueue(async () =>
-                                {
-                                    try
-                                    {
-                                        card.CoverImage = await EchoPlay.App.Services.CoverService.ConvertToBitmapAsync(bytes);
-                                    }
-                                    catch
-                                    {
-                                        // Cover-Fehler auf dem UI-Thread – Platzhalter bleibt stehen
-                                    }
-                                    finally
-                                    {
-                                        tcs.SetResult();
-                                    }
-                                });
-
-                                if (!enqueued)
-                                {
-                                    // Dispatcher fährt runter – Cover-Laden abbrechen
-                                    return;
-                                }
-
-                                await tcs.Task;
-                            }
-                            else
-                            {
-                                // Unit-Tests ohne Dispatcher – direkt setzen
-                                card.CoverImage = await EchoPlay.App.Services.CoverService.ConvertToBitmapAsync(bytes);
-                            }
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Serienwechsel – erwarteter Abbruch
-                    }
-                    catch
-                    {
-                        // Cover-Laden darf die UI nicht blockieren – Platzhalter bleibt stehen
-                    }
-                    finally
-                    {
-                        _ = throttle.Release();
-                    }
-                }, cancellationToken));
-            }
-
-            try
-            {
-                await Task.WhenAll(tasks);
-            }
-            catch (OperationCanceledException)
-            {
-                // Serienwechsel – erwarteter Abbruch
-            }
-
-            throttle.Dispose();
-        }
-
-        /// <summary>
-        /// Lädt die rohen Cover-Bytes einer Episode (threadpool-safe, kein UI-Zugriff).
-        /// Priorität: DB-Cover → cover.jpg im Ordner → ID3-Tag des ersten Tracks.
-        /// </summary>
-        /// <param name="episode">Die Episode, deren Cover geladen werden soll.</param>
-        /// <returns>Rohe Bilddaten oder <see langword="null"/> wenn kein Cover vorhanden.</returns>
-        private async Task<byte[]?> LoadCoverBytesAsync(Episode episode)
-        {
-            // DB-Cover über CoverService laden (CoverImages-Tabelle)
-            if (_coverService is not null)
-            {
-                IReadOnlyDictionary<Guid, byte[]> coverMap =
-                    await _coverService.GetEpisodeCoverBytesAsync([episode.Id]);
-                if (coverMap.TryGetValue(episode.Id, out byte[]? dbBytes))
-                {
-                    return dbBytes;
-                }
-            }
-
-            // Ersten Track für den ID3-Fallback ermitteln – nur wenn cover.jpg fehlt
-            string? firstTrackPath = null;
-
-            if (episode.LocalFolderPath is not null &&
-                !File.Exists(Path.Combine(episode.LocalFolderPath, Core.CoverConstants.CoverFileName)))
-            {
-                using IServiceScope scope = _scopeFactory.CreateScope();
-                ILocalTrackDataService trackService = scope.ServiceProvider
-                    .GetRequiredService<ILocalTrackDataService>();
-
-                IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id);
-                firstTrackPath = tracks.OrderBy(t => t.TrackNumber).FirstOrDefault()?.FilePath;
-            }
-
-            return await _coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
-        }
-
-        /// <summary>
-        /// Lädt das Cover einer Episode asynchron und setzt es auf der Karte.
-        /// Wird für die erste Charge (max. 60 Kacheln) direkt auf dem UI-Thread aufgerufen,
-        /// daher ist BitmapImage-Erstellung hier sicher.
-        /// Fehler werden still ignoriert – fehlende Cover sind kein kritisches Problem.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Einzel-Cover-Loader für die erste Kachel-Charge: IO-/TagLib-/Dekodier-Fehler dürfen die Kachel-Darstellung nicht stoppen; der Platzhalter bleibt stehen.")]
-        private async Task LoadCoverForEpisodeCardAsync(LocalEpisodeCardViewModel card, Episode episode)
-        {
-            try
-            {
-                byte[]? bytes = await LoadCoverBytesAsync(episode);
-
-                if (bytes is not null)
-                {
-                    card.CoverImage = await EchoPlay.App.Services.CoverService.ConvertToBitmapAsync(bytes);
-                }
-            }
-            catch
-            {
-                // Cover-Laden darf die UI nicht blockieren – fehlende Cover zeigen den Platzhalter
-            }
         }
 
         // ── Episoden-Status ──────────────────────────────────────────────────────

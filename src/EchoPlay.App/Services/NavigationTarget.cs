@@ -37,9 +37,6 @@ namespace EchoPlay.App.Services
         /// <summary>Statistik-Seite.</summary>
         Statistics,
 
-        /// <summary>Protokoll/Log-Anzeige.</summary>
-        Log,
-
         /// <summary>Über-Seite (Version, Autoren, Lizenz).</summary>
         About
     }

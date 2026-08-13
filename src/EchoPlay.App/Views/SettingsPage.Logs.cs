@@ -5,9 +5,15 @@ using System;
 namespace EchoPlay.App.Views
 {
     /// <summary>
-    /// Log-Viewer: Manuelles Refresh, Live-Timer und NumberBox-Handler für
-    /// die Aufbewahrungszeit.
+    /// Log-Viewer: Zeichnen des Protokollblocks und NumberBox-Handler für die
+    /// Aufbewahrungszeit.
     /// </summary>
+    /// <remarks>
+    /// Den Takt der Live-Ansicht führt allein das
+    /// <see cref="ViewModels.MaintenanceSettingsViewModel"/>. Die Seite zeichnet, sobald
+    /// sich die Einträge ändern — vorher lief hier ein zweiter Zeitgeber im selben
+    /// Zwei-Sekunden-Takt, der dieselben Daten noch einmal las.
+    /// </remarks>
     public sealed partial class SettingsPage : Page
     {
         /// <summary>
@@ -18,36 +24,6 @@ namespace EchoPlay.App.Views
             RefreshLogView();
         }
 
-        /// <summary>
-        /// Startet den Live-Timer (2 Sekunden Intervall) für automatisches Log-Refresh.
-        /// </summary>
-        private void OnLiveViewChecked(object sender, RoutedEventArgs e)
-        {
-            if (_logLiveTimer is null)
-            {
-                _logLiveTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-                _logLiveTimer.Tick += OnLogLiveTick;
-            }
-
-            _logLiveTimer.Start();
-            RefreshLogView();
-        }
-
-        /// <summary>Stoppt den Live-Timer.</summary>
-        private void OnLiveViewUnchecked(object sender, RoutedEventArgs e)
-        {
-            _logLiveTimer?.Stop();
-        }
-
-        /// <summary>
-        /// Tick-Handler des Live-Timers. Benannt (statt Lambda), damit
-        /// <c>OnNavigatedFrom</c> die Subscription wieder aufheben kann
-        /// und die Page beim Verlassen GC-frei wird.
-        /// </summary>
-        private void OnLogLiveTick(object? sender, object e)
-        {
-            RefreshLogView();
-        }
 
         /// <summary>
         /// Holt die Einträge neu aus dem Puffer und zeichnet sie. Für manuellen Refresh,
@@ -55,7 +31,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void RefreshLogView()
         {
-            ViewModel.RefreshLogs();
+            ViewModel.MaintenanceVM.RefreshLogs();
             RenderLogView();
         }
 
@@ -79,7 +55,7 @@ namespace EchoPlay.App.Views
             Microsoft.UI.Xaml.Documents.Paragraph paragraph = new();
 
             foreach (string entry in EchoPlay.App.Helpers.LogViewBuilder.BuildLines(
-                ViewModel.LogEntries, ViewModel.IsLogViewerAvailable))
+                ViewModel.MaintenanceVM.LogEntries, ViewModel.MaintenanceVM.IsLogViewerAvailable))
             {
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = entry });
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());
@@ -107,9 +83,9 @@ namespace EchoPlay.App.Views
         /// </remarks>
         /// <param name="sender">Das ViewModel.</param>
         /// <param name="e">Enthält den Namen der geänderten Eigenschaft.</param>
-        private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void OnMaintenancePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is nameof(ViewModel.LogSearchText) or nameof(ViewModel.LogMinimumLevel))
+            if (e.PropertyName is nameof(ViewModel.MaintenanceVM.LogSearchText) or nameof(ViewModel.MaintenanceVM.LogMinimumLevel))
             {
                 RefreshLogView();
             }
@@ -124,8 +100,23 @@ namespace EchoPlay.App.Views
             // NaN tritt auf, wenn der Nutzer ein ungültiges Zeichen eingibt – ignorieren
             if (!double.IsNaN(args.NewValue))
             {
-                ViewModel.LogRetentionDays = (int)args.NewValue;
+                ViewModel.GeneralVM.LogRetentionDays = (int)args.NewValue;
             }
+        }
+
+        /// <summary>
+        /// Zeichnet den Protokollblock neu, sobald das Ansichtsmodell neue Einträge
+        /// eingelesen hat — im Live-Betrieb alle zwei Sekunden, sonst auf Anforderung.
+        /// </summary>
+        /// <remarks>
+        /// Zeichnet nur und lädt nicht: <see cref="RefreshLogView"/> würde den Puffer neu
+        /// einlesen, damit erneut die Sammlung ändern und sich selbst aufrufen. Genau diese
+        /// Schleife hat die Anwendung beim ersten Versuch ohne eine einzige Protokollzeile
+        /// beendet.
+        /// </remarks>
+        private void OnLogEntriesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            RenderLogView();
         }
     }
 }

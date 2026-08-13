@@ -37,7 +37,7 @@ namespace EchoPlay.App.Views
             if (sender is ToggleMenuFlyoutItem item && item.Tag is Guid seriesId)
             {
                 bool isChecked = item.IsChecked;
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ToggleWatchAsync(seriesId, isChecked));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.ToggleWatchAsync(seriesId, isChecked));
             }
         }
 
@@ -45,7 +45,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkAllAsReadAsync(seriesId));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.MarkAllAsReadAsync(seriesId));
             }
         }
 
@@ -57,7 +57,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.DeleteSeriesFromLibraryAsync(seriesId));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.DeleteSeriesFromLibraryAsync(seriesId));
             }
         }
 
@@ -65,8 +65,8 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                LocalArtistCardViewModel? card = ViewModel.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.DeleteSeriesFromDiskAsync(seriesId, card?.LocalFolderPath));
+                LocalArtistCardViewModel? card = ViewModel.ArtistsVM.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.DeleteSeriesFromDiskAsync(seriesId, card?.LocalFolderPath));
             }
         }
 
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkEpisodeAsPlayedAsync(episodeId));
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.EpisodesVM.MarkEpisodeAsPlayedAsync(episodeId));
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.MarkEpisodeAsUnplayedAsync(episodeId));
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.EpisodesVM.MarkEpisodeAsUnplayedAsync(episodeId));
         }
 
         /// <summary>
@@ -115,14 +115,14 @@ namespace EchoPlay.App.Views
                 RestructurePreviewDisplay? preview = null;
                 void CapturePreview(RestructurePreviewDisplay p) => preview = p;
 
-                ViewModel.RestructurePreviewReady += CapturePreview;
+                ViewModel.Actions.RestructurePreviewReady += CapturePreview;
                 try
                 {
-                    await ViewModel.AnalyzeRestructureAsync(seriesId);
+                    await ViewModel.Actions.AnalyzeRestructureAsync(seriesId);
                 }
                 finally
                 {
-                    ViewModel.RestructurePreviewReady -= CapturePreview;
+                    ViewModel.Actions.RestructurePreviewReady -= CapturePreview;
                 }
 
                 if (preview is null || preview.IsEmpty)
@@ -156,12 +156,12 @@ namespace EchoPlay.App.Views
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    int movedCount = await ViewModel.ExecuteRestructureAsync(preview);
+                    int movedCount = await ViewModel.Actions.ExecuteRestructureAsync(preview);
 
                     // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
                     if (movedCount > 0)
                     {
-                        await ViewModel.LoadAsync();
+                        await ViewModel.Actions.LoadAsync();
                     }
                 }
             });

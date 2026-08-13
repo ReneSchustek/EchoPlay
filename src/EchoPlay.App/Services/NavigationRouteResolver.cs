@@ -27,7 +27,6 @@ namespace EchoPlay.App.Services
                 [NavigationTarget.SeriesDetail] = typeof(SeriesDetailPage),
                 [NavigationTarget.Import] = typeof(ImportPage),
                 [NavigationTarget.Statistics] = typeof(StatistikPage),
-                [NavigationTarget.Log] = typeof(LogPage),
                 [NavigationTarget.About] = typeof(AboutPage)
             };
 

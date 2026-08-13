@@ -1,13 +1,12 @@
 using EchoPlay.App.ViewModels;
-using EchoPlay.Logger.Models;
 using System;
 using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Prüft die beiden Filterkriterien für sich — ohne ViewModel, ohne Liste, ohne
-    /// Oberfläche. Was hier gilt, gilt in jeder Ansicht, die sie benutzt.
+    /// Prüft das Filterkriterium für sich — ohne ViewModel, ohne Liste, ohne
+    /// Oberfläche. Was hier gilt, gilt in jeder Ansicht, die es benutzt.
     /// </summary>
     public sealed class FilterCriteriaTests
     {
@@ -27,9 +26,6 @@ namespace EchoPlay.App.Tests.ViewModels
                 isFavorite: isFavorite,
                 isWatched: isWatched,
                 scopeFactory: null!);
-
-        private static LogEntryViewModel Entry(LogLevel level, string message, string category) =>
-            new("12:00:00", level, category, message);
 
         [Fact]
         public void ArtistFilter_WithoutCriteria_KeepsEverything()
@@ -102,54 +98,5 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Throws<ArgumentNullException>(() => filter.Matches(null!));
         }
 
-        [Fact]
-        public void LogFilter_WithoutCriteria_KeepsEverything()
-        {
-            LogEntryFilter filter = new();
-
-            Assert.False(filter.IsActive);
-            Assert.True(filter.Matches(Entry(LogLevel.Information, "Alles gut", "Start")));
-        }
-
-        /// <summary>
-        /// Die Stufe filtert genau, nicht ab einer Schwelle — sonst brächte „Warnungen" auch
-        /// jeden Fehler mit.
-        /// </summary>
-        [Fact]
-        public void LogFilter_LevelMatchesExactlyAndNotAsThreshold()
-        {
-            LogEntryFilter filter = new() { Level = LogLevel.Warning };
-
-            Assert.True(filter.Matches(Entry(LogLevel.Warning, "Bild fehlt", "Cover")));
-            Assert.False(filter.Matches(Entry(LogLevel.Error, "Abbruch", "Datenbank")));
-            Assert.False(filter.Matches(Entry(LogLevel.Information, "Bereit", "Start")));
-        }
-
-        [Fact]
-        public void LogFilter_SearchCoversMessageAndCategory()
-        {
-            LogEntryFilter filter = new() { SearchText = "cover" };
-
-            Assert.True(filter.Matches(Entry(LogLevel.Warning, "Bild fehlt", "Cover")));
-            Assert.True(filter.Matches(Entry(LogLevel.Warning, "Cover nicht gefunden", "Bilder")));
-            Assert.False(filter.Matches(Entry(LogLevel.Warning, "Abbruch", "Datenbank")));
-        }
-
-        [Fact]
-        public void LogFilter_SearchAndLevelApplyTogether()
-        {
-            LogEntryFilter filter = new() { SearchText = "Abbruch", Level = LogLevel.Warning };
-
-            Assert.False(filter.Matches(Entry(LogLevel.Error, "Abbruch", "Datenbank")));
-            Assert.True(filter.Matches(Entry(LogLevel.Warning, "Abbruch", "Datenbank")));
-        }
-
-        [Fact]
-        public void LogFilter_NullEntry_IsRejected()
-        {
-            LogEntryFilter filter = new();
-
-            _ = Assert.Throws<ArgumentNullException>(() => filter.Matches(null!));
-        }
     }
 }

@@ -27,11 +27,19 @@ namespace EchoPlay.App.ViewModels
         private readonly DispatcherQueue? _dispatcherQueue;
 
         private ObservableCollection<PlaylistItemViewModel> _playlistItems = [];
+        private Task _pendingTitleFill = Task.CompletedTask;
         private BitmapImage? _coverImage;
         private bool _isPlaying;
         private string _currentTitle = string.Empty;
         private double _positionSeconds;
         private double _durationSeconds;
+        private double _episodeProgressPercent;
+        private string _episodeProgressText = string.Empty;
+
+        // Einmal zerlegt statt bei jedem Positions-Tick.
+        private static readonly System.Text.CompositeFormat EpisodeProgressFormat =
+            System.Text.CompositeFormat.Parse(
+                EchoPlay.App.Helpers.SafeResourceLoader.Get("PlayerEpisodeProgressFormat", "Ganze Folge: {0} von {1}"));
         private bool _isSeeking;
         private bool _showRemainingTime = true;
         private string _elapsedText = "0:00";
@@ -49,6 +57,7 @@ namespace EchoPlay.App.ViewModels
         {
             _playerService = playerService;
             _scopeFactory = scopeFactory;
+            Volume = new VolumeControl(playerService, scopeFactory);
 
             // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests) – daher try-catch.
             try
@@ -132,6 +141,12 @@ namespace EchoPlay.App.ViewModels
             private set => SetProperty(ref _currentTitle, value);
         }
 
+        /// <summary>
+        /// Lautstärke und Stummschaltung. Beide Wiedergabe-Ansichten zeigen denselben Wert,
+        /// weil beide denselben Wiedergabedienst bedienen.
+        /// </summary>
+        public VolumeControl Volume { get; }
+
         /// <summary>Aktuelle Abspielposition in Sekunden – für den Slider-Wert.</summary>
         public double PositionSeconds
         {
@@ -152,6 +167,39 @@ namespace EchoPlay.App.ViewModels
             get => _durationSeconds;
             private set => SetProperty(ref _durationSeconds, value);
         }
+
+        /// <summary>
+        /// Fortschritt in der ganzen Folge, in Prozent (0–100).
+        /// </summary>
+        /// <remarks>
+        /// Der Regler darüber zeigt die laufende Datei. Bei einer Folge aus vier Dateien
+        /// sagt „Minute 12" allein aber nichts — erst dieser Wert beantwortet, wie weit man
+        /// im Hörspiel ist.
+        /// </remarks>
+        public double EpisodeProgressPercent
+        {
+            get => _episodeProgressPercent;
+            private set => SetProperty(ref _episodeProgressPercent, value);
+        }
+
+        /// <summary>
+        /// Fortschritt der Folge als Text, etwa „1:12:30 von 4:41:44".
+        /// </summary>
+        public string EpisodeProgressText
+        {
+            get => _episodeProgressText;
+            private set => SetProperty(ref _episodeProgressText, value);
+        }
+
+        /// <summary>
+        /// Sichtbarkeit des Folgen-Fortschritts. Er erscheint nur, wenn die Gesamtdauer
+        /// bekannt ist und die Folge aus mehr als einer Datei besteht — sonst doppelte er
+        /// nur den Regler darüber.
+        /// </summary>
+        public Microsoft.UI.Xaml.Visibility EpisodeProgressVisibility =>
+            _playerService.OverallDuration > TimeSpan.Zero && _playerService.CurrentTrackPaths.Count > 1
+                ? Microsoft.UI.Xaml.Visibility.Visible
+                : Microsoft.UI.Xaml.Visibility.Collapsed;
 
         /// <summary>
         /// Formatierte bereits gespielte Zeit, z.B. "3:45" oder "1:03:45".
@@ -288,8 +336,9 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void RefreshFromPlayerService()
         {
+            AdoptRunningPlaylist();
+
             IsPlaying = _playerService.IsPlaying;
-            CurrentTitle = _playerService.CurrentTrackTitle ?? string.Empty;
             DurationSeconds = _playerService.Duration.TotalSeconds;
 
             // Slider nur aktualisieren wenn kein Drag läuft – sonst springt der Slider zurück
@@ -300,20 +349,124 @@ namespace EchoPlay.App.ViewModels
 
             UpdateTimeDisplay();
             UpdateCurrentTrackHighlight();
+            UpdateCurrentTitle();
+        }
+
+        /// <summary>
+        /// Setzt die Überschrift auf den Anzeigenamen der laufenden Zeile, damit oben derselbe
+        /// Titel steht wie unten in der Liste. Steht die Zeile (noch) nicht in der Liste,
+        /// bleibt der Dateiname aus dem Wiedergabe-Dienst.
+        /// </summary>
+        private void UpdateCurrentTitle()
+        {
+            PlaylistItemViewModel? current = _playlistItems.FirstOrDefault(item => item.IsCurrentTrack);
+
+            CurrentTitle = current?.Title ?? _playerService.CurrentTrackTitle ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Trägt die Titel aus den Kennzeichnungen in die eben aufgebaute Wiedergabeliste nach
+        /// und zieht die Überschrift mit.
+        /// </summary>
+        /// <param name="rows">Die Zeilen der Wiedergabeliste.</param>
+        /// <returns>Der Task ist abgeschlossen, wenn die Titel stehen.</returns>
+        internal async Task FillTitlesAsync(IReadOnlyList<ITrackTitleTarget> rows)
+        {
+            await TrackTitleFiller.FillAsync(_scopeFactory, rows);
+            UpdateCurrentTitle();
+        }
+
+        /// <summary>Der Vorgang, der die Titel der Wiedergabeliste nachträgt — für Tests.</summary>
+        internal Task PendingTitleFill => _pendingTitleFill;
+
+        /// <summary>
+        /// Übernimmt die Wiedergabeliste, die gerade läuft, wenn sie eine andere ist als die
+        /// angezeigte. Nötig, weil die Wiedergabe meist woanders startet — aus der Mediathek,
+        /// der Serienansicht oder über „Weiterhören". Ohne diesen Abgleich zeigt die Seite den
+        /// Platzhalter, während unten die Folge läuft.
+        /// </summary>
+        private void AdoptRunningPlaylist()
+        {
+            IReadOnlyList<string> running = _playerService.CurrentTrackPaths;
+
+            if (running.Count == 0 || SameAsDisplayed(running))
+            {
+                return;
+            }
+
+            BuildPlaylist(running);
+            PlaylistSubtitle = $"{running.Count} {(running.Count == 1 ? "Track" : "Tracks")}";
+
+            // Das Cover der laufenden Spur, nicht das der ersten: Wer mitten in einer Folge
+            // einsteigt, soll sehen, was gerade läuft.
+            string? currentPath = _playerService.CurrentTrackPath;
+            string cover = running.FirstOrDefault(
+                p => string.Equals(p, currentPath, StringComparison.OrdinalIgnoreCase))
+                ?? running[0];
+
+            _ = LoadCoverFromId3Async(cover);
+        }
+
+        /// <summary>
+        /// Prüft, ob die angezeigte Liste bereits dieselbe ist wie die übergebene. Ohne diesen
+        /// Vergleich würde die Liste bei jedem Positions-Tick neu aufgebaut.
+        /// </summary>
+        private bool SameAsDisplayed(IReadOnlyList<string> paths)
+        {
+            if (_playlistItems.Count != paths.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < paths.Count; i++)
+            {
+                if (!string.Equals(_playlistItems[i].FullPath, paths[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
         /// Hebt den aktuell spielenden Track in der Playlist visuell hervor.
-        /// Ermittelt den aktiven Track anhand des Dateinamens aus <see cref="IPlayerService.CurrentTrackTitle"/>.
+        /// Verglichen wird der Dateipfad aus <see cref="IPlayerService.CurrentTrackPath"/> —
+        /// der Anzeigename taugt dafür nicht, weil er aus der Kennzeichnung der Datei
+        /// stammen kann und dann nicht mehr zum Dateinamen passt.
         /// </summary>
         private void UpdateCurrentTrackHighlight()
         {
-            string? currentTitle = _playerService.CurrentTrackTitle;
+            string? currentPath = _playerService.CurrentTrackPath;
 
             foreach (PlaylistItemViewModel item in _playlistItems)
             {
-                item.IsCurrentTrack = item.FileName == currentTitle;
+                item.IsCurrentTrack = currentPath is not null
+                    && string.Equals(item.FullPath, currentPath, StringComparison.OrdinalIgnoreCase);
             }
+        }
+
+        /// <summary>
+        /// Zieht den Fortschritt über die ganze Folge nach.
+        /// </summary>
+        private void UpdateEpisodeProgress()
+        {
+            TimeSpan overallPosition = _playerService.OverallPosition;
+            TimeSpan overallDuration = _playerService.OverallDuration;
+
+            EpisodeProgressPercent = overallDuration > TimeSpan.Zero
+                ? Math.Min(100, overallPosition.TotalSeconds / overallDuration.TotalSeconds * 100)
+                : 0;
+
+            EpisodeProgressText = overallDuration > TimeSpan.Zero
+                ? string.Format(
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    EpisodeProgressFormat,
+                    FormatTime(overallPosition),
+                    FormatTime(overallDuration))
+                : string.Empty;
+
+            OnPropertyChanged(nameof(EpisodeProgressVisibility));
         }
 
         /// <summary>
@@ -325,6 +478,7 @@ namespace EchoPlay.App.ViewModels
             TimeSpan duration = _playerService.Duration;
 
             ElapsedText = FormatTime(position);
+            UpdateEpisodeProgress();
 
             if (_showRemainingTime)
             {
@@ -383,6 +537,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             PlaylistItems = items;
+            _pendingTitleFill = FillTitlesAsync(items);
 
             // Playlist-Header: Ordnername als Titel, Trackanzahl als Untertitel.
             // Gesamtdauer wird erst nach dem Start aktualisiert (Mediaplayer kennt sie vorher nicht).

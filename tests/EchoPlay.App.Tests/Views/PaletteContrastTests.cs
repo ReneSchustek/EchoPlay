@@ -52,25 +52,51 @@ namespace EchoPlay.App.Tests.Views
             ("TextOnAccentBrush", "AccentPrimaryBrush", "Beschriftung auf der Primäraktion"),
             ("CardHeaderForegroundBrush", "CardHeaderBackgroundBrush", "Kachelkopf"),
             ("CardBodyForegroundBrush", "CardBodyBackgroundBrush", "Kachelkörper"),
-            ("TextPrimaryBrush", "InputBackgroundBrush", "Eingabe im Suchfeld")
+            ("TextPrimaryBrush", "InputBackgroundBrush", "Eingabe im Suchfeld"),
+            ("ButtonForeground", "ButtonBackground", "Beschriftung der stillen Schaltfläche"),
+            ("ButtonForegroundPointerOver", "ButtonBackgroundPointerOver", "Beschriftung unter dem Zeiger"),
+            ("ButtonForegroundPressed", "ButtonBackgroundPressed", "Beschriftung im gedrückten Zustand"),
+            ("AccentButtonForeground", "AccentButtonBackground", "Beschriftung auf der Primäraktion"),
+            ("ToggleButtonForegroundChecked", "ToggleButtonBackgroundChecked", "Beschriftung des aktiven Filters")
         ];
 
         /// <summary>
         /// Bedienelemente, die sich abheben müssen, weil an ihnen ein Zustand hängt.
         /// <para>
-        /// Der <em>ruhende</em> Rahmen eines Eingabefelds steht bewusst nicht in dieser Liste:
-        /// Die Gestaltungslinie schreibt dafür einen Hairline-Rahmen mit 8 bis 10 Prozent
-        /// Deckkraft vor, der 3:1 nicht erreichen kann. Erkennbar bleibt das Feld dort über
-        /// Lupensymbol und Platzhalter. Der <em>Fokus</em> dagegen ist reine Zustandsanzeige —
-        /// wer ihn nicht sieht, weiß beim Tippen nicht, wohin er schreibt.
+        /// Der Rahmen eines Eingabefelds steht hier in <em>allen drei</em> Zuständen — ruhend,
+        /// unter dem Zeiger und im Fokus. Der ruhende war lange ausgenommen, weil die
+        /// Gestaltungslinie für Rahmen eine Haarlinie mit 8 bis 10 Prozent Deckkraft vorgibt.
+        /// Die Vorgabe gilt für <em>Trennlinien</em>: Karten, Listen, Abschnitte. Ein
+        /// Eingabefeld ist ein Bedienelement, und dessen Umriss muss man finden können,
+        /// bevor man ihn angesteuert hat.
+        /// </para>
+        /// <para>
+        /// Gemessen wird gegen die Feldfläche <em>und</em> gegen den Grund ringsum: Der Rahmen
+        /// liegt zwischen beiden, und beide sind seine Nachbarfarben.
         /// </para>
         /// </summary>
         private static readonly (string Foreground, string Background, string Usage)[] ControlPairings =
         [
+            ("InputBorderBrush", "InputBackgroundBrush", "ruhender Rahmen des Suchfelds, gegen die Feldfläche"),
+            ("InputBorderBrush", "AppBackgroundBrush", "ruhender Rahmen des Suchfelds, gegen den Grund ringsum"),
+            ("InputBorderHoverBrush", "InputBackgroundBrush", "Rahmen unter dem Zeiger"),
             ("InputBorderFocusBrush", "InputBackgroundBrush", "Fokusrahmen des Suchfelds"),
             ("AccentPrimaryBrush", "SurfaceBrush", "Rand des aktiven Filter-Chips"),
             ("AccentPrimaryBrush", "AppBackgroundBrush", "Rand des angesprungenen Buchstabens"),
-            ("SelectionBorderBrush", "CardBackgroundBrush", "Rand der gewählten Kachel")
+            ("SelectionBorderBrush", "CardBackgroundBrush", "Rand der gewählten Kachel"),
+
+            // Schaltflächen: Die Fläche einer stillen Schaltfläche darf ruhig bleiben — sie
+            // findet sich über ihren Rand. Der muss sich deshalb von beidem abheben: von der
+            // eigenen Fläche und vom Grund, auf dem die Schaltfläche sitzt.
+            ("ButtonBorderBrush", "ButtonBackground", "Rand der stillen Schaltfläche, gegen die eigene Fläche"),
+            ("ButtonBorderBrush", "AppBackgroundBrush", "Rand der stillen Schaltfläche, gegen die Seite"),
+            ("ButtonBorderBrush", "CardBackgroundBrush", "Rand der stillen Schaltfläche, gegen die Karte"),
+            ("ButtonBorderBrushPointerOver", "ButtonBackgroundPointerOver", "Rand unter dem Zeiger"),
+            ("ButtonBorderBrushPressed", "ButtonBackgroundPressed", "Rand im gedrückten Zustand"),
+
+            // Die Primäraktion trägt ihre Farbe als Fläche — dort zählt die Fläche selbst.
+            ("AccentButtonBackground", "AppBackgroundBrush", "Fläche der Primäraktion, gegen die Seite"),
+            ("AccentButtonBackground", "CardBackgroundBrush", "Fläche der Primäraktion, gegen die Karte")
         ];
 
         [Fact]

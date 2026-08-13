@@ -148,5 +148,22 @@ namespace EchoPlay.Data.Entities.Settings
         /// 0 = Nummer aufsteigend (Standard), 1 = Nummer absteigend, 2 = Neueste zuerst.
         /// </summary>
         public int OnlineEpisodeSortIndex { get; set; }
+
+        /// <summary>
+        /// Zuletzt eingestellte Lautstärke der Wiedergabe, von 0,0 (still) bis 1,0 (voll).
+        /// Standard: 1,0.
+        /// </summary>
+        /// <remarks>
+        /// Sie überlebt den Neustart, weil eine leise eingestellte Anlage sonst bei jedem
+        /// Start wieder auf volle Lautstärke springt — beim abendlichen Hörspiel die
+        /// unangenehmste Art von Überraschung.
+        /// </remarks>
+        public double Volume { get; set; } = 1.0;
+
+        /// <summary>
+        /// Ob die Wiedergabe stummgeschaltet ist. Die Lautstärke bleibt dabei erhalten und
+        /// gilt wieder, sobald die Stummschaltung endet.
+        /// </summary>
+        public bool IsMuted { get; set; }
     }
 }

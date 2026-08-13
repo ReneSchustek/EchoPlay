@@ -111,14 +111,7 @@ namespace EchoPlay.App.Services
             }
 
             // ── Phase 1: Lokale Cover kopieren (Raw SQL via Data-Schicht) ────────
-            int localFound;
-
-            using (IServiceScope copyScope = _scopeFactory.CreateScope())
-            {
-                ICoverCopyService coverCopy = copyScope.ServiceProvider
-                    .GetRequiredService<ICoverCopyService>();
-                localFound = await coverCopy.CopyFromMatchingEpisodesAsync(seriesId, ct);
-            }
+            int localFound = await CopyLocalCoversAsync(seriesId, ct);
 
             // ── Episoden ohne Cover ermitteln (mit Cooldown-Filter) ─────────────
 
@@ -129,17 +122,74 @@ namespace EchoPlay.App.Services
             Series? series = await seriesService.GetByIdAsync(seriesId, ct);
             string seriesName = series?.Title ?? string.Empty;
 
-            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId, ct);
             DateTime cooldownThreshold = _clock.UtcNow.AddDays(-CooldownDays);
 
-            // Batch-Prüfung: welche Episoden haben bereits ein Cover in der CoverImages-Tabelle?
+            IReadOnlyList<Episode> needsCheck =
+                await CollectMissingCoversAsync(episodeService, seriesId, cooldownThreshold, ct);
+
+            if (needsCheck.Count == 0)
+            {
+                if (localFound > 0)
+                {
+                    _logger.Info("Alle Cover für \"{SeriesName}\" lokal kopiert ({LocalFound} Stück).", seriesName, localFound);
+                }
+                return;
+            }
+
+            Dictionary<string, string> titleToCoverUrl = CollectProviderUrls(importEpisodes, needsCheck);
+
+            _logger.Info("Cover-Suche für {EpisodeCount} Episoden von \"{SeriesName}\"", needsCheck.Count, seriesName);
+
+            // ── Phase 2: Provider-URLs herunterladen (sequentiell) ─────────────
+            int downloaded = await DownloadProviderCoversAsync(needsCheck, titleToCoverUrl, ct);
+
+            // ── Phase 3: Online-Suchkette für den Rest (mit Rate-Limiting) ──────
+            ct.ThrowIfCancellationRequested();
+
+            IReadOnlyList<Episode> stillMissing =
+                await CollectMissingCoversAsync(episodeService, seriesId, cooldownThreshold, ct);
+
+            int onlineFound = await SearchCoversOnlineAsync(stillMissing, seriesName, ct);
+
+            _logger.Info(
+                "Cover abgeschlossen: {LocalFound} lokal, {Downloaded} Provider, {OnlineFound} online, {NotFound} nicht gefunden",
+                localFound, downloaded, onlineFound, stillMissing.Count - onlineFound);
+        }
+
+        /// <summary>
+        /// Phase 1: Cover gleichnamiger Folgen aus dem eigenen Bestand übernehmen.
+        /// </summary>
+        /// <returns>Wie viele Cover kopiert wurden.</returns>
+        private async Task<int> CopyLocalCoversAsync(Guid seriesId, CancellationToken ct)
+        {
+            using IServiceScope copyScope = _scopeFactory.CreateScope();
+            ICoverCopyService coverCopy = copyScope.ServiceProvider.GetRequiredService<ICoverCopyService>();
+            return await coverCopy.CopyFromMatchingEpisodesAsync(seriesId, ct);
+        }
+
+        /// <summary>
+        /// Die Folgen einer Serie, die weder ein Cover noch einen laufenden Cooldown haben.
+        /// </summary>
+        /// <remarks>
+        /// Dieselbe Frage stellt sich zweimal: vor dem Herunterladen und noch einmal vor der
+        /// Online-Suche. Sie stand deshalb zweimal im Quelltext — zwei Fassungen derselben
+        /// Regel, die auseinanderlaufen können, ohne dass es auffällt.
+        /// </remarks>
+        private async Task<IReadOnlyList<Episode>> CollectMissingCoversAsync(
+            IEpisodeDataService episodeService,
+            Guid seriesId,
+            DateTime cooldownThreshold,
+            CancellationToken ct)
+        {
+            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(seriesId, ct);
+
             List<Guid> episodeIds = new(episodes.Count);
             foreach (Episode ep in episodes) episodeIds.Add(ep.Id);
 
             IReadOnlyDictionary<Guid, byte[]> existingCovers =
                 await _coverService.GetEpisodeCoverBytesAsync(episodeIds, ct);
 
-            List<Episode> needsCheck = [];
+            List<Episode> missing = [];
 
             foreach (Episode episode in episodes)
             {
@@ -153,19 +203,20 @@ namespace EchoPlay.App.Services
                     continue;
                 }
 
-                needsCheck.Add(episode);
+                missing.Add(episode);
             }
 
-            if (needsCheck.Count == 0)
-            {
-                if (localFound > 0)
-                {
-                    _logger.Info("Alle Cover für \"{SeriesName}\" lokal kopiert ({LocalFound} Stück).", seriesName, localFound);
-                }
-                return;
-            }
+            return missing;
+        }
 
-            // Provider-URLs sammeln: aus Import-Daten oder aus der DB
+        /// <summary>
+        /// Sammelt die Cover-Adressen des Anbieters, bevorzugt aus den Import-Daten. Was dort
+        /// fehlt, kommt aus der gespeicherten Adresse der Folge.
+        /// </summary>
+        private static Dictionary<string, string> CollectProviderUrls(
+            IReadOnlyList<ImportEpisode>? importEpisodes,
+            IReadOnlyList<Episode> needsCheck)
+        {
             Dictionary<string, string> titleToCoverUrl = new(StringComparer.OrdinalIgnoreCase);
 
             if (importEpisodes is not null)
@@ -179,7 +230,6 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            // Fallback: gespeicherte Provider-URLs aus der Episode-Entity
             foreach (Episode episode in needsCheck)
             {
                 if (!string.IsNullOrEmpty(episode.CoverImageUrl)
@@ -189,15 +239,26 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info("Cover-Suche für {EpisodeCount} Episoden von \"{SeriesName}\"", needsCheck.Count, seriesName);
+            return titleToCoverUrl;
+        }
 
-            // ── Phase 2: Provider-URLs herunterladen (sequentiell) ─────────────
-
+        /// <summary>
+        /// Phase 2: Die feststehenden Adressen des Anbieters herunterladen.
+        /// </summary>
+        /// <remarks>
+        /// Sequentiell und ohne Wartelimit: Die Adressen stehen schon fest, es ist ein Abruf
+        /// je Folge, und die Bilder liegen auf den Auslieferungsnetzen der Anbieter — nicht
+        /// auf deren Schnittstellen, für die das Wartelimit gilt.
+        /// </remarks>
+        /// <returns>Wie viele Cover geladen wurden.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download je Folge: HTTP- oder DB-Fehler einer einzelnen Folge dürfen die Schleife nicht verlassen; jede Folge wird unabhängig behandelt.")]
+        private async Task<int> DownloadProviderCoversAsync(
+            IReadOnlyList<Episode> needsCheck,
+            Dictionary<string, string> titleToCoverUrl,
+            CancellationToken ct)
+        {
             int downloaded = 0;
 
-            // Sequentiell und ohne Rate-Limiter: die URLs stehen schon fest, es ist ein
-            // Abruf je Folge, und die Bilder liegen auf den CDN-Hosts der Anbieter — nicht
-            // auf deren API-Endpunkten, für die das Wartelimit gilt.
             foreach (Episode episode in needsCheck)
             {
                 ct.ThrowIfCancellationRequested();
@@ -225,30 +286,20 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            // ── Phase 3: Online-Suchkette für den Rest (mit Rate-Limiting) ──────
+            return downloaded;
+        }
 
-            ct.ThrowIfCancellationRequested();
-
-            // Erneut prüfen welche Episoden noch kein Cover haben (via CoverImages-Tabelle)
-            IReadOnlyList<Episode> afterDownload = await episodeService.GetBySeriesIdAsync(seriesId, ct);
-
-            List<Guid> afterDownloadIds = new(afterDownload.Count);
-            foreach (Episode ep in afterDownload) afterDownloadIds.Add(ep.Id);
-
-            IReadOnlyDictionary<Guid, byte[]> coversAfterDownload =
-                await _coverService.GetEpisodeCoverBytesAsync(afterDownloadIds, ct);
-
-            List<Episode> stillMissing = [];
-
-            foreach (Episode episode in afterDownload)
-            {
-                if (!coversAfterDownload.ContainsKey(episode.Id)
-                    && (!episode.CoverLastChecked.HasValue || episode.CoverLastChecked.Value <= cooldownThreshold))
-                {
-                    stillMissing.Add(episode);
-                }
-            }
-
+        /// <summary>
+        /// Phase 3: Für den Rest die Online-Suchkette bemühen, mit Pause zwischen den Anfragen.
+        /// Der Zeitstempel wird auch ohne Treffer gesetzt — er trägt den Cooldown.
+        /// </summary>
+        /// <returns>Wie viele Cover gefunden wurden.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Cover-Suche je Folge: Fehler der fremden Gegenstellen dürfen die Schleife nicht verlassen; jede Folge wird unabhängig behandelt.")]
+        private async Task<int> SearchCoversOnlineAsync(
+            IReadOnlyList<Episode> stillMissing,
+            string seriesName,
+            CancellationToken ct)
+        {
             int onlineFound = 0;
 
             foreach (Episode episode in stillMissing)
@@ -288,9 +339,7 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info(
-                "Cover abgeschlossen: {LocalFound} lokal, {Downloaded} Provider, {OnlineFound} online, {NotFound} nicht gefunden",
-                localFound, downloaded, onlineFound, stillMissing.Count - onlineFound);
+            return onlineFound;
         }
 
         /// <summary>

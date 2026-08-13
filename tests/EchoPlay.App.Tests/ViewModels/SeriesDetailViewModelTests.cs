@@ -3,6 +3,7 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -22,13 +23,15 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService,
             FakePlaybackStateDataService playbackService,
             FakeLocalTrackDataService trackService,
-            FakePlayerService playerService)
+            FakePlayerService playerService,
+            FakeTrackTitleResolver? titleResolver = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<IPlaybackStateDataService>(_ => playbackService);
             _ = services.AddScoped<ILocalTrackDataService>(_ => trackService);
+            _ = services.AddScoped<ITrackTitleResolver>(_ => titleResolver ?? new FakeTrackTitleResolver());
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -54,7 +57,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.LoadAsync(series.Id);
 
-            Assert.Equal("TKKG", vm.SeriesTitle);
+            Assert.Equal("TKKG", vm.Header.SeriesTitle);
         }
 
         [Fact]
@@ -77,7 +80,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.LoadAsync(series.Id);
 
-            Assert.Equal(3, vm.Episodes.Count);
+            Assert.Equal(3, vm.EpisodeList.Episodes.Count);
         }
 
         [Fact]
@@ -99,7 +102,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync(series.Id);
 
             // Glyph für "Nicht gespielt" (Radiobuttonleer)
-            Assert.Equal("\uE73E", vm.Episodes[0].StatusGlyph);
+            Assert.Equal("\uE73E", vm.EpisodeList.Episodes[0].StatusGlyph);
         }
 
         [Fact]
@@ -132,7 +135,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync(series.Id);
 
             // Glyph für "In Bearbeitung" (Fortschrittsicon)
-            Assert.Equal("\uE916", vm.Episodes[0].StatusGlyph);
+            Assert.Equal("\uE916", vm.EpisodeList.Episodes[0].StatusGlyph);
         }
 
         [Fact]
@@ -165,7 +168,56 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync(series.Id);
 
             // Glyph für "Abgeschlossen" (Häkchen)
-            Assert.Equal("\uE8FB", vm.Episodes[0].StatusGlyph);
+            Assert.Equal("\uE8FB", vm.EpisodeList.Episodes[0].StatusGlyph);
+        }
+
+        [Fact]
+        public async Task SelectEpisodeAsync_ShowsTitleFromTheFile_AndFallsBackToTheFileName()
+        {
+            // Rechte Spalte der Serienansicht: gepflegte Datei zeigt den Titel, die
+            // ungepflegte den Dateinamen – beide ohne Endung und ohne die Nummer,
+            // die in der Spalte davor steht.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series { Title = "Sherlock Holmes" }, cancellationToken: TestContext.Current.CancellationToken);
+            Series series = seriesService.All[0];
+
+            FakeEpisodeDataService episodeService = new();
+            await episodeService.AddAsync(
+                new Episode { SeriesId = series.Id, Title = "Das leere Haus", EpisodeNumber = 1 },
+                cancellationToken: TestContext.Current.CancellationToken);
+            Episode episode = episodeService.All[0];
+
+            const string ersterTeil = @"C:\Hörspiele\Sherlock\001\01 - Das leere Haus (Teil 1).mp3";
+            const string zweiterTeil = @"C:\Hörspiele\Sherlock\001\02 - Das leere Haus (Teil 2).mp3";
+
+            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
+            {
+                [episode.Id] =
+                [
+                    new LocalTrack { FilePath = ersterTeil, TrackNumber = 1, Duration = TimeSpan.FromMinutes(4) },
+                    new LocalTrack { FilePath = zweiterTeil, TrackNumber = 2, Duration = TimeSpan.FromMinutes(4) }
+                ]
+            });
+
+            FakeTrackTitleResolver titleResolver = new();
+            titleResolver.TitlesByPath[ersterTeil] = "Das leere Haus (Teil 1)";
+
+            SeriesDetailViewModel vm = BuildViewModel(seriesService, episodeService,
+                playbackService: new FakePlaybackStateDataService(),
+                trackService: trackService,
+                playerService: new FakePlayerService(),
+                titleResolver: titleResolver);
+
+            await vm.LoadAsync(series.Id);
+            await vm.TrackList.SelectEpisodeAsync(vm.EpisodeList.Episodes[0], TestContext.Current.CancellationToken);
+
+            Assert.Equal(2, vm.TrackList.Tracks.Count);
+            Assert.Equal("Das leere Haus (Teil 1)", vm.TrackList.Tracks[0].Title);
+            Assert.Equal("Das leere Haus (Teil 2)", vm.TrackList.Tracks[1].Title);
+
+            // Die Nummer steht nur in ihrer eigenen Spalte, nicht zusätzlich im Titel.
+            Assert.Equal(1, vm.TrackList.Tracks[0].TrackNumber);
+            Assert.Equal(2, vm.TrackList.Tracks[1].TrackNumber);
         }
 
         [Fact]
@@ -327,9 +379,11 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task PlayEpisodeAsync_StartsFromBeginning_WhenCompleted()
+        public async Task PlayEpisodeAsync_ResumesAtOpenPosition_EvenWhenAlreadyHeard()
         {
-            // Abgeschlossene Episode wird von Anfang an gespielt
+            // Ein Hörspiel hört man nicht einmal im Leben: Eine gehörte Folge mit offener
+            // Stelle wird dort fortgesetzt, nicht von vorn begonnen. Früher entschied hier
+            // allein der Hörstatus — und die Stelle war verloren.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];
@@ -350,7 +404,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             IReadOnlyList<LocalTrack> tracks =
             [
-                new LocalTrack { EpisodeId = episode.Id, FilePath = "/track1.mp3", TrackNumber = 1 }
+                new LocalTrack { EpisodeId = episode.Id, FilePath = "/track1.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(60) }
             ];
 
             FakeLocalTrackDataService trackService = new(new System.Collections.Generic.Dictionary<Guid, IReadOnlyList<LocalTrack>>
@@ -367,7 +421,51 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.PlayEpisodeAsync(episode.Id);
 
-            // Position = TimeSpan.Zero bedeutet: von vorne starten
+            // Die Stelle liegt mitten in der Folge — dort wird fortgesetzt.
+            Assert.Equal(TimeSpan.FromMinutes(50), playerService.PlayCalls[0].ResumePosition);
+        }
+
+        [Fact]
+        public async Task PlayEpisodeAsync_StartsFromBeginning_WhenFullyHeard()
+        {
+            // Durchgehört heißt: Die Stelle steht am Ende. Dann beginnt die Folge von vorn.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
+            Series series = seriesService.All[0];
+
+            FakeEpisodeDataService episodeService = new();
+            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
+            Episode episode = episodeService.All[0];
+
+            FakePlaybackStateDataService playbackService = new(
+            [
+                new PlaybackState
+                {
+                    EpisodeId    = episode.Id,
+                    LastPosition = TimeSpan.FromMinutes(60),
+                    IsCompleted  = true
+                }
+            ]);
+
+            IReadOnlyList<LocalTrack> tracks =
+            [
+                new LocalTrack { EpisodeId = episode.Id, FilePath = "/track1.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(60) }
+            ];
+
+            FakeLocalTrackDataService trackService = new(new System.Collections.Generic.Dictionary<Guid, IReadOnlyList<LocalTrack>>
+            {
+                [episode.Id] = tracks
+            });
+
+            FakePlayerService playerService = new();
+
+            SeriesDetailViewModel vm = BuildViewModel(seriesService, episodeService,
+                playbackService: playbackService,
+                trackService: trackService,
+                playerService: playerService);
+
+            await vm.PlayEpisodeAsync(episode.Id);
+
             Assert.Equal(TimeSpan.Zero, playerService.PlayCalls[0].ResumePosition);
         }
     }

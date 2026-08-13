@@ -46,60 +46,28 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert das ViewModel und erzeugt die vier Sub-VMs mit den benötigten Abhängigkeiten.
         /// </summary>
-        /// <param name="scopeFactory">DI-Scope-Fabrik für Datenbankzugriffe.</param>
-        /// <param name="themeService">Service für den Live-Themewechsel.</param>
-        /// <param name="syncService">Service für den lokalen Bibliothek-Sync.</param>
-        /// <param name="errorDialogService">Service für Fehler-Dialoge.</param>
-        /// <param name="confirmationDialogService">Ja/Nein-Dialog für den Navigation-Guard.</param>
-        /// <param name="localizationService">Lokalisierungs-Service für die Dialogtexte.</param>
-        /// <param name="patternAnalyzer">Analysiert Episodenmuster im lokalen Bibliotheksordner.</param>
-        /// <param name="connectionTestCoordinator">Kapselt den Verbindungstest gegen den aktiven Provider.</param>
-        /// <param name="credentialStore">Speichert und liest Spotify-Credentials.</param>
-        /// <param name="optionsProvider">Liefert zur Laufzeit die vollständigen SpotifyOptions.</param>
-        /// <param name="logViewerCoordinator">Kapselt Dateisystem- und Live-Puffer-Zugriff für den Log-Viewer.</param>
-        /// <param name="loggerManager">Wird nach dem Speichern mit den neuen Werten aktualisiert.</param>
-        /// <param name="statusBar">StatusBar-Singleton – wird über <see cref="HasUnsavedChanges"/> informiert.</param>
-        /// <param name="languageSwitchService">Kapselt Persistenz, Sprachpräferenz und Neustart. Nullable für Tests.</param>
-        public SettingsViewModel(
-            IServiceScopeFactory scopeFactory,
-            IThemeService themeService,
-            ISyncService syncService,
-            IErrorDialogService errorDialogService,
-            IConfirmationDialogService confirmationDialogService,
-            ILocalizationService localizationService,
-            IEpisodePatternAnalyzer patternAnalyzer,
-            IConnectionTestCoordinator connectionTestCoordinator,
-            ISpotifyCredentialStore credentialStore,
-            ISpotifyOptionsProvider optionsProvider,
-            ILogViewerCoordinator logViewerCoordinator,
-            LoggerManager loggerManager,
-            StatusBarViewModel statusBar,
-            ILanguageSwitchService? languageSwitchService = null)
+        /// <param name="context">Bündelt alle per DI aufgelösten Dienste.</param>
+        internal SettingsViewModel(SettingsViewModelContext context)
         {
-            _languageSwitchService = languageSwitchService;
-            _scopeFactory = scopeFactory;
-            _themeService = themeService;
-            _errorDialogService = errorDialogService;
-            _confirmationDialogService = confirmationDialogService;
-            _localizationService = localizationService;
-            _loggerManager = loggerManager;
-            _statusBar = statusBar;
+            ArgumentNullException.ThrowIfNull(context);
+
+            _languageSwitchService = context.LanguageSwitchService;
+            _scopeFactory = context.ScopeFactory;
+            _themeService = context.ThemeService;
+            _errorDialogService = context.ErrorDialogService;
+            _confirmationDialogService = context.ConfirmationDialogService;
+            _localizationService = context.LocalizationService;
+            _loggerManager = context.LoggerManager;
+            _statusBar = context.StatusBar;
 
             // Sub-VMs mit gemeinsamem Edit-Callback – jede Nutzeränderung setzt HasUnsavedChanges
             GeneralVM = new GeneralSettingsViewModel(OnSubVmUserEdit);
-            OnlineVM = new OnlineSettingsViewModel(connectionTestCoordinator, credentialStore, optionsProvider, OnSubVmUserEdit);
-            LocalVM = new LocalSettingsViewModel(syncService, errorDialogService, patternAnalyzer, OnSubVmUserEdit);
-            MaintenanceVM = new MaintenanceSettingsViewModel(scopeFactory, logViewerCoordinator, OnSubVmUserEdit);
-
-            // PropertyChanged durchreichen, damit die XAML-Bindings auf den Top-VM-Pass-Through-Properties
-            // weiterhin aktualisiert werden, obwohl der Wert in einem Sub-VM liegt.
-            GeneralVM.PropertyChanged += OnSubVmPropertyChanged;
-            OnlineVM.PropertyChanged += OnSubVmPropertyChanged;
-            LocalVM.PropertyChanged += OnSubVmPropertyChanged;
-            MaintenanceVM.PropertyChanged += OnSubVmPropertyChanged;
-
-            // Pattern-Dialog-Event an die Page weiterreichen
-            LocalVM.PatternSelectionRequested += OnLocalVmPatternSelectionRequested;
+            OnlineVM = new OnlineSettingsViewModel(
+                context.ConnectionTestCoordinator, context.CredentialStore, context.OptionsProvider, OnSubVmUserEdit);
+            LocalVM = new LocalSettingsViewModel(
+                context.SyncService, context.ErrorDialogService, context.PatternAnalyzer, OnSubVmUserEdit);
+            MaintenanceVM = new MaintenanceSettingsViewModel(
+                context.ScopeFactory, context.LogViewerCoordinator, OnSubVmUserEdit);
         }
 
         // ── Sub-VMs ─────────────────────────────────────────────────────────────
@@ -144,272 +112,6 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Pattern-Dialog-Event ────────────────────────────────────────────────
-
-        /// <summary>
-        /// Wird ausgelöst, wenn der Lokal-Tab mehrere Muster-Vorschläge liefert und der Nutzer
-        /// eines auswählen soll. Die Page zeigt darauf einen ContentDialog an.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste des Lokal-Tabs; die Page öffnet einen ContentDialog für die Muster-Auswahl, Action<IReadOnlyList<...>> bleibt semantisch klarer als ein dedizierter EventArgs-Typ.")]
-        public event Action<IReadOnlyList<PatternSuggestionDisplay>>? PatternSelectionRequested;
-
-        // ── Pass-Through-Eigenschaften: Allgemein ───────────────────────────────
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.ActiveTheme"/>
-        public string ActiveTheme
-        {
-            get => GeneralVM.ActiveTheme;
-            set => GeneralVM.ActiveTheme = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.ActiveLanguage"/>
-        public string ActiveLanguage
-        {
-            get => GeneralVM.ActiveLanguage;
-            set => GeneralVM.ActiveLanguage = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.AvailableLanguages"/>
-        public IReadOnlyList<LanguageOption> AvailableLanguages => GeneralVM.AvailableLanguages;
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.NewReleaseDays"/>
-        public int NewReleaseDays
-        {
-            get => GeneralVM.NewReleaseDays;
-            set => GeneralVM.NewReleaseDays = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.OfflineMode"/>
-        public bool OfflineMode
-        {
-            get => GeneralVM.OfflineMode;
-            set => GeneralVM.OfflineMode = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.OnlineOnlyMode"/>
-        public bool OnlineOnlyMode
-        {
-            get => GeneralVM.OnlineOnlyMode;
-            set => GeneralVM.OnlineOnlyMode = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.LogRetentionDays"/>
-        public int LogRetentionDays
-        {
-            get => GeneralVM.LogRetentionDays;
-            set => GeneralVM.LogRetentionDays = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.MinimumLogLevel"/>
-        public LogLevel MinimumLogLevel
-        {
-            get => GeneralVM.MinimumLogLevel;
-            set => GeneralVM.MinimumLogLevel = value;
-        }
-
-        /// <inheritdoc cref="GeneralSettingsViewModel.MinimumLogLevelIndex"/>
-        public int MinimumLogLevelIndex
-        {
-            get => GeneralVM.MinimumLogLevelIndex;
-            set => GeneralVM.MinimumLogLevelIndex = value;
-        }
-
-        // ── Pass-Through-Eigenschaften: Online ──────────────────────────────────
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ActiveProvider"/>
-        public ProviderType ActiveProvider
-        {
-            get => OnlineVM.ActiveProvider;
-            set => OnlineVM.ActiveProvider = value;
-        }
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ActiveProviderTag"/>
-        public string ActiveProviderTag
-        {
-            get => OnlineVM.ActiveProviderTag;
-            set => OnlineVM.ActiveProviderTag = value;
-        }
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.IsTestingConnection"/>
-        public bool IsTestingConnection => OnlineVM.IsTestingConnection;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ConnectionTestResultText"/>
-        public string? ConnectionTestResultText => OnlineVM.ConnectionTestResultText;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ConnectionTestSuccess"/>
-        public bool? ConnectionTestSuccess => OnlineVM.ConnectionTestSuccess;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ConnectionTestSuccessVisibility"/>
-        public Visibility ConnectionTestSuccessVisibility => OnlineVM.ConnectionTestSuccessVisibility;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ConnectionTestFailureVisibility"/>
-        public Visibility ConnectionTestFailureVisibility => OnlineVM.ConnectionTestFailureVisibility;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.ConnectionTestResultVisibility"/>
-        public Visibility ConnectionTestResultVisibility => OnlineVM.ConnectionTestResultVisibility;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.TestConnectionCommand"/>
-        public ICommand TestConnectionCommand => OnlineVM.TestConnectionCommand;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.SpotifyClientId"/>
-        public string SpotifyClientId
-        {
-            get => OnlineVM.SpotifyClientId;
-            set => OnlineVM.SpotifyClientId = value;
-        }
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.SpotifyClientSecret"/>
-        public string SpotifyClientSecret
-        {
-            get => OnlineVM.SpotifyClientSecret;
-            set => OnlineVM.SpotifyClientSecret = value;
-        }
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.SpotifyStatus"/>
-        public string SpotifyStatus => OnlineVM.SpotifyStatus;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.IsSpotifyLinked"/>
-        public bool IsSpotifyLinked => OnlineVM.IsSpotifyLinked;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.IsTestingCredentials"/>
-        public bool IsTestingCredentials => OnlineVM.IsTestingCredentials;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.TestAndSaveSpotifyCommand"/>
-        public ICommand TestAndSaveSpotifyCommand => OnlineVM.TestAndSaveSpotifyCommand;
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.RemoveSpotifyCommand"/>
-        public ICommand RemoveSpotifyCommand => OnlineVM.RemoveSpotifyCommand;
-
-        // ── Pass-Through-Eigenschaften: Lokal ───────────────────────────────────
-
-        /// <inheritdoc cref="LocalSettingsViewModel.LocalLibraryEnabled"/>
-        public bool LocalLibraryEnabled
-        {
-            get => LocalVM.LocalLibraryEnabled;
-            set => LocalVM.LocalLibraryEnabled = value;
-        }
-
-        /// <inheritdoc cref="LocalSettingsViewModel.LocalLibraryRootPath"/>
-        public string LocalLibraryRootPath
-        {
-            get => LocalVM.LocalLibraryRootPath;
-            set => LocalVM.LocalLibraryRootPath = value;
-        }
-
-        /// <inheritdoc cref="LocalSettingsViewModel.EpisodeFolderPattern"/>
-        public string EpisodeFolderPattern
-        {
-            get => LocalVM.EpisodeFolderPattern;
-            set => LocalVM.EpisodeFolderPattern = value;
-        }
-
-        /// <inheritdoc cref="LocalSettingsViewModel.AutoImportAfterScan"/>
-        public bool AutoImportAfterScan
-        {
-            get => LocalVM.AutoImportAfterScan;
-            set => LocalVM.AutoImportAfterScan = value;
-        }
-
-        /// <inheritdoc cref="LocalSettingsViewModel.IsSyncing"/>
-        public bool IsSyncing => LocalVM.IsSyncing;
-
-        /// <inheritdoc cref="LocalSettingsViewModel.IsSyncEnabled"/>
-        public bool IsSyncEnabled => LocalVM.IsSyncEnabled;
-
-        /// <inheritdoc cref="LocalSettingsViewModel.SyncStatusText"/>
-        public string SyncStatusText => LocalVM.SyncStatusText;
-
-        /// <inheritdoc cref="LocalSettingsViewModel.PatternSuggestions"/>
-        public IReadOnlyList<PatternSuggestionDisplay> PatternSuggestions => LocalVM.PatternSuggestions;
-
-        /// <inheritdoc cref="LocalSettingsViewModel.PatternSuggestionsVisibility"/>
-        public Visibility PatternSuggestionsVisibility => LocalVM.PatternSuggestionsVisibility;
-
-        // ── Pass-Through-Eigenschaften: Verwaltung + Protokolle ─────────────────
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.DbPurgeDays"/>
-        public int DbPurgeDays
-        {
-            get => MaintenanceVM.DbPurgeDays;
-            set => MaintenanceVM.DbPurgeDays = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.ClearCacheOnNextStart"/>
-        public bool ClearCacheOnNextStart
-        {
-            get => MaintenanceVM.ClearCacheOnNextStart;
-            set => MaintenanceVM.ClearCacheOnNextStart = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.DbBackupEnabled"/>
-        public bool DbBackupEnabled
-        {
-            get => MaintenanceVM.DbBackupEnabled;
-            set => MaintenanceVM.DbBackupEnabled = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.DbBackupRetentionCount"/>
-        public int DbBackupRetentionCount
-        {
-            get => MaintenanceVM.DbBackupRetentionCount;
-            set => MaintenanceVM.DbBackupRetentionCount = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.IsMaintaining"/>
-        public bool IsMaintaining => MaintenanceVM.IsMaintaining;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.IsNotMaintaining"/>
-        public bool IsNotMaintaining => MaintenanceVM.IsNotMaintaining;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.MaintenanceStatusText"/>
-        public string MaintenanceStatusText => MaintenanceVM.MaintenanceStatusText;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.MaintenanceStatusVisibility"/>
-        public Visibility MaintenanceStatusVisibility => MaintenanceVM.MaintenanceStatusVisibility;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.LogEntries"/>
-        public ObservableCollection<string> LogEntries => MaintenanceVM.LogEntries;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.IsLogViewerAvailable"/>
-        public bool IsLogViewerAvailable => MaintenanceVM.IsLogViewerAvailable;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.LogSearchText"/>
-        public string LogSearchText
-        {
-            get => MaintenanceVM.LogSearchText;
-            set => MaintenanceVM.LogSearchText = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.LogMinimumLevel"/>
-        public LogLevel LogMinimumLevel
-        {
-            get => MaintenanceVM.LogMinimumLevel;
-            set => MaintenanceVM.LogMinimumLevel = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.LogLevelFilterIndex"/>
-        public int LogLevelFilterIndex
-        {
-            get => MaintenanceVM.LogLevelFilterIndex;
-            set => MaintenanceVM.LogLevelFilterIndex = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.AvailableLogFiles"/>
-        public IReadOnlyList<LogFileOption> AvailableLogFiles => MaintenanceVM.AvailableLogFiles;
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.SelectedLogFile"/>
-        public LogFileOption? SelectedLogFile
-        {
-            get => MaintenanceVM.SelectedLogFile;
-            set => MaintenanceVM.SelectedLogFile = value;
-        }
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.IsLiveViewActive"/>
-        public bool IsLiveViewActive
-        {
-            get => MaintenanceVM.IsLiveViewActive;
-            set => MaintenanceVM.IsLiveViewActive = value;
-        }
 
         // ── Laden und Speichern ──────────────────────────────────────────────────
 
@@ -512,7 +214,7 @@ namespace EchoPlay.App.ViewModels
 
             // Hinweis wenn Offline-Modus deaktiviert, aber kein Provider konfiguriert ist –
             // ohne Provider bleibt die Online-Mediathek unsichtbar, was den Nutzer verwirren kann.
-            if (!OfflineMode && ActiveProvider == ProviderType.None)
+            if (!GeneralVM.OfflineMode && OnlineVM.ActiveProvider == ProviderType.None)
             {
                 await _errorDialogService.ShowAsync(
                     SafeResourceLoader.Get("NoProviderHintTitle", "Kein Provider"),
@@ -527,7 +229,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="themeName">Name des anzuwendenden Themes.</param>
         public void ApplyTheme(string themeName)
         {
-            ActiveTheme = themeName;
+            GeneralVM.ActiveTheme = themeName;
             _themeService.ApplyTheme(themeName);
         }
 
@@ -589,52 +291,6 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Pass-Through-Methoden ──────────────────────────────────────────────
-
-        /// <inheritdoc cref="LocalSettingsViewModel.SyncAsync"/>
-        public Task SyncAsync() => LocalVM.SyncAsync();
-
-        /// <inheritdoc cref="LocalSettingsViewModel.BrowseLibraryFolderAsync"/>
-        public Task BrowseLibraryFolderAsync(nint windowHandle) => LocalVM.BrowseLibraryFolderAsync(windowHandle);
-
-        /// <inheritdoc cref="LocalSettingsViewModel.AnalyzePatternAsync"/>
-        public Task AnalyzePatternAsync() => LocalVM.AnalyzePatternAsync();
-
-        /// <inheritdoc cref="LocalSettingsViewModel.ApplyPatternSuggestion"/>
-        public void ApplyPatternSuggestion(string pattern) => LocalVM.ApplyPatternSuggestion(pattern);
-
-        /// <inheritdoc cref="OnlineSettingsViewModel.TestConnectionAsync"/>
-        public Task TestConnectionAsync() => OnlineVM.TestConnectionAsync();
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.RunMaintenanceAsync"/>
-        public Task RunMaintenanceAsync() => MaintenanceVM.RunMaintenanceAsync();
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.ResetLibraryAsync"/>
-        public Task ResetLibraryAsync(int scopeIndex) => MaintenanceVM.ResetLibraryAsync(scopeIndex);
-
-        /// <inheritdoc cref="MaintenanceSettingsViewModel.RefreshLogs"/>
-        public void RefreshLogs() => MaintenanceVM.RefreshLogs();
-
-        // ── Event-Weiterleitung ─────────────────────────────────────────────────
-
-        /// <summary>
-        /// Leitet PropertyChanged-Events der Sub-VMs an eigene Listener weiter, damit die
-        /// XAML-Bindings an die Pass-Through-Properties auf dem Top-VM aktualisiert werden.
-        /// Alle Property-Namen sind zwischen Top-VM und Sub-VMs bewusst identisch gehalten.
-        /// </summary>
-        private void OnSubVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            OnPropertyChanged(e.PropertyName);
-        }
-
-        /// <summary>
-        /// Leitet das PatternSelectionRequested-Event des Lokal-Sub-VMs an externe Listener weiter.
-        /// </summary>
-        private void OnLocalVmPatternSelectionRequested(IReadOnlyList<PatternSuggestionDisplay> suggestions)
-        {
-            PatternSelectionRequested?.Invoke(suggestions);
-        }
-
         /// <summary>
         /// Wird von allen Sub-VMs bei Nutzeränderung aufgerufen und aktiviert
         /// <see cref="HasUnsavedChanges"/>. Während <see cref="LoadAsync"/> unterdrückt jedes
@@ -649,15 +305,6 @@ namespace EchoPlay.App.ViewModels
         /// Stoppt den Log-Live-View-Timer und gibt die Sub-VM-Ressourcen frei.
         /// Wird von der Page beim Verlassen aufgerufen.
         /// </summary>
-        public void Dispose()
-        {
-            GeneralVM.PropertyChanged -= OnSubVmPropertyChanged;
-            OnlineVM.PropertyChanged -= OnSubVmPropertyChanged;
-            LocalVM.PropertyChanged -= OnSubVmPropertyChanged;
-            MaintenanceVM.PropertyChanged -= OnSubVmPropertyChanged;
-            LocalVM.PatternSelectionRequested -= OnLocalVmPatternSelectionRequested;
-
-            MaintenanceVM.Dispose();
-        }
+        public void Dispose() => MaintenanceVM.Dispose();
     }
 }

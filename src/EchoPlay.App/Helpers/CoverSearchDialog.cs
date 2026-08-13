@@ -41,29 +41,68 @@ namespace EchoPlay.App.Helpers
         /// </param>
         /// <param name="xamlRoot">XamlRoot für den ContentDialog – kommt von der aufrufenden Page.</param>
         /// <returns>Das ausgewählte Cover oder null bei Abbruch.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Interne TriggerSearchAsync-Wrapper-Funktion fängt alle Fehler der externen Cover-Suche (HTTP/iTunes/CoverArtArchive-Provider) ab und zeigt lediglich eine neutrale Statusmeldung, damit der Dialog offen bleibt.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt.")]
         public static async Task<CoverSearchHit?> ShowAsync(
             string initialQuery,
             Func<string, EchoPlay.LocalLibrary.Cover.CoverSearchPage, CancellationToken, Task<IReadOnlyList<CoverSearchHit>>> searchFunc,
             XamlRoot xamlRoot)
         {
-            // UI-Elemente aufbauen
             (Grid searchRow, TextBox queryBox, Button searchButton) = CreateSearchPanel(initialQuery);
+            (StackPanel statusRow, ProgressRing progressRing, TextBlock statusText) = CreateStatusRow();
 
-            // Statuszeile: ProgressRing + Text
+            // VariableSizedWrapGrid statt GridView: Ein GridView im Dialog wirft eine
+            // COM-Ausnahme, sobald sich seine Elemente ändern.
+            VariableSizedWrapGrid resultsPanel = new()
+            {
+                Orientation = Orientation.Horizontal,
+                ItemWidth = TileWidth,
+                ItemHeight = TileHeight,
+                MaximumRowsOrColumns = MaxTilesPerRow
+            };
+
+            ContentDialog dialog = BuildDialog(xamlRoot, searchRow, statusRow, resultsPanel);
+
+            // Schließt der Anwender den Dialog während einer laufenden Suche, bricht der
+            // Abruf über das Zeichen früh ab — sonst läuft er ungesehen weiter.
+            using CancellationTokenSource dialogCts = new();
+            dialog.Closing += (_, _) => dialogCts.Cancel();
+
+            CoverSearchSession session = new(
+                searchFunc, dialog, queryBox, progressRing, statusText, resultsPanel, dialogCts.Token);
+
+            searchButton.Click += async (_, _) => await session.SearchAsync();
+            dialog.Opened += async (_, _) => await session.SearchAsync();
+            queryBox.KeyDown += async (_, args) =>
+            {
+                if (args.Key == Windows.System.VirtualKey.Enter)
+                {
+                    await session.SearchAsync();
+                }
+            };
+
+            ContentDialogDragHelper.MakeDraggable(dialog);
+            ContentDialogResult dialogResult = await dialog.ShowAsync();
+
+            return dialogResult == ContentDialogResult.Primary ? session.SelectedHit : null;
+        }
+
+        /// <summary>
+        /// Baut die Statuszeile aus Fortschrittsanzeige und Text.
+        /// </summary>
+        /// <returns>Die Zeile samt der beiden Teile, die die Sitzung später beschreibt.</returns>
+        private static (StackPanel Row, ProgressRing Ring, TextBlock Text) CreateStatusRow()
+        {
             ProgressRing progressRing = new()
             {
                 Width = 18,
                 Height = 18,
                 Margin = new Thickness(0, 0, 6, 0),
-                IsActive = false,
+                IsActive = true,
                 VerticalAlignment = VerticalAlignment.Center
             };
 
             TextBlock statusText = new()
             {
-                Text = string.Empty,
+                Text = SafeResourceLoader.Get("CoverSearchSearching"),
                 VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap
             };
@@ -76,17 +115,15 @@ namespace EchoPlay.App.Helpers
             statusRow.Children.Add(progressRing);
             statusRow.Children.Add(statusText);
 
-            // Ergebnis-Kacheln – VariableSizedWrapGrid statt GridView
-            // (GridView im ContentDialog wirft COMException bei Item-Änderungen)
-            VariableSizedWrapGrid resultsPanel = new()
-            {
-                Orientation = Orientation.Horizontal,
-                ItemWidth = TileWidth,
-                ItemHeight = TileHeight,
-                MaximumRowsOrColumns = MaxTilesPerRow
-            };
+            return (statusRow, progressRing, statusText);
+        }
 
-            // Dialog zusammenbauen
+        /// <summary>
+        /// Setzt den Dialog aus Suchzeile, Statuszeile und Ergebnisraster zusammen.
+        /// </summary>
+        private static ContentDialog BuildDialog(
+            XamlRoot xamlRoot, Grid searchRow, StackPanel statusRow, VariableSizedWrapGrid resultsPanel)
+        {
             StackPanel content = new() { Spacing = 8, MinWidth = 400 };
             content.Children.Add(searchRow);
             content.Children.Add(statusRow);
@@ -97,7 +134,7 @@ namespace EchoPlay.App.Helpers
                 Margin = new Thickness(0, 4, 0, 0)
             });
 
-            ContentDialog dialog = new()
+            return new ContentDialog
             {
                 XamlRoot = xamlRoot,
                 Title = SafeResourceLoader.Get("CoverSearchDialogTitle"),
@@ -106,220 +143,6 @@ namespace EchoPlay.App.Helpers
                 CloseButtonText = SafeResourceLoader.Get("CommonCancel"),
                 IsPrimaryButtonEnabled = false
             };
-
-            // Zustand
-            List<CoverSearchHit> currentResults = [];
-            int selectedIndex = -1;
-
-            // Zustand des Nachladens. Die Adressen dienen der Dubletten-Abwehr: Anbieter ohne
-            // Versatz liefern beim Nachladen dieselben Treffer erneut, und zwei Anbieter können
-            // dasselbe Bild kennen.
-            EchoPlay.LocalLibrary.Cover.CoverSearchPage currentPage = EchoPlay.LocalLibrary.Cover.CoverSearchPage.First;
-            HashSet<string> shownUrls = new(StringComparer.OrdinalIgnoreCase);
-            Border? loadMoreTile = null;
-
-            // Schließt der Anwender den Dialog während einer laufenden Suche, bricht die
-            // Cover-Suche (HTTP-Request) über das Token früh ab – sonst läuft sie ungesehen weiter.
-            using CancellationTokenSource dialogCts = new();
-            dialog.Closing += (_, _) => dialogCts.Cancel();
-
-            string searchingText = SafeResourceLoader.Get("CoverSearchSearching");
-            progressRing.IsActive = true;
-            statusText.Text = searchingText;
-
-            // Suchfunktion
-            async Task RunSearchAsync(string query)
-            {
-                progressRing.IsActive = true;
-                statusText.Text = searchingText;
-                currentResults.Clear();
-                resultsPanel.Children.Clear();
-                selectedIndex = -1;
-                dialog.IsPrimaryButtonEnabled = false;
-                currentPage = EchoPlay.LocalLibrary.Cover.CoverSearchPage.First;
-                shownUrls.Clear();
-                loadMoreTile = null;
-
-                IReadOnlyList<CoverSearchHit> results =
-                    await searchFunc(query.Trim(), currentPage, dialogCts.Token);
-
-                progressRing.IsActive = false;
-
-                if (results.Count == 0)
-                {
-                    statusText.Text = string.Format(
-                        CultureInfo.CurrentCulture,
-                        SafeResourceLoader.Get("CoverSearchNoResultsFormat"),
-                        query.Trim());
-                    return;
-                }
-
-                int neu = AppendResults(results);
-                ShowHitCount();
-                EnsureLoadMoreTile(neu > 0);
-            }
-
-            // Hängt Treffer an und liefert, wie viele davon neu waren. Gemeinsam genutzt von
-            // der ersten Suche und vom Nachladen — sonst wäre die Kachel-Erzeugung samt
-            // Auswahl-Logik zweimal da.
-            int AppendResults(IReadOnlyList<CoverSearchHit> results)
-            {
-                int neu = 0;
-
-                foreach (CoverSearchHit r in results)
-                {
-                    if (!shownUrls.Add(r.FullUrl))
-                    {
-                        continue;
-                    }
-
-                    currentResults.Add(r);
-                    int tileIndex = currentResults.Count - 1;
-                    neu++;
-
-                    Border tileBorder = CreateCoverTile(r);
-
-                    tileBorder.PointerPressed += (_, _) =>
-                    {
-                        // Bisherige Auswahl zurücksetzen
-                        foreach (UIElement child in resultsPanel.Children)
-                        {
-                            if (child is Border b)
-                            {
-                                b.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                            }
-                        }
-
-                        tileBorder.BorderBrush = (Brush)
-                            Application.Current.Resources["AccentFillColorDefaultBrush"];
-                        selectedIndex = tileIndex;
-                        dialog.IsPrimaryButtonEnabled = true;
-                    };
-
-                    resultsPanel.Children.Add(tileBorder);
-                }
-
-                return neu;
-            }
-
-            void ShowHitCount()
-            {
-                statusText.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        currentResults.Count,
-                        "CoverSearchHitsFoundSingular",
-                        "CoverSearchHitsFoundPlural",
-                        "{0} Treffer gefunden.",
-                        "{0} Treffer gefunden."),
-                    currentResults.Count);
-            }
-
-            // Die Nachlade-Kachel steht immer als letzte im Raster. Bleibt eine Runde ohne neue
-            // Treffer, verschwindet sie — ein Knopf, der nichts mehr tut, ist schlimmer als
-            // keiner.
-            void EnsureLoadMoreTile(bool weitereMoeglich)
-            {
-                if (loadMoreTile is not null)
-                {
-                    _ = resultsPanel.Children.Remove(loadMoreTile);
-                    loadMoreTile = null;
-                }
-
-                if (!weitereMoeglich)
-                {
-                    return;
-                }
-
-                Border tile = CreateLoadMoreTile();
-                tile.PointerPressed += async (_, _) => await LoadMoreAsync();
-                loadMoreTile = tile;
-                resultsPanel.Children.Add(tile);
-            }
-
-            async Task LoadMoreAsync()
-            {
-                EnsureLoadMoreTile(weitereMoeglich: false);
-                progressRing.IsActive = true;
-                statusText.Text = searchingText;
-
-                try
-                {
-                    currentPage = currentPage.Next;
-
-                    IReadOnlyList<CoverSearchHit> weitere =
-                        await searchFunc(queryBox.Text.Trim(), currentPage, dialogCts.Token);
-
-                    int neu = AppendResults(weitere);
-                    ShowHitCount();
-
-                    if (neu == 0)
-                    {
-                        statusText.Text = SafeResourceLoader.Get(
-                            "CoverSearchNoMoreResults", "Keine weiteren Treffer.");
-                    }
-
-                    EnsureLoadMoreTile(neu > 0);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Dialog geschlossen — nichts zu tun.
-                }
-                catch (Exception)
-                {
-                    statusText.Text = SafeResourceLoader.Get("CoverSearchFailed");
-                    EnsureLoadMoreTile(weitereMoeglich: true);
-                }
-                finally
-                {
-                    progressRing.IsActive = false;
-                }
-            }
-
-            // Wrapper für Fehlerbehandlung
-            async Task TriggerSearchAsync()
-            {
-                try
-                {
-                    await RunSearchAsync(queryBox.Text);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Dialog wurde geschlossen — kein Fehlerzustand, einfach abbrechen.
-                    progressRing.IsActive = false;
-                }
-                catch (Exception)
-                {
-                    progressRing.IsActive = false;
-                    statusText.Text = SafeResourceLoader.Get("CoverSearchFailed");
-                }
-            }
-
-            // Events
-            searchButton.Click += async (_, _) => await TriggerSearchAsync();
-
-            queryBox.KeyDown += async (_, args) =>
-            {
-                if (args.Key == Windows.System.VirtualKey.Enter)
-                {
-                    await TriggerSearchAsync();
-                }
-            };
-
-            dialog.Opened += async (_, _) => await TriggerSearchAsync();
-
-            // Dialog anzeigen
-            ContentDialogDragHelper.MakeDraggable(dialog);
-            ContentDialogResult dialogResult = await dialog.ShowAsync();
-
-            if (dialogResult == ContentDialogResult.Primary
-                && selectedIndex >= 0
-                && selectedIndex < currentResults.Count)
-            {
-                return currentResults[selectedIndex];
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -360,7 +183,7 @@ namespace EchoPlay.App.Helpers
         /// keiner gepasst hat.
         /// </summary>
         /// <returns>Die Kachel, ohne Klick-Behandlung.</returns>
-        private static Border CreateLoadMoreTile()
+        internal static Border CreateLoadMoreTile()
         {
             FontIcon icon = new()
             {
@@ -401,7 +224,7 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         /// <param name="result">Das Suchergebnis mit Thumbnail-URL und Titel.</param>
         /// <returns>Ein Border-Element, das als klickbare Kachel im Ergebnis-Panel dient.</returns>
-        private static Border CreateCoverTile(CoverSearchHit result)
+        internal static Border CreateCoverTile(CoverSearchHit result)
         {
             Image coverImage = new()
             {

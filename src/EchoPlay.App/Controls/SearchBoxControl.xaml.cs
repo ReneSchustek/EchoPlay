@@ -16,6 +16,9 @@ namespace EchoPlay.App.Controls
     /// </summary>
     public sealed partial class SearchBoxControl : UserControl
     {
+        private bool _isPointerOver;
+        private bool _hasFocus;
+
         /// <summary>
         /// Initialisiert das Suchfeld.
         /// </summary>
@@ -86,6 +89,47 @@ namespace EchoPlay.App.Controls
 
         private void OnTextChanged(object sender, TextChangedEventArgs e) =>
             SearchText = InputBox.Text;
+
+        // ── Zustände des Rahmens ────────────────────────────────────────────────
+        //
+        // Die innere TextBox ist rahmenlos, damit Lupe, Eingabe und Löschen-Zeichen als ein
+        // Feld wirken. Damit verliert sie aber auch die Rückmeldung, die WinUI sonst selbst
+        // zeichnet: Zeiger darüber und — wichtiger — wo die Tastatur gerade steht. Beides
+        // holt der äußere Rahmen hier nach.
+
+        private void OnFieldPointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            _isPointerOver = true;
+            UpdateFieldState();
+        }
+
+        private void OnFieldPointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            _isPointerOver = false;
+            UpdateFieldState();
+        }
+
+        private void OnInputGotFocus(object sender, RoutedEventArgs e)
+        {
+            _hasFocus = true;
+            UpdateFieldState();
+        }
+
+        private void OnInputLostFocus(object sender, RoutedEventArgs e)
+        {
+            _hasFocus = false;
+            UpdateFieldState();
+        }
+
+        /// <summary>
+        /// Setzt den Zustand des Rahmens. Der Fokus hat Vorrang vor dem Zeiger — sonst
+        /// verschwände die Marke, sobald jemand mit der Maus daneben fährt.
+        /// </summary>
+        private void UpdateFieldState()
+        {
+            string zustand = _hasFocus ? "Focused" : _isPointerOver ? "PointerOver" : "Normal";
+            _ = VisualStateManager.GoToState(this, zustand, true);
+        }
 
         private void OnKeyDown(object sender, KeyRoutedEventArgs e)
         {

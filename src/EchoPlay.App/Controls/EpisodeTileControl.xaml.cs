@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -19,6 +20,13 @@ namespace EchoPlay.App.Controls
         public EpisodeTileControl()
         {
             InitializeComponent();
+
+            // Der Knopf oben rechts trägt nur ein Zeichen. Ohne Namen ist er für
+            // Sprachausgabe und Automation stumm; ein setzender Aufrufer überschreibt
+            // ihn über ActionTooltip.
+            AutomationProperties.SetName(
+                ActionButton,
+                Helpers.SafeResourceLoader.Get("EpisodeTileActionButton", "Weitere Aktionen"));
         }
 
         // ── Kachel-Klick ────────────────────────────────────────────────────────
@@ -179,10 +187,20 @@ namespace EchoPlay.App.Controls
             }
         }
 
-        /// <summary>Tooltip für den Aktions-Button.</summary>
+        /// <summary>
+        /// Tooltip für den Aktions-Button. Derselbe Text wird als Name für die
+        /// Bedienungshilfen gesetzt — der Knopf trägt nur ein Zeichen, ohne Namen ist er
+        /// für Sprachausgabe und Automation stumm.
+        /// </summary>
         public static readonly DependencyProperty ActionTooltipProperty =
             DependencyProperty.Register(nameof(ActionTooltip), typeof(string), typeof(EpisodeTileControl),
-                new PropertyMetadata(null, (d, e) => ToolTipService.SetToolTip(((EpisodeTileControl)d).ActionButton, (string?)e.NewValue)));
+                new PropertyMetadata(null, (d, e) => SetActionTooltip((EpisodeTileControl)d, (string?)e.NewValue)));
+
+        private static void SetActionTooltip(EpisodeTileControl control, string? tooltip)
+        {
+            ToolTipService.SetToolTip(control.ActionButton, tooltip);
+            AutomationProperties.SetName(control.ActionButton, tooltip ?? string.Empty);
+        }
 
         /// <summary>Tooltip für den Aktions-Button.</summary>
         public string? ActionTooltip

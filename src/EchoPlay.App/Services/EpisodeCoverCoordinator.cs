@@ -82,7 +82,7 @@ namespace EchoPlay.App.Services
             await _coverService.SetSeriesCoverAsync(card.SeriesId, bytes, cancellationToken: cancellationToken);
             await SaveCoverToDirectoryAsync(card.LocalFolderPath, bytes, cancellationToken);
 
-            card.CoverImage = await CoverService.ConvertToBitmapAsync(bytes, cancellationToken);
+            card.CoverImage = await CoverService.ConvertToBitmapAsync(bytes, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -100,7 +100,7 @@ namespace EchoPlay.App.Services
             await _coverService.SetEpisodeCoverAsync(card.EpisodeId, bytes, cancellationToken: cancellationToken);
             await SaveCoverToDirectoryAsync(card.FolderPath, bytes, cancellationToken);
 
-            card.CoverImage = await CoverService.ConvertToBitmapAsync(bytes, cancellationToken);
+            card.CoverImage = await CoverService.ConvertToBitmapAsync(bytes, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc/>

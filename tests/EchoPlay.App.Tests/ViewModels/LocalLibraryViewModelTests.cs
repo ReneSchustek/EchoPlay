@@ -6,6 +6,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
+using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
@@ -33,9 +34,11 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService? settingsService = null,
             FakeSyncService? syncService = null,
             FakePlayerService? playerService = null,
-            FakeCoverSearchService? coverSearchService = null)
+            FakeCoverSearchService? coverSearchService = null,
+            FakeTrackTitleResolver? titleResolver = null)
         {
             ServiceCollection services = new();
+            _ = services.AddScoped<ITrackTitleResolver>(_ => titleResolver ?? new FakeTrackTitleResolver());
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<ILocalTrackDataService>(_ => trackService ?? new FakeLocalTrackDataService());
@@ -100,11 +103,11 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
             // Nur TKKG hat einen lokalen Ordner – Bibi bleibt unsichtbar
-            _ = Assert.Single(vm.Artists);
-            Assert.Equal("TKKG", vm.Artists[0].Title);
+            _ = Assert.Single(vm.ArtistsVM.Artists);
+            Assert.Equal("TKKG", vm.ArtistsVM.Artists[0].Title);
         }
 
         [Fact]
@@ -140,13 +143,13 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
-            await vm.SelectArtistAsync(vm.Artists[0]);
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
 
             // Nur Folge 1 hat einen lokalen Ordner
-            _ = Assert.Single(vm.Episodes);
-            Assert.Equal("001 \u2013 Folge 1", vm.Episodes[0].DisplayTitle);
+            _ = Assert.Single(vm.EpisodesVM.Episodes);
+            Assert.Equal("001 \u2013 Folge 1", vm.EpisodesVM.Episodes[0].DisplayTitle);
         }
 
         [Fact]
@@ -186,14 +189,66 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeLocalTrackDataService trackService = new(existingTracks);
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService, trackService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
-            await vm.SelectArtistAsync(vm.Artists[0]);
-            await vm.SelectEpisodeAsync(vm.Episodes[0]);
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+            await vm.Actions.SelectEpisodeAsync(vm.EpisodesVM.Episodes[0]);
 
-            Assert.Equal(2, vm.Tracks.Count);
-            Assert.Equal(1, vm.Tracks[0].TrackNumber);
-            Assert.Equal(2, vm.Tracks[1].TrackNumber);
+            Assert.Equal(2, vm.TracksVM.Tracks.Count);
+            Assert.Equal(1, vm.TracksVM.Tracks[0].TrackNumber);
+            Assert.Equal(2, vm.TracksVM.Tracks[1].TrackNumber);
+        }
+
+        [Fact]
+        public async Task SelectEpisodeAsync_TracksAreTagged_ShowsTitleFromTheFile()
+        {
+            // Gepflegte Kennzeichnung: In der Liste steht der Titel, nicht der Dateiname.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Sherlock Holmes",
+                LocalFolderPath = @"C:\Hörspiele\Sherlock"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            await episodeService.AddAsync(new Episode
+            {
+                Title = "Das leere Haus",
+                SeriesId = seriesService.All[0].Id,
+                EpisodeNumber = 1,
+                LocalFolderPath = @"C:\Hörspiele\Sherlock\001",
+                LocalTrackCount = 2
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            const string ersterTeil = @"C:\Hörspiele\Sherlock\001\01 - Das leere Haus (Teil 1).mp3";
+            const string zweiterTeil = @"C:\Hörspiele\Sherlock\001\02 - Das leere Haus (Teil 2).mp3";
+
+            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
+            {
+                [episodeService.All[0].Id] =
+                [
+                    new LocalTrack { FilePath = ersterTeil, TrackNumber = 1, Duration = TimeSpan.FromMinutes(4) },
+                    new LocalTrack { FilePath = zweiterTeil, TrackNumber = 2, Duration = TimeSpan.FromMinutes(4) }
+                ]
+            });
+
+            FakeTrackTitleResolver titleResolver = new();
+            titleResolver.TitlesByPath[ersterTeil] = "Das leere Haus (Teil 1)";
+            // Zweiter Teil ohne Titel in der Datei – dort greift die Rückfallebene.
+
+            LocalLibraryViewModel vm = BuildViewModel(
+                seriesService,
+                episodeService,
+                trackService,
+                titleResolver: titleResolver);
+
+            await vm.Actions.LoadAsync();
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+            await vm.Actions.SelectEpisodeAsync(vm.EpisodesVM.Episodes[0]);
+
+            Assert.Equal("Das leere Haus (Teil 1)", vm.TracksVM.Tracks[0].Title);
+            Assert.Equal("Das leere Haus (Teil 2)", vm.TracksVM.Tracks[1].Title);
         }
 
         [Fact]
@@ -211,7 +266,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService, syncService: syncService);
 
-            vm.ScanCommand.Execute(null);
+            vm.ScanVM.ScanCommand.Execute(null);
 
             // Fire-and-forget: mit Task.FromResult-Fakes synchron ausgeführt
             Assert.Equal(1, syncService.SyncCallCount);
@@ -231,11 +286,11 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
-            Assert.Equal(Visibility.Collapsed, vm.EpisodesAccordionVisibility);
-            Assert.Equal(Visibility.Collapsed, vm.TracksAccordionVisibility);
-            Assert.Equal(-1, vm.SelectedArtistIndex);
+            Assert.Equal(Visibility.Collapsed, vm.ArtistsVM.EpisodesAccordionVisibility);
+            Assert.Equal(Visibility.Collapsed, vm.TracksVM.TracksAccordionVisibility);
+            Assert.Equal(-1, vm.ArtistsVM.SelectedArtistIndex);
         }
 
         [Fact]
@@ -252,12 +307,12 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
-            await vm.SelectArtistAsync(vm.Artists[0]);
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
 
-            Assert.Equal(Visibility.Visible, vm.EpisodesAccordionVisibility);
-            Assert.Equal(0, vm.SelectedArtistIndex);
+            Assert.Equal(Visibility.Visible, vm.ArtistsVM.EpisodesAccordionVisibility);
+            Assert.Equal(0, vm.ArtistsVM.SelectedArtistIndex);
         }
 
         [Fact]
@@ -286,19 +341,19 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
-            await vm.SelectArtistAsync(vm.Artists[0]);
-            Assert.Equal(0, vm.SelectedArtistIndex);
-            Assert.True(vm.Artists[0].IsSelectedInAccordion);
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+            Assert.Equal(0, vm.ArtistsVM.SelectedArtistIndex);
+            Assert.True(vm.ArtistsVM.Artists[0].IsSelectedInAccordion);
 
             // Re-Klick auf dieselbe Kachel → Toggle: Auswahl wird aufgehoben.
-            await vm.SelectArtistAsync(vm.Artists[0]);
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
 
-            Assert.Equal(-1, vm.SelectedArtistIndex);
-            Assert.False(vm.Artists[0].IsSelectedInAccordion);
-            Assert.Equal(Visibility.Collapsed, vm.EpisodesAccordionVisibility);
-            Assert.Empty(vm.Episodes);
+            Assert.Equal(-1, vm.ArtistsVM.SelectedArtistIndex);
+            Assert.False(vm.ArtistsVM.Artists[0].IsSelectedInAccordion);
+            Assert.Equal(Visibility.Collapsed, vm.ArtistsVM.EpisodesAccordionVisibility);
+            Assert.Empty(vm.EpisodesVM.Episodes);
         }
 
         [Fact]
@@ -326,12 +381,12 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
-            await vm.SelectArtistAsync(vm.Artists[0]);
-            await vm.SelectEpisodeAsync(vm.Episodes[0]);
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+            await vm.Actions.SelectEpisodeAsync(vm.EpisodesVM.Episodes[0]);
 
-            Assert.Equal(Visibility.Visible, vm.TracksAccordionVisibility);
+            Assert.Equal(Visibility.Visible, vm.TracksVM.TracksAccordionVisibility);
         }
 
         // ── PlayEpisodeCommand ───────────────────────────────────────────────────
@@ -377,15 +432,112 @@ namespace EchoPlay.App.Tests.ViewModels
             LocalLibraryViewModel vm = BuildViewModel(
                 seriesService, episodeService, trackService, playerService: playerService);
 
-            await vm.LoadAsync();
-            await vm.SelectArtistAsync(vm.Artists[0]);
-            await vm.SelectEpisodeAsync(vm.Episodes[0]);
+            await vm.Actions.LoadAsync();
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+            await vm.Actions.SelectEpisodeAsync(vm.EpisodesVM.Episodes[0]);
 
-            vm.PlayEpisodeCommand.Execute(null);
+            vm.TracksVM.PlayEpisodeCommand.Execute(null);
+            await vm.TracksVM.PendingPlayback;
 
             _ = Assert.Single(playerService.PlayCalls);
             Assert.Equal(2, playerService.PlayCalls[0].TrackPaths.Count);
             // Track 1 (a.mp3) muss vor Track 2 (b.mp3) übergeben werden
+            Assert.Equal(@"C:\TKKG\001_a.mp3", playerService.PlayCalls[0].TrackPaths[0]);
+            Assert.Equal(@"C:\TKKG\001_b.mp3", playerService.PlayCalls[0].TrackPaths[1]);
+        }
+
+        [Fact]
+        public async Task SelectEpisodeAsync_MakesTheTrackPanelVisible()
+        {
+            // Der Name der Pass-Through-Eigenschaft muss dem des Sub-VMs entsprechen: Die
+            // Weiterleitung reicht den Namen unverändert durch. Wich er ab, blieb das Panel
+            // unsichtbar, obwohl die Spuren geladen waren.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            await episodeService.AddAsync(new Episode
+            {
+                Title = "Folge 1",
+                SeriesId = seriesService.All[0].Id,
+                EpisodeNumber = 1,
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
+                LocalTrackCount = 1
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
+            {
+                [episodeService.All[0].Id] =
+                [
+                    new LocalTrack { FilePath = @"C:\TKKG\001_a.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(12) }
+                ]
+            });
+
+            LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService, trackService);
+            await vm.Actions.LoadAsync();
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+
+            List<string> geaenderteEigenschaften = [];
+            vm.TracksVM.PropertyChanged += (_, e) => geaenderteEigenschaften.Add(e.PropertyName ?? string.Empty);
+
+            await vm.Actions.SelectEpisodeAsync(vm.EpisodesVM.Episodes[0]);
+
+            Assert.Equal(Visibility.Visible, vm.TracksVM.TracksAccordionVisibility);
+            Assert.Equal(Visibility.Visible, vm.TracksVM.TrackActionsVisibility);
+
+            // Ohne diese Meldungen erfährt die Bindung nichts von der Änderung.
+            Assert.Contains(nameof(LocalTracksViewModel.TracksAccordionVisibility), geaenderteEigenschaften);
+            Assert.Contains(nameof(LocalTracksViewModel.TrackActionsVisibility), geaenderteEigenschaften);
+        }
+
+        [Fact]
+        public async Task PlayEpisodeAsync_StartsTheEpisode_WithoutItsTracksBeingShown()
+        {
+            // Der Doppelklick startet über die Folgen-Id, nicht über die angezeigte Liste –
+            // sonst liefe er ins Leere, solange die Spurenliste rechts noch lädt.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                LocalFolderPath = @"C:\Hörspiele\TKKG"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            await episodeService.AddAsync(new Episode
+            {
+                Title = "Folge 1",
+                SeriesId = seriesService.All[0].Id,
+                EpisodeNumber = 1,
+                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
+                LocalTrackCount = 2
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
+            {
+                [episodeService.All[0].Id] =
+                [
+                    new LocalTrack { FilePath = @"C:\TKKG\001_b.mp3", TrackNumber = 2, Duration = TimeSpan.FromMinutes(10) },
+                    new LocalTrack { FilePath = @"C:\TKKG\001_a.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(12) }
+                ]
+            });
+
+            FakePlayerService playerService = new();
+            LocalLibraryViewModel vm = BuildViewModel(
+                seriesService, episodeService, trackService, playerService: playerService);
+
+            await vm.Actions.LoadAsync();
+            await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
+
+            // Bewusst ohne SelectEpisodeAsync: Es ist keine Folge ausgewählt, keine Liste geladen.
+            await vm.TracksVM.PlayEpisodeAsync(vm.EpisodesVM.Episodes[0], TestContext.Current.CancellationToken);
+
+            _ = Assert.Single(playerService.PlayCalls);
             Assert.Equal(@"C:\TKKG\001_a.mp3", playerService.PlayCalls[0].TrackPaths[0]);
             Assert.Equal(@"C:\TKKG\001_b.mp3", playerService.PlayCalls[0].TrackPaths[1]);
         }
@@ -405,10 +557,10 @@ namespace EchoPlay.App.Tests.ViewModels
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
             // Noch keine Folge ausgewählt → keine Tracks → Befehl inaktiv
-            Assert.False(vm.PlayEpisodeCommand.CanExecute(null));
+            Assert.False(vm.TracksVM.PlayEpisodeCommand.CanExecute(null));
         }
 
         // ── Fehlende Folgen ──────────────────────────────────────────────────────
@@ -432,12 +584,12 @@ namespace EchoPlay.App.Tests.ViewModels
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
 
             // Serie muss erst geladen werden, damit die Karten vorhanden sind
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
             IReadOnlyList<string>? received = null;
-            vm.MissingEpisodesResolved += titles => received = titles;
+            vm.Actions.MissingEpisodesResolved += titles => received = titles;
 
-            await vm.ShowMissingEpisodesAsync(tkkg);
+            await vm.Actions.ShowMissingEpisodesAsync(tkkg);
 
             Assert.NotNull(received);
             _ = Assert.Single(received!);
@@ -460,12 +612,12 @@ namespace EchoPlay.App.Tests.ViewModels
             Guid tkkg = seriesService.All[0].Id;
 
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
-            await vm.LoadAsync();
+            await vm.Actions.LoadAsync();
 
             IReadOnlyList<string>? received = null;
-            vm.MissingEpisodesResolved += titles => received = titles;
+            vm.Actions.MissingEpisodesResolved += titles => received = titles;
 
-            await vm.ShowMissingEpisodesAsync(tkkg);
+            await vm.Actions.ShowMissingEpisodesAsync(tkkg);
 
             Assert.NotNull(received);
             _ = Assert.Single(received!);

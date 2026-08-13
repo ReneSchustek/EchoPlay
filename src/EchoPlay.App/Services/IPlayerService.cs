@@ -30,6 +30,20 @@ namespace EchoPlay.App.Services
         /// </summary>
         string? CurrentTrackTitle { get; }
 
+        /// <summary>
+        /// Dateipfad des aktuell laufenden Tracks. Null, wenn nichts spielt.
+        /// Über ihn findet eine angezeigte Wiedergabeliste ihre laufende Zeile — der
+        /// Anzeigename taugt dafür nicht, weil er aus der Kennzeichnung stammen kann.
+        /// </summary>
+        string? CurrentTrackPath { get; }
+
+        /// <summary>
+        /// Dateipfade der laufenden Wiedergabeliste, in Reihenfolge. Leer, wenn nichts spielt.
+        /// Damit kann eine Seite die laufende Wiedergabe anzeigen, die sie nicht selbst
+        /// gestartet hat — sonst bliebe sie leer, obwohl unten der Abspieler läuft.
+        /// </summary>
+        IReadOnlyList<string> CurrentTrackPaths { get; }
+
         /// <summary>Aktuelle Abspielposition.</summary>
         TimeSpan Position { get; }
 
@@ -37,10 +51,34 @@ namespace EchoPlay.App.Services
         TimeSpan Duration { get; }
 
         /// <summary>
+        /// Die Stelle in der ganzen Folge, über alle Spuren gerechnet. Ohne bekannte
+        /// Spurdauern gleich <see cref="Position"/>.
+        /// </summary>
+        TimeSpan OverallPosition { get; }
+
+        /// <summary>
+        /// Die Gesamtdauer der Folge über alle Spuren; <see cref="TimeSpan.Zero"/>, wenn
+        /// die Spurdauern nicht bekannt sind.
+        /// </summary>
+        TimeSpan OverallDuration { get; }
+
+        /// <summary>
         /// Wiedergabegeschwindigkeit. 1.0 entspricht normaler Geschwindigkeit.
         /// Gültige Werte: 0.25 bis 4.0 (Plattformlimit des MediaPlayer).
         /// </summary>
         double PlaybackRate { get; set; }
+
+        /// <summary>
+        /// Lautstärke der Wiedergabe, von 0,0 (still) bis 1,0 (voll). Werte außerhalb
+        /// werden auf den Bereich gezogen.
+        /// </summary>
+        double Volume { get; set; }
+
+        /// <summary>
+        /// Ob die Wiedergabe stummgeschaltet ist. Die eingestellte Lautstärke bleibt dabei
+        /// erhalten und gilt wieder, sobald die Stummschaltung endet.
+        /// </summary>
+        bool IsMuted { get; set; }
 
         /// <summary>
         /// Verbleibende Zeit des Einschlaf-Timers.
@@ -54,8 +92,22 @@ namespace EchoPlay.App.Services
         /// <param name="episodeId">ID der Episode – für PlaybackState-Persistenz.</param>
         /// <param name="trackPaths">Absolute Dateipfade der Audiotracks, in Reihenfolge.</param>
         /// <param name="startIndex">Index des ersten Tracks (0-basiert).</param>
-        /// <param name="resumePosition">Position, ab der fortgesetzt werden soll.</param>
-        void Play(Guid episodeId, IReadOnlyList<string> trackPaths, int startIndex = 0, TimeSpan resumePosition = default);
+        /// <param name="resumePosition">
+        /// Stelle, ab der fortgesetzt wird. Sind Spurdauern angegeben, gilt sie für die
+        /// ganze Folge und bestimmt damit auch die Spur; sonst für die Spur
+        /// <paramref name="startIndex"/>.
+        /// </param>
+        /// <param name="trackDurations">
+        /// Die Dauern der Spuren in derselben Reihenfolge wie <paramref name="trackPaths"/>.
+        /// Ohne sie kennt der Dienst nur die laufende Spur — die Folge bleibt dann ohne
+        /// Gesamtfortschritt.
+        /// </param>
+        void Play(
+            Guid episodeId,
+            IReadOnlyList<string> trackPaths,
+            int startIndex = 0,
+            TimeSpan resumePosition = default,
+            IReadOnlyList<TimeSpan>? trackDurations = null);
 
         /// <summary>Pausiert die Wiedergabe.</summary>
         void Pause();

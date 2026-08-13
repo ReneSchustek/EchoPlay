@@ -127,6 +127,7 @@
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
             BorderThickness="0,1,0,0"
+            Tapped="OnMiniPlayerTapped"
             Visibility="{x:Bind MiniPlayer.MiniPlayerVisibility, Mode=OneWay}">
 
             <Grid.ColumnDefinitions>
@@ -143,11 +144,15 @@
                 Style="{ThemeResource BodyStrongTextBlockStyle}"
                 VerticalAlignment="Center"/>
 
-            <!-- Steuerbuttons, Geschwindigkeit und Sleep-Timer -->
+            <!-- Steuerbuttons, Geschwindigkeit, Lautstärke und Sleep-Timer.
+                 Der rechte Rand hält den Abstand zum Wiedergabe-Balken: Ohne ihn stoßen
+                 die beiden Spalten unmittelbar aneinander, und der letzte Knopf klebt am
+                 Regler. -->
             <StackPanel
                 Grid.Column="1"
                 Orientation="Horizontal"
                 Spacing="8"
+                Margin="16,0,24,0"
                 VerticalAlignment="Center">
                 <Button
                     x:Uid="MiniPlayerPreviousButton"
@@ -175,6 +180,32 @@
                     <ComboBoxItem Tag="1.5" Content="1.5×"/>
                     <ComboBoxItem Tag="2.0" Content="2×"/>
                 </ComboBox>
+                <!-- Lautstärke hinter einem Knopf: In der Kopfzeile ist kein Platz für
+                     einen zweiten Regler neben dem Wiedergabe-Balken. -->
+                <Button x:Uid="MiniPlayerVolumeButton">
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Width="220">
+                                <Button
+                                    x:Uid="MiniPlayerMuteButton"
+                                    Content="{x:Bind MiniPlayer.Volume.VolumeGlyph, Mode=OneWay}"
+                                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                    Command="{x:Bind MiniPlayer.Volume.ToggleMuteCommand}"
+                                    Width="40" Height="40"/>
+                                <Slider
+                                    x:Uid="MiniPlayerVolumeSlider"
+                                    Minimum="0"
+                                    Maximum="100"
+                                    Width="150"
+                                    VerticalAlignment="Center"
+                                    Value="{x:Bind MiniPlayer.Volume.VolumePercent, Mode=TwoWay}"
+                                    PointerCaptureLost="OnVolumeSliderReleased"
+                                    LostFocus="OnVolumeSliderLostFocus"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                    <FontIcon Glyph="{x:Bind MiniPlayer.Volume.VolumeGlyph, Mode=OneWay}" FontSize="14"/>
+                </Button>
                 <Button x:Uid="MiniPlayerSleepTimerButton">
                     <Button.Flyout>
                         <MenuFlyout>
@@ -216,6 +247,32 @@
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         HorizontalAlignment="Right"/>
                 </Grid>
+                <!-- Fortschritt der ganzen Folge. Der Regler darüber führt nur die laufende
+                     Datei; bei mehreren Dateien fehlt sonst die Antwort darauf, wie weit
+                     das Hörspiel ist. -->
+                <Grid
+                    Margin="12,4,12,0"
+                    ColumnSpacing="8"
+                    Visibility="{x:Bind MiniPlayer.EpisodeProgressVisibility, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        Text="{x:Bind MiniPlayer.EpisodeProgressText, Mode=OneWay}"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        VerticalAlignment="Center"/>
+                    <ProgressBar
+                        x:Uid="MiniPlayerEpisodeProgress"
+                        Grid.Column="1"
+                        Height="2"
+                        VerticalAlignment="Center"
+                        Value="{x:Bind MiniPlayer.EpisodeProgressPercent, Mode=OneWay}"
+                        Maximum="100"
+                        IsIndeterminate="False"/>
+                </Grid>
             </StackPanel>
 
             <!-- Schließen-Button: oben rechts im MiniPlayer, wie ein klassischer Fenster-Schließen-Button.
@@ -244,10 +301,10 @@
             Grid.Row="2"
             Height="3"
             Maximum="100"
-            IsIndeterminate="{x:Bind StatusBar.IsScanIndeterminate, Mode=OneWay}"
-            Value="{x:Bind StatusBar.ScanProgressValue, Mode=OneWay}"
+            IsIndeterminate="{x:Bind StatusBar.ScanProgress.IsIndeterminate, Mode=OneWay}"
+            Value="{x:Bind StatusBar.ScanProgress.Value, Mode=OneWay}"
             HorizontalAlignment="Stretch"
-            Visibility="{x:Bind StatusBar.ScanProgressVisibility, Mode=OneWay}"/>
+            Visibility="{x:Bind StatusBar.ScanProgress.Visibility, Mode=OneWay}"/>
 
         <!-- Info-Leiste: Statistiken, Theme-Flyout, Sprachwechsel-Flyout -->
         <Grid
@@ -381,13 +438,13 @@
             <!-- Mittlere Gruppe: Scan-Fortschrittstext – nur sichtbar während ein Scan läuft -->
             <TextBlock
                 Grid.Column="1"
-                Text="{x:Bind StatusBar.ScanProgressText, Mode=OneWay}"
+                Text="{x:Bind StatusBar.ScanProgress.Text, Mode=OneWay}"
                 Style="{ThemeResource CaptionTextBlockStyle}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 TextTrimming="CharacterEllipsis"
                 MaxWidth="300"
-                Visibility="{x:Bind StatusBar.ScanProgressVisibility, Mode=OneWay}"/>
+                Visibility="{x:Bind StatusBar.ScanProgress.Visibility, Mode=OneWay}"/>
 
             <!-- Rechte Gruppe: Aktiver Dienst + Sprachwechsel-Button -->
             <StackPanel

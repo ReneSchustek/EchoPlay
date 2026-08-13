@@ -26,6 +26,9 @@ namespace EchoPlay.App.ViewModels
         // Bricht laufende Cover-Downloads ab, wenn eine andere Serie gewählt wird.
         private CancellationTokenSource? _episodeCoverCts;
 
+        // Nur für die Laufzeitmessung der drei Schritte bis zur fertigen Liste.
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
+
         /// <summary>Public Call-Counter für Tests.</summary>
         public int SelectSeriesCallCount { get; private set; }
 
@@ -42,6 +45,13 @@ namespace EchoPlay.App.ViewModels
             _seriesVM = seriesVM;
             _episodesVM = episodesVM;
             _state = state;
+
+            // Der Protokollkanal wird einmalig beim Aufbau geholt, weil die Kontextklasse
+            // keinen führt und der Bereich hier sofort wieder geschlossen wird.
+            using IServiceScope loggerScope = context.ScopeFactory.CreateScope();
+            _logger = loggerScope.ServiceProvider
+                .GetService<EchoPlay.Logger.Abstractions.ILoggerFactory>()
+                ?.CreateLogger("OnlineEpisodePipeline");
         }
 
         /// <summary>
@@ -84,11 +94,18 @@ namespace EchoPlay.App.ViewModels
             _seriesVM.SelectSeries(card);
             _episodesVM.IsLoadingEpisodes = true;
 
+            // Die drei Schritte bis zur Liste werden einzeln gemessen. Ohne diese Zahlen ist
+            // an einer trägen Serienansicht nicht zu erkennen, welcher davon sie träge macht.
+            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
             // Lokale Cover in CoverImages sicherstellen – liest cover.jpg / ID3-Tags aus dem Dateisystem
             if (_ctx.BackgroundCoverService is not null)
             {
                 _ = await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
             }
+
+            long ensureMs = stopwatch.ElapsedMilliseconds;
+            stopwatch.Restart();
 
             // Cover aus lokalen Episoden auf Online-Episoden kopieren (reine SQL-Operation, ms)
             using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
@@ -96,26 +113,23 @@ namespace EchoPlay.App.ViewModels
             ICoverCopyService coverCopy = scope.ServiceProvider.GetRequiredService<ICoverCopyService>();
             _ = await coverCopy.CopyFromMatchingEpisodesAsync(card.Id);
 
+            long copyMs = stopwatch.ElapsedMilliseconds;
+            stopwatch.Restart();
+
             // Episoden aus DB laden – Cover sind jetzt schon gesetzt
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(card.Id);
 
-            // Cover-Binärdaten per Batch laden – ein Query statt N Einzelzugriffe
-            List<Guid> episodeIds = new(episodes.Count);
-            foreach (Episode episode in episodes)
-            {
-                episodeIds.Add(episode.Id);
-            }
-
-            IReadOnlyDictionary<Guid, byte[]> coverMap = _ctx.CoverService is not null
-                ? await _ctx.CoverService.GetEpisodeCoverBytesAsync(episodeIds)
-                : new Dictionary<Guid, byte[]>();
+            long episodesMs = stopwatch.ElapsedMilliseconds;
+            _logger?.Info(
+                "Serienansicht \"{Title}\": LokaleCover={EnsureMs} ms, CoverKopie={CopyMs} ms, Folgen={EpisodesMs} ms ({Count} Folgen)",
+                card.Title, ensureMs, copyMs, episodesMs, episodes.Count);
 
             List<OnlineEpisodeCardViewModel> episodeCards = new(episodes.Count);
 
             foreach (Episode episode in episodes)
             {
-                OnlineEpisodeCardViewModel episodeCard = new(
+                episodeCards.Add(new OnlineEpisodeCardViewModel(
                     episodeId: episode.Id,
                     episodeNumber: episode.EpisodeNumber,
                     title: episode.Title,
@@ -124,22 +138,30 @@ namespace EchoPlay.App.ViewModels
                     providerUrl: episode.ProviderUrl,
                     scopeFactory: _ctx.ScopeFactory,
                     appleMusicAlbumId: episode.AppleMusicAlbumId,
-                    spotifyAlbumId: episode.SpotifyAlbumId);
-
-                if (coverMap.TryGetValue(episode.Id, out byte[]? coverData))
-                {
-                    BitmapImage? coverImage = await CoverService.ConvertToBitmapAsync(coverData);
-                    if (coverImage is not null)
-                    {
-                        episodeCard.CoverImage = coverImage;
-                    }
-                }
-
-                episodeCards.Add(episodeCard);
+                    spotifyAlbumId: episode.SpotifyAlbumId));
             }
 
+            // Nur die oberste Reihe bekommt ihr Bild sofort. Vorher alle zu holen hieße bei
+            // „Bibi Blocksberg" (399 Folgen, rund 40 MB Bilddaten), dass die Liste erst nach
+            // knapp zwanzig Sekunden überhaupt erscheint — gemessen, nicht geschätzt.
+            stopwatch.Restart();
+            await ApplyCoversAsync(episodeCards, episodes, 0, FirstVisibleCovers, ct);
+            long firstCoversMs = stopwatch.ElapsedMilliseconds;
+
+            stopwatch.Restart();
             _episodesVM.SetEpisodes(episodeCards);
             _episodesVM.IsLoadingEpisodes = false;
+            long setMs = stopwatch.ElapsedMilliseconds;
+
+            _logger?.Info(
+                "Serienansicht \"{Title}\": ErsteCover={FirstCoversMs} ms, Liste setzen={SetMs} ms",
+                card.Title, firstCoversMs, setMs);
+
+            // Der Rest folgt in Chargen, während die Liste schon steht und bedienbar ist.
+            if (episodeCards.Count > FirstVisibleCovers)
+            {
+                _ = ApplyRemainingCoversAsync(episodeCards, episodes, ct);
+            }
 
             // Fehlende Cover im Hintergrund nachladen – UI zeigt erst Platzhalter,
             // Cover erscheinen progressiv sobald der Download fertig ist.
@@ -156,6 +178,122 @@ namespace EchoPlay.App.ViewModels
             if (hasMissingCovers && _ctx.CoverCacheService is not null)
             {
                 _ = RefreshMissingEpisodeCoversAsync(card.Id, episodeCards, ct);
+            }
+        }
+
+        /// <summary>
+        /// Wie viele Cover vor dem ersten Zeichnen umgewandelt werden. Das deckt den
+        /// sichtbaren Bereich ab; alles Weitere kommt nach, während die Liste schon steht.
+        /// </summary>
+        private const int FirstVisibleCovers = 24;
+
+        /// <summary>
+        /// Größe einer Nachlade-Charge. Zwischen zwei Chargen kommt die Oberfläche wieder zum
+        /// Zeichnen — ohne diese Pause bliebe sie bis zum letzten Bild stehen.
+        /// </summary>
+        private const int CoverBatchSize = 40;
+
+        /// <summary>
+        /// Wartezeit, bevor das Nachtragen beginnt. Sie gehört der Liste: Erst wenn sie
+        /// gezeichnet ist, darf um denselben Faden gerungen werden.
+        /// </summary>
+        private static readonly TimeSpan FirstDrawPause = TimeSpan.FromMilliseconds(400);
+
+        /// <summary>Pause zwischen zwei Chargen, damit die Oberfläche zum Zeichnen kommt.</summary>
+        private static readonly TimeSpan CoverBatchPause = TimeSpan.FromMilliseconds(30);
+
+        /// <summary>
+        /// Zielbreite der Kachelbilder. Die Kachel ist 120 Punkte breit; das Doppelte hält sie
+        /// auch auf einem hoch aufgelösten Bildschirm scharf und dekodiert trotzdem nur einen
+        /// Bruchteil der 600 Punkte, die in der Datenbank liegen.
+        /// </summary>
+        private const int TileDecodeWidth = 240;
+
+        /// <summary>
+        /// Wandelt die Bilddaten einer Spanne in Bildobjekte um und setzt sie auf die Kacheln.
+        /// </summary>
+        /// <param name="cards">Die Kacheln in derselben Reihenfolge wie die Folgen.</param>
+        /// <param name="episodes">Die Folgen, aus denen die Kennungen kommen.</param>
+        /// <param name="start">Erster Eintrag der Spanne.</param>
+        /// <param name="count">Wie viele Einträge höchstens.</param>
+        /// <param name="ct">Endet, sobald eine andere Serie gewählt wird.</param>
+        private async Task ApplyCoversAsync(
+            List<OnlineEpisodeCardViewModel> cards,
+            IReadOnlyList<Episode> episodes,
+            int start,
+            int count,
+            CancellationToken ct)
+        {
+            if (_ctx.CoverService is null) return;
+
+            int ende = Math.Min(start + count, cards.Count);
+            if (ende <= start) return;
+
+            // Die Bilddaten dieser Spanne in einem Zug — ein Abruf je Charge statt einem für
+            // den ganzen Bestand.
+            List<Guid> episodeIds = new(ende - start);
+            for (int i = start; i < ende; i++)
+            {
+                episodeIds.Add(episodes[i].Id);
+            }
+
+            IReadOnlyDictionary<Guid, byte[]> coverMap =
+                await _ctx.CoverService.GetEpisodeCoverBytesAsync(episodeIds, ct);
+
+            for (int i = start; i < ende; i++)
+            {
+                if (ct.IsCancellationRequested) return;
+
+                if (!coverMap.TryGetValue(episodes[i].Id, out byte[]? coverData)) continue;
+
+                BitmapImage? coverImage = await CoverService.ConvertToBitmapAsync(
+                    coverData, TileDecodeWidth, ct);
+                if (coverImage is not null)
+                {
+                    cards[i].CoverImage = coverImage;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Trägt die übrigen Cover chargenweise nach, nachdem die Liste bereits steht.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Nachtragen der übrigen Cover: Fehler beim Umwandeln einzelner Bilder dürfen die Liste nicht stören; die betroffene Kachel behält ihren Platzhalter.")]
+        private async Task ApplyRemainingCoversAsync(
+            List<OnlineEpisodeCardViewModel> cards,
+            IReadOnlyList<Episode> episodes,
+            CancellationToken ct)
+        {
+            try
+            {
+                // Der Liste den Vortritt lassen: Erst wenn sie gezeichnet ist, beginnt das
+                // Nachtragen. Ohne diese Pause kämpfen beide um denselben Faden, und die
+                // Kacheln erscheinen später als ohne jedes Nachladen.
+                await Task.Delay(FirstDrawPause, ct);
+
+                System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                for (int offset = FirstVisibleCovers; offset < cards.Count; offset += CoverBatchSize)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    await ApplyCoversAsync(cards, episodes, offset, CoverBatchSize, ct);
+
+                    // Die Oberfläche kommt zwischen zwei Chargen wieder zum Zeichnen.
+                    await Task.Delay(CoverBatchPause, ct);
+                }
+
+                _logger?.Info(
+                    "Serienansicht: {Count} übrige Cover in {ElapsedMs} ms nachgetragen.",
+                    cards.Count - FirstVisibleCovers, stopwatch.ElapsedMilliseconds);
+            }
+            catch (OperationCanceledException)
+            {
+                // Serienwechsel — erwarteter Abbruch.
+            }
+            catch (Exception)
+            {
+                // Cover sind Beiwerk; die Liste bleibt bedienbar.
             }
         }
 

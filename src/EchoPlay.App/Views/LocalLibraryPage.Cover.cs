@@ -27,7 +27,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            LocalArtistCardViewModel? card = ViewModel.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
+            LocalArtistCardViewModel? card = ViewModel.ArtistsVM.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
 
             if (card is null)
             {
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Views
 
                 if (bytes is not null)
                 {
-                    await ViewModel.ApplySeriesCoverFromBytesAsync(card, bytes);
+                    await ViewModel.Actions.ApplySeriesCoverFromBytesAsync(card, bytes);
                 }
             });
         }
@@ -57,7 +57,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            LocalArtistCardViewModel? card = ViewModel.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
+            LocalArtistCardViewModel? card = ViewModel.ArtistsVM.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
 
             if (card is null)
             {
@@ -67,17 +67,17 @@ namespace EchoPlay.App.Views
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
                 // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
-                using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
+                using IDisposable? onlineScope = await ViewModel.Actions.RequestOnlineAccessForCoverSearchAsync();
                 if (onlineScope is null) return;
 
                 CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                     card.Title,
-                    (query, page, ct) => ViewModel.SearchCoversAsync(query, page, ct),
+                    (query, page, ct) => ViewModel.Actions.SearchCoversAsync(query, page, ct),
                     Content.XamlRoot);
 
                 if (selected is not null)
                 {
-                    await ViewModel.ApplySelectedSeriesCoverAsync(card, selected);
+                    await ViewModel.Actions.ApplySelectedSeriesCoverAsync(card, selected);
                 }
             });
         }
@@ -92,7 +92,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            LocalEpisodeCardViewModel? card = ViewModel.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId);
+            LocalEpisodeCardViewModel? card = ViewModel.EpisodesVM.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId);
 
             if (card is null)
             {
@@ -105,7 +105,7 @@ namespace EchoPlay.App.Views
 
                 if (bytes is not null)
                 {
-                    await ViewModel.ApplyEpisodeCoverFromBytesAsync(card, bytes);
+                    await ViewModel.Actions.ApplyEpisodeCoverFromBytesAsync(card, bytes);
                 }
             });
         }
@@ -120,7 +120,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            LocalEpisodeCardViewModel? card = ViewModel.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId);
+            LocalEpisodeCardViewModel? card = ViewModel.EpisodesVM.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId);
 
             if (card is null)
             {
@@ -130,17 +130,17 @@ namespace EchoPlay.App.Views
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
                 // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
-                using IDisposable? onlineScope = await ViewModel.RequestOnlineAccessForCoverSearchAsync();
+                using IDisposable? onlineScope = await ViewModel.Actions.RequestOnlineAccessForCoverSearchAsync();
                 if (onlineScope is null) return;
 
                 CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
                     card.Title,
-                    (query, page, ct) => ViewModel.SearchCoversAsync(query, page, ct),
+                    (query, page, ct) => ViewModel.Actions.SearchCoversAsync(query, page, ct),
                     Content.XamlRoot);
 
                 if (selected is not null)
                 {
-                    await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
+                    await ViewModel.Actions.ApplySelectedEpisodeCoverAsync(card, selected);
                 }
             });
         }

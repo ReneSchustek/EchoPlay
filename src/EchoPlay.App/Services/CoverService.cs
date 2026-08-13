@@ -51,7 +51,7 @@ namespace EchoPlay.App.Services
         public async Task<BitmapImage?> GetSeriesCoverImageAsync(Guid seriesId, CancellationToken cancellationToken = default)
         {
             byte[]? bytes = await GetCoverBytesAsync(EntityTypeSeries, seriesId, cancellationToken);
-            return bytes is not null ? await ConvertToBitmapAsync(bytes, cancellationToken) : null;
+            return bytes is not null ? await ConvertToBitmapAsync(bytes, cancellationToken: cancellationToken) : null;
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Services
         public async Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
             byte[]? bytes = await GetCoverBytesAsync(EntityTypeEpisode, episodeId, cancellationToken);
-            return bytes is not null ? await ConvertToBitmapAsync(bytes, cancellationToken) : null;
+            return bytes is not null ? await ConvertToBitmapAsync(bytes, cancellationToken: cancellationToken) : null;
         }
 
         /// <summary>
@@ -118,13 +118,27 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="imageData">Rohe Bild-Bytes (JPEG/PNG/...).</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <param name="decodePixelWidth">
+        /// Zielbreite in Bildpunkten, oder 0 für die volle Größe. Die Cover liegen mit 600
+        /// Punkten Kantenlänge vor; eine Kachel ist 120 breit. Wer sie voll dekodiert, zahlt
+        /// das mit Zeit und Speicher — bei vierhundert Folgen einer Serie ist der Unterschied
+        /// nicht mehr theoretisch.
+        /// </param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bild-Dekodierung via BitmapImage.SetSourceAsync: kaputte oder zugeschnittene Cover-Rohdaten liefern native WIC/COM-Fehler; für die UI reicht 'null' (Fallback-Cover).")]
-        public static async Task<BitmapImage?> ConvertToBitmapAsync(byte[] imageData, CancellationToken cancellationToken = default)
+        public static async Task<BitmapImage?> ConvertToBitmapAsync(
+            byte[] imageData, int decodePixelWidth = 0, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 BitmapImage bitmap = new();
+
+                // Muss vor SetSourceAsync stehen — danach ist die Größe bereits entschieden.
+                if (decodePixelWidth > 0)
+                {
+                    bitmap.DecodePixelWidth = decodePixelWidth;
+                }
+
                 using InMemoryRandomAccessStream stream = new();
                 _ = await stream.WriteAsync(imageData.AsBuffer());
                 stream.Seek(0);

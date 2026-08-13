@@ -100,6 +100,24 @@ namespace EchoPlay.App.Views
         /// Signalisiert dem ViewModel, dass ein manueller Seek beginnt.
         /// Verhindert, dass der Slider während des Ziehens durch PlayerService-Updates zurückspringt.
         /// </summary>
+        /// <summary>
+        /// Schreibt die eingestellte Lautstärke in die Einstellungen, sobald der Nutzer den
+        /// Regler loslässt.
+        /// </summary>
+        private async void OnVolumeSliderReleased(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            await EchoPlay.App.Infrastructure.AsyncEventHandler.RunSafelyAsync(() => ViewModel.Volume.CommitAsync());
+        }
+
+        /// <summary>
+        /// Speichert die Lautstärke auch dann, wenn der Regler mit der Tastatur bedient
+        /// wurde — dort gibt es kein Loslassen der Maus.
+        /// </summary>
+        private async void OnVolumeSliderLostFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            await EchoPlay.App.Infrastructure.AsyncEventHandler.RunSafelyAsync(() => ViewModel.Volume.CommitAsync());
+        }
+
         private void OnSliderPointerPressed(object sender, PointerRoutedEventArgs e)
         {
             ViewModel.BeginSeek();

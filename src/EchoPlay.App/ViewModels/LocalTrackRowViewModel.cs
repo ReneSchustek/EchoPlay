@@ -1,4 +1,6 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Services;
+using EchoPlay.Core.Parsing;
 using System;
 using System.Globalization;
 using System.IO;
@@ -12,8 +14,10 @@ namespace EchoPlay.App.ViewModels
     /// an <see cref="LocalLibraryViewModel"/>, der das <see cref="LocalLibraryViewModel.NavigateToTagManagerRequested"/>-Event feuert.
     /// ViewModels sollen nicht direkt navigieren – die Page-Ebene übernimmt das.
     /// </summary>
-    public sealed class LocalTrackRowViewModel
+    public sealed class LocalTrackRowViewModel : ObservableObject, ITrackTitleTarget
     {
+        private string _title;
+
         /// <summary>
         /// Erstellt ein Zeilen-ViewModel für einen lokalen Track.
         /// </summary>
@@ -35,7 +39,10 @@ namespace EchoPlay.App.ViewModels
             TrackId = trackId;
             TrackNumber = trackNumber;
             FilePath = filePath;
-            FileName = Path.GetFileName(filePath);
+
+            // Bis der Titel aus der Kennzeichnung gelesen ist, steht hier der aufgeräumte
+            // Dateiname. Er bleibt stehen, wenn die Datei keinen Titel führt.
+            _title = TrackDisplayTitle.FromFilePath(filePath, trackNumber);
             Duration = duration;
 
             OpenInTagManagerCommand = new RelayCommand(() =>
@@ -56,8 +63,15 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Tracknummer innerhalb der Episode (1-basiert).</summary>
         public int TrackNumber { get; }
 
-        /// <summary>Dateiname ohne Verzeichnispfad.</summary>
-        public string FileName { get; }
+        /// <summary>
+        /// Angezeigter Titel der Spur: der Titel aus der Kennzeichnung der Datei,
+        /// ersatzweise der Dateiname ohne Endung und ohne die daneben stehende Nummer.
+        /// </summary>
+        public string Title
+        {
+            get => _title;
+            private set => SetProperty(ref _title, value);
+        }
 
         /// <summary>Absoluter Dateipfad der Audiodatei.</summary>
         public string FilePath { get; }
@@ -78,5 +92,18 @@ namespace EchoPlay.App.ViewModels
         /// Alle Audiodateien im gleichen Ordner werden im Tag-Manager geladen.
         /// </summary>
         public ICommand OpenInTagManagerCommand { get; }
+
+        /// <summary>
+        /// Übernimmt den aus der Kennzeichnung gelesenen Titel.
+        /// Ein leerer Wert wird verworfen, damit die Zeile nie ohne Text dasteht.
+        /// </summary>
+        /// <param name="resolvedTitle">Der gelesene Titel oder <see langword="null"/>.</param>
+        public void ApplyTitle(string? resolvedTitle)
+        {
+            if (!string.IsNullOrWhiteSpace(resolvedTitle))
+            {
+                Title = resolvedTitle;
+            }
+        }
     }
 }

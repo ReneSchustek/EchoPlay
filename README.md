@@ -27,7 +27,10 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 
 - Integrierter Audioplayer mit MiniPlayer, Zeitanzeige und Playlist-Unterstützung.
 - 8 Audioformate: MP3, M4A, FLAC, OGG, WMA, WAV, AAC, Opus.
-- Automatische Positionsspeicherung – beim nächsten Start wird an der letzten Stelle fortgesetzt.
+- Automatische Positionsspeicherung – beim nächsten Start wird an der letzten Stelle fortgesetzt, auch bei Folgen aus mehreren Dateien.
+- **Fortschritt der ganzen Folge** – Neben der Position in der laufenden Datei zeigen beide Player, wie weit das Hörspiel insgesamt ist.
+- **Lautstärke** – Regler und Stummschaltung in beiden Playern; die Einstellung bleibt über den Neustart erhalten.
+- **Wiederhören** – Eine bereits gehörte Folge bleibt als gehört gekennzeichnet und erscheint zusätzlich unter „Angefangen", solange eine offene Stelle darin steht.
 - **Album beim Anbieter öffnen** – Folgen ohne lokale Datei lassen sich per Kontextmenü in Spotify oder Apple Music aufrufen. Ist die Spotify-App installiert, öffnet sie sich statt des Browsers; dort ist der Nutzer bereits angemeldet. Die Wiedergabe selbst steuert der Nutzer beim Anbieter — eine Fortsetzung wie bei lokalen Dateien gibt es dort nicht.
 
 ### Fehlende Folgen
@@ -162,6 +165,8 @@ Die App funktioniert sofort mit lokalen Audiodateien. Für die Online-Suche übe
 5. **Warnungen = Fehler:** Das Projekt fährt mit `TreatWarningsAsErrors=true` und `AnalysisMode=All`. Neue CA-Warnungen müssen entweder gelöst oder mit Methoden-Begründung suppressed werden.
 6. **DI-Lifetimes:** ViewModels sind `Transient`, `DbContext` ist `Scoped`. ViewModels nutzen `IServiceScopeFactory` für DB-Zugriff — direkte `DbContext`-Injektion in ViewModels ist ein Captive-Dependency-Muster und wird im Review abgelehnt.
 7. **Keine Cover-BLOBs an Entities:** Cover liegen in der `CoverImages`-Tabelle, referenziert über `ICoverImageDataService`.
+8. **Registrierungen liegen bei ihrem Modul:** Der Container wird in `src/EchoPlay.App/Composition/` aufgebaut — je eine Erweiterungsmethode für Protokollierung, HTTP-Clients, Datenquellen, Anwendungsdienste und ViewModels. `AppHostFactory` legt nur die Reihenfolge fest. Neue Dienste kommen in die passende Datei, nicht in den Einstiegspunkt.
+9. **Bindungen zeigen auf den zuständigen Bereich:** Seiten mit mehreren Bereichen (Startseite, Mediathek, Serienansicht, Einstellungen) binden direkt auf deren ViewModel — `ViewModel.ScanVM.IsScanning`, nicht `ViewModel.IsScanning`. Eine Eigenschaft ein zweites Mal auf der obersten Ebene zu führen, ist ausdrücklich unerwünscht: Weicht der weitergereichte Name ab, wartet die Bindung auf eine Meldung, die nie kommt, und die Anzeige bleibt stumm leer.
 
 ---
 

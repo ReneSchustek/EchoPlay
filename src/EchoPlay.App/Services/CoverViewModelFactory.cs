@@ -86,7 +86,7 @@ namespace EchoPlay.App.Services
                     try
                     {
                         byte[] bytes = await File.ReadAllBytesAsync(coverPath, cancellationToken).ConfigureAwait(true);
-                        return await CoverService.ConvertToBitmapAsync(bytes, cancellationToken).ConfigureAwait(true);
+                        return await CoverService.ConvertToBitmapAsync(bytes, cancellationToken: cancellationToken).ConfigureAwait(true);
                     }
                     catch
                     {
@@ -138,7 +138,7 @@ namespace EchoPlay.App.Services
                     byte[]? coverBytes = await coverLoader.LoadAsync(episode.LocalFolderPath, firstTrackPath).ConfigureAwait(true);
                     if (coverBytes is not null)
                     {
-                        return await CoverService.ConvertToBitmapAsync(coverBytes, cancellationToken).ConfigureAwait(true);
+                        return await CoverService.ConvertToBitmapAsync(coverBytes, cancellationToken: cancellationToken).ConfigureAwait(true);
                     }
                 }
                 catch

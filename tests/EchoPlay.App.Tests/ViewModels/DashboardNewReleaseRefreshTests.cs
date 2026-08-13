@@ -32,14 +32,14 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cache);
             ServiceProvider provider = services.BuildServiceProvider();
 
-            DashboardViewModel vm = new(
+            DashboardViewModel vm = new(new DashboardViewModelContext(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new FakeErrorDialogService(),
                 new FakeConfirmationDialogService(),
                 new FakePlayerService(),
                 new FakeLoggerFactory(),
-                clock: new FakeClock(),
-                newReleaseEventService: events);
+                Clock: new FakeClock(),
+                NewReleaseEventService: events));
 
             return (vm, events, cache);
         }
@@ -55,7 +55,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 BuildViewModel(seriesService);
 
             await vm.LoadAsync();
-            Assert.Empty(vm.NewEpisodeGroups);
+            Assert.Empty(vm.NeuerscheinungenVM.NewEpisodeGroups);
 
             // Der Hintergrund-Check füllt den Cache erst nach dem Rendern der Seite.
             await cache.UpsertRangeAsync(
@@ -77,11 +77,11 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Ohne Dispatcher (Unit-Test) lädt das VM direkt – auf den Abschluss warten.
             await ChangeSignals.WaitForCollectionAsync(
-                vm.NewEpisodeGroups,
-                () => vm.NewEpisodeGroups.Count > 0,
+                vm.NeuerscheinungenVM.NewEpisodeGroups,
+                () => vm.NeuerscheinungenVM.NewEpisodeGroups.Count > 0,
                 "Startseite lädt die Neuerscheinungen nach dem Cache-Ereignis nach");
 
-            _ = Assert.Single(vm.NewEpisodeGroups);
+            _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups);
         }
 
         [Fact]

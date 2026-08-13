@@ -23,6 +23,10 @@ namespace EchoPlay.App.Services
 
         private readonly MediaPlayer _player;
         private readonly MediaPlaybackList _playlist;
+
+        // Die Spurdauern der laufenden Folge. Ohne sie kennt der Dienst nur die Stelle in
+        // der laufenden Datei — und die allein taugt nicht zum Fortsetzen.
+        private EpisodeTimeline _timeline = EpisodeTimeline.Empty;
         private readonly System.Timers.Timer _positionTimer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
@@ -31,6 +35,7 @@ namespace EchoPlay.App.Services
         // Synchronisierung: _stateLock schützt alle mutable Felder (synchron),
         // _saveLock serialisiert die async DB-Persistierung.
         private readonly object _stateLock = new();
+        private IReadOnlyList<string> _currentTrackPaths = [];
         private readonly SemaphoreSlim _saveLock = new(1, 1);
 
         private Guid _currentEpisodeId;
@@ -84,6 +89,24 @@ namespace EchoPlay.App.Services
         public string? CurrentTrackTitle { get; private set; }
 
         /// <summary>
+        /// Dateipfad des aktuell laufenden Tracks. Null, wenn nichts spielt.
+        /// </summary>
+        public string? CurrentTrackPath { get; private set; }
+
+        /// <summary>
+        /// Dateipfade der laufenden Wiedergabeliste, in Reihenfolge. Leer, wenn nichts spielt.
+        /// </summary>
+        /// <remarks>
+        /// Die Abspielliste selbst führt nur <c>MediaSource</c>-Objekte; die Pfade daraus
+        /// zurückzugewinnen ist umständlich und unsicher. Sie werden deshalb beim Start
+        /// mitgeschrieben.
+        /// </remarks>
+        public IReadOnlyList<string> CurrentTrackPaths
+        {
+            get { lock (_stateLock) { return _currentTrackPaths; } }
+        }
+
+        /// <summary>
         /// Aktuelle Abspielposition.
         /// </summary>
         public TimeSpan Position => _player.PlaybackSession.Position;
@@ -94,6 +117,45 @@ namespace EchoPlay.App.Services
         public TimeSpan Duration => _player.PlaybackSession.NaturalDuration;
 
         /// <summary>
+        /// Die Stelle in der ganzen Folge, über alle Spuren gerechnet.
+        /// </summary>
+        public TimeSpan OverallPosition
+        {
+            get
+            {
+                EpisodeTimeline timeline;
+                lock (_stateLock) { timeline = _timeline; }
+
+                return timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
+            }
+        }
+
+        /// <summary>
+        /// Die Gesamtdauer der Folge über alle Spuren.
+        /// </summary>
+        public TimeSpan OverallDuration
+        {
+            get
+            {
+                lock (_stateLock) { return _timeline.TotalDuration; }
+            }
+        }
+
+        /// <summary>
+        /// Die laufende Spur, nullbasiert. Ohne laufende Wiedergabe null.
+        /// </summary>
+        private int CurrentTrackIndex
+        {
+            get
+            {
+                uint index = _playlist.CurrentItemIndex;
+
+                // Die Abspielliste meldet zwischen zwei Titeln einen unbelegten Index.
+                return index == uint.MaxValue ? 0 : (int)index;
+            }
+        }
+
+        /// <summary>
         /// Wiedergabegeschwindigkeit. 1.0 entspricht normaler Geschwindigkeit.
         /// Gültige Werte: 0.25 bis 4.0 (Plattformlimit des MediaPlayer).
         /// </summary>
@@ -101,6 +163,49 @@ namespace EchoPlay.App.Services
         {
             get => _player.PlaybackSession.PlaybackRate;
             set => _player.PlaybackSession.PlaybackRate = value;
+        }
+
+        /// <summary>
+        /// Lautstärke der Wiedergabe, von 0,0 (still) bis 1,0 (voll).
+        /// </summary>
+        /// <remarks>
+        /// Der Wert wirkt sofort, wird hier aber nicht gespeichert: Ein Regler feuert
+        /// während des Ziehens dutzende Male, und jede Änderung in die Datenbank zu
+        /// schreiben hieße, den Wiedergabepfad mit Schreibvorgängen zu belegen. Das
+        /// Speichern stößt die Oberfläche an, wenn der Nutzer loslässt.
+        /// </remarks>
+        public double Volume
+        {
+            get => _player.Volume;
+            set
+            {
+                double desired = Math.Clamp(value, 0.0, 1.0);
+                if (Math.Abs(_player.Volume - desired) < 0.0001)
+                {
+                    return;
+                }
+
+                _player.Volume = desired;
+                StateChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Ob die Wiedergabe stummgeschaltet ist.
+        /// </summary>
+        public bool IsMuted
+        {
+            get => _player.IsMuted;
+            set
+            {
+                if (_player.IsMuted == value)
+                {
+                    return;
+                }
+
+                _player.IsMuted = value;
+                StateChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         /// <summary>
@@ -116,12 +221,34 @@ namespace EchoPlay.App.Services
         /// <param name="episodeId">ID der Episode – für PlaybackState-Persistenz.</param>
         /// <param name="trackPaths">Absolute Dateipfade der Audiotracks, in Reihenfolge.</param>
         /// <param name="startIndex">Index des ersten Tracks (0-basiert).</param>
-        /// <param name="resumePosition">Position, ab der fortgesetzt werden soll.</param>
+        /// <param name="resumePosition">
+        /// Stelle, ab der fortgesetzt wird. Mit bekannten Spurdauern gilt sie für die ganze
+        /// Folge und bestimmt damit auch die Spur; sonst für die übergebene Spur.
+        /// </param>
+        /// <param name="trackDurations">Die Dauern der Spuren in Abspielreihenfolge, sofern bekannt.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Einstieg: kaputte/fehlende Audio-Dateien, Codec-Fehler oder MediaFoundation-COM-Fehler werden als Nutzer-Fehlermeldung über 'ErrorOccurred' signalisiert, ohne die App zu reißen.")]
-        public void Play(Guid episodeId, IReadOnlyList<string> trackPaths, int startIndex = 0, TimeSpan resumePosition = default)
+        public void Play(
+            Guid episodeId,
+            IReadOnlyList<string> trackPaths,
+            int startIndex = 0,
+            TimeSpan resumePosition = default,
+            IReadOnlyList<TimeSpan>? trackDurations = null)
         {
             ArgumentNullException.ThrowIfNull(trackPaths);
             _logger.Debug(() => $"Wiedergabe gestartet: EpisodeId={episodeId}, Tracks={trackPaths.Count}, StartIndex={startIndex}");
+
+            EpisodeTimeline timeline = trackDurations is null
+                ? EpisodeTimeline.Empty
+                : new EpisodeTimeline(trackDurations);
+
+            // Mit bekannten Spurdauern gilt die Fortsetzstelle für die ganze Folge und
+            // bestimmt damit auch die Spur. Ohne sie bleibt es beim bisherigen Verhalten:
+            // die Stelle gilt für die übergebene Spur.
+            TimeSpan positionInTrack = resumePosition;
+            if (timeline.IsKnown && resumePosition > TimeSpan.Zero)
+            {
+                (startIndex, positionInTrack) = timeline.ToTrack(resumePosition);
+            }
 
             try
             {
@@ -129,6 +256,8 @@ namespace EchoPlay.App.Services
                 {
                     _currentEpisodeId = episodeId;
                     _autoSaveTick = 0;
+                    _currentTrackPaths = [.. trackPaths];
+                    _timeline = timeline;
                 }
 
                 _playlist.Items.Clear();
@@ -144,12 +273,12 @@ namespace EchoPlay.App.Services
 #pragma warning restore CA2000
                 }
 
-                _ = _playlist.MoveTo((uint)startIndex);
+                _ = _playlist.MoveTo((uint)Math.Max(0, startIndex));
                 _player.Play();
 
-                if (resumePosition > TimeSpan.Zero)
+                if (positionInTrack > TimeSpan.Zero)
                 {
-                    _player.PlaybackSession.Position = resumePosition;
+                    _player.PlaybackSession.Position = positionInTrack;
                 }
 
                 _positionTimer.Start();
@@ -196,7 +325,9 @@ namespace EchoPlay.App.Services
             lock (_stateLock)
             {
                 episodeToSave = _currentEpisodeId;
-                positionToSave = _player.PlaybackSession.Position;
+                // Gespeichert wird die Stelle in der Folge, nicht die in der Datei — sonst
+                // setzt die Wiedergabe später in der falschen Spur wieder ein.
+                positionToSave = _timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
                 ResetPlaybackState();
             }
 
@@ -237,7 +368,10 @@ namespace EchoPlay.App.Services
             _autoSaveTick = 0;
 
             CurrentTrackTitle = null;
+            CurrentTrackPath = null;
             _currentEpisodeId = Guid.Empty;
+            _currentTrackPaths = [];
+            _timeline = EpisodeTimeline.Empty;
         }
 
         /// <summary>
@@ -402,6 +536,7 @@ namespace EchoPlay.App.Services
             if (args.NewItem?.Source?.Uri is Uri uri)
             {
                 CurrentTrackTitle = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+                CurrentTrackPath = uri.LocalPath;
             }
 
             StateChanged?.Invoke(this, EventArgs.Empty);
@@ -431,7 +566,7 @@ namespace EchoPlay.App.Services
             lock (_stateLock)
             {
                 episodeId = _currentEpisodeId;
-                position = _player.PlaybackSession.Position;
+                position = _timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
             }
 
             await SavePlaybackStateForEpisodeAsync(episodeId, position);

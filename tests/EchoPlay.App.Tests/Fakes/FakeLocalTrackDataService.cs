@@ -28,11 +28,17 @@ namespace EchoPlay.App.Tests.Fakes
         public Dictionary<Guid, IReadOnlyList<LocalTrack>> SavedTracks { get; } = [];
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Sortiert wie der echte Dienst nach <see cref="LocalTrack.TrackNumber"/>. Ohne diese
+        /// Sortierung gibt der Fake eine Reihenfolge zurück, die es in der Anwendung nicht gibt —
+        /// und Aufrufer, die sich auf die Reihenfolge verlassen, fielen im Test durch, obwohl sie
+        /// richtig sind.
+        /// </remarks>
         public Task<IReadOnlyList<LocalTrack>> GetByEpisodeIdAsync(Guid episodeId, CancellationToken cancellationToken = default)
         {
             if (_tracksByEpisode.TryGetValue(episodeId, out IReadOnlyList<LocalTrack>? tracks))
             {
-                return Task.FromResult(tracks);
+                return Task.FromResult<IReadOnlyList<LocalTrack>>([.. tracks.OrderBy(track => track.TrackNumber)]);
             }
 
             return Task.FromResult<IReadOnlyList<LocalTrack>>([]);

@@ -479,6 +479,9 @@ namespace EchoPlay.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsMuted")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("LastAppStart")
                         .HasColumnType("TEXT");
 
@@ -519,6 +522,9 @@ namespace EchoPlay.Data.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Volume")
+                        .HasColumnType("REAL");
 
                     b.HasKey("Id");
 

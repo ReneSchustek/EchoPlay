@@ -258,6 +258,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
                         "DbBackupEnabled" INTEGER NOT NULL DEFAULT 0,
                         "DbBackupRetentionCount" INTEGER NOT NULL DEFAULT 5,
                         "OnlineEpisodeSortIndex" INTEGER NOT NULL DEFAULT 0,
+                        "Volume" REAL NOT NULL DEFAULT 1.0,
+                        "IsMuted" INTEGER NOT NULL DEFAULT 0,
                         "IsDeleted" INTEGER NOT NULL DEFAULT 0,
                         "CreatedAt" TEXT NOT NULL DEFAULT '2026-01-01T00:00:00',
                         "UpdatedAt" TEXT NULL,

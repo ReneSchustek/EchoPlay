@@ -5,6 +5,7 @@ using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.ComponentModel;
@@ -47,9 +48,9 @@ namespace EchoPlay.App.Views
             _sectionHandler = new Helpers.LetterSectionSplitHandler<LocalArtistCardViewModel>(
                 new Helpers.ItemsControlSectionHost(TopSectionsHost),
                 new Helpers.ItemsControlSectionHost(BottomSectionsHost),
-                () => ViewModel.Artists,
+                () => ViewModel.ArtistsVM.Artists,
                 artist => artist.Title,
-                () => ViewModel.SelectedArtistIndex,
+                () => ViewModel.ArtistsVM.SelectedArtistIndex,
                 () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 16),
                 _resources.GetString("LokalLetterSectionFormat"));
 
@@ -77,11 +78,11 @@ namespace EchoPlay.App.Views
             LokalFilterBar.Chips =
             [
                 new Controls.FilterChip(
-                    FilterKeyFavorites, _resources.GetString("LokalFilterFavorites"), ViewModel.FavoritesOnly),
+                    FilterKeyFavorites, _resources.GetString("LokalFilterFavorites"), ViewModel.ArtistsVM.FavoritesOnly),
                 new Controls.FilterChip(
-                    FilterKeyWatched, _resources.GetString("LokalFilterWatched"), ViewModel.WatchedOnly),
+                    FilterKeyWatched, _resources.GetString("LokalFilterWatched"), ViewModel.ArtistsVM.WatchedOnly),
                 new Controls.FilterChip(
-                    FilterKeyIncomplete, _resources.GetString("LokalFilterIncomplete"), ViewModel.IncompleteOnly)
+                    FilterKeyIncomplete, _resources.GetString("LokalFilterIncomplete"), ViewModel.ArtistsVM.IncompleteOnly)
             ];
 
             LokalNoResultsPanel.Message = _resources.GetString("LokalNoResultsMessage");
@@ -107,13 +108,13 @@ namespace EchoPlay.App.Views
             switch (e.Chip.Key)
             {
                 case FilterKeyFavorites:
-                    ViewModel.FavoritesOnly = e.Chip.IsActive;
+                    ViewModel.ArtistsVM.FavoritesOnly = e.Chip.IsActive;
                     break;
                 case FilterKeyWatched:
-                    ViewModel.WatchedOnly = e.Chip.IsActive;
+                    ViewModel.ArtistsVM.WatchedOnly = e.Chip.IsActive;
                     break;
                 case FilterKeyIncomplete:
-                    ViewModel.IncompleteOnly = e.Chip.IsActive;
+                    ViewModel.ArtistsVM.IncompleteOnly = e.Chip.IsActive;
                     break;
             }
         }
@@ -135,15 +136,16 @@ namespace EchoPlay.App.Views
                 }
 
                 ViewModel.NavigateToTagManagerRequested += OnNavigateToTagManagerRequested;
-                ViewModel.AddFolderRequested += OnAddFolderRequested;
-                ViewModel.MissingEpisodesResolved += OnMissingEpisodesResolved;
-                ViewModel.MissingEpisodesModeRequested += OnMissingEpisodesModeRequested;
-                ViewModel.AllSeriesCheckCompleted += OnAllSeriesCheckCompleted;
-                ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+                ViewModel.ScanVM.AddFolderRequested += OnAddFolderRequested;
+                ViewModel.Actions.MissingEpisodesResolved += OnMissingEpisodesResolved;
+                ViewModel.Actions.MissingEpisodesModeRequested += OnMissingEpisodesModeRequested;
+                ViewModel.Actions.AllSeriesCheckCompleted += OnAllSeriesCheckCompleted;
+                ViewModel.ArtistsVM.PropertyChanged += OnArtistsPropertyChanged;
                 SizeChanged += OnPageSizeChanged;
                 EpisodeAccordion.GridView.SelectionChanged += OnEpisodeSelectionChanged;
+                EpisodeAccordion.GridView.DoubleTapped += OnEpisodeDoubleTapped;
                 ViewModel.Activate();
-                await ViewModel.LoadAsync();
+                await ViewModel.Actions.LoadAsync();
             });
         }
 
@@ -155,27 +157,28 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedFrom(e);
             ViewModel.NavigateToTagManagerRequested -= OnNavigateToTagManagerRequested;
-            ViewModel.AddFolderRequested -= OnAddFolderRequested;
-            ViewModel.MissingEpisodesResolved -= OnMissingEpisodesResolved;
-            ViewModel.MissingEpisodesModeRequested -= OnMissingEpisodesModeRequested;
-            ViewModel.AllSeriesCheckCompleted -= OnAllSeriesCheckCompleted;
-            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            ViewModel.ScanVM.AddFolderRequested -= OnAddFolderRequested;
+            ViewModel.Actions.MissingEpisodesResolved -= OnMissingEpisodesResolved;
+            ViewModel.Actions.MissingEpisodesModeRequested -= OnMissingEpisodesModeRequested;
+            ViewModel.Actions.AllSeriesCheckCompleted -= OnAllSeriesCheckCompleted;
+            ViewModel.ArtistsVM.PropertyChanged -= OnArtistsPropertyChanged;
             SizeChanged -= OnPageSizeChanged;
             EpisodeAccordion.GridView.SelectionChanged -= OnEpisodeSelectionChanged;
+            EpisodeAccordion.GridView.DoubleTapped -= OnEpisodeDoubleTapped;
             ViewModel.Deactivate();
             // VM disposed — Scan-Event-Subscriptions, Sub-VM-Ketten und Koordinatoren freigeben.
             ViewModel.Dispose();
         }
 
         /// <summary>
-        /// Reagiert auf Änderungen an <see cref="LocalLibraryViewModel.Artists"/>
-        /// oder <see cref="LocalLibraryViewModel.SelectedArtistIndex"/> und baut die
+        /// Reagiert auf Änderungen an <see cref="LocalArtistsViewModel.Artists"/>
+        /// oder <see cref="LocalArtistsViewModel.SelectedArtistIndex"/> und baut die
         /// Buchstaben-Abschnitte neu auf.
         /// </summary>
-        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void OnArtistsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is nameof(LocalLibraryViewModel.Artists)
-                               or nameof(LocalLibraryViewModel.SelectedArtistIndex))
+            if (e.PropertyName is nameof(LocalArtistsViewModel.Artists)
+                               or nameof(LocalArtistsViewModel.SelectedArtistIndex))
             {
                 UpdateSections();
             }
@@ -222,7 +225,7 @@ namespace EchoPlay.App.Views
             if (e.ClickedItem is LocalArtistCardViewModel artist)
             {
                 EpisodeAccordion.GridView.SelectedItem = null;
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectArtistAsync(artist));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.SelectArtistAsync(artist));
                 // UpdateSplit wird durch PropertyChanged auf SelectedArtistIndex ausgelöst
             }
         }
@@ -235,7 +238,21 @@ namespace EchoPlay.App.Views
         {
             if (sender is GridView { SelectedItem: LocalEpisodeCardViewModel episode })
             {
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectEpisodeAsync(episode));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.SelectEpisodeAsync(episode));
+            }
+        }
+
+        /// <summary>
+        /// Startet die Folge, auf die der Nutzer doppelt geklickt hat.
+        /// Der erste Klick des Doppelklicks hat sie bereits ausgewählt und damit ihre Spuren
+        /// geladen — gespielt wird trotzdem über die Folgen-Id, damit der Doppelklick auch
+        /// dann greift, wenn die Liste rechts noch lädt.
+        /// </summary>
+        private async void OnEpisodeDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            if (sender is GridView { SelectedItem: LocalEpisodeCardViewModel episode })
+            {
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.TracksVM.PlayEpisodeAsync(episode));
             }
         }
 
@@ -247,7 +264,7 @@ namespace EchoPlay.App.Views
         private async void OnPickFolderClick(object sender, RoutedEventArgs e)
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.PickFolderAsync(handle));
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ScanVM.PickFolderAsync(handle));
         }
 
         /// <summary>
@@ -256,17 +273,17 @@ namespace EchoPlay.App.Views
         private async void OnAddFolderClick(object sender, RoutedEventArgs e)
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.AddFolderAsync(handle));
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ScanVM.AddFolderAsync(handle));
         }
 
         /// <summary>
-        /// Reagiert auf das <see cref="LocalLibraryViewModel.AddFolderRequested"/>-Event.
+        /// Reagiert auf das <see cref="LocalLibraryScanViewModel.AddFolderRequested"/>-Event.
         /// Das ViewModel selbst kennt das HWND nicht – die Page liefert es.
         /// </summary>
         private async void OnAddFolderRequested()
         {
             nint handle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.AddFolderAsync(handle));
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ScanVM.AddFolderAsync(handle));
         }
 
         /// <summary>
@@ -278,7 +295,7 @@ namespace EchoPlay.App.Views
             // Vor dem Zuklappen merken, wohin zurückgekehrt wird: Der Folgenbereich kann weit
             // unten aufgehen, und ohne Rücksprung stünde man danach irgendwo in der Liste statt
             // bei der Serie, die man gerade offen hatte.
-            LocalArtistCardViewModel? lastOpened = ViewModel.SelectedArtist;
+            LocalArtistCardViewModel? lastOpened = ViewModel.ArtistsVM.SelectedArtist;
 
             ViewModel.DeselectArtist();
 
@@ -297,13 +314,13 @@ namespace EchoPlay.App.Views
         /// <summary>Tab-Wechsel: reguläre Folgen anzeigen.</summary>
         private void OnEpisodeTabRegularChecked(object sender, RoutedEventArgs e)
         {
-            ViewModel.EpisodeTabIndex = 0;
+            ViewModel.EpisodesVM.EpisodeTabIndex = 0;
         }
 
         /// <summary>Tab-Wechsel: Sonderfolgen anzeigen.</summary>
         private void OnEpisodeTabSpecialChecked(object sender, RoutedEventArgs e)
         {
-            ViewModel.EpisodeTabIndex = 1;
+            ViewModel.EpisodesVM.EpisodeTabIndex = 1;
         }
 
         /// <summary>

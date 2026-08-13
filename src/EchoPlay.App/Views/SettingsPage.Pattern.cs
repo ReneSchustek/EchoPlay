@@ -19,7 +19,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnAnalyzePatternClick(object sender, RoutedEventArgs e)
         {
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.AnalyzePatternAsync());
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.LocalVM.AnalyzePatternAsync());
         }
 
         /// <summary>
@@ -30,12 +30,12 @@ namespace EchoPlay.App.Views
         {
             if (sender is Button { Tag: string pattern })
             {
-                ViewModel.ApplyPatternSuggestion(pattern);
+                ViewModel.LocalVM.ApplyPatternSuggestion(pattern);
             }
         }
 
         /// <summary>
-        /// Event-Handler für <see cref="ViewModels.SettingsViewModel.PatternSelectionRequested"/>.
+        /// Event-Handler für <see cref="ViewModels.LocalSettingsViewModel.PatternSelectionRequested"/>.
         /// Delegiert an den asynchronen Dialog-Methode.
         /// async void ist hier korrekt – WinUI-Event-Handler dürfen keinen Task zurückgeben.
         /// </summary>
@@ -119,7 +119,7 @@ namespace EchoPlay.App.Views
                 {
                     if (child is RadioButton { IsChecked: true, Tag: string pattern })
                     {
-                        ViewModel.ApplyPatternSuggestion(pattern);
+                        ViewModel.LocalVM.ApplyPatternSuggestion(pattern);
                         return;
                     }
                 }

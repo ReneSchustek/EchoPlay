@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.ComponentModel;
 using System.Globalization;
@@ -271,6 +273,25 @@ namespace EchoPlay.App
         }
 
         /// <summary>
+        /// Schreibt die eingestellte Lautstärke in die Einstellungen, sobald der Nutzer den
+        /// Regler loslässt. Während des Ziehens wirkt sie sofort, gespeichert wird aber erst
+        /// am Ende — sonst löste jede Zwischenstellung einen Schreibvorgang aus.
+        /// </summary>
+        private async void OnVolumeSliderReleased(object sender, PointerRoutedEventArgs e)
+        {
+            await AsyncEventHandler.RunSafelyAsync(() => MiniPlayer.Volume.CommitAsync());
+        }
+
+        /// <summary>
+        /// Speichert die Lautstärke auch dann, wenn der Regler mit der Tastatur bedient
+        /// wurde — dort gibt es kein Loslassen der Maus.
+        /// </summary>
+        private async void OnVolumeSliderLostFocus(object sender, RoutedEventArgs e)
+        {
+            await EchoPlay.App.Infrastructure.AsyncEventHandler.RunSafelyAsync(() => MiniPlayer.Volume.CommitAsync());
+        }
+
+        /// <summary>
         /// Aktualisiert das Play/Pause-Glyph und den Slider-Wert, wenn der PlayerService den Zustand wechselt.
         /// Der Slider wird per Code-Behind gesetzt, um die Rückkopplungsschleife zwischen
         /// PositionSeconds-Bindung und ValueChanged zu vermeiden.
@@ -340,6 +361,49 @@ namespace EchoPlay.App
         {
             MiniPlayerPanel.Visibility = Visibility.Collapsed;
             MiniPlayer.StopCommand.Execute(null);
+        }
+
+        /// <summary>
+        /// Führt vom Mini-Player auf die Player-Seite. Sie übernimmt die laufende Wiedergabe
+        /// von sich aus, es genügt also die Navigation.
+        /// Der Weg über <see cref="NavigationView.SelectedItem"/> statt direkt über den
+        /// Navigationsdienst ist Absicht: So wandert die Markierung im Menü mit, und die
+        /// Abfrage auf ungespeicherte Änderungen der Einstellungsseite greift weiterhin.
+        /// Für Tastaturnutzer bleibt der Menüpunkt „Player" der Weg — er führt zum selben Ziel.
+        /// </summary>
+        private void OnMiniPlayerTapped(object sender, TappedRoutedEventArgs e)
+        {
+            // Die Bedienelemente des Mini-Players sollen bedienen, nicht navigieren.
+            if (IsInsideInteractiveElement(e.OriginalSource as DependencyObject))
+            {
+                return;
+            }
+
+            if (!ReferenceEquals(NavView.SelectedItem, NavPlayer))
+            {
+                NavView.SelectedItem = NavPlayer;
+            }
+        }
+
+        /// <summary>
+        /// Prüft, ob der Ursprung eines Klicks innerhalb eines Bedienelements des Mini-Players
+        /// liegt. Die Suche endet am Panel selbst — darüber hinaus interessiert sie nicht.
+        /// </summary>
+        /// <param name="source">Das Element, auf dem der Klick entstanden ist.</param>
+        /// <returns><see langword="true"/>, wenn ein Bedienelement getroffen wurde.</returns>
+        private bool IsInsideInteractiveElement(DependencyObject? source)
+        {
+            for (DependencyObject? current = source;
+                 current is not null && !ReferenceEquals(current, MiniPlayerPanel);
+                 current = VisualTreeHelper.GetParent(current))
+            {
+                if (current is ButtonBase or Slider or ComboBox)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // ── Info-Leiste: Theme und Sprache ───────────────────────────────────────

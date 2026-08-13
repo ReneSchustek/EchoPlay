@@ -65,9 +65,9 @@ namespace EchoPlay.App.Tests.ViewModels
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(
                 null, (1, "Eins"), (2, "Zwei"), (3, "Drei"));
 
-            viewModel.SortOrder = EpisodeSortOrder.Title;
+            viewModel.EpisodeList.SortOrder = EpisodeSortOrder.Title;
 
-            Assert.Equal(3, viewModel.Episodes[0].EpisodeNumber);
+            Assert.Equal(3, viewModel.EpisodeList.Episodes[0].EpisodeNumber);
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Tests.ViewModels
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(
                 null, (3, "Drei"), (1, "Eins"), (2, "Zwei"));
 
-            Assert.Equal(1, viewModel.Episodes[0].EpisodeNumber);
+            Assert.Equal(1, viewModel.EpisodeList.Episodes[0].EpisodeNumber);
         }
 
         [Fact]
@@ -85,11 +85,11 @@ namespace EchoPlay.App.Tests.ViewModels
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(null, (1, "Eins"));
 
             List<string> changed = [];
-            viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+            viewModel.EpisodeList.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
 
-            viewModel.SortOrder = EpisodeSortOrder.Title;
+            viewModel.EpisodeList.SortOrder = EpisodeSortOrder.Title;
 
-            Assert.Contains(nameof(SeriesDetailViewModel.Episodes), changed);
+            Assert.Contains(nameof(SeriesEpisodeList.Episodes), changed);
         }
 
         [Fact]
@@ -97,7 +97,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync();
 
-            Assert.Equal(string.Empty, viewModel.ProgressText);
+            Assert.Equal(string.Empty, viewModel.Header.ProgressText);
         }
 
         [Fact]
@@ -113,7 +113,7 @@ namespace EchoPlay.App.Tests.ViewModels
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(
                 localization, (1, "Eins"), (2, "Zwei"));
 
-            Assert.Equal("0 of 2 episodes played", viewModel.ProgressText);
+            Assert.Equal("0 of 2 episodes played", viewModel.Header.ProgressText);
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(localization, (1, "Eins"));
 
-            Assert.Equal("0 of 1 episode played", viewModel.ProgressText);
+            Assert.Equal("0 of 1 episode played", viewModel.Header.ProgressText);
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(null, (1, "Eins"));
 
-            Assert.Contains("von 1", viewModel.ProgressText, StringComparison.Ordinal);
+            Assert.Contains("von 1", viewModel.Header.ProgressText, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -149,7 +149,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await viewModel.MarkAsPlayedAsync(episodeId);
 
-            EpisodeTileViewModel tile = viewModel.Episodes.First(e => e.EpisodeId == episodeId);
+            EpisodeTileViewModel tile = viewModel.EpisodeList.Episodes.First(e => e.EpisodeId == episodeId);
             Assert.Equal(PlaybackStatus.Finished, tile.Progress);
         }
 
@@ -164,7 +164,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await viewModel.MarkAsUnplayedAsync(episodeId);
 
-            EpisodeTileViewModel tile = viewModel.Episodes.First(e => e.EpisodeId == episodeId);
+            EpisodeTileViewModel tile = viewModel.EpisodeList.Episodes.First(e => e.EpisodeId == episodeId);
             Assert.Equal(PlaybackStatus.NotStarted, tile.Progress);
         }
 
@@ -176,7 +176,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await viewModel.MarkAsPlayedAsync(episodes.All[0].Id);
 
-            Assert.Contains("1 von 2", viewModel.ProgressText, StringComparison.Ordinal);
+            Assert.Contains("1 von 2", viewModel.Header.ProgressText, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -186,7 +186,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await viewModel.MarkAsPlayedAsync(Helpers.TestIds.EpisodeE);
 
-            Assert.Equal(PlaybackStatus.NotStarted, viewModel.Episodes[0].Progress);
+            Assert.Equal(PlaybackStatus.NotStarted, viewModel.EpisodeList.Episodes[0].Progress);
         }
 
         [Fact]
@@ -195,8 +195,8 @@ namespace EchoPlay.App.Tests.ViewModels
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(
                 null, (1, "Reguläre Folge"), (null, "Sonderfolge"));
 
-            Assert.True(viewModel.HasSpecialEpisodes);
-            Assert.Equal(1, viewModel.SpecialEpisodeCount);
+            Assert.True(viewModel.EpisodeList.HasSpecialEpisodes);
+            Assert.Equal(1, viewModel.EpisodeList.SpecialEpisodeCount);
         }
 
         [Fact]

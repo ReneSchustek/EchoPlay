@@ -26,13 +26,13 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(new Data.Entities.Settings.AppSettings()));
             ServiceProvider provider = services.BuildServiceProvider();
 
-            return new DashboardViewModel(
+            return new DashboardViewModel(new DashboardViewModelContext(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new FakeErrorDialogService(),
                 new FakeConfirmationDialogService(),
                 new FakePlayerService(),
                 new FakeLoggerFactory(),
-                clock: new FakeClock());
+                Clock: new FakeClock()));
         }
 
         [Fact]

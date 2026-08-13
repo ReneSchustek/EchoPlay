@@ -10,16 +10,6 @@
 
     <UserControl.Resources>
         <!-- Dezenter Pfeil-Button: dezelt sich in Light/Dark, kompatibel mit Fluent. -->
-        <Style x:Key="HorizontalTileRowArrowButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="MinHeight" Value="48"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}"/>
-            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -32,7 +22,7 @@
         <Button x:Name="LeftArrow"
                 x:Uid="TileRowScrollLeftButton"
                 Grid.Column="0"
-                Style="{StaticResource HorizontalTileRowArrowButtonStyle}"
+                Style="{StaticResource ScrollArrowButtonStyle}"
                 Click="OnLeftArrowClick"
                 Visibility="Collapsed"
                 VerticalAlignment="Center">
@@ -57,7 +47,7 @@
         <Button x:Name="RightArrow"
                 x:Uid="TileRowScrollRightButton"
                 Grid.Column="2"
-                Style="{StaticResource HorizontalTileRowArrowButtonStyle}"
+                Style="{StaticResource ScrollArrowButtonStyle}"
                 Click="OnRightArrowClick"
                 Visibility="Collapsed"
                 VerticalAlignment="Center">

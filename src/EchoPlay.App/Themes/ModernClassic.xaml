@@ -112,11 +112,44 @@
             <SolidColorBrush x:Key="AccentPrimaryPressedBrush"  Color="#364FD1"/>
             <SolidColorBrush x:Key="AccentPrimaryDisabledBrush" Color="#C7D2FE"/>
 
-            <!-- Buttons -->
-            <SolidColorBrush x:Key="ButtonBackgroundBrush"         Color="#4361EE"/>
-            <SolidColorBrush x:Key="ButtonBackgroundHoverBrush"    Color="#5B75F2"/>
-            <SolidColorBrush x:Key="ButtonBackgroundPressedBrush"  Color="#364FD1"/>
-            <SolidColorBrush x:Key="ButtonBackgroundDisabledBrush" Color="#E5E7EB"/>
+            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos —
+                 die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
+            <SolidColorBrush x:Key="ButtonBackground"                      Color="#F3F4F6"/>
+            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"           Color="#E4E7EB"/>
+            <SolidColorBrush x:Key="ButtonBackgroundPressed"               Color="#D9DCE2"/>
+            <SolidColorBrush x:Key="ButtonBackgroundDisabled"              Color="#F3F4F6"/>
+            <SolidColorBrush x:Key="ButtonForeground"                      Color="#1F2937"/>
+            <SolidColorBrush x:Key="ButtonForegroundPointerOver"           Color="#1F2937"/>
+            <SolidColorBrush x:Key="ButtonForegroundPressed"               Color="#1F2937"/>
+            <SolidColorBrush x:Key="ButtonForegroundDisabled"              Color="#D1D5DB"/>
+            <SolidColorBrush x:Key="ButtonBorderBrush"                     Color="#828CA1"/>
+            <SolidColorBrush x:Key="ButtonBorderBrushPointerOver"          Color="#657087"/>
+            <SolidColorBrush x:Key="ButtonBorderBrushPressed"              Color="#657087"/>
+            <SolidColorBrush x:Key="ButtonBorderBrushDisabled"             Color="#D1D5DB"/>
+
+            <!-- Primäraktion: Akzentfläche, in allen Zuständen aus der Palette. -->
+            <SolidColorBrush x:Key="AccentButtonBackground"                Color="#4361EE"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver"     Color="#5B75F2"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed"         Color="#364FD1"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundDisabled"        Color="#C7D2FE"/>
+            <SolidColorBrush x:Key="AccentButtonForeground"                Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentButtonForegroundPointerOver"     Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentButtonForegroundPressed"         Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentButtonForegroundDisabled"        Color="#D1D5DB"/>
+            <SolidColorBrush x:Key="AccentButtonBorderBrush"               Color="#4361EE"/>
+
+            <!-- Umschalter im gehakten Zustand, etwa der aktive Filter. Ohne diese Schlüssel
+                 färbt Windows sie in seiner eigenen Akzentfarbe — auf jedem Rechner anders. -->
+            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"            Color="#4361EE"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#5B75F2"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"     Color="#364FD1"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundChecked"            Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed"     Color="#FFFFFF"/>
+
+            <!-- Stille Flächen und Ränder, die die Pfeil-Schaltflächen benutzen. -->
+            <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush"         Color="#E4E7EB"/>
+            <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush"        Color="#828CA1"/>
 
             <!-- Karten: weißer Hintergrund mit feiner Umrandung statt Schatten -->
             <SolidColorBrush x:Key="CardBackgroundBrush"      Color="#FFFFFF"/>
@@ -139,9 +172,31 @@
             <SolidColorBrush x:Key="InputBackgroundHoverBrush"    Color="#F9FAFB"/>
             <SolidColorBrush x:Key="InputBackgroundFocusBrush"    Color="#FFFFFF"/>
             <SolidColorBrush x:Key="InputBackgroundDisabledBrush" Color="#F3F4F6"/>
-            <SolidColorBrush x:Key="InputBorderBrush"             Color="#D1D5DB"/>
-            <SolidColorBrush x:Key="InputBorderHoverBrush"        Color="#9CA3AF"/>
+            <SolidColorBrush x:Key="InputBorderBrush"             Color="#8A94A4"/>
+            <SolidColorBrush x:Key="InputBorderHoverBrush"        Color="#757F90"/>
             <SolidColorBrush x:Key="InputBorderFocusBrush"        Color="#4361EE"/>
+
+            <!-- Dieselben Farben unter den Namen, die WinUI wirklich liest. Die eigenen
+                 Input-Schlüssel darüber liest nur das Suchfeld; Text-, Kennwort-, Zahlen-
+                 und Auswahlfelder folgten sonst der Vorgabe des Rahmenwerks. -->
+            <StaticResource x:Key="TextControlBackground" ResourceKey="InputBackgroundBrush"/>
+            <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="InputBackgroundHoverBrush"/>
+            <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="InputBackgroundFocusBrush"/>
+            <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="InputBackgroundDisabledBrush"/>
+            <StaticResource x:Key="TextControlBorderBrush" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="InputBorderHoverBrush"/>
+            <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="InputBorderFocusBrush"/>
+            <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="TextControlElevationBorderBrush" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="TextControlElevationBorderFocusedBrush" ResourceKey="InputBorderFocusBrush"/>
+            <StaticResource x:Key="ComboBoxBackground" ResourceKey="InputBackgroundBrush"/>
+            <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="InputBackgroundHoverBrush"/>
+            <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="InputBackgroundFocusBrush"/>
+            <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="InputBackgroundDisabledBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="InputBorderHoverBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="InputBorderFocusBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="InputBorderBrush"/>
 
             <!-- Selektion / Highlight -->
             <SolidColorBrush x:Key="HighlightBrush"           Color="#4361EE"/>
@@ -231,10 +286,44 @@
             <SolidColorBrush x:Key="AccentPrimaryHoverBrush"               Color="#5B75F2"/>
             <SolidColorBrush x:Key="AccentPrimaryPressedBrush"             Color="#364FD1"/>
             <SolidColorBrush x:Key="AccentPrimaryDisabledBrush"            Color="#C7D2FE"/>
-            <SolidColorBrush x:Key="ButtonBackgroundBrush"                 Color="#4361EE"/>
-            <SolidColorBrush x:Key="ButtonBackgroundHoverBrush"            Color="#5B75F2"/>
-            <SolidColorBrush x:Key="ButtonBackgroundPressedBrush"          Color="#364FD1"/>
-            <SolidColorBrush x:Key="ButtonBackgroundDisabledBrush"         Color="#E5E7EB"/>
+            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos —
+                 die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
+            <SolidColorBrush x:Key="ButtonBackground"                      Color="#F3F4F6"/>
+            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"           Color="#E4E7EB"/>
+            <SolidColorBrush x:Key="ButtonBackgroundPressed"               Color="#D9DCE2"/>
+            <SolidColorBrush x:Key="ButtonBackgroundDisabled"              Color="#F3F4F6"/>
+            <SolidColorBrush x:Key="ButtonForeground"                      Color="#1F2937"/>
+            <SolidColorBrush x:Key="ButtonForegroundPointerOver"           Color="#1F2937"/>
+            <SolidColorBrush x:Key="ButtonForegroundPressed"               Color="#1F2937"/>
+            <SolidColorBrush x:Key="ButtonForegroundDisabled"              Color="#D1D5DB"/>
+            <SolidColorBrush x:Key="ButtonBorderBrush"                     Color="#828CA1"/>
+            <SolidColorBrush x:Key="ButtonBorderBrushPointerOver"          Color="#657087"/>
+            <SolidColorBrush x:Key="ButtonBorderBrushPressed"              Color="#657087"/>
+            <SolidColorBrush x:Key="ButtonBorderBrushDisabled"             Color="#D1D5DB"/>
+
+            <!-- Primäraktion: Akzentfläche, in allen Zuständen aus der Palette. -->
+            <SolidColorBrush x:Key="AccentButtonBackground"                Color="#4361EE"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver"     Color="#5B75F2"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed"         Color="#364FD1"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundDisabled"        Color="#C7D2FE"/>
+            <SolidColorBrush x:Key="AccentButtonForeground"                Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentButtonForegroundPointerOver"     Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentButtonForegroundPressed"         Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentButtonForegroundDisabled"        Color="#D1D5DB"/>
+            <SolidColorBrush x:Key="AccentButtonBorderBrush"               Color="#4361EE"/>
+
+            <!-- Umschalter im gehakten Zustand, etwa der aktive Filter. Ohne diese Schlüssel
+                 färbt Windows sie in seiner eigenen Akzentfarbe — auf jedem Rechner anders. -->
+            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"            Color="#4361EE"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#5B75F2"/>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"     Color="#364FD1"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundChecked"            Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed"     Color="#FFFFFF"/>
+
+            <!-- Stille Flächen und Ränder, die die Pfeil-Schaltflächen benutzen. -->
+            <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush"         Color="#E4E7EB"/>
+            <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush"        Color="#828CA1"/>
             <SolidColorBrush x:Key="CardBackgroundBrush"                   Color="#FFFFFF"/>
             <SolidColorBrush x:Key="CardBackgroundHoverBrush"              Color="#F9FAFB"/>
             <SolidColorBrush x:Key="CardBorderBrush"                       Color="#E5E7EB"/>
@@ -246,9 +335,31 @@
             <SolidColorBrush x:Key="InputBackgroundHoverBrush"             Color="#F9FAFB"/>
             <SolidColorBrush x:Key="InputBackgroundFocusBrush"             Color="#FFFFFF"/>
             <SolidColorBrush x:Key="InputBackgroundDisabledBrush"          Color="#F3F4F6"/>
-            <SolidColorBrush x:Key="InputBorderBrush"                      Color="#D1D5DB"/>
-            <SolidColorBrush x:Key="InputBorderHoverBrush"                 Color="#9CA3AF"/>
+            <SolidColorBrush x:Key="InputBorderBrush"                      Color="#8A94A4"/>
+            <SolidColorBrush x:Key="InputBorderHoverBrush"                 Color="#757F90"/>
             <SolidColorBrush x:Key="InputBorderFocusBrush"                 Color="#4361EE"/>
+
+            <!-- Dieselben Farben unter den Namen, die WinUI wirklich liest. Die eigenen
+                 Input-Schlüssel darüber liest nur das Suchfeld; Text-, Kennwort-, Zahlen-
+                 und Auswahlfelder folgten sonst der Vorgabe des Rahmenwerks. -->
+            <StaticResource x:Key="TextControlBackground" ResourceKey="InputBackgroundBrush"/>
+            <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="InputBackgroundHoverBrush"/>
+            <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="InputBackgroundFocusBrush"/>
+            <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="InputBackgroundDisabledBrush"/>
+            <StaticResource x:Key="TextControlBorderBrush" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="InputBorderHoverBrush"/>
+            <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="InputBorderFocusBrush"/>
+            <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="TextControlElevationBorderBrush" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="TextControlElevationBorderFocusedBrush" ResourceKey="InputBorderFocusBrush"/>
+            <StaticResource x:Key="ComboBoxBackground" ResourceKey="InputBackgroundBrush"/>
+            <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="InputBackgroundHoverBrush"/>
+            <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="InputBackgroundFocusBrush"/>
+            <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="InputBackgroundDisabledBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="InputBorderBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="InputBorderHoverBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="InputBorderFocusBrush"/>
+            <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="InputBorderBrush"/>
             <SolidColorBrush x:Key="HighlightBrush"                        Color="#4361EE"/>
             <SolidColorBrush x:Key="ActiveBrush"                           Color="#4361EE"/>
             <SolidColorBrush x:Key="ActiveBackgroundBrush"                 Color="#EEF2FF"/>

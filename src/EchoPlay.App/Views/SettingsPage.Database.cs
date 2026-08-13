@@ -17,7 +17,7 @@ namespace EchoPlay.App.Views
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                await ViewModel.RunMaintenanceAsync();
+                await ViewModel.MaintenanceVM.RunMaintenanceAsync();
 
                 // Abschlussdialog – der Nutzer sieht klar, ob die Bereinigung geklappt hat.
                 // MaintenanceStatusText enthält bei Erfolg eine Bestätigung, bei Fehler die Meldung.
@@ -27,7 +27,7 @@ namespace EchoPlay.App.Views
                     Title = _resources.GetString("DatabaseMaintenanceTitle"),
                     Content = new TextBlock
                     {
-                        Text = ViewModel.MaintenanceStatusText,
+                        Text = ViewModel.MaintenanceVM.MaintenanceStatusText,
                         TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
                     },
                     CloseButtonText = _resources.GetString("CommonCloseButton")
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Views
             // NaN tritt auf, wenn der Nutzer ein ungültiges Zeichen eingibt – ignorieren
             if (!double.IsNaN(args.NewValue))
             {
-                ViewModel.DbPurgeDays = (int)args.NewValue;
+                ViewModel.MaintenanceVM.DbPurgeDays = (int)args.NewValue;
             }
         }
 
@@ -58,7 +58,7 @@ namespace EchoPlay.App.Views
         {
             if (!double.IsNaN(args.NewValue))
             {
-                ViewModel.NewReleaseDays = (int)args.NewValue;
+                ViewModel.GeneralVM.NewReleaseDays = (int)args.NewValue;
             }
         }
 
@@ -98,7 +98,7 @@ namespace EchoPlay.App.Views
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    await ViewModel.ResetLibraryAsync(selectedIndex);
+                    await ViewModel.MaintenanceVM.ResetLibraryAsync(selectedIndex);
                 }
             });
         }

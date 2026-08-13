@@ -416,6 +416,9 @@
   <data name="OnlineEpisodeOpenBrowserItem.Text" xml:space="preserve">
     <value>Open in browser</value>
   </data>
+  <data name="EpisodeTileActionButton" xml:space="preserve">
+    <value>More actions</value>
+  </data>
   <data name="OnlineEpisodeCoverSearchItem.Text" xml:space="preserve">
     <value>Search cover</value>
   </data>
@@ -640,36 +643,6 @@
     <value>No file matches the search and filter.</value>
   </data>
   <data name="TagManagerResetFiltersAction" xml:space="preserve">
-    <value>Reset search</value>
-  </data>
-  <data name="ProtokollPageTitle" xml:space="preserve">
-    <value>Log</value>
-  </data>
-  <data name="ProtokollPageSubtitle" xml:space="preserve">
-    <value>Messages from the current session, newest first</value>
-  </data>
-  <data name="ProtokollClearAction" xml:space="preserve">
-    <value>Clear view</value>
-  </data>
-  <data name="ProtokollSearchPlaceholder" xml:space="preserve">
-    <value>Search message or area …</value>
-  </data>
-  <data name="ProtokollLevelError" xml:space="preserve">
-    <value>Errors</value>
-  </data>
-  <data name="ProtokollLevelWarning" xml:space="preserve">
-    <value>Warnings</value>
-  </data>
-  <data name="ProtokollLevelInformation" xml:space="preserve">
-    <value>Information</value>
-  </data>
-  <data name="ProtokollLevelDebug" xml:space="preserve">
-    <value>Debug details</value>
-  </data>
-  <data name="ProtokollNoResultsMessage" xml:space="preserve">
-    <value>No message matches the search and level.</value>
-  </data>
-  <data name="ProtokollResetFiltersAction" xml:space="preserve">
     <value>Reset search</value>
   </data>
   <data name="SuchePageTitle" xml:space="preserve">
@@ -916,16 +889,6 @@
   </data>
   <data name="TagManagerRemoveAllTagsButton.AutomationProperties.Name" xml:space="preserve">
     <value>Remove all tags</value>
-  </data>
-  <!-- ProtokollPage – live log view -->
-  <data name="ProtokollLiveToggle.Header" xml:space="preserve">
-    <value>Live</value>
-  </data>
-  <data name="ProtokollClearButton.ToolTipService.ToolTip" xml:space="preserve">
-    <value>Clear log</value>
-  </data>
-  <data name="ProtokollClearButton.AutomationProperties.Name" xml:space="preserve">
-    <value>Clear log</value>
   </data>
 
   <data name="TagManagerRenameSectionLabel.Text" xml:space="preserve">
@@ -1984,4 +1947,40 @@ The application will close.</value>
   </data>
   <data name="SeriesTileWatchedIndicator.AutomationProperties.Name" xml:space="preserve">
     <value>This series is checked for new episodes</value>
-  </data></root>
+  </data>  <data name="PlayerEpisodeProgress.AutomationProperties.Name" xml:space="preserve">
+    <value>Episode progress</value>
+  </data>
+  <data name="MiniPlayerEpisodeProgress.AutomationProperties.Name" xml:space="preserve">
+    <value>Episode progress</value>
+  </data>
+  <data name="MiniPlayerVolumeButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="MiniPlayerVolumeButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="MiniPlayerVolumeSlider.AutomationProperties.Name" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="MiniPlayerMuteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Mute</value>
+  </data>
+  <data name="MiniPlayerMuteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mute</value>
+  </data>
+  <data name="PlayerVolumeSlider.AutomationProperties.Name" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="PlayerMuteButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Mute</value>
+  </data>
+  <data name="PlayerMuteButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mute</value>
+  </data>
+  <data name="MiniPlayerEpisodeProgressFormat" xml:space="preserve">
+    <value>Episode {0}%</value>
+  </data>
+  <data name="PlayerEpisodeProgressFormat" xml:space="preserve">
+    <value>Whole episode: {0} of {1}</value>
+  </data>
+</root>

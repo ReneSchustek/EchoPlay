@@ -329,7 +329,7 @@ namespace EchoPlay.App.Views
             await ViewModel.LoadAsync();
 
             // Keine abonnierte Serie → direkt zur Suche, damit der Nutzer loslegen kann
-            if (!ViewModel.HasSubscribedSeries)
+            if (!ViewModel.Hints.HasSubscribedSeries)
             {
                 _navigationService.NavigateTo(NavigationTarget.Search, "onboarding");
                 return;

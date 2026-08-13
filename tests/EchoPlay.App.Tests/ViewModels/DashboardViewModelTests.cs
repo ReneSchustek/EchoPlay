@@ -41,13 +41,13 @@ namespace EchoPlay.App.Tests.ViewModels
 
             ServiceProvider provider = services.BuildServiceProvider();
 
-            return new DashboardViewModel(
+            return new DashboardViewModel(new DashboardViewModelContext(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 new FakeErrorDialogService(),
                 new FakeConfirmationDialogService(),
                 new FakePlayerService(),
                 new FakeLoggerFactory(),
-                clock: new FakeClock());
+                Clock: new FakeClock()));
         }
 
         [Fact]
@@ -86,7 +86,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Neuerscheinungen kommen aus dem DB-Cache (leer bei leerem Fake)
-            Assert.Empty(vm.NewEpisodeGroups);
+            Assert.Empty(vm.NeuerscheinungenVM.NewEpisodeGroups);
         }
 
         [Fact]
@@ -101,8 +101,8 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
 
-            _ = Assert.Single(vm.FavoriteSeries);
-            Assert.Equal("TKKG", vm.FavoriteSeries[0].SeriesName);
+            _ = Assert.Single(vm.FavoritenVM.FavoriteSeries);
+            Assert.Equal("TKKG", vm.FavoritenVM.FavoriteSeries[0].SeriesName);
         }
 
         [Fact]
@@ -115,7 +115,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
 
-            Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, vm.NoFavoritesHintVisibility);
+            Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, vm.Hints.NoFavoritesHintVisibility);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
 
-            Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, vm.NoWatchedSeriesHintVisibility);
+            Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, vm.Hints.NoWatchedSeriesHintVisibility);
         }
 
         [Fact]
@@ -145,7 +145,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService());
             await vm.LoadAsync();
 
-            Assert.Equal(Microsoft.UI.Xaml.Visibility.Collapsed, vm.NoWatchedSeriesHintVisibility);
+            Assert.Equal(Microsoft.UI.Xaml.Visibility.Collapsed, vm.Hints.NoWatchedSeriesHintVisibility);
         }
 
         [Fact]
@@ -178,9 +178,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Kacheln werden synchron aus dem Cache gebaut – kein Delay nötig.
             // Die Gruppierung ist jetzt nach Monat, nicht nach Serie.
-            _ = Assert.Single(vm.NewEpisodeGroups);
-            _ = Assert.Single(vm.NewEpisodeGroups[0].Episodes);
-            Assert.Equal("TKKG", vm.NewEpisodeGroups[0].Episodes[0].SeriesName);
+            _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups);
+            _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups[0].Episodes);
+            Assert.Equal("TKKG", vm.NeuerscheinungenVM.NewEpisodeGroups[0].Episodes[0].SeriesName);
         }
 
         [Fact]
@@ -231,7 +231,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Gehörte Folge wurde gefiltert – keine Neuerscheinungen übrig
-            Assert.Empty(vm.NewEpisodeGroups);
+            Assert.Empty(vm.NeuerscheinungenVM.NewEpisodeGroups);
         }
 
         [Fact]
@@ -273,16 +273,16 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Zwei Gruppen: "Angekündigt" und der aktuelle Monat
-            Assert.Equal(2, vm.NewEpisodeGroups.Count);
+            Assert.Equal(2, vm.NeuerscheinungenVM.NewEpisodeGroups.Count);
 
             // "Angekündigt" ist die erste Gruppe (SortKey 0 = ganz oben)
-            NewEpisodesGroupViewModel announcedGroup = vm.NewEpisodeGroups[0];
+            NewEpisodesGroupViewModel announcedGroup = vm.NeuerscheinungenVM.NewEpisodeGroups[0];
             Assert.Equal("Angekündigt", announcedGroup.GroupLabel);
             _ = Assert.Single(announcedGroup.Episodes);
             Assert.Equal("Angekündigte Folge", announcedGroup.Episodes[0].EpisodeTitle);
 
             // Monatsgruppe enthält die verfügbare Folge
-            NewEpisodesGroupViewModel monthGroup = vm.NewEpisodeGroups[1];
+            NewEpisodesGroupViewModel monthGroup = vm.NeuerscheinungenVM.NewEpisodeGroups[1];
             _ = Assert.Single(monthGroup.Episodes);
             Assert.Equal("Verfügbare Folge", monthGroup.Episodes[0].EpisodeTitle);
         }
@@ -325,7 +325,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, cacheService: cacheService);
             await vm.LoadAsync();
 
-            List<NewEpisodeCardViewModel> episodes = vm.NewEpisodeGroups.SelectMany(g => g.Episodes).ToList();
+            List<NewEpisodeCardViewModel> episodes = vm.NeuerscheinungenVM.NewEpisodeGroups.SelectMany(g => g.Episodes).ToList();
             Assert.Equal(2, episodes.Count);
             Assert.Equal("Folge Neu", episodes[0].EpisodeTitle);
             Assert.Equal("Folge Alt", episodes[1].EpisodeTitle);
@@ -369,9 +369,9 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Zwei Monatsgruppen: Januar und Dezember (neuester zuerst)
-            Assert.Equal(2, vm.NewEpisodeGroups.Count);
-            Assert.Contains("Januar", vm.NewEpisodeGroups[0].GroupLabel, StringComparison.Ordinal);
-            Assert.Contains("Dezember", vm.NewEpisodeGroups[1].GroupLabel, StringComparison.Ordinal);
+            Assert.Equal(2, vm.NeuerscheinungenVM.NewEpisodeGroups.Count);
+            Assert.Contains("Januar", vm.NeuerscheinungenVM.NewEpisodeGroups[0].GroupLabel, StringComparison.Ordinal);
+            Assert.Contains("Dezember", vm.NeuerscheinungenVM.NewEpisodeGroups[1].GroupLabel, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -456,7 +456,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Trotz gefülltem Cache: keine Neuerscheinungen im Offline-Modus
-            Assert.Empty(vm.NewEpisodeGroups);
+            Assert.Empty(vm.NeuerscheinungenVM.NewEpisodeGroups);
         }
 
         /// <summary>
@@ -559,9 +559,9 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            _ = Assert.Single(vm.RecentSeries);
-            Assert.Equal("Die drei Fragezeichen", vm.RecentSeries[0].SeriesName);
-            Assert.Equal("Online-Folge", vm.RecentSeries[0].LastEpisodeTitle);
+            _ = Assert.Single(vm.ZuletztGehoertVM.Items);
+            Assert.Equal("Die drei Fragezeichen", vm.ZuletztGehoertVM.Items[0].SeriesName);
+            Assert.Equal("Online-Folge", vm.ZuletztGehoertVM.Items[0].LastEpisodeTitle);
         }
 
         [Fact]
@@ -597,8 +597,8 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            _ = Assert.Single(vm.RecentSeries);
-            Assert.Equal("TKKG", vm.RecentSeries[0].SeriesName);
+            _ = Assert.Single(vm.ZuletztGehoertVM.Items);
+            Assert.Equal("TKKG", vm.ZuletztGehoertVM.Items[0].SeriesName);
         }
 
         [Fact]
@@ -648,10 +648,10 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            Assert.Equal(2, vm.RecentSeries.Count);
+            Assert.Equal(2, vm.ZuletztGehoertVM.Items.Count);
             // Serie B war zuletzt gehört → steht oben
-            Assert.Equal("Serie B", vm.RecentSeries[0].SeriesName);
-            Assert.Equal("Serie A", vm.RecentSeries[1].SeriesName);
+            Assert.Equal("Serie B", vm.ZuletztGehoertVM.Items[0].SeriesName);
+            Assert.Equal("Serie A", vm.ZuletztGehoertVM.Items[1].SeriesName);
         }
 
         // ── CleanEpisodeTitle ──────────────────────────────────────────────
@@ -837,10 +837,10 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Ohne CoverService-Registrierung gibt es kein Cover – die Kachel erscheint trotzdem.
-            _ = Assert.Single(vm.InProgressEpisodes);
-            Assert.False(vm.InProgressEpisodes[0].HasEpisodeCover);
+            _ = Assert.Single(vm.InProgressVM.Items);
+            Assert.False(vm.InProgressVM.Items[0].HasEpisodeCover);
 
-            _ = Assert.Single(vm.RecentSeries);
+            _ = Assert.Single(vm.ZuletztGehoertVM.Items);
         }
 
         [Fact]

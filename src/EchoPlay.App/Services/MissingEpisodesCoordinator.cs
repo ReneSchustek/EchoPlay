@@ -131,7 +131,7 @@ namespace EchoPlay.App.Services
                 for (int i = 0; i < localSeries.Count; i++)
                 {
                     Series series = localSeries[i];
-                    _statusBar.SetScanProgress(string.Format(
+                    _statusBar.ScanProgress.SetText(string.Format(
                         CultureInfo.CurrentCulture, progressPattern, i + 1, localSeries.Count, series.Title));
 
                     SeriesMissingEpisodesResult result = await CheckSingleSeriesForReportAsync(series, onlineAvailable, checker, cancellationToken);
@@ -151,7 +151,7 @@ namespace EchoPlay.App.Services
                     _statusBar.IsTemporarilyOnline = false;
                 }
 
-                _statusBar.ClearScanProgress();
+                _statusBar.ScanProgress.Clear();
             }
         }
 

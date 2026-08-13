@@ -1,6 +1,7 @@
 using EchoPlay.App.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace EchoPlay.App.Tests.Fakes
 {
@@ -23,10 +24,28 @@ namespace EchoPlay.App.Tests.Fakes
         public string? CurrentTrackTitle { get; private set; }
 
         /// <inheritdoc/>
+        public string? CurrentTrackPath { get; private set; }
+
+        /// <inheritdoc/>
+        public IReadOnlyList<string> CurrentTrackPaths { get; private set; } = [];
+
+        /// <inheritdoc/>
         public TimeSpan Position { get; private set; }
 
         /// <inheritdoc/>
         public TimeSpan Duration { get; private set; }
+
+        /// <summary>Die Stelle in der ganzen Folge.</summary>
+        public TimeSpan OverallPosition { get; private set; }
+
+        /// <summary>Die Gesamtdauer der Folge über alle Spuren.</summary>
+        public TimeSpan OverallDuration { get; private set; }
+
+        /// <summary>Lautstärke von 0,0 bis 1,0.</summary>
+        public double Volume { get; set; } = 1.0;
+
+        /// <summary>Ob stummgeschaltet ist.</summary>
+        public bool IsMuted { get; set; }
 
         /// <inheritdoc/>
         public double PlaybackRate { get; set; } = 1.0;
@@ -41,7 +60,7 @@ namespace EchoPlay.App.Tests.Fakes
         public bool SetSleepTimerWasCalled { get; private set; }
 
         /// <summary>Aufgezeichnete Play-Aufrufe.</summary>
-        public List<(Guid EpisodeId, IReadOnlyList<string> TrackPaths, int StartIndex, TimeSpan ResumePosition)> PlayCalls { get; } = [];
+        public List<(Guid EpisodeId, IReadOnlyList<string> TrackPaths, int StartIndex, TimeSpan ResumePosition, IReadOnlyList<TimeSpan>? TrackDurations)> PlayCalls { get; } = [];
 
         /// <summary>Gibt an, ob <see cref="Pause"/> aufgerufen wurde.</summary>
         public bool PauseWasCalled { get; private set; }
@@ -74,13 +93,36 @@ namespace EchoPlay.App.Tests.Fakes
             IsPlaying = isPlaying;
             Position = TimeSpan.FromSeconds(positionSeconds);
             Duration = TimeSpan.FromSeconds(durationSeconds);
+            OverallPosition = Position;
+            OverallDuration = Duration;
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <inheritdoc/>
-        public void Play(Guid episodeId, IReadOnlyList<string> trackPaths, int startIndex = 0, TimeSpan resumePosition = default)
+        public void Play(
+            Guid episodeId,
+            IReadOnlyList<string> trackPaths,
+            int startIndex = 0,
+            TimeSpan resumePosition = default,
+            IReadOnlyList<TimeSpan>? trackDurations = null)
         {
-            PlayCalls.Add((episodeId, trackPaths, startIndex, resumePosition));
+            PlayCalls.Add((episodeId, trackPaths, startIndex, resumePosition, trackDurations));
+            CurrentTrackPaths = [.. trackPaths];
+        }
+
+        /// <summary>
+        /// Simuliert eine Wiedergabe, die woanders gestartet wurde: Der Dienst führt eine
+        /// Liste, ohne dass die Player-Seite daran beteiligt war.
+        /// </summary>
+        /// <param name="trackPaths">Dateipfade der laufenden Liste.</param>
+        /// <param name="currentPath">Dateipfad der laufenden Spur.</param>
+        public void SimulateExternalPlayback(IReadOnlyList<string> trackPaths, string? currentPath)
+        {
+            CurrentTrackPaths = [.. trackPaths];
+            CurrentTrackPath = currentPath;
+            CurrentTrackTitle = currentPath is null ? null : Path.GetFileNameWithoutExtension(currentPath);
+            IsPlaying = true;
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <inheritdoc/>
@@ -94,6 +136,8 @@ namespace EchoPlay.App.Tests.Fakes
         {
             StopWasCalled = true;
             CurrentTrackTitle = null;
+            CurrentTrackPath = null;
+            CurrentTrackPaths = [];
             IsPlaying = false;
             StateChanged?.Invoke(this, EventArgs.Empty);
         }

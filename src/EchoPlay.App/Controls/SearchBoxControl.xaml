@@ -12,11 +12,35 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Border
+        x:Name="FieldBorder"
         Background="{ThemeResource InputBackgroundBrush}"
         BorderBrush="{ThemeResource InputBorderBrush}"
         BorderThickness="{StaticResource HairlineBorderThickness}"
         CornerRadius="{StaticResource ControlCornerRadius}"
-        Padding="{StaticResource ControlPadding}">
+        Padding="{StaticResource ControlPadding}"
+        PointerEntered="OnFieldPointerEntered"
+        PointerExited="OnFieldPointerExited">
+
+        <!-- Die innere TextBox trägt keinen Rahmen; ohne diese Zustände am äußeren Rahmen
+             gäbe es also weder eine Reaktion auf den Zeiger noch eine sichtbare Marke,
+             wo die Tastatur gerade steht. -->
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="FieldStates">
+                <VisualState x:Name="Normal"/>
+                <VisualState x:Name="PointerOver">
+                    <VisualState.Setters>
+                        <Setter Target="FieldBorder.BorderBrush" Value="{ThemeResource InputBorderHoverBrush}"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Focused">
+                    <VisualState.Setters>
+                        <Setter Target="FieldBorder.BorderBrush" Value="{ThemeResource InputBorderFocusBrush}"/>
+                        <Setter Target="FieldBorder.BorderThickness" Value="{StaticResource FocusVisualThickness}"/>
+                        <Setter Target="FieldBorder.Background" Value="{ThemeResource InputBackgroundFocusBrush}"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
 
         <Grid ColumnSpacing="8">
             <Grid.ColumnDefinitions>
@@ -42,6 +66,8 @@
                 MinHeight="0"
                 VerticalAlignment="Center"
                 TextChanged="OnTextChanged"
+                GotFocus="OnInputGotFocus"
+                LostFocus="OnInputLostFocus"
                 KeyDown="OnKeyDown"/>
 
             <!-- Der Name für die Sprachausgabe kommt aus der Ressourcendatei und nicht aus

@@ -85,6 +85,25 @@
                     Tapped="OnTimeDisplayTapped"/>
             </Grid>
 
+            <!-- Fortschritt der ganzen Folge. Der Regler darüber zeigt die laufende Datei;
+                 bei mehreren Dateien sagt dessen Zeit allein nicht, wie weit man im
+                 Hörspiel ist. Erscheint deshalb nur dann. -->
+            <StackPanel
+                Margin="12,8,12,0"
+                Spacing="2"
+                Visibility="{x:Bind ViewModel.EpisodeProgressVisibility, Mode=OneWay}">
+                <ProgressBar
+                    x:Uid="PlayerEpisodeProgress"
+                    Value="{x:Bind ViewModel.EpisodeProgressPercent, Mode=OneWay}"
+                    Maximum="100"
+                    IsIndeterminate="False"/>
+                <TextBlock
+                    Text="{x:Bind ViewModel.EpisodeProgressText, Mode=OneWay}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    HorizontalAlignment="Center"/>
+            </StackPanel>
+
             <!-- Wiedergabe-Steuerelemente -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
                 <Button
@@ -110,6 +129,30 @@
                     Width="48" Height="48"
                     CornerRadius="24"
                     Command="{x:Bind ViewModel.NextCommand}"/>
+            </StackPanel>
+
+            <!-- Lautstärke. Auf der Player-Seite ist Platz für den Regler selbst; im
+                 Mini-Player steckt er hinter einem Knopf. -->
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Center"
+                Spacing="8"
+                Margin="0,16,0,0">
+                <Button
+                    x:Uid="PlayerMuteButton"
+                    Content="{x:Bind ViewModel.Volume.VolumeGlyph, Mode=OneWay}"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Width="40" Height="40"
+                    Command="{x:Bind ViewModel.Volume.ToggleMuteCommand}"/>
+                <Slider
+                    x:Uid="PlayerVolumeSlider"
+                    Minimum="0"
+                    Maximum="100"
+                    Width="180"
+                    VerticalAlignment="Center"
+                    Value="{x:Bind ViewModel.Volume.VolumePercent, Mode=TwoWay}"
+                    PointerCaptureLost="OnVolumeSliderReleased"
+                    LostFocus="OnVolumeSliderLostFocus"/>
             </StackPanel>
 
         </StackPanel>
@@ -144,7 +187,7 @@
                 SelectionMode="None">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="vm:PlaylistItemViewModel">
-                        <Grid ColumnSpacing="8" Padding="0,4" AutomationProperties.Name="{x:Bind FileName}">
+                        <Grid ColumnSpacing="8" Padding="0,4" AutomationProperties.Name="{x:Bind Title, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="28"/>
                                 <ColumnDefinition Width="*"/>
@@ -169,7 +212,7 @@
 
                             <TextBlock
                                 Grid.Column="1"
-                                Text="{x:Bind FileName}"
+                                Text="{x:Bind Title, Mode=OneWay}"
                                 TextTrimming="CharacterEllipsis"
                                 VerticalAlignment="Center"/>
                         </Grid>

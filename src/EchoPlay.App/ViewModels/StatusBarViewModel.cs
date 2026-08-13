@@ -46,9 +46,6 @@ namespace EchoPlay.App.ViewModels
         private bool _isOffline;
         private bool _hasUnsavedSettings;
         private bool _isTemporarilyOnline;
-        private string _scanProgressText = string.Empty;
-        private double _scanProgressValue;
-        private bool _isScanActive;
         private readonly ILanguageSwitchService? _languageSwitchService;
 
         /// <summary>
@@ -71,6 +68,8 @@ namespace EchoPlay.App.ViewModels
             _taskbar = taskbar;
             _clock = clock;
             _languageSwitchService = languageSwitchService;
+
+            ScanProgress = new ScanProgressIndicator(taskbar);
 
             // CommandParameter enthält den Theme-Namen bzw. den Sprachcode als string
             SwitchThemeCommand = new ParameterizedRelayCommand(param => SwitchTheme(param as string ?? string.Empty));
@@ -333,110 +332,11 @@ namespace EchoPlay.App.ViewModels
         // ── Scan-Fortschritt ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// Fortschrittstext des laufenden Bibliotheks-Scans, z.B. "Scanne TKKG …".
-        /// Leer wenn kein Scan aktiv ist.
+        /// Der Fortschritt eines laufenden Vorgangs — Text, Balken und Taskleisten-Symbol.
+        /// Die Anzeige bindet direkt auf diesen Bereich; eine zweite Fassung der
+        /// Eigenschaften auf dieser Ebene wäre nur eine Fehlerquelle.
         /// </summary>
-        public string ScanProgressText
-        {
-            get => _scanProgressText;
-            private set => SetProperty(ref _scanProgressText, value);
-        }
-
-        /// <summary>
-        /// Numerischer Fortschritt des laufenden Scans (0–100).
-        /// 0 bedeutet, dass die Gesamtanzahl noch unbekannt ist → Balken indeterministisch.
-        /// </summary>
-        public double ScanProgressValue
-        {
-            get => _scanProgressValue;
-            private set
-            {
-                if (SetProperty(ref _scanProgressValue, value))
-                {
-                    OnPropertyChanged(nameof(IsScanIndeterminate));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gibt an, ob gerade ein Bibliotheks-Scan läuft.
-        /// Steuert die Sichtbarkeit der Fortschrittsanzeige in der Info-Leiste.
-        /// </summary>
-        public bool IsScanActive
-        {
-            get => _isScanActive;
-            private set
-            {
-                if (SetProperty(ref _isScanActive, value))
-                {
-                    OnPropertyChanged(nameof(ScanProgressVisibility));
-                    OnPropertyChanged(nameof(IsScanIndeterminate));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gibt an, ob der Fortschrittsbalken indeterministisch dargestellt werden soll.
-        /// True wenn ein Scan läuft, aber die Gesamtanzahl der Dateien noch unbekannt ist (PercentComplete = 0).
-        /// </summary>
-        public bool IsScanIndeterminate => _isScanActive && _scanProgressValue <= 0;
-
-        /// <summary>
-        /// Sichtbarkeit der Scan-Fortschrittsanzeige in der Info-Leiste.
-        /// Nur eingeblendet, wenn ein Scan aktiv ist.
-        /// </summary>
-        public Visibility ScanProgressVisibility =>
-            _isScanActive ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Aktualisiert Text und numerischen Fortschritt des laufenden Scans.
-        /// Wird aus <see cref="LocalLibraryViewModel"/> im Progress-Callback aufgerufen.
-        /// Aktualisiert zusätzlich den Fortschrittsbalken im Taskleisten-Symbol.
-        /// </summary>
-        /// <param name="progress">Aktueller Scan-Fortschritt mit Text und Prozentwert.</param>
-        public void UpdateScanProgress(ScanProgress progress)
-        {
-            ArgumentNullException.ThrowIfNull(progress);
-            ScanProgressText = progress.StatusText;
-            ScanProgressValue = progress.PercentComplete;
-            IsScanActive = true;
-
-            // Taskleisten-Fortschritt: indeterministisch solange Gesamtanzahl unbekannt (0 %)
-            if (progress.PercentComplete > 0)
-            {
-                _taskbar.SetProgress(progress.PercentComplete);
-            }
-            else
-            {
-                _taskbar.SetIndeterminate();
-            }
-        }
-
-        /// <summary>
-        /// Setzt den Fortschrittstext und aktiviert die Anzeige in der Info-Leiste.
-        /// Ohne numerischen Fortschritt – der Balken läuft indeterministisch.
-        /// Geeignet für Vorgänge, bei denen kein Prozentwert bekannt ist (z.B. Import-Fortschritt).
-        /// </summary>
-        /// <param name="text">Der anzuzeigende Fortschrittstext.</param>
-        public void SetScanProgress(string text)
-        {
-            ScanProgressText = text;
-            ScanProgressValue = 0;
-            IsScanActive = true;
-            _taskbar.SetIndeterminate();
-        }
-
-        /// <summary>
-        /// Leert den Fortschrittstext und blendet die Anzeige aus.
-        /// Wird nach Abschluss des Scans aufgerufen, damit die Leiste immer verschwindet.
-        /// </summary>
-        public void ClearScanProgress()
-        {
-            ScanProgressText = string.Empty;
-            ScanProgressValue = 0;
-            IsScanActive = false;
-            _taskbar.Clear();
-        }
+        public ScanProgressIndicator ScanProgress { get; }
 
         // ── Commands ─────────────────────────────────────────────────────────────
 

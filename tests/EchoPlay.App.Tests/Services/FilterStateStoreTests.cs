@@ -47,9 +47,18 @@ namespace EchoPlay.App.Tests.Services
             FilterStateStore store = new();
 
             store.GetOrCreate<LocalArtistFilter>("Gemeinsam").SearchText = "Serien";
-            LogEntryFilter messages = store.GetOrCreate<LogEntryFilter>("Gemeinsam");
+            SecondCriterion other = store.GetOrCreate<SecondCriterion>("Gemeinsam");
 
-            Assert.Equal(string.Empty, messages.SearchText);
+            Assert.Equal(string.Empty, other.SearchText);
+        }
+
+        /// <summary>
+        /// Zweiter Kriterien-Typ allein für diesen Test. Die Anwendung führt derzeit nur einen;
+        /// die Zusicherung des Speichers gilt trotzdem und soll geprüft bleiben.
+        /// </summary>
+        private sealed class SecondCriterion
+        {
+            public string SearchText { get; set; } = string.Empty;
         }
 
         [Fact]
@@ -83,7 +92,7 @@ namespace EchoPlay.App.Tests.Services
 
             LocalArtistsViewModel neu = new(
                 scopeFactory: null!,
-                coverService: null,
+                coverBuilder: null,
                 filter: store.GetOrCreate<LocalArtistFilter>("LocalLibrary"));
 
             Assert.True(neu.FavoritesOnly);

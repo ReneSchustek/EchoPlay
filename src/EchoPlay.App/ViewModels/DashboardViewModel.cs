@@ -1,144 +1,94 @@
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
-using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Playback;
-using EchoPlay.Data.Entities.Settings;
+using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
-    /// ViewModel für die Startseite (Dashboard).
-    /// Koordiniert fünf Sub-VMs (Neuerscheinungen, Favoriten, Weiterhören, In Progress,
-    /// Zuletzt gehört), lädt gemeinsame Daten einmalig aus der DB und verteilt sie über
-    /// den <see cref="DashboardDataLoader"/> an die Sektionen.
-    /// Die Page-XAML bindet weiterhin gegen <c>ViewModel.NewEpisodeGroups</c>,
-    /// <c>ViewModel.FavoriteSeries</c>, <c>ViewModel.RecentSeries</c> usw. – per
-    /// Pass-Through auf die Sub-VMs.
+    /// ViewModel für die Startseite.
     /// </summary>
+    /// <remarks>
+    /// Die Seite besteht aus fünf Abschnitten — Neuerscheinungen, Favoriten, Weiterhören,
+    /// „läuft gerade" und „zuletzt gehört" —, und jeder hat sein eigenes Ansichtsmodell.
+    /// Dieses hier liest die gemeinsame Datengrundlage einmal
+    /// (<see cref="DashboardSnapshot"/>), lässt die Abschnitte daraus bauen und verteilt die
+    /// Ergebnisse. Bindungen sprechen die Abschnitte direkt an, etwa
+    /// <c>ViewModel.NeuerscheinungenVM.NewEpisodeGroups</c>.
+    /// </remarks>
     public sealed class DashboardViewModel : ObservableObject, IDisposable
     {
-        // Dashboard-Sektionsname für Positionsspeicherung der Neuerscheinungen
-        private const string SectionNewReleases = "Neuerscheinungen";
-
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IConfirmationDialogService _confirmationDialogService;
-        private readonly ILocalizationService? _localizationService;
         private readonly ILogger _logger;
+        private readonly DashboardCoverProvider _coverProvider;
         private readonly DashboardDataLoader _dataLoader;
+        private readonly DashboardSeriesSectionBuilder _sectionBuilder;
+        private readonly NewReleaseGroupBuilder _newReleaseBuilder;
         private readonly INewReleaseEventService? _newReleaseEventService;
         private readonly DispatcherQueue? _uiDispatcherQueue;
 
         private bool _isLoading;
-        private bool _hasSubscribedSeries = true;
-        private bool _hasFavoriteSeries;
-        private bool _hasWatchedSeries;
 
-        // Lifecycle-CTS: jeder LoadAsync-Aufruf cancelt die laufende Load-Session
-        // und legt eine neue an. Bei Dispose wird der aktuelle gestoppt + entsorgt.
+        // Jeder Ladelauf bricht den vorigen ab und legt ein neues Abbruchzeichen an. Beim
+        // Freigeben wird das laufende gestoppt.
         private CancellationTokenSource? _loadCts;
 
         /// <summary>
         /// Initialisiert das ViewModel mit allen benötigten Services.
         /// </summary>
-        /// <param name="scopeFactory">Für scoped DB-Zugriffe in LoadAsync und in den Kachel-Commands.</param>
-        /// <param name="errorDialogService">Für Info-Dialoge bei nicht verfügbaren Episoden.</param>
-        /// <param name="confirmationDialogService">Für Bestätigungs-Dialoge vor Statusänderungen.</param>
-        /// <param name="playerService">Für das Starten der Wiedergabe.</param>
-        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-        /// <param name="coverService">Zentraler Cover-Dienst für DB-basierte Cover. Nullable für Tests.</param>
-        /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
-        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
-        /// <param name="backgroundCoverService">Hintergrund-Service, der fehlende Folgen-Cover nach dem Rendern nachlädt. Nullable für Tests.</param>
-        /// <param name="newReleaseEventService">Meldet Änderungen am Neuerscheinungen-Cache. Nullable für Tests.</param>
-        public DashboardViewModel(
-            IServiceScopeFactory scopeFactory,
-            IErrorDialogService errorDialogService,
-            IConfirmationDialogService confirmationDialogService,
-            IPlayerService playerService,
-            ILoggerFactory loggerFactory,
-            ICoverService? coverService = null,
-            ILocalizationService? localizationService = null,
-            IClock? clock = null,
-            BackgroundCoverService? backgroundCoverService = null,
-            INewReleaseEventService? newReleaseEventService = null)
+        /// <param name="context">Bündelt alle per DI aufgelösten Dienste.</param>
+        internal DashboardViewModel(DashboardViewModelContext context)
         {
-            ArgumentNullException.ThrowIfNull(loggerFactory);
-            _scopeFactory = scopeFactory;
-            _confirmationDialogService = confirmationDialogService;
-            _localizationService = localizationService;
-            _logger = loggerFactory.CreateLogger("DashboardViewModel");
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(context.LoggerFactory);
 
-            IClock resolvedClock = clock ?? new SystemClock();
+            _scopeFactory = context.ScopeFactory;
+            _logger = context.LoggerFactory.CreateLogger("DashboardViewModel");
 
-            // UI-Dispatcher einfangen, damit der Hintergrund-Cover-Callback BitmapImage-Instanzen
-            // auf dem UI-Thread erzeugen und Kacheln per PropertyChanged aktualisieren kann.
-            // In Unit-Tests ohne WinUI-Runtime bleibt der Wert null – der DataLoader fällt dann
-            // auf Task.Run zurück.
-            DispatcherQueue? dispatcherQueue;
-            try
-            {
-                dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                dispatcherQueue = null;
-            }
+            IClock resolvedClock = context.Clock ?? new SystemClock();
+            _uiDispatcherQueue = TryGetDispatcherQueue();
 
-            _dataLoader = new DashboardDataLoader(
-                scopeFactory,
-                errorDialogService,
-                confirmationDialogService,
-                playerService,
-                coverService,
-                localizationService,
-                resolvedClock,
-                _logger,
-                backgroundCoverService,
-                dispatcherQueue);
+            _coverProvider = new DashboardCoverProvider(
+                context.ScopeFactory, context.CoverService, context.BackgroundCoverService, _uiDispatcherQueue);
 
-            // Sub-VMs initialisieren und PropertyChanged an eigene Pass-Through-Properties weiterreichen,
-            // damit die XAML-Bindings auf Top-VM-Properties unverändert funktionieren.
+            NewEpisodeCardServices cardServices = new(
+                context.ErrorDialogService,
+                context.ConfirmationDialogService,
+                context.PlayerService,
+                context.LocalizationService);
+
+            _dataLoader = new DashboardDataLoader(context.ScopeFactory, _coverProvider, cardServices, resolvedClock);
+            _sectionBuilder = new DashboardSeriesSectionBuilder(
+                context.ScopeFactory, _coverProvider, context.ConfirmationDialogService, context.LocalizationService);
+            _newReleaseBuilder = new NewReleaseGroupBuilder(
+                context.ScopeFactory, _coverProvider, cardServices, resolvedClock, _logger);
+
             NeuerscheinungenVM = new DashboardNeuerscheinungenViewModel();
-            FavoritenVM = new DashboardFavoritenViewModel(scopeFactory, _logger);
+            FavoritenVM = new DashboardFavoritenViewModel(context.ScopeFactory, _logger);
             WeiterhoerenVM = new DashboardWeiterhoerenViewModel();
             InProgressVM = new DashboardInProgressViewModel();
             ZuletztGehoertVM = new DashboardRecentlyPlayedViewModel();
 
-            NeuerscheinungenVM.PropertyChanged += OnSubVmPropertyChanged;
-            FavoritenVM.PropertyChanged += OnSubVmPropertyChanged;
-            WeiterhoerenVM.PropertyChanged += OnSubVmPropertyChanged;
-            InProgressVM.PropertyChanged += OnSubVmPropertyChanged;
-            ZuletztGehoertVM.PropertyChanged += OnSubVmPropertyChanged;
-
-            // FavoritesChanged löst die Neuberechnung des NoFavoritesHint-Visibility-Flags aus,
-            // wenn der Nutzer Favoriten entfernt oder umsortiert.
+            // Entfernt oder sortiert der Nutzer Favoriten, ändert sich der Hinweis darüber.
             FavoritenVM.FavoritesChanged += OnFavoritesChanged;
 
-            // Der Neuerscheinungs-Check läuft nach dem Favorisieren im Hintergrund weiter –
-            // ohne dieses Abo bliebe die schon gerenderte Seite auf dem alten Stand.
-            _uiDispatcherQueue = dispatcherQueue;
-            _newReleaseEventService = newReleaseEventService;
+            // Die Prüfung auf Neuerscheinungen läuft nach dem Favorisieren im Hintergrund
+            // weiter — ohne dieses Abo bliebe die schon gezeichnete Seite auf altem Stand.
+            _newReleaseEventService = context.NewReleaseEventService;
             if (_newReleaseEventService is not null)
             {
                 _newReleaseEventService.CacheChanged += OnNewReleaseCacheChanged;
             }
         }
-
-        // ── Sub-VMs ─────────────────────────────────────────────────────────────
 
         /// <summary>Sub-VM für den Neuerscheinungen-Abschnitt.</summary>
         public DashboardNeuerscheinungenViewModel NeuerscheinungenVM { get; }
@@ -149,31 +99,16 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sub-VM für den „Weiterhören"-Abschnitt.</summary>
         public DashboardWeiterhoerenViewModel WeiterhoerenVM { get; }
 
-        /// <summary>Sub-VM für den „In Progress"-Abschnitt.</summary>
+        /// <summary>Sub-VM für den „läuft gerade"-Abschnitt.</summary>
         public DashboardInProgressViewModel InProgressVM { get; }
 
         /// <summary>Sub-VM für den „Zuletzt gehört"-Abschnitt.</summary>
         public DashboardRecentlyPlayedViewModel ZuletztGehoertVM { get; }
 
-        // ── Top-VM-Zustand ──────────────────────────────────────────────────────
-
         /// <summary>
-        /// Gibt an, ob mindestens eine abonnierte Serie vorhanden ist.
-        /// Wird auf <see langword="false"/> gesetzt, wenn die Datenbank keine abonnierten Serien
-        /// enthält – dann navigiert die Startseite automatisch zur Suche (Onboarding).
+        /// Die Hinweise, mit denen die Seite einen noch leeren Bestand erklärt.
         /// </summary>
-        public bool HasSubscribedSeries
-        {
-            get => _hasSubscribedSeries;
-            private set
-            {
-                if (SetProperty(ref _hasSubscribedSeries, value))
-                {
-                    OnPropertyChanged(nameof(NoFavoritesHintVisibility));
-                    OnPropertyChanged(nameof(NoWatchedSeriesHintVisibility));
-                }
-            }
-        }
+        public DashboardOnboardingHints Hints { get; } = new();
 
         /// <summary>
         /// Gibt an, ob gerade ein Ladevorgang läuft. Steuert den ProgressRing auf der Startseite.
@@ -184,71 +119,8 @@ namespace EchoPlay.App.ViewModels
             private set => SetProperty(ref _isLoading, value);
         }
 
-        /// <summary>
-        /// Hinweis, wenn abonnierte Serien vorhanden sind, aber noch keine favorisiert wurden.
-        /// Steuert die Sichtbarkeit des Hinweistexts im Neuerscheinungen-Abschnitt.
-        /// </summary>
-        public Visibility NoFavoritesHintVisibility =>
-            _hasSubscribedSeries && !_hasFavoriteSeries ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Hinweis, wenn Favoriten existieren, aber keine einzige Serie überwacht wird.
-        /// Ohne überwachte Serie fragt der Start gar nicht erst beim Provider nach und der
-        /// Neuerscheinungen-Abschnitt verschwindet komplett – der Hinweis macht diesen
-        /// Zustand sichtbar, statt ihn wie einen Fehler wirken zu lassen.
-        /// Der Fall tritt nur noch bei Altbeständen auf: Favorisieren aktiviert die
-        /// Überwachung inzwischen automatisch (siehe <see cref="ISeriesDataService.SetFavoriteAsync"/>).
-        /// </summary>
-        public Visibility NoWatchedSeriesHintVisibility =>
-            _hasSubscribedSeries && _hasFavoriteSeries && !_hasWatchedSeries
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-        // ── Pass-Through-Eigenschaften ──────────────────────────────────────────
-
-        /// <inheritdoc cref="DashboardNeuerscheinungenViewModel.NewEpisodeGroups"/>
-        public ObservableCollection<NewEpisodesGroupViewModel> NewEpisodeGroups => NeuerscheinungenVM.NewEpisodeGroups;
-
-        /// <inheritdoc cref="DashboardNeuerscheinungenViewModel.NewEpisodeGroupsVisibility"/>
-        public Visibility NewEpisodeGroupsVisibility => NeuerscheinungenVM.NewEpisodeGroupsVisibility;
-
-        /// <inheritdoc cref="DashboardNeuerscheinungenViewModel.NewReleasesLoadingVisibility"/>
-        public Visibility NewReleasesLoadingVisibility => NeuerscheinungenVM.NewReleasesLoadingVisibility;
-
-        /// <inheritdoc cref="DashboardNeuerscheinungenViewModel.NewReleasesSectionVisibility"/>
-        public Visibility NewReleasesSectionVisibility => NeuerscheinungenVM.NewReleasesSectionVisibility;
-
-        /// <inheritdoc cref="DashboardNeuerscheinungenViewModel.IsLoadingNewReleases"/>
-        public bool IsLoadingNewReleases => NeuerscheinungenVM.IsLoadingNewReleases;
-
-        /// <inheritdoc cref="DashboardFavoritenViewModel.FavoriteSeries"/>
-        public ObservableCollection<FavoriteSeriesCardViewModel> FavoriteSeries => FavoritenVM.FavoriteSeries;
-
-        /// <inheritdoc cref="DashboardFavoritenViewModel.FavoriteSectionVisibility"/>
-        public Visibility FavoriteSectionVisibility => FavoritenVM.FavoriteSectionVisibility;
-
-        /// <summary>Angefangene Serien mit noch ungehörten Folgen (Weiterhören-Sektion).</summary>
-        public IReadOnlyList<UnheardSeriesCardViewModel> UnheardSeries => WeiterhoerenVM.Items;
-
-        /// <summary>Sichtbarkeit der Weiterhören-Sektion.</summary>
-        public Visibility UnheardSectionVisibility => WeiterhoerenVM.SectionVisibility;
-
-        /// <summary>Aktuell laufende Episoden (In-Progress-Sektion).</summary>
-        public IReadOnlyList<NewEpisodeCardViewModel> InProgressEpisodes => InProgressVM.Items;
-
-        /// <summary>Sichtbarkeit der In-Progress-Sektion.</summary>
-        public Visibility InProgressSectionVisibility => InProgressVM.SectionVisibility;
-
-        /// <summary>Zuletzt gehörte Serien (Zuletzt-gehört-Sektion).</summary>
-        public IReadOnlyList<RecentSeriesCardViewModel> RecentSeries => ZuletztGehoertVM.Items;
-
-        /// <summary>Sichtbarkeit der Zuletzt-gehört-Sektion.</summary>
-        public Visibility RecentSectionVisibility => ZuletztGehoertVM.SectionVisibility;
-
         /// <inheritdoc cref="DashboardFavoritenViewModel.SaveFavoriteSeriesOrderAsync"/>
         public Task SaveFavoriteSeriesOrderAsync() => FavoritenVM.SaveFavoriteSeriesOrderAsync();
-
-        // ── Laden ───────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Lädt alle Abschnitte der Startseite und verteilt die Ergebnisse an die Sub-VMs.
@@ -257,338 +129,177 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Der Task ist abgeschlossen, wenn alle Abschnitte gefüllt und an die Sub-ViewModels verteilt sind.</returns>
         public async Task LoadAsync()
         {
-            // Lifecycle-Cancellation: laufenden Lade-Lauf abbrechen, Token erneuern.
-            // Wenn der Nutzer die Seite verlässt oder neu auf das Dashboard navigiert, sollen
-            // pending Service-Calls keinen verworfenen VM-State mehr beschreiben.
-            CancellationTokenSource? previous = _loadCts;
-            _loadCts = new CancellationTokenSource();
-            CancellationToken ct = _loadCts.Token;
-            if (previous is not null)
-            {
-                await previous.CancelAsync();
-                previous.Dispose();
-            }
+            CancellationToken ct = await BeginLoadSessionAsync();
 
-            // Timing-Scope für Support: alle Build*-Schritte und HTTP/DB-Zeilen werden unter
-            // „UA:<id> DashboardLoad" gruppiert – über `grep UA:<id>` pro Start auffindbar.
+            // Zeitmessung für die Diagnose: alle Bau-Schritte und die HTTP-/DB-Zeilen darunter
+            // erscheinen im Protokoll unter derselben Kennung.
             using IDisposable ua = UserActionScope.BeginUserAction("DashboardLoad");
             Stopwatch totalStopwatch = Stopwatch.StartNew();
 
             IsLoading = true;
-
-            // StartupResult wurde im Splash vorgeladen – enthält den Offline-Status.
-            StartupResult? startupResult = null;
-            try
-            {
-                startupResult = App.StartupResultData;
-            }
-            catch (InvalidOperationException)
-            {
-                // App.StartupResultData kann InvalidOperationException werfen,
-                // wenn der Splash noch nicht abgeschlossen ist – Fallback auf DB-Abfrage
-            }
-
-            bool offlineMode = false;
-            IReadOnlyList<Series> subscribedSeries = [];
+            DashboardSnapshot snapshot;
 
             try
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
-                ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-                IPlaybackStateDataService stateService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
+                IServiceProvider services = scope.ServiceProvider;
 
-                // Serien immer frisch laden – IsWatched kann sich während der Session ändern
-                subscribedSeries = await seriesService.GetSubscribedAsync();
+                IEpisodeDataService episodeService = services.GetRequiredService<IEpisodeDataService>();
+                IDashboardPositionDataService positionService = services.GetRequiredService<IDashboardPositionDataService>();
 
-                // Offline-Status: aus StartupResult (Konnektivitäts-Check im Splash) oder aus DB
-                if (startupResult is not null)
-                {
-                    offlineMode = !startupResult.IsOnlineAvailable || startupResult.Settings.OfflineMode;
-                }
-                else
-                {
-                    IAppSettingsDataService settingsService =
-                        scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-                    AppSettings appSettings = await settingsService.GetAsync();
-                    offlineMode = appSettings.OfflineMode;
-                }
+                snapshot = await DashboardSnapshot.LoadAsync(
+                    services.GetRequiredService<ISeriesDataService>(),
+                    services.GetRequiredService<IPlaybackStateDataService>(),
+                    services.GetRequiredService<IAppSettingsDataService>(),
+                    positionService,
+                    ReadStartupResult(),
+                    _logger);
 
-                IReadOnlyList<Series> favoritesRaw = await seriesService.GetFavoritesAsync();
+                Hints.Apply(snapshot);
 
-                // Benutzerdefinierte Reihenfolge aus der DashboardPositions-Tabelle laden.
-                IDashboardPositionDataService positionService =
-                    scope.ServiceProvider.GetRequiredService<IDashboardPositionDataService>();
-                IReadOnlyList<DashboardPosition> savedPositions =
-                    await positionService.GetBySectionAsync(SectionNewReleases);
+                // Alle sichtbar werdenden Folgen-Cover in einer Abfrage, bevor die Abschnitte
+                // bauen — sonst löst jede Kachel ihre eigene aus.
+                await _coverProvider.BeginSessionAsync(snapshot.RelevantEpisodeIds, ct);
 
-                // Position-Lookup: SeriesId → Position (0-basiert)
-                Dictionary<Guid, int> positionBySeriesId = new(savedPositions.Count);
-                foreach (DashboardPosition dp in savedPositions)
-                {
-                    positionBySeriesId[dp.SeriesId] = dp.Position;
-                }
-
-                List<Series> favoriteSeries = [.. favoritesRaw
-                    .OrderBy(s => positionBySeriesId.TryGetValue(s.Id, out int pos) ? pos : int.MaxValue)
-                    .ThenBy(s => s.Title)];
-
-                foreach (Series s in favoriteSeries)
-                {
-                    string posText = positionBySeriesId.TryGetValue(s.Id, out int p)
-                        ? p.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        : "keine";
-                    _logger.Debug(() => $"Favorit: '{s.Title}' – Position={posText}");
-                }
-
-                // Onboarding: wenn keine abonnierte Serie vorhanden ist, signalisieren wir das der Seite
-                HasSubscribedSeries = subscribedSeries.Count > 0;
-                _hasFavoriteSeries = favoriteSeries.Count > 0;
-                _hasWatchedSeries = subscribedSeries.Any(s => s.IsWatched);
-                OnPropertyChanged(nameof(NoFavoritesHintVisibility));
-                OnPropertyChanged(nameof(NoWatchedSeriesHintVisibility));
-
-                // PlaybackStates einmal komplett laden – wird für Weiterhören, In-Progress
-                // und Zuletzt-gehört benötigt. Vermeidet N+1-Abfragen pro Episode.
-                IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
-                Dictionary<Guid, PlaybackState> stateByEpisodeId = new(allStates.Count);
-                foreach (PlaybackState ps in allStates)
-                {
-                    stateByEpisodeId[ps.EpisodeId] = ps;
-                }
-
-                // Vorgelagerte Batch-Query: alle potentiell sichtbaren Folgen-Cover in einer Abfrage
-                // aus CoverImages laden. Dateisystem- und ID3-Lookups landen danach in der Hintergrund-Queue.
-                List<Guid> relevantEpisodeIds = new(allStates.Count);
-                foreach (PlaybackState ps in allStates)
-                {
-                    relevantEpisodeIds.Add(ps.EpisodeId);
-                }
-                await _dataLoader.BeginLoadSessionAsync(relevantEpisodeIds, ct);
-
-                Stopwatch sectionStopwatch = Stopwatch.StartNew();
-
-                // Weiterhören-Liste aufbauen – benötigt alle Folgen der Favoriten-Serien
-                IReadOnlyList<UnheardSeriesCardViewModel> unheardList =
-                    await BuildUnheardSeriesAsync(favoriteSeries, episodeService, stateByEpisodeId);
-                WeiterhoerenVM.SetItems(unheardList);
-                _logger.Debug(() => $"BuildUnheard dauer={sectionStopwatch.ElapsedMilliseconds} ms");
-                sectionStopwatch.Restart();
-
-                // Favoriten-Kacheln aufbauen (mit Cover und RemoveCommand) und sortieren
-                IReadOnlyList<FavoriteSeriesCardViewModel> favoriteCards =
-                    await BuildFavoriteCardsAsync(favoriteSeries, positionService);
-                FavoritenVM.SetItems(favoriteCards);
-                _logger.Debug(() => $"BuildFavorites dauer={sectionStopwatch.ElapsedMilliseconds} ms");
-                sectionStopwatch.Restart();
-
-                // In-Progress und Recent über den DataLoader bauen
-                IReadOnlyList<NewEpisodeCardViewModel> inProgress =
-                    await _dataLoader.BuildInProgressEpisodesAsync(episodeService, allStates, subscribedSeries, ct);
-                InProgressVM.SetItems(inProgress);
-                _logger.Debug(() => $"BuildInProgress dauer={sectionStopwatch.ElapsedMilliseconds} ms");
-                sectionStopwatch.Restart();
-
-                IReadOnlyList<RecentSeriesCardViewModel> recent =
-                    await _dataLoader.BuildRecentSeriesAsync(episodeService, allStates, subscribedSeries, ct);
-                ZuletztGehoertVM.SetItems(recent);
-                _logger.Debug(() => $"BuildRecent dauer={sectionStopwatch.ElapsedMilliseconds} ms");
+                await LoadSectionsAsync(episodeService, positionService, snapshot, ct);
             }
             finally
             {
                 IsLoading = false;
             }
 
-            // Neuerscheinungen: im Offline-Modus komplett überspringen.
-            // Gecachte Daten bleiben in der DB erhalten, werden aber nicht angezeigt.
-            if (!offlineMode)
+            // Neuerscheinungen entfallen im Offline-Modus vollständig. Die zwischengespeicherten
+            // Daten bleiben erhalten, sie werden nur nicht gezeigt.
+            if (!snapshot.OfflineMode)
             {
                 Stopwatch newReleaseStopwatch = Stopwatch.StartNew();
-                IReadOnlyList<NewEpisodesGroupViewModel> groups =
-                    await _dataLoader.BuildNewReleaseGroupsAsync(subscribedSeries, ct);
-                NeuerscheinungenVM.SetGroups(groups);
+                NeuerscheinungenVM.SetGroups(await _newReleaseBuilder.BuildAsync(snapshot.SubscribedSeries, ct));
                 _logger.Debug(() => $"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
             }
 
-            // Sichtbare Kacheln mit Serien-Cover-Fallback bekommen ihre Folgen-Cover
-            // progressiv über den BackgroundCoverService nachgeladen.
-            _dataLoader.FlushPendingEpisodeCoverRefresh();
+            // Kacheln, die nur das Serien-Cover zeigen, bekommen ihr Folgen-Cover jetzt
+            // nachgetragen — nach dem Zeichnen, nicht davor.
+            _coverProvider.FlushPendingRefresh();
 
             _logger.Info("DashboardLoad total={ElapsedMs} ms", totalStopwatch.ElapsedMilliseconds);
         }
 
         /// <summary>
-        /// Baut die „Weiterhören"-Liste – Serien mit mindestens einer gehörten und mindestens
-        /// einer ungehörten Folge. Nutzt eine Batch-Query für alle Folgen der Favoriten-Serien,
-        /// um N+1-Abfragen zu vermeiden.
+        /// Löst alle Event-Subscriptions und gibt das Favoriten-Sub-VM frei.
         /// </summary>
-        private async Task<IReadOnlyList<UnheardSeriesCardViewModel>> BuildUnheardSeriesAsync(
-            List<Series> favoriteSeries,
+        public void Dispose()
+        {
+            _loadCts?.Cancel();
+            _loadCts?.Dispose();
+            _loadCts = null;
+
+            FavoritenVM.FavoritesChanged -= OnFavoritesChanged;
+
+            if (_newReleaseEventService is not null)
+            {
+                _newReleaseEventService.CacheChanged -= OnNewReleaseCacheChanged;
+            }
+
+            FavoritenVM.Dispose();
+        }
+
+        /// <summary>
+        /// Bricht einen noch laufenden Ladelauf ab und beginnt einen neuen. Verlässt der
+        /// Nutzer die Seite oder kehrt er zurück, sollen offene Aufrufe keinen verworfenen
+        /// Zustand mehr beschreiben.
+        /// </summary>
+        /// <returns>Das Abbruchzeichen des neuen Laufs.</returns>
+        private async Task<CancellationToken> BeginLoadSessionAsync()
+        {
+            CancellationTokenSource? previous = _loadCts;
+            _loadCts = new CancellationTokenSource();
+            CancellationToken ct = _loadCts.Token;
+
+            if (previous is not null)
+            {
+                await previous.CancelAsync();
+                previous.Dispose();
+            }
+
+            return ct;
+        }
+
+        /// <summary>
+        /// Baut die vier Abschnitte, die aus den Wiedergabeständen kommen, und verteilt sie.
+        /// Jeder Schritt wird einzeln gemessen — so ist im Protokoll ablesbar, welcher
+        /// Abschnitt einen langsamen Start verursacht.
+        /// </summary>
+        private async Task LoadSectionsAsync(
             IEpisodeDataService episodeService,
-            Dictionary<Guid, PlaybackState> stateByEpisodeId)
+            IDashboardPositionDataService positionService,
+            DashboardSnapshot snapshot,
+            CancellationToken ct)
         {
-            List<Guid> favoriteSeriesIds = [.. favoriteSeries.Select(s => s.Id)];
-            IReadOnlyList<Episode> allFavoriteEpisodes =
-                await episodeService.GetBySeriesIdsAsync(favoriteSeriesIds);
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
-            Dictionary<Guid, List<Episode>> episodesBySeriesId = new(favoriteSeries.Count);
-            foreach (Episode episode in allFavoriteEpisodes)
-            {
-                if (!episodesBySeriesId.TryGetValue(episode.SeriesId, out List<Episode>? bucket))
-                {
-                    bucket = [];
-                    episodesBySeriesId[episode.SeriesId] = bucket;
-                }
-                bucket.Add(episode);
-            }
+            WeiterhoerenVM.SetItems(await _sectionBuilder.BuildUnheardSeriesAsync(
+                snapshot.FavoriteSeries, episodeService, snapshot.StateByEpisodeId));
+            _logger.Debug(() => $"BuildUnheard dauer={stopwatch.ElapsedMilliseconds} ms");
+            stopwatch.Restart();
 
-            List<UnheardSeriesCardViewModel> unheardList = [];
+            FavoritenVM.SetItems(await _sectionBuilder.BuildFavoriteCardsAsync(snapshot.FavoriteSeries, positionService));
+            _logger.Debug(() => $"BuildFavorites dauer={stopwatch.ElapsedMilliseconds} ms");
+            stopwatch.Restart();
 
-            foreach (Series series in favoriteSeries)
-            {
-                if (!episodesBySeriesId.TryGetValue(series.Id, out List<Episode>? episodes))
-                {
-                    continue;
-                }
+            InProgressVM.SetItems(await _dataLoader.BuildInProgressEpisodesAsync(
+                episodeService, snapshot.AllStates, snapshot.SubscribedSeries, ct));
+            _logger.Debug(() => $"BuildInProgress dauer={stopwatch.ElapsedMilliseconds} ms");
+            stopwatch.Restart();
 
-                int completedCount = 0;
-                int totalEpisodeCount = episodes.Count;
-
-                foreach (Episode episode in episodes)
-                {
-                    if (stateByEpisodeId.TryGetValue(episode.Id, out PlaybackState? state) && state.IsCompleted)
-                    {
-                        completedCount++;
-                    }
-                }
-
-                int unheardCount = totalEpisodeCount - completedCount;
-                if (completedCount > 0 && unheardCount > 0)
-                {
-                    BitmapImage? cover = await _dataLoader.BuildSeriesCoverAsync(series);
-                    unheardList.Add(new UnheardSeriesCardViewModel(series.Id, series.Title, cover, unheardCount, _localizationService));
-                }
-            }
-
-            return unheardList;
+            ZuletztGehoertVM.SetItems(await _dataLoader.BuildRecentSeriesAsync(
+                episodeService, snapshot.AllStates, snapshot.SubscribedSeries, ct));
+            _logger.Debug(() => $"BuildRecent dauer={stopwatch.ElapsedMilliseconds} ms");
         }
 
         /// <summary>
-        /// Baut die Favoriten-Kacheln inklusive Cover-Bild und sortiert sie nach der
-        /// benutzerdefinierten Reihenfolge aus der DashboardPositions-Tabelle. Serien ohne
-        /// gespeicherte Position werden alphabetisch angehängt.
+        /// Liest das Ergebnis des Startlaufs. Es enthält den Offline-Zustand; ist der
+        /// Startlauf noch nicht durch, liefert die Methode nichts und die Einstellung wird
+        /// stattdessen gelesen.
         /// </summary>
-        private async Task<IReadOnlyList<FavoriteSeriesCardViewModel>> BuildFavoriteCardsAsync(
-            IReadOnlyList<Series> favoriteSeries,
-            IDashboardPositionDataService positionService)
+        private static StartupResult? ReadStartupResult()
         {
-            List<FavoriteSeriesCardViewModel> favoriteCards = [];
-
-            foreach (Series series in favoriteSeries)
+            try
             {
-                BitmapImage? cover = await _dataLoader.BuildSeriesCoverAsync(series);
-                favoriteCards.Add(new FavoriteSeriesCardViewModel(
-                    series.Id, series.Title, cover, _scopeFactory, _confirmationDialogService, _localizationService));
+                return App.StartupResultData;
             }
-
-            // Benutzerdefinierte Reihenfolge für Favoriten-Kacheln laden.
-            // Die Favoriten-Positionen sind unabhängig von den Neuerscheinungen-Positionen,
-            // weil der Nutzer beide Abschnitte getrennt per Drag & Drop sortieren kann.
-            IReadOnlyList<DashboardPosition> favoritePositions =
-                await positionService.GetBySectionAsync("Favoriten");
-
-            Dictionary<Guid, int> favoritePositionBySeriesId = new(favoritePositions.Count);
-            foreach (DashboardPosition dp in favoritePositions)
+            catch (InvalidOperationException)
             {
-                favoritePositionBySeriesId[dp.SeriesId] = dp.Position;
+                return null;
             }
-
-            favoriteCards.Sort((a, b) =>
-            {
-                bool aHasPos = favoritePositionBySeriesId.TryGetValue(a.SeriesId, out int posA);
-                bool bHasPos = favoritePositionBySeriesId.TryGetValue(b.SeriesId, out int posB);
-
-                if (aHasPos && bHasPos)
-                {
-                    return posA.CompareTo(posB);
-                }
-
-                if (aHasPos)
-                {
-                    return -1;
-                }
-
-                if (bHasPos)
-                {
-                    return 1;
-                }
-
-                return string.Compare(a.SeriesName, b.SeriesName, StringComparison.Ordinal);
-            });
-
-            return favoriteCards;
         }
 
-        // ── Event-Weiterleitung ─────────────────────────────────────────────────
-
         /// <summary>
-        /// Leitet PropertyChanged-Events der Sub-VMs an die eigenen Pass-Through-Properties weiter.
-        /// Die Sektions-Sub-VMs melden generisch <c>Items</c>/<c>SectionVisibility</c> und werden
-        /// auf die sektionsspezifischen Proxy-Namen abgebildet, an die die View bindet; Favoriten-
-        /// und Neuerscheinungen-VM behalten ihre eigenen Property-Namen.
+        /// Fängt die Warteschlange der Oberfläche ein, damit der Hintergrund-Rückruf für
+        /// Cover Bilder auf dem richtigen Thread erzeugen kann. In Tests ohne laufende
+        /// Oberfläche bleibt sie leer.
         /// </summary>
-        private void OnSubVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private static DispatcherQueue? TryGetDispatcherQueue()
         {
-            switch (sender)
+            try
             {
-                case DashboardWeiterhoerenViewModel:
-                    ForwardSectionChange(e.PropertyName, nameof(UnheardSeries), nameof(UnheardSectionVisibility));
-                    break;
-                case DashboardInProgressViewModel:
-                    ForwardSectionChange(e.PropertyName, nameof(InProgressEpisodes), nameof(InProgressSectionVisibility));
-                    break;
-                case DashboardRecentlyPlayedViewModel:
-                    ForwardSectionChange(e.PropertyName, nameof(RecentSeries), nameof(RecentSectionVisibility));
-                    break;
-                default:
-                    OnPropertyChanged(e.PropertyName);
-                    break;
+                return DispatcherQueue.GetForCurrentThread();
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                return null;
             }
         }
 
         /// <summary>
-        /// Bildet die generischen Sektions-Property-Namen auf die Dashboard-Proxy-Namen ab.
-        /// </summary>
-        /// <param name="changedProperty">Der vom Sub-VM gemeldete Property-Name.</param>
-        /// <param name="itemsProxy">Der Proxy-Name für die Liste.</param>
-        /// <param name="visibilityProxy">Der Proxy-Name für die Sichtbarkeit.</param>
-        private void ForwardSectionChange(string? changedProperty, string itemsProxy, string visibilityProxy)
-        {
-            if (changedProperty == nameof(DashboardInProgressViewModel.Items))
-            {
-                OnPropertyChanged(itemsProxy);
-            }
-            else if (changedProperty == nameof(DashboardInProgressViewModel.SectionVisibility))
-            {
-                OnPropertyChanged(visibilityProxy);
-            }
-        }
-
-        /// <summary>
-        /// Aktualisiert den <c>_hasFavoriteSeries</c>-Flag und den NoFavoritesHint,
-        /// wenn der Nutzer Favoriten entfernt oder umsortiert.
+        /// Frischt den Favoriten-Hinweis auf, wenn der Nutzer Favoriten entfernt oder umsortiert.
         /// </summary>
         private void OnFavoritesChanged()
-        {
-            _hasFavoriteSeries = FavoritenVM.FavoriteSeries.Count > 0;
-            OnPropertyChanged(nameof(NoFavoritesHintVisibility));
-            OnPropertyChanged(nameof(NoWatchedSeriesHintVisibility));
-        }
+            => Hints.UpdateFavorites(FavoritenVM.FavoriteSeries.Count > 0);
 
         /// <summary>
-        /// Lädt die Startseite neu, nachdem sich der Neuerscheinungen-Cache geändert hat.
-        /// Der Auslöser läuft im Hintergrund, deshalb der Wechsel auf den UI-Thread.
-        /// Ohne Dispatcher (Unit-Tests) wird direkt geladen.
+        /// Lädt die Startseite neu, nachdem sich der Neuerscheinungen-Zwischenspeicher
+        /// geändert hat. Der Auslöser läuft im Hintergrund, deshalb der Wechsel auf den
+        /// Oberflächen-Thread. Ohne Warteschlange (Tests) wird direkt geladen.
         /// </summary>
         private void OnNewReleaseCacheChanged()
         {
@@ -616,32 +327,6 @@ namespace EchoPlay.App.ViewModels
             {
                 _logger.Warning("Nachladen der Startseite fehlgeschlagen: {Reason}", ex.Message);
             }
-        }
-
-        /// <summary>
-        /// Löst alle Event-Subscriptions und gibt das Favoriten-Sub-VM frei.
-        /// </summary>
-        public void Dispose()
-        {
-            // Lifecycle-CTS: laufenden Lade-Lauf stoppen + freigeben.
-            _loadCts?.Cancel();
-            _loadCts?.Dispose();
-            _loadCts = null;
-
-            NeuerscheinungenVM.PropertyChanged -= OnSubVmPropertyChanged;
-            FavoritenVM.PropertyChanged -= OnSubVmPropertyChanged;
-            WeiterhoerenVM.PropertyChanged -= OnSubVmPropertyChanged;
-            InProgressVM.PropertyChanged -= OnSubVmPropertyChanged;
-            ZuletztGehoertVM.PropertyChanged -= OnSubVmPropertyChanged;
-
-            FavoritenVM.FavoritesChanged -= OnFavoritesChanged;
-
-            if (_newReleaseEventService is not null)
-            {
-                _newReleaseEventService.CacheChanged -= OnNewReleaseCacheChanged;
-            }
-
-            FavoritenVM.Dispose();
         }
     }
 }

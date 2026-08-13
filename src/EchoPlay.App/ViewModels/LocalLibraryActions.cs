@@ -190,7 +190,7 @@ namespace EchoPlay.App.ViewModels
 
             IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.EpisodeId);
 
-            _tracksVM.SetTracks(episode, tracks);
+            await _tracksVM.SetTracksAsync(episode, tracks);
         }
 
         // ── Serien-Verwaltung ─────────────────────────────────────────────────────

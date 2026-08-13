@@ -9,16 +9,6 @@
     <Page.Resources>
         <!-- Pfeil-Button für die Favoriten-Sektion (ListView mit Drag-and-Drop, eigene Pfeile).
              Die anderen Kachelreihen nutzen das HorizontalTileRowControl mit eingebautem Style. -->
-        <Style x:Key="ScrollArrowButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="MinHeight" Value="48"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}"/>
-            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}"/>
-        </Style>
 
         <!-- Tile-Template für Neuerscheinungen: Cover, Badge, Kontextmenü, Progress, Overlay. -->
         <DataTemplate x:Key="NewEpisodeTileTemplate" x:DataType="viewmodels:NewEpisodeCardViewModel">
@@ -180,14 +170,14 @@
                 <TextBlock
                     x:Uid="DashboardHeadingNew"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
-                    Visibility="{x:Bind ViewModel.NewReleasesSectionVisibility, Mode=OneWay}"/>
+                    Visibility="{x:Bind ViewModel.NeuerscheinungenVM.NewReleasesSectionVisibility, Mode=OneWay}"/>
 
                 <!-- Lade-Hinweis für Neuerscheinungen: sichtbar solange die iTunes-API
                      im Hintergrund abgefragt wird und noch keine Ergebnisse vorliegen -->
                 <StackPanel
                     Orientation="Horizontal"
                     Spacing="8"
-                    Visibility="{x:Bind ViewModel.NewReleasesLoadingVisibility, Mode=OneWay}">
+                    Visibility="{x:Bind ViewModel.NeuerscheinungenVM.NewReleasesLoadingVisibility, Mode=OneWay}">
                     <ProgressRing IsActive="True" Width="16" Height="16"/>
                     <TextBlock
                         x:Uid="DashboardLoadingNewReleases"
@@ -199,7 +189,7 @@
                 <!-- Hinweis wenn keine Favoriten gesetzt – erscheint statt der leeren Kachelreihe -->
                 <TextBlock
                     x:Uid="DashboardNoFavoritesHint"
-                    Visibility="{x:Bind ViewModel.NoFavoritesHintVisibility, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.Hints.NoFavoritesHintVisibility, Mode=OneWay}"
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
@@ -208,7 +198,7 @@
                      sonst kommentarlos leer. -->
                 <TextBlock
                     x:Uid="DashboardNoWatchedHint"
-                    Visibility="{x:Bind ViewModel.NoWatchedSeriesHintVisibility, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.Hints.NoWatchedSeriesHintVisibility, Mode=OneWay}"
                     TextWrapping="Wrap"
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
@@ -216,8 +206,8 @@
                 <!-- Neuerscheinungen: monatlich gruppiert – "Angekündigt" ganz oben,
                      dann Monate absteigend (neuester zuerst). -->
                 <ItemsControl
-                    ItemsSource="{x:Bind ViewModel.NewEpisodeGroups, Mode=OneWay}"
-                    Visibility="{x:Bind ViewModel.NewEpisodeGroupsVisibility, Mode=OneWay}">
+                    ItemsSource="{x:Bind ViewModel.NeuerscheinungenVM.NewEpisodeGroups, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.NeuerscheinungenVM.NewEpisodeGroupsVisibility, Mode=OneWay}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="viewmodels:NewEpisodesGroupViewModel">
                             <StackPanel Margin="0,0,0,16" AutomationProperties.Name="{x:Bind GroupLabel}">
@@ -237,12 +227,12 @@
                 <TextBlock
                     x:Uid="DashboardHeadingFavorites"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
-                    Visibility="{x:Bind ViewModel.FavoriteSectionVisibility, Mode=OneWay}"/>
+                    Visibility="{x:Bind ViewModel.FavoritenVM.FavoriteSectionVisibility, Mode=OneWay}"/>
 
                 <!-- Favoriten-Kacheln: ListView statt ItemsControl, damit CanReorderItems
                      die Kacheln per Drag & Drop umsortierbar macht.
                      ItemsStackPanel Orientation=Horizontal sorgt für eine einzeilige Kachelreihe. -->
-                <Grid Visibility="{x:Bind ViewModel.FavoriteSectionVisibility, Mode=OneWay}">
+                <Grid Visibility="{x:Bind ViewModel.FavoritenVM.FavoriteSectionVisibility, Mode=OneWay}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -253,7 +243,7 @@
                         <FontIcon Glyph="&#xE76B;" FontSize="{StaticResource IconSizeS}"/>
                     </Button>
                     <ListView Grid.Column="1"
-                        ItemsSource="{x:Bind ViewModel.FavoriteSeries, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.FavoritenVM.FavoriteSeries, Mode=OneWay}"
                         CanReorderItems="True"
                         AllowDrop="True"
                         SelectionMode="None"
@@ -321,33 +311,33 @@
                 <TextBlock
                     x:Uid="DashboardHeadingUnheard"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
-                    Visibility="{x:Bind ViewModel.UnheardSectionVisibility, Mode=OneWay}"/>
+                    Visibility="{x:Bind ViewModel.WeiterhoerenVM.SectionVisibility, Mode=OneWay}"/>
 
                 <ctrl:HorizontalTileRowControl
-                    Visibility="{x:Bind ViewModel.UnheardSectionVisibility, Mode=OneWay}"
-                    ItemsSource="{x:Bind ViewModel.UnheardSeries, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.WeiterhoerenVM.SectionVisibility, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.WeiterhoerenVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource UnheardSeriesTileTemplate}"/>
 
                 <!-- Abschnitt: Läuft gerade – nur einblenden wenn Episoden mit Fortschritt vorhanden -->
                 <TextBlock
                     x:Uid="DashboardHeadingInProgress"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
-                    Visibility="{x:Bind ViewModel.InProgressSectionVisibility, Mode=OneWay}"/>
+                    Visibility="{x:Bind ViewModel.InProgressVM.SectionVisibility, Mode=OneWay}"/>
 
                 <ctrl:HorizontalTileRowControl
-                    Visibility="{x:Bind ViewModel.InProgressSectionVisibility, Mode=OneWay}"
-                    ItemsSource="{x:Bind ViewModel.InProgressEpisodes, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.InProgressVM.SectionVisibility, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.InProgressVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource InProgressTileTemplate}"/>
 
                 <!-- Abschnitt: Zuletzt gehört – nur einblenden wenn Einträge vorhanden -->
                 <TextBlock
                     x:Uid="DashboardHeadingRecent"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
-                    Visibility="{x:Bind ViewModel.RecentSectionVisibility, Mode=OneWay}"/>
+                    Visibility="{x:Bind ViewModel.ZuletztGehoertVM.SectionVisibility, Mode=OneWay}"/>
 
                 <ctrl:HorizontalTileRowControl
-                    Visibility="{x:Bind ViewModel.RecentSectionVisibility, Mode=OneWay}"
-                    ItemsSource="{x:Bind ViewModel.RecentSeries, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.ZuletztGehoertVM.SectionVisibility, Mode=OneWay}"
+                    ItemsSource="{x:Bind ViewModel.ZuletztGehoertVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource RecentSeriesTileTemplate}"/>
 
                 <!-- Ankündigungs-Sektion entfernt: Ankündigungen sind jetzt als "Angekündigt"-Gruppe

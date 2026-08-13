@@ -23,7 +23,6 @@ namespace EchoPlay.App.Views
     {
         private readonly ILocalizationService _localizationService;
         private static readonly EchoPlay.App.Helpers.SafeResourceStrings _resources = new();
-        private DispatcherTimer? _logLiveTimer;
 
         /// <summary>Alle Theme-Vorschauen für die Farbkacheln in den Einstellungen.</summary>
         public System.Collections.Generic.IReadOnlyList<ThemePreviewViewModel> ThemeOptions { get; } =
@@ -58,26 +57,30 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedTo(e);
 
-            ViewModel.PatternSelectionRequested += OnPatternSelectionRequested;
-            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            ViewModel.LocalVM.PatternSelectionRequested += OnPatternSelectionRequested;
+            ViewModel.MaintenanceVM.PropertyChanged += OnMaintenancePropertyChanged;
+
+            // Den Takt der Live-Ansicht führt das Ansichtsmodell; die Seite zeichnet,
+            // sobald dort neue Einträge stehen.
+            ViewModel.MaintenanceVM.LogEntries.CollectionChanged += OnLogEntriesChanged;
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
                 await ViewModel.LoadAsync();
 
                 // RadioButtons nachträglich setzen, da x:Bind für diese nicht geeignet ist
-                SyncThemeRadioButton(ViewModel.ActiveTheme);
-                SyncProviderRadioButton(ViewModel.ActiveProviderTag);
+                SyncThemeRadioButton(ViewModel.GeneralVM.ActiveTheme);
+                SyncProviderRadioButton(ViewModel.OnlineVM.ActiveProviderTag);
 
                 // Sprach-ComboBox auf die gespeicherte Sprache setzen
-                SyncLanguageComboBox(ViewModel.ActiveLanguage);
+                SyncLanguageComboBox(ViewModel.GeneralVM.ActiveLanguage);
 
                 // Log-Datei-ComboBox: Live-Option direkt nach dem Laden vorauswählen
-                LogFileComboBox.SelectedItem = ViewModel.SelectedLogFile;
+                LogFileComboBox.SelectedItem = ViewModel.MaintenanceVM.SelectedLogFile;
 
                 // Erste Log-Einträge laden – der Setter von SelectedLogFile gibt keinen Refresh
                 // aus wenn der Wert sich beim Set nicht geändert hat (SetProperty gibt false zurück).
-                // RefreshLogView statt ViewModel.RefreshLogs: Letzteres füllt nur die Liste im
+                // RefreshLogView statt ViewModel.MaintenanceVM.RefreshLogs: Letzteres füllt nur die Liste im
                 // ViewModel, der RichTextBlock bliebe leer bis zum ersten Klick auf Aktualisieren.
                 RefreshLogView();
             });
@@ -93,30 +96,14 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
         {
             base.OnNavigatingFrom(e);
-            ViewModel.PatternSelectionRequested -= OnPatternSelectionRequested;
+            ViewModel.LocalVM.PatternSelectionRequested -= OnPatternSelectionRequested;
             // Vor dem Dispose abmelden: Der Handler schreibt in den RichTextBlock, der nach der
             // Navigation nicht mehr geladen ist - gleiche Falle wie beim Live-Timer unten.
-            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            ViewModel.MaintenanceVM.PropertyChanged -= OnMaintenancePropertyChanged;
+            ViewModel.MaintenanceVM.LogEntries.CollectionChanged -= OnLogEntriesChanged;
             ViewModel.Dispose();
         }
 
-        /// <summary>
-        /// Garantiert, dass der Live-Log-Timer beim Verlassen der Seite gestoppt wird —
-        /// auch wenn der Nutzer die Live-Checkbox nicht manuell deaktiviert hat.
-        /// Ohne diesen Stopp würde der 2-Sekunden-`Tick` nach der Navigation weiterfeuern
-        /// und versuchen, auf die bereits entladene `LogRichTextBlock`-Instanz zu schreiben.
-        /// </summary>
-        /// <param name="e">Ereignisargumente der Navigation.</param>
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            base.OnNavigatedFrom(e);
-            if (_logLiveTimer is not null)
-            {
-                _logLiveTimer.Stop();
-                _logLiveTimer.Tick -= OnLogLiveTick;
-                _logLiveTimer = null;
-            }
-        }
 
         /// <summary>
         /// Wird ausgelöst, wenn der Benutzer eine Theme-Kachel auswählt.
@@ -159,7 +146,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is RadioButton { Tag: string tag })
             {
-                ViewModel.ActiveProviderTag = tag;
+                ViewModel.OnlineVM.ActiveProviderTag = tag;
             }
         }
 
@@ -167,13 +154,13 @@ namespace EchoPlay.App.Views
         private async void OnBrowseClick(object sender, RoutedEventArgs e)
         {
             nint hWnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.BrowseLibraryFolderAsync(hWnd));
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.LocalVM.BrowseLibraryFolderAsync(hWnd));
         }
 
         /// <summary>Startet den Sync der lokalen Bibliothek.</summary>
         private async void OnSyncClick(object sender, RoutedEventArgs e)
         {
-            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SyncAsync());
+            await AsyncEventHandler.RunSafelyAsync(() => ViewModel.LocalVM.SyncAsync());
         }
 
         /// <summary>
@@ -216,7 +203,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is ComboBox { SelectedItem: LogFileOption option })
             {
-                ViewModel.SelectedLogFile = option;
+                ViewModel.MaintenanceVM.SelectedLogFile = option;
 
                 // Der Setter lädt nur die Einträge ins ViewModel – die Anzeige muss
                 // getrennt nachgezogen werden, sonst zeigt sie weiter die alte Datei.

@@ -1,3 +1,4 @@
+using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
@@ -34,7 +35,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             return new LocalArtistsViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                coverService);
+                new SeriesCoverBuilder(coverService));
         }
 
         private static Series MakeSeries(Guid id, string title)

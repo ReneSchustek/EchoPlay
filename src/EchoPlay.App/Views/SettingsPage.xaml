@@ -85,7 +85,7 @@
 
                         <ComboBox
                             x:Name="LanguageComboBox"
-                            ItemsSource="{x:Bind ViewModel.AvailableLanguages, Mode=OneTime}"
+                            ItemsSource="{x:Bind ViewModel.GeneralVM.AvailableLanguages, Mode=OneTime}"
                             DisplayMemberPath="DisplayName"
                             MinWidth="200"/>
 
@@ -107,7 +107,7 @@
 
                         <NumberBox
                             x:Uid="LogRetentionDaysBox"
-                            Value="{x:Bind ViewModel.LogRetentionDays, Mode=OneWay}"
+                            Value="{x:Bind ViewModel.GeneralVM.LogRetentionDays, Mode=OneWay}"
                             Minimum="1"
                             Maximum="365"
                             SpinButtonPlacementMode="Inline"
@@ -125,7 +125,7 @@
                              Die Änderung gilt sofort nach dem Speichern – kein Neustart nötig. -->
                         <ComboBox
                             x:Uid="MinimumLogLevelComboBox"
-                            SelectedIndex="{x:Bind ViewModel.MinimumLogLevelIndex, Mode=TwoWay}"
+                            SelectedIndex="{x:Bind ViewModel.GeneralVM.MinimumLogLevelIndex, Mode=TwoWay}"
                             Width="200"
                             HorizontalAlignment="Left">
                             <ComboBoxItem x:Uid="LogLevelTrace"/>
@@ -146,7 +146,7 @@
 
                         <NumberBox
                             x:Uid="NewReleaseDaysBox"
-                            Value="{x:Bind ViewModel.NewReleaseDays, Mode=OneWay}"
+                            Value="{x:Bind ViewModel.GeneralVM.NewReleaseDays, Mode=OneWay}"
                             Minimum="7"
                             Maximum="365"
                             SpinButtonPlacementMode="Inline"
@@ -158,13 +158,13 @@
                         <!-- Offline-Modus: deaktiviert iTunes-Abfragen, Suche und Neuerscheinungen -->
                         <ToggleSwitch
                             x:Uid="SettingsOfflineMode"
-                            IsOn="{x:Bind ViewModel.OfflineMode, Mode=TwoWay}"
+                            IsOn="{x:Bind ViewModel.GeneralVM.OfflineMode, Mode=TwoWay}"
                             Margin="0,16,0,0"/>
 
                         <!-- Nur-Online-Modus: blendet die lokale Mediathek aus -->
                         <ToggleSwitch
                             x:Uid="SettingsOnlineOnlyMode"
-                            IsOn="{x:Bind ViewModel.OnlineOnlyMode, Mode=TwoWay}"
+                            IsOn="{x:Bind ViewModel.GeneralVM.OnlineOnlyMode, Mode=TwoWay}"
                             Margin="0,8,0,0"/>
 
                         <ctrl:SaveCancelBar SaveClicked="OnSaveClick" CancelClicked="OnCancelClick"/>
@@ -222,11 +222,11 @@
                         <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
                             <Button
                                 x:Uid="TestConnectionButton"
-                                Command="{x:Bind ViewModel.TestConnectionCommand}">
+                                Command="{x:Bind ViewModel.OnlineVM.TestConnectionCommand}">
                                 <FontIcon Glyph="&#xE703;" FontSize="{StaticResource IconSizeM}"/>
                             </Button>
                             <ProgressRing
-                                IsActive="{x:Bind ViewModel.IsTestingConnection, Mode=OneWay}"
+                                IsActive="{x:Bind ViewModel.OnlineVM.IsTestingConnection, Mode=OneWay}"
                                 Width="20"
                                 Height="20"
                                 VerticalAlignment="Center"/>
@@ -236,19 +236,19 @@
                         <StackPanel
                             Orientation="Horizontal"
                             Spacing="8"
-                            Visibility="{x:Bind ViewModel.ConnectionTestResultVisibility, Mode=OneWay}">
+                            Visibility="{x:Bind ViewModel.OnlineVM.ConnectionTestResultVisibility, Mode=OneWay}">
                             <FontIcon
                                 Glyph="&#xE73E;"
                                 FontSize="{StaticResource IconSizeM}"
                                 VerticalAlignment="Center"
-                                Visibility="{x:Bind ViewModel.ConnectionTestSuccessVisibility, Mode=OneWay}"/>
+                                Visibility="{x:Bind ViewModel.OnlineVM.ConnectionTestSuccessVisibility, Mode=OneWay}"/>
                             <FontIcon
                                 Glyph="&#xE711;"
                                 FontSize="{StaticResource IconSizeM}"
                                 VerticalAlignment="Center"
-                                Visibility="{x:Bind ViewModel.ConnectionTestFailureVisibility, Mode=OneWay}"/>
+                                Visibility="{x:Bind ViewModel.OnlineVM.ConnectionTestFailureVisibility, Mode=OneWay}"/>
                             <TextBlock
-                                Text="{x:Bind ViewModel.ConnectionTestResultText, Mode=OneWay}"
+                                Text="{x:Bind ViewModel.OnlineVM.ConnectionTestResultText, Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 Style="{ThemeResource CaptionTextBlockStyle}"/>
                         </StackPanel>
@@ -261,20 +261,20 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
                             <TextBlock x:Uid="SettingsSpotifyStatusLabel" VerticalAlignment="Center"/>
-                            <TextBlock Text="{x:Bind ViewModel.SpotifyStatus, Mode=OneWay}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            <TextBlock Text="{x:Bind ViewModel.OnlineVM.SpotifyStatus, Mode=OneWay}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                         </StackPanel>
 
                         <TextBox x:Uid="SettingsSpotifyClientId"
-                                 Text="{x:Bind ViewModel.SpotifyClientId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Text="{x:Bind ViewModel.OnlineVM.SpotifyClientId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,0,8" MaxWidth="400" HorizontalAlignment="Left"/>
                         <PasswordBox x:Uid="SettingsSpotifyClientSecret"
-                                     Password="{x:Bind ViewModel.SpotifyClientSecret, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Password="{x:Bind ViewModel.OnlineVM.SpotifyClientSecret, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0,0,0,12" MaxWidth="400" HorizontalAlignment="Left"/>
 
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Uid="SettingsSpotifyTestSaveButton" Command="{x:Bind ViewModel.TestAndSaveSpotifyCommand}"/>
-                            <Button x:Uid="SettingsSpotifyRemoveButton" Command="{x:Bind ViewModel.RemoveSpotifyCommand}"
-                                    Visibility="{x:Bind ViewModel.IsSpotifyLinked, Mode=OneWay}"/>
+                            <Button x:Uid="SettingsSpotifyTestSaveButton" Command="{x:Bind ViewModel.OnlineVM.TestAndSaveSpotifyCommand}"/>
+                            <Button x:Uid="SettingsSpotifyRemoveButton" Command="{x:Bind ViewModel.OnlineVM.RemoveSpotifyCommand}"
+                                    Visibility="{x:Bind ViewModel.OnlineVM.IsSpotifyLinked, Mode=OneWay}"/>
                         </StackPanel>
 
                         <ctrl:SaveCancelBar SaveClicked="OnSaveClick" CancelClicked="OnCancelClick"/>
@@ -295,11 +295,11 @@
 
                         <ToggleSwitch
                             x:Uid="LocalLibraryToggle"
-                            IsOn="{x:Bind ViewModel.LocalLibraryEnabled, Mode=TwoWay}"/>
+                            IsOn="{x:Bind ViewModel.LocalVM.LocalLibraryEnabled, Mode=TwoWay}"/>
 
                         <ToggleSwitch
                             x:Uid="AutoImportAfterScanToggle"
-                            IsOn="{x:Bind ViewModel.AutoImportAfterScan, Mode=TwoWay}"/>
+                            IsOn="{x:Bind ViewModel.LocalVM.AutoImportAfterScan, Mode=TwoWay}"/>
 
                         <!-- Pfad + Durchsuchen + Sync direkt nebeneinander:
                              Sync macht nur im Kontext des Pfades Sinn -->
@@ -312,7 +312,7 @@
                             <TextBox
                                 x:Uid="LibraryPathTextBox"
                                 Grid.Column="0"
-                                Text="{x:Bind ViewModel.LocalLibraryRootPath, Mode=TwoWay}"/>
+                                Text="{x:Bind ViewModel.LocalVM.LocalLibraryRootPath, Mode=TwoWay}"/>
                             <Button
                                 x:Uid="BrowseButton"
                                 Grid.Column="1"
@@ -324,7 +324,7 @@
                                 x:Uid="SyncButton"
                                 Grid.Column="2"
                                 VerticalAlignment="Bottom"
-                                IsEnabled="{x:Bind ViewModel.IsSyncEnabled, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.LocalVM.IsSyncEnabled, Mode=OneWay}"
                                 Click="OnSyncClick">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE72C;" FontSize="{StaticResource IconSizeM}"/>
@@ -336,12 +336,12 @@
                         <!-- Sync-Fortschritt direkt unter dem Pfad -->
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ProgressRing
-                                IsActive="{x:Bind ViewModel.IsSyncing, Mode=OneWay}"
+                                IsActive="{x:Bind ViewModel.LocalVM.IsSyncing, Mode=OneWay}"
                                 Width="20"
                                 Height="20"
                                 VerticalAlignment="Center"/>
                             <TextBlock
-                                Text="{x:Bind ViewModel.SyncStatusText, Mode=OneWay}"
+                                Text="{x:Bind ViewModel.LocalVM.SyncStatusText, Mode=OneWay}"
                                 Style="{ThemeResource CaptionTextBlockStyle}"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                 TextWrapping="Wrap"
@@ -356,7 +356,7 @@
                             <TextBox
                                 Grid.Column="0"
                                 x:Uid="EpisodeFolderPatternBox"
-                                Text="{x:Bind ViewModel.EpisodeFolderPattern, Mode=TwoWay}"/>
+                                Text="{x:Bind ViewModel.LocalVM.EpisodeFolderPattern, Mode=TwoWay}"/>
                             <Button
                                 Grid.Column="1"
                                 x:Uid="AnalyzePatternButton"
@@ -375,8 +375,8 @@
 
                         <!-- Muster-Vorschläge nach Analyse -->
                         <ItemsControl
-                            ItemsSource="{x:Bind ViewModel.PatternSuggestions, Mode=OneWay}"
-                            Visibility="{x:Bind ViewModel.PatternSuggestionsVisibility, Mode=OneWay}">
+                            ItemsSource="{x:Bind ViewModel.LocalVM.PatternSuggestions, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.LocalVM.PatternSuggestionsVisibility, Mode=OneWay}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:PatternSuggestionDisplay">
                                     <Button
@@ -418,7 +418,7 @@
 
                         <CheckBox
                             x:Uid="ClearCacheOnNextStartCheckBox"
-                            IsChecked="{x:Bind ViewModel.ClearCacheOnNextStart, Mode=TwoWay}"/>
+                            IsChecked="{x:Bind ViewModel.MaintenanceVM.ClearCacheOnNextStart, Mode=TwoWay}"/>
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
@@ -436,7 +436,7 @@
 
                         <NumberBox
                             x:Uid="DbPurgeDaysBox"
-                            Value="{x:Bind ViewModel.DbPurgeDays, Mode=OneWay}"
+                            Value="{x:Bind ViewModel.MaintenanceVM.DbPurgeDays, Mode=OneWay}"
                             Minimum="0"
                             Maximum="3650"
                             SpinButtonPlacementMode="Inline"
@@ -448,7 +448,7 @@
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Button
                                 x:Uid="DbMaintenanceButton"
-                                IsEnabled="{x:Bind ViewModel.IsNotMaintaining, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.MaintenanceVM.IsNotMaintaining, Mode=OneWay}"
                                 Click="OnDbMaintenanceClick">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xEF90;" FontSize="{StaticResource IconSizeM}"/>
@@ -456,15 +456,15 @@
                                 </StackPanel>
                             </Button>
                             <ProgressRing
-                                IsActive="{x:Bind ViewModel.IsMaintaining, Mode=OneWay}"
+                                IsActive="{x:Bind ViewModel.MaintenanceVM.IsMaintaining, Mode=OneWay}"
                                 Width="20"
                                 Height="20"
                                 VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <TextBlock
-                            Text="{x:Bind ViewModel.MaintenanceStatusText, Mode=OneWay}"
-                            Visibility="{x:Bind ViewModel.MaintenanceStatusVisibility, Mode=OneWay}"
+                            Text="{x:Bind ViewModel.MaintenanceVM.MaintenanceStatusText, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.MaintenanceVM.MaintenanceStatusVisibility, Mode=OneWay}"
                             Style="{ThemeResource CaptionTextBlockStyle}"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             TextWrapping="Wrap"/>
@@ -485,18 +485,18 @@
 
                         <ToggleSwitch
                             x:Uid="DbBackupEnabledToggle"
-                            IsOn="{x:Bind ViewModel.DbBackupEnabled, Mode=TwoWay}"/>
+                            IsOn="{x:Bind ViewModel.MaintenanceVM.DbBackupEnabled, Mode=TwoWay}"/>
 
                         <NumberBox
                             x:Uid="DbBackupRetentionBox"
-                            Value="{x:Bind ViewModel.DbBackupRetentionCount, Mode=TwoWay}"
+                            Value="{x:Bind ViewModel.MaintenanceVM.DbBackupRetentionCount, Mode=TwoWay}"
                             Minimum="1"
                             Maximum="20"
                             SpinButtonPlacementMode="Inline"
                             SmallChange="1"
                             Width="200"
                             HorizontalAlignment="Left"
-                            IsEnabled="{x:Bind ViewModel.DbBackupEnabled, Mode=OneWay}"/>
+                            IsEnabled="{x:Bind ViewModel.MaintenanceVM.DbBackupEnabled, Mode=OneWay}"/>
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
@@ -521,7 +521,7 @@
 
                         <Button
                             x:Uid="DbResetButton"
-                            IsEnabled="{x:Bind ViewModel.IsNotMaintaining, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.MaintenanceVM.IsNotMaintaining, Mode=OneWay}"
                             Margin="0,4,0,0"
                             Click="OnResetClick">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -555,16 +555,14 @@
                             x:Name="LogFileComboBox"
                             x:Uid="LogFileComboBox"
                             Grid.Column="0"
-                            ItemsSource="{x:Bind ViewModel.AvailableLogFiles, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.MaintenanceVM.AvailableLogFiles, Mode=OneWay}"
                             DisplayMemberPath="FileName"
                             HorizontalAlignment="Stretch"
                             SelectionChanged="OnLogFileSelectionChanged"/>
                         <ToggleButton
                             x:Uid="LogLiveViewToggle"
                             Grid.Column="1"
-                            IsChecked="{x:Bind ViewModel.IsLiveViewActive, Mode=TwoWay}"
-                            Checked="OnLiveViewChecked"
-                            Unchecked="OnLiveViewUnchecked"
+                            IsChecked="{x:Bind ViewModel.MaintenanceVM.IsLiveViewActive, Mode=TwoWay}"
                             VerticalAlignment="Bottom"/>
                     </Grid>
 
@@ -582,10 +580,10 @@
                         <TextBox
                             x:Uid="LogSearchBox"
                             Grid.Column="0"
-                            Text="{x:Bind ViewModel.LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            Text="{x:Bind ViewModel.MaintenanceVM.LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <ComboBox
                             Grid.Column="1"
-                            SelectedIndex="{x:Bind ViewModel.LogLevelFilterIndex, Mode=TwoWay}"
+                            SelectedIndex="{x:Bind ViewModel.MaintenanceVM.LogLevelFilterIndex, Mode=TwoWay}"
                             Width="130">
                             <ComboBoxItem x:Uid="LogLevelAll"/>
                             <ComboBoxItem x:Uid="LogLevelInfo"/>

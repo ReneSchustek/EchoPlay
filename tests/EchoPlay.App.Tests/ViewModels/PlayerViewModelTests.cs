@@ -1,7 +1,9 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
+using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -13,8 +15,15 @@ namespace EchoPlay.App.Tests.ViewModels
     {
         private static PlayerViewModel BuildViewModel(FakePlayerService playerService)
         {
-            // ScopeFactory nur für SaveLastOpenedFolderAsync benötigt – hier nicht relevant
-            ServiceProvider provider = new ServiceCollection().BuildServiceProvider();
+            return BuildViewModel(playerService, new FakeTrackTitleResolver());
+        }
+
+        private static PlayerViewModel BuildViewModel(FakePlayerService playerService, FakeTrackTitleResolver titleResolver)
+        {
+            // ScopeFactory liefert den Titel-Auflöser für die Wiedergabeliste
+            ServiceCollection services = new();
+            _ = services.AddScoped<ITrackTitleResolver>(_ => titleResolver);
+            ServiceProvider provider = services.BuildServiceProvider();
 
             return new PlayerViewModel(playerService, provider.GetRequiredService<IServiceScopeFactory>());
         }
@@ -31,6 +40,89 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(vm.IsPlaying);
             Assert.Equal("Track A", vm.CurrentTitle);
             Assert.Equal(120.0, vm.DurationSeconds);
+        }
+
+        [Fact]
+        public void PlaylistItems_PlaybackStartedElsewhere_AdoptsRunningList()
+        {
+            // Der übliche Weg: Die Wiedergabe startet in der Mediathek oder der Serienansicht,
+            // die Player-Seite war daran nicht beteiligt. Sie muss die laufende Liste trotzdem
+            // zeigen - sonst steht dort der Platzhalter, während unten die Folge läuft.
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+
+            Assert.Empty(vm.PlaylistItems);
+
+            playerService.SimulateExternalPlayback(
+                [@"C:\Audio\Serie\01 - Erster Teil.mp3", @"C:\Audio\Serie\02 - Zweiter Teil.mp3"],
+                currentPath: @"C:\Audio\Serie\02 - Zweiter Teil.mp3");
+
+            Assert.Equal(2, vm.PlaylistItems.Count);
+            Assert.Equal("2 Tracks", vm.PlaylistSubtitle);
+            Assert.Equal("Zweiter Teil", vm.CurrentTitle);
+
+            // Die laufende Spur ist hervorgehoben, nicht die erste der Liste.
+            Assert.False(vm.PlaylistItems[0].IsCurrentTrack);
+            Assert.True(vm.PlaylistItems[1].IsCurrentTrack);
+        }
+
+        [Fact]
+        public void PlaylistItems_SameListAgain_IsNotRebuilt()
+        {
+            // StateChanged feuert im Sekundentakt aus dem Positions-Timer. Ohne Abgleich
+            // entstünde bei jedem Tick eine neue Liste - die Auswahl in der Ansicht wäre weg.
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+
+            List<string> tracks = [@"C:\Audio\Serie\01 - Erster Teil.mp3"];
+            playerService.SimulateExternalPlayback(tracks, currentPath: tracks[0]);
+
+            PlaylistItemViewModel ersterEintrag = vm.PlaylistItems[0];
+            playerService.SimulateExternalPlayback(tracks, currentPath: tracks[0]);
+
+            Assert.Same(ersterEintrag, vm.PlaylistItems[0]);
+        }
+
+        [Fact]
+        public async Task PlaylistItems_TracksAreTagged_ShowTitleFromTheFile()
+        {
+            // Auch die Wiedergabeliste des Players zeigt den Titel aus der Kennzeichnung;
+            // ohne Titel bleibt der Dateiname ohne Endung und ohne Zeilennummer stehen.
+            const string ersterTeil = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+            const string zweiterTeil = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
+
+            FakeTrackTitleResolver titleResolver = new();
+            titleResolver.TitlesByPath[ersterTeil] = "Das leere Haus (Teil 1)";
+
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService, titleResolver);
+
+            vm.LoadFiles([ersterTeil, zweiterTeil]);
+            await vm.PendingTitleFill;
+
+            Assert.Equal("Das leere Haus (Teil 1)", vm.PlaylistItems[0].Title);
+            Assert.Equal("Das leere Haus (Teil 2)", vm.PlaylistItems[1].Title);
+        }
+
+        [Fact]
+        public void CurrentTrackHighlight_FollowsThePath_NotTheDisplayedName()
+        {
+            // Der Anzeigename kommt aus der Kennzeichnung und passt dann nicht mehr zum
+            // Dateinamen – hervorgehoben wird trotzdem die richtige Zeile.
+            const string ersterTeil = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+            const string zweiterTeil = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
+
+            FakeTrackTitleResolver titleResolver = new();
+            titleResolver.TitlesByPath[zweiterTeil] = "Ein ganz anderer Titel";
+
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService, titleResolver);
+
+            playerService.SimulateExternalPlayback([ersterTeil, zweiterTeil], currentPath: zweiterTeil);
+
+            Assert.False(vm.PlaylistItems[0].IsCurrentTrack);
+            Assert.True(vm.PlaylistItems[1].IsCurrentTrack);
+            Assert.Equal("Ein ganz anderer Titel", vm.CurrentTitle);
         }
 
         [Fact]

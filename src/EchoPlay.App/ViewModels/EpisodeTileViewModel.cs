@@ -40,6 +40,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="hasLocalTrack">Ob mindestens eine lokale Audiodatei vorliegt.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-ID der Folge, sofern bekannt.</param>
         /// <param name="seriesTitle">Serientitel – Suchbegriff für Spotify, wenn keine Album-ID vorliegt.</param>
+        /// <param name="hasOpenPosition">Ob die Folge an einer offenen Stelle steht, an der weitergehört werden kann.</param>
         public EpisodeTileViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -55,7 +56,8 @@ namespace EchoPlay.App.ViewModels
             string? spotifyAlbumId = null,
             bool hasLocalTrack = true,
             string? appleMusicAlbumId = null,
-            string? seriesTitle = null)
+            string? seriesTitle = null,
+            bool hasOpenPosition = false)
         {
             SpotifyAlbumId = spotifyAlbumId;
             AppleMusicAlbumId = appleMusicAlbumId;
@@ -67,6 +69,7 @@ namespace EchoPlay.App.ViewModels
             Title = title;
             TotalDuration = totalDuration;
             Progress = playbackStatus;
+            HasOpenPosition = hasOpenPosition;
             ReleaseDate = releaseDate;
             ProgressPercent = progressPercent;
             IsSpecialEpisode = isSpecialEpisode;
@@ -108,6 +111,15 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Wiedergabefortschritt der Episode (NotStarted / InProgress / Finished).</summary>
         public PlaybackStatus Progress { get; }
+
+        /// <summary>
+        /// Ob die Folge an einer offenen Stelle steht, an der weitergehört werden kann.
+        /// </summary>
+        /// <remarks>
+        /// Unabhängig von <see cref="Progress"/>: Eine bereits gehörte Folge, die erneut
+        /// angefangen wurde, bleibt gehört und hat trotzdem eine offene Stelle.
+        /// </remarks>
+        public bool HasOpenPosition { get; }
 
         /// <summary>
         /// Kombinierter Anzeige-Titel aus Episodennummer und Bezeichnung, z.B. "001 – Titel".

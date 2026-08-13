@@ -1,7 +1,10 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
+using EchoPlay.LocalLibrary.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
@@ -12,12 +15,27 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class MiniPlayerViewModelTests
     {
+        private static MiniPlayerViewModel BuildViewModel(FakePlayerService playerService)
+        {
+            return BuildViewModel(playerService, new FakeTrackTitleResolver());
+        }
+
+        private static MiniPlayerViewModel BuildViewModel(FakePlayerService playerService, FakeTrackTitleResolver titleResolver)
+        {
+            // ScopeFactory liefert den Titel-Auflöser für die laufende Spur
+            ServiceCollection services = new();
+            _ = services.AddScoped<ITrackTitleResolver>(_ => titleResolver);
+            ServiceProvider provider = services.BuildServiceProvider();
+
+            return new MiniPlayerViewModel(playerService, provider.GetRequiredService<IServiceScopeFactory>());
+        }
+
         [Fact]
         public void TrackTitle_UpdatesFromStateChanged()
         {
             // StateChanged muss TrackTitle aktualisieren
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetState("TKKG – Folge 1", isPlaying: true, positionSeconds: 0, durationSeconds: 60);
 
@@ -25,11 +43,44 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task TrackTitle_TrackIsTagged_ShowsTitleFromTheFile()
+        {
+            // Unten muss dasselbe stehen wie in der Wiedergabeliste der Player-Seite.
+            const string spur = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+
+            FakeTrackTitleResolver titleResolver = new();
+            titleResolver.TitlesByPath[spur] = "Das leere Haus (Teil 1)";
+
+            FakePlayerService playerService = new();
+            MiniPlayerViewModel vm = BuildViewModel(playerService, titleResolver);
+
+            playerService.SimulateExternalPlayback([spur], currentPath: spur);
+            await vm.PendingTitleLoad;
+
+            Assert.Equal("Das leere Haus (Teil 1)", vm.TrackTitle);
+        }
+
+        [Fact]
+        public async Task TrackTitle_TrackHasNoTag_KeepsTheNumberInTheFileName()
+        {
+            // Der Mini-Player hat keine Nummernspalte – die Nummer muss also stehen bleiben.
+            const string spur = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+
+            FakePlayerService playerService = new();
+            MiniPlayerViewModel vm = BuildViewModel(playerService, new FakeTrackTitleResolver());
+
+            playerService.SimulateExternalPlayback([spur], currentPath: spur);
+            await vm.PendingTitleLoad;
+
+            Assert.Equal("01 - Das leere Haus (Teil 1)", vm.TrackTitle);
+        }
+
+        [Fact]
         public void IsPlaying_UpdatesFromStateChanged()
         {
             // IsPlaying muss den aktuellen Wiedergabestatus widerspiegeln
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetState("Folge 1", isPlaying: true, positionSeconds: 0, durationSeconds: 60);
             Assert.True(vm.IsPlaying);
@@ -43,7 +94,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // PositionSeconds muss der übergebenen Position entsprechen
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetState("Folge 1", isPlaying: true, positionSeconds: 42.5, durationSeconds: 3600);
 
@@ -55,7 +106,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // SeekTo muss die Position korrekt an den PlayerService weiterreichen
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.SeekTo(120.0);
 
@@ -67,7 +118,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // PlayCommand entspricht Resume – nicht Play (kein neuer Track)
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.PlayCommand.Execute(null);
 
@@ -79,7 +130,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // PauseCommand muss Pause auf dem PlayerService aufrufen
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.PauseCommand.Execute(null);
 
@@ -91,7 +142,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Geschwindigkeitsänderung im ViewModel muss den PlayerService aktualisieren
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.PlaybackRate = 1.5;
 
@@ -103,7 +154,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // SetProperty gibt false zurück wenn der Wert gleich bleibt – kein Seiteneffekt
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.PlaybackRate = 1.0; // Startwert ist bereits 1.0
 
@@ -115,7 +166,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // SetSleepTimer im ViewModel muss den PlayerService aufrufen
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.SetSleepTimer(TimeSpan.FromMinutes(30));
 
@@ -128,7 +179,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // StateChanged nach SetSleepTimer muss SleepTimerText als mm:ss formatieren
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetSleepTimer(TimeSpan.FromMinutes(30));
 
@@ -140,7 +191,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Ohne aktiven Timer bleibt SleepTimerText leer
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetState("Folge 1", isPlaying: true, positionSeconds: 0, durationSeconds: 60);
 
@@ -152,7 +203,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Deaktivieren des Timers (null) muss SleepTimerText leeren
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetSleepTimer(TimeSpan.FromMinutes(15));
             playerService.SetSleepTimer(null);
@@ -168,7 +219,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Ohne laufende Wiedergabe soll der MiniPlayer nicht sichtbar sein.
             // Verhindert, dass der MiniPlayer beim App-Start leer angezeigt wird.
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             Assert.Equal(Visibility.Collapsed, vm.MiniPlayerVisibility);
         }
@@ -179,7 +230,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Sobald StateChanged mit einem Track-Titel feuert, muss der MiniPlayer sichtbar werden.
             // Wird ausgelöst wenn IPlayerService.Play() aus der lokalen Mediathek aufgerufen wird.
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetState("TKKG 001 – Die Schwarze Hand", isPlaying: true, positionSeconds: 0, durationSeconds: 2400);
 
@@ -191,7 +242,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nach dem Stopp (TrackTitle wird auf leer gesetzt) muss der MiniPlayer wieder verschwinden.
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SetState("TKKG 001", isPlaying: true, positionSeconds: 0, durationSeconds: 2400);
             Assert.Equal(Visibility.Visible, vm.MiniPlayerVisibility);
@@ -209,7 +260,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Ohne Fehler muss ErrorMessage leer sein
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             Assert.Equal(string.Empty, vm.ErrorMessage);
         }
@@ -219,7 +270,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // ErrorOccurred vom PlayerService muss als ErrorMessage im ViewModel ankommen
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SimulateError("Datei nicht gefunden");
 
@@ -231,7 +282,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Fehlermeldung wird bei normaler Zustandsänderung zurückgesetzt
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             playerService.SimulateError("Wiedergabefehler");
             Assert.Equal("Wiedergabefehler", vm.ErrorMessage);
@@ -246,7 +297,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Nach Dispose darf ErrorOccurred nicht mehr ankommen
             FakePlayerService playerService = new();
-            MiniPlayerViewModel vm = new(playerService);
+            MiniPlayerViewModel vm = BuildViewModel(playerService);
 
             vm.Dispose();
             playerService.SimulateError("Sollte nicht ankommen");

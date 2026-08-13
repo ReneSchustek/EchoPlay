@@ -34,6 +34,9 @@ namespace EchoPlay.App.ViewModels
         private readonly IScanEventService _scanEventService;
         private readonly Action<Series> _onSeriesSynced;
 
+        // Löst die Verbindung zwischen Datenbank und Festplatte, bevor neu eingelesen wird.
+        private readonly LocalLibraryReset _libraryReset;
+
         /// <summary>
         /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst und
         /// später genutzt, um Hintergrundthread-Callbacks des <see cref="IScanEventService"/>
@@ -79,6 +82,7 @@ namespace EchoPlay.App.ViewModels
             _statusBar = statusBar;
             _scanEventService = scanEventService;
             _onSeriesSynced = onSeriesSynced;
+            _libraryReset = new LocalLibraryReset(scopeFactory);
 
             // DispatcherQueue auf dem UI-Thread erfassen – Events des Scan-Dienstes treffen später
             // vom Hintergrundthread ein und müssen auf den UI-Thread gemarshallt werden.
@@ -310,14 +314,14 @@ namespace EchoPlay.App.ViewModels
                     ScanDetailText = p.DetailText ?? string.Empty;
                     IsScanIndeterminate = p.PercentComplete <= 0;
                     ScanProgressPercent = p.PercentComplete;
-                    _statusBar.UpdateScanProgress(p);
+                    _statusBar.ScanProgress.Update(p);
                 });
 
                 SyncResult result = await _syncService.SyncAsync(progress, forceImportAll: forceImportAll);
 
                 // Fortschrittsbalken sofort ausblenden – bevor der Reload die Liste neu befüllt.
                 // Sonst wirkt die Ladezeit der DB-Ansicht wie ein "hängengebliebener" Scan.
-                _statusBar.ClearScanProgress();
+                _statusBar.ScanProgress.Clear();
                 SyncStatusText = $"Scan abgeschlossen: {result.TracksCreated} Tracks angelegt, {result.EpisodesUpdated} Episoden aktualisiert";
                 ScanDetailText = string.Empty;
 
@@ -325,7 +329,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                _statusBar.ClearScanProgress();
+                _statusBar.ScanProgress.Clear();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
                 await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryScanFailedTitle"), ex.Message);
@@ -365,65 +369,11 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                // Datenbankbereinigung auf dem Threadpool – verhindert UI-Freeze durch die vielen
-                // aufeinanderfolgenden DB-Awaits. Ein eigener Scope ist nötig, da DbContext nicht
-                // thread-sicher ist.
-                await Task.Run(async () =>
-                {
-                    using IServiceScope cleanupScope = _scopeFactory.CreateScope();
-                    ISeriesDataService seriesService = cleanupScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                    IEpisodeDataService episodeService = cleanupScope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-                    ILocalTrackDataService trackService = cleanupScope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
-                    ICoverImageDataService coverImageService = cleanupScope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
-
-                    IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
-
-                    List<Guid> seriesIdsToResetCover = [];
-                    List<Guid> episodeIdsToResetCover = [];
-
-                    foreach (Series series in allSeries)
-                    {
-                        bool isLocalOnly = series.SpotifyArtistId is null && series.AppleMusicArtistId is null;
-
-                        if (isLocalOnly)
-                        {
-                            // Rein lokale Serie vollständig entfernen – kaskadiert Episoden, Tracks und PlaybackStates
-                            await seriesService.DeleteAsync(series.Id);
-                            continue;
-                        }
-
-                        // Online-importierte Serie: lokale Zuordnung entfernen, Metadaten behalten
-                        series.LocalFolderPath = null;
-                        await seriesService.UpdateAsync(series);
-                        seriesIdsToResetCover.Add(series.Id);
-
-                        IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
-
-                        foreach (Episode episode in episodes)
-                        {
-                            episode.LocalFolderPath = null;
-                            episode.LocalTrackCount = null;
-                            // Zurück auf den Ausgangszustand – kein lokaler Abgleich mehr vorhanden
-                            episode.TrackMatchKind = TrackMatchKind.NotMatched;
-                            await episodeService.UpdateAsync(episode);
-
-                            episodeIdsToResetCover.Add(episode.Id);
-
-                            // Leere Liste löscht alle LocalTrack-Einträge dieser Episode
-                            await trackService.SaveTracksForEpisodeAsync(episode.Id, []);
-                        }
-                    }
-
-                    // Gespeicherte Cover löschen – beim nächsten Scan werden sie neu eingelesen.
-                    // Ohne dieses Reset würde das alte Binärbild dauerhaft in der CoverImages-Tabelle
-                    // verbleiben, selbst wenn der Nutzer ein anderes Bild auf die Festplatte legt.
-                    _ = await coverImageService.DeleteByEntitiesAsync(CoverEntityTypes.Series, seriesIdsToResetCover);
-                    _ = await coverImageService.DeleteByEntitiesAsync(CoverEntityTypes.Episode, episodeIdsToResetCover);
-                });
+                await _libraryReset.ClearLocalAssignmentsAsync();
 
                 string resettingStatus = SafeResourceLoader.Get("ScanStatusResetting");
                 SyncStatusText = resettingStatus;
-                _statusBar.UpdateScanProgress(new ScanProgress { StatusText = resettingStatus });
+                _statusBar.ScanProgress.Update(new ScanProgress { StatusText = resettingStatus });
 
                 Progress<ScanProgress> progress = new(p =>
                 {
@@ -431,14 +381,14 @@ namespace EchoPlay.App.ViewModels
                     ScanDetailText = p.DetailText ?? string.Empty;
                     IsScanIndeterminate = p.PercentComplete <= 0;
                     ScanProgressPercent = p.PercentComplete;
-                    _statusBar.UpdateScanProgress(p);
+                    _statusBar.ScanProgress.Update(p);
                 });
 
                 // forceImportAll: true – nach dem Reset müssen alle Serienordner neu importiert werden,
                 // unabhängig davon ob AutoImportAfterScan in den Einstellungen aktiviert ist.
                 SyncResult result = await _syncService.SyncAsync(progress, forceImportAll: true);
 
-                _statusBar.ClearScanProgress();
+                _statusBar.ScanProgress.Clear();
                 SyncStatusText = $"Neu-Initialisierung abgeschlossen: {result.TracksCreated} Tracks angelegt";
                 ScanDetailText = string.Empty;
 
@@ -446,7 +396,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                _statusBar.ClearScanProgress();
+                _statusBar.ScanProgress.Clear();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
                 await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryReinitFailedTitle"), ex.Message);

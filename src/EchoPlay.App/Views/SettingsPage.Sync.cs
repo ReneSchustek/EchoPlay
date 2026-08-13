@@ -55,7 +55,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void SyncLanguageComboBox(string languageCode)
         {
-            foreach (LanguageOption option in ViewModel.AvailableLanguages)
+            foreach (LanguageOption option in ViewModel.GeneralVM.AvailableLanguages)
             {
                 if (option.Code == languageCode)
                 {
@@ -65,9 +65,9 @@ namespace EchoPlay.App.Views
             }
 
             // Fallback auf erste Sprache wenn kein passender Eintrag gefunden wurde
-            if (ViewModel.AvailableLanguages.Count > 0)
+            if (ViewModel.GeneralVM.AvailableLanguages.Count > 0)
             {
-                LanguageComboBox.SelectedItem = ViewModel.AvailableLanguages[0];
+                LanguageComboBox.SelectedItem = ViewModel.GeneralVM.AvailableLanguages[0];
             }
         }
     }

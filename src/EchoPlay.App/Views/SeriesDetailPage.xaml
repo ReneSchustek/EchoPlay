@@ -48,7 +48,7 @@
 
             <TextBlock
                 Grid.Column="1"
-                Text="{x:Bind ViewModel.SeriesTitle, Mode=OneWay}"
+                Text="{x:Bind ViewModel.Header.SeriesTitle, Mode=OneWay}"
                 Style="{ThemeResource TitleTextBlockStyle}"
                 VerticalAlignment="Center"/>
 
@@ -57,10 +57,10 @@
             <Button
                 Grid.Column="2"
                 x:Uid="SeriesDetailFavoriteButton"
-                Content="{x:Bind ViewModel.FavoriteGlyph, Mode=OneWay}"
+                Content="{x:Bind ViewModel.Header.FavoriteGlyph, Mode=OneWay}"
                 FontFamily="{ThemeResource SymbolThemeFontFamily}"
                 FontSize="20"
-                Command="{x:Bind ViewModel.ToggleFavoriteCommand}"
+                Command="{x:Bind ViewModel.Header.ToggleFavoriteCommand}"
                 Style="{ThemeResource SubtleButtonStyle}"
                 Padding="8"
                 Margin="8,0,4,0"
@@ -81,7 +81,7 @@
                 Grid.Column="0"
                 Width="280"
                 VerticalAlignment="Center"
-                SearchText="{x:Bind ViewModel.EpisodeSearchText, Mode=TwoWay}"/>
+                SearchText="{x:Bind ViewModel.EpisodeList.EpisodeSearchText, Mode=TwoWay}"/>
 
             <!-- Sortier-ComboBox -->
             <ComboBox
@@ -107,8 +107,8 @@
         <!-- Serienbeschreibung (vom Provider, z.B. Spotify) -->
         <TextBlock
             Grid.Row="3"
-            Text="{x:Bind ViewModel.SeriesDescription, Mode=OneWay}"
-            Visibility="{x:Bind ViewModel.DescriptionVisibility, Mode=OneWay}"
+            Text="{x:Bind ViewModel.Header.SeriesDescription, Mode=OneWay}"
+            Visibility="{x:Bind ViewModel.Header.DescriptionVisibility, Mode=OneWay}"
             Style="{ThemeResource BodyTextBlockStyle}"
             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
             TextWrapping="Wrap"
@@ -118,12 +118,12 @@
         <!-- Gesamtfortschritt -->
         <StackPanel Grid.Row="4" Margin="16,0,16,8">
             <TextBlock
-                Text="{x:Bind ViewModel.ProgressText, Mode=OneWay}"
+                Text="{x:Bind ViewModel.Header.ProgressText, Mode=OneWay}"
                 Style="{ThemeResource CaptionTextBlockStyle}"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 Margin="0,0,0,4"/>
             <ProgressBar
-                Value="{x:Bind ViewModel.OverallProgressPercent, Mode=OneWay}"
+                Value="{x:Bind ViewModel.Header.OverallProgressPercent, Mode=OneWay}"
                 Maximum="100"
                 IsIndeterminate="False"/>
         </StackPanel>
@@ -151,7 +151,7 @@
                     Orientation="Horizontal"
                     Spacing="4"
                     Margin="8,0"
-                    Visibility="{x:Bind ViewModel.HasSpecialEpisodes, Mode=OneWay}">
+                    Visibility="{x:Bind ViewModel.EpisodeList.HasSpecialEpisodes, Mode=OneWay}">
                     <RadioButton
                         x:Uid="LokalTabEpisodes"
                         GroupName="DetailEpisodeTab"
@@ -163,7 +163,7 @@
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock x:Uid="LokalTabSpecial"/>
                             <TextBlock Text="(" />
-                            <TextBlock Text="{x:Bind ViewModel.SpecialEpisodeCount, Mode=OneWay}"/>
+                            <TextBlock Text="{x:Bind ViewModel.EpisodeList.SpecialEpisodeCount, Mode=OneWay}"/>
                             <TextBlock Text=")" />
                         </StackPanel>
                     </RadioButton>
@@ -189,7 +189,7 @@
 
                     <!-- Episodenkacheln mit Cover-Thumbnail links und Text rechts -->
                     <GridView
-                        ItemsSource="{x:Bind ViewModel.Episodes, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.EpisodeList.Episodes, Mode=OneWay}"
                         SelectionMode="Single"
                         SelectionChanged="OnEpisodeSelectionChanged"
                         Padding="8">
@@ -342,14 +342,14 @@
                     x:Uid="SeriesDetailPlayEpisodeButton"
                     Margin="8,8,8,4"
                     Click="OnPlayEpisodeClick"
-                    Visibility="{x:Bind ViewModel.TrackActionsVisibility, Mode=OneWay}"/>
+                    Visibility="{x:Bind ViewModel.TrackList.TrackActionsVisibility, Mode=OneWay}"/>
 
                 <!-- Track-Liste -->
                 <Grid Grid.Row="1">
                     <!-- "Folge wählen"-Hinweis -->
                     <TextBlock
                         x:Uid="SeriesDetailTracksEmpty"
-                        Visibility="{x:Bind ViewModel.TracksEmptyVisibility, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.TrackList.TracksEmptyVisibility, Mode=OneWay}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Style="{ThemeResource BodyTextBlockStyle}"
@@ -359,7 +359,7 @@
                     <!-- "Keine lokalen Dateien"-Hinweis -->
                     <TextBlock
                         x:Uid="SeriesDetailNoLocalTracks"
-                        Visibility="{x:Bind ViewModel.NoLocalTracksVisibility, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.TrackList.NoLocalTracksVisibility, Mode=OneWay}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Style="{ThemeResource BodyTextBlockStyle}"
@@ -368,11 +368,11 @@
 
                     <!-- Track-Zeilen -->
                     <ListView
-                        ItemsSource="{x:Bind ViewModel.Tracks, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.TrackList.Tracks, Mode=OneWay}"
                         SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:LocalTrackRowViewModel">
-                                <Grid Padding="0,4" AutomationProperties.Name="{x:Bind FileName}">
+                                <Grid Padding="0,4" AutomationProperties.Name="{x:Bind Title, Mode=OneWay}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="32"/>
                                         <ColumnDefinition Width="*"/>
@@ -387,7 +387,7 @@
 
                                     <TextBlock
                                         Grid.Column="1"
-                                        Text="{x:Bind FileName}"
+                                        Text="{x:Bind Title, Mode=OneWay}"
                                         TextTrimming="CharacterEllipsis"
                                         VerticalAlignment="Center"/>
 

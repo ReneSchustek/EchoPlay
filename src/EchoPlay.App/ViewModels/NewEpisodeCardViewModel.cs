@@ -31,6 +31,20 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalizationService? _localizationService;
         private readonly IClock _clock;
 
+        /// <summary>
+        /// Veröffentlichungsdatum der Folge. Entscheidet beim Klick darüber, ob der Sprung zum
+        /// Anbieter sinnvoll ist — vor dem Erscheinen steht dort nur eine Vorabveröffentlichung.
+        /// </summary>
+        private readonly DateTime? _releaseDate;
+
+        /// <summary>
+        /// Anbieter-Kennungen der Folge, mitgegeben statt nachgeladen: Eine Neuerscheinung
+        /// stammt vom Anbieter und ist noch keine gespeicherte Folge — ihre Id steht in keiner
+        /// Tabelle, ein Nachladen fände nie etwas.
+        /// </summary>
+        private readonly string? _spotifyAlbumId;
+        private readonly string? _appleMusicAlbumId;
+
         private PlaybackStatus _status;
         private double _progressPercent;
         private BitmapImage? _coverImage;
@@ -56,6 +70,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="releaseDate">Erscheinungsdatum für Ankündigungen, oder null.</param>
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
+        /// <param name="spotifyAlbumId">Spotify-Album-Kennung der Folge, sofern bekannt.</param>
+        /// <param name="appleMusicAlbumId">Apple-Music-Album-Kennung der Folge, sofern bekannt.</param>
         [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase",
             Justification = "Lowercase-Badge-Text wird im UI direkt angezeigt und muss kleingeschrieben bleiben.")]
         public NewEpisodeCardViewModel(
@@ -75,8 +91,12 @@ namespace EchoPlay.App.ViewModels
             int? episodeNumber = null,
             DateTime? releaseDate = null,
             ILocalizationService? localizationService = null,
-            IClock? clock = null)
+            IClock? clock = null,
+            string? spotifyAlbumId = null,
+            string? appleMusicAlbumId = null)
         {
+            _spotifyAlbumId = spotifyAlbumId;
+            _appleMusicAlbumId = appleMusicAlbumId;
             ArgumentNullException.ThrowIfNull(seriesName);
             ArgumentNullException.ThrowIfNull(episodeTitle);
             _clock = clock ?? new SystemClock();
@@ -87,6 +107,7 @@ namespace EchoPlay.App.ViewModels
             _coverImage = coverImage;
             EpisodeNumber = episodeNumber;
             _localizationService = localizationService;
+            _releaseDate = releaseDate;
 
             EpisodeNumberText = episodeNumber.HasValue
                 ? string.Format(CultureInfo.CurrentCulture, localizationService?.Get("EpisodeNumberFormat") ?? "Folge {0}", episodeNumber.Value)
@@ -347,17 +368,36 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task PlayAsync()
         {
-            if (IsAnnounced || !HasLocalTrack)
-            {
-                string notAvailableTitle = _localizationService?.Get("EpisodeNotAvailableTitle") ?? "Noch nicht verfügbar";
-                string notAvailableMessage = _localizationService?.Get("EpisodeNotAvailableMessage")
-                    ?? "Diese Episode ist noch nicht lokal verfügbar und kann noch nicht abgespielt werden.";
+            // Maßgeblich ist das Veröffentlichungsdatum, nicht das Kennzeichen: Erst wenn das
+            // Album vollständig zur Verfügung steht, lohnt der Sprung zum Anbieter. Apple Music
+            // führt angekündigte Alben zwar schon als Vorabveröffentlichung — zu hören gibt es
+            // dort aber nichts, und der Nutzer landet außerhalb der Anwendung.
+            bool nochNichtErschienen = _releaseDate.HasValue && _releaseDate.Value.Date > _clock.UtcNow.Date;
 
-                await _errorDialogService.ShowAsync(notAvailableTitle, notAvailableMessage);
+            if (nochNichtErschienen || (IsAnnounced && !_releaseDate.HasValue))
+            {
+                await _errorDialogService.ShowAsync(
+                    _localizationService?.Get("EpisodeNotAvailableTitle") ?? "Noch nicht verfügbar",
+                    _localizationService?.Get("EpisodeNotAvailableMessage")
+                        ?? "Diese Episode ist noch nicht lokal verfügbar und kann noch nicht abgespielt werden.");
                 return;
             }
 
-            await PlaybackLauncher.PlayEpisodeAsync(_scopeFactory, _playerService, EpisodeId);
+            EpisodeLaunchResult result = await PlaybackLauncher.PlayOrOpenProviderAsync(
+                _scopeFactory, _playerService, EpisodeId, SeriesName, EpisodeTitle, _spotifyAlbumId, _appleMusicAlbumId);
+
+            if (result != EpisodeLaunchResult.NothingToPlay)
+            {
+                return;
+            }
+
+            // Der frühere Text sagte bei jeder Folge ohne Datei „noch nicht verfügbar" — das
+            // trifft nur den angekündigten Fall oben. Hier gibt es die Folge; sie ist nur
+            // nirgends erreichbar.
+            await _errorDialogService.ShowAsync(
+                _localizationService?.Get("EpisodeNotPlayableTitle") ?? "Nicht abspielbar",
+                _localizationService?.Get("EpisodeNotPlayableMessage")
+                    ?? "Diese Folge liegt nicht auf diesem Rechner, und es ist kein Anbieter hinterlegt, bei dem sie geöffnet werden könnte.");
         }
 
         /// <summary>

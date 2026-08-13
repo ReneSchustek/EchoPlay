@@ -1,8 +1,13 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Parsing;
+using EchoPlay.LocalLibrary.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -14,13 +19,23 @@ namespace EchoPlay.App.ViewModels
     public sealed class MiniPlayerViewModel : ObservableObject, IDisposable
     {
         private readonly IPlayerService _playerService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         // Null außerhalb des UI-Threads (z.B. in Unit-Tests)
         private readonly DispatcherQueue? _dispatcherQueue;
 
+        private string? _titleSourcePath;
         private string _trackTitle = string.Empty;
         private double _positionSeconds;
         private double _durationSeconds;
+        private double _episodeProgressPercent;
+        private string _episodeProgressText = string.Empty;
+
+        // Einmal zerlegt statt bei jedem Positions-Tick: Die Anzeige frischt zweimal je
+        // Sekunde auf, und das Muster ändert sich dabei nie.
+        private static readonly System.Text.CompositeFormat EpisodeProgressFormat =
+            System.Text.CompositeFormat.Parse(
+                EchoPlay.App.Helpers.SafeResourceLoader.Get("MiniPlayerEpisodeProgressFormat", "Folge {0} %"));
         private bool _isPlaying;
         private double _playbackRate = 1.0;
         private string _sleepTimerText = string.Empty;
@@ -32,10 +47,13 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das ViewModel und registriert sich für Zustandsänderungen des PlayerService.
         /// </summary>
         /// <param name="playerService">Der zentrale Wiedergabe-Service.</param>
+        /// <param name="scopeFactory">Fabrik für den Scope, aus dem der Titel der Spur gelesen wird.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch außerhalb von WinUI zu konstruieren.")]
-        public MiniPlayerViewModel(IPlayerService playerService)
+        public MiniPlayerViewModel(IPlayerService playerService, IServiceScopeFactory scopeFactory)
         {
             _playerService = playerService;
+            _scopeFactory = scopeFactory;
+            Volume = new VolumeControl(playerService, scopeFactory);
 
             // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests) – daher try-catch.
             try
@@ -57,12 +75,21 @@ namespace EchoPlay.App.ViewModels
             _playerService.ErrorOccurred += OnErrorOccurred;
         }
 
+        /// <summary>Der Vorgang, der den Titel aus der Kennzeichnung nachlädt — für Tests.</summary>
+        internal Task PendingTitleLoad { get; private set; } = Task.CompletedTask;
+
         /// <summary>Titel des aktuell laufenden Tracks.</summary>
         public string TrackTitle
         {
             get => _trackTitle;
             private set => SetProperty(ref _trackTitle, value);
         }
+
+        /// <summary>
+        /// Lautstärke und Stummschaltung. Beide Wiedergabe-Ansichten zeigen denselben Wert,
+        /// weil beide denselben Wiedergabedienst bedienen.
+        /// </summary>
+        public VolumeControl Volume { get; }
 
         /// <summary>Aktuelle Position in Sekunden – für den Slider.</summary>
         public double PositionSeconds
@@ -77,6 +104,42 @@ namespace EchoPlay.App.ViewModels
             get => _durationSeconds;
             private set => SetProperty(ref _durationSeconds, value);
         }
+
+        /// <summary>
+        /// Fortschritt in der ganzen Folge, in Prozent (0–100).
+        /// </summary>
+        /// <remarks>
+        /// Im Mini-Player ist kein Platz für zwei Regler. Der vorhandene zeigt die laufende
+        /// Datei; dieser schmale Balken darunter beantwortet die Frage, die bei einer Folge
+        /// aus mehreren Dateien offen bleibt: wie weit bin ich im Hörspiel.
+        /// </remarks>
+        public double EpisodeProgressPercent
+        {
+            get => _episodeProgressPercent;
+            private set => SetProperty(ref _episodeProgressPercent, value);
+        }
+
+        /// <summary>
+        /// Beschriftung des Folgen-Balkens, etwa „Folge 49 %".
+        /// </summary>
+        /// <remarks>
+        /// Ohne sie ist ein schmaler Balken unter der Zeitanzeige nicht zu deuten — er sieht
+        /// aus wie ein zweiter Positionsregler, meint aber die ganze Folge.
+        /// </remarks>
+        public string EpisodeProgressText
+        {
+            get => _episodeProgressText;
+            private set => SetProperty(ref _episodeProgressText, value);
+        }
+
+        /// <summary>
+        /// Sichtbarkeit des Folgen-Fortschritts — nur bei bekannter Gesamtdauer und mehr
+        /// als einer Datei.
+        /// </summary>
+        public Visibility EpisodeProgressVisibility =>
+            _playerService.OverallDuration > TimeSpan.Zero && _playerService.CurrentTrackPaths.Count > 1
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
         /// <summary>Gibt an, ob gerade Wiedergabe aktiv ist.</summary>
         public bool IsPlaying
@@ -223,7 +286,7 @@ namespace EchoPlay.App.ViewModels
         {
             // Fehlermeldung bei normaler Zustandsänderung zurücksetzen
             ErrorMessage = string.Empty;
-            TrackTitle = _playerService.CurrentTrackTitle ?? string.Empty;
+            UpdateTrackTitle();
             PositionSeconds = _playerService.Position.TotalSeconds;
             DurationSeconds = _playerService.Duration.TotalSeconds;
             IsPlaying = _playerService.IsPlaying;
@@ -236,7 +299,65 @@ namespace EchoPlay.App.ViewModels
             TimeSpan remaining = duration - position;
             RemainingText = remaining > TimeSpan.Zero ? "-" + FormatTime(remaining) : FormatTime(duration);
 
+            TimeSpan overallDuration = _playerService.OverallDuration;
+            EpisodeProgressPercent = overallDuration > TimeSpan.Zero
+                ? Math.Min(100, _playerService.OverallPosition.TotalSeconds / overallDuration.TotalSeconds * 100)
+                : 0;
+
+            EpisodeProgressText = overallDuration > TimeSpan.Zero
+                ? string.Format(
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    EpisodeProgressFormat,
+                    Math.Round(EpisodeProgressPercent))
+                : string.Empty;
+
+            OnPropertyChanged(nameof(EpisodeProgressVisibility));
             OnPropertyChanged(nameof(MiniPlayerVisibility));
+        }
+
+        /// <summary>
+        /// Setzt den angezeigten Titel: sofort den aufgeräumten Dateinamen, danach — sobald
+        /// gelesen — den Titel aus der Kennzeichnung. Damit steht unten dasselbe wie in der
+        /// Wiedergabeliste der Player-Seite.
+        /// </summary>
+        private void UpdateTrackTitle()
+        {
+            string? path = _playerService.CurrentTrackPath;
+
+            if (path is null)
+            {
+                TrackTitle = _playerService.CurrentTrackTitle ?? string.Empty;
+                _titleSourcePath = null;
+                return;
+            }
+
+            if (string.Equals(path, _titleSourcePath, StringComparison.OrdinalIgnoreCase))
+            {
+                // Derselbe Track wie beim letzten Tick – der Titel steht schon.
+                return;
+            }
+
+            _titleSourcePath = path;
+            TrackTitle = TrackDisplayTitle.FromFilePath(path, TrackDisplayTitle.NoNumberShown);
+            PendingTitleLoad = LoadTitleFromTagAsync(path);
+        }
+
+        /// <summary>
+        /// Liest den Titel aus der Kennzeichnung nach. Wechselt der Track zwischenzeitlich,
+        /// wird das Ergebnis verworfen.
+        /// </summary>
+        private async Task LoadTitleFromTagAsync(string path)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ITrackTitleResolver resolver = scope.ServiceProvider.GetRequiredService<ITrackTitleResolver>();
+
+            IReadOnlyList<string> titles = await resolver.ResolveAsync(
+                [new TrackTitleRequest(path, TrackDisplayTitle.NoNumberShown)]);
+
+            if (titles.Count > 0 && string.Equals(path, _titleSourcePath, StringComparison.OrdinalIgnoreCase))
+            {
+                TrackTitle = titles[0];
+            }
         }
 
         /// <summary>

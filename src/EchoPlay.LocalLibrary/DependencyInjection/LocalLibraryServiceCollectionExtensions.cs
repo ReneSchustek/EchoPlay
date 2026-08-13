@@ -29,6 +29,7 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
             _ = services.AddScoped<ITrackMatcher, TrackMatcher>();
             _ = services.AddScoped<IAudioMetadataReader, AudioMetadataReader>();
             _ = services.AddScoped<ITagTitleReader, TagTitleReader>();
+            _ = services.AddScoped<ITrackTitleResolver, TrackTitleResolver>();
             _ = services.AddScoped<ILocalCoverLoader, LocalCoverLoader>();
             _ = services.AddScoped<ILocalCoverService, LocalCoverService>();
             _ = services.AddTransient<IEpisodePatternAnalyzer, EpisodePatternAnalyzer>();

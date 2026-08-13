@@ -195,7 +195,7 @@ namespace EchoPlay.App.ViewModels
                 Progress<string> progress = new(text =>
                 {
                     StatusText = text;
-                    _statusBar?.SetScanProgress(text);
+                    _statusBar?.ScanProgress.SetText(text);
                 });
 
                 _ = await _importService.ImportAsync(series, progress);
@@ -211,7 +211,7 @@ namespace EchoPlay.App.ViewModels
             {
                 IsImporting = false;
                 // Info-Leiste immer aufräumen, auch bei Fehlern
-                _statusBar?.ClearScanProgress();
+                _statusBar?.ScanProgress.Clear();
             }
         }
     }

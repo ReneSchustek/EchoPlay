@@ -98,7 +98,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
             {
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ShowMissingEpisodesAsync(seriesId));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.Actions.ShowMissingEpisodesAsync(seriesId));
             }
         }
 

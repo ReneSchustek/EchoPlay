@@ -28,6 +28,10 @@ namespace EchoPlay.App.ViewModels
         private readonly IErrorDialogService _errorDialogService;
         private readonly ILocalizationService _localizationService;
 
+        // Die Durchführung einer Suche — Anbieter fragen, Bestand durchsuchen, Treffer bauen.
+        // Das Ansichtsmodell hält davon nur noch Eingabe, Zustand und Liste.
+        private readonly SearchRunner _searchRunner;
+
         // Wird nur für lokale Suche benötigt – in Tests ohne lokale Serien kann null übergeben werden
         private readonly IServiceScopeFactory? _scopeFactory;
 
@@ -101,6 +105,10 @@ namespace EchoPlay.App.ViewModels
             _navigationService = navigationService;
             _pageModeGuard = pageModeGuard;
             _backgroundCoverService = backgroundCoverService;
+
+            _searchRunner = new SearchRunner(
+                importService, errorDialogService, localizationService,
+                scopeFactory, backgroundCoverService, this);
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
             ResetCommand = new RelayCommand(Reset);
@@ -379,94 +387,19 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                List<SearchResultViewModel> viewModels = [];
-                Exception? onlineError = null;
+                SearchRunner.SearchRunResult? outcome = await _searchRunner.RunAsync(searchText, scope, coverToken);
+                if (outcome is null) return;
 
-                // Online- und Lokal-Zweig sind entkoppelt: Ein Fehler im Online-Zweig
-                // (kein Netz, Provider-Timeout, HTTP-/Parser-Fehler) darf die lokalen Treffer
-                // nicht mehr verschlucken. Der Online-Fehler wird gemerkt und erst nach dem
-                // Anzeigen der lokalen Treffer als Hinweis gezeigt.
-                if (scope is SearchSource.Online or SearchSource.Both)
-                {
-                    try
-                    {
-                        SearchOutcome seriesOutcome = await _importService.SearchAsync(searchText);
-                        if (coverToken.IsCancellationRequested) return;
-
-                        SearchOutcome albumsOutcome = await _importService.SearchAlbumsAsync(searchText);
-                        if (coverToken.IsCancellationRequested) return;
-
-                        IsSpotifyFallbackHintVisible =
-                            seriesOutcome.SpotifyFallbackApplied || albumsOutcome.SpotifyFallbackApplied;
-
-                        IReadOnlyList<ImportSeries> seriesResults = seriesOutcome.Results;
-                        IReadOnlyList<ImportSeries> albumResults = albumsOutcome.Results;
-
-                        // Zusammenführen und nach Relevanz sortieren:
-                        // Treffer mit Suchbegriff im Titel/Künstler zuerst, dann nach Score.
-                        // Vergleich case-insensitiv (OrdinalIgnoreCase) – daher der Suchbegriff
-                        // unverändert (kein ToUpperInvariant nötig, das war irreführend benannt).
-                        string searchNeedle = searchText;
-                        List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
-                        combined.AddRange(seriesResults);
-                        combined.AddRange(albumResults);
-                        combined.Sort((a, b) =>
-                        {
-                            bool aContains = a.Title.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase)
-                                          || (a.ArtistName?.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase) ?? false);
-                            bool bContains = b.Title.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase)
-                                          || (b.ArtistName?.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase) ?? false);
-
-                            if (aContains != bContains) return aContains ? -1 : 1;
-                            return b.Score.CompareTo(a.Score);
-                        });
-
-                        foreach (ImportSeries series in combined)
-                        {
-                            bool alreadyImported = series.IsAlbumResult
-                                ? false
-                                : await _importService.IsAlreadyImportedAsync(series);
-                            if (coverToken.IsCancellationRequested) return;
-
-                            viewModels.Add(new SearchResultViewModel(
-                                series, alreadyImported, _importService, _errorDialogService,
-                                _localizationService, _backgroundCoverService,
-                                parentViewModel: this, cancellationToken: coverToken));
-                        }
-                    }
-                    catch (Exception ex) when (!coverToken.IsCancellationRequested)
-                    {
-                        // Online-Fehler entkoppelt merken; der Lokal-Zweig läuft trotzdem.
-                        onlineError = ex;
-                    }
-                }
-
-                if (coverToken.IsCancellationRequested) return;
-
-                if (scope is SearchSource.Local or SearchSource.Both)
-                {
-                    IReadOnlyList<ImportSeries> localResults = await SearchLocalAsync(searchText);
-                    if (coverToken.IsCancellationRequested) return;
-
-                    foreach (ImportSeries series in localResults)
-                    {
-                        // Lokale Einträge existieren bereits in der DB – Import-Button wäre hier nicht sinnvoll
-                        viewModels.Add(new SearchResultViewModel(
-                            series, true, _importService, _errorDialogService,
-                            _localizationService, _backgroundCoverService,
-                            cancellationToken: coverToken));
-                    }
-                }
-
+                IsSpotifyFallbackHintVisible = outcome.SpotifyFallbackApplied;
                 _hasSearched = true;
-                Results = viewModels;
+                Results = outcome.Results;
 
                 // Online-Fehlerhinweis erst NACH den lokalen Treffern – die lokale Serie ist
                 // dann bereits sichtbar, unabhängig vom Ausgang des Online-Zweigs.
-                if (onlineError is not null && !coverToken.IsCancellationRequested)
+                if (outcome.OnlineError is not null && !coverToken.IsCancellationRequested)
                 {
                     await _errorDialogService.ShowAsync(
-                        _localizationService.Get("OnlineSearchFailedTitle"), onlineError.Message);
+                        _localizationService.Get("OnlineSearchFailedTitle"), outcome.OnlineError.Message);
                 }
             }
             catch (Exception ex)
@@ -492,51 +425,6 @@ namespace EchoPlay.App.ViewModels
                 }
                 _ = completedSource.TrySetResult(true);
             }
-        }
-
-        /// <summary>
-        /// Durchsucht die lokale Bibliothek nach Serien, deren Titel den Suchbegriff enthält.
-        /// Gibt eine leere Liste zurück, wenn kein <see cref="IServiceScopeFactory"/> verfügbar ist –
-        /// also wenn das ViewModel ohne Scope-Factory instanziiert wurde (typisch in Tests).
-        /// </summary>
-        /// <param name="query">Der Suchbegriff – Groß-/Kleinschreibung wird ignoriert.</param>
-        /// <returns>Gefundene lokale Serien als <see cref="ImportSeries"/> mit <c>Source = "Lokal"</c>.</returns>
-        private async Task<IReadOnlyList<ImportSeries>> SearchLocalAsync(string query)
-        {
-            if (_scopeFactory is null)
-            {
-                return [];
-            }
-
-            // Robustheit: führende/abschließende Leerzeichen aus der AutoSuggestBox entfernen,
-            // damit sie nicht ins Substring-Matching einfliessen.
-            string trimmedQuery = query.Trim();
-            if (trimmedQuery.Length == 0)
-            {
-                return [];
-            }
-
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
-
-            List<ImportSeries> localResults = [];
-
-            foreach (Series series in allSeries)
-            {
-                if (series.Title.Contains(trimmedQuery, StringComparison.OrdinalIgnoreCase))
-                {
-                    // SourceSeriesId = Datenbank-GUID der Serie, damit der Eintrag eindeutig identifizierbar bleibt
-                    localResults.Add(new ImportSeries
-                    {
-                        Title = series.Title,
-                        Source = "Lokal",
-                        SourceSeriesId = series.Id.ToString()
-                    });
-                }
-            }
-
-            return localResults;
         }
 
         /// <summary>

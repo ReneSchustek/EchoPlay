@@ -1,10 +1,13 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -18,6 +21,7 @@ namespace EchoPlay.App.ViewModels
     public sealed class LocalTracksViewModel : ObservableObject
     {
         private readonly IPlayerService _playerService;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly Action<string> _requestTagManagerNavigation;
 
         private IReadOnlyList<LocalTrackRowViewModel> _tracks = [];
@@ -28,12 +32,15 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das Sub-ViewModel.
         /// </summary>
         /// <param name="playerService">Wiedergabe-Service für die Track-Liste.</param>
+        /// <param name="scopeFactory">Fabrik für den Scope, aus dem die Titel der Spuren gelesen werden.</param>
         /// <param name="requestTagManagerNavigation">Callback an die Top-VM, der die Tag-Manager-Navigation auslöst.</param>
         public LocalTracksViewModel(
             IPlayerService playerService,
+            IServiceScopeFactory scopeFactory,
             Action<string> requestTagManagerNavigation)
         {
             _playerService = playerService;
+            _scopeFactory = scopeFactory;
             _requestTagManagerNavigation = requestTagManagerNavigation;
 
             OpenAllSeriesTracksCommand = new RelayCommand(() => OpenAllTracksByPath(_selectedArtist?.LocalFolderPath));
@@ -53,7 +60,7 @@ namespace EchoPlay.App.ViewModels
                 if (SetProperty(ref _tracks, value))
                 {
                     OnPropertyChanged(nameof(TracksEmptyVisibility));
-                    OnPropertyChanged(nameof(TracksHeaderVisibility));
+                    OnPropertyChanged(nameof(TrackActionsVisibility));
                     PlayEpisodeCommand.SetEnabled(value.Count > 0 && _selectedEpisode is not null);
                 }
             }
@@ -67,7 +74,7 @@ namespace EchoPlay.App.ViewModels
             {
                 if (SetProperty(ref _selectedEpisode, value))
                 {
-                    OnPropertyChanged(nameof(EpisodeAccordionVisibility));
+                    OnPropertyChanged(nameof(TracksAccordionVisibility));
                     OnPropertyChanged(nameof(SelectedEpisodeTitle));
                     PlayEpisodeCommand.SetEnabled(_tracks.Count > 0 && value is not null);
                 }
@@ -87,13 +94,20 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Sichtbarkeit der Tracks-Kopfzeile inkl. PlayEpisode-Button.
-        /// Nur eingeblendet wenn Tracks geladen sind.
+        /// Nur eingeblendet wenn Tracks geladen sind. Der Name entspricht dem der
+        /// Pass-Through-Eigenschaft in <see cref="LocalLibraryViewModel"/> — siehe
+        /// <see cref="TracksAccordionVisibility"/>.
         /// </summary>
-        public Visibility TracksHeaderVisibility =>
+        public Visibility TrackActionsVisibility =>
             _tracks.Count > 0 && _selectedEpisode is not null ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>Sichtbarkeit des Akkordeon-Bereichs der gewählten Episode.</summary>
-        public Visibility EpisodeAccordionVisibility =>
+        /// <summary>
+        /// Sichtbarkeit des Track-Panels rechts neben den Folgen-Kacheln.
+        /// Der Name muss dem der Pass-Through-Eigenschaft in <see cref="LocalLibraryViewModel"/>
+        /// entsprechen: Die Weiterleitung reicht den Namen unverändert durch, ein abweichender
+        /// Name erreicht die Bindung nie.
+        /// </summary>
+        public Visibility TracksAccordionVisibility =>
             _selectedEpisode is not null ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>Titel der gewählten Episode.</summary>
@@ -113,12 +127,22 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Spielt die Tracks der aktuellen Folge in sortierter Reihenfolge ab.</summary>
         public RelayCommand PlayEpisodeCommand { get; }
 
+        /// <summary>Der zuletzt vom Befehl angestoßene Wiedergabestart — für Tests.</summary>
+        internal Task PendingPlayback { get; private set; } = Task.CompletedTask;
+
         /// <summary>
         /// Übernimmt die geladenen Tracks für die übergebene Episode und aktualisiert die UI.
+        /// Die Liste steht sofort; die Titel aus den Kennzeichnungen der Dateien werden
+        /// anschließend nachgetragen.
         /// </summary>
         /// <param name="episode">Die ausgewählte Episode.</param>
         /// <param name="tracks">Die rohen Tracks aus der DB (sortiert oder unsortiert).</param>
-        public void SetTracks(LocalEpisodeCardViewModel episode, IReadOnlyList<LocalTrack> tracks)
+        /// <param name="cancellationToken">Bricht das Nachladen der Titel ab.</param>
+        /// <returns>Der Task ist abgeschlossen, wenn die Titel nachgetragen sind.</returns>
+        public async Task SetTracksAsync(
+            LocalEpisodeCardViewModel episode,
+            IReadOnlyList<LocalTrack> tracks,
+            CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(tracks);
             ArgumentNullException.ThrowIfNull(episode);
@@ -152,6 +176,8 @@ namespace EchoPlay.App.ViewModels
 
             TrackPanelSubtitle = $"{numberPart}{tracks.Count} {trackWord} \u00B7 {durationText}";
             OnPropertyChanged(nameof(TrackPanelSubtitle));
+
+            await TrackTitleFiller.FillAsync(_scopeFactory, trackRows, cancellationToken);
         }
 
         /// <summary>Setzt die Track-Auswahl zurück (kein Episode-Bereich, keine Tracks).</summary>
@@ -162,7 +188,24 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Spielt die Tracks der aktuell gewählten Episode in korrekter Reihenfolge ab.
+        /// Startet die übergebene Folge — an der zuletzt gespeicherten Stelle, sofern sie nicht
+        /// abgeschlossen ist. Setzt bewusst nicht voraus, dass die Spuren rechts bereits
+        /// angezeigt werden: Der Doppelklick auf eine Kachel soll auch dann greifen, wenn die
+        /// Liste noch lädt.
+        /// </summary>
+        /// <param name="episode">Die zu startende Folge.</param>
+        /// <param name="cancellationToken">Bricht das Laden der Spuren ab.</param>
+        /// <returns>Der Task ist abgeschlossen, wenn die Wiedergabe angestoßen ist.</returns>
+        public async Task PlayEpisodeAsync(LocalEpisodeCardViewModel episode, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(episode);
+
+            using IDisposable userAction = UserActionScope.BeginUserAction("LocalLibraryPlayEpisode");
+            await PlaybackLauncher.PlayEpisodeAsync(_scopeFactory, _playerService, episode.EpisodeId, cancellationToken);
+        }
+
+        /// <summary>
+        /// Spielt die aktuell gewählte Episode ab.
         /// Stille Rückkehr wenn keine Episode/keine Tracks vorhanden sind.
         /// </summary>
         private void PlayCurrentEpisode()
@@ -172,8 +215,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            List<string> trackPaths = [.. _tracks.Select(t => t.FilePath)];
-            _playerService.Play(_selectedEpisode.EpisodeId, trackPaths);
+            PendingPlayback = PlayEpisodeAsync(_selectedEpisode);
         }
 
         /// <summary>

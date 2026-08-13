@@ -67,7 +67,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSpotifyCredentialStore resolvedCredentialStore = credentialStore ?? new FakeSpotifyCredentialStore();
             FakeSpotifyOptionsProvider resolvedOptionsProvider = optionsProvider ?? new FakeSpotifyOptionsProvider(resolvedCredentialStore);
 
-            return new SettingsViewModel(
+            return new SettingsViewModel(new SettingsViewModelContext(
                 scopeFactory,
                 themeService ?? new FakeThemeService(),
                 syncService ?? new FakeSyncService(new SyncResult()),
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 resolvedOptionsProvider,
                 logViewerCoordinator ?? new FakeLogViewerCoordinator(),
                 BuildLoggerManager(),
-                BuildStatusBar(scopeFactory));
+                BuildStatusBar(scopeFactory)));
         }
 
         [Fact]
@@ -100,11 +100,11 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.LoadAsync();
 
-            Assert.Equal("PaperCoffee", vm.ActiveTheme);
-            Assert.Equal(ProviderType.Spotify, vm.ActiveProvider);
-            Assert.False(vm.LocalLibraryEnabled);
-            Assert.Equal("/meine/musik", vm.LocalLibraryRootPath);
-            Assert.Equal("{number} - {title}", vm.EpisodeFolderPattern);
+            Assert.Equal("PaperCoffee", vm.GeneralVM.ActiveTheme);
+            Assert.Equal(ProviderType.Spotify, vm.OnlineVM.ActiveProvider);
+            Assert.False(vm.LocalVM.LocalLibraryEnabled);
+            Assert.Equal("/meine/musik", vm.LocalVM.LocalLibraryRootPath);
+            Assert.Equal("{number} - {title}", vm.LocalVM.EpisodeFolderPattern);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
-            vm.ActiveTheme = "ModernClassic";
+            vm.GeneralVM.ActiveTheme = "ModernClassic";
             await vm.SaveAsync();
 
             Assert.Equal(1, settings.SaveCallCount);
@@ -148,7 +148,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             vm.ApplyTheme("PaperCoffee");
 
-            Assert.Equal("PaperCoffee", vm.ActiveTheme);
+            Assert.Equal("PaperCoffee", vm.GeneralVM.ActiveTheme);
             _ = Assert.Single(themeService.AppliedThemes);
             Assert.Equal("PaperCoffee", themeService.AppliedThemes[0]);
         }
@@ -174,11 +174,11 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
 
             await vm.LoadAsync();
-            await vm.SyncAsync();
+            await vm.LocalVM.SyncAsync();
 
-            Assert.False(string.IsNullOrEmpty(vm.SyncStatusText));
+            Assert.False(string.IsNullOrEmpty(vm.LocalVM.SyncStatusText));
             // Ergebnis-String enthält mindestens den SeriesMatched-Zähler
-            Assert.Contains("3", vm.SyncStatusText, StringComparison.Ordinal);
+            Assert.Contains("3", vm.LocalVM.SyncStatusText, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -197,8 +197,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Zwei sequenzielle Aufrufe – da FakeSyncService synchron zurückgibt,
             // ist IsSyncing nach dem ersten Aufruf bereits false
-            await vm.SyncAsync();
-            await vm.SyncAsync();
+            await vm.LocalVM.SyncAsync();
+            await vm.LocalVM.SyncAsync();
 
             Assert.Equal(2, syncService.SyncCallCount);
         }
@@ -215,10 +215,10 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
-            await vm.SyncAsync();
+            await vm.LocalVM.SyncAsync();
 
-            Assert.True(vm.IsSyncEnabled);
-            Assert.False(vm.IsSyncing);
+            Assert.True(vm.LocalVM.IsSyncEnabled);
+            Assert.False(vm.LocalVM.IsSyncing);
         }
 
         // --- HasUnsavedChanges-Tests ---
@@ -243,7 +243,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
-            vm.OfflineMode = !vm.OfflineMode;
+            vm.GeneralVM.OfflineMode = !vm.GeneralVM.OfflineMode;
 
             Assert.True(vm.HasUnsavedChanges);
         }
@@ -256,7 +256,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
-            vm.NewReleaseDays = 120;
+            vm.GeneralVM.NewReleaseDays = 120;
             Assert.True(vm.HasUnsavedChanges);
 
             await vm.SaveAsync();
@@ -271,7 +271,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings);
 
             await vm.LoadAsync();
-            vm.DbPurgeDays = 99;
+            vm.MaintenanceVM.DbPurgeDays = 99;
             Assert.True(vm.HasUnsavedChanges);
 
             await vm.LoadAsync();
@@ -298,23 +298,23 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Jedes Property einzeln testen – Load setzt HasUnsavedChanges zurück
             await vm.LoadAsync();
-            vm.ActiveTheme = "PaperCoffee";
+            vm.GeneralVM.ActiveTheme = "PaperCoffee";
             Assert.True(vm.HasUnsavedChanges);
 
             await vm.LoadAsync();
-            vm.ActiveProvider = ProviderType.Spotify;
+            vm.OnlineVM.ActiveProvider = ProviderType.Spotify;
             Assert.True(vm.HasUnsavedChanges);
 
             await vm.LoadAsync();
-            vm.LocalLibraryEnabled = false;
+            vm.LocalVM.LocalLibraryEnabled = false;
             Assert.True(vm.HasUnsavedChanges);
 
             await vm.LoadAsync();
-            vm.EpisodeFolderPattern = "{title}";
+            vm.LocalVM.EpisodeFolderPattern = "{title}";
             Assert.True(vm.HasUnsavedChanges);
 
             await vm.LoadAsync();
-            vm.AutoImportAfterScan = true;
+            vm.LocalVM.AutoImportAfterScan = true;
             Assert.True(vm.HasUnsavedChanges);
         }
 
@@ -328,10 +328,10 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
 
-            vm.RefreshLogs();
+            vm.MaintenanceVM.RefreshLogs();
 
-            Assert.Empty(vm.LogEntries);
-            Assert.False(vm.IsLogViewerAvailable);
+            Assert.Empty(vm.MaintenanceVM.LogEntries);
+            Assert.False(vm.MaintenanceVM.IsLogViewerAvailable);
         }
 
         [Fact]
@@ -344,9 +344,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.RefreshLogs();
+            vm.MaintenanceVM.RefreshLogs();
 
-            Assert.Equal(2, vm.LogEntries.Count);
+            Assert.Equal(2, vm.MaintenanceVM.LogEntries.Count);
         }
 
         [Fact]
@@ -359,10 +359,10 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.LogSearchText = "spotify";
+            vm.MaintenanceVM.LogSearchText = "spotify";
 
-            _ = Assert.Single(vm.LogEntries);
-            Assert.Contains("Spotify", vm.LogEntries[0], StringComparison.Ordinal);
+            _ = Assert.Single(vm.MaintenanceVM.LogEntries);
+            Assert.Contains("Spotify", vm.MaintenanceVM.LogEntries[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -379,13 +379,13 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
 
             List<string?> gemeldet = [];
-            vm.PropertyChanged += (_, e) => gemeldet.Add(e.PropertyName);
+            vm.MaintenanceVM.PropertyChanged += (_, e) => gemeldet.Add(e.PropertyName);
 
-            vm.LogSearchText = "spotify";
-            vm.LogMinimumLevel = LogLevel.Warning;
+            vm.MaintenanceVM.LogSearchText = "spotify";
+            vm.MaintenanceVM.LogMinimumLevel = LogLevel.Warning;
 
-            Assert.Contains(nameof(SettingsViewModel.LogSearchText), gemeldet);
-            Assert.Contains(nameof(SettingsViewModel.LogMinimumLevel), gemeldet);
+            Assert.Contains(nameof(MaintenanceSettingsViewModel.LogSearchText), gemeldet);
+            Assert.Contains(nameof(MaintenanceSettingsViewModel.LogMinimumLevel), gemeldet);
         }
 
         [Fact]
@@ -400,9 +400,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.LogMinimumLevel = LogLevel.Warning;
+            vm.MaintenanceVM.LogMinimumLevel = LogLevel.Warning;
 
-            Assert.Equal(2, vm.LogEntries.Count);
+            Assert.Equal(2, vm.MaintenanceVM.LogEntries.Count);
         }
 
         [Fact]
@@ -415,10 +415,10 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.RefreshLogs();
+            vm.MaintenanceVM.RefreshLogs();
 
-            _ = Assert.Single(vm.LogEntries);
-            Assert.Contains("Verbindung getrennt", vm.LogEntries[0], StringComparison.Ordinal);
+            _ = Assert.Single(vm.MaintenanceVM.LogEntries);
+            Assert.Contains("Verbindung getrennt", vm.MaintenanceVM.LogEntries[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -428,12 +428,12 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings);
 
-            vm.LogLevelFilterIndex = 2;
-            Assert.Equal(LogLevel.Warning, vm.LogMinimumLevel);
-            Assert.Equal(2, vm.LogLevelFilterIndex);
+            vm.MaintenanceVM.LogLevelFilterIndex = 2;
+            Assert.Equal(LogLevel.Warning, vm.MaintenanceVM.LogMinimumLevel);
+            Assert.Equal(2, vm.MaintenanceVM.LogLevelFilterIndex);
 
-            vm.LogLevelFilterIndex = 0;
-            Assert.Equal(LogLevel.Debug, vm.LogMinimumLevel);
+            vm.MaintenanceVM.LogLevelFilterIndex = 0;
+            Assert.Equal(LogLevel.Debug, vm.MaintenanceVM.LogMinimumLevel);
         }
 
         // ── Verbindungstest ─────────────────────────────────────────────────
@@ -447,11 +447,11 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
 
             await vm.LoadAsync();
-            await vm.TestConnectionAsync();
+            await vm.OnlineVM.TestConnectionAsync();
 
             _ = Assert.Single(coordinator.Calls);
             Assert.Equal(ProviderType.Spotify, coordinator.Calls[0]);
-            Assert.True(vm.ConnectionTestSuccess);
+            Assert.True(vm.OnlineVM.ConnectionTestSuccess);
         }
 
         [Fact]
@@ -463,10 +463,10 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
 
             await vm.LoadAsync();
-            await vm.TestConnectionAsync();
+            await vm.OnlineVM.TestConnectionAsync();
 
-            Assert.False(vm.ConnectionTestSuccess);
-            Assert.Contains("Timeout", vm.ConnectionTestResultText, StringComparison.Ordinal);
+            Assert.False(vm.OnlineVM.ConnectionTestSuccess);
+            Assert.Contains("Timeout", vm.OnlineVM.ConnectionTestResultText, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -478,7 +478,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
 
             await vm.LoadAsync();
-            await vm.TestConnectionAsync();
+            await vm.OnlineVM.TestConnectionAsync();
 
             Assert.Empty(coordinator.Calls);
         }
@@ -492,7 +492,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, maintenanceService: maintenance);
 
-            await vm.ResetLibraryAsync(0);
+            await vm.MaintenanceVM.ResetLibraryAsync(0);
 
             Assert.Equal(1, maintenance.ClearOnlineCount);
             Assert.Equal(0, maintenance.ClearLocalCount);
@@ -506,7 +506,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, maintenanceService: maintenance);
 
-            await vm.ResetLibraryAsync(1);
+            await vm.MaintenanceVM.ResetLibraryAsync(1);
 
             Assert.Equal(0, maintenance.ClearOnlineCount);
             Assert.Equal(1, maintenance.ClearLocalCount);
@@ -519,7 +519,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, maintenanceService: maintenance);
 
-            await vm.ResetLibraryAsync(2);
+            await vm.MaintenanceVM.ResetLibraryAsync(2);
 
             Assert.Equal(1, maintenance.ClearAllCount);
         }
@@ -533,7 +533,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.LoadAsync();
 
-            Assert.True(vm.ClearCacheOnNextStart);
+            Assert.True(vm.MaintenanceVM.ClearCacheOnNextStart);
         }
     }
 }

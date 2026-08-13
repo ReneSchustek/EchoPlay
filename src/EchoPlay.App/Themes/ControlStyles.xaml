@@ -72,22 +72,43 @@
     <!-- ── Primäraktion ──────────────────────────────────────────────────────
          Die eine hervorgehobene Schaltfläche einer Seite, rechts im Seitenkopf.
 
-         Nicht der eingebaute AccentButtonStyle: Der greift auf einen Schlüssel des
-         Rahmenwerks zu, der einmalig beim Laden gebunden wird. Da alle sechs Paletten
-         gleichzeitig eingehängt sind und der Theme-Dienst danach nur die Flächen tauscht,
-         behielte die Schaltfläche die Akzentfarbe der zuletzt deklarierten Palette — im
-         dunkelblauen Erscheinungsbild also einen bernsteinfarbenen Knopf.
+         Setzt auf den eingebauten AccentButtonStyle auf. Der frühere Kommentar begründete
+         das Gegenteil: Alle sechs Paletten seien gleichzeitig eingehängt, deshalb behielte
+         die Schaltfläche die Akzentfarbe der zuletzt deklarierten. Nachgemessen am
+         13.08.2026 stimmt das nicht mehr — der Theme-Dienst entfernt beim Start alle
+         Paletten und hängt genau eine ein (ThemeService.RemoveAllThemeDictionaries, dann
+         AddThemeDictionary). Und seit die Schaltflächen aus der Palette kommen, belegt jede
+         Palette AccentButtonBackground samt PointerOver, Pressed und Disabled selbst.
 
-         Über AccentPrimaryBrush folgt sie dagegen der Palette, die gerade gilt. -->
-    <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{ThemeResource AccentPrimaryBrush}"/>
-        <Setter Property="Foreground" Value="{ThemeResource TextOnAccentBrush}"/>
-        <Setter Property="BorderBrush" Value="{ThemeResource AccentPrimaryBrush}"/>
-        <Setter Property="BorderThickness" Value="{StaticResource HairlineBorderThickness}"/>
+         Der eigene Stil hatte dafür einen sichtbaren Preis: Die Zustände der
+         Standardvorlage setzen die Fläche unmittelbar am Inhalt und gewinnen gegen jeden
+         Setter. Beim Überfahren galt deshalb die stille Fläche des gewöhnlichen Knopfes —
+         die Primäraktion kippte von Akzent auf Grau. Über den Basisstil greifen die
+         Zustände der Palette. -->
+    <Style x:Key="PrimaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
         <Setter Property="MinHeight" Value="{StaticResource TouchTargetMinSize}"/>
         <Setter Property="Padding" Value="{StaticResource ControlPadding}"/>
         <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- ── Blätterpfeil an einer waagerechten Kachelreihe ────────────────────
+         Schmal und hoch, damit er neben den Kacheln steht, ohne sie zu verdecken. Die
+         48 Punkte Höhe sind das Bedienziel; die Breite darf darunter bleiben, weil der
+         Pfeil in einer Reihe sitzt, die selbst schon Zielfläche ist.
+
+         Stand zweimal wortgleich in zwei Ansichten — einmal davon mit fest verdrahtetem
+         Eckenradius. Ein Stil, der an zwei Orten gepflegt werden muss, läuft auseinander;
+         genau das war dort schon passiert. -->
+    <Style x:Key="ScrollArrowButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}"/>
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="{StaticResource HairlineBorderThickness}"/>
+        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}"/>
     </Style>
 
     <Style x:Key="IconButtonStyle" TargetType="Button">

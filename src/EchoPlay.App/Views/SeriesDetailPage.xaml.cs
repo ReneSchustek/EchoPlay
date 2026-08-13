@@ -85,7 +85,7 @@ namespace EchoPlay.App.Views
 
             // Die Indizes entsprechen der früheren Aufklappliste: 1 = ungehört,
             // 2 = gehört, 3 = angefangen.
-            ViewModel.EpisodeFilterIndex = e.Chip.IsActive
+            ViewModel.EpisodeList.EpisodeFilterIndex = e.Chip.IsActive
                 ? e.Chip.Key switch
                 {
                     FilterKeyUnheard => 1,
@@ -132,13 +132,13 @@ namespace EchoPlay.App.Views
         /// <summary>Tab-Wechsel: reguläre Folgen.</summary>
         private void OnDetailTabRegularChecked(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            ViewModel.EpisodeTabIndex = 0;
+            ViewModel.EpisodeList.EpisodeTabIndex = 0;
         }
 
         /// <summary>Tab-Wechsel: Sonderfolgen.</summary>
         private void OnDetailTabSpecialChecked(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            ViewModel.EpisodeTabIndex = 1;
+            ViewModel.EpisodeList.EpisodeTabIndex = 1;
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is GridView { SelectedItem: EpisodeTileViewModel episode })
             {
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SelectEpisodeAsync(episode));
+                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.TrackList.SelectEpisodeAsync(episode));
             }
         }
 
@@ -169,7 +169,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is ComboBox { SelectedIndex: >= 0 and int index })
             {
-                ViewModel.SortOrder = (EpisodeSortOrder)index;
+                ViewModel.EpisodeList.SortOrder = (EpisodeSortOrder)index;
             }
         }
 

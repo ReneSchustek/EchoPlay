@@ -70,19 +70,37 @@ internal static class LocalRenamer
             return (null, 0);
         }
 
-        // Ein Zielname, den es im Dokument schon als Bezeichner gibt, wird nicht vergeben. Der
-        // Gültigkeitsbereich wäre zwar meist ein anderer, aber eine Verwechslung im selben
-        // Dokument ist teurer als ein ausgelassener Name - der fällt beim nächsten Lauf auf.
+        // Ein Zielname, den es im Gültigkeitsbereich schon gibt, wird nicht vergeben.
         //
-        // Derselbe Zielname zweimal ist der gefährlichere Fall: "historie" und "verlauf" heißen
+        // Derselbe Zielname zweimal ist der gefährliche Fall: "historie" und "verlauf" heißen
         // beide "history". Stehen sie in einer Methode, entsteht CS0128 - oder, schlimmer, zwei
-        // Variablen verschmelzen unbemerkt zu einer. Deshalb bekommt jeder Zielname genau einen
-        // Träger; der zweite bleibt stehen und fällt beim nächsten Lauf auf.
-        HashSet<string> occupied = CollectExistingNames(root);
+        // Variablen verschmelzen unbemerkt zu einer. Deshalb bekommt jeder Zielname innerhalb
+        // eines Members genau einen Träger; der zweite bleibt stehen.
+        //
+        // Der Bereich ist der umschließende Member, nicht das Dokument: In einer Testklasse mit
+        // vierzig Methoden hieße sonst schon die zweite Variable wie eine aus einer fremden
+        // Methode, und beide blieben für immer deutsch. Dazu kommen die Felder und Eigenschaften
+        // des Typs - eine lokale Variable darf ein Feld zwar verdecken, aber dann trifft jede
+        // Verwendung des Feldnamens im selben Member plötzlich die Variable, und das übersetzt
+        // sich fehlerfrei.
+        HashSet<string> fields = CollectFieldNames(root);
+        Dictionary<SyntaxNode, HashSet<string>> occupiedPerMember = new();
         foreach (ISymbol symbol in newNames.Keys.ToList())
         {
-            string target = newNames[symbol];
-            if (!occupied.Add(target))
+            SyntaxNode? scope = ScopeOf(symbol, root);
+            if (scope is null)
+            {
+                _ = newNames.Remove(symbol);
+                continue;
+            }
+
+            if (!occupiedPerMember.TryGetValue(scope, out HashSet<string>? occupied))
+            {
+                occupied = [.. CollectExistingNames(scope), .. fields];
+                occupiedPerMember[scope] = occupied;
+            }
+
+            if (!occupied.Add(newNames[symbol]))
             {
                 _ = newNames.Remove(symbol);
             }
@@ -146,6 +164,46 @@ internal static class LocalRenamer
         }
 
         return matches;
+    }
+
+    // Der Gültigkeitsbereich einer lokalen Variable endet an der Memberdeklaration. Ein Feld-
+    // oder Eigenschafts-Initialisierer trägt ebenfalls Anweisungen, deshalb genügt der Aufstieg
+    // bis zum ersten Member; eine lokale Funktion ist Teil ihres Members und bekommt keinen
+    // eigenen Bereich.
+    private static SyntaxNode? ScopeOf(ISymbol symbol, SyntaxNode root)
+    {
+        SyntaxReference? reference = symbol.DeclaringSyntaxReferences.FirstOrDefault();
+        if (reference is null || reference.SyntaxTree != root.SyntaxTree)
+        {
+            return null;
+        }
+
+        return reference.GetSyntax().FirstAncestorOrSelf<MemberDeclarationSyntax>();
+    }
+
+    private static HashSet<string> CollectFieldNames(SyntaxNode root)
+    {
+        HashSet<string> names = new(StringComparer.Ordinal);
+        foreach (SyntaxNode node in root.DescendantNodes())
+        {
+            switch (node)
+            {
+                case FieldDeclarationSyntax field:
+                    foreach (VariableDeclaratorSyntax declarator in field.Declaration.Variables)
+                    {
+                        _ = names.Add(declarator.Identifier.ValueText);
+                    }
+
+                    break;
+                case PropertyDeclarationSyntax property:
+                    _ = names.Add(property.Identifier.ValueText);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return names;
     }
 
     private static HashSet<string> CollectExistingNames(SyntaxNode root)

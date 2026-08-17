@@ -16,9 +16,17 @@ namespace EchoPlay.App.Tests.Fakes
     internal sealed class FakeCoverService : ICoverService
     {
         private readonly List<Guid> _seriesCoverRequests = [];
+        private readonly List<Guid> _storedSeriesCovers = [];
+        private readonly List<Guid> _storedEpisodeCovers = [];
 
         /// <summary>Alle Serien-IDs, für die <see cref="GetSeriesCoverImageAsync"/> aufgerufen wurde (Reihenfolge erhalten).</summary>
         public IReadOnlyList<Guid> SeriesCoverRequests => _seriesCoverRequests;
+
+        /// <summary>Alle Serien-IDs, für die ein Cover abgelegt wurde (Reihenfolge erhalten).</summary>
+        public IReadOnlyList<Guid> StoredSeriesCovers => _storedSeriesCovers;
+
+        /// <summary>Alle Folgen-IDs, für die ein Cover abgelegt wurde (Reihenfolge erhalten).</summary>
+        public IReadOnlyList<Guid> StoredEpisodeCovers => _storedEpisodeCovers;
 
         /// <inheritdoc/>
         public Task<BitmapImage?> GetSeriesCoverImageAsync(Guid seriesId, CancellationToken cancellationToken = default)
@@ -36,12 +44,18 @@ namespace EchoPlay.App.Tests.Fakes
             Task.FromResult<IReadOnlyDictionary<Guid, byte[]>>(new Dictionary<Guid, byte[]>());
 
         /// <inheritdoc/>
-        public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+        public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        {
+            _storedSeriesCovers.Add(seriesId);
+            return Task.CompletedTask;
+        }
 
         /// <inheritdoc/>
-        public Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+        public Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        {
+            _storedEpisodeCovers.Add(episodeId);
+            return Task.CompletedTask;
+        }
 
         /// <inheritdoc/>
         public Task<bool> HasSeriesCoverAsync(Guid seriesId, CancellationToken cancellationToken = default) =>

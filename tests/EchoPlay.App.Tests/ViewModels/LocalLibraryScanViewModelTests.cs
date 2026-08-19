@@ -1,222 +1,298 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
-using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="LocalLibraryScanViewModel"/> – das Sub-ViewModel, das den
-    /// Bibliotheks-Scan steuert. Ein Scan läuft minutenlang und blockiert die Oberfläche
-    /// halb; entsprechend wichtig sind Doppelklick-Schutz, das Zurücksetzen der Zustände
-    /// im Fehlerfall und die Meldung an das übergeordnete ViewModel.
+    /// Prüft das Einlesen der lokalen Mediathek: Scan, Neuaufbau und den Ereignisstrom,
+    /// über den während des Laufs schon Kacheln erscheinen.
     /// </summary>
+    /// <remarks>
+    /// Der Neuaufbau löst jede Zuordnung zwischen Datenbank und Platte — deshalb steht die
+    /// Rückfrage hier unter Test. Die zweite Zusage ist unscheinbarer und wiegt schwerer:
+    /// Ist die Datenbank leer, muss der Lauf alles einlesen, auch wenn in den Einstellungen
+    /// das automatische Einlesen abgeschaltet ist. Ohne diese Ausnahme bliebe die Mediathek
+    /// nach einem Zurücksetzen dauerhaft leer.
+    /// </remarks>
     public sealed class LocalLibraryScanViewModelTests
     {
-        private static (LocalLibraryScanViewModel ViewModel, FakeSyncService Sync, FakeErrorDialogService Errors)
-            Build(
-                FakeSyncService? syncService = null,
-                bool confirmReset = true,
-                params Series[] existingSeries)
-        {
-            FakeSeriesDataService seriesService = new();
+        // ── Ereignisstrom ────────────────────────────────────────────────────────
 
-            foreach (Series series in existingSeries)
+        [Fact]
+        public async Task Activate_LetsSeriesAppearWhileTheScanRuns()
+        {
+            Harness harness = await Harness.BuildAsync();
+            harness.ViewModel.Activate();
+
+            harness.ScanEvents.RaiseSeriesSynced(new Series { Title = "Die drei Fragezeichen" });
+
+            // Bei zweitausend Ordnern dauert ein Lauf Minuten. Erschienen die Kacheln erst
+            // am Ende, sähe die Mediathek die ganze Zeit leer aus.
+            Assert.Equal(["Die drei Fragezeichen"], harness.SyncedTitles);
+        }
+
+        [Fact]
+        public async Task Deactivate_StopsTheStream()
+        {
+            Harness harness = await Harness.BuildAsync();
+            harness.ViewModel.Activate();
+            harness.ViewModel.Deactivate();
+
+            harness.ScanEvents.RaiseSeriesSynced(new Series { Title = "Kommt nicht an" });
+
+            Assert.Empty(harness.SyncedTitles);
+        }
+
+        [Fact]
+        public async Task Dispose_StopsTheStream()
+        {
+            Harness harness = await Harness.BuildAsync();
+            harness.ViewModel.Activate();
+
+            harness.ViewModel.Dispose();
+            harness.ScanEvents.RaiseSeriesSynced(new Series { Title = "Kommt nicht an" });
+
+            // Der Ereignisdienst lebt so lange wie die Anwendung. Bliebe ein Rückruf einer
+            // verlassenen Ansicht hängen, hielte er sie samt Kacheln im Speicher.
+            Assert.Empty(harness.SyncedTitles);
+        }
+
+        // ── Anzeigezustand ───────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task BeforeAnyScan_TheOverlayIsHidden()
+        {
+            Harness harness = await Harness.BuildAsync();
+
+            Assert.True(harness.ViewModel.IsNotScanning);
+            Assert.Equal(Visibility.Collapsed, harness.ViewModel.IsScanningVisibility);
+            Assert.Equal(Visibility.Collapsed, harness.ViewModel.ScanDetailVisibility);
+        }
+
+        // ── Scan ─────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task Scan_WithEmptyDatabase_ReadsEverything()
+        {
+            Harness harness = await Harness.BuildAsync();
+
+            await harness.RunScanAsync();
+
+            // Nach einem Zurücksetzen ist die Datenbank leer. Würde der Lauf hier auf die
+            // Einstellung hören, bliebe die Mediathek leer und niemand fände den Grund.
+            Assert.True(harness.SyncService.LastForceImportAll);
+        }
+
+        [Fact]
+        public async Task Scan_WithExistingSeries_LeavesTheDecisionToTheSettings()
+        {
+            Harness harness = await Harness.BuildAsync(existingSeries: [new Series { Title = "Schon da" }]);
+
+            await harness.RunScanAsync();
+
+            Assert.False(harness.SyncService.LastForceImportAll);
+        }
+
+        [Fact]
+        public async Task Scan_ClearsTheListBeforeItStarts()
+        {
+            Harness harness = await Harness.BuildAsync();
+
+            await harness.RunScanAsync();
+
+            // Alte Kacheln während des Laufs stehen zu lassen hieße, dass der Anwender
+            // minutenlang auf einen Stand blickt, der gerade ersetzt wird.
+            Assert.Equal(1, harness.ScanStartingCount);
+        }
+
+        [Fact]
+        public async Task Scan_ReportsWhatItCreated()
+        {
+            Harness harness = await Harness.BuildAsync();
+
+            await harness.RunScanAsync();
+
+            // Die Zahlen sind der einzige Beleg, dass der Lauf etwas getan hat. „Fertig"
+            // allein ließe offen, ob er den Ordner überhaupt gefunden hat.
+            Assert.Contains("12", harness.ViewModel.SyncStatusText, StringComparison.Ordinal);
+            Assert.Contains("3", harness.ViewModel.SyncStatusText, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task Scan_HidesTheProgressBarBeforeTheListReloads()
+        {
+            Harness harness = await Harness.BuildAsync();
+
+            await harness.RunScanAsync();
+
+            // Der Balken verschwindet vor dem Nachladen der Ansicht. Bliebe er stehen,
+            // sähe die Ladezeit der Liste aus wie ein hängender Lauf.
+            Assert.Equal(string.Empty, harness.ViewModel.ScanDetailText);
+            Assert.True(harness.ViewModel.IsNotScanning);
+        }
+
+        [Fact]
+        public async Task Scan_WhenItFails_ShowsAnErrorAndClearsTheOverlay()
+        {
+            Harness harness = await Harness.BuildAsync(
+                syncFailure: new InvalidOperationException("Laufwerk nicht bereit"));
+
+            harness.ViewModel.ScanCommand.Execute(null);
+            (string Title, string Message) shown = await harness.ErrorDialog.FirstDialogShown;
+
+            Assert.Equal("Laufwerk nicht bereit", shown.Message);
+            Assert.Equal(string.Empty, harness.ViewModel.SyncStatusText);
+            Assert.True(harness.ViewModel.IsNotScanning);
+        }
+
+        // ── Neuaufbau ────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task ReInitialize_WhenUserDeclines_TouchesNothing()
+        {
+            Harness harness = await Harness.BuildAsync(confirmResult: false);
+
+            harness.ViewModel.ReInitializeCommand.Execute(null);
+            await Task.Yield();
+
+            // Der Neuaufbau löst jede Zuordnung zwischen Datenbank und Platte. Wer im
+            // Dialog ablehnt, behält seinen Stand — samt der Ordner, die er von Hand
+            // zugewiesen hat.
+            Assert.Equal(0, harness.SyncService.SyncCallCount);
+            Assert.Equal(0, harness.ScanStartingCount);
+        }
+
+        [Fact]
+        public async Task ReInitialize_WhenConfirmed_ReadsEverythingAgain()
+        {
+            Harness harness = await Harness.BuildAsync(existingSeries: [new Series { Title = "Schon da" }]);
+
+            TaskCompletionSource reloaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            harness.ViewModel.LibraryReloaded += () =>
             {
-                seriesService.AddAsync(series).GetAwaiter().GetResult();
-            }
-
-            ServiceCollection services = new();
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
-
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
-            FakeSyncService sync = syncService ?? new FakeSyncService();
-            FakeErrorDialogService errors = new();
-
-            StatusBarViewModel statusBar = new(
-                scopeFactory,
-                new FakeThemeService(),
-                new TaskbarProgressService(),
-                new FakeClock());
-
-            LocalLibraryScanViewModel viewModel = new(
-                scopeFactory,
-                sync,
-                errors,
-                new FakeConfirmationDialogService(confirmReset),
-                statusBar,
-                new FakeScanEventService(),
-                _ => { });
-
-            return (viewModel, sync, errors);
-        }
-
-        [Fact]
-        public async Task ScanCommand_RunsSyncAndResetsScanningFlag()
-        {
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build();
-
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel,
-                () => !viewModel.IsScanning && sync.SyncCallCount > 0,
-                "Scan läuft durch und setzt das Lauf-Flag zurück");
-
-            Assert.Equal(1, sync.SyncCallCount);
-            Assert.False(viewModel.IsScanning);
-            Assert.True(viewModel.IsNotScanning);
-        }
-
-        [Fact]
-        public async Task ScanCommand_WithEmptyLibrary_ForcesFullImport()
-        {
-            // Nach „Bibliothek zurücksetzen" ist die Datenbank leer. Dann muss der Scan
-            // alles neu importieren, egal was in den Einstellungen steht.
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build();
-
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel, () => sync.SyncCallCount > 0, "Scan ruft den Sync-Dienst");
-
-            Assert.True(sync.LastForceImportAll);
-        }
-
-        [Fact]
-        public async Task ScanCommand_WithExistingSeries_DoesNotForceFullImport()
-        {
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build(
-                syncService: null,
-                confirmReset: true,
-                new Series { Title = "Bereits vorhanden" });
-
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel, () => sync.SyncCallCount > 0, "Scan ruft den Sync-Dienst");
-
-            Assert.False(sync.LastForceImportAll);
-        }
-
-        [Fact]
-        public async Task ScanCommand_ReportsResultInStatusText()
-        {
-            FakeSyncService sync = new(new SyncResult { TracksCreated = 12, EpisodesUpdated = 3 });
-            (LocalLibraryScanViewModel viewModel, _, _) = Build(sync);
-
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel,
-                () => viewModel.SyncStatusText.Contains("12", StringComparison.Ordinal),
-                "Statuszeile nennt die Zahl der angelegten Tracks");
-
-            Assert.Contains("12", viewModel.SyncStatusText, StringComparison.Ordinal);
-        }
-
-        [Fact]
-        public async Task ScanCommand_WhenSyncFails_ShowsDialogAndClearsState()
-        {
-            // Ein defekter Ordner darf die Oberfläche nicht im Scan-Zustand hängen lassen.
-            FakeSyncService sync = new(exception: new InvalidOperationException("Laufwerk nicht erreichbar"));
-            (LocalLibraryScanViewModel viewModel, _, FakeErrorDialogService errors) = Build(sync);
-
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel, () => !viewModel.IsScanning && errors.ShownDialogs.Count > 0, "Fehlerdialog erscheint");
-
-            _ = Assert.Single(errors.ShownDialogs);
-            Assert.False(viewModel.IsScanning);
-            Assert.Equal(string.Empty, viewModel.ScanDetailText);
-        }
-
-        [Fact]
-        public async Task ScanCommand_RaisesLibraryReloaded()
-        {
-            // Ohne dieses Signal zeigt die Mediathek nach dem Scan veraltete Zähler.
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build();
-
-            bool reloaded = false;
-            viewModel.LibraryReloaded += () =>
-            {
-                reloaded = true;
+                _ = reloaded.TrySetResult();
                 return Task.CompletedTask;
             };
 
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel, () => !viewModel.IsScanning && sync.SyncCallCount > 0, "Scan endet");
+            harness.ViewModel.ReInitializeCommand.Execute(null);
+            await reloaded.Task;
 
-            Assert.True(reloaded);
+            // Nach dem Auflösen aller Zuordnungen muss alles neu eingelesen werden — auch
+            // hier zählt die Einstellung nicht, sonst bliebe der Bestand ohne Dateien.
+            Assert.Equal(1, harness.SyncService.SyncCallCount);
+            Assert.True(harness.SyncService.LastForceImportAll);
         }
 
         [Fact]
-        public async Task ScanCommand_RaisesScanStartingBeforeWork()
+        public async Task ReInitialize_WhenItFails_ShowsAnErrorAndClearsTheOverlay()
         {
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build();
+            Harness harness = await Harness.BuildAsync(
+                syncFailure: new InvalidOperationException("Datenbank gesperrt"));
 
-            bool starting = false;
-            viewModel.ScanStarting += () => starting = true;
+            harness.ViewModel.ReInitializeCommand.Execute(null);
+            (string Title, string Message) shown = await harness.ErrorDialog.FirstDialogShown;
 
-            viewModel.ScanCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel, () => sync.SyncCallCount > 0, "Scan startet");
-
-            Assert.True(starting);
+            Assert.Equal("Datenbank gesperrt", shown.Message);
+            Assert.True(harness.ViewModel.IsNotScanning);
         }
 
-        [Fact]
-        public void IsScanning_RaisesPropertyChangedForDependentFlag()
+        // ── Aufbau ───────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Baut das Ansichtsmodell samt Umfeld und stellt einen Wartepunkt für den Lauf
+        /// bereit — die Befehle selbst liefern keinen, an dem ein Test hängen könnte.
+        /// </summary>
+        private sealed class Harness
         {
-            // IsNotScanning steuert die Bedienbarkeit der Schaltflächen und muss mitlaufen.
-            (LocalLibraryScanViewModel viewModel, _, _) = Build();
+            public LocalLibraryScanViewModel ViewModel { get; private set; } = null!;
 
-            List<string> changed = [];
-            viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+            public required FakeSyncService SyncService { get; init; }
 
-            viewModel.ScanCommand.Execute(null);
+            public required FakeScanEventService ScanEvents { get; init; }
 
-            Assert.Contains(nameof(LocalLibraryScanViewModel.IsScanning), changed);
-            Assert.Contains(nameof(LocalLibraryScanViewModel.IsNotScanning), changed);
-        }
+            public required FakeErrorDialogService ErrorDialog { get; init; }
 
-        [Fact]
-        public async Task ReInitializeCommand_WhenDeclined_DoesNothing()
-        {
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build(confirmReset: false);
+            public List<string> SyncedTitles { get; } = [];
 
-            viewModel.ReInitializeCommand.Execute(null);
-            await Task.Yield();
+            public int ScanStartingCount { get; private set; }
 
-            Assert.Equal(0, sync.SyncCallCount);
-        }
+            /// <summary>
+            /// Startet den Lauf und wartet, bis die Ansicht neu geladen wird.
+            /// </summary>
+            public async Task RunScanAsync()
+            {
+                TaskCompletionSource reloaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                ViewModel.LibraryReloaded += () =>
+                {
+                    _ = reloaded.TrySetResult();
+                    return Task.CompletedTask;
+                };
 
-        [Fact]
-        public async Task ReInitializeCommand_WhenConfirmed_ClearsAndRescans()
-        {
-            (LocalLibraryScanViewModel viewModel, FakeSyncService sync, _) = Build(
-                syncService: null,
-                confirmReset: true,
-                new Series { Title = "Nur lokal", LocalFolderPath = @"C:\Hörspiele\Test" });
+                ViewModel.ScanCommand.Execute(null);
+                await reloaded.Task;
+            }
 
-            viewModel.ReInitializeCommand.Execute(null);
-            await ChangeSignals.WaitForAsync(
-                viewModel,
-                () => !viewModel.IsScanning && sync.SyncCallCount > 0,
-                "Neuinitialisierung startet den Scan");
+            public static async Task<Harness> BuildAsync(
+                IReadOnlyList<Series>? existingSeries = null,
+                bool confirmResult = true,
+                Exception? syncFailure = null)
+            {
+                FakeSyncService syncService = new(
+                    new SyncResult { TracksCreated = 12, EpisodesUpdated = 3 }, syncFailure);
+                FakeScanEventService scanEvents = new();
+                FakeErrorDialogService errorDialog = new();
 
-            Assert.Equal(1, sync.SyncCallCount);
+                FakeSeriesDataService seriesService = new();
+                foreach (Series entry in existingSeries ?? [])
+                {
+                    await seriesService.AddAsync(entry, TestContext.Current.CancellationToken);
+                }
+
+                ServiceCollection services = new();
+                _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+                _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+                _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+                _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+                _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+                _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+
+                ServiceProvider provider = services.BuildServiceProvider();
+                IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+
+                StatusBarViewModel statusBar = new(
+                    scopeFactory, new FakeThemeService(), new TaskbarProgressService(), new FakeClock());
+
+                Harness harness = new()
+                {
+                    SyncService = syncService,
+                    ScanEvents = scanEvents,
+                    ErrorDialog = errorDialog,
+                };
+
+                harness.ViewModel = new LocalLibraryScanViewModel(
+                    scopeFactory,
+                    syncService,
+                    errorDialog,
+                    new FakeConfirmationDialogService(confirmResult),
+                    statusBar,
+                    scanEvents,
+                    series => harness.SyncedTitles.Add(series.Title));
+
+                harness.ViewModel.ScanStarting += () => harness.ScanStartingCount++;
+
+                return harness;
+            }
         }
     }
 }

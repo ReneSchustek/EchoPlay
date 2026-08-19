@@ -67,5 +67,24 @@ namespace EchoPlay.App.Tests.Infrastructure
             Assert.Empty(dialog.ShownDialogs);
             Assert.Empty(logger.Entries);
         }
+
+        [Fact]
+        public async Task RunSafelyAsync_WhenTheErrorDialogItselfFails_StillReturnsQuietly()
+        {
+            // Das Sicherheitsnetz darf kein zweites Loch haben: Schägt die Anzeige der
+            // Meldung fehl — etwa weil das Fenster gerade schließt —, wäre der ursprüngliche
+            // Fehler samt Absturz zurück. Der Protokolleintrag steht da bereits.
+            ThrowingErrorDialogService dialog = new();
+            CapturingLogger logger = new();
+
+            await AsyncEventHandler.RunSafelyAsync(
+                () => throw new InvalidOperationException("Kaputt"),
+                dialog,
+                logger,
+                "FehlerMitKaputtemDialog");
+
+            Assert.Equal(1, dialog.AttemptCount);
+            Assert.NotEmpty(logger.Entries);
+        }
     }
 }

@@ -2,6 +2,7 @@ using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Scanning;
 using System;
+using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,12 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Gibt an, ob der letzte Aufruf <c>forceImportAll = true</c> gesetzt hatte.</summary>
         public bool LastForceImportAll { get; private set; }
 
+        /// <summary>
+        /// Stände, die der Lauf meldet, bevor er sein Ergebnis liefert. Damit lässt sich
+        /// prüfen, was die Fortschrittsanzeige daraus macht.
+        /// </summary>
+        public List<ScanProgress> ProgressSteps { get; } = [];
+
         /// <inheritdoc/>
         public Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
@@ -43,6 +50,11 @@ namespace EchoPlay.App.Tests.Fakes
         {
             SyncCallCount++;
             LastForceImportAll = forceImportAll;
+
+            foreach (ScanProgress step in ProgressSteps)
+            {
+                progress?.Report(step);
+            }
 
             if (_exception is not null)
             {

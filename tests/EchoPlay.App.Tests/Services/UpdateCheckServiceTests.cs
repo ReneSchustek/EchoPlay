@@ -234,6 +234,89 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(erwartet, UpdateCheckService.StripSha256Line(body));
         }
 
+        [Fact]
+        public async Task CheckForUpdateAsync_OlderRelease_OffersNothing()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings,
+                new ReleaseJsonHandler(ReleaseJson("v0.0.1", body: $"Alt.\n\nSHA256: {ValidHash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            // Ein älteres Release ist kein Update. Es anzubieten hieße, den Anwender auf einen
+            // Stand zurückzuschicken, den er längst hinter sich hat.
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_SkippedVersion_IsNotOfferedAgain()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings { SkippedUpdateVersion = "99.0.0" });
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings,
+                new ReleaseJsonHandler(ReleaseJson("v99.0.0", body: $"Neu.\n\nSHA256: {ValidHash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            // „Diese Version überspringen" ist eine Ansage des Anwenders. Wird sie beim
+            // nächsten Start ignoriert, fragt die Anwendung ihn immer wieder dasselbe.
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_SkippedOtherVersion_StillOffersTheNewOne()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings { SkippedUpdateVersion = "98.0.0" });
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings,
+                new ReleaseJsonHandler(ReleaseJson("v99.0.0", body: $"Neu.\n\nSHA256: {ValidHash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            // Übersprungen wurde eine andere Fassung — die neue darf trotzdem erscheinen.
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_ReleaseWithoutSetupFile_OffersNothing()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            const string ohneSetup = $$"""
+            {
+              "tag_name": "v99.0.0",
+              "body": "Neu.\n\nSHA256: {{ValidHash}}",
+              "assets": []
+            }
+            """;
+
+            UpdateCheckService service = BuildServiceWithHandler(settings, new ReleaseJsonHandler(ohneSetup));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            // Ohne Setup-Datei gibt es nichts herunterzuladen. Ein Angebot ohne Ziel endet
+            // in einer Fehlermeldung, für die der Anwender nichts kann.
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_UnreadableVersionTag_OffersNothing()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings,
+                new ReleaseJsonHandler(ReleaseJson("Weihnachtsausgabe", body: $"Neu.\n\nSHA256: {ValidHash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            // Eine Kennzeichnung, die keine Versionsnummer ist, lässt sich nicht vergleichen.
+            // Dann wird nichts angeboten, statt zu raten.
+            Assert.Null(result);
+        }
+
+        /// <summary>Ein formal gültiger Hash — der Inhalt spielt für diese Tests keine Rolle.</summary>
+        private const string ValidHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
         private static string ReleaseJson(string tag, string body) =>
             $$"""
             {

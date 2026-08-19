@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class OnlineLibraryViewModelTests
     {
-        private static OnlineLibraryViewModel BuildViewModel(FakeSeriesDataService seriesService)
+        private static OnlineLibraryViewModel BuildViewModel(FakeSeriesDataService seriesService, FakePageModeGuard? pageModeGuard = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
@@ -65,7 +65,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeErrorDialogService(),
                 new FakeLocalizationService(),
                 new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>());
+                provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>(),
+                pageModeGuard: pageModeGuard);
         }
 
         [Fact]
@@ -346,6 +347,69 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.Series[0].ToggleSubscriptionCommand.Execute(null);
 
             Assert.True(vm.Series[0].IsSubscribed);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_WithoutPageModeGuard_AllowsThePage()
+        {
+            OnlineLibraryViewModel vm = BuildViewModel(new FakeSeriesDataService());
+
+            bool allowed = await vm.InitializeAsync();
+
+            // Ohne Wächter gibt es nichts zu prüfen. Die Seite dann zu blockieren, sperrte
+            // die Online-Mediathek aus einem Grund aus, den niemand gesetzt hat.
+            Assert.True(allowed);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_WhenGuardAllows_OpensThePage()
+        {
+            FakePageModeGuard guard = new(allow: true);
+            OnlineLibraryViewModel vm = BuildViewModel(new FakeSeriesDataService(), guard);
+
+            bool allowed = await vm.InitializeAsync();
+
+            Assert.True(allowed);
+            Assert.Equal(1, guard.CallCount);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_WhenGuardRefuses_KeepsThePageClosed()
+        {
+            FakePageModeGuard guard = new(allow: false);
+            OnlineLibraryViewModel vm = BuildViewModel(new FakeSeriesDataService(), guard);
+
+            bool allowed = await vm.InitializeAsync();
+
+            // Im Offline-Modus hat die Online-Mediathek nichts zu zeigen. Würde sie trotzdem
+            // laden, liefe jede Abfrage in einen Fehler, den der Anwender selbst verursacht hat.
+            Assert.False(allowed);
+        }
+
+        [Fact]
+        public async Task DeselectSeries_ClearsTheEpisodeList()
+        {
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(
+                new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            OnlineLibraryViewModel vm = BuildViewModel(seriesService);
+            await vm.LoadAsync();
+
+            vm.DeselectSeries();
+
+            // Bleibt die Folgenliste stehen, gehört sie zu einer Serie, die nicht mehr
+            // ausgewählt ist — der nächste Klick trifft dann die falsche Folge.
+            Assert.Empty(vm.EpisodesVM.Episodes);
+        }
+
+        [Fact]
+        public async Task SelectSeries_WithoutCard_Throws()
+        {
+            OnlineLibraryViewModel vm = BuildViewModel(new FakeSeriesDataService());
+
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(() => vm.SelectSeriesAsync(null!));
         }
     }
 }

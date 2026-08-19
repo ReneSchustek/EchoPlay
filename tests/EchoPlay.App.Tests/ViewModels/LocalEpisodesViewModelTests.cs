@@ -239,5 +239,100 @@ namespace EchoPlay.App.Tests.ViewModels
             viewModel.Dispose();
             viewModel.Dispose();
         }
+        [Fact]
+        public async Task AlsGehoert_SetztDenHakenSofortUndSchreibtDenStand()
+        {
+            // Ohne die sofortige Aktualisierung erschiene der Haken erst nach einem
+            // Serienwechsel — der Anwender hält den Klick dann für wirkungslos.
+            FakePlaybackStateDataService states = new();
+            (LocalEpisodesViewModel viewModel, _) = await LoadWithStatesAsync(states, Episode(1, "Der Superhund"));
+            Guid episodeId = viewModel.Episodes[0].EpisodeId;
+
+            await viewModel.MarkEpisodeAsPlayedAsync(episodeId);
+
+            Assert.True(viewModel.Episodes[0].IsCompleted);
+            IReadOnlyList<EchoPlay.Data.Entities.Playback.PlaybackState> stored =
+                await states.GetAllAsync(TestContext.Current.CancellationToken);
+            Assert.True(Assert.Single(stored).IsCompleted);
+        }
+
+        [Fact]
+        public async Task AlsUngehoert_NimmtDenHakenZurueckUndLoeschtDenStand()
+        {
+            FakePlaybackStateDataService states = new();
+            (LocalEpisodesViewModel viewModel, _) = await LoadWithStatesAsync(states, Episode(1, "Der Superhund"));
+            Guid episodeId = viewModel.Episodes[0].EpisodeId;
+            await viewModel.MarkEpisodeAsPlayedAsync(episodeId);
+
+            await viewModel.MarkEpisodeAsUnplayedAsync(episodeId);
+
+            Assert.False(viewModel.Episodes[0].IsCompleted);
+            Assert.Empty(await states.GetAllAsync(TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task AlsGehoert_LaeuftAuchFuerEineUnbekannteFolgeDurch()
+        {
+            // Der Aufruf kommt aus dem Kachelmenü; steht die Kachel nicht mehr in der
+            // Liste, darf der Stand trotzdem geschrieben werden.
+            FakePlaybackStateDataService states = new();
+            (LocalEpisodesViewModel viewModel, _) = await LoadWithStatesAsync(states, Episode(1, "Der Superhund"));
+
+            await viewModel.MarkEpisodeAsPlayedAsync(Guid.NewGuid());
+
+            _ = Assert.Single(await states.GetAllAsync(TestContext.Current.CancellationToken));
+            Assert.False(viewModel.Episodes[0].IsCompleted);
+        }
+
+        [Fact]
+        public async Task Folgentitel_VerliertDenSeriennamenAmAnfang()
+        {
+            // Die Ordnernamen tragen den Seriennamen mit. Auf der Kachel steht er ohnehin
+            // schon darüber — zweimal derselbe Name kostet nur Platz.
+            LocalEpisodesViewModel viewModel = await LoadAsync(
+                Episode(1, "TKKG - Der Superhund"),
+                Episode(2, "TKKG \u2013 Der Schatz"),
+                Episode(3, "Ganz ohne Serienname"));
+
+            Assert.Equal("Der Superhund", viewModel.Episodes[0].Title);
+            Assert.Equal("Der Schatz", viewModel.Episodes[1].Title);
+            Assert.Equal("Ganz ohne Serienname", viewModel.Episodes[2].Title);
+        }
+
+        [Fact]
+        public async Task Folgentitel_BleibtStehenWennNichtsUebrigBliebe()
+        {
+            LocalEpisodesViewModel viewModel = await LoadAsync(Episode(1, "TKKG"));
+
+            Assert.Equal("TKKG", viewModel.Episodes[0].Title);
+        }
+
+        private static async Task<(LocalEpisodesViewModel ViewModel, IServiceScopeFactory ScopeFactory)> LoadWithStatesAsync(
+            FakePlaybackStateDataService states,
+            params Episode[] episodes)
+        {
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => states);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+
+            ServiceProvider provider = services.BuildServiceProvider();
+            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+
+            LocalEpisodesViewModel viewModel = new(
+                scopeFactory,
+                new FakeLocalCoverLoader(),
+                new FakeClock());
+
+            await viewModel.LoadForSeriesAsync(
+                BuildArtist(scopeFactory),
+                episodes,
+                completedIds: [],
+                inProgressIds: []);
+
+            return (viewModel, scopeFactory);
+        }
     }
 }

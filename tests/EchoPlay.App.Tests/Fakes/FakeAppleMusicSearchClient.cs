@@ -55,10 +55,23 @@ namespace EchoPlay.App.Tests.Fakes
             });
         }
 
+        /// <summary>Treffer, die <see cref="SearchAlbumsAsync"/> liefert.</summary>
+        public List<ITunesCollectionDto> AlbumSearchResults { get; } = [];
+
+        /// <summary>Alle Suchbegriffe der Album-Suche in ihrer Reihenfolge.</summary>
+        public List<string> AlbumSearchQueries { get; } = [];
+
         /// <inheritdoc/>
         public Task<ITunesResponseDto<ITunesCollectionDto>> SearchAlbumsAsync(
-            string query, int limit = 25, CancellationToken ct = default) =>
-            Task.FromResult(new ITunesResponseDto<ITunesCollectionDto>());
+            string query, int limit = 25, CancellationToken ct = default)
+        {
+            AlbumSearchQueries.Add(query);
+            return Task.FromResult(new ITunesResponseDto<ITunesCollectionDto>
+            {
+                ResultCount = AlbumSearchResults.Count,
+                Results = AlbumSearchResults
+            });
+        }
 
         /// <inheritdoc/>
         public Task<ITunesResponseDto<ITunesCollectionDto>> LookupAlbumsAsync(

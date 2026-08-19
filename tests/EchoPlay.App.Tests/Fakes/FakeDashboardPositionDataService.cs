@@ -10,6 +10,25 @@ namespace EchoPlay.App.Tests.Fakes
     internal sealed class FakeDashboardPositionDataService : IDashboardPositionDataService
     {
         private readonly Dictionary<string, List<DashboardPosition>> _positions = [];
+        private readonly Exception? _saveFailure;
+
+        /// <summary>
+        /// Erstellt den Nachbau.
+        /// </summary>
+        /// <param name="saveFailure">
+        /// Wird beim Speichern geworfen, wenn gesetzt. Die echte Ablage kann während einer
+        /// Wartung gesperrt sein — ohne diesen Fall bliebe der Behandlungszweig ungeprüft.
+        /// </param>
+        public FakeDashboardPositionDataService(Exception? saveFailure = null)
+        {
+            _saveFailure = saveFailure;
+        }
+
+        /// <summary>Wie oft eine Reihenfolge gespeichert wurde.</summary>
+        public int SaveCallCount { get; private set; }
+
+        /// <summary>Die zuletzt gespeicherte Reihenfolge.</summary>
+        public IReadOnlyList<Guid> LastOrder { get; private set; } = [];
 
         /// <inheritdoc />
         public Task<IReadOnlyList<DashboardPosition>> GetBySectionAsync(string section, CancellationToken cancellationToken = default)
@@ -25,6 +44,14 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc />
         public Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default)
         {
+            SaveCallCount++;
+            LastOrder = [.. seriesIds];
+
+            if (_saveFailure is not null)
+            {
+                return Task.FromException(_saveFailure);
+            }
+
             List<DashboardPosition> list = [];
 
             for (int i = 0; i < seriesIds.Count; i++)

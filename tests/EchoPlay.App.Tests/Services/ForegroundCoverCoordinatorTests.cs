@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
@@ -211,6 +212,75 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public void EnqueueForEpisodes_WithEmptyList_DoesNothing()
+        {
+            FakeCoverService coverService = new();
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(coverService: coverService);
+
+            coordinator.EnqueueForEpisodes([], onCoverReady: null);
+
+            // Eine leere Warteschlange darf keinen Hintergrundlauf anwerfen — sonst zahlt
+            // das Dashboard bei jedem Aufbau für nichts.
+            Assert.False(coordinator.IsActive);
+        }
+
+        [Fact]
+        public async Task EnqueueForEpisodes_WithStoredCover_ReturnsItWithoutLoadingFromDisk()
+        {
+            Guid episodeId = new("dddddddd-1111-2222-3333-777777777777");
+
+            FakeCoverService coverService = new();
+            coverService.ExistingEpisodeCovers[episodeId] = StoredBytes;
+
+            ConfigurableLocalCoverLoader loader = new();
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(coverService: coverService, coverLoader: loader);
+
+            TaskCompletionSource<byte[]> delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            coordinator.EnqueueForEpisodes([episodeId], (episode, bytes) => _ = delivered.TrySetResult(bytes));
+
+            byte[] result = await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            // Was in der Ablage liegt, geht sofort an die Kachel. Ein Griff zur Platte wäre
+            // hier verschwendet — das Dashboard baut sich bei jedem Öffnen neu auf.
+            Assert.Equal(StoredBytes, result);
+            Assert.Empty(loader.Calls);
+        }
+
+        [Fact]
+        public async Task EnqueueForEpisodes_WithDuplicateIds_ReportsEachEpisodeOnce()
+        {
+            Guid episodeId = new("dddddddd-1111-2222-3333-888888888888");
+
+            FakeCoverService coverService = new();
+            coverService.ExistingEpisodeCovers[episodeId] = StoredBytes;
+
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(coverService: coverService);
+
+            List<Guid> reported = [];
+            TaskCompletionSource delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            coordinator.EnqueueForEpisodes(
+                [episodeId, episodeId, episodeId],
+                (id, bytes) =>
+                {
+                    lock (reported)
+                    {
+                        reported.Add(id);
+                    }
+
+                    _ = delivered.TrySetResult();
+                });
+
+            await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            // Dieselbe Folge steht im Dashboard mehrfach — als laufende Folge und als
+            // Neuerscheinung. Ohne Entdopplung liefe die Arbeit dreifach.
+            lock (reported)
+            {
+                _ = Assert.Single(reported);
+            }
+        }
+
+        [Fact]
         public async Task WaitWhileInFlight_WithNothingRunning_ReturnsImmediately()
         {
             ForegroundCoverCoordinator coordinator = BuildCoordinator();
@@ -218,6 +288,143 @@ namespace EchoPlay.App.Tests.Services
             await coordinator.WaitWhileInFlightAsync(TestContext.Current.CancellationToken);
 
             Assert.False(coordinator.IsActive);
+        }
+
+        [Fact]
+        public async Task EnqueueForEpisodes_OhneAblage_HoltDasCoverVonDerPlatte()
+        {
+            // Reihenfolge der Quellen: erst die Ablage, dann die Platte. Was von der Platte
+            // kommt, wandert in die Ablage — beim nächsten Aufbau fällt der Griff weg.
+
+            FakeEpisodeDataService episodes = new();
+            Episode episode = new()
+            {
+                Title = "Folge 1",
+                SeriesId = TestIds.SeriesA,
+                LocalFolderPath = @"D:\Media\TKKG\001"
+            };
+            await episodes.AddAsync(episode, TestContext.Current.CancellationToken);
+            Guid episodeId = episode.Id;
+
+            ConfigurableLocalCoverLoader loader = new(new Dictionary<string, byte[]>
+            {
+                [@"D:\Media\TKKG\001"] = StoredBytes
+            });
+            FakeCoverService coverService = new();
+
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(
+                episodeService: episodes, coverLoader: loader, coverService: coverService);
+
+            TaskCompletionSource<byte[]> delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            coordinator.EnqueueForEpisodes([episodeId], (id, bytes) => _ = delivered.TrySetResult(bytes));
+
+            byte[] result = await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            Assert.Equal(StoredBytes, result);
+            Assert.Equal([episodeId], coverService.StoredEpisodeCovers);
+        }
+
+        [Fact]
+        public async Task EnqueueForEpisodes_OhneCoverAufDerPlatte_LaedtVomAnbieter()
+        {
+            FakeEpisodeDataService episodes = new();
+            Episode episode = new()
+            {
+                Title = "Folge 2",
+                SeriesId = TestIds.SeriesA,
+                CoverImageUrl = "https://example.com/cover.jpg"
+            };
+            await episodes.AddAsync(episode, TestContext.Current.CancellationToken);
+            Guid episodeId = episode.Id;
+
+            FakeCoverDownloader downloader = new();
+            downloader.SetResponse("https://example.com/cover.jpg", DownloadedBytes);
+            FakeCoverService coverService = new();
+
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(
+                episodeService: episodes, coverService: coverService, downloader: downloader);
+
+            TaskCompletionSource<byte[]> delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            coordinator.EnqueueForEpisodes([episodeId], (id, bytes) => _ = delivered.TrySetResult(bytes));
+
+            byte[] result = await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            Assert.Equal(DownloadedBytes, result);
+            Assert.Equal(["https://example.com/cover.jpg"], downloader.RequestedUrls);
+            Assert.Equal([episodeId], coverService.StoredEpisodeCovers);
+        }
+
+        [Fact]
+        public async Task EnqueueForEpisodes_OhneQuelleMeldetNichts()
+        {
+            // Eine Folge ohne Ordner und ohne Adresse hat keine Cover-Quelle. Die Kachel
+            // behält ihren Platzhalter, und die übrigen Folgen laufen weiter durch.
+            Guid mitAblage = new("dddddddd-1111-2222-3333-999999999994");
+
+            FakeEpisodeDataService episodes = new();
+            Episode episode = new() { Title = "Ohne Quelle", SeriesId = TestIds.SeriesA };
+            await episodes.AddAsync(episode, TestContext.Current.CancellationToken);
+            Guid ohneQuelle = episode.Id;
+
+            FakeCoverService coverService = new();
+            coverService.ExistingEpisodeCovers[mitAblage] = StoredBytes;
+
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(
+                episodeService: episodes, coverService: coverService);
+
+            List<Guid> gemeldet = [];
+            TaskCompletionSource delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            coordinator.EnqueueForEpisodes([ohneQuelle, mitAblage], (id, bytes) =>
+            {
+                lock (gemeldet)
+                {
+                    gemeldet.Add(id);
+                }
+
+                if (id == mitAblage)
+                {
+                    _ = delivered.TrySetResult();
+                }
+            });
+
+            await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            lock (gemeldet)
+            {
+                Assert.Equal([mitAblage], gemeldet);
+            }
+        }
+
+        [Fact]
+        public async Task EnqueueForEpisodes_UnbekannteFolgeWirdUebersprungen()
+        {
+            // Die Kachel kann aus einem Bestand stammen, der inzwischen gelöscht wurde.
+            Guid unbekannt = new("dddddddd-1111-2222-3333-999999999995");
+            Guid bekannt = new("dddddddd-1111-2222-3333-999999999996");
+
+            FakeCoverService coverService = new();
+            coverService.ExistingEpisodeCovers[bekannt] = StoredBytes;
+
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(coverService: coverService);
+
+            TaskCompletionSource delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            List<Guid> gemeldet = [];
+            coordinator.EnqueueForEpisodes([unbekannt, bekannt], (id, bytes) =>
+            {
+                lock (gemeldet)
+                {
+                    gemeldet.Add(id);
+                }
+
+                _ = delivered.TrySetResult();
+            });
+
+            await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            lock (gemeldet)
+            {
+                Assert.Equal([bekannt], gemeldet);
+            }
         }
 
         private static ForegroundCoverCoordinator BuildCoordinator(

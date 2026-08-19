@@ -35,7 +35,9 @@ namespace EchoPlay.App.Tests.ViewModels
             ProviderType activeProvider = ProviderType.Spotify,
             FakeSpotifyClientCredentialsProvider? credentialsProvider = null,
             EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? spotifySearch = null,
-            EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? appleMusicSearch = null)
+            EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? appleMusicSearch = null,
+            FakeConfirmationDialogService? confirmationDialogService = null,
+            FakeWatchToggleService? watchToggleService = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
@@ -72,7 +74,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             return new OnlineLibraryActionsContext(
                 ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
-                ConfirmationDialogService: new FakeConfirmationDialogService(),
+                ConfirmationDialogService: confirmationDialogService ?? new FakeConfirmationDialogService(),
                 ImportService: importService,
                 ErrorDialogService: new FakeErrorDialogService(),
                 LocalizationService: new FakeLocalizationService(),
@@ -80,7 +82,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 CoverCacheService: null,
                 CoverService: provider.GetRequiredService<CoverService>(),
                 BackgroundCoverService: null,
-                WatchToggleService: null,
+                WatchToggleService: watchToggleService,
                 CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
                 RateLimiter: null);
         }
@@ -370,6 +372,108 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.RemoveSeriesAsync(UnknownRemoveId);
 
             Assert.Equal(1, sut.RemoveSeriesCallCount);
+        }
+
+        [Fact]
+        public async Task OnlineBulkRefreshActions_RemoveSeriesAsync_WhenUserDeclines_KeepsTheSeries()
+        {
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "Die drei Fragezeichen", IsOnlineImported = true };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            FakeConfirmationDialogService dialog = new(result: false);
+            OnlineLibraryActionsContext ctx = BuildContext(seriesService, confirmationDialogService: dialog);
+
+            OnlineSeriesViewModel seriesVM = new();
+            seriesVM.SetAllSeries([CardFor(series, ctx.ScopeFactory)]);
+            OnlineEpisodesViewModel episodesVM = new();
+
+            OnlineBulkRefreshActions sut = new(ctx, seriesVM, episodesVM,
+                setIsLoading: _ => { }, setLoadingStatusText: _ => { },
+                reloadAfterRefreshAsync: () => Task.CompletedTask);
+
+            await sut.RemoveSeriesAsync(series.Id);
+
+            // Der Dialog ist die letzte Gelegenheit umzukehren. Wird dort abgelehnt, muss
+            // die Serie samt Folgen unangetastet bleiben.
+            Assert.Equal(1, dialog.CallCount);
+            _ = Assert.Single(seriesService.All);
+            _ = Assert.Single(seriesVM.AllSeries);
+        }
+
+        [Fact]
+        public async Task OnlineBulkRefreshActions_RemoveSeriesAsync_WhenConfirmed_RemovesItEverywhere()
+        {
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "Die drei Fragezeichen", IsOnlineImported = true };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            OnlineLibraryActionsContext ctx = BuildContext(
+                seriesService, confirmationDialogService: new FakeConfirmationDialogService(result: true));
+
+            OnlineSeriesViewModel seriesVM = new();
+            seriesVM.SetAllSeries([CardFor(series, ctx.ScopeFactory)]);
+            OnlineEpisodesViewModel episodesVM = new();
+
+            OnlineBulkRefreshActions sut = new(ctx, seriesVM, episodesVM,
+                setIsLoading: _ => { }, setLoadingStatusText: _ => { },
+                reloadAfterRefreshAsync: () => Task.CompletedTask);
+
+            await sut.RemoveSeriesAsync(series.Id);
+
+            // Aus der Ablage und aus der Anzeige — bliebe die Kachel stehen, führte der
+            // nächste Klick auf eine Serie, die es nicht mehr gibt.
+            Assert.Empty(seriesService.All);
+            Assert.Empty(seriesVM.AllSeries);
+        }
+
+        [Fact]
+        public async Task OnlineBulkRefreshActions_ToggleWatchAsync_WithService_UpdatesTheCard()
+        {
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "Die drei Fragezeichen", IsOnlineImported = true };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            FakeWatchToggleService watchToggle = new();
+            OnlineLibraryActionsContext ctx = BuildContext(seriesService, watchToggleService: watchToggle);
+
+            OnlineSeriesViewModel seriesVM = new();
+            seriesVM.SetAllSeries([CardFor(series, ctx.ScopeFactory)]);
+            OnlineEpisodesViewModel episodesVM = new();
+
+            OnlineBulkRefreshActions sut = new(ctx, seriesVM, episodesVM,
+                setIsLoading: _ => { }, setLoadingStatusText: _ => { },
+                reloadAfterRefreshAsync: () => Task.CompletedTask);
+
+            await sut.ToggleWatchAsync(series.Id, watch: true);
+
+            // Der Dienst merkt sich den Stand, die Kachel zeigt ihn. Fehlt das zweite,
+            // springt das Symbol beim nächsten Aufbau der Liste zurück.
+            Assert.Equal([(series.Id, true)], watchToggle.Calls);
+            Assert.True(seriesVM.AllSeries[0].IsWatched);
+        }
+
+        /// <summary>
+        /// Baut die Kachel zu einer Serie. Die Zählwerte spielen für diese Tests keine Rolle —
+        /// geprüft wird, ob die Kachel verschwindet beziehungsweise ihren Überwachungsstand
+        /// übernimmt.
+        /// </summary>
+        private static SeriesCardViewModel CardFor(Series series, IServiceScopeFactory scopeFactory)
+        {
+            return new SeriesCardViewModel(
+                series.Id,
+                series.Title,
+                coverImage: null,
+                totalEpisodeCount: 0,
+                newEpisodeCount: 0,
+                inProgressCount: 0,
+                finishedCount: 0,
+                isSubscribed: true,
+                isFavorite: false,
+                isWatched: false,
+                scopeFactory,
+                new FakeConfirmationDialogService(),
+                new FakeLocalizationService());
         }
     }
 }

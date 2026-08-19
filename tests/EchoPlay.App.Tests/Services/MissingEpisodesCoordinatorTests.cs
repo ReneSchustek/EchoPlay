@@ -24,7 +24,8 @@ namespace EchoPlay.App.Tests.Services
     {
         private static MissingEpisodesCoordinator BuildCoordinator(
             FakeSeriesDataService? seriesService = null,
-            FakeOnlineEpisodeChecker? checker = null)
+            FakeOnlineEpisodeChecker? checker = null,
+            Action<StatusBarViewModel>? captureStatusBar = null)
         {
             FakeSeriesDataService series = seriesService ?? new FakeSeriesDataService();
 
@@ -43,6 +44,10 @@ namespace EchoPlay.App.Tests.Services
                 new FakeThemeService(),
                 new TaskbarProgressService(),
                 new FakeClock());
+
+            // Die Statusleiste gehört zum geprüften Verhalten: Wer sie sehen will, bekommt
+            // sie hier durchgereicht, ohne dass die anderen Aufrufe etwas ändern müssen.
+            captureStatusBar?.Invoke(statusBar);
 
             return new MissingEpisodesCoordinator(
                 scopeFactory,
@@ -332,6 +337,134 @@ namespace EchoPlay.App.Tests.Services
             }
 
             return root;
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_WithOnline_PutsProviderEpisodesIntoTheReport()
+        {
+            string folder = CreateSeriesFolder("001 - Eins", "002 - Zwei");
+
+            try
+            {
+                FakeSeriesDataService seriesService = new();
+                Series series = new()
+                {
+                    Title = "Mit Online-Abgleich",
+                    IsSubscribed = true,
+                    LocalFolderPath = folder,
+                    AppleMusicArtistId = "201306317",
+                };
+                await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+                FakeOnlineEpisodeChecker checker = new(
+                [
+                    new OnlineEpisodeCheckResult
+                    {
+                        SeriesId = series.Id,
+                        SeriesTitle = series.Title,
+                        OnlineHighestNumber = 4,
+                        LocalHighestNumber = 2,
+                        NewEpisodesCount = 2,
+                        MissingOnlineEpisodes =
+                        [
+                            new MissingOnlineEpisode { EpisodeNumber = 3, AlbumTitle = "Folge 3 - Der dritte Fall" },
+                            new MissingOnlineEpisode { EpisodeNumber = 4, AlbumTitle = "Folge 4 - Der vierte Fall" },
+                        ],
+                    },
+                ]);
+
+                MissingEpisodesCoordinator coordinator = BuildCoordinator(seriesService, checker);
+
+                MissingEpisodesReport report = await coordinator.CheckAllSeriesAsync(
+                    MissingEpisodesMode.WithOnline, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Der eigentliche Zweck des Online-Abgleichs: sichtbar machen, welche Folgen es
+                // beim Anbieter gibt und in der Sammlung fehlen. Bleibt die Liste leer, ist der
+                // Weg über das Netz umsonst gegangen.
+                SeriesMissingEpisodesResult result = Assert.Single(report.Results);
+                Assert.Equal(4, result.OnlineHighestNumber);
+                Assert.Equal(2, result.OnlineEpisodes.Count);
+                Assert.Equal(1, checker.CheckCallCount);
+            }
+            finally
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_OfflineOnly_NeverAsksTheProvider()
+        {
+            string folder = CreateSeriesFolder("001 - Eins");
+
+            try
+            {
+                FakeSeriesDataService seriesService = new();
+                await seriesService.AddAsync(
+                    new Series { Title = "Nur lokal geprüft", IsSubscribed = true, LocalFolderPath = folder },
+                    TestContext.Current.CancellationToken);
+
+                FakeOnlineEpisodeChecker checker = new();
+                MissingEpisodesCoordinator coordinator = BuildCoordinator(seriesService, checker);
+
+                _ = await coordinator.CheckAllSeriesAsync(
+                    MissingEpisodesMode.OfflineOnly, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Wer im Dialog „nur offline" wählt, hat dem Netzzugriff ausdrücklich
+                // widersprochen. Eine Abfrage trotzdem abzusetzen, wäre ein Vertrauensbruch.
+                Assert.Equal(0, checker.CheckCallCount);
+            }
+            finally
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_WithOnline_ReturnsTheStatusBarToOfflineAfterwards()
+        {
+            StatusBarViewModel? statusBar = null;
+            MissingEpisodesCoordinator coordinator = BuildCoordinator(
+                captureStatusBar: bar => statusBar = bar);
+
+            _ = await coordinator.CheckAllSeriesAsync(
+                MissingEpisodesMode.WithOnline, TestContext.Current.CancellationToken);
+
+            // Für die Prüfung geht die Anwendung vorübergehend online — der Anwender hat dem
+            // im Dialog zugestimmt. Bliebe der Stand danach stehen, zeigte die Statusleiste
+            // dauerhaft „online", obwohl niemand mehr zugestimmt hat.
+            Assert.NotNull(statusBar);
+            Assert.False(statusBar.IsTemporarilyOnline);
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_WithoutOnline_LeavesTheStatusBarUntouched()
+        {
+            StatusBarViewModel? statusBar = null;
+            MissingEpisodesCoordinator coordinator = BuildCoordinator(
+                captureStatusBar: bar => statusBar = bar);
+
+            _ = await coordinator.CheckAllSeriesAsync(
+                MissingEpisodesMode.OfflineOnly, TestContext.Current.CancellationToken);
+
+            Assert.NotNull(statusBar);
+            Assert.False(statusBar.IsTemporarilyOnline);
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_ClearsTheProgressTextWhenDone()
+        {
+            StatusBarViewModel? statusBar = null;
+            MissingEpisodesCoordinator coordinator = BuildCoordinator(
+                captureStatusBar: bar => statusBar = bar);
+
+            _ = await coordinator.CheckAllSeriesAsync(
+                MissingEpisodesMode.OfflineOnly, TestContext.Current.CancellationToken);
+
+            // Bleibt „Prüfe Serie 3/12 …" stehen, hält der Anwender einen längst beendeten
+            // Vorgang für laufend und wartet auf etwas, das nicht mehr kommt.
+            Assert.NotNull(statusBar);
+            Assert.True(string.IsNullOrEmpty(statusBar.ScanProgress.Text));
         }
     }
 }

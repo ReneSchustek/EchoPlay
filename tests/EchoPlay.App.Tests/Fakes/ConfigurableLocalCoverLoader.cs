@@ -29,12 +29,20 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <summary>Jeder Ladeversuch mit seinen Argumenten, in Aufrufreihenfolge.</summary>
-        public IReadOnlyList<(string? FolderPath, string? FirstTrackPath)> Calls => _calls;
+        public IReadOnlyList<(string? FolderPath, string? FirstTrackPath)> Calls
+        {
+            get { lock (_calls) { return _calls.ToArray(); } }
+        }
 
         /// <inheritdoc/>
         public Task<byte[]?> LoadAsync(string? episodeFolderPath, string? firstTrackPath)
         {
-            _calls.Add((episodeFolderPath, firstTrackPath));
+            // Das Nachladen der Kacheln arbeitet mehrere Folgen gleichzeitig ab; ohne Sperre
+            // verliert die Aufzeichnung Einträge und der Test misst zu wenig.
+            lock (_calls)
+            {
+                _calls.Add((episodeFolderPath, firstTrackPath));
+            }
 
             if (episodeFolderPath is not null && _coversByFolder.TryGetValue(episodeFolderPath, out byte[]? cover))
             {

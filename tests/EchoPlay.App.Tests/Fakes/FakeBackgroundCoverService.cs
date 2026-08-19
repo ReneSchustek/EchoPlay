@@ -57,12 +57,21 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.FromResult(0);
         }
 
+        /// <summary>Anzahl der Cover, die der Splash-Durchlauf gemeldet bekommt.</summary>
+        public int SeriesCoversResult { get; set; }
+
+        /// <summary>Wenn gesetzt, scheitert der Splash-Durchlauf mit diesem Fehler.</summary>
+        public System.Exception? SeriesCoversFailure { get; set; }
+
         /// <inheritdoc/>
         public override Task<int> RunSeriesCoversOnceAsync(bool isOnlineAvailable, CancellationToken ct = default)
         {
             RunSeriesCoversCallCount++;
             LastIsOnlineAvailable = isOnlineAvailable;
-            return Task.FromResult(0);
+
+            return SeriesCoversFailure is not null
+                ? Task.FromException<int>(SeriesCoversFailure)
+                : Task.FromResult(SeriesCoversResult);
         }
 
         /// <inheritdoc/>

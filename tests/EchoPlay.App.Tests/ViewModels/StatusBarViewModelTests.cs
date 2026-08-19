@@ -23,13 +23,14 @@ namespace EchoPlay.App.Tests.ViewModels
         private static (StatusBarViewModel Vm, FakePlaybackStateDataService StateService) BuildViewModel(
             FakeSeriesDataService seriesService,
             FakeEpisodeDataService episodeService,
-            FakePlaybackStateDataService stateService)
+            FakePlaybackStateDataService stateService,
+            AppSettings? settings = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
             _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService);
-            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(settings));
 
             ServiceProvider provider = services.BuildServiceProvider();
 
@@ -226,6 +227,73 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             Assert.Equal("Apple Music", vm.ActiveProviderDisplay);
+        }
+
+        [Fact]
+        public async Task OfflineMode_ShowsOfflineInTheInfoBar()
+        {
+            (StatusBarViewModel vm, _) = BuildViewModel(
+                new FakeSeriesDataService(), new FakeEpisodeDataService(), new FakePlaybackStateDataService(),
+                new AppSettings { OfflineMode = true });
+
+            await vm.LoadAsync();
+
+            Assert.True(vm.IsOffline);
+            Assert.Equal("Offline", vm.OnlineOfflineText);
+        }
+
+        [Fact]
+        public async Task TemporarilyOnline_OverridesTheOfflineDisplay()
+        {
+            (StatusBarViewModel vm, _) = BuildViewModel(
+                new FakeSeriesDataService(), new FakeEpisodeDataService(), new FakePlaybackStateDataService(),
+                new AppSettings { OfflineMode = true });
+
+            await vm.LoadAsync();
+            vm.IsTemporarilyOnline = true;
+
+            // Während einer einzelnen zugestimmten Aktion zeigt die Leiste „Online" — sonst
+            // stünde dort „Offline", während gerade Daten aus dem Netz kommen.
+            Assert.Equal("Online", vm.OnlineOfflineText);
+            Assert.NotEqual("", vm.OnlineOfflineGlyph);
+
+            // Die Einstellung selbst bleibt unberührt: Nach der Aktion gilt wieder Offline.
+            Assert.True(vm.IsOffline);
+        }
+
+        [Fact]
+        public async Task TemporarilyOnline_ReportsAllDependentDisplays()
+        {
+            (StatusBarViewModel vm, _) = BuildViewModel(
+                new FakeSeriesDataService(), new FakeEpisodeDataService(), new FakePlaybackStateDataService(),
+                new AppSettings { OfflineMode = true });
+
+            await vm.LoadAsync();
+
+            List<string> reported = [];
+            vm.PropertyChanged += (_, e) => reported.Add(e.PropertyName ?? string.Empty);
+
+            vm.IsTemporarilyOnline = true;
+
+            // Text, Symbol, Farbe und die Sichtbarkeit des Offline-Zeichens hängen alle am
+            // selben Zustand. Fehlt eine Meldung, bleibt ein Teil der Leiste auf dem alten
+            // Stand stehen — die Anzeige widerspricht sich dann selbst.
+            Assert.Contains(nameof(StatusBarViewModel.OnlineOfflineText), reported);
+            Assert.Contains(nameof(StatusBarViewModel.OnlineOfflineGlyph), reported);
+            Assert.Contains(nameof(StatusBarViewModel.OfflineSymbolVisibility), reported);
+        }
+
+        [Fact]
+        public async Task OnlineMode_ShowsOnlineWithoutAnyOverride()
+        {
+            (StatusBarViewModel vm, _) = BuildViewModel(
+                new FakeSeriesDataService(), new FakeEpisodeDataService(), new FakePlaybackStateDataService(),
+                new AppSettings { OfflineMode = false });
+
+            await vm.LoadAsync();
+
+            Assert.False(vm.IsOffline);
+            Assert.Equal("Online", vm.OnlineOfflineText);
         }
     }
 }

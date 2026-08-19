@@ -172,6 +172,85 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(erwartet, confirmation.LastMessage);
         }
 
+        [Fact]
+        public async Task TagSaveActions_RemoveAllTagsAsync_WithoutSelection_RemovesNothing()
+        {
+            FakeTagService tagService = new();
+            TagManagerActionsContext ctx = BuildContext(tagService);
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, _) = BuildSubVms();
+
+            TagSaveActions sut = new(ctx, fileList, editor, cover,
+                setIsLoading: _ => { }, setBatchProgress: _ => { }, setHasUnsavedChanges: _ => { });
+
+            await sut.RemoveAllTagsAsync();
+
+            Assert.Equal(1, sut.RemoveAllTagsCallCount);
+            Assert.Equal(0, tagService.RemoveAllCallCount);
+        }
+
+        [Fact]
+        public async Task TagSaveActions_RemoveAllTagsAsync_WhenUserDeclines_KeepsTheTags()
+        {
+            IReadOnlyList<(string, AudioTag)> folderFiles =
+            [
+                (@"D:\test\track1.mp3", new AudioTag { Title = "Bleibt erhalten" })
+            ];
+
+            FakeTagService tagService = new(folderFiles);
+            FakeConfirmationDialogService confirmation = new(result: false);
+            TagManagerActionsContext ctx = BuildContext(tagService) with { ConfirmationDialogService = confirmation };
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
+
+            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
+                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            await loader.LoadFolderAsync(@"D:\test");
+            fileList.SetSelectedFiles([fileList.Files[0]]);
+            await loader.WaitForFileLoadCompleteAsync();
+
+            TagSaveActions sut = new(ctx, fileList, editor, cover,
+                setIsLoading: _ => { }, setBatchProgress: _ => { }, setHasUnsavedChanges: _ => { });
+
+            await sut.RemoveAllTagsAsync();
+
+            // Alle Angaben einer Datei zu löschen ist nicht rückgängig zu machen. Wer im
+            // Dialog ablehnt, muss seine Kennzeichnung behalten.
+            Assert.Equal(1, confirmation.CallCount);
+            Assert.Equal(0, tagService.RemoveAllCallCount);
+        }
+
+        [Fact]
+        public async Task TagSaveActions_RemoveAllTagsAsync_WhenConfirmed_ClearsTheEditor()
+        {
+            IReadOnlyList<(string, AudioTag)> folderFiles =
+            [
+                (@"D:\test\track1.mp3", new AudioTag { Title = "Wird entfernt", Album = "Album" })
+            ];
+
+            FakeTagService tagService = new(folderFiles);
+            TagManagerActionsContext ctx = BuildContext(tagService) with
+            {
+                ConfirmationDialogService = new FakeConfirmationDialogService(result: true),
+            };
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
+
+            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
+                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            await loader.LoadFolderAsync(@"D:\test");
+            fileList.SetSelectedFiles([fileList.Files[0]]);
+            await loader.WaitForFileLoadCompleteAsync();
+
+            TagSaveActions sut = new(ctx, fileList, editor, cover,
+                setIsLoading: _ => { }, setBatchProgress: _ => { }, setHasUnsavedChanges: _ => { });
+
+            await sut.RemoveAllTagsAsync();
+
+            // Nach dem Entfernen muss auch die Anzeige leer sein — sonst stünden dort Werte,
+            // die in der Datei nicht mehr existieren, und der nächste Speichern-Klick
+            // schriebe sie zurück.
+            Assert.Equal(1, tagService.RemoveAllCallCount);
+            Assert.True(string.IsNullOrEmpty(editor.Title));
+        }
+
         // ── TagLookupActions ─────────────────────────────────────────────────────
 
         [Fact]
@@ -209,6 +288,31 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.LookupOnlineAsync();
 
             Assert.Equal(1, sut.LookupOnlineCallCount);
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(0)]
+        [InlineData(5)]
+        public void TagLookupActions_ApplyLookupCandidate_OutsideTheResultList_ChangesNothing(int index)
+        {
+            FakeTagService tagService = new();
+            TagManagerActionsContext ctx = BuildContext(tagService);
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, _, TagRenameViewModel rename) = BuildSubVms();
+
+            bool unsavedChangesRaised = false;
+            TagLookupActions sut = new(ctx, fileList, editor, rename,
+                setIsLoading: _ => { }, setIsLookingUp: _ => { }, setAutoLookupStatus: _ => { },
+                setBatchProgress: _ => { }, setHasUnsavedChanges: v => unsavedChangesRaised = v,
+                refreshCommandStates: () => { }, previewRenameAsync: () => Task.CompletedTask);
+
+            // Ohne vorherige Suche ist die Trefferliste leer — jeder Index liegt daneben.
+            // Der Anwender klickt in einer Liste, die sich zwischenzeitlich geändert haben
+            // kann; ein Zugriff daneben wäre ein Absturz mitten im Bearbeiten.
+            sut.ApplyLookupCandidate(index);
+
+            Assert.False(unsavedChangesRaised);
+            Assert.True(string.IsNullOrEmpty(editor.Title));
         }
 
         // ── TagCoverActions ──────────────────────────────────────────────────────

@@ -36,12 +36,45 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default) =>
-            Task.FromResult<BitmapImage?>(null);
+        public Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default)
+        {
+            _episodeCoverRequests.Add(episodeId);
+            return Task.FromResult<BitmapImage?>(null);
+        }
+
+        private readonly List<Guid> _episodeCoverRequests = [];
+
+        /// <summary>Jede Einzelabfrage nach einem Folgen-Cover, in Aufrufreihenfolge.</summary>
+        public IReadOnlyList<Guid> EpisodeCoverRequests => _episodeCoverRequests;
+
+        private readonly List<IReadOnlyList<Guid>> _episodeCoverBatchRequests = [];
+
+        /// <summary>Jede Sammelabfrage nach Folgen-Covern, in Aufrufreihenfolge.</summary>
+        public IReadOnlyList<IReadOnlyList<Guid>> EpisodeCoverBatchRequests => _episodeCoverBatchRequests;
 
         /// <inheritdoc/>
-        public Task<IReadOnlyDictionary<Guid, byte[]>> GetEpisodeCoverBytesAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyDictionary<Guid, byte[]>>(new Dictionary<Guid, byte[]>());
+        public Task<IReadOnlyDictionary<Guid, byte[]>> GetEpisodeCoverBytesAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
+        {
+            _episodeCoverBatchRequests.Add(episodeIds ?? []);
+
+            Dictionary<Guid, byte[]> found = [];
+
+            foreach (Guid id in episodeIds ?? [])
+            {
+                if (ExistingEpisodeCovers.TryGetValue(id, out byte[]? bytes))
+                {
+                    found[id] = bytes;
+                }
+            }
+
+            return Task.FromResult<IReadOnlyDictionary<Guid, byte[]>>(found);
+        }
+
+        /// <summary>
+        /// Cover, die bereits in der Ablage liegen. Wer sie vorgibt, prüft den Weg, auf dem
+        /// nichts nachgeladen werden muss.
+        /// </summary>
+        public Dictionary<Guid, byte[]> ExistingEpisodeCovers { get; } = [];
 
         /// <inheritdoc/>
         public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)

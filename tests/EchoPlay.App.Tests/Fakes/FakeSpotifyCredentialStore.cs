@@ -46,9 +46,21 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.FromResult(_credentials);
         }
 
+        /// <summary>
+        /// Ist gesetzt, scheitert das Speichern mit dieser Meldung. Bildet den Fall ab, in dem
+        /// die Verschlüsselung des Benutzerprofils nicht greift — dann darf der Anwender den
+        /// Grund sehen, statt dass der Befehl reißt.
+        /// </summary>
+        public string? FailSaveWith { get; set; }
+
         /// <inheritdoc/>
         public Task SaveAsync(string clientId, string clientSecret, CancellationToken cancellationToken = default)
         {
+            if (FailSaveWith is not null)
+            {
+                return Task.FromException(new InvalidOperationException(FailSaveWith));
+            }
+
             _credentials = (clientId, clientSecret);
             LastLoadFailedDueToCorruption = false;
             SaveCallCount++;

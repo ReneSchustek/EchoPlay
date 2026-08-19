@@ -373,7 +373,7 @@ namespace EchoPlay.App.ViewModels
 
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("DbMaintenance");
             IsMaintaining = true;
-            MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaning");
+            MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaning", "Bereinigung läuft …");
 
             try
             {
@@ -384,11 +384,11 @@ namespace EchoPlay.App.ViewModels
                 await maintenance.PurgeAsync(Math.Max(0, DbPurgeDays));
                 await maintenance.VacuumAsync();
 
-                MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaned");
+                MaintenanceStatusText = SafeResourceLoader.Get("MaintenanceStatusCleaned", "Datenbank erfolgreich bereinigt.");
             }
             catch (Exception ex)
             {
-                string errorFormat = SafeResourceLoader.Get("MaintenanceStatusError");
+                string errorFormat = SafeResourceLoader.Get("MaintenanceStatusError", "Fehler bei der Bereinigung: {0}");
                 MaintenanceStatusText = string.Format(System.Globalization.CultureInfo.CurrentCulture, errorFormat, ex.Message);
             }
             finally

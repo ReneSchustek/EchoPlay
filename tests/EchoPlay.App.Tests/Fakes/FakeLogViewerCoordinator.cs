@@ -24,6 +24,15 @@ namespace EchoPlay.App.Tests.Fakes
         /// </summary>
         public bool IsLiveViewAvailable { get; set; } = true;
 
+        /// <summary>Wie oft die Anzeige neu zusammengestellt wurde.</summary>
+        public int BuildCallCount { get; private set; }
+
+        /// <summary>Der zuletzt übergebene Suchtext.</summary>
+        public string? LastSearchText { get; private set; }
+
+        /// <summary>Die zuletzt übergebene Mindeststufe.</summary>
+        public LogLevel? LastMinimumLevel { get; private set; }
+
         /// <summary>Die Rückgabe für <see cref="LoadLogFileOptionsAsync"/>.</summary>
         public List<LogFileOption> FileOptions { get; } = [];
 
@@ -56,6 +65,10 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public IReadOnlyList<string> BuildFilteredLiveEntries(string searchText, LogLevel minimumLevel)
         {
+            BuildCallCount++;
+            LastSearchText = searchText;
+            LastMinimumLevel = minimumLevel;
+
             if (!IsLiveViewAvailable)
             {
                 return [];

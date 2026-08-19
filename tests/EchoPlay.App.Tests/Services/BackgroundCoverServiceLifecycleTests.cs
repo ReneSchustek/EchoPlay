@@ -75,6 +75,40 @@ namespace EchoPlay.App.Tests.Services
             hangingFactory.Release();
         }
 
+        [Fact]
+        public void Dispose_WithoutStart_StaysQuiet()
+        {
+            BackgroundCoverService service = CreateService(
+                new NoopServiceScopeFactory(), new BackgroundCoverServiceOptions());
+
+            // Wird das Fenster geschlossen, bevor der Hintergrundlauf überhaupt anlief,
+            // darf die Freigabe nicht über einen fehlenden Lauf stolpern.
+            service.Dispose();
+            service.Dispose();
+        }
+
+        [Fact]
+        public void Dispose_AfterStart_EndsTheBackgroundRun()
+        {
+            BackgroundCoverServiceOptions options = new()
+            {
+                InitialDelay = TimeSpan.FromSeconds(30),
+                Interval = TimeSpan.FromMinutes(5),
+            };
+
+            BackgroundCoverService service = CreateService(new NoopServiceScopeFactory(), options);
+            service.Start();
+
+            // Die Freigabe wartet auf das Ende des Laufs. Bräche sie den Abbruch nicht ab,
+            // liefe der Zeitgeber nach dem Schließen des Fensters weiter.
+            Stopwatch sw = Stopwatch.StartNew();
+            service.Dispose();
+            sw.Stop();
+
+            Assert.True(sw.ElapsedMilliseconds < 2500,
+                $"Erwartet < 2500 ms (Abbruch muss greifen), tatsächlich {sw.ElapsedMilliseconds} ms.");
+        }
+
         private static BackgroundCoverService CreateService(
             Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory,
             BackgroundCoverServiceOptions options)

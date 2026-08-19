@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
@@ -252,6 +253,134 @@ namespace EchoPlay.App.Tests.Services
             }
 
             return root;
+        }
+        [Fact]
+        public async Task Neuerscheinungen_NehmenNurAlbenImZeitfenster()
+        {
+            // Der Zeitraum ist die ganze Aussage der Prüfung: Was älter ist, hat der
+            // Anwender längst gesehen — es gehört nicht als Neuerscheinung auf das Brett.
+            DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+            FakeAppleMusicSearchClient client = new(
+                albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
+                {
+                    [ArtistId] =
+                    [
+                        Album("Testserie - Folge 20 - Frisch", heute.AddDays(-3)),
+                        Album("Testserie - Folge 10 - Alt", heute.AddDays(-90))
+                    ]
+                });
+
+            OnlineEpisodeChecker checker = BuildChecker(client);
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckNewReleasesAsync(
+                [Checkable(ArtistId.ToString(CultureInfo.InvariantCulture))],
+                heute.AddDays(-30),
+                TestContext.Current.CancellationToken);
+
+            OnlineEpisodeCheckResult result = Assert.Single(results);
+            NewReleaseEpisode neu = Assert.Single(result.NewReleaseEpisodes);
+            Assert.Equal("Testserie - Folge 20 - Frisch", neu.Title);
+            Assert.Equal(20, neu.EpisodeNumber);
+            Assert.Empty(result.AnnouncedEpisodes);
+        }
+
+        [Fact]
+        public async Task Neuerscheinungen_ZeigenAngekuendigteFolgenMit()
+        {
+            // Eine angekündigte Folge steht zweimal im Ergebnis: als Ankündigung für den
+            // Hinweis und als Neuerscheinung für die Kachel mit Erscheinungsdatum.
+            DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+            FakeAppleMusicSearchClient client = new(
+                albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
+                {
+                    [ArtistId] = [Album("Testserie - Folge 21 - Kommt noch", heute.AddDays(20))]
+                });
+
+            OnlineEpisodeChecker checker = BuildChecker(client);
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckNewReleasesAsync(
+                [Checkable(ArtistId.ToString(CultureInfo.InvariantCulture))],
+                heute.AddDays(-30),
+                TestContext.Current.CancellationToken);
+
+            OnlineEpisodeCheckResult result = Assert.Single(results);
+            Assert.Equal("Testserie - Folge 21 - Kommt noch", Assert.Single(result.AnnouncedEpisodes).Title);
+            Assert.Equal(21, Assert.Single(result.NewReleaseEpisodes).EpisodeNumber);
+            Assert.Equal(21, result.OnlineHighestNumber);
+        }
+
+        [Fact]
+        public async Task Neuerscheinungen_SortierenNeuestesZuerst()
+        {
+            DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+            FakeAppleMusicSearchClient client = new(
+                albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
+                {
+                    [ArtistId] =
+                    [
+                        Album("Testserie - Folge 18 - Älter", heute.AddDays(-20)),
+                        Album("Testserie - Folge 19 - Neuer", heute.AddDays(-2))
+                    ]
+                });
+
+            OnlineEpisodeChecker checker = BuildChecker(client);
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckNewReleasesAsync(
+                [Checkable(ArtistId.ToString(CultureInfo.InvariantCulture))],
+                heute.AddDays(-30),
+                TestContext.Current.CancellationToken);
+
+            OnlineEpisodeCheckResult result = Assert.Single(results);
+            Assert.Equal(
+                ["Testserie - Folge 19 - Neuer", "Testserie - Folge 18 - Älter"],
+                result.NewReleaseEpisodes.Select(e => e.Title));
+        }
+
+        [Fact]
+        public async Task Neuerscheinungen_OhneTrefferMeldenDieSerieGarNicht()
+        {
+            // Eine Serie ohne Fund gehört nicht ins Ergebnis — sonst stünde sie mit
+            // leerer Liste auf dem Brett und sähe aus wie ein Fehler.
+            DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+            FakeAppleMusicSearchClient client = new(
+                albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
+                {
+                    [ArtistId] = [Album("Testserie - Folge 5 - Uralt", heute.AddDays(-400))]
+                });
+
+            OnlineEpisodeChecker checker = BuildChecker(client);
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckNewReleasesAsync(
+                [Checkable(ArtistId.ToString(CultureInfo.InvariantCulture))],
+                heute.AddDays(-30),
+                TestContext.Current.CancellationToken);
+
+            Assert.Empty(results);
+        }
+
+        [Fact]
+        public async Task Neuerscheinungen_UebergehenAlbenOhneLesbaresDatum()
+        {
+            DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+            FakeAppleMusicSearchClient client = new(
+                albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
+                {
+                    [ArtistId] =
+                    [
+                        Album("Testserie - Folge 30 - Ohne Datum"),
+                        Album("Testserie - Folge 31 - Mit Datum", heute.AddDays(-1))
+                    ]
+                });
+
+            OnlineEpisodeChecker checker = BuildChecker(client);
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckNewReleasesAsync(
+                [Checkable(ArtistId.ToString(CultureInfo.InvariantCulture))],
+                heute.AddDays(-30),
+                TestContext.Current.CancellationToken);
+
+            OnlineEpisodeCheckResult result = Assert.Single(results);
+            Assert.Equal(31, Assert.Single(result.NewReleaseEpisodes).EpisodeNumber);
         }
     }
 }

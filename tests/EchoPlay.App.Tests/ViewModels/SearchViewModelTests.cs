@@ -9,6 +9,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -546,6 +547,153 @@ namespace EchoPlay.App.Tests.ViewModels
             /// <inheritdoc/>
             public Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default) =>
                 throw new InvalidOperationException("Simulierter Netzwerkfehler");
+        }
+        [Fact]
+        public async Task Seitenstart_HaeltDieSucheImNurLokalBetriebAn()
+        {
+            // Die Suche fragt fremde Gegenstellen. Wer ausdrücklich offline arbeitet,
+            // darf davon nichts mitbekommen.
+            FakePageModeGuard guard = new(allow: false);
+            SearchViewModel viewModel = BuildViewModelWithGuard([], guard);
+
+            await viewModel.InitializeAsync("TKKG");
+
+            Assert.Equal(1, guard.CallCount);
+            Assert.Equal(string.Empty, viewModel.SearchText);
+            Assert.Empty(viewModel.Results);
+        }
+
+        [Fact]
+        public async Task Seitenstart_MitSuchtextSuchtSofort()
+        {
+            List<ImportSeries> treffer =
+            [
+                new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "id1" }
+            ];
+
+            SearchViewModel viewModel = BuildViewModelWithGuard(treffer, new FakePageModeGuard());
+
+            await viewModel.InitializeAsync("TKKG");
+            await viewModel.WaitForSearchCompleteAsync();
+
+            Assert.Equal("TKKG", viewModel.SearchText);
+            _ = Assert.Single(viewModel.Results);
+        }
+
+        [Fact]
+        public async Task Seitenstart_OhneParameterSuchtNichts()
+        {
+            SearchViewModel viewModel = BuildViewModelWithGuard([], new FakePageModeGuard());
+
+            await viewModel.InitializeAsync(null);
+            await viewModel.InitializeAsync("   ");
+            await viewModel.InitializeAsync(42);
+
+            Assert.Equal(string.Empty, viewModel.SearchText);
+            Assert.False(viewModel.IsOnboardingHintVisible);
+        }
+
+        [Fact]
+        public async Task Seitenstart_MitOnboardingZeigtDenHinweisStattEinerSuche()
+        {
+            SearchViewModel viewModel = BuildViewModelWithGuard([], new FakePageModeGuard());
+
+            await viewModel.InitializeAsync("onboarding");
+
+            Assert.True(viewModel.IsOnboardingHintVisible);
+            Assert.Equal(Visibility.Visible, viewModel.OnboardingHintVisibility);
+            Assert.Equal(string.Empty, viewModel.SearchText);
+        }
+
+        [Fact]
+        public async Task Onboarding_VerschwindetMitDerErstenSuche()
+        {
+            List<ImportSeries> treffer =
+            [
+                new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "id1" }
+            ];
+            SearchViewModel viewModel = BuildViewModelWithGuard(treffer, new FakePageModeGuard());
+            await viewModel.InitializeAsync("onboarding");
+
+            viewModel.SearchText = "TKKG";
+            viewModel.SearchCommand.Execute(null);
+            await viewModel.WaitForSearchCompleteAsync();
+
+            Assert.Equal(Visibility.Collapsed, viewModel.OnboardingHintVisibility);
+        }
+
+        [Fact]
+        public void ErfolgsHinweis_ErscheintNachDemHinzufuegen()
+        {
+            SearchViewModel viewModel = BuildViewModel([]);
+
+            Assert.Equal(Visibility.Collapsed, viewModel.SuccessHintVisibility);
+
+            viewModel.NotifySeriesAdded();
+
+            Assert.True(viewModel.ShowSuccessHint);
+            Assert.Equal(Visibility.Visible, viewModel.SuccessHintVisibility);
+        }
+
+        [Fact]
+        public void ErfolgsHinweis_FuehrtInDieOnlineMediathek()
+        {
+            FakeNavigationService navigation = new();
+            ImportService importService = BuildImportService([], new FakeSeriesDataService(), null);
+            SearchViewModel viewModel = new(
+                importService,
+                new FakeErrorDialogService(),
+                new FakeLocalizationService(),
+                navigationService: navigation);
+
+            viewModel.NavigateToOnlineMediathek();
+
+            Assert.Equal(NavigationTarget.OnlineLibrary, Assert.Single(navigation.Navigations).Target);
+        }
+
+        [Fact]
+        public void Suchbereich_MerktSichDieWahl()
+        {
+            SearchViewModel viewModel = BuildViewModel([]);
+
+            viewModel.SelectedScopeIndex = 2;
+
+            Assert.Equal(2, viewModel.SelectedScopeIndex);
+        }
+
+        [Fact]
+        public async Task LeeresSuchfeld_RaeumtTrefferUndHinweiseAb()
+        {
+            // Der eingebaute Löschknopf des Suchfelds meldet nur den leeren Text.
+            // Bleiben die Treffer stehen, sieht der Anwender Ergebnisse ohne Anfrage.
+            List<ImportSeries> treffer =
+            [
+                new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "id1" }
+            ];
+            SearchViewModel viewModel = BuildViewModel(treffer);
+            viewModel.SearchText = "TKKG";
+            viewModel.SearchCommand.Execute(null);
+            await viewModel.WaitForSearchCompleteAsync();
+
+            viewModel.SearchText = string.Empty;
+
+            Assert.Empty(viewModel.Results);
+            Assert.Equal(Visibility.Collapsed, viewModel.EmptyStateVisibility);
+            Assert.Equal(Visibility.Collapsed, viewModel.LoadingVisibility);
+        }
+
+        private static SearchViewModel BuildViewModelWithGuard(
+            IReadOnlyList<ImportSeries> searchResults,
+            FakePageModeGuard pageModeGuard)
+        {
+            ImportService importService = BuildImportService(
+                searchResults, new FakeSeriesDataService(), null);
+
+            return new SearchViewModel(
+                importService,
+                new FakeErrorDialogService(),
+                new FakeLocalizationService(),
+                pageModeGuard: pageModeGuard);
         }
     }
 }

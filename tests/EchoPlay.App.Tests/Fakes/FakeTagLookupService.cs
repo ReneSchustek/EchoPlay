@@ -23,10 +23,19 @@ namespace EchoPlay.App.Tests.Fakes
         /// Erstellt den Fake mit vorab konfigurierten Ergebnissen.
         /// </summary>
         /// <param name="results">Ergebnisse, die bei jedem Aufruf von <see cref="SearchAsync"/> zurückgegeben werden.</param>
-        public FakeTagLookupService(IReadOnlyList<TagLookupResult>? results = null)
+        /// <param name="searchFailure">
+        /// Wird statt eines Ergebnisses geworfen, wenn gesetzt. Die Suche geht über das Netz;
+        /// eine Zeitüberschreitung ist dort der Regelfall und kein Sonderfall.
+        /// </param>
+        public FakeTagLookupService(
+            IReadOnlyList<TagLookupResult>? results = null,
+            Exception? searchFailure = null)
         {
             _results = results ?? [];
+            _searchFailure = searchFailure;
         }
+
+        private readonly Exception? _searchFailure;
 
         /// <inheritdoc/>
         public Task<IReadOnlyList<TagLookupResult>> SearchAsync(
@@ -34,7 +43,10 @@ namespace EchoPlay.App.Tests.Fakes
             CancellationToken cancellationToken = default)
         {
             LastQuery = query;
-            return Task.FromResult(_results);
+
+            return _searchFailure is not null
+                ? Task.FromException<IReadOnlyList<TagLookupResult>>(_searchFailure)
+                : Task.FromResult(_results);
         }
     }
 }

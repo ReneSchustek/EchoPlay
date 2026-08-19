@@ -1,4 +1,5 @@
 using EchoPlay.App.Tests.Fakes;
+using System;
 using EchoPlay.App.ViewModels;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
@@ -170,6 +171,183 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.PlaylistItems.RemoveAt(1);
 
             Assert.Equal(2, vm.PlaylistItems.Count);
+        }
+
+        [Fact]
+        public void LoadFiles_StartsPlaybackImmediately()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+
+            vm.LoadFiles([@"D:\Media\01.mp3", @"D:\Media\02.mp3"]);
+
+            // Einen Ordner zu öffnen heißt hören zu wollen: Die Wiedergabe beginnt sofort
+            // beim ersten Titel, ohne dass noch einmal geklickt werden muss.
+            _ = Assert.Single(playerService.PlayCalls);
+            Assert.Equal(0, playerService.PlayCalls[0].Item3);
+        }
+
+        [Fact]
+        public void LoadFiles_WithEmptySelection_StartsNothing()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+
+            vm.LoadFiles([]);
+
+            // Eine leere Auswahl darf das Abspielgerät nicht mit einer leeren Liste anwerfen.
+            Assert.Empty(playerService.PlayCalls);
+            Assert.Empty(vm.PlaylistItems);
+        }
+
+        [Fact]
+        public void PlayItem_StartsAtTheClickedEntry()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+            vm.LoadFiles([@"D:\Media\01.mp3", @"D:\Media\02.mp3", @"D:\Media\03.mp3"]);
+
+            vm.PlayItem(vm.PlaylistItems[2]);
+
+            // Wer auf den dritten Titel klickt, will den dritten hören. Beginnt die
+            // Wiedergabe stattdessen wieder vorn, ist die Liste als Bedienelement wertlos.
+            Assert.Equal(2, playerService.PlayCalls.Count);
+            Assert.Equal(2, playerService.PlayCalls[^1].Item3);
+        }
+
+        [Fact]
+        public void PlayItem_PassesTheWholeListNotOnlyTheClickedFile()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+            vm.LoadFiles([@"D:\Media\01.mp3", @"D:\Media\02.mp3"]);
+
+            vm.PlayItem(vm.PlaylistItems[0]);
+
+            // Die ganze Liste geht mit, damit nach dem ersten Titel der nächste folgt.
+            // Nur die angeklickte Datei zu übergeben, beendete die Wiedergabe nach einem Stück.
+            Assert.Equal(2, playerService.PlayCalls[^1].Item2.Count);
+        }
+
+        [Fact]
+        public void PlayItem_WithoutItem_StartsNothingNew()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+            vm.LoadFiles([@"D:\Media\01.mp3"]);
+            int afterLoading = playerService.PlayCalls.Count;
+
+            vm.PlayItem(null);
+
+            Assert.Equal(afterLoading, playerService.PlayCalls.Count);
+        }
+
+        [Fact]
+        public void LoadFiles_WithoutPathList_Throws()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+
+            _ = Assert.Throws<ArgumentNullException>(() => vm.LoadFiles(null!));
+        }
+        [Fact]
+        public void PlayPause_SchaltetUmUndZeigtDasPassendeZeichen()
+        {
+            // Das Zeichen der Schaltfläche ist der einzige Hinweis darauf, was ein Klick
+            // auslöst — zeigt es das falsche, drückt der Anwender auf Pause und startet.
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+
+            Assert.Equal("\uE768", viewModel.PlayPauseGlyph);
+
+            playerService.SetState("Track A", isPlaying: true, positionSeconds: 0, durationSeconds: 60);
+
+            Assert.True(viewModel.IsPlaying);
+            Assert.Equal("\uE769", viewModel.PlayPauseGlyph);
+        }
+
+        [Fact]
+        public void Steuerbefehle_ErreichenDenAbspieler()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+
+            viewModel.NextCommand.Execute(null);
+            viewModel.PreviousCommand.Execute(null);
+
+            Assert.Equal(1, playerService.SkipToNextCallCount);
+            Assert.Equal(1, playerService.SkipToPreviousCallCount);
+        }
+
+        [Fact]
+        public async Task DateiAuswahl_BautDieWiedergabeliste()
+        {
+            // Der Weg über die Dateiauswahl legt dieselbe Liste an wie das Öffnen eines
+            // Ordners — nur ohne Zugriff auf das Dateisystem.
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+
+            viewModel.LoadFiles([@"D:\audio\001.mp3", @"D:\audio\002.mp3"]);
+            await viewModel.PendingTitleFill;
+
+            Assert.Equal(2, viewModel.PlaylistItems.Count);
+            Assert.Equal(@"D:\audio\001.mp3", viewModel.PlaylistItems[0].FullPath);
+        }
+
+        [Fact]
+        public void DateiAuswahl_OhneListeWirftEineAussagekraeftigeAusnahme()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+
+            _ = Assert.Throws<ArgumentNullException>(() => viewModel.LoadFiles(null!));
+        }
+
+        [Fact]
+        public async Task LaufenderTitel_WirdInDerListeHervorgehoben()
+        {
+            // Verglichen wird der Dateipfad: Der Anzeigename kann aus der Kennzeichnung
+            // stammen und passt dann nicht mehr zum Dateinamen.
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+            viewModel.LoadFiles([@"D:\audio\001.mp3", @"D:\audio\002.mp3"]);
+            await viewModel.PendingTitleFill;
+
+            playerService.SimulateExternalPlayback([@"D:\audio\001.mp3", @"D:\audio\002.mp3"], @"D:\audio\002.mp3");
+
+            Assert.False(viewModel.PlaylistItems[0].IsCurrentTrack);
+            Assert.True(viewModel.PlaylistItems[1].IsCurrentTrack);
+        }
+
+        [Fact]
+        public void OhneCover_ZeigtDieSeiteDenPlatzhalter()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+
+            Assert.Null(viewModel.CoverImage);
+            Assert.Equal(Microsoft.UI.Xaml.Visibility.Visible, viewModel.NoCoverVisibility);
+        }
+
+        [Fact]
+        public async Task ZuletztGeoeffneterOrdner_WirdGemerktUndWiedergegeben()
+        {
+            FakePlayerService playerService = new();
+            FakeAppSettingsDataService settings = new();
+
+            ServiceCollection services = new();
+            _ = services.AddScoped<ITrackTitleResolver>(_ => new FakeTrackTitleResolver());
+            _ = services.AddScoped<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>(_ => settings);
+            ServiceProvider provider = services.BuildServiceProvider();
+
+            PlayerViewModel viewModel = new(playerService, provider.GetRequiredService<IServiceScopeFactory>());
+
+            Assert.Null(await viewModel.GetLastOpenedFolderAsync());
+
+            await viewModel.SaveLastOpenedFolderAsync(@"D:\audio");
+
+            Assert.Equal(@"D:\audio", await viewModel.GetLastOpenedFolderAsync());
+            Assert.Equal(1, settings.SaveCallCount);
         }
     }
 }

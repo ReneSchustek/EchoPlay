@@ -16,8 +16,9 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="ConnectionTestCoordinator"/>. Verwendet inline definierte
-    /// Stub-API-Clients für Spotify und Apple Music, damit kein Netzwerk nötig ist.
+    /// Tests für <see cref="ConnectionTestCoordinator"/>. Der Erfolgsfall läuft über den
+    /// gemeinsamen <see cref="FakeSpotifyApiClient"/>; für den Netzwerkfehler steht ein
+    /// eigener Stub daneben, der wirft. Netzwerk braucht keiner von beiden.
     /// </summary>
     public sealed class ConnectionTestCoordinatorTests
     {
@@ -54,7 +55,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task TestAsync_Spotify_HappyPath_ReturnsSuccess()
         {
             ServiceCollection services = new();
-            _ = services.AddScoped<ISpotifyApiClient>(_ => new EmptyResultSpotifyClient());
+            _ = services.AddScoped<ISpotifyApiClient>(_ => new FakeSpotifyApiClient());
             ServiceProvider provider = services.BuildServiceProvider();
             ConnectionTestCoordinator coordinator = new(provider.GetRequiredService<IServiceScopeFactory>(), new FakeLocalizationService(), new FakeLoggerFactory());
 
@@ -76,18 +77,6 @@ namespace EchoPlay.App.Tests.Services
             public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);
             public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);
             public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyTrackDto>>(_ex);
-        }
-
-        private sealed class EmptyResultSpotifyClient : ISpotifyApiClient
-        {
-            public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
-                => Task.FromResult<IReadOnlyList<SpotifyArtistDto>>([]);
-            public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default)
-                => Task.FromResult<IReadOnlyList<SpotifyAlbumDto>>([]);
-            public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
-                => Task.FromResult<IReadOnlyList<SpotifyAlbumDto>>([]);
-            public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)
-                => Task.FromResult<IReadOnlyList<SpotifyTrackDto>>([]);
         }
     }
 }

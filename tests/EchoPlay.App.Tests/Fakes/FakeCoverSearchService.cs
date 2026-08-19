@@ -43,6 +43,7 @@ namespace EchoPlay.App.Tests.Fakes
         {
             LastSearchTitle = title;
             LastPage = page;
+            _ = _firstSearch.TrySetResult(title);
 
             // Nachladen liefert nichts mehr — Tests, die nur die erste Seite brauchen, bleiben
             // damit unverändert, und der Dialog blendet das Nachladen korrekt aus.
@@ -51,5 +52,14 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>Letzte angefragte Seite. Für Assertions zum Nachladen.</summary>
         public CoverSearchPage LastPage { get; private set; }
+
+        private readonly TaskCompletionSource<string> _firstSearch =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Wird abgeschlossen, sobald zum ersten Mal gesucht wurde. Wartepunkt für Abläufe,
+        /// die im Hintergrund starten und keinen Rückgabewert haben.
+        /// </summary>
+        public Task<string> FirstSearch => _firstSearch.Task;
     }
 }

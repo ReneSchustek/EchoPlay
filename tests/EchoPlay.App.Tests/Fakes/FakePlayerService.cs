@@ -139,6 +139,15 @@ namespace EchoPlay.App.Tests.Fakes
             CurrentTrackPath = null;
             CurrentTrackPaths = [];
             IsPlaying = false;
+
+            // Der echte Dienst verwirft beim Stoppen den gesamten Wiedergabestand
+            // (ResetPlaybackState). Bliebe die Position hier stehen, zeigte die Zeitanzeige
+            // im Test eine Stelle in einer Datei, die gar nicht mehr läuft.
+            Position = TimeSpan.Zero;
+            Duration = TimeSpan.Zero;
+            OverallPosition = TimeSpan.Zero;
+            OverallDuration = TimeSpan.Zero;
+
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -148,11 +157,17 @@ namespace EchoPlay.App.Tests.Fakes
             ResumeWasCalled = true;
         }
 
-        /// <inheritdoc/>
-        public void SkipToNext() { }
+        /// <summary>Anzahl der Sprünge zur nächsten Spur.</summary>
+        public int SkipToNextCallCount { get; private set; }
+
+        /// <summary>Anzahl der Sprünge zur vorherigen Spur.</summary>
+        public int SkipToPreviousCallCount { get; private set; }
 
         /// <inheritdoc/>
-        public void SkipToPrevious() { }
+        public void SkipToNext() => SkipToNextCallCount++;
+
+        /// <inheritdoc/>
+        public void SkipToPrevious() => SkipToPreviousCallCount++;
 
         /// <inheritdoc/>
         public void SeekTo(TimeSpan position)

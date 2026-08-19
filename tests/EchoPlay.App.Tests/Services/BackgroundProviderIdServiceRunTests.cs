@@ -124,5 +124,52 @@ namespace EchoPlay.App.Tests.Services
             service.Dispose();
             service.Dispose();
         }
+        [Fact]
+        public async Task Start_UndStop_BeendenDenHintergrundlauf()
+        {
+            // Der Lauf beginnt mit einer Wartezeit, damit der Programmstart frei bleibt.
+            // Das Beenden muss trotzdem sofort greifen — sonst hängt der Programmschluss.
+            (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
+
+            service.Start();
+            await service.StopAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            // Nach dem Beenden ist ein erneuter Start möglich, ohne dass etwas hängen bleibt.
+            service.Start();
+            await service.StopAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
+        public async Task Start_MehrfachBleibtEinLauf()
+        {
+            // Zwei Aufrufe dürfen keinen zweiten Lauf erzeugen — sonst liefe die
+            // Anreicherung doppelt über denselben Bestand.
+            (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
+
+            service.Start();
+            service.Start();
+
+            await service.StopAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
+        public async Task Stop_OhneStartIstHarmlos()
+        {
+            (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
+
+            await service.StopAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
+        public async Task Dispose_NachDemStartBrichtDenLaufAb()
+        {
+            (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
+            service.Start();
+
+            service.Dispose();
+
+            // Nach dem Verwerfen gibt es nichts mehr zu beenden.
+            await service.StopAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        }
     }
 }

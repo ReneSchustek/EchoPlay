@@ -29,6 +29,12 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<IReadOnlyDictionary<Guid, byte[]>> GetImageDataByEntitiesAsync(
             string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default)
         {
+            BatchRequests.Add(entityIds);
+            if (_signalAfterBatchCount > 0 && BatchRequests.Count >= _signalAfterBatchCount)
+            {
+                _ = _batchesReached.TrySetResult();
+            }
+
             Dictionary<Guid, byte[]> result = new();
 
             foreach (Guid id in entityIds)
@@ -104,6 +110,29 @@ namespace EchoPlay.App.Tests.Fakes
 
             return Task.FromResult(deleted);
         }
+
+        /// <summary>
+        /// Jede Sammelabfrage in Aufrufreihenfolge. Darüber lässt sich prüfen, ob ein
+        /// Aufrufer die Bilddaten wirklich in Chargen holt statt Folge für Folge.
+        /// </summary>
+        public List<IReadOnlyList<Guid>> BatchRequests { get; } = [];
+
+        private readonly TaskCompletionSource _batchesReached =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private int _signalAfterBatchCount;
+
+        /// <summary>
+        /// Meldet sich über <see cref="BatchesReached"/>, sobald so viele Sammelabfragen
+        /// eingegangen sind. Wartepunkt für Abläufe, die nebenher weiterarbeiten — ohne
+        /// ihn bliebe nur eine Wartezeit, und die macht den Test von der Laufgeschwindigkeit
+        /// abhängig.
+        /// </summary>
+        /// <param name="count">Die erwartete Zahl an Sammelabfragen.</param>
+        public void SignalAfterBatches(int count) => _signalAfterBatchCount = count;
+
+        /// <summary>Wird abgeschlossen, sobald die erwartete Zahl an Sammelabfragen erreicht ist.</summary>
+        public Task BatchesReached => _batchesReached.Task;
 
         /// <inheritdoc/>
         public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(_covers.Count);

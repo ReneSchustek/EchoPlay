@@ -86,5 +86,19 @@ namespace EchoPlay.Core.Tests.Security
             // Verschiedene Trailing-Separator-Kombinationen müssen gleich behandelt werden.
             Assert.True(SecurePathHelper.IsPathInside(candidate, rootWithSep));
         }
+
+        [Fact]
+        public void IsPathInside_WithAPathThatCannotBeResolved_SaysNo()
+        {
+            // Ein Pfad mit einem Nullzeichen lässt sich nicht in absolute Form bringen.
+            // Die Prüfung muss dann verneinen — ein „weiß nicht“ wäre hier ein Freibrief.
+            Assert.False(SecurePathHelper.IsPathInside("C:\\Media\\\0Folge", @"C:\Media"));
+        }
+
+        [Fact]
+        public void IsPathInside_WithARootThatCannotBeResolved_SaysNo()
+        {
+            Assert.False(SecurePathHelper.IsPathInside(@"C:\Media\Folge", "C:\\\0Media"));
+        }
     }
 }

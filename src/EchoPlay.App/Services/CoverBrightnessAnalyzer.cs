@@ -8,10 +8,10 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Analysiert die Helligkeit eines Cover-Bildes in der oberen linken Ecke.
-    /// Statische Utility-Klasse – die WinRT-COM-Typen
-    /// (<see cref="BitmapDecoder"/>, <see cref="InMemoryRandomAccessStream"/>)
-    /// werden nur bei tatsächlichem Aufruf instanziiert, damit Unit-Tests ohne
-    /// WinUI-Hosting nicht beim Laden des ViewModels eine COM-Exception auslösen.
+    /// Statische Utility-Klasse – <see cref="BitmapDecoder"/> und
+    /// <see cref="InMemoryRandomAccessStream"/> gehören zum Betriebssystem, sind
+    /// systemweit registriert und laufen auch ohne WinUI-Hosting. Die Klasse ist
+    /// deshalb vollständig durch Unit-Tests abgedeckt.
     /// </summary>
     public static class CoverBrightnessAnalyzer
     {

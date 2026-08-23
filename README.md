@@ -92,7 +92,8 @@ an denen fremde Daten ins Programm gelangen, sind trotzdem abgesichert:
 | Links öffnen | Nur `http`/`https` oder ein exakt erwartetes Anwendungsschema; eine Adresse aus der Datenbank startet damit kein beliebiges Programm |
 | Datenbankzugriff | EF Core mit LINQ; die wenigen Roh-SQL-Stellen nutzen ausschließlich feste Fragmente und Parameter |
 | Protokolle | Verzeichnisse werden durch einen Kurz-Hash ersetzt, Geheimnisse in Abfrageparametern und Zugangsdaten in Adressen durch `***` |
-| Abhängigkeiten | `dotnet list package --vulnerable`/`--deprecated` als hartes Gate, CodeQL und gitleaks in der CI |
+| Abhängigkeiten | `dotnet list package --vulnerable` als hartes Gate, abgekündigte Pakete als Hinweis; CodeQL und die Prüfung der Historie in der CI |
+| Geheimnisse im Quellbaum | `gitleaks` läuft vor jedem Abschluss über den Arbeitsbaum und bricht bei jedem Fund ab |
 
 Der Build läuft mit `TreatWarningsAsErrors=true` und `AnalysisMode=All`; die
 Sicherheitsanalyse (Roslyn-Analyzer, SecurityCodeScan) ist damit Teil jedes Builds.

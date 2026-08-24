@@ -254,8 +254,10 @@ namespace EchoPlay.App.ViewModels
         /// Handler für <see cref="IScanEventService.SeriesSynced"/>.
         /// Wird vom Hintergrundthread des Sync-Dienstes aufgerufen und marshallt den Callback
         /// über den <see cref="DispatcherQueue"/> auf den UI-Thread, bevor das übergeordnete
-        /// ViewModel benachrichtigt wird. Die Callback-Implementierung erzeugt WinRT-Objekte
-        /// (BitmapImage, InMemoryRandomAccessStream), die zwingend auf dem UI-Thread entstehen müssen.
+        /// ViewModel benachrichtigt wird. Nötig ist der Wechsel wegen <c>BitmapImage</c>: Als
+        /// <c>DependencyObject</c> aus <c>Microsoft.UI.*</c> gehört es dem Thread, auf dem es
+        /// entsteht. Die WinRT-Typen aus <c>Windows.*</c> sind dagegen systemweit registriert
+        /// und brauchen den UI-Thread nicht.
         /// </summary>
         /// <param name="series">Die synchronisierte Serie.</param>
         private void OnSeriesSyncedInternal(Series series)
@@ -332,7 +334,7 @@ namespace EchoPlay.App.ViewModels
                 _statusBar.ScanProgress.Clear();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
-                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryScanFailedTitle"), ex.Message);
+                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryScanFailedTitle"), ex.Message, DialogKey.LibraryScanFailed);
             }
             finally
             {
@@ -351,7 +353,8 @@ namespace EchoPlay.App.ViewModels
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("LibraryReinitTitle"),
-                SafeResourceLoader.Get("LibraryReinitMessage"));
+                SafeResourceLoader.Get("LibraryReinitMessage"),
+                DialogKey.LibraryReinit);
 
             if (!confirmed)
             {
@@ -399,7 +402,7 @@ namespace EchoPlay.App.ViewModels
                 _statusBar.ScanProgress.Clear();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
-                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryReinitFailedTitle"), ex.Message);
+                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryReinitFailedTitle"), ex.Message, DialogKey.LibraryReinitFailed);
             }
             finally
             {

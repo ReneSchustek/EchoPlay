@@ -1,4 +1,5 @@
 using EchoPlay.App.ViewModels;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,7 +50,7 @@ namespace EchoPlay.App.Services
             string title = EchoPlay.App.Helpers.SafeResourceLoader.Get("OfflineOnlineAccessTitle");
             string message = EchoPlay.App.Helpers.SafeResourceLoader.Get("OfflineOnlineAccessMessage");
 
-            bool confirmed = await _confirmationDialog.ConfirmAsync(title, message, cancellationToken);
+            bool confirmed = await _confirmationDialog.ConfirmAsync(title, message, DialogKey.OfflineOnlineAccess, cancellationToken);
             if (!confirmed)
             {
                 return null;

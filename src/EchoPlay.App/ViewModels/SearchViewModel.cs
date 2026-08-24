@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Models;
 using EchoPlay.Core.Search;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
@@ -399,7 +400,7 @@ namespace EchoPlay.App.ViewModels
                 if (outcome.OnlineError is not null && !coverToken.IsCancellationRequested)
                 {
                     await _errorDialogService.ShowAsync(
-                        _localizationService.Get("OnlineSearchFailedTitle"), outcome.OnlineError.Message);
+                        _localizationService.Get("OnlineSearchFailedTitle"), outcome.OnlineError.Message, DialogKey.OnlineSearchFailed);
                 }
             }
             catch (Exception ex)
@@ -408,7 +409,7 @@ namespace EchoPlay.App.ViewModels
                 if (coverToken.IsCancellationRequested) return;
 
                 await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message);
+                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message, DialogKey.OnlineSearchFailed);
             }
             finally
             {

@@ -62,6 +62,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeLogViewerCoordinator(),
                 BuildLoggerManager(),
                 statusBar,
+                new FakeDialogSuppressionService(),
+                new FakeLoggerFactory(),
                 languageSwitchService));
         }
 

@@ -1,4 +1,5 @@
 using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -133,7 +134,7 @@ namespace EchoPlay.App.ViewModels
                 if (coverToken.IsCancellationRequested) return;
 
                 await _ctx.ErrorDialogService.ShowAsync(
-                    _ctx.LocalizationService.Get("OnlineSearchFailedTitle"), ex.Message);
+                    _ctx.LocalizationService.Get("OnlineSearchFailedTitle"), ex.Message, DialogKey.OnlineSearchFailed);
             }
             finally
             {

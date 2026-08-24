@@ -16,8 +16,8 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class LocalizationCoverageTests
     {
-        private static readonly string DeResourcePath = ResolveResourcePath("de");
-        private static readonly string EnResourcePath = ResolveResourcePath("en-US");
+        private static readonly string DeResourcePath = ResourcePathResolver.Resolve("de");
+        private static readonly string EnResourcePath = ResourcePathResolver.Resolve("en-US");
 
         [Fact]
         public void ResourceKeys_AreSymmetricBetweenDeAndEn()
@@ -86,21 +86,5 @@ namespace EchoPlay.App.Tests.Services
                 $"Doppelte Schlüssel in {culture}: {string.Join(", ", duplicates)}");
         }
 
-        private static string ResolveResourcePath(string culture)
-        {
-            // Ausgehend vom Solution-Root das App-Projekt suchen, statt den
-            // Ordner-Layout (src/) fest zu verdrahten — so übersteht der Test Umzüge.
-            DirectoryInfo dir = new(RepositoryPaths.Root());
-
-            string relativePath = Path.Combine("Strings", culture, "Resources.resw");
-            string path = Directory
-                .EnumerateFiles(dir.FullName, "Resources.resw", SearchOption.AllDirectories)
-                .FirstOrDefault(p => p.EndsWith(Path.DirectorySeparatorChar + relativePath, StringComparison.OrdinalIgnoreCase)
-                    && p.Contains(Path.DirectorySeparatorChar + "EchoPlay.App" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-                    && !p.Contains(Path.DirectorySeparatorChar + "EchoPlay.App.Tests" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                ?? throw new FileNotFoundException($"Ressource-Datei '{relativePath}' nicht gefunden unterhalb von '{dir.FullName}'.");
-
-            return path;
-        }
     }
 }

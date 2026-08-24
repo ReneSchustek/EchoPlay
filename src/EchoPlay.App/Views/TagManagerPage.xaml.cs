@@ -2,6 +2,7 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
+using EchoPlay.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -145,15 +146,12 @@ namespace EchoPlay.App.Views
 
                 if (results.Count == 0)
                 {
-                    ContentDialog noResultsDialog = new()
-                    {
-                        Title = resources.GetString("TagManagerNoResultsTitle"),
-                        Content = resources.GetString("TagManagerNoResultsMessage"),
-                        CloseButtonText = resources.GetString("CommonOkButton"),
-                        XamlRoot = XamlRoot
-                    };
-                    Helpers.ContentDialogDragHelper.MakeDraggable(noResultsDialog);
-                    _ = await noResultsDialog.ShowAsync();
+                    // Über den Fehlerdialog-Dienst statt als eigener ContentDialog: nur so
+                    // trägt der Hinweis das Häkchen zum dauerhaften Ausblenden.
+                    await App.Services.GetRequiredService<IErrorDialogService>().ShowAsync(
+                        resources.GetString("TagManagerNoResultsTitle"),
+                        resources.GetString("TagManagerNoResultsMessage"),
+                        DialogKey.TagManagerNoResults);
                     return;
                 }
 

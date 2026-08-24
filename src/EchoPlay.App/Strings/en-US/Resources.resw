@@ -1986,4 +1986,169 @@ The application will close.</value>
   <data name="PlayerEpisodeProgressFormat" xml:space="preserve">
     <value>Whole episode: {0} of {1}</value>
   </data>
+  <!-- Ausgeblendete Hinweise -->
+  <data name="DialogSuppressHintCheckBox" xml:space="preserve">
+    <value>Do not show this notice again</value>
+  </data>
+  <data name="DialogSuppressConfirmCheckBox" xml:space="preserve">
+    <value>Do not ask again, run this straight away</value>
+  </data>
+  <data name="SettingsHiddenDialogsHeading.Text" xml:space="preserve">
+    <value>Hidden notices</value>
+  </data>
+  <data name="SettingsHiddenDialogsDescription.Text" xml:space="preserve">
+    <value>Dialogs switched off with the "do not show again" tick. Restored notices appear again just like the first time.</value>
+  </data>
+  <data name="SettingsHiddenDialogsEmpty.Text" xml:space="preserve">
+    <value>No notice is hidden at the moment.</value>
+  </data>
+  <data name="SettingsHiddenDialogsRestoreButton.Content" xml:space="preserve">
+    <value>Show again</value>
+  </data>
+  <data name="SettingsHiddenDialogsRestoreAllButton.Content" xml:space="preserve">
+    <value>Show all again</value>
+  </data>
+  <data name="SettingsHiddenDialogsIrreversibleNote.Text" xml:space="preserve">
+    <value>This action writes files with no way back.</value>
+  </data>
+
+  <!-- Sprechende Namen der ausblendbaren Dialoge -->
+  <data name="DialogName_EpisodeCoverOverwrite" xml:space="preserve">
+    <value>Overwrite episode cover</value>
+  </data>
+  <data name="DialogName_OfflineOnlineAccess" xml:space="preserve">
+    <value>Go online despite offline mode</value>
+  </data>
+  <data name="DialogName_FavoriteRemove" xml:space="preserve">
+    <value>Remove series from favourites</value>
+  </data>
+  <data name="DialogName_SeriesRemoveFromLibrary" xml:space="preserve">
+    <value>Remove series from library</value>
+  </data>
+  <data name="DialogName_SeriesDeleteFromDisk" xml:space="preserve">
+    <value>Delete series from disk</value>
+  </data>
+  <data name="DialogName_LibraryReinit" xml:space="preserve">
+    <value>Rebuild library</value>
+  </data>
+  <data name="DialogName_EpisodeMarkPlayed" xml:space="preserve">
+    <value>Mark episode as played</value>
+  </data>
+  <data name="DialogName_EpisodeMarkUnplayed" xml:space="preserve">
+    <value>Mark episode as unplayed</value>
+  </data>
+  <data name="DialogName_OnlineRemoveSeries" xml:space="preserve">
+    <value>Remove series from online library</value>
+  </data>
+  <data name="DialogName_OnlineSubscribe" xml:space="preserve">
+    <value>Watch series</value>
+  </data>
+  <data name="DialogName_OnlineUnsubscribe" xml:space="preserve">
+    <value>Stop watching a series</value>
+  </data>
+  <data name="DialogName_UnsavedSettings" xml:space="preserve">
+    <value>Leave settings with unsaved changes</value>
+  </data>
+  <data name="DialogName_LanguageRestart" xml:space="preserve">
+    <value>Restart to change the language</value>
+  </data>
+  <data name="DialogName_TagManagerCoverApplyAll" xml:space="preserve">
+    <value>Write cover to all files</value>
+  </data>
+  <data name="DialogName_TagManagerApplyToAll" xml:space="preserve">
+    <value>Apply details to all files</value>
+  </data>
+  <data name="DialogName_TagManagerRename" xml:space="preserve">
+    <value>Rename files</value>
+  </data>
+  <data name="DialogName_TagManagerSaveAll" xml:space="preserve">
+    <value>Save all changed files</value>
+  </data>
+  <data name="DialogName_TagManagerRemoveAll" xml:space="preserve">
+    <value>Remove all tags from a file</value>
+  </data>
+  <data name="DialogName_CoverDownloadFailed" xml:space="preserve">
+    <value>Cover could not be loaded</value>
+  </data>
+  <data name="DialogName_OfflineModeSearchHint" xml:space="preserve">
+    <value>Offline mode notice</value>
+  </data>
+  <data name="DialogName_OnlineOnlyModeHint" xml:space="preserve">
+    <value>Online-only mode notice</value>
+  </data>
+  <data name="DialogName_ImportSearchFailed" xml:space="preserve">
+    <value>Search before import failed</value>
+  </data>
+  <data name="DialogName_ImportFailed" xml:space="preserve">
+    <value>Import failed</value>
+  </data>
+  <data name="DialogName_LibraryScanFailed" xml:space="preserve">
+    <value>Library scan failed</value>
+  </data>
+  <data name="DialogName_LibraryReinitFailed" xml:space="preserve">
+    <value>Library rebuild failed</value>
+  </data>
+  <data name="DialogName_LocalLibrarySyncFailed" xml:space="preserve">
+    <value>Library sync failed</value>
+  </data>
+  <data name="DialogName_EpisodeNotAvailable" xml:space="preserve">
+    <value>Episode not available yet</value>
+  </data>
+  <data name="DialogName_EpisodeNotPlayable" xml:space="preserve">
+    <value>Episode cannot be played</value>
+  </data>
+  <data name="DialogName_OnlineRefreshFailed" xml:space="preserve">
+    <value>Refreshing online series failed</value>
+  </data>
+  <data name="DialogName_OnlineSearchFailed" xml:space="preserve">
+    <value>Online search failed</value>
+  </data>
+  <data name="DialogName_OnlineImportFailed" xml:space="preserve">
+    <value>Import from online search failed</value>
+  </data>
+  <data name="DialogName_NoProviderHint" xml:space="preserve">
+    <value>Notice: no provider configured</value>
+  </data>
+  <data name="DialogName_LanguageRestartManual" xml:space="preserve">
+    <value>Manual restart required</value>
+  </data>
+  <data name="DialogName_TagManagerNoResults" xml:space="preserve">
+    <value>Online lookup found nothing</value>
+  </data>
+  <data name="DialogName_TagManagerCoverRemoveError" xml:space="preserve">
+    <value>Cover could not be removed</value>
+  </data>
+  <data name="DialogName_TagManagerFolderLoadError" xml:space="preserve">
+    <value>Folder could not be read</value>
+  </data>
+  <data name="DialogName_TagManagerTagLoadError" xml:space="preserve">
+    <value>Tags could not be read</value>
+  </data>
+  <data name="DialogName_TagManagerLookupError" xml:space="preserve">
+    <value>Online lookup failed</value>
+  </data>
+  <data name="DialogName_TagManagerAutoLookupError" xml:space="preserve">
+    <value>Automatic online lookup failed</value>
+  </data>
+  <data name="DialogName_TagManagerPreviewError" xml:space="preserve">
+    <value>Rename preview failed</value>
+  </data>
+  <data name="DialogName_TagManagerRenamePartialError" xml:space="preserve">
+    <value>Rename only partly succeeded</value>
+  </data>
+  <data name="DialogName_TagManagerRenameError" xml:space="preserve">
+    <value>Rename failed</value>
+  </data>
+  <data name="DialogName_TagManagerSaveError" xml:space="preserve">
+    <value>Saving tags failed</value>
+  </data>
+  <data name="DialogName_TagManagerRemoveTagsError" xml:space="preserve">
+    <value>Removing tags failed</value>
+  </data>
+  <data name="DialogName_TagManagerCoverApplyAllError" xml:space="preserve">
+    <value>Applying the cover to all files failed</value>
+  </data>
+  <data name="DialogName_TagManagerApplyToAllError" xml:space="preserve">
+    <value>Applying the details to all files failed</value>
+  </data>
 </root>

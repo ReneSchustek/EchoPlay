@@ -1,3 +1,4 @@
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,7 +48,7 @@ namespace EchoPlay.App.Services
                 return true;
             }
 
-            await _errorDialogService.ShowAsync(_localizationService.Get("OfflineModeSearchHintTitle"), _localizationService.Get("OfflineModeSearchHintMessage"), cancellationToken);
+            await _errorDialogService.ShowAsync(_localizationService.Get("OfflineModeSearchHintTitle"), _localizationService.Get("OfflineModeSearchHintMessage"), DialogKey.OfflineModeSearchHint, cancellationToken);
             _ = _navigationService.GoBack();
             return false;
         }
@@ -63,7 +64,7 @@ namespace EchoPlay.App.Services
                 return true;
             }
 
-            await _errorDialogService.ShowAsync(_localizationService.Get("OnlineOnlyModeHintTitle"), _localizationService.Get("OnlineOnlyModeHintMessage"), cancellationToken);
+            await _errorDialogService.ShowAsync(_localizationService.Get("OnlineOnlyModeHintTitle"), _localizationService.Get("OnlineOnlyModeHintMessage"), DialogKey.OnlineOnlyModeHint, cancellationToken);
             _ = _navigationService.GoBack();
             return false;
         }

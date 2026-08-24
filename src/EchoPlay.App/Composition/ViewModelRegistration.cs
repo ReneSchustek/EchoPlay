@@ -141,6 +141,8 @@ namespace EchoPlay.App.Composition
                     provider.GetRequiredService<ILogViewerCoordinator>(),
                     provider.GetRequiredService<EchoPlay.Logger.Core.LoggerManager>(),
                     provider.GetRequiredService<StatusBarViewModel>(),
+                    provider.GetRequiredService<IDialogSuppressionService>(),
+                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
                     provider.GetRequiredService<ILanguageSwitchService>())));
 
             _ = services.AddTransient<ImportViewModel>(provider => new ImportViewModel(

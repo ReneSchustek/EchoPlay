@@ -500,6 +500,72 @@
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
+                        <!-- Ausgeblendete Hinweise -->
+                        <TextBlock
+                            x:Uid="SettingsHiddenDialogsHeading"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Margin="0,8,0,4"/>
+
+                        <TextBlock
+                            x:Uid="SettingsHiddenDialogsDescription"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <TextBlock
+                            x:Uid="SettingsHiddenDialogsEmpty"
+                            Visibility="{x:Bind ViewModel.HiddenDialogsVM.EmptyHintVisibility, Mode=OneWay}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"
+                            Margin="0,4,0,0"/>
+
+                        <ItemsControl
+                            ItemsSource="{x:Bind ViewModel.HiddenDialogsVM.Items, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.HiddenDialogsVM.ListVisibility, Mode=OneWay}"
+                            Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:HiddenDialogItemViewModel">
+                                    <Grid ColumnSpacing="12" Margin="0,6,0,6"
+                                          AutomationProperties.Name="{x:Bind DisplayName}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{x:Bind DisplayName}" TextWrapping="Wrap"/>
+                                            <TextBlock
+                                                Text="{x:Bind SuppressedAtText}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock
+                                                x:Uid="SettingsHiddenDialogsIrreversibleNote"
+                                                Visibility="{x:Bind IrreversibleVisibility}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                TextWrapping="Wrap"/>
+                                        </StackPanel>
+
+                                        <Button
+                                            x:Uid="SettingsHiddenDialogsRestoreButton"
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Command="{x:Bind RestoreCommand}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Button
+                            x:Uid="SettingsHiddenDialogsRestoreAllButton"
+                            Visibility="{x:Bind ViewModel.HiddenDialogsVM.ListVisibility, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.HiddenDialogsVM.IsNotBusy, Mode=OneWay}"
+                            Margin="0,8,0,0"
+                            Click="OnRestoreAllHiddenDialogsClick"/>
+
+                        <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
+
                         <!-- Bibliothek zurücksetzen -->
                         <TextBlock
                             x:Uid="DbResetHeading"

@@ -1,4 +1,5 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
 using System;
 using System.Collections.Generic;
@@ -85,7 +86,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerFolderLoadErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerFolderLoadErrorTitle"), ex.Message, DialogKey.TagManagerFolderLoadError);
             }
             finally
             {
@@ -115,7 +116,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message, DialogKey.TagManagerTagLoadError);
             }
             finally
             {
@@ -152,7 +153,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message, DialogKey.TagManagerTagLoadError);
             }
             finally
             {

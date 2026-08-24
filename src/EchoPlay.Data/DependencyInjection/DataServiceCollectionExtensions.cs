@@ -45,6 +45,7 @@ namespace EchoPlay.Data.DependencyInjection
             _ = services.AddScoped<ICoverCopyService, CoverCopyService>();
             _ = services.AddScoped<ICoverImageDataService, CoverImageDataService>();
             _ = services.AddScoped<ISecureSettingsDataService, SecureSettingsDataService>();
+            _ = services.AddScoped<IDialogSuppressionDataService, DialogSuppressionDataService>();
 
             return services;
         }

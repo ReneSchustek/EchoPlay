@@ -1,6 +1,7 @@
 using EchoPlay.App.Composition;
 using EchoPlay.App.Services;
 using EchoPlay.App.Startup;
+using EchoPlay.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
@@ -247,7 +248,7 @@ namespace EchoPlay.App
             {
                 ErrorDialogService errorDialog = Services.GetRequiredService<ErrorDialogService>();
                 string messageFormat = EchoPlay.App.Helpers.SafeResourceLoader.Get("UnexpectedErrorMessage");
-                await errorDialog.ShowAsync(
+                await errorDialog.ShowAlwaysAsync(
                     EchoPlay.App.Helpers.SafeResourceLoader.Get("UnexpectedErrorTitle"),
                     string.Format(System.Globalization.CultureInfo.CurrentCulture, messageFormat, message));
             }

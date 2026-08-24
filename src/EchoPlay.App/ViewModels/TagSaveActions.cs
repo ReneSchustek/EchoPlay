@@ -1,4 +1,5 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
 using System;
 using System.Collections.Generic;
@@ -73,7 +74,7 @@ namespace EchoPlay.App.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerSaveErrorTitle"), ex.Message);
+                    await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerSaveErrorTitle"), ex.Message, DialogKey.TagManagerSaveError);
                 }
 
                 return;
@@ -96,6 +97,7 @@ namespace EchoPlay.App.ViewModels
                     file.IsModified = false;
                 },
                 SafeResourceLoader.Get("TagManagerSaveErrorTitle"),
+                DialogKey.TagManagerSaveError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
 
             _setHasUnsavedChanges(false);
@@ -124,7 +126,8 @@ namespace EchoPlay.App.ViewModels
                         "TagManagerSaveAllConfirmMessagePlural",
                         "{0} geänderte Datei wird gespeichert.",
                         "{0} geänderte Dateien werden gespeichert."),
-                    modifiedFiles.Count));
+                    modifiedFiles.Count),
+                DialogKey.TagManagerSaveAll);
 
             if (!confirmed)
             {
@@ -142,6 +145,7 @@ namespace EchoPlay.App.ViewModels
                     file.IsModified = false;
                 },
                 SafeResourceLoader.Get("TagManagerSaveErrorTitle"),
+                DialogKey.TagManagerSaveError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
 
             _setHasUnsavedChanges(false);
@@ -161,7 +165,8 @@ namespace EchoPlay.App.ViewModels
 
             bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("TagManagerRemoveAllTitle"),
-                string.Format(CultureInfo.CurrentCulture, SafeResourceLoader.Get("TagManagerRemoveAllMessage"), _fileListVM.SelectedFile.FileName));
+                string.Format(CultureInfo.CurrentCulture, SafeResourceLoader.Get("TagManagerRemoveAllMessage"), _fileListVM.SelectedFile.FileName),
+                DialogKey.TagManagerRemoveAll);
 
             if (!confirmed)
             {
@@ -178,7 +183,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerRemoveTagsErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerRemoveTagsErrorTitle"), ex.Message, DialogKey.TagManagerRemoveTagsError);
             }
         }
     }

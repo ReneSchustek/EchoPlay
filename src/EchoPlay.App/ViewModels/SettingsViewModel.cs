@@ -2,6 +2,7 @@ using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Analysis;
@@ -68,6 +69,11 @@ namespace EchoPlay.App.ViewModels
                 context.SyncService, context.ErrorDialogService, context.PatternAnalyzer, OnSubVmUserEdit);
             MaintenanceVM = new MaintenanceSettingsViewModel(
                 context.ScopeFactory, context.LogViewerCoordinator, OnSubVmUserEdit);
+
+            // Ohne Änderungs-Rückruf: Ausblenden und Zurückholen wirken sofort und hängen
+            // nicht am gemeinsamen Speichern-Knopf der Seite.
+            HiddenDialogsVM = new HiddenDialogsViewModel(
+                context.SuppressionService, context.LocalizationService, context.LoggerFactory);
         }
 
         // ── Sub-VMs ─────────────────────────────────────────────────────────────
@@ -83,6 +89,9 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Sub-VM für Verwaltung + Protokolle (Cache, Purge, Reset, Log-Viewer).</summary>
         public MaintenanceSettingsViewModel MaintenanceVM { get; }
+
+        /// <summary>Sub-VM für die Liste der dauerhaft ausgeblendeten Hinweise.</summary>
+        public HiddenDialogsViewModel HiddenDialogsVM { get; }
 
         // ── Top-VM-State ────────────────────────────────────────────────────────
 
@@ -142,6 +151,8 @@ namespace EchoPlay.App.ViewModels
 
                 // Log-Dateien asynchron laden – darf ruhig parallel zur restlichen Initialisierung laufen
                 await MaintenanceVM.LoadLogFilesAsync();
+
+                await HiddenDialogsVM.LoadAsync();
             }
             finally
             {
@@ -165,7 +176,8 @@ namespace EchoPlay.App.ViewModels
 
             bool shouldSave = await _confirmationDialogService.ConfirmAsync(
                 _localizationService.Get("UnsavedSettingsDialogTitle"),
-                _localizationService.Get("UnsavedSettingsDialogMessage"));
+                _localizationService.Get("UnsavedSettingsDialogMessage"),
+                DialogKey.UnsavedSettings);
 
             if (shouldSave)
             {
@@ -218,7 +230,8 @@ namespace EchoPlay.App.ViewModels
             {
                 await _errorDialogService.ShowAsync(
                     SafeResourceLoader.Get("NoProviderHintTitle", "Kein Provider"),
-                    SafeResourceLoader.Get("NoProviderHintMessage", "Kein Online-Provider konfiguriert."));
+                    SafeResourceLoader.Get("NoProviderHintMessage", "Kein Online-Provider konfiguriert."),
+                    DialogKey.NoProviderHint);
             }
         }
 
@@ -251,7 +264,8 @@ namespace EchoPlay.App.ViewModels
 
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 _localizationService.Get("LanguageRestartTitle"),
-                _localizationService.Get("LanguageRestartMessage"));
+                _localizationService.Get("LanguageRestartMessage"),
+                DialogKey.LanguageRestart);
 
             if (!confirmed)
             {
@@ -287,7 +301,8 @@ namespace EchoPlay.App.ViewModels
                 // darf nicht im Glauben bleiben, die Auswahl sei verloren.
                 await _errorDialogService.ShowAsync(
                     _localizationService.Get("LanguageRestartTitle"),
-                    _localizationService.Get("LanguageRestartManualMessage"));
+                    _localizationService.Get("LanguageRestartManualMessage"),
+                    DialogKey.LanguageRestartManual);
             }
         }
 

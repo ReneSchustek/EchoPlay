@@ -1,5 +1,6 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,7 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<TagFileItemViewModel> files,
             Func<TagFileItemViewModel, Task> perFile,
             string errorTitle,
+            DialogKey errorKey,
             IErrorDialogService errorDialogService,
             Action<bool> setIsLoading,
             Action<string> setBatchProgress)
@@ -46,7 +48,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await errorDialogService.ShowAsync(errorTitle, ex.Message);
+                await errorDialogService.ShowAsync(errorTitle, ex.Message, errorKey);
             }
             finally
             {

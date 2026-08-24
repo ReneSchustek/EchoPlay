@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +16,14 @@ namespace EchoPlay.App.Tests.Fakes
         public int AttemptCount { get; private set; }
 
         /// <inheritdoc/>
-        public Task ShowAsync(string title, string message, CancellationToken cancellationToken = default)
+        public Task ShowAsync(string title, string message, DialogKey key, CancellationToken cancellationToken = default)
+        {
+            AttemptCount++;
+            throw new InvalidOperationException("Der Dialog konnte nicht angezeigt werden.");
+        }
+
+        /// <inheritdoc/>
+        public Task ShowAlwaysAsync(string title, string message, CancellationToken cancellationToken = default)
         {
             AttemptCount++;
             throw new InvalidOperationException("Der Dialog konnte nicht angezeigt werden.");

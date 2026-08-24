@@ -1,5 +1,6 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -87,7 +88,7 @@ namespace EchoPlay.App.ViewModels
                 ? string.Format(CultureInfo.CurrentCulture, _localizationService.Get("FavoriteRemoveMessage"), SeriesName)
                 : $"\u201E{SeriesName}\u201C wird nicht mehr als Favorit angezeigt.";
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(title, message);
+            bool confirmed = await _confirmationDialogService.ConfirmAsync(title, message, DialogKey.FavoriteRemove);
 
             if (!confirmed)
             {

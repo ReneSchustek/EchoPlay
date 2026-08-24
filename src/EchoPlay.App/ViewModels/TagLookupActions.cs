@@ -1,5 +1,6 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
+using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
 using System;
 using System.Collections.Generic;
@@ -134,7 +135,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerLookupErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerLookupErrorTitle"), ex.Message, DialogKey.TagManagerLookupError);
             }
             finally
             {
@@ -204,7 +205,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 _setAutoLookupStatus(string.Empty);
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerAutoLookupErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerAutoLookupErrorTitle"), ex.Message, DialogKey.TagManagerAutoLookupError);
             }
             finally
             {
@@ -235,7 +236,8 @@ namespace EchoPlay.App.ViewModels
                         "TagManagerApplyToAllConfirmMessagePlural",
                         "Album, Künstler, Jahr, Genre und TrackCount werden für {0} Datei überschrieben. Title und Tracknummer bleiben erhalten.",
                         "Album, Künstler, Jahr, Genre und TrackCount werden für {0} Dateien überschrieben. Title und Tracknummer bleiben erhalten."),
-                    _fileListVM.Files.Count));
+                    _fileListVM.Files.Count),
+                DialogKey.TagManagerApplyToAll);
 
             if (!confirmed)
             {
@@ -252,6 +254,7 @@ namespace EchoPlay.App.ViewModels
                     file.IsModified = false;
                 },
                 SafeResourceLoader.Get("TagManagerApplyToAllErrorTitle"),
+                DialogKey.TagManagerApplyToAllError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
 
             _editorVM.ClearPendingBatchTag();

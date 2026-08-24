@@ -25,6 +25,8 @@ namespace EchoPlay.App.ViewModels
     /// <param name="LogViewerCoordinator">Kapselt Datei- und Speicherzugriff der Protokollansicht.</param>
     /// <param name="LoggerManager">Wird nach dem Speichern mit den neuen Werten versorgt.</param>
     /// <param name="StatusBar">Wird über ungespeicherte Änderungen informiert.</param>
+    /// <param name="SuppressionService">Kennt die dauerhaft ausgeblendeten Hinweise.</param>
+    /// <param name="LoggerFactory">Protokolliert, was die Schaltflächen der Hinweisliste nebenher tun.</param>
     /// <param name="LanguageSwitchService">Kapselt Ablage, Sprachvorgabe und Neustart. Nullable für Tests.</param>
     internal sealed record SettingsViewModelContext(
         IServiceScopeFactory ScopeFactory,
@@ -40,5 +42,7 @@ namespace EchoPlay.App.ViewModels
         ILogViewerCoordinator LogViewerCoordinator,
         LoggerManager LoggerManager,
         StatusBarViewModel StatusBar,
+        IDialogSuppressionService SuppressionService,
+        EchoPlay.Logger.Abstractions.ILoggerFactory LoggerFactory,
         ILanguageSwitchService? LanguageSwitchService = null);
 }

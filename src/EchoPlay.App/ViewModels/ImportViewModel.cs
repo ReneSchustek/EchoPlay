@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -156,7 +157,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportError"), ex.Message);
-                await _errorDialogService.ShowAsync(_localizationService.Get("ImportSearchFailedTitle"), ex.Message);
+                await _errorDialogService.ShowAsync(_localizationService.Get("ImportSearchFailedTitle"), ex.Message, DialogKey.ImportSearchFailed);
             }
             finally
             {
@@ -205,7 +206,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportError"), ex.Message);
-                await _errorDialogService.ShowAsync(_localizationService.Get("ImportFailedTitle"), ex.Message);
+                await _errorDialogService.ShowAsync(_localizationService.Get("ImportFailedTitle"), ex.Message, DialogKey.ImportFailed);
             }
             finally
             {

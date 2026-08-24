@@ -449,7 +449,10 @@ namespace EchoPlay.App.ViewModels
                     return;
                 }
 
-                // Ab hier UI-Thread – BitmapImage und InMemoryRandomAccessStream sind nicht thread-sicher
+                // Ab hier UI-Thread, und zwar wegen BitmapImage: Als DependencyObject aus
+                // Microsoft.UI.* gehört es dem Thread, auf dem es entsteht. Der Stream aus
+                // Windows.Storage.Streams ist systemweit registriert und liefe überall — er
+                // entsteht hier nur, weil er einzig hier gebraucht wird.
                 using Windows.Storage.Streams.InMemoryRandomAccessStream randomAccessStream = new();
                 using Windows.Storage.Streams.DataWriter writer = new(randomAccessStream.GetOutputStreamAt(0));
                 writer.WriteBytes(imageData);

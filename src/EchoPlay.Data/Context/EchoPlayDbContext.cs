@@ -48,6 +48,9 @@ namespace EchoPlay.Data.Context
         /// <summary>Gemerkte Serientitel mit aktiver Neuerscheinungs-Überwachung.</summary>
         public DbSet<WatchedTitle> WatchedTitles => Set<WatchedTitle>();
 
+        /// <summary>Dauerhaft ausgeblendete Dialoge.</summary>
+        public DbSet<DialogSuppression> DialogSuppressions => Set<DialogSuppression>();
+
         /// <summary>
         /// Konfiguriert das Modell beim Erstellen.
         /// Wendet Fluent-API-Konfigurationen und globale Filter an.
@@ -73,6 +76,7 @@ namespace EchoPlay.Data.Context
             _ = modelBuilder.Entity<CachedNewRelease>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<CoverImage>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<SecureSetting>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<DialogSuppression>().HasQueryFilter(entity => !entity.IsDeleted);
         }
     }
 }

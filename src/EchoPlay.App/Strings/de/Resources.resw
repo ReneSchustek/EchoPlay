@@ -1988,4 +1988,169 @@ Die Anwendung wird beendet.</value>
   <data name="PlayerEpisodeProgressFormat" xml:space="preserve">
     <value>Ganze Folge: {0} von {1}</value>
   </data>
+  <!-- Ausgeblendete Hinweise -->
+  <data name="DialogSuppressHintCheckBox" xml:space="preserve">
+    <value>Diesen Hinweis nicht mehr anzeigen</value>
+  </data>
+  <data name="DialogSuppressConfirmCheckBox" xml:space="preserve">
+    <value>Nicht mehr nachfragen, künftig sofort ausführen</value>
+  </data>
+  <data name="SettingsHiddenDialogsHeading.Text" xml:space="preserve">
+    <value>Ausgeblendete Hinweise</value>
+  </data>
+  <data name="SettingsHiddenDialogsDescription.Text" xml:space="preserve">
+    <value>Dialoge, die über das Häkchen „nicht wieder anzeigen" abgestellt wurden. Zurückgeholte Hinweise erscheinen wieder wie beim ersten Mal.</value>
+  </data>
+  <data name="SettingsHiddenDialogsEmpty.Text" xml:space="preserve">
+    <value>Zurzeit ist kein Hinweis ausgeblendet.</value>
+  </data>
+  <data name="SettingsHiddenDialogsRestoreButton.Content" xml:space="preserve">
+    <value>Wieder anzeigen</value>
+  </data>
+  <data name="SettingsHiddenDialogsRestoreAllButton.Content" xml:space="preserve">
+    <value>Alle wieder anzeigen</value>
+  </data>
+  <data name="SettingsHiddenDialogsIrreversibleNote.Text" xml:space="preserve">
+    <value>Diese Aktion schreibt Dateien ohne Rückweg.</value>
+  </data>
+
+  <!-- Sprechende Namen der ausblendbaren Dialoge -->
+  <data name="DialogName_EpisodeCoverOverwrite" xml:space="preserve">
+    <value>Folgen-Cover überschreiben</value>
+  </data>
+  <data name="DialogName_OfflineOnlineAccess" xml:space="preserve">
+    <value>Trotz Offline-Modus online gehen</value>
+  </data>
+  <data name="DialogName_FavoriteRemove" xml:space="preserve">
+    <value>Serie aus den Favoriten entfernen</value>
+  </data>
+  <data name="DialogName_SeriesRemoveFromLibrary" xml:space="preserve">
+    <value>Serie aus der Mediathek entfernen</value>
+  </data>
+  <data name="DialogName_SeriesDeleteFromDisk" xml:space="preserve">
+    <value>Serie von der Festplatte löschen</value>
+  </data>
+  <data name="DialogName_LibraryReinit" xml:space="preserve">
+    <value>Mediathek neu aufbauen</value>
+  </data>
+  <data name="DialogName_EpisodeMarkPlayed" xml:space="preserve">
+    <value>Folge als gehört markieren</value>
+  </data>
+  <data name="DialogName_EpisodeMarkUnplayed" xml:space="preserve">
+    <value>Folge als ungehört markieren</value>
+  </data>
+  <data name="DialogName_OnlineRemoveSeries" xml:space="preserve">
+    <value>Serie aus der Online-Mediathek entfernen</value>
+  </data>
+  <data name="DialogName_OnlineSubscribe" xml:space="preserve">
+    <value>Serie überwachen</value>
+  </data>
+  <data name="DialogName_OnlineUnsubscribe" xml:space="preserve">
+    <value>Überwachung einer Serie beenden</value>
+  </data>
+  <data name="DialogName_UnsavedSettings" xml:space="preserve">
+    <value>Einstellungen mit ungespeicherten Änderungen verlassen</value>
+  </data>
+  <data name="DialogName_LanguageRestart" xml:space="preserve">
+    <value>Neustart für den Sprachwechsel</value>
+  </data>
+  <data name="DialogName_TagManagerCoverApplyAll" xml:space="preserve">
+    <value>Cover auf alle Dateien schreiben</value>
+  </data>
+  <data name="DialogName_TagManagerApplyToAll" xml:space="preserve">
+    <value>Angaben auf alle Dateien übernehmen</value>
+  </data>
+  <data name="DialogName_TagManagerRename" xml:space="preserve">
+    <value>Dateien umbenennen</value>
+  </data>
+  <data name="DialogName_TagManagerSaveAll" xml:space="preserve">
+    <value>Alle geänderten Dateien speichern</value>
+  </data>
+  <data name="DialogName_TagManagerRemoveAll" xml:space="preserve">
+    <value>Alle Tags einer Datei entfernen</value>
+  </data>
+  <data name="DialogName_CoverDownloadFailed" xml:space="preserve">
+    <value>Cover konnte nicht geladen werden</value>
+  </data>
+  <data name="DialogName_OfflineModeSearchHint" xml:space="preserve">
+    <value>Hinweis zum Offline-Modus</value>
+  </data>
+  <data name="DialogName_OnlineOnlyModeHint" xml:space="preserve">
+    <value>Hinweis zum Nur-Online-Modus</value>
+  </data>
+  <data name="DialogName_ImportSearchFailed" xml:space="preserve">
+    <value>Suche vor dem Import fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_ImportFailed" xml:space="preserve">
+    <value>Import fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_LibraryScanFailed" xml:space="preserve">
+    <value>Einlesen der Mediathek fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_LibraryReinitFailed" xml:space="preserve">
+    <value>Neuaufbau der Mediathek fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_LocalLibrarySyncFailed" xml:space="preserve">
+    <value>Abgleich der Mediathek fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_EpisodeNotAvailable" xml:space="preserve">
+    <value>Folge noch nicht verfügbar</value>
+  </data>
+  <data name="DialogName_EpisodeNotPlayable" xml:space="preserve">
+    <value>Folge nicht abspielbar</value>
+  </data>
+  <data name="DialogName_OnlineRefreshFailed" xml:space="preserve">
+    <value>Aktualisieren der Online-Serien fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_OnlineSearchFailed" xml:space="preserve">
+    <value>Online-Suche fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_OnlineImportFailed" xml:space="preserve">
+    <value>Import aus der Online-Suche fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_NoProviderHint" xml:space="preserve">
+    <value>Hinweis: kein Anbieter eingerichtet</value>
+  </data>
+  <data name="DialogName_LanguageRestartManual" xml:space="preserve">
+    <value>Neustart von Hand nötig</value>
+  </data>
+  <data name="DialogName_TagManagerNoResults" xml:space="preserve">
+    <value>Online-Abfrage ohne Treffer</value>
+  </data>
+  <data name="DialogName_TagManagerCoverRemoveError" xml:space="preserve">
+    <value>Cover konnte nicht entfernt werden</value>
+  </data>
+  <data name="DialogName_TagManagerFolderLoadError" xml:space="preserve">
+    <value>Ordner konnte nicht gelesen werden</value>
+  </data>
+  <data name="DialogName_TagManagerTagLoadError" xml:space="preserve">
+    <value>Tags konnten nicht gelesen werden</value>
+  </data>
+  <data name="DialogName_TagManagerLookupError" xml:space="preserve">
+    <value>Online-Abfrage fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerAutoLookupError" xml:space="preserve">
+    <value>Selbsttätige Online-Abfrage fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerPreviewError" xml:space="preserve">
+    <value>Vorschau der Umbenennung fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerRenamePartialError" xml:space="preserve">
+    <value>Umbenennung nur teilweise gelungen</value>
+  </data>
+  <data name="DialogName_TagManagerRenameError" xml:space="preserve">
+    <value>Umbenennung fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerSaveError" xml:space="preserve">
+    <value>Speichern der Tags fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerRemoveTagsError" xml:space="preserve">
+    <value>Entfernen der Tags fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerCoverApplyAllError" xml:space="preserve">
+    <value>Cover-Übernahme auf alle Dateien fehlgeschlagen</value>
+  </data>
+  <data name="DialogName_TagManagerApplyToAllError" xml:space="preserve">
+    <value>Übernahme der Angaben auf alle Dateien fehlgeschlagen</value>
+  </data>
 </root>

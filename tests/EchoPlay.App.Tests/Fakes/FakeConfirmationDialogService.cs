@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +25,9 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Meldungstext des zuletzt angefragten Dialogs.</summary>
         public string? LastMessage { get; private set; }
 
+        /// <summary>Kennung des zuletzt angefragten Dialogs.</summary>
+        public DialogKey LastKey { get; private set; }
+
         /// <summary>
         /// Initialisiert den Fake mit dem zu liefernden Ergebnis.
         /// </summary>
@@ -37,11 +41,12 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default)
+        public Task<bool> ConfirmAsync(string title, string message, DialogKey key, CancellationToken cancellationToken = default)
         {
             CallCount++;
             LastTitle = title;
             LastMessage = message;
+            LastKey = key;
             return Task.FromResult(_result);
         }
     }

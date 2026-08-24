@@ -1,4 +1,5 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.Core.Models;
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -60,7 +61,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerCoverRemoveErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerCoverRemoveErrorTitle"), ex.Message, DialogKey.TagManagerCoverRemoveError);
             }
         }
 
@@ -85,7 +86,8 @@ namespace EchoPlay.App.ViewModels
                         "TagManagerCoverApplyAllConfirmMessagePlural",
                         "Das aktuelle Cover wird in {0} Datei geschrieben.",
                         "Das aktuelle Cover wird in {0} Dateien geschrieben."),
-                    _fileListVM.Files.Count));
+                    _fileListVM.Files.Count),
+                DialogKey.TagManagerCoverApplyAll);
 
             if (!confirmed)
             {
@@ -99,6 +101,7 @@ namespace EchoPlay.App.ViewModels
                 _fileListVM.Files,
                 file => _ctx.TagService.WriteCoverAsync(file.FilePath, imageData, mimeType),
                 SafeResourceLoader.Get("TagManagerCoverApplyAllErrorTitle"),
+                DialogKey.TagManagerCoverApplyAllError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
         }
     }

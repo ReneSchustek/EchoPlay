@@ -3,6 +3,7 @@ using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
@@ -379,7 +380,8 @@ namespace EchoPlay.App.ViewModels
                 await _errorDialogService.ShowAsync(
                     _localizationService?.Get("EpisodeNotAvailableTitle") ?? "Noch nicht verfügbar",
                     _localizationService?.Get("EpisodeNotAvailableMessage")
-                        ?? "Diese Episode ist noch nicht lokal verfügbar und kann noch nicht abgespielt werden.");
+                        ?? "Diese Episode ist noch nicht lokal verfügbar und kann noch nicht abgespielt werden.",
+                    DialogKey.EpisodeNotAvailable);
                 return;
             }
 
@@ -397,7 +399,8 @@ namespace EchoPlay.App.ViewModels
             await _errorDialogService.ShowAsync(
                 _localizationService?.Get("EpisodeNotPlayableTitle") ?? "Nicht abspielbar",
                 _localizationService?.Get("EpisodeNotPlayableMessage")
-                    ?? "Diese Folge liegt nicht auf diesem Rechner, und es ist kein Anbieter hinterlegt, bei dem sie geöffnet werden könnte.");
+                    ?? "Diese Folge liegt nicht auf diesem Rechner, und es ist kein Anbieter hinterlegt, bei dem sie geöffnet werden könnte.",
+                DialogKey.EpisodeNotPlayable);
         }
 
         /// <summary>
@@ -408,7 +411,8 @@ namespace EchoPlay.App.ViewModels
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("EpisodeMarkPlayedTitle"),
-                SafeResourceLoader.Get("EpisodeMarkPlayedMessage"));
+                SafeResourceLoader.Get("EpisodeMarkPlayedMessage"),
+                DialogKey.EpisodeMarkPlayed);
 
             if (!confirmed)
             {
@@ -432,7 +436,8 @@ namespace EchoPlay.App.ViewModels
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("EpisodeMarkUnplayedTitle"),
-                SafeResourceLoader.Get("EpisodeMarkUnplayedMessage"));
+                SafeResourceLoader.Get("EpisodeMarkUnplayedMessage"),
+                DialogKey.EpisodeMarkUnplayed);
 
             if (!confirmed)
             {

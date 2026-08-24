@@ -1,6 +1,7 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
+using EchoPlay.Core.Models;
 using EchoPlay.Core;
 using EchoPlay.Core.Security;
 using EchoPlay.Data.Entities.Settings;
@@ -113,7 +114,7 @@ namespace EchoPlay.App.Services
             byte[]? bytes = await _coverDownloader.DownloadAsync(hit.FullUrl, cancellationToken);
             if (bytes is null)
             {
-                await _errorDialogService.ShowAsync(_localizationService.Get("CoverDownloadFailedTitle"), _localizationService.Get("CoverDownloadFailedMessage"), cancellationToken);
+                await _errorDialogService.ShowAsync(_localizationService.Get("CoverDownloadFailedTitle"), _localizationService.Get("CoverDownloadFailedMessage"), DialogKey.CoverDownloadFailed, cancellationToken);
                 return;
             }
 
@@ -130,7 +131,7 @@ namespace EchoPlay.App.Services
             byte[]? bytes = await _coverDownloader.DownloadAsync(hit.FullUrl, cancellationToken);
             if (bytes is null)
             {
-                await _errorDialogService.ShowAsync(_localizationService.Get("CoverDownloadFailedTitle"), _localizationService.Get("CoverDownloadFailedMessage"), cancellationToken);
+                await _errorDialogService.ShowAsync(_localizationService.Get("CoverDownloadFailedTitle"), _localizationService.Get("CoverDownloadFailedMessage"), DialogKey.CoverDownloadFailed, cancellationToken);
                 return;
             }
 
@@ -150,7 +151,7 @@ namespace EchoPlay.App.Services
                 return true;
             }
 
-            return await _confirmationDialogService.ConfirmAsync(SafeResourceLoader.Get("EpisodeCoverOverwriteTitle"), SafeResourceLoader.Get("EpisodeCoverOverwriteMessage"), cancellationToken);
+            return await _confirmationDialogService.ConfirmAsync(SafeResourceLoader.Get("EpisodeCoverOverwriteTitle"), SafeResourceLoader.Get("EpisodeCoverOverwriteMessage"), DialogKey.EpisodeCoverOverwrite, cancellationToken);
         }
 
         /// <summary>

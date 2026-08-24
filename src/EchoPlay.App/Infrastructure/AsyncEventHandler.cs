@@ -1,3 +1,4 @@
+using EchoPlay.Core.Models;
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -68,7 +69,7 @@ namespace EchoPlay.App.Infrastructure
                 logger.Warning("Handler '{OperationName}' fehlgeschlagen: {Reason}", operationName, ex.Message);
                 try
                 {
-                    await errorDialog.ShowAsync(
+                    await errorDialog.ShowAlwaysAsync(
                         "Aktion fehlgeschlagen",
                         $"Beim Ausführen der Aktion ist ein Fehler aufgetreten:\n\n{ex.Message}")
                         .ConfigureAwait(true);

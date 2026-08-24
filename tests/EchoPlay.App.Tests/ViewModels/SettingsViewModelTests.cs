@@ -80,7 +80,9 @@ namespace EchoPlay.App.Tests.ViewModels
                 resolvedOptionsProvider,
                 logViewerCoordinator ?? new FakeLogViewerCoordinator(),
                 BuildLoggerManager(),
-                BuildStatusBar(scopeFactory)));
+                BuildStatusBar(scopeFactory),
+                new FakeDialogSuppressionService(),
+                new FakeLoggerFactory()));
         }
 
         [Fact]

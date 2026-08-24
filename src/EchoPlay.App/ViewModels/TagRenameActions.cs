@@ -1,4 +1,5 @@
 using EchoPlay.App.Helpers;
+using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
 using System;
 using System.Collections.Generic;
@@ -67,7 +68,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerPreviewErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerPreviewErrorTitle"), ex.Message, DialogKey.TagManagerPreviewError);
             }
             finally
             {
@@ -99,7 +100,8 @@ namespace EchoPlay.App.ViewModels
                         "TagManagerRenameConfirmMessagePlural",
                         "{0} Datei wird nach dem Muster „{1}\" umbenannt. Dieser Vorgang kann nicht rückgängig gemacht werden.",
                         "{0} Dateien werden nach dem Muster „{1}\" umbenannt. Dieser Vorgang kann nicht rückgängig gemacht werden."),
-                    previewCount, _renameVM.RenamePattern));
+                    previewCount, _renameVM.RenamePattern),
+                DialogKey.TagManagerRename);
 
             if (!confirmed)
             {
@@ -129,12 +131,13 @@ namespace EchoPlay.App.ViewModels
                                 "TagManagerRenamePartialErrorMessagePlural",
                                 "{0} von {1} Datei wurde umbenannt. Details im Protokoll.",
                                 "{0} von {1} Dateien wurden umbenannt. Details im Protokoll."),
-                            renamedCount, previewCount));
+                            renamedCount, previewCount),
+                        DialogKey.TagManagerRenamePartialError);
                 }
             }
             catch (Exception ex)
             {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerRenameErrorTitle"), ex.Message);
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerRenameErrorTitle"), ex.Message, DialogKey.TagManagerRenameError);
             }
             finally
             {

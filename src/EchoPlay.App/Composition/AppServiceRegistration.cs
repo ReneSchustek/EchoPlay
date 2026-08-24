@@ -98,6 +98,10 @@ namespace EchoPlay.App.Composition
             // Die Ressourcen-Instanz ist threadsicher und teuer zu erzeugen.
             _ = services.AddSingleton<ILocalizationService, LocalizationService>();
 
+            // Kennt die dauerhaft ausgeblendeten Dialoge und hält sie im Speicher. Muss vor
+            // den beiden Dialogdiensten stehen, die ihn bei jedem Hinweis befragen.
+            _ = services.AddSingleton<IDialogSuppressionService, DialogSuppressionService>();
+
             _ = services.AddSingleton<IErrorDialogService, ErrorDialogService>();
             _ = services.AddSingleton<ErrorDialogService>(provider =>
                 (ErrorDialogService)provider.GetRequiredService<IErrorDialogService>());

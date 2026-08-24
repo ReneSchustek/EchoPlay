@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
+using EchoPlay.Core.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -296,7 +297,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineImportFailedTitle"), ex.Message);
+                    _localizationService.Get("OnlineImportFailedTitle"), ex.Message, DialogKey.OnlineImportFailed);
             }
             finally
             {

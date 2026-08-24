@@ -1,3 +1,4 @@
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,7 +75,8 @@ namespace EchoPlay.App.ViewModels
                 string.Format(
                     CultureInfo.CurrentCulture,
                     _ctx.LocalizationService.Get("OnlineRemoveSeriesDialogMessage"),
-                    card.Title));
+                    card.Title),
+                DialogKey.OnlineRemoveSeries);
 
             if (!confirmed)
             {
@@ -177,7 +179,7 @@ namespace EchoPlay.App.ViewModels
             catch (Exception ex)
             {
                 await _ctx.ErrorDialogService.ShowAsync(
-                    _ctx.LocalizationService.Get("OnlineRefreshFailedTitle"), ex.Message);
+                    _ctx.LocalizationService.Get("OnlineRefreshFailedTitle"), ex.Message, DialogKey.OnlineRefreshFailed);
             }
             finally
             {

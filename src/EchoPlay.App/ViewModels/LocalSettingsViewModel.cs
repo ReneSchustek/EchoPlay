@@ -2,6 +2,7 @@ using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.LocalLibrary.Analysis;
 using EchoPlay.LocalLibrary.Scanning;
@@ -261,7 +262,7 @@ namespace EchoPlay.App.ViewModels
             {
                 string syncFailed = SafeResourceLoader.Get("SyncFailed", "Sync fehlgeschlagen");
                 SyncStatusText = $"{syncFailed}: {ex.Message}";
-                await _errorDialogService.ShowAsync(syncFailed, ex.Message);
+                await _errorDialogService.ShowAsync(syncFailed, ex.Message, DialogKey.LocalLibrarySyncFailed);
             }
             finally
             {

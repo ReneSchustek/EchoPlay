@@ -1,6 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
+using EchoPlay.Core.Models;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -164,7 +165,9 @@ namespace EchoPlay.App.ViewModels
                 : string.Format(System.Globalization.CultureInfo.CurrentCulture,
                     _localizationService.Get("OnlineUnsubscribeDialogMessage"), Title);
 
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(title, message);
+            DialogKey key = shouldSubscribe ? DialogKey.OnlineSubscribe : DialogKey.OnlineUnsubscribe;
+
+            bool confirmed = await _confirmationDialogService.ConfirmAsync(title, message, key);
 
             if (!confirmed)
             {

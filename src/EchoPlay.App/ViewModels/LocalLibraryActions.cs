@@ -257,7 +257,8 @@ namespace EchoPlay.App.ViewModels
             using IDisposable ua = UserActionScope.BeginUserAction("DeleteSeriesFromLibrary");
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("SeriesRemoveFromLibraryTitle"),
-                SafeResourceLoader.Get("SeriesRemoveFromLibraryMessage"));
+                SafeResourceLoader.Get("SeriesRemoveFromLibraryMessage"),
+                DialogKey.SeriesRemoveFromLibrary);
 
             if (!confirmed)
             {
@@ -281,7 +282,8 @@ namespace EchoPlay.App.ViewModels
             using IDisposable ua = UserActionScope.BeginUserAction("DeleteSeriesFromDisk");
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("SeriesDeleteFromDiskTitle"),
-                SafeResourceLoader.Get("SeriesDeleteFromDiskMessage"));
+                SafeResourceLoader.Get("SeriesDeleteFromDiskMessage"),
+                DialogKey.SeriesDeleteFromDisk);
 
             if (!confirmed)
             {

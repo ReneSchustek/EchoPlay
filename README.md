@@ -54,6 +54,7 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 - **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases. Der Download läuft nur über HTTPS von einem GitHub-Release-Host, und die Setup-Datei muss gegen den SHA-256-Hash aus dem Release-Body passen. Fehlt der Hash, wird nicht installiert.
 - **Statistik** – Sammlungsübersicht, Hörfortschritt, Kennzahlen.
 - **Kontexthilfe** – TeachingTips auf jeder Seite für neue Nutzer.
+- **Hinweise dauerhaft ausblenden** – Jeder Hinweis und jede Rückfrage trägt ein Häkchen „nicht wieder anzeigen". Bei Rückfragen wird nur eine Zustimmung gemerkt: Wer abbricht, wird beim nächsten Mal wieder gefragt. Ausgenommen bleiben unerwartete Fehler und ein fehlgeschlagener Start — die müssen sichtbar bleiben. Unter Einstellungen → Verwaltung stehen alle ausgeblendeten Hinweise mit Datum und lassen sich einzeln oder gesammelt zurückholen.
 
 ---
 

@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
             modelBuilder.Entity("EchoPlay.Data.Entities.Library.CachedNewRelease", b =>
                 {
@@ -569,6 +569,41 @@ namespace EchoPlay.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("DashboardPositions", (string)null);
+                });
+
+            modelBuilder.Entity("EchoPlay.Data.Entities.Settings.DialogSuppression", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique()
+                        .HasFilter("IsDeleted = 0");
+
+                    b.HasIndex("IsDeleted", "DeletedAt")
+                        .HasFilter("IsDeleted = 1");
+
+                    b.ToTable("DialogSuppressions", (string)null);
                 });
 
             modelBuilder.Entity("EchoPlay.Data.Entities.Settings.SecureSetting", b =>

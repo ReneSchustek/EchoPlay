@@ -8,7 +8,7 @@ namespace EchoPlay.App.Views
 {
     /// <summary>
     /// Online-Suche nach Hörspielserien.
-    /// Unterstützt Suche per Eingabetaste in der AutoSuggestBox oder per Schaltfläche.
+    /// Unterstützt Suche per Eingabetaste im Suchfeld oder über die Aktion im Seitenkopf.
     /// Suchergebnisse werden als Kachelgitter mit Import-Option dargestellt.
     ///
     /// Nimmt optionale Navigationsparameter entgegen:

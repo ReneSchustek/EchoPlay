@@ -212,10 +212,10 @@ namespace EchoPlay.App.ViewModels
                 : Visibility.Collapsed;
 
         /// <summary>
-        /// Sucheingabe des Nutzers. Wird im TwoWay-Binding mit der AutoSuggestBox verknüpft.
-        /// Beim Leerwerden (eingebauter X-Button der AutoSuggestBox oder vollständiges
-        /// Löschen per Tastatur) löst der Setter automatisch <see cref="Reset"/> aus,
-        /// damit Treffer und Status-Hinweise sofort verschwinden.
+        /// Sucheingabe des Nutzers. Wird im TwoWay-Binding mit dem Suchfeld verknüpft.
+        /// Beim Leerwerden (Löschen-Zeichen im Feld oder vollständiges Löschen per Tastatur)
+        /// löst der Setter automatisch <see cref="Reset"/> aus, damit Treffer und
+        /// Status-Hinweise sofort verschwinden.
         /// </summary>
         public string SearchText
         {

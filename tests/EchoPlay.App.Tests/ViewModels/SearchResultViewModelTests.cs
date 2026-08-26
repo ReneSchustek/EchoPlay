@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await (sut.CoverLoadTask ?? Task.CompletedTask);
 
-            (string Source, string SourceSeriesId, string CoverUrl, CancellationToken Ct) call =
+            (string Source, string SourceSeriesId, string? CoverUrl, CancellationToken Ct) call =
                 Assert.Single(coverService.SearchCoverRequests);
             Assert.Equal("Spotify", call.Source);
             Assert.Equal("tkkg-001", call.SourceSeriesId);
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await (sut.CoverLoadTask ?? Task.CompletedTask);
 
-            (string Source, string SourceSeriesId, string CoverUrl, CancellationToken Ct) call =
+            (string Source, string SourceSeriesId, string? CoverUrl, CancellationToken Ct) call =
                 Assert.Single(coverService.SearchCoverRequests);
             Assert.True(call.Ct.IsCancellationRequested);
         }

@@ -7,8 +7,8 @@ namespace EchoPlay.AppleMusic.Mapping
 {
     /// <summary>
     /// Wandelt iTunes-Künstler-Daten in importierbare Serienmodelle um.
-    /// Die iTunes Search API liefert keine Editorial Notes oder Artwork auf Künstler-Ebene,
-    /// daher bleiben Description und CoverImageUrl leer.
+    /// Die iTunes Search API liefert auf Künstler-Ebene weder Editorial Notes noch Artwork —
+    /// die Beschreibung bleibt deshalb leer, das Cover stammt aus dem ersten Album der Serie.
     /// </summary>
     public static class AppleMusicSeriesMapper
     {
@@ -17,8 +17,14 @@ namespace EchoPlay.AppleMusic.Mapping
         /// </summary>
         /// <param name="artist">Der iTunes-Künstler.</param>
         /// <param name="scoreResult">Das Ergebnis der Hörspiel-Bewertung.</param>
+        /// <param name="coverImageUrl">
+        /// Cover-Adresse aus der Albenprüfung. Bleibt sie leer, sucht die Trefferkarte das
+        /// Cover in der eigenen Datenbank — für bereits importierte Serien reicht das.
+        /// </param>
         /// <returns>Das importierbare Serienmodell.</returns>
-        public static ImportSeries Map(ITunesArtistDto artist, HoerspielScoreResult scoreResult)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
+            Justification = "Die Adresse stammt als Zeichenkette aus der Anbieter-Antwort und wird in ImportSeries ebenfalls als Zeichenkette geführt; ein Uri-Umweg brächte nur Umwandlungen.")]
+        public static ImportSeries Map(ITunesArtistDto artist, HoerspielScoreResult scoreResult, string? coverImageUrl = null)
         {
             ArgumentNullException.ThrowIfNull(artist);
             ArgumentNullException.ThrowIfNull(scoreResult);
@@ -29,7 +35,7 @@ namespace EchoPlay.AppleMusic.Mapping
                 Source = "AppleMusic",
                 Title = artist.ArtistName,
                 Description = null,
-                CoverImageUrl = null,
+                CoverImageUrl = coverImageUrl,
                 IsHoerspiel = scoreResult.IsHoerspiel,
                 Score = scoreResult.Score
             };

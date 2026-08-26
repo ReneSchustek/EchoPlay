@@ -1,5 +1,6 @@
 using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Dtos;
+using EchoPlay.AppleMusic.Mapping;
 using EchoPlay.Core.Http;
 using EchoPlay.Core.Scoring;
 using Microsoft.Extensions.Options;
@@ -36,6 +37,12 @@ namespace EchoPlay.AppleMusic.Scoring
         /// <summary>
         /// Analysiert einen iTunes-Künstler hinsichtlich Hörspiel-Merkmalen.
         /// </summary>
+        /// <remarks>
+        /// Steht der Name bereits für eine bekannte Hörspielserie, endet die Analyse dort:
+        /// Die Bewertung nimmt solche Künstler ohnehin hart an
+        /// (<see cref="HoerspielScoreCalculator.Evaluate"/>), jede Albenprüfung wäre für die
+        /// Tonne — und kostet vier Anfragen an der Ratenbremse.
+        /// </remarks>
         /// <param name="source">Der iTunes-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
         /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
@@ -56,9 +63,11 @@ namespace EchoPlay.AppleMusic.Scoring
             bool nameContainsQuery = normalizedName.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase);
             bool hasNumberVariantMatch = HoerspielNameMatcher.HasNumberVariantMatch(normalizedName, normalizedQuery, _settings.NumberWordMapping);
             bool hasExactWordMatch = HoerspielNameMatcher.IsExactWordMatch(normalizedName, normalizedQuery);
-            bool hasHoerspielGenre = IsHoerspielGenre(source.PrimaryGenreName);
+            bool hasHoerspielGenre = AppleMusicGenreMatcher.IsHoerspielGenre(source.PrimaryGenreName, _settings.HoerspielGenres);
 
-            (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.ArtistId, cancellationToken).ConfigureAwait(false);
+            AlbumAnalysis albums = isKnownSeries
+                ? AlbumAnalysis.Skipped
+                : await AnalyzeAlbumsAsync(source.ArtistId, cancellationToken).ConfigureAwait(false);
 
             DebugInfoBuilder debug = new();
             debug.Add(isKnownSeries, $"Bekannte Serie: '{artistName}'");
@@ -66,8 +75,9 @@ namespace EchoPlay.AppleMusic.Scoring
             debug.Add(hasNumberVariantMatch, "Zahlwort-Variante");
             debug.Add(hasExactWordMatch, "Exaktes Wort-Match");
             debug.Add(hasHoerspielGenre, $"Hörspiel-Genre: '{source.PrimaryGenreName}'");
-            debug.Add(hasHoerspielAlbumStructure, "Hörspiel-Albumstruktur");
-            debug.Add(!hasHoerspielAlbumStructure && !hasAlbums, "Keine Alben");
+            debug.Add(albums.HasHoerspielStructure, "Hörspiel-Albumstruktur");
+            debug.Add(!isKnownSeries && !albums.HasAlbums, "Keine Alben");
+            debug.Add(isKnownSeries, "Albenprüfung übersprungen");
 
             string debugInfo = debug.Build("Keine Indikatoren gefunden");
 
@@ -80,43 +90,42 @@ namespace EchoPlay.AppleMusic.Scoring
                 HasNumberVariantMatch = hasNumberVariantMatch,
                 HasExactWordMatch = hasExactWordMatch,
                 HasHoerspielGenre = hasHoerspielGenre,
-                HasHoerspielAlbumStructure = hasHoerspielAlbumStructure,
-                HasAlbums = hasAlbums,
+                HasHoerspielAlbumStructure = albums.HasHoerspielStructure,
+                HasAlbums = albums.HasAlbums,
+                ArtworkUrl = albums.ArtworkUrl,
                 DebugInfo = debugInfo
             };
         }
 
         /// <summary>
-        /// Prüft, ob das primäre Genre des Künstlers auf Hörspiel-Inhalte hinweist.
+        /// Das Ergebnis der Albenprüfung.
         /// </summary>
-        /// <param name="primaryGenreName">Das primäre Genre des Künstlers.</param>
-        /// <returns><c>true</c>, wenn ein Hörspiel-typisches Genre erkannt wurde.</returns>
-        private bool IsHoerspielGenre(string? primaryGenreName)
+        /// <param name="HasAlbums">Ob der Künstler überhaupt Alben besitzt.</param>
+        /// <param name="HasHoerspielStructure">Ob mindestens ein Album die Hörspiel-Struktur zeigt.</param>
+        /// <param name="ArtworkUrl">
+        /// Die Cover-Adresse des ersten Albums. Sie ist das Cover der Serie — auf Künstlerebene
+        /// liefert der Anbieter keines, auf Albenebene schon, und die Liste liegt hier ohnehin vor.
+        /// </param>
+        private readonly record struct AlbumAnalysis(bool HasAlbums, bool HasHoerspielStructure, string? ArtworkUrl)
         {
-            if (string.IsNullOrWhiteSpace(primaryGenreName))
-            {
-                return false;
-            }
-
-            foreach (string genre in _settings.HoerspielGenres)
-            {
-                if (string.Equals(primaryGenreName, genre, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            /// <summary>Das Ergebnis, wenn die Prüfung übersprungen wurde.</summary>
+            public static AlbumAnalysis Skipped => new(HasAlbums: false, HasHoerspielStructure: false, ArtworkUrl: null);
         }
 
         /// <summary>
         /// Analysiert die Album-Struktur eines Künstlers auf Hörspiel-Merkmale.
-        /// Lädt Alben und deren Tracks über die iTunes Lookup API.
+        /// Lädt die Alben und die Titel der ersten Alben über die iTunes Lookup API.
         /// </summary>
+        /// <remarks>
+        /// Die Titel aller zu prüfenden Alben kommen in einer einzigen Anfrage
+        /// (<see cref="IAppleMusicSearchClient.LookupTracksBatchAsync"/>): Die Lookup-API nimmt
+        /// mehrere Kennungen entgegen, und jede eingesparte Anfrage ist an der Ratenbremse
+        /// anderthalb Sekunden wert.
+        /// </remarks>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
         /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
-        /// <returns>Ein Tupel mit Flags: ob Alben vorhanden sind und ob Hörspiel-Struktur erkannt wurde.</returns>
-        private async Task<(bool HasAlbums, bool HasHoerspielStructure)> AnalyzeAlbumsAsync(long artistId, CancellationToken cancellationToken)
+        /// <returns>Das Ergebnis der Albenprüfung.</returns>
+        private async Task<AlbumAnalysis> AnalyzeAlbumsAsync(long artistId, CancellationToken cancellationToken)
         {
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
                 await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
@@ -128,58 +137,86 @@ namespace EchoPlay.AppleMusic.Scoring
 
             if (albums.Count == 0)
             {
-                return (false, false);
+                return new AlbumAnalysis(HasAlbums: false, HasHoerspielStructure: false, ArtworkUrl: null);
             }
+
+            string? artworkUrl = AppleMusicArtworkUrl.WithSize(albums[0].ArtworkUrl100);
 
             // Maximal AlbumsToCheck Alben prüfen
             int albumsToCheck = Math.Min(albums.Count, _settings.AlbumsToCheck);
+            List<long> collectionIds = albums.Take(albumsToCheck).Select(album => album.CollectionId).ToList();
 
-            for (int i = 0; i < albumsToCheck; i++)
+            IReadOnlyDictionary<long, List<TimeSpan>>? durationsByAlbum =
+                await LoadTrackDurationsAsync(collectionIds, cancellationToken).ConfigureAwait(false);
+
+            if (durationsByAlbum is null)
             {
-                ITunesCollectionDto album = albums[i];
+                return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: false, artworkUrl);
+            }
 
-                ITunesResponseDto<ITunesTrackDto> tracksResponse;
-
-                try
+            foreach (long collectionId in collectionIds)
+            {
+                if (durationsByAlbum.TryGetValue(collectionId, out List<TimeSpan>? durations)
+                    && durations.Count > 0
+                    && HoerspielAlbumHeuristic.LooksLikeHoerspiel(durations))
                 {
-                    tracksResponse = await _searchClient.LookupTracksAsync(album.CollectionId, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
-                {
-                    // Schlägt das Laden der Tracks für ein Album fehl, wird es bei der Strukturanalyse
-                    // übersprungen, um die Gesamtbewertung nicht zu blockieren.
-                    _logger.Warning(
-                        $"Tracks für iTunes-Album '{album.CollectionId}' ('{album.CollectionName}') konnten nicht geladen werden. Album wird bei der Hörspielanalyse übersprungen.");
-                    _logger.Error("Fehlerdetails:", ex);
-                    continue;
-                }
-
-                // Lookup-Antworten enthalten das Album als erstes Element
-                List<ITunesTrackDto> tracks = tracksResponse.Results
-                    .Where(r => string.Equals(r.WrapperType, "track", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (tracks.Count == 0)
-                {
-                    continue;
-                }
-
-                // Trackdauern extrahieren und an Core-Heuristik delegieren
-                List<TimeSpan> durations = new(tracks.Count);
-
-                foreach (ITunesTrackDto track in tracks)
-                {
-                    int millis = track.TrackTimeMillis ?? 0;
-                    durations.Add(TimeSpan.FromMilliseconds(millis));
-                }
-
-                if (HoerspielAlbumHeuristic.LooksLikeHoerspiel(durations))
-                {
-                    return (true, true);
+                    return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: true, artworkUrl);
                 }
             }
 
-            return (true, false);
+            return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: false, artworkUrl);
+        }
+
+        /// <summary>
+        /// Lädt die Titeldauern der angegebenen Alben in einer Anfrage und ordnet sie ihrem Album zu.
+        /// </summary>
+        /// <param name="collectionIds">Die Kennungen der zu prüfenden Alben.</param>
+        /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
+        /// <returns>
+        /// Die Dauern je Album, oder <see langword="null"/>, wenn die Gegenstelle die Anfrage
+        /// vorübergehend nicht beantworten konnte. Dann bleibt die Strukturfrage offen —
+        /// die Bewertung stützt sich auf Name und Genre.
+        /// </returns>
+        private async Task<IReadOnlyDictionary<long, List<TimeSpan>>?> LoadTrackDurationsAsync(
+            List<long> collectionIds,
+            CancellationToken cancellationToken)
+        {
+            ITunesResponseDto<ITunesTrackDto> tracksResponse;
+
+            try
+            {
+                tracksResponse = await _searchClient.LookupTracksBatchAsync(collectionIds, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (TransientRequestError.IsTransient(ex, cancellationToken))
+            {
+                // Schlägt das Laden der Titel fehl, entfällt die Strukturanalyse; die Bewertung
+                // läuft mit den übrigen Merkmalen weiter, statt den Künstler ganz zu verlieren.
+                _logger.Warning(
+                    $"Titel der Alben [{string.Join(", ", collectionIds)}] konnten nicht geladen werden. Die Albenstruktur bleibt bei der Hörspielanalyse unberücksichtigt.");
+                _logger.Error("Fehlerdetails:", ex);
+                return null;
+            }
+
+            Dictionary<long, List<TimeSpan>> durationsByAlbum = new(collectionIds.Count);
+
+            foreach (ITunesTrackDto track in tracksResponse.Results)
+            {
+                // Lookup-Antworten enthalten die Alben selbst als eigene Einträge
+                if (!string.Equals(track.WrapperType, "track", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!durationsByAlbum.TryGetValue(track.CollectionId, out List<TimeSpan>? durations))
+                {
+                    durations = [];
+                    durationsByAlbum[track.CollectionId] = durations;
+                }
+
+                durations.Add(TimeSpan.FromMilliseconds(track.TrackTimeMillis ?? 0));
+            }
+
+            return durationsByAlbum;
         }
     }
 }

@@ -122,5 +122,61 @@ namespace EchoPlay.App.Tests.Services
             _ = await Assert.ThrowsAsync<ObjectDisposedException>(
                 () => limiter.WaitAsync("disposed.host", ct: TestContext.Current.CancellationToken));
         }
+
+        [Fact]
+        public async Task WaitAsync_ForAnImageHost_UsesTheShortIntervalOfItsSuffix()
+        {
+            // Bilder holt man bei einem Auslieferungsnetz, nicht bei einer API: Dort gibt es
+            // kein Kontingent zu schonen. Mit dem Standardabstand von einer Sekunde erschien
+            // das fünfzehnte Cover einer Trefferseite erst nach fünfzehn Sekunden.
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan> { ["itunes.apple.com"] = TimeSpan.FromSeconds(5) },
+                defaultInterval: TimeSpan.FromSeconds(5),
+                suffixIntervals: new Dictionary<string, TimeSpan> { [".mzstatic.com"] = TimeSpan.FromMilliseconds(20) });
+
+            await limiter.WaitAsync("is1-ssl.mzstatic.com", ct: TestContext.Current.CancellationToken);
+
+            Stopwatch sw = Stopwatch.StartNew();
+            await limiter.WaitAsync("is1-ssl.mzstatic.com", ct: TestContext.Current.CancellationToken);
+            sw.Stop();
+
+            Assert.True(sw.ElapsedMilliseconds < 500, $"Erwartet < 500 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+        }
+
+        [Fact]
+        public async Task WaitAsync_ForAnApiHost_IgnoresTheImageSuffixes()
+        {
+            // Der exakte Eintrag schlägt die Endung — sonst würde eine großzügige Regel für
+            // Bildhosts versehentlich auch die API entfesseln.
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan> { ["itunes.apple.com"] = TimeSpan.FromMilliseconds(300) },
+                defaultInterval: TimeSpan.FromMilliseconds(10),
+                suffixIntervals: new Dictionary<string, TimeSpan> { [".com"] = TimeSpan.FromMilliseconds(10) });
+
+            await limiter.WaitAsync("itunes.apple.com", ct: TestContext.Current.CancellationToken);
+
+            Stopwatch sw = Stopwatch.StartNew();
+            await limiter.WaitAsync("itunes.apple.com", ct: TestContext.Current.CancellationToken);
+            sw.Stop();
+
+            Assert.True(sw.ElapsedMilliseconds >= 250, $"Erwartet >= 250 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+        }
+
+        [Fact]
+        public async Task WaitAsync_ForAHostWithoutAnyRule_UsesTheDefaultInterval()
+        {
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan>(),
+                defaultInterval: TimeSpan.FromMilliseconds(300),
+                suffixIntervals: new Dictionary<string, TimeSpan> { [".mzstatic.com"] = TimeSpan.FromMilliseconds(10) });
+
+            await limiter.WaitAsync("beispiel.test", ct: TestContext.Current.CancellationToken);
+
+            Stopwatch sw = Stopwatch.StartNew();
+            await limiter.WaitAsync("beispiel.test", ct: TestContext.Current.CancellationToken);
+            sw.Stop();
+
+            Assert.True(sw.ElapsedMilliseconds >= 250, $"Erwartet >= 250 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+        }
     }
 }

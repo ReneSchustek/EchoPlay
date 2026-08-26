@@ -86,8 +86,11 @@ namespace EchoPlay.App.ViewModels
             IsHoerspiel = importSeries.IsHoerspiel;
             IsAlbumResult = importSeries.IsAlbumResult;
 
-            // Cover einmal über die zentrale Pipeline laden, BitmapImage erstellen UND Helligkeit analysieren
-            if (_backgroundCoverService is not null && !string.IsNullOrEmpty(importSeries.CoverImageUrl))
+            // Cover einmal über die zentrale Pipeline laden, BitmapImage erstellen UND Helligkeit analysieren.
+            // Auch ohne Adresse: Der erste Schritt der Pipeline ist der Blick in die eigene
+            // Datenbank, und der trägt jeden Treffer, dessen Serie bereits importiert ist —
+            // auf Künstlerebene liefert Apple Music überhaupt kein Artwork.
+            if (_backgroundCoverService is not null && !string.IsNullOrEmpty(importSeries.SourceSeriesId))
             {
                 CoverLoadTask = LoadCoverAndAnalyzeAsync(importSeries.CoverImageUrl);
             }
@@ -316,7 +319,7 @@ namespace EchoPlay.App.ViewModels
         /// Die WinRT-COM-Typen für die Analyse leben in <see cref="Services.CoverBrightnessAnalyzer"/>.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse für eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler dürfen die Kachel nicht zerstören – der Platzhalter bleibt stehen.")]
-        private async Task LoadCoverAndAnalyzeAsync(string coverUrl)
+        private async Task LoadCoverAndAnalyzeAsync(string? coverUrl)
         {
             try
             {

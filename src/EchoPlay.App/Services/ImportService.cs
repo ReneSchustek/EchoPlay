@@ -60,6 +60,15 @@ namespace EchoPlay.App.Services
             => _providerSearch.SearchAsync(query, cancellationToken);
 
         /// <summary>
+        /// Sucht Serien beim Anbieter und meldet jeden Treffer, sobald er feststeht.
+        /// </summary>
+        /// <param name="query">Der Suchbegriff.</param>
+        /// <param name="cancellationToken">Abbruchzeichen der umgebenden Operation.</param>
+        /// <returns>Die Treffer in der Reihenfolge, in der der Anbieter sie bewertet.</returns>
+        public IAsyncEnumerable<ImportSeries> SearchStreamAsync(string query, CancellationToken cancellationToken = default)
+            => _providerSearch.SearchStreamAsync(query, cancellationToken);
+
+        /// <summary>
         /// Sucht Alben beim Anbieter — einzelne Veröffentlichungen statt ganzer Serien.
         /// </summary>
         /// <param name="query">Der Suchbegriff.</param>

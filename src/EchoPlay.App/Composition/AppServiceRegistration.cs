@@ -22,6 +22,20 @@ namespace EchoPlay.App.Composition
             ["api.discogs.com"] = TimeSpan.FromSeconds(1),
         };
 
+        /// <summary>Mindestabstand für Gegenstellen, die nur Bilder ausliefern.</summary>
+        /// <remarks>
+        /// Ein Bildabruf an einem Auslieferungsnetz ist kein API-Aufruf: Es gibt dort kein
+        /// Kontingent zu schonen, und die Cover einer Trefferseite sollen nebeneinander laden
+        /// statt hintereinander. Mit dem Standardabstand von einer Sekunde erschien das
+        /// fünfzehnte Cover erst nach fünfzehn Sekunden. Die Rechnernamen wechseln
+        /// (<c>is1-ssl</c> bis <c>is5-ssl</c>), deshalb die Endung statt des vollen Namens.
+        /// </remarks>
+        private static readonly Dictionary<string, TimeSpan> ImageHostRateLimits = new()
+        {
+            [".mzstatic.com"] = TimeSpan.FromMilliseconds(50),
+            [".scdn.co"] = TimeSpan.FromMilliseconds(50),
+        };
+
         /// <summary>
         /// Registriert alle Dienste der Anwendungsschicht.
         /// </summary>
@@ -70,7 +84,8 @@ namespace EchoPlay.App.Composition
             // Einzige Stelle, an der in Produktion die Systemzeit gelesen wird. Tests
             // setzen eine feste Zeitquelle ein und werden damit reproduzierbar.
             _ = services.AddSingleton<IClock, SystemClock>();
-            _ = services.AddSingleton<IHostRateLimiter>(_ => new SemaphoreHostRateLimiter(HostRateLimits));
+            _ = services.AddSingleton<IHostRateLimiter>(_ => new SemaphoreHostRateLimiter(
+                HostRateLimits, defaultInterval: null, suffixIntervals: ImageHostRateLimits));
 
             // Hängt die Ratenbremse in die HTTP-Kette ein. Muss transient sein, damit die
             // Client-Fabrik je Client eine eigene Instanz erzeugt.

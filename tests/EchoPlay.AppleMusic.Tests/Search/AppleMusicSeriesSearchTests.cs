@@ -37,7 +37,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
                     artists: [AppleMusicTestData.DieDreiFragezeichen]));
 
             // Der Fake-Scorer liefert ein positives Ergebnis, das den Künstler als Hörspiel akzeptiert.
-            _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
+            _ = services.AddSingleton<EchoPlay.AppleMusic.Scoring.IAppleMusicArtistScorer>(
                 new FakeAppleMusicHoerspielScorer(
                     HoerspielScoreResult.Yes(
                         "201306317",
@@ -86,7 +86,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
                     artists: [AppleMusicTestData.UnsuitableArtist]));
 
             // Der Fake-Scorer lehnt den Künstler ab, obwohl die API-Suche ihn findet.
-            _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
+            _ = services.AddSingleton<EchoPlay.AppleMusic.Scoring.IAppleMusicArtistScorer>(
                 new FakeAppleMusicHoerspielScorer(
                     HoerspielScoreResult.No(
                         "999999999",
@@ -122,7 +122,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             _ = services.AddSingleton<IAppleMusicSearchClient>(
                 new FakeAppleMusicSearchClient(artists: []));
 
-            _ = services.AddSingleton<IHoerspielScorer<ITunesArtistDto>>(
+            _ = services.AddSingleton<EchoPlay.AppleMusic.Scoring.IAppleMusicArtistScorer>(
                 new FakeAppleMusicHoerspielScorer(
                     HoerspielScoreResult.No("0", HoerspielDecisionReason.None, 0, "Kein Treffer")));
 

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Core.Scoring;
@@ -15,10 +16,15 @@ namespace EchoPlay.AppleMusic.Scoring
     /// Thread-Safety: Alle Felder sind <c>readonly</c>, der gemeinsame <see cref="HoerspielDecisionCache"/>
     /// ist thread-safe. Instanzen dürfen parallel von mehreren Scopes genutzt werden.
     /// </summary>
-    internal sealed class AppleMusicHoerspielScorer : HoerspielScorerBase<ITunesArtistDto>
+    internal sealed class AppleMusicHoerspielScorer : HoerspielScorerBase<ITunesArtistDto>, IAppleMusicArtistScorer
     {
         private readonly AppleMusicHoerspielAnalyzer _analyzer;
         private readonly AppleMusicHoerspielSettings _settings;
+
+        // Cover-Adresse je Künstler aus der Albenprüfung. Der gemeinsame Entscheidungs-Cache
+        // hält nur Bewertungen; das Artwork ist ein Anzeigemerkmal und bleibt deshalb hier.
+        // Die Registrierung ist Scoped — der Speicher lebt genau einen Suchlauf.
+        private readonly ConcurrentDictionary<string, string?> _artworkByArtistId = new(StringComparer.Ordinal);
 
         /// <summary>
         /// Initialisiert den Scorer mit Analyzer, Einstellungen, Cache und Logger.
@@ -49,6 +55,21 @@ namespace EchoPlay.AppleMusic.Scoring
         protected override string GetArtistName(ITunesArtistDto source) => source.ArtistName;
 
         /// <inheritdoc/>
+        public async Task<AppleMusicArtistScore> ScoreArtistAsync(
+            ITunesArtistDto artist,
+            string searchQuery,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(artist);
+
+            HoerspielScoreResult score = await ScoreAsync(artist, searchQuery, cancellationToken).ConfigureAwait(false);
+
+            _ = _artworkByArtistId.TryGetValue(GetArtistId(artist), out string? artworkUrl);
+
+            return new AppleMusicArtistScore(score, artworkUrl);
+        }
+
+        /// <inheritdoc/>
         protected override async Task<HoerspielScoreResult> AnalyzeAndEvaluateAsync(
             ITunesArtistDto source,
             string artistId,
@@ -56,6 +77,12 @@ namespace EchoPlay.AppleMusic.Scoring
             CancellationToken cancellationToken)
         {
             AppleMusicHoerspielAnalysis analysis = await _analyzer.AnalyzeAsync(source, searchQuery, cancellationToken).ConfigureAwait(false);
+
+            if (analysis.ArtworkUrl is not null)
+            {
+                _artworkByArtistId[artistId] = analysis.ArtworkUrl;
+            }
+
             return Evaluate(artistId, analysis);
         }
 

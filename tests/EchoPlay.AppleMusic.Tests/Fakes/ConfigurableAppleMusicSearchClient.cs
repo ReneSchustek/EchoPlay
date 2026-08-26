@@ -12,6 +12,27 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
     {
         private readonly Dictionary<long, List<ITunesCollectionDto>> _albumsByArtist = new();
         private readonly Dictionary<long, List<ITunesTrackDto>> _tracksByAlbum = new();
+        private List<ITunesArtistDto> _artists = [];
+
+        /// <summary>Wie oft die Albenliste eines Künstlers abgefragt wurde.</summary>
+        public int LookupAlbumsCalls { get; private set; }
+
+        /// <summary>Wie oft Titel einzeln abgefragt wurden.</summary>
+        public int LookupTracksCalls { get; private set; }
+
+        /// <summary>Wie oft Titel gebündelt abgefragt wurden.</summary>
+        public int LookupTracksBatchCalls { get; private set; }
+
+        /// <summary>
+        /// Legt die Künstler fest, die die Suche zurückgibt.
+        /// </summary>
+        /// <param name="artists">Die Künstler der Suchantwort.</param>
+        /// <returns>Diese Instanz für Fluent-Konfiguration.</returns>
+        public ConfigurableAppleMusicSearchClient WithArtists(List<ITunesArtistDto> artists)
+        {
+            _artists = artists;
+            return this;
+        }
 
         /// <summary>
         /// Registriert Alben für einen bestimmten Künstler.
@@ -45,7 +66,11 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Leere Suchantwort.</returns>
         public Task<ITunesResponseDto<ITunesArtistDto>> SearchArtistsAsync(string query, int limit = 25, CancellationToken ct = default)
         {
-            return Task.FromResult(new ITunesResponseDto<ITunesArtistDto>());
+            return Task.FromResult(new ITunesResponseDto<ITunesArtistDto>
+            {
+                ResultCount = _artists.Count,
+                Results = _artists
+            });
         }
 
         /// <inheritdoc/>
@@ -62,6 +87,8 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Die Lookup-Antwort mit Artist- und Album-Einträgen.</returns>
         public Task<ITunesResponseDto<ITunesCollectionDto>> LookupAlbumsAsync(long artistId, CancellationToken ct = default)
         {
+            LookupAlbumsCalls++;
+
             List<ITunesCollectionDto> results = [];
 
             // Lookup-Antworten enthalten den Künstler als erstes Element
@@ -89,6 +116,8 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Die Lookup-Antwort mit Collection- und Track-Einträgen.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksAsync(long collectionId, CancellationToken ct = default)
         {
+            LookupTracksCalls++;
+
             List<ITunesTrackDto> results = [];
 
             // Lookup-Antworten enthalten das Album als erstes Element
@@ -116,6 +145,8 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// <returns>Die Lookup-Antwort mit Collection- und Track-Einträgen aller Alben.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
         {
+            LookupTracksBatchCalls++;
+
             List<ITunesTrackDto> results = [];
 
             foreach (long collectionId in collectionIds)
@@ -124,7 +155,22 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
                 if (_tracksByAlbum.TryGetValue(collectionId, out List<ITunesTrackDto>? tracks))
                 {
-                    results.AddRange(tracks);
+                    // Wie die echte Antwort: Jeder Titel trägt die Kennung seines Albums —
+                    // nur daran lässt sich in einer Sammelantwort zuordnen, wozu er gehört.
+                    foreach (ITunesTrackDto track in tracks)
+                    {
+                        results.Add(new ITunesTrackDto
+                        {
+                            WrapperType = track.WrapperType,
+                            TrackId = track.TrackId,
+                            TrackName = track.TrackName,
+                            TrackTimeMillis = track.TrackTimeMillis,
+                            TrackNumber = track.TrackNumber,
+                            ReleaseDate = track.ReleaseDate,
+                            CollectionId = collectionId,
+                            CollectionName = track.CollectionName
+                        });
+                    }
                 }
             }
 

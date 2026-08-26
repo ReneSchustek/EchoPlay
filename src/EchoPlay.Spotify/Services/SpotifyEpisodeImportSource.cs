@@ -77,7 +77,7 @@ namespace EchoPlay.Spotify.Services
                     {
                         tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
                     }
-                    catch (Exception ex) when (TransientRequestError.IsTransient(ex))
+                    catch (Exception ex) when (TransientRequestError.IsTransient(ex, cancellationToken))
                     {
                         // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
                         _logger.Warning(

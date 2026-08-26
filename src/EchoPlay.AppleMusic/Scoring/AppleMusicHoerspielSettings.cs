@@ -25,5 +25,16 @@ namespace EchoPlay.AppleMusic.Scoring
         /// Bonus, wenn das primäre Genre des Künstlers auf Hörspiel hinweist.
         /// </summary>
         public int GenreBonus { get; init; } = 30;
+
+        /// <summary>
+        /// Höchstzahl der Künstler, für die eine Albenprüfung gestartet wird.
+        /// </summary>
+        /// <remarks>
+        /// Jede Albenprüfung kostet zwei Anfragen an einer Gegenstelle, die nur alle
+        /// anderthalb Sekunden eine annimmt. Bekannte Serien zählen nicht mit — sie stehen
+        /// ohne Anfrage fest. Vier geprüfte Kandidaten halten den Suchlauf unter der
+        /// Wartezeit, ab der eine Suche als hängend empfunden wird.
+        /// </remarks>
+        public int MaxDeepChecks { get; init; } = 4;
     }
 }

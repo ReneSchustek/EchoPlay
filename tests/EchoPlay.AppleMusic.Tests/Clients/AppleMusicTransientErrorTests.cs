@@ -42,9 +42,11 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 Options.Create(new AppleMusicHoerspielSettings()),
                 BuildLoggerFactory());
 
+            // Bewusst kein Name aus der Liste bekannter Serien: Für die stünde die
+            // Entscheidung schon fest und die Albenprüfung liefe gar nicht erst an.
             AppleMusicHoerspielAnalysis analysis = await sut.AnalyzeAsync(
-                new ITunesArtistDto { ArtistId = ArtistId, ArtistName = "TKKG" },
-                "TKKG",
+                new ITunesArtistDto { ArtistId = ArtistId, ArtistName = "Eine neue Hörspielserie" },
+                "Eine neue Hörspielserie",
                 TestContext.Current.CancellationToken);
 
             // Das Album zählt weiterhin als vorhanden — nur seine Struktur bleibt
@@ -110,6 +112,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             AppleMusicSeriesSearch sut = new(
                 new ThrowingTrackClient([]),
                 new ThrowingScorer(),
+                BuildSettings(),
                 BuildLoggerFactory());
 
             _ = await Assert.ThrowsAsync<ArgumentException>(
@@ -124,7 +127,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 new ITunesArtistDto { ArtistId = ArtistId, ArtistName = "TKKG" },
             ]);
 
-            AppleMusicSeriesSearch sut = new(client, new ThrowingScorer(), BuildLoggerFactory());
+            AppleMusicSeriesSearch sut = new(client, new ThrowingScorer(), BuildSettings(), BuildLoggerFactory());
 
             IReadOnlyList<ImportSeries> results = await sut.SearchAsync(
                 "TKKG", TestContext.Current.CancellationToken);
@@ -137,6 +140,9 @@ namespace EchoPlay.AppleMusic.Tests.Clients
         // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static LoggerFactory BuildLoggerFactory() => new([], new LoggerOptions());
+
+        private static Microsoft.Extensions.Options.IOptions<AppleMusicHoerspielSettings> BuildSettings() =>
+            Microsoft.Extensions.Options.Options.Create(new AppleMusicHoerspielSettings());
 
         /// <summary>Adapter, der Alben liefert, aber jede Track-Abfrage mit einem Netzfehler beantwortet.</summary>
         private sealed class ThrowingTrackClient : IAppleMusicSearchClient
@@ -197,11 +203,11 @@ namespace EchoPlay.AppleMusic.Tests.Clients
         }
 
         /// <summary>Bewerter, der jede Anfrage mit einem Fehler beantwortet.</summary>
-        private sealed class ThrowingScorer : IHoerspielScorer<ITunesArtistDto>
+        private sealed class ThrowingScorer : IAppleMusicArtistScorer
         {
-            public Task<HoerspielScoreResult> ScoreAsync(
-                ITunesArtistDto source, string searchQuery, CancellationToken cancellationToken = default)
-                => Task.FromException<HoerspielScoreResult>(
+            public Task<AppleMusicArtistScore> ScoreArtistAsync(
+                ITunesArtistDto artist, string searchQuery, CancellationToken cancellationToken = default)
+                => Task.FromException<AppleMusicArtistScore>(
                     new InvalidOperationException("Bewertung nicht möglich"));
         }
     }

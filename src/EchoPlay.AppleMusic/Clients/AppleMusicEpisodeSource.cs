@@ -126,7 +126,7 @@ namespace EchoPlay.AppleMusic.Clients
                 {
                     tracksResponse = await _searchClient.LookupTracksBatchAsync(batchIds, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
+                catch (Exception ex) when (TransientRequestError.IsTransient(ex, cancellationToken))
                 {
                     // Batch-Fehler unterbricht den Import nicht: die betroffenen Folgen werden ohne
                     // Dauer importiert (kein Datenverlust), statt komplett zu fehlen.

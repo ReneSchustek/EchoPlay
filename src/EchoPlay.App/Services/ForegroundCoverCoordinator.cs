@@ -318,20 +318,24 @@ namespace EchoPlay.App.Services
         /// "Foreground aktiv", sodass der Hintergrund-Loop pausiert. Persistiert das
         /// Cover **nicht** in <c>CoverImages</c> – Such-Treffer sind noch nicht importiert.
         /// </summary>
-        /// <param name="source">Provider-Schlüssel aus <see cref="ProviderKeys"/>. Andere Werte verhindern den DB-Lookup.</param>
-        /// <param name="sourceSeriesId">Provider-spezifische Serien-ID (Spotify-Artist-ID oder iTunes-Artist-ID).</param>
-        /// <param name="coverUrl">Cover-URL aus dem Such-Treffer.</param>
+        /// <param name="source">Quelle des Treffers aus <see cref="ProviderKeys"/>. Andere Werte verhindern den DB-Lookup.</param>
+        /// <param name="sourceSeriesId">Kennung der Serie bei der Quelle (Anbieter-Kennung oder Datenbank-Kennung).</param>
+        /// <param name="coverUrl">
+        /// Cover-Adresse aus dem Such-Treffer. Bleibt sie leer, endet der Weg beim
+        /// Datenbank-Zweig — für Treffer aus dem eigenen Bestand ist das der einzige und
+        /// zugleich der schnellste Weg.
+        /// </param>
         /// <param name="ct">Abbruch-Token der laufenden Suche.</param>
         /// <returns>Cover-Bytes oder <see langword="null"/> bei Fehler/Abbruch ohne Daten.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
             Justification = "Cover-URL stammt aus DTO der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie ICoverDownloader).")]
         internal async Task<byte[]?> RequestCoverForSearchResultAsync(
-            string source, string sourceSeriesId, string coverUrl, CancellationToken ct = default)
+            string source, string sourceSeriesId, string? coverUrl, CancellationToken ct = default)
         {
-            if (string.IsNullOrEmpty(coverUrl)) return null;
-
             byte[]? cached = await TryGetCachedSeriesCoverAsync(source, sourceSeriesId, ct).ConfigureAwait(false);
             if (cached is not null) return cached;
+
+            if (string.IsNullOrEmpty(coverUrl)) return null;
 
             if (!Uri.TryCreate(coverUrl, UriKind.Absolute, out Uri? uri)) return null;
 
@@ -351,9 +355,10 @@ namespace EchoPlay.App.Services
             }
         }
         /// <summary>
-        /// Findet eine bereits importierte Serie über ihre Provider-Quell-ID und liefert
+        /// Findet eine bereits importierte Serie über ihre Quell-Kennung und liefert
         /// deren persistiertes Cover aus <c>CoverImages</c>. Liefert <see langword="null"/>,
         /// wenn die Serie noch nicht importiert ist oder die Quelle unbekannt ist.
+        /// Treffer aus dem eigenen Bestand tragen die Datenbank-Kennung selbst.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="source">Bezeichnung des Anbieters, z. B. <c>Spotify</c> oder <c>AppleMusic</c>.</param>
@@ -372,6 +377,9 @@ namespace EchoPlay.App.Services
             {
                 ProviderKeys.Spotify => await seriesService.GetBySpotifyArtistIdAsync(sourceSeriesId, cancellationToken).ConfigureAwait(false),
                 ProviderKeys.AppleMusic => await seriesService.GetByAppleMusicArtistIdAsync(sourceSeriesId, cancellationToken).ConfigureAwait(false),
+                ProviderKeys.Local => Guid.TryParse(sourceSeriesId, out Guid seriesId)
+                    ? await seriesService.GetByIdAsync(seriesId, cancellationToken).ConfigureAwait(false)
+                    : null,
                 _ => null
             };
 

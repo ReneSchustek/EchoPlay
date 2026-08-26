@@ -18,7 +18,9 @@ namespace EchoPlay.App.Services
     public sealed class SemaphoreHostRateLimiter : IHostRateLimiter
     {
         private readonly IReadOnlyDictionary<string, TimeSpan> _intervals;
+        private readonly IReadOnlyDictionary<string, TimeSpan> _suffixIntervals;
         private readonly TimeSpan _defaultInterval;
+        private readonly ConcurrentDictionary<string, TimeSpan> _resolvedIntervals = new();
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphores = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset> _lastCalls = new();
         private int _foregroundPending;
@@ -34,12 +36,47 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="intervals">Minimum-Intervall pro Hostname.</param>
         /// <param name="defaultInterval">Fallback-Intervall für unbekannte Hosts.</param>
+        /// <param name="suffixIntervals">
+        /// Minimum-Intervall pro Host-Endung, etwa <c>.mzstatic.com</c>. Greift, wenn kein
+        /// exakter Hostname passt. Auslieferungsnetze für Bilder verteilen ihre Anfragen auf
+        /// wechselnde Rechnernamen — die alle einzeln einzutragen wäre eine Liste, die bei
+        /// jeder Umstellung der Gegenstelle veraltet.
+        /// </param>
         public SemaphoreHostRateLimiter(
             IReadOnlyDictionary<string, TimeSpan> intervals,
-            TimeSpan? defaultInterval = null)
+            TimeSpan? defaultInterval = null,
+            IReadOnlyDictionary<string, TimeSpan>? suffixIntervals = null)
         {
             _intervals = intervals;
+            _suffixIntervals = suffixIntervals ?? new Dictionary<string, TimeSpan>();
             _defaultInterval = defaultInterval ?? TimeSpan.FromSeconds(1);
+        }
+
+        /// <summary>
+        /// Ermittelt das Mindestintervall für einen Host: exakter Eintrag, dann Endung,
+        /// zuletzt der Standardwert. Das Ergebnis wird je Host gemerkt.
+        /// </summary>
+        /// <param name="host">Der Hostname.</param>
+        /// <returns>Das Mindestintervall zwischen zwei Anfragen an diesen Host.</returns>
+        private TimeSpan ResolveInterval(string host)
+        {
+            return _resolvedIntervals.GetOrAdd(host, name =>
+            {
+                if (_intervals.TryGetValue(name, out TimeSpan configured))
+                {
+                    return configured;
+                }
+
+                foreach (KeyValuePair<string, TimeSpan> suffix in _suffixIntervals)
+                {
+                    if (name.EndsWith(suffix.Key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return suffix.Value;
+                    }
+                }
+
+                return _defaultInterval;
+            });
         }
 
         /// <inheritdoc/>
@@ -94,9 +131,7 @@ namespace EchoPlay.App.Services
 
             try
             {
-                TimeSpan interval = _intervals.TryGetValue(host, out TimeSpan configured)
-                    ? configured
-                    : _defaultInterval;
+                TimeSpan interval = ResolveInterval(host);
 
                 if (_lastCalls.TryGetValue(host, out DateTimeOffset lastCall))
                 {

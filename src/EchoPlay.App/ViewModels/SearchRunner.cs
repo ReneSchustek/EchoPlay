@@ -12,13 +12,18 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
-    /// Führt eine einzelne Suche aus: fragt den Anbieter, durchsucht den eigenen Bestand,
-    /// führt beides zusammen und baut die Trefferkarten.
+    /// Führt eine einzelne Suche aus: fragt den Anbieter, durchsucht den eigenen Bestand
+    /// und reicht jede fertige Trefferkarte an die Seite weiter.
     /// </summary>
     /// <remarks>
     /// Der Ablauf stand vorher im Ansichtsmodell und machte gut ein Drittel davon aus. Die
     /// Trennung ist die zwischen „was gesucht wird" und „was die Seite anzeigt": Das
     /// Ansichtsmodell hält Eingabe, Zustand und Liste, dieser Typ die Durchführung.
+    /// <para>
+    /// Die Karten werden einzeln gemeldet, statt am Ende als Liste. Eine Anbieter-Suche über
+    /// mehrere Künstler dauert Sekunden; die Seite zeigte solange nur den Ladekreis und wirkte
+    /// tot. Der Preis dafür ist die Reihenfolge: Sie entsteht beim Einfügen, nicht am Schluss.
+    /// </para>
     /// </remarks>
     internal sealed class SearchRunner
     {
@@ -42,7 +47,8 @@ namespace EchoPlay.App.ViewModels
         /// <param name="backgroundCoverService">Lädt die Cover der Trefferkarten nach.</param>
         /// <param name="parent">
         /// Das Ansichtsmodell, an dem die Karten hängen. Sie melden ihm einen erfolgreichen
-        /// Import zurück, deshalb kennt die Durchführung es.
+        /// Import zurück und es nimmt die fertigen Karten entgegen, deshalb kennt die
+        /// Durchführung es.
         /// </param>
         public SearchRunner(
             ImportService importService,
@@ -61,21 +67,21 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Das Ergebnis einer Suche.
+        /// Das Ergebnis einer Suche. Die Treffer selbst sind zu diesem Zeitpunkt längst
+        /// gemeldet; hier steht nur noch, was die Seite darüber hinaus wissen muss.
         /// </summary>
-        /// <param name="Results">Die Trefferkarten in Anzeigereihenfolge.</param>
         /// <param name="SpotifyFallbackApplied">Ob der Anbieter auf Spotify ausgewichen ist.</param>
         /// <param name="OnlineError">
         /// Ein Fehler des Online-Zweigs, falls einer auftrat. Er wird mitgegeben statt
         /// geworfen, damit die lokalen Treffer trotzdem erscheinen.
         /// </param>
         internal sealed record SearchRunResult(
-            IReadOnlyList<SearchResultViewModel> Results,
             bool SpotifyFallbackApplied,
             Exception? OnlineError);
 
         /// <summary>
-        /// Führt die Suche im gewünschten Bereich aus.
+        /// Führt die Suche im gewünschten Bereich aus und meldet jede fertige Karte an das
+        /// Ansichtsmodell.
         /// </summary>
         /// <param name="searchText">Der eingefrorene Suchbegriff.</param>
         /// <param name="scope">Online, lokal oder beides.</param>
@@ -87,7 +93,6 @@ namespace EchoPlay.App.ViewModels
         public async Task<SearchRunResult?> RunAsync(
             string searchText, SearchSource scope, CancellationToken coverToken)
         {
-            List<SearchResultViewModel> viewModels = [];
             Exception? onlineError = null;
             bool spotifyFallback = false;
 
@@ -99,7 +104,6 @@ namespace EchoPlay.App.ViewModels
                 OnlineOutcome? online = await CollectOnlineResultsAsync(searchText, coverToken);
                 if (online is null) return null;
 
-                viewModels.AddRange(online.Results);
                 onlineError = online.Error;
                 spotifyFallback = online.SpotifyFallbackApplied;
             }
@@ -108,32 +112,31 @@ namespace EchoPlay.App.ViewModels
 
             if (scope is SearchSource.Local or SearchSource.Both)
             {
-                List<SearchResultViewModel>? localResults =
-                    await CollectLocalResultsAsync(searchText, coverToken);
-
-                if (localResults is null) return null;
-                viewModels.AddRange(localResults);
+                if (!await PublishLocalResultsAsync(searchText, coverToken)) return null;
             }
 
-            return new SearchRunResult(viewModels, spotifyFallback, onlineError);
+            return new SearchRunResult(spotifyFallback, onlineError);
         }
 
         /// <summary>Das Zwischenergebnis des Online-Zweigs.</summary>
         private sealed record OnlineOutcome(
-            List<SearchResultViewModel> Results,
             bool SpotifyFallbackApplied,
             Exception? Error);
 
         /// <summary>
-        /// Der Online-Zweig: Serien und Alben beim Anbieter suchen, zusammenführen und in
-        /// Trefferkarten übersetzen.
+        /// Der Online-Zweig: erst die Alben, dann die Serien.
         /// </summary>
+        /// <remarks>
+        /// Die Reihenfolge ist Absicht. Die Albensuche ist eine einzige Anfrage und bringt
+        /// Treffer samt Cover zurück — damit steht die erste Kachel nach gut einer Sekunde.
+        /// Die Seriensuche bewertet Künstler einzeln und braucht länger; ihre Treffer wandern
+        /// beim Einfügen an die richtige Stelle.
+        /// </remarks>
         /// <returns>Das Zwischenergebnis, oder <see langword="null"/> bei Abbruch.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Zweig der Suche: Provider-HTTP-/Parser-/Timeout-Fehler werden gemerkt und nach den lokalen Treffern gezeigt, damit ein Ausfall der Gegenstelle die lokalen Treffer nicht verschluckt.")]
         private async Task<OnlineOutcome?> CollectOnlineResultsAsync(
             string searchText, CancellationToken coverToken)
         {
-            List<SearchResultViewModel> viewModels = [];
             bool spotifyFallback = false;
 
             try
@@ -141,94 +144,79 @@ namespace EchoPlay.App.ViewModels
                 // Das Abbruchzeichen geht mit: Eine überholte Suche soll nicht noch zu Ende
                 // laufen und Kontingent beim Anbieter verbrauchen. Das Ergebnis ist dasselbe —
                 // ihre Treffer wurden ohnehin verworfen.
-                SearchOutcome seriesOutcome = await _importService.SearchAsync(searchText, coverToken);
-                if (coverToken.IsCancellationRequested) return null;
-
                 SearchOutcome albumsOutcome = await _importService.SearchAlbumsAsync(searchText, coverToken);
                 if (coverToken.IsCancellationRequested) return null;
 
-                spotifyFallback = seriesOutcome.SpotifyFallbackApplied || albumsOutcome.SpotifyFallbackApplied;
+                spotifyFallback = albumsOutcome.SpotifyFallbackApplied;
 
-                List<ImportSeries> combined = MergeAndRank(
-                    seriesOutcome.Results, albumsOutcome.Results, searchText);
-
-                foreach (ImportSeries series in combined)
+                foreach (ImportSeries album in albumsOutcome.Results)
                 {
-                    bool alreadyImported = series.IsAlbumResult
-                        ? false
-                        : await _importService.IsAlreadyImportedAsync(series, coverToken);
-                    if (coverToken.IsCancellationRequested) return null;
+                    if (!await PublishOnlineResultAsync(album, searchText, coverToken)) return null;
+                }
 
-                    viewModels.Add(new SearchResultViewModel(
-                        series, alreadyImported, _importService, _errorDialogService,
-                        _localizationService, _backgroundCoverService,
-                        parentViewModel: _parent, cancellationToken: coverToken));
+                await foreach (ImportSeries series in _importService.SearchStreamAsync(searchText, coverToken))
+                {
+                    if (!await PublishOnlineResultAsync(series, searchText, coverToken)) return null;
                 }
             }
             catch (Exception ex) when (!coverToken.IsCancellationRequested)
             {
-                // Fehler merken, aber die bisher gebauten Karten behalten — der Lokal-Zweig
-                // läuft danach trotzdem.
-                return new OnlineOutcome(viewModels, spotifyFallback, ex);
+                // Fehler merken, aber die bisher gemeldeten Karten stehen lassen — der
+                // Lokal-Zweig läuft danach trotzdem.
+                return new OnlineOutcome(spotifyFallback, ex);
             }
 
-            return new OnlineOutcome(viewModels, spotifyFallback, null);
+            return new OnlineOutcome(spotifyFallback, null);
         }
 
         /// <summary>
-        /// Führt Serien- und Albentreffer zusammen und sortiert nach Relevanz: Treffer mit dem
-        /// Suchbegriff in Titel oder Künstler zuerst, danach nach Bewertung.
+        /// Baut die Karte zu einem Anbieter-Treffer und meldet sie an das Ansichtsmodell.
         /// </summary>
-        /// <remarks>
-        /// Der Vergleich ignoriert Groß- und Kleinschreibung, deshalb geht der Suchbegriff
-        /// unverändert ein — ein vorheriges Umwandeln in Großbuchstaben war irreführend.
-        /// </remarks>
-        private static List<ImportSeries> MergeAndRank(
-            IReadOnlyList<ImportSeries> seriesResults,
-            IReadOnlyList<ImportSeries> albumResults,
-            string searchNeedle)
+        /// <param name="series">Der Treffer.</param>
+        /// <param name="searchText">Der Suchbegriff, für die Reihenfolge in der Liste.</param>
+        /// <param name="coverToken">Bricht ab, sobald eine neue Suche begonnen hat.</param>
+        /// <returns><see langword="false"/>, wenn die Suche inzwischen überholt ist.</returns>
+        private async Task<bool> PublishOnlineResultAsync(
+            ImportSeries series, string searchText, CancellationToken coverToken)
         {
-            List<ImportSeries> combined = new(seriesResults.Count + albumResults.Count);
-            combined.AddRange(seriesResults);
-            combined.AddRange(albumResults);
+            bool alreadyImported = !series.IsAlbumResult
+                && await _importService.IsAlreadyImportedAsync(series, coverToken);
 
-            combined.Sort((a, b) =>
-            {
-                bool aContains = a.Title.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase)
-                              || (a.ArtistName?.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase) ?? false);
-                bool bContains = b.Title.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase)
-                              || (b.ArtistName?.Contains(searchNeedle, StringComparison.OrdinalIgnoreCase) ?? false);
+            if (coverToken.IsCancellationRequested) return false;
 
-                if (aContains != bContains) return aContains ? -1 : 1;
-                return b.Score.CompareTo(a.Score);
-            });
+            SearchResultViewModel card = new(
+                series, alreadyImported, _importService, _errorDialogService,
+                _localizationService, _backgroundCoverService,
+                parentViewModel: _parent, cancellationToken: coverToken);
 
-            return combined;
+            _parent.PublishOnlineResult(card, SearchResultRank.Create(series, searchText));
+            return true;
         }
 
         /// <summary>
         /// Der lokale Zweig: Treffer aus dem eigenen Bestand als Karten ohne Import-Schaltfläche.
+        /// Sie stehen am Ende der Liste, damit die Anbieter-Treffer ihre Reihenfolge behalten.
         /// </summary>
-        /// <returns>Die Trefferkarten, oder <see langword="null"/> bei Abbruch.</returns>
-        private async Task<List<SearchResultViewModel>?> CollectLocalResultsAsync(
+        /// <param name="searchText">Der Suchbegriff.</param>
+        /// <param name="coverToken">Bricht ab, sobald eine neue Suche begonnen hat.</param>
+        /// <returns><see langword="false"/>, wenn die Suche inzwischen überholt ist.</returns>
+        private async Task<bool> PublishLocalResultsAsync(
             string searchText, CancellationToken coverToken)
         {
             IReadOnlyList<ImportSeries> localResults = await SearchLocalAsync(searchText);
-            if (coverToken.IsCancellationRequested) return null;
-
-            List<SearchResultViewModel> viewModels = new(localResults.Count);
+            if (coverToken.IsCancellationRequested) return false;
 
             foreach (ImportSeries series in localResults)
             {
                 // Lokale Einträge stehen bereits in der Datenbank — eine Import-Schaltfläche
                 // wäre hier ohne Sinn.
-                viewModels.Add(new SearchResultViewModel(
+                _parent.PublishLocalResult(new SearchResultViewModel(
                     series, true, _importService, _errorDialogService,
                     _localizationService, _backgroundCoverService,
                     cancellationToken: coverToken));
             }
 
-            return viewModels;
+            return true;
         }
 
         /// <summary>
@@ -262,12 +250,12 @@ namespace EchoPlay.App.ViewModels
             {
                 if (series.Title.Contains(trimmedQuery, StringComparison.OrdinalIgnoreCase))
                 {
-                    // SourceSeriesId ist die Kennung der Serie in der Datenbank — damit bleibt
-                    // der Eintrag eindeutig zuzuordnen.
+                    // SourceSeriesId ist die Kennung der Serie in der Datenbank — damit findet
+                    // die Trefferkarte das Cover in CoverImages, ganz ohne Netz.
                     localResults.Add(new ImportSeries
                     {
                         Title = series.Title,
-                        Source = "Lokal",
+                        Source = ProviderKeys.Local,
                         SourceSeriesId = series.Id.ToString()
                     });
                 }

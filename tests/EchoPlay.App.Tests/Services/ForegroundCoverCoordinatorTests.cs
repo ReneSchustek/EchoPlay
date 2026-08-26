@@ -427,6 +427,67 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        [Fact]
+        public async Task RequestCoverForSearchResult_ForALocalHit_UsesTheCoverFromTheDatabase()
+        {
+            // Ein Treffer aus dem eigenen Bestand trägt keine Anbieter-Adresse — sein Bild
+            // liegt längst in der Datenbank. Vorher startete der Weg dorthin gar nicht erst,
+            // und die Kachel blieb leer, obwohl dieselbe Serie auf jeder anderen Seite ihr
+            // Cover zeigte.
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "Bibi Blocksberg" };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            FakeCoverImageDataService coverImages = new();
+            await coverImages.SetCoverAsync(
+                CoverEntityTypes.Series, series.Id, StoredBytes, cancellationToken: TestContext.Current.CancellationToken);
+
+            FakeCoverDownloader downloader = new();
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(
+                seriesService: seriesService, coverImages: coverImages, downloader: downloader);
+
+            byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
+                ProviderKeys.Local, series.Id.ToString(), coverUrl: null, TestContext.Current.CancellationToken);
+
+            Assert.Equal(StoredBytes, result);
+            Assert.Empty(downloader.RequestedUrls);
+        }
+
+        [Fact]
+        public async Task RequestCoverForSearchResult_ForALocalHitWithoutAGuid_ReturnsNothing()
+        {
+            FakeCoverDownloader downloader = new();
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(downloader: downloader);
+
+            byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
+                ProviderKeys.Local, "keine-kennung", coverUrl: null, TestContext.Current.CancellationToken);
+
+            Assert.Null(result);
+            Assert.Empty(downloader.RequestedUrls);
+        }
+
+        [Fact]
+        public async Task RequestCoverForSearchResult_WithoutUrlButAnImportedSeries_UsesTheStoredCover()
+        {
+            // Auf Künstlerebene liefert Apple Music kein Artwork. Für eine bereits
+            // importierte Serie ist das kein Grund für eine leere Kachel.
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "Bereits importiert", AppleMusicArtistId = "4711" };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            FakeCoverImageDataService coverImages = new();
+            await coverImages.SetCoverAsync(
+                CoverEntityTypes.Series, series.Id, StoredBytes, cancellationToken: TestContext.Current.CancellationToken);
+
+            ForegroundCoverCoordinator coordinator = BuildCoordinator(
+                seriesService: seriesService, coverImages: coverImages);
+
+            byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
+                ProviderKeys.AppleMusic, "4711", coverUrl: null, TestContext.Current.CancellationToken);
+
+            Assert.Equal(StoredBytes, result);
+        }
+
         private static ForegroundCoverCoordinator BuildCoordinator(
             FakeSeriesDataService? seriesService = null,
             FakeEpisodeDataService? episodeService = null,

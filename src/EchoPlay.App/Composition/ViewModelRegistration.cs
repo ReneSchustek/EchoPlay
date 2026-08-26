@@ -105,7 +105,8 @@ namespace EchoPlay.App.Composition
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<INavigationService>(),
                 provider.GetRequiredService<IPageModeGuard>(),
-                provider.GetRequiredService<BackgroundCoverService>()));
+                provider.GetRequiredService<BackgroundCoverService>(),
+                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("SearchViewModel")));
 
             _ = services.AddTransient<SeriesDetailViewModel>(provider => new SeriesDetailViewModel(
                 provider.GetRequiredService<IServiceScopeFactory>(),

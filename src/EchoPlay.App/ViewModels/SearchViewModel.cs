@@ -9,6 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,6 +49,14 @@ namespace EchoPlay.App.ViewModels
         // Trefferkarten und sorgt für DB-First-Lookup, Foreground-Priorität und Rate-Limiter.
         private readonly BackgroundCoverService? _backgroundCoverService;
 
+        // Protokolliert Start, ersten Treffer und Gesamtdauer einer Suche. Ohne diese drei
+        // Marken lässt sich am Protokoll nicht nachrechnen, wie lange der Nutzer auf die
+        // erste Kachel gewartet hat — und genau das ist die Zahl, auf die es hier ankommt.
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
+
+        private readonly Stopwatch _searchStopwatch = new();
+        private bool _firstResultReported;
+
         private string _searchText = string.Empty;
         private bool _isLoading;
         private bool _hasSearched;
@@ -53,7 +64,16 @@ namespace EchoPlay.App.ViewModels
         private bool _showSuccessHint;
         private bool _isSpotifyFallbackHintVisible;
         private int _selectedScopeIndex;
-        private IReadOnlyList<SearchResultViewModel> _results = [];
+
+        // Eine feste Instanz, die nur geleert und befüllt wird: Die Treffer erscheinen
+        // einzeln, während die Suche noch läuft — ein Austausch der ganzen Liste würde die
+        // Bindung bei jedem Treffer neu aufziehen.
+        private readonly ObservableCollection<SearchResultViewModel> _results = [];
+
+        // Der Rang jeder Anbieter-Karte, in derselben Reihenfolge wie die Karten selbst.
+        // Er sagt beim Einfügen, wo die nächste Karte hingehört. Karten aus dem eigenen
+        // Bestand stehen dahinter und brauchen keinen Rang.
+        private readonly List<SearchResultRank> _onlineRanks = [];
 
         // Liste statt Single-TCS: bei Back-to-Back-Suchen laufen mehrere Aufrufe parallel,
         // die alle abgewartet werden müssen – der älteste verwirft seine Ergebnisse, der
@@ -90,6 +110,10 @@ namespace EchoPlay.App.ViewModels
         /// Optionale zentrale Cover-Pipeline. Wird an <see cref="SearchResultViewModel"/>
         /// weitergereicht; bei <see langword="null"/> bleiben die Trefferkacheln ohne Cover.
         /// </param>
+        /// <param name="logger">
+        /// Optionaler Protokollkanal für die Laufzeitmarken einer Suche. In Tests kann der
+        /// Parameter weggelassen werden.
+        /// </param>
         public SearchViewModel(
             ImportService importService,
             IErrorDialogService errorDialogService,
@@ -97,7 +121,8 @@ namespace EchoPlay.App.ViewModels
             IServiceScopeFactory? scopeFactory = null,
             INavigationService? navigationService = null,
             IPageModeGuard? pageModeGuard = null,
-            BackgroundCoverService? backgroundCoverService = null)
+            BackgroundCoverService? backgroundCoverService = null,
+            EchoPlay.Logger.Abstractions.ILogger? logger = null)
         {
             _importService = importService;
             _errorDialogService = errorDialogService;
@@ -106,6 +131,9 @@ namespace EchoPlay.App.ViewModels
             _navigationService = navigationService;
             _pageModeGuard = pageModeGuard;
             _backgroundCoverService = backgroundCoverService;
+            _logger = logger;
+
+            _results.CollectionChanged += OnResultsChanged;
 
             _searchRunner = new SearchRunner(
                 importService, errorDialogService, localizationService,
@@ -225,17 +253,71 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        /// <summary>Suchergebnisse der letzten Anfrage.</summary>
-        public IReadOnlyList<SearchResultViewModel> Results
+        /// <summary>
+        /// Suchergebnisse der laufenden oder zuletzt beendeten Anfrage. Die Liste wächst
+        /// während der Suche — jede Karte erscheint, sobald ihr Treffer feststeht.
+        /// </summary>
+        public ObservableCollection<SearchResultViewModel> Results => _results;
+
+        private void OnResultsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            get => _results;
-            private set
+            OnPropertyChanged(nameof(EmptyStateVisibility));
+        }
+
+        /// <summary>
+        /// Reiht eine Anbieter-Karte an ihrem Rang ein.
+        /// </summary>
+        /// <remarks>
+        /// Gesucht wird die erste Stelle, an der die neue Karte vor der bereits stehenden
+        /// rangiert. Eine spät eintreffende, bessere Karte rückt damit nach oben — der Preis
+        /// dafür, dass überhaupt schon etwas zu sehen ist, statt auf die vollständige Liste
+        /// zu warten.
+        /// </remarks>
+        /// <param name="card">Die fertige Trefferkarte.</param>
+        /// <param name="rank">Ihr Rang zum Suchbegriff.</param>
+        internal void PublishOnlineResult(SearchResultViewModel card, SearchResultRank rank)
+        {
+            ArgumentNullException.ThrowIfNull(card);
+
+            int index = 0;
+            while (index < _onlineRanks.Count && !rank.RanksBefore(_onlineRanks[index]))
             {
-                if (SetProperty(ref _results, value))
-                {
-                    OnPropertyChanged(nameof(EmptyStateVisibility));
-                }
+                index++;
             }
+
+            _onlineRanks.Insert(index, rank);
+            _results.Insert(index, card);
+
+            ReportFirstResult();
+        }
+
+        /// <summary>
+        /// Hängt eine Karte aus dem eigenen Bestand hinten an.
+        /// </summary>
+        /// <param name="card">Die fertige Trefferkarte.</param>
+        internal void PublishLocalResult(SearchResultViewModel card)
+        {
+            ArgumentNullException.ThrowIfNull(card);
+
+            _results.Add(card);
+
+            ReportFirstResult();
+        }
+
+        /// <summary>
+        /// Schreibt die Wartezeit bis zur ersten Kachel ins Protokoll — einmal je Suche.
+        /// </summary>
+        private void ReportFirstResult()
+        {
+            if (_firstResultReported)
+            {
+                return;
+            }
+
+            _firstResultReported = true;
+            _logger?.Info(
+                "Suche \"{Query}\": erster Treffer nach {ElapsedMs} ms.",
+                _searchText, _searchStopwatch.ElapsedMilliseconds);
         }
 
         /// <summary>
@@ -379,12 +461,15 @@ namespace EchoPlay.App.ViewModels
             // Sofort-Reset der Trefferansicht VOR dem ersten Await – die UI zeigt sofort
             // Loader plus leere Liste, alte Karten verschwinden noch im selben Frame.
             _hasSearched = false;
-            ReleaseCurrentResults();
-            Results = [];
+            ClearResults();
             ShowSuccessHint = false;
             IsOnboardingHintVisible = false;
             IsSpotifyFallbackHintVisible = false;
             IsLoading = true;
+
+            _firstResultReported = false;
+            _searchStopwatch.Restart();
+            _logger?.Info("Suche \"{Query}\" gestartet.", searchText);
 
             try
             {
@@ -393,7 +478,11 @@ namespace EchoPlay.App.ViewModels
 
                 IsSpotifyFallbackHintVisible = outcome.SpotifyFallbackApplied;
                 _hasSearched = true;
-                Results = outcome.Results;
+                OnPropertyChanged(nameof(EmptyStateVisibility));
+
+                _logger?.Info(
+                    "Suche \"{Query}\" abgeschlossen: {ResultCount} Treffer nach {ElapsedMs} ms.",
+                    searchText, _results.Count, _searchStopwatch.ElapsedMilliseconds);
 
                 // Online-Fehlerhinweis erst NACH den lokalen Treffern – die lokale Serie ist
                 // dann bereits sichtbar, unabhängig vom Ausgang des Online-Zweigs.
@@ -447,8 +536,7 @@ namespace EchoPlay.App.ViewModels
                 OnPropertyChanged(nameof(SearchText));
             }
 
-            ReleaseCurrentResults();
-            Results = [];
+            ClearResults();
             _hasSearched = false;
             ShowSuccessHint = false;
             IsSpotifyFallbackHintVisible = false;
@@ -463,6 +551,14 @@ namespace EchoPlay.App.ViewModels
             {
                 result.ClearCoverImage();
             }
+        }
+
+        /// <summary>Gibt die Cover frei und leert Trefferliste samt Rangfolge.</summary>
+        private void ClearResults()
+        {
+            ReleaseCurrentResults();
+            _onlineRanks.Clear();
+            _results.Clear();
         }
 
         /// <summary>

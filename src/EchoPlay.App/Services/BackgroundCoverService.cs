@@ -280,15 +280,15 @@ namespace EchoPlay.App.Services
         /// Such-Treffer ist noch nicht importiert. Details siehe
         /// <see cref="ForegroundCoverCoordinator"/>.
         /// </summary>
-        /// <param name="source">Provider-Schlüssel. Andere Werte verhindern den DB-Lookup.</param>
-        /// <param name="sourceSeriesId">Provider-spezifische Serien-ID.</param>
-        /// <param name="coverUrl">Cover-URL aus dem Such-Treffer.</param>
+        /// <param name="source">Quelle des Treffers. Andere Werte verhindern den DB-Lookup.</param>
+        /// <param name="sourceSeriesId">Kennung der Serie bei der Quelle.</param>
+        /// <param name="coverUrl">Cover-Adresse aus dem Such-Treffer, sofern der Anbieter eine liefert.</param>
         /// <param name="ct">Abbruch-Token der laufenden Suche.</param>
         /// <returns>Cover-Bytes oder <see langword="null"/> bei Fehler/Abbruch ohne Daten.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
             Justification = "Cover-URL stammt aus DTO der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie ICoverDownloader).")]
         public virtual Task<byte[]?> RequestCoverForSearchResultAsync(
-            string source, string sourceSeriesId, string coverUrl, CancellationToken ct = default)
+            string source, string sourceSeriesId, string? coverUrl, CancellationToken ct = default)
             => _foreground.RequestCoverForSearchResultAsync(source, sourceSeriesId, coverUrl, ct);
 
         /// <summary>

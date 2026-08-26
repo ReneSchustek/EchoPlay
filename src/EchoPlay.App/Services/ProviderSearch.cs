@@ -79,6 +79,51 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
+        /// Sucht wie <see cref="SearchAsync"/>, meldet die Treffer aber einzeln, sobald sie feststehen.
+        /// </summary>
+        /// <remarks>
+        /// Der Hinweis auf den Spotify-Rückfall fehlt hier bewusst: Er hängt an den
+        /// Einstellungen, nicht am Ergebnis, und die Albensuche desselben Suchlaufs meldet ihn
+        /// bereits. Ein zweiter Meldeweg hätte nur die Signatur verkompliziert.
+        /// </remarks>
+        /// <param name="query">Der Suchtext.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <returns>Die Treffer in der Reihenfolge, in der der Anbieter sie bewertet.</returns>
+        /// <exception cref="ArgumentException">Wird geworfen, wenn <paramref name="query"/> leer oder nur Leerzeichen enthält.</exception>
+        public async IAsyncEnumerable<ImportSeries> SearchStreamAsync(
+            string query,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                throw new ArgumentException("Suchbegriff darf nicht leer sein.", nameof(query));
+            }
+
+            using IServiceScope scope = _scopeFactory.CreateScope();
+
+            IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+            AppSettings settings = await settingsService.GetAsync(cancellationToken);
+
+            // Ohne aktiven Provider kann keine Online-Suche stattfinden.
+            if (settings.ActiveProvider == ProviderType.None)
+            {
+                yield break;
+            }
+
+            (ProviderType importProvider, _) =
+                await ResolveProviderAsync(scope, settings.ActiveProvider, cancellationToken);
+
+            string providerKey = importProvider.ToString();
+            _logger.Debug(() => $"Suche nach \"{query}\" via {providerKey}");
+            ISeriesImportSearch search = scope.ServiceProvider.GetRequiredKeyedService<ISeriesImportSearch>(providerKey);
+
+            await foreach (ImportSeries series in search.SearchStreamAsync(query, cancellationToken).ConfigureAwait(false))
+            {
+                yield return series;
+            }
+        }
+
+        /// <summary>
         /// Wählt den effektiven Provider für einen Suchlauf. Bildet das bestehende Both→AppleMusic-Mapping
         /// ab und prüft zusätzlich, ob Spotify-Credentials hinterlegt sind. Fehlen sie, wird transparent
         /// auf Apple Music umgelenkt und ein Warning geloggt — die AppSettings bleiben unverändert.
@@ -200,7 +245,7 @@ namespace EchoPlay.App.Services
                         Source = ProviderKeys.AppleMusic,
                         Title = album.CollectionName,
                         ArtistName = album.ArtistName,
-                        CoverImageUrl = null,
+                        CoverImageUrl = EchoPlay.AppleMusic.Mapping.AppleMusicArtworkUrl.WithSize(album.ArtworkUrl100),
                         IsAlbumResult = true,
                         IsHoerspiel = true,
                         Score = 50

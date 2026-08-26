@@ -46,6 +46,13 @@ namespace EchoPlay.AppleMusic.Scoring
         public bool HasHoerspielGenre { get; init; }
 
         /// <summary>
+        /// Cover-Adresse des ersten Albums, sofern die Albenprüfung gelaufen ist.
+        /// Auf Künstlerebene liefert die iTunes Search API kein Artwork; das erste Album
+        /// der Serie ist die nächstbeste und bereits vorliegende Quelle.
+        /// </summary>
+        public string? ArtworkUrl { get; init; }
+
+        /// <summary>
         /// Menschenlesbare Debug-Information zur Analyse.
         /// </summary>
         public string DebugInfo { get; init; } = string.Empty;

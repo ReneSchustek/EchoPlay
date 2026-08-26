@@ -132,7 +132,7 @@ namespace EchoPlay.Spotify.Scoring
                 {
                     tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (TransientRequestError.IsTransient(ex))
+                catch (Exception ex) when (TransientRequestError.IsTransient(ex, cancellationToken))
                 {
                     // Schlägt das Laden der Tracks für ein Album fehl, wird es bei der Strukturanalyse
                     // übersprungen, um die Gesamtbewertung nicht zu blockieren.

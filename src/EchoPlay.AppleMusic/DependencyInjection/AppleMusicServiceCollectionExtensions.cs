@@ -42,7 +42,13 @@ namespace EchoPlay.AppleMusic.DependencyInjection
             _ = services.AddOptions<AppleMusicHoerspielSettings>();
             services.TryAddScoped<HoerspielDecisionCache>();
             _ = services.AddScoped<AppleMusicHoerspielAnalyzer>();
-            _ = services.AddScoped<IHoerspielScorer<ITunesArtistDto>, AppleMusicHoerspielScorer>();
+
+            // Beide Verträge zeigen bewusst auf DIESELBE Instanz: Der Scorer merkt sich die
+            // Cover-Adresse aus der Albenprüfung, und die Suche holt sie dort ab. Zwei
+            // getrennte Instanzen hätten getrennte Speicher — die Treffer blieben ohne Cover.
+            _ = services.AddScoped<AppleMusicHoerspielScorer>();
+            _ = services.AddScoped<IHoerspielScorer<ITunesArtistDto>>(provider => provider.GetRequiredService<AppleMusicHoerspielScorer>());
+            _ = services.AddScoped<IAppleMusicArtistScorer>(provider => provider.GetRequiredService<AppleMusicHoerspielScorer>());
 
             return services;
         }

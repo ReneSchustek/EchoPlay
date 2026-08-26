@@ -1,4 +1,4 @@
-# EchoPlay
+﻿# EchoPlay
 
 **Hörspiel-Verwaltung für Windows** – Serien entdecken, Episoden verfolgen, lokal und online.
 
@@ -48,7 +48,8 @@ EchoPlay ist eine Desktop-Anwendung für Hörspiel-Fans, die ihre Sammlung organ
 ### Weitere Features
 
 - **Suche und Filter auf jeder Listenseite** – Mediatheken, Serien-Detail, Suche, Protokoll und Tag-Manager tragen denselben Aufbau: Seitenkopf, Suchfeld, Filter als Chips. Die Suche wirkt beim Tippen. Findet sie nichts, sagt die Seite das anders als bei leerem Bestand — und bietet den Weg zurück zum vollständigen Bestand an. Such- und Filtereinstellungen überstehen den Wechsel auf eine andere Seite und zurück.
-- **Cover-System** – 5 Online-Anbieter, lokaler Fallback, DB-Cache.
+- **Anbieter-Suche mit laufender Anzeige** – Die Treffer erscheinen einzeln, sobald sie feststehen, statt erst nach dem vollständigen Suchlauf; jede Kachel bringt ihr Cover gleich mit. Künstler ohne Namens- oder Genrebezug scheiden vor der aufwendigen Prüfung aus, bekannte Serien werden gar nicht erst geprüft. Wer während einer laufenden Suche weitertippt, bricht sie ab — ohne dass daraus Fehlermeldungen entstehen.
+- **Cover-System** – 5 Online-Anbieter, lokaler Fallback, DB-Cache. Bilder kommen von einem Auslieferungsnetz und laden deshalb nebeneinander statt hintereinander; die Cover einer Trefferseite stehen zusammen.
 - **6 Themes** – Ruhrcoder, ModernClassic, PaperCoffee, MidnightLibrary, ForestSignal, AmberWhiskey. Aufbau, Kachelform und Abstände sind über alle Themes gleich; die Farbe bleibt Sache des gewählten Themes. Für Text ist in jedem Theme ein Kontrast von mindestens 4,5:1 sichergestellt.
 - **Lokalisierung** – Deutsch und Englisch, zur Laufzeit umschaltbar.
 - **Auto-Update** – Prüft beim Start auf neue Versionen via GitHub Releases. Der Download läuft nur über HTTPS von einem GitHub-Release-Host, und die Setup-Datei muss gegen den SHA-256-Hash aus dem Release-Body passen. Fehlt der Hash, wird nicht installiert.

@@ -40,6 +40,29 @@ namespace EchoPlay.Data.Services.Interfaces
         Task<Series?> GetByAppleMusicArtistIdAsync(string appleMusicArtistId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Findet die <em>online importierte</em> Serie zu einer Spotify-Artist-ID.
+        /// </summary>
+        /// <remarks>
+        /// Beantwortet die Frage „steckt dieser Künstler schon in der Online-Mediathek?".
+        /// Eine rein lokal eingelesene Serie trägt dieselbe Künstlerkennung, sobald die
+        /// Neuerscheinungs-Prüfung sie ermittelt hat – sie darf den Online-Import deshalb
+        /// nicht blockieren.
+        /// </remarks>
+        /// <param name="spotifyArtistId">Die ID des Künstlers von Spotify.</param>
+        /// <returns>Die zugeordnete <see cref="Series"/> oder null.</returns>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<Series?> GetOnlineImportedBySpotifyArtistIdAsync(string spotifyArtistId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Findet die <em>online importierte</em> Serie zu einer Apple-Music-Artist-ID.
+        /// Gegenstück zu <see cref="GetOnlineImportedBySpotifyArtistIdAsync"/>.
+        /// </summary>
+        /// <param name="appleMusicArtistId">Die ID des Künstlers von Apple Music.</param>
+        /// <returns>Die zugeordnete <see cref="Series"/> oder null.</returns>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        Task<Series?> GetOnlineImportedByAppleMusicArtistIdAsync(string appleMusicArtistId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Persistiert eine neue Hörspielserie im System.
         /// </summary>
         /// <param name="series">Die zu speichernde Entität.</param>

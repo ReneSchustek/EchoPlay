@@ -88,6 +88,34 @@ namespace EchoPlay.Data.Services
         }
 
         /// <summary>
+        /// Liefert die online importierte Serie zu einer Spotify-Artist-ID oder <c>null</c>.
+        /// </summary>
+        /// <param name="spotifyArtistId">Die Spotify-Artist-ID.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<Series?> GetOnlineImportedBySpotifyArtistIdAsync(string spotifyArtistId, CancellationToken cancellationToken = default)
+        {
+            _logger.Debug(() => $"Lade online importierte Serie mit Spotify-Artist-ID '{spotifyArtistId}'.");
+            return await _context.Series
+                .FirstOrDefaultAsync(
+                    series => series.IsOnlineImported && series.SpotifyArtistId == spotifyArtistId,
+                    cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Liefert die online importierte Serie zu einer Apple-Music-Artist-ID oder <c>null</c>.
+        /// </summary>
+        /// <param name="appleMusicArtistId">Die Apple-Music-Artist-ID.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        public async Task<Series?> GetOnlineImportedByAppleMusicArtistIdAsync(string appleMusicArtistId, CancellationToken cancellationToken = default)
+        {
+            _logger.Debug(() => $"Lade online importierte Serie mit Apple-Music-Artist-ID '{appleMusicArtistId}'.");
+            return await _context.Series
+                .FirstOrDefaultAsync(
+                    series => series.IsOnlineImported && series.AppleMusicArtistId == appleMusicArtistId,
+                    cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Fügt eine neue Serie dauerhaft hinzu.
         /// </summary>
         /// <param name="series">Die zu persistierende Serie.</param>

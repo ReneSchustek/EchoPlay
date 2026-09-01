@@ -12,6 +12,15 @@ namespace EchoPlay.AppleMusic.Clients
     public sealed class AppleMusicSearchClient : IAppleMusicSearchClient
     {
         private const string Country = "de";
+
+        /// <summary>
+        /// Obergrenze einer Lookup-Antwort. iTunes liefert höchstens so viele Alben je Anfrage,
+        /// unabhängig davon, welches <c>limit</c> in der Adresse steht – ein höherer Wert
+        /// täuscht nur Vollständigkeit vor. Gemessen an „Die drei ???": 200 Alben, und die
+        /// jüngsten Folgen fehlten.
+        /// </summary>
+        private const int LookupAlbumCap = 200;
+
         private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         private readonly HttpClient _httpClient;
@@ -68,17 +77,101 @@ namespace EchoPlay.AppleMusic.Clients
 
         /// <summary>
         /// Lädt alle Alben eines Künstlers über die Lookup-API.
+        /// Bei langen Serien werden zwei Reihenfolgen abgefragt und zusammengelegt,
+        /// weil eine einzelne Antwort den Bestand nicht fasst.
         /// </summary>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
         /// <param name="ct">Abbruchtoken für den HTTP-Aufruf.</param>
         /// <returns>Die Lookup-Antwort mit Künstler- und Album-Einträgen.</returns>
         public async Task<ITunesResponseDto<ITunesCollectionDto>> LookupAlbumsAsync(long artistId, CancellationToken ct = default)
         {
-            // Limit bewusst hoch gewählt – Serien wie Die drei ??? haben 230+ Folgen.
-            // Die iTunes Lookup-API akzeptiert Werte über 200 problemlos.
-            string url = $"lookup?id={artistId}&entity=album&country={Country}&limit=500";
+            string basisUrl = $"lookup?id={artistId}&entity=album&country={Country}&limit={LookupAlbumCap}";
 
-            return await GetAsync<ITunesResponseDto<ITunesCollectionDto>>(url, ct).ConfigureAwait(false);
+            ITunesResponseDto<ITunesCollectionDto> standard =
+                await GetAsync<ITunesResponseDto<ITunesCollectionDto>>(basisUrl, ct).ConfigureAwait(false);
+
+            int albenImStandard = CountAlbums(standard);
+
+            // Unter dem Deckel ist der Bestand vollständig – eine zweite Anfrage brächte nichts.
+            if (albenImStandard < LookupAlbumCap)
+            {
+                return standard;
+            }
+
+            // Ausgeschöpfter Deckel heißt: Es gibt mehr, als eine Antwort trägt. Die
+            // Standardreihenfolge beginnt bei den ältesten Alben, deshalb fehlen ausgerechnet
+            // die neuen Folgen. `sort=recent` dreht die Reihenfolge um; beide Hälften
+            // zusammengelegt decken den Bestand ab.
+            ITunesResponseDto<ITunesCollectionDto> neueste =
+                await GetAsync<ITunesResponseDto<ITunesCollectionDto>>($"{basisUrl}&sort=recent", ct).ConfigureAwait(false);
+
+            ITunesResponseDto<ITunesCollectionDto> zusammengelegt = MergeAlbums(standard, neueste);
+
+            _logger.Debug(() =>
+                $"iTunes-Lookup für Künstler '{artistId}': Deckel von {LookupAlbumCap} ausgeschöpft, " +
+                $"mit sort=recent auf {CountAlbums(zusammengelegt)} Alben ergänzt.");
+
+            return zusammengelegt;
+        }
+
+        /// <summary>
+        /// Zählt die Album-Einträge einer Lookup-Antwort. Der Künstler-Eintrag steht
+        /// als erstes Element in derselben Liste und zählt nicht mit.
+        /// </summary>
+        /// <param name="response">Die Lookup-Antwort.</param>
+        private static int CountAlbums(ITunesResponseDto<ITunesCollectionDto> response)
+        {
+            int anzahl = 0;
+            foreach (ITunesCollectionDto eintrag in response.Results)
+            {
+                if (IsAlbum(eintrag))
+                {
+                    anzahl++;
+                }
+            }
+
+            return anzahl;
+        }
+
+        /// <summary>Ob ein Lookup-Eintrag ein Album ist und kein Künstler.</summary>
+        /// <param name="entry">Der Eintrag aus der Lookup-Antwort.</param>
+        private static bool IsAlbum(ITunesCollectionDto entry) =>
+            string.Equals(entry.WrapperType, "collection", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Legt zwei Lookup-Antworten desselben Künstlers zusammen. Die erste bleibt
+        /// vollständig erhalten (samt Künstler-Eintrag), aus der zweiten kommen nur die
+        /// Alben hinzu, deren Collection-ID noch fehlt.
+        /// </summary>
+        /// <param name="first">Die Antwort in Standardreihenfolge.</param>
+        /// <param name="second">Die Antwort mit den neuesten Alben.</param>
+        private static ITunesResponseDto<ITunesCollectionDto> MergeAlbums(
+            ITunesResponseDto<ITunesCollectionDto> first,
+            ITunesResponseDto<ITunesCollectionDto> second)
+        {
+            HashSet<long> bekannteAlben = [];
+            foreach (ITunesCollectionDto eintrag in first.Results)
+            {
+                if (IsAlbum(eintrag))
+                {
+                    _ = bekannteAlben.Add(eintrag.CollectionId);
+                }
+            }
+
+            List<ITunesCollectionDto> zusammen = [.. first.Results];
+            foreach (ITunesCollectionDto eintrag in second.Results)
+            {
+                if (IsAlbum(eintrag) && bekannteAlben.Add(eintrag.CollectionId))
+                {
+                    zusammen.Add(eintrag);
+                }
+            }
+
+            return new ITunesResponseDto<ITunesCollectionDto>
+            {
+                ResultCount = zusammen.Count,
+                Results = zusammen
+            };
         }
 
         /// <summary>

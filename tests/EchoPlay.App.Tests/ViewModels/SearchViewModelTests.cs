@@ -129,7 +129,8 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "TKKG",
-                SpotifyArtistId = KnownSpotifyId
+                SpotifyArtistId = KnownSpotifyId,
+                IsOnlineImported = true
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             List<ImportSeries> results =
@@ -187,7 +188,8 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series
             {
                 Title = "Fünf Freunde",
-                SpotifyArtistId = "ff-002"
+                SpotifyArtistId = "ff-002",
+                IsOnlineImported = true
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             List<ImportSeries> results =
@@ -208,6 +210,40 @@ namespace EchoPlay.App.Tests.ViewModels
             // Kein Import nötig – bereits vorhanden
             _ = Assert.Single(vm.Results);
             Assert.True(vm.Results[0].IsImported);
+        }
+
+        [Fact]
+        public async Task SearchCommand_LokaleSerieMitKuenstlerkennung_BleibtHinzufuegbar()
+        {
+            // Die Neuerscheinungs-Prüfung schreibt die Künstlerkennung auch auf lokal eingelesene
+            // Serien. Der Treffer darf deshalb nicht als „bereits vorhanden" gelten – sonst
+            // verschwindet der Hinzufügen-Knopf und der Künstler kommt nie in die Online-Mediathek.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Die Playmos",
+                SpotifyArtistId = "playmos-001",
+                LocalFolderPath = @"D:\Hörspiele\Die Playmos",
+                IsOnlineImported = false
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            List<ImportSeries> results =
+            [
+                new ImportSeries
+                {
+                    Title          = "Die Playmos",
+                    Source         = "Spotify",
+                    SourceSeriesId = "playmos-001"
+                }
+            ];
+
+            SearchViewModel vm = BuildViewModel(results, seriesService);
+            vm.SearchText = "Playmos";
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            _ = Assert.Single(vm.Results);
+            Assert.False(vm.Results[0].IsImported);
         }
 
         [Fact]

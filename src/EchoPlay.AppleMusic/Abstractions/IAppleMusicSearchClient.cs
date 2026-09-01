@@ -33,6 +33,11 @@ namespace EchoPlay.AppleMusic.Abstractions
         /// <summary>
         /// Lädt alle Alben eines Künstlers über die Lookup-API.
         /// Das erste Element der Antwort ist der Künstler selbst und muss gefiltert werden.
+        /// <para>
+        /// Eine einzelne Lookup-Antwort trägt höchstens 200 Alben – bei längeren Serien
+        /// fehlt der Rest. Die Umsetzung fragt deshalb zwei Reihenfolgen ab und legt sie
+        /// zusammen, damit auch die jüngsten Folgen enthalten sind.
+        /// </para>
         /// </summary>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
         /// <param name="ct">Abbruchtoken für den HTTP-Aufruf.</param>

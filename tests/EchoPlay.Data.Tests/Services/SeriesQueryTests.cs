@@ -95,6 +95,81 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Null(result);
         }
 
+        /// <summary>
+        /// Eine lokal eingelesene Serie trägt dieselbe Künstlerkennung, sobald die
+        /// Neuerscheinungs-Prüfung sie ermittelt hat. Für die Frage „steckt der Künstler schon
+        /// in der Online-Mediathek?" zählt sie nicht mit.
+        /// </summary>
+        /// <returns>Ein asynchroner Task.</returns>
+        [Fact]
+        public async Task GetOnlineImportedByAppleMusicArtistIdAsync_IgnoriertLokaleSerie()
+        {
+            _ = Context.Series.Add(new Series
+            {
+                Title = "Die Playmos",
+                AppleMusicArtistId = "267092844",
+                IsOnlineImported = false
+            });
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            Context.ChangeTracker.Clear();
+
+            SeriesDataService service = CreateSeriesService();
+
+            Assert.NotNull(await service.GetByAppleMusicArtistIdAsync("267092844", cancellationToken: TestContext.Current.CancellationToken));
+            Assert.Null(await service.GetOnlineImportedByAppleMusicArtistIdAsync("267092844", cancellationToken: TestContext.Current.CancellationToken));
+        }
+
+        /// <summary>
+        /// Liegt neben der lokalen auch die online importierte Serie vor, muss genau diese
+        /// gefunden werden.
+        /// </summary>
+        /// <returns>Ein asynchroner Task.</returns>
+        [Fact]
+        public async Task GetOnlineImportedByAppleMusicArtistIdAsync_FindetDieOnlineSerie()
+        {
+            _ = Context.Series.Add(new Series
+            {
+                Title = "Fünf Freunde",
+                AppleMusicArtistId = "216347875",
+                IsOnlineImported = false
+            });
+            _ = Context.Series.Add(new Series
+            {
+                Title = "Fünf Freunde",
+                AppleMusicArtistId = "216347875",
+                IsOnlineImported = true
+            });
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            Context.ChangeTracker.Clear();
+
+            SeriesDataService service = CreateSeriesService();
+            Series? result = await service.GetOnlineImportedByAppleMusicArtistIdAsync("216347875", cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result);
+            Assert.True(result.IsOnlineImported);
+        }
+
+        /// <summary>
+        /// Gegenstück für Spotify: Auch dort blockiert eine rein lokale Serie den Online-Import nicht.
+        /// </summary>
+        /// <returns>Ein asynchroner Task.</returns>
+        [Fact]
+        public async Task GetOnlineImportedBySpotifyArtistIdAsync_IgnoriertLokaleSerie()
+        {
+            _ = Context.Series.Add(new Series
+            {
+                Title = "TKKG",
+                SpotifyArtistId = "sp-tkkg",
+                IsOnlineImported = false
+            });
+            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            Context.ChangeTracker.Clear();
+
+            SeriesDataService service = CreateSeriesService();
+
+            Assert.Null(await service.GetOnlineImportedBySpotifyArtistIdAsync("sp-tkkg", cancellationToken: TestContext.Current.CancellationToken));
+        }
+
         [Fact]
         public async Task SetWatchedAsync_SetsFlag()
         {

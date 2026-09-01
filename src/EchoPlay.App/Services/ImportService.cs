@@ -172,6 +172,7 @@ namespace EchoPlay.App.Services
         /// Wird nach einer Migration aufgerufen, die alte Episoden bereinigt hat –
         /// der Nutzer muss nicht manuell neu importieren.
         /// Existierende Episoden der Serie werden nicht gelöscht; nur fehlende werden nachgeladen.
+        /// Der Aufruf ist damit wiederholbar, ohne den Bestand zu verdoppeln.
         /// </summary>
         /// <param name="series">Die bestehende Serie mit gesetzter SpotifyArtistId oder AppleMusicArtistId.</param>
         /// <returns>Anzahl der neu angelegten Episoden. 0 wenn kein Provider zugeordnet oder keine Episoden gefunden.</returns>
@@ -196,16 +197,23 @@ namespace EchoPlay.App.Services
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
             IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(sourceSeriesId, cancellationToken: cancellationToken);
+            List<ImportEpisode> uniqueEpisodes = DeduplicateBySourceEpisodeId(episodes, series.Title);
+
+            // Der Bestand wird bewusst erst NACH dem Anbieter-Abruf gelesen. Der Abruf dauert bei
+            // langen Serien Minuten; startet der Re-Import neben einem noch laufenden Erstimport,
+            // sind dessen Folgen bis dahin geschrieben und werden hier erkannt. Ohne diesen
+            // Abgleich legte der Re-Import jede Folge ein zweites Mal an.
+            ExistingEpisodeIndex bestand = new(await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken));
 
             // Batch-Insert: ein einziger SaveChangesAsync-Aufruf statt N (analog ImportAsync).
             // Bei einer Serie mit 200 Folgen ersetzt das 200 DB-Roundtrips durch einen.
-            List<Episode> mappedEpisodes = new(episodes.Count);
-            foreach (ImportEpisode importEpisode in episodes)
+            List<Episode> mappedEpisodes = MapMissingEpisodes(uniqueEpisodes, bestand, series.Id, series.Title);
+
+            if (mappedEpisodes.Count > 0)
             {
-                mappedEpisodes.Add(MapToEpisode(importEpisode, series.Id));
+                await episodeService.AddRangeAsync(mappedEpisodes, cancellationToken);
             }
 
-            await episodeService.AddRangeAsync(mappedEpisodes, cancellationToken);
             int count = mappedEpisodes.Count;
 
             _logger.Info("Re-Import abgeschlossen: \"{Title}\", {EpisodeCount} Episoden nachgeladen", series.Title, count);
@@ -242,17 +250,9 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
-            // Bestehende Episoden in ein Title-Lookup ziehen – ein einmaliger DB-Roundtrip,
+            // Bestehende Episoden in einen Index ziehen – ein einmaliger DB-Roundtrip,
             // statt der Schleife pro Treffer ein neues FirstOrDefault auf die Liste loszuwerfen.
-            IReadOnlyList<Episode> existingEpisodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
-            Dictionary<string, Episode> existingByTitle = new(existingEpisodes.Count, StringComparer.OrdinalIgnoreCase);
-
-            foreach (Episode existing in existingEpisodes)
-            {
-                // Doppelte Titel: ersten Treffer behalten – das spätere Update bevorzugt damit deterministisch
-                // die Episode mit der niedrigsten EpisodeNumber bzw. dem ältesten Datensatz.
-                _ = existingByTitle.TryAdd(existing.Title, existing);
-            }
+            ExistingEpisodeIndex bestand = new(await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken));
 
             // Delta: bekannte Titel als Hinweis mitgeben. Die Quelle spart dadurch den teuren
             // Track-Lookup für bestehende Folgen (nur die Dauer bräuchte ihn), liefert deren
@@ -260,7 +260,7 @@ namespace EchoPlay.App.Services
             // Lookups wie es neue Folgen gibt, und fehlende Cover lassen sich trotzdem nachtragen.
             IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(
                 sourceSeriesId,
-                new HashSet<string>(existingByTitle.Keys, StringComparer.OrdinalIgnoreCase),
+                bestand.Titles,
                 cancellationToken);
 
             // Add- und Update-Pfad getrennt sammeln; jeder Pfad löst genau einen DB-Roundtrip aus.
@@ -269,9 +269,9 @@ namespace EchoPlay.App.Services
 
             foreach (ImportEpisode importEpisode in providerEpisodes)
             {
-                // Titel-basierter Vergleich – robuster als Nummernvergleich,
-                // da Online-Episoden nicht immer eine konsistente Folgennummer haben
-                if (existingByTitle.TryGetValue(importEpisode.Title, out Episode? existing))
+                // Anbieter-Kennung zuerst, Titel als Rückfall – ein umbenanntes Album bliebe
+                // beim reinen Titelvergleich unerkannt und käme als zweite Zeile in den Bestand.
+                if (bestand.TryFind(importEpisode, out Episode? existing))
                 {
                     // Bestehende Episode: CoverImageUrl nachtragen falls noch nicht gesetzt
                     if (!string.IsNullOrEmpty(importEpisode.CoverImageUrl)
@@ -284,7 +284,9 @@ namespace EchoPlay.App.Services
                     continue;
                 }
 
-                newEpisodes.Add(MapToEpisode(importEpisode, series.Id));
+                Episode neueFolge = MapToEpisode(importEpisode, series.Id);
+                bestand.Add(neueFolge);
+                newEpisodes.Add(neueFolge);
             }
 
             if (newEpisodes.Count > 0)
@@ -310,6 +312,46 @@ namespace EchoPlay.App.Services
             }
 
             return newCount;
+        }
+
+        /// <summary>
+        /// Bildet aus der Anbieter-Antwort die Folgen ab, die der Bestand noch nicht kennt.
+        /// Jede angelegte Folge wandert sofort in den Index, damit sie kein zweites Mal entsteht.
+        /// </summary>
+        /// <param name="providerEpisodes">Die entdoppelte Anbieter-Antwort.</param>
+        /// <param name="existing">Der vorhandene Bestand der Serie.</param>
+        /// <param name="seriesId">Datenbank-ID der Serie.</param>
+        /// <param name="seriesTitle">Serientitel für die Protokollzeile.</param>
+        /// <returns>Die anzulegenden Folgen in Anbieter-Reihenfolge.</returns>
+        private List<Episode> MapMissingEpisodes(
+            List<ImportEpisode> providerEpisodes,
+            ExistingEpisodeIndex existing,
+            Guid seriesId,
+            string seriesTitle)
+        {
+            List<Episode> missing = new(providerEpisodes.Count);
+            int known = 0;
+
+            foreach (ImportEpisode importEpisode in providerEpisodes)
+            {
+                if (existing.Contains(importEpisode))
+                {
+                    known++;
+                    continue;
+                }
+
+                Episode mapped = MapToEpisode(importEpisode, seriesId);
+                existing.Add(mapped);
+                missing.Add(mapped);
+            }
+
+            if (known > 0)
+            {
+                _logger.Debug(() =>
+                    $"Re-Import \"{seriesTitle}\": {known} bereits vorhandene Folgen übersprungen, {missing.Count} neu.");
+            }
+
+            return missing;
         }
 
         /// <summary>
@@ -348,8 +390,14 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Sucht eine bestehende Serie anhand der externen ID und Quelle.
+        /// Sucht die bereits online importierte Serie anhand der externen ID und Quelle.
         /// </summary>
+        /// <remarks>
+        /// Bewusst nur online importierte Serien: Eine lokal eingelesene Serie trägt dieselbe
+        /// Künstlerkennung, sobald die Neuerscheinungs-Prüfung sie ermittelt und gespeichert hat.
+        /// Zählte sie hier mit, gälte der Künstler als „bereits vorhanden" — die Suche blendete
+        /// den Hinzufügen-Knopf aus und die Serie ließe sich nie in die Online-Mediathek holen.
+        /// </remarks>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="service">Datendienst, über den nach der bestehenden Serie gesucht wird.</param>
         /// <param name="series">Das Anbieter-Modell mit Quelle und externer ID.</param>
@@ -357,8 +405,8 @@ namespace EchoPlay.App.Services
         {
             return series.Source switch
             {
-                ProviderKeys.Spotify => await service.GetBySpotifyArtistIdAsync(series.SourceSeriesId, cancellationToken),
-                ProviderKeys.AppleMusic => await service.GetByAppleMusicArtistIdAsync(series.SourceSeriesId, cancellationToken),
+                ProviderKeys.Spotify => await service.GetOnlineImportedBySpotifyArtistIdAsync(series.SourceSeriesId, cancellationToken),
+                ProviderKeys.AppleMusic => await service.GetOnlineImportedByAppleMusicArtistIdAsync(series.SourceSeriesId, cancellationToken),
                 _ => null
             };
         }

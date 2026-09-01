@@ -51,6 +51,20 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
+        public Task<Series?> GetOnlineImportedBySpotifyArtistIdAsync(string spotifyArtistId, CancellationToken cancellationToken = default)
+        {
+            Series? result = _series.FirstOrDefault(s => s.IsOnlineImported && s.SpotifyArtistId == spotifyArtistId);
+            return Task.FromResult(result);
+        }
+
+        /// <inheritdoc/>
+        public Task<Series?> GetOnlineImportedByAppleMusicArtistIdAsync(string appleMusicArtistId, CancellationToken cancellationToken = default)
+        {
+            Series? result = _series.FirstOrDefault(s => s.IsOnlineImported && s.AppleMusicArtistId == appleMusicArtistId);
+            return Task.FromResult(result);
+        }
+
+        /// <inheritdoc/>
         public Task AddAsync(Series series, CancellationToken cancellationToken = default)
         {
             // EF Core setzt die Id nach SaveChanges via store-generated value.

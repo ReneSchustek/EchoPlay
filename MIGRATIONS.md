@@ -1,6 +1,6 @@
 # EchoPlay — Datenbank-Migrationen
 
-Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-07-29, 40 Migrationen.
+Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-09-01, 43 Migrationen.
 
 Jede Migration erzeugt drei Artefakte, die zusammen in denselben Commit gehören: `<Timestamp>_<Name>.cs`, `<Timestamp>_<Name>.Designer.cs` und den aktualisierten `EchoPlayDbContextModelSnapshot.cs`. Der Pfad lautet `src/EchoPlay.Data/Migrations/`.
 
@@ -62,6 +62,7 @@ Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.
 | 40 | 2026-07-29 | AddSeriesCoverLastChecked | Spalte `Series.CoverLastChecked` (nullable TEXT), Gegenstück zu `Episodes.CoverLastChecked`. Der Hintergrunddienst sucht seit dieser Version auch Serien-Cover online; ohne den Zeitstempel fragte er bei jedem Durchlauf dieselben coverlosen Serien erneut bei den Anbietern an. NULL für den Bestand bedeutet „noch nie geprüft" – die erste Suche läuft also für alle bestehenden Serien |
 | 41 | 2026-08-13 | LautstaerkeInEinstellungen | Spalten `AppSettings.Volume` (REAL) und `AppSettings.IsMuted` (INTEGER) für den Lautstärkeregler beider Player. **Der Vorgabewert für `Volume` ist von Hand auf 1,0 gesetzt** — der Initialisierer der Entität gilt nur für neue Objekte, mit dem erzeugten 0,0 wäre die Anwendung nach dem Update stumm gewesen |
 | 42 | 2026-08-24 | AusgeblendeteHinweise | Tabelle `DialogSuppressions` (UNIQUE auf `Key`, gefiltert auf aktive Zeilen) für die dauerhaft ausgeblendeten Dialoge. Eine Zeile je Hinweis statt einer Spalte je Hinweis in `AppSettings` — die Anwendung kennt rund fünfzig ausblendbare Dialoge. Zurückholen ist ein Soft-Delete; der gefilterte Index erlaubt danach ein erneutes Ausblenden desselben Hinweises. Kein Bestandswert nötig: Eine leere Tabelle heißt „nichts ausgeblendet" |
+| 43 | 2026-09-01 | DoppelteFolgenEntfernen | Reine Datenbereinigung ohne Schemaänderung: entfernt je Serie und Anbieter-Album-Kennung die überzähligen Folgenzeilen und behält die älteste. Ursache war ein Re-Import, der jede Folge des Anbieters neu anlegte statt nur die fehlenden — lief er neben einem noch laufenden Erstimport, verdoppelte er den Bestand. Wiedergabestand, Cover und lokale Titel wandern vorher auf die verbleibende Zeile; `PlaybackStates.EpisodeId` und `CoverImages(EntityType, EntityId)` sind eindeutig, deshalb zieht je verbleibender Folge genau ein Eintrag um. Folgen ohne Anbieter-Kennung bleiben unangetastet — gleiche Titel in verschiedenen Ordnern sind lokal normal. Nicht umkehrbar (`Down` bleibt leer); gemessen auf einer 1,35-GB-Datenbank: 11 s, 1306 entfernte Zeilen, alle 3276 Gehört-Markierungen erhalten |
 
 ## Prüf-Reflex vor jedem Migrations-Commit
 

@@ -430,7 +430,8 @@ namespace EchoPlay.App.Tests.Services
             await seriesService.AddAsync(new Series
             {
                 Title = "Bestehende Serie",
-                AppleMusicArtistId = "artist-existing"
+                AppleMusicArtistId = "artist-existing",
+                IsOnlineImported = true
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             ImportService service = BuildService(settings, seriesService, episodeService,
@@ -492,7 +493,8 @@ namespace EchoPlay.App.Tests.Services
             await seriesService.AddAsync(new Series
             {
                 Title = "Vorhandene Serie",
-                SpotifyArtistId = "spotify-123"
+                SpotifyArtistId = "spotify-123",
+                IsOnlineImported = true
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             ImportService service = BuildService(settings, seriesService, episodeService,
@@ -759,6 +761,177 @@ namespace EchoPlay.App.Tests.Services
             bool result = await service.IsAlreadyImportedAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task IsAlreadyImportedAsync_ReturnsFalse_WhenOnlyLocalSeriesCarriesTheArtistId()
+        {
+            // Eine lokal eingelesene Serie bekommt ihre Apple-Music-Artist-ID von der
+            // Neuerscheinungs-Prüfung. Zählte sie als „bereits importiert", blendete die Suche
+            // den Hinzufügen-Knopf aus und der Künstler ließe sich nie in die Online-Mediathek
+            // holen (real beobachtet an „Die Playmos").
+            FakeSeriesDataService seriesService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            FakeEpisodeDataService episodeService = new();
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Die Playmos",
+                AppleMusicArtistId = "267092844",
+                LocalFolderPath = @"D:\Hörspiele\Die Playmos",
+                IsOnlineImported = false
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+
+            ImportSeries series = new()
+            {
+                SourceSeriesId = "267092844",
+                Source = "AppleMusic",
+                Title = "Die Playmos",
+                IsHoerspiel = true,
+                Score = 80
+            };
+
+            bool result = await service.IsAlreadyImportedAsync(series, cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ImportAsync_ImportsArtist_WhenOnlyLocalSeriesCarriesTheArtistId()
+        {
+            // Gegenprobe zum vorigen Test auf dem Schreibpfad: Der Künstler muss wirklich in die
+            // Online-Mediathek gelangen und darf nicht am Vorhanden-Check abprallen.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Die Playmos",
+                AppleMusicArtistId = "267092844",
+                LocalFolderPath = @"D:\Hörspiele\Die Playmos",
+                IsOnlineImported = false
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(
+                [
+                    new() { SourceEpisodeId = "am1", Title = "Folge 1", EpisodeNumber = 1 },
+                ]));
+
+            ImportSeries importSeries = new()
+            {
+                SourceSeriesId = "267092844",
+                Source = "AppleMusic",
+                Title = "Die Playmos",
+                IsHoerspiel = true,
+                Score = 80
+            };
+
+            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(2, seriesService.All.Count);
+            Assert.Contains(seriesService.All, s => s.IsOnlineImported && s.AppleMusicArtistId == "267092844");
+        }
+
+        [Fact]
+        public async Task ReImportEpisodesAsync_SkipsEpisodesAlreadyInTheLibrary()
+        {
+            // Der Re-Import läuft an, während der Erstimport seine Folgen schon geschrieben hat –
+            // genau die Verschränkung, die den Bestand einmal verdoppelt hat. Er darf nur die
+            // fehlende Folge anlegen.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Die drei ???",
+                AppleMusicArtistId = "201306317",
+                IsOnlineImported = true
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series existingSeries = seriesService.All[0];
+
+            await episodeService.AddAsync(new Episode
+            {
+                SeriesId = existingSeries.Id,
+                Title = "Folge 229",
+                EpisodeNumber = 229,
+                AppleMusicAlbumId = "am229"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode
+            {
+                SeriesId = existingSeries.Id,
+                Title = "Folge 230",
+                EpisodeNumber = 230,
+                AppleMusicAlbumId = "am230"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(
+                [
+                    new() { SourceEpisodeId = "am229", Title = "Folge 229", EpisodeNumber = 229 },
+                    new() { SourceEpisodeId = "am230", Title = "Folge 230", EpisodeNumber = 230 },
+                    new() { SourceEpisodeId = "am231", Title = "Folge 231", EpisodeNumber = 231 },
+                ]));
+
+            int count = await service.ReImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, count);
+            Assert.Equal(3, episodeService.All.Count);
+            _ = Assert.Single(episodeService.All, e => e.Title == "Folge 230");
+        }
+
+        [Fact]
+        public async Task DeltaImportEpisodesAsync_SkipsKnownAlbum_WhenProviderRenamedIt()
+        {
+            // Der Anbieter benennt Alben nachträglich um. Beim reinen Titelvergleich käme die
+            // Folge als zweite Zeile in den Bestand; die Album-Kennung erkennt sie wieder.
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            FakeAppSettingsDataService settings = new(new AppSettings());
+
+            await seriesService.AddAsync(new Series
+            {
+                Title = "TKKG",
+                AppleMusicArtistId = "artist-tkkg",
+                IsOnlineImported = true
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series existingSeries = seriesService.All[0];
+
+            await episodeService.AddAsync(new Episode
+            {
+                SeriesId = existingSeries.Id,
+                Title = "Folge 240",
+                EpisodeNumber = 240,
+                AppleMusicAlbumId = "am240"
+            }, cancellationToken: TestContext.Current.CancellationToken);
+
+            ImportService service = BuildService(settings, seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(
+                [
+                    new() { SourceEpisodeId = "am240", Title = "Folge 240: Das verschollene Zepter", EpisodeNumber = 240 },
+                ]));
+
+            int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, newCount);
+            _ = Assert.Single(episodeService.All);
         }
     }
 }

@@ -75,9 +75,9 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             ITunesResponseDto<ITunesCollectionDto> result =
                 await client.LookupAlbumsAsync(artistId: 100, ct: TestContext.Current.CancellationToken);
 
-            int kuenstlerEintraege = result.Results.Count(
+            int artistEntries = result.Results.Count(
                 r => string.Equals(r.WrapperType, "artist", StringComparison.OrdinalIgnoreCase));
-            Assert.Equal(1, kuenstlerEintraege);
+            Assert.Equal(1, artistEntries);
         }
 
         // ── Test-Helfer ──────────────────────────────────────────────────────────

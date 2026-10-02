@@ -93,4 +93,3 @@ BundleArtifacts/
 # Setup-Publish-Artefakte (self-contained Publish + kompilierte Setup.exe, ~300 MB)
 dist/
 
-**/.ai/

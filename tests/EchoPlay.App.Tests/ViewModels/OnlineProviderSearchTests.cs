@@ -113,7 +113,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Auswahluebernahme_UeberspringtBereitsVorhandeneTreffer()
+        public async Task SelectionTakeover_SkipsHitsAlreadyPresent()
         {
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(

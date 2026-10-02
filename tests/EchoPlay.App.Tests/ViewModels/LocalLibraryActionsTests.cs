@@ -347,7 +347,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Coveruebernahme_LaeuftUeberDenKoordinator()
+        public async Task CoverTakeover_RunsThroughTheCoordinator()
         {
             FakeEpisodeCoverCoordinator coordinator = new();
             Harness harness = Harness.Build(coverCoordinator: coordinator);

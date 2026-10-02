@@ -204,7 +204,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Hinzufuegen_MeldetDieSerieAlsVorhandenUndRuftDenAufruferZurueck()
+        public async Task Add_ReportsTheSeriesAsPresentAndCallsTheCallerBack()
         {
             bool nachbereitet = false;
             SearchResultViewModel sut = BuildViewModel(

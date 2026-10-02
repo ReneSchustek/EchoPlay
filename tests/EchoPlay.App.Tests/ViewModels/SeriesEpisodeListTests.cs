@@ -209,7 +209,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Aenderungen_MeldenDieAbhaengigenAnzeigen()
+        public void Changes_NotifyTheDependentDisplays()
         {
             SeriesEpisodeList list = BuildList(Tile("Der Superhund", 1));
             List<string?> gemeldet = [];

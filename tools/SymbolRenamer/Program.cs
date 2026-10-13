@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Rename;
 //
 // Auftragsdatei:
 // {
-//   "projects": ["src/ShopAnalytics.Core/ShopAnalytics.Core.csproj", "..."],
+//   "projects": ["src/EchoPlay.Core/EchoPlay.Core.csproj", "..."],
 //   "renames": [
 //     { "kind": "type",     "container": null,             "from": "RobotsRegelwerk", "to": "RobotsRuleSet" },
 //     { "kind": "member",   "container": "RobotsRuleSet",  "from": "IstErlaubt",      "to": "IsAllowed" }
@@ -23,7 +23,7 @@ using Microsoft.CodeAnalysis.Rename;
 // {
 //   "projects": ["..."],
 //   "segmentDictionary": "F:/.../glossar-segmente.txt",
-//   "localProjects": ["ShopAnalytics.Core"]
+//   "localProjects": ["EchoPlay.Core"]
 // }
 internal static class Program
 {

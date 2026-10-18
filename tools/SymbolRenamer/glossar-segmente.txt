@@ -396,7 +396,6 @@ ebenen=Levels
 echt=Real
 echte=Real
 echten=Real
-edelstahl=StainlessSteel
 effekt=Effect
 eigene=Own
 eigenen=Own

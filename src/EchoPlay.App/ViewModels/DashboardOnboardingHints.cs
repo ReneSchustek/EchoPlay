@@ -10,7 +10,7 @@ namespace EchoPlay.App.ViewModels
     /// <remarks>
     /// Ohne sie sieht ein frisch eingerichtetes Programm aus wie ein kaputtes: Der
     /// Neuerscheinungs-Abschnitt bleibt leer, und nichts sagt warum. Die drei Zustände
-    /// bauen aufeinander auf — keine Serie abonniert, keine favorisiert, keine überwacht —,
+    /// bauen aufeinander auf (keine Serie abonniert, keine favorisiert, keine überwacht),
     /// deshalb stehen sie zusammen und nicht verteilt im Ansichtsmodell der Seite.
     /// </remarks>
     public sealed class DashboardOnboardingHints : ObservableObject
@@ -44,7 +44,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Hinweis, wenn Favoriten existieren, aber keine einzige Serie überwacht wird.
         /// Ohne überwachte Serie fragt der Start gar nicht erst beim Anbieter nach und der
-        /// Neuerscheinungs-Abschnitt verschwindet vollständig — der Hinweis macht diesen
+        /// Neuerscheinungs-Abschnitt verschwindet vollständig, der Hinweis macht diesen
         /// Zustand sichtbar, statt ihn wie einen Fehler wirken zu lassen.
         /// Der Fall tritt nur noch bei Altbeständen auf: Favorisieren schaltet die
         /// Überwachung inzwischen mit ein (siehe <see cref="ISeriesDataService.SetFavoriteAsync"/>).
@@ -65,7 +65,7 @@ namespace EchoPlay.App.ViewModels
             _hasFavoriteSeries = snapshot.HasFavoriteSeries;
             _hasWatchedSeries = snapshot.HasWatchedSeries;
 
-            // Zuletzt gesetzt, weil die Eigenschaft die Meldungen selbst auslöst — so gilt
+            // Zuletzt gesetzt, weil die Eigenschaft die Meldungen selbst auslöst. So gilt
             // dabei schon der neue Stand der beiden anderen Werte.
             HasSubscribedSeries = snapshot.HasSubscribedSeries;
             RaiseHintChanges();

@@ -25,7 +25,7 @@ namespace EchoPlay.LocalLibrary.Matching
                 return TrackMatchKind.Custom;
             }
 
-            // Klassisches Hörspiel: wenige, lange Tracks – lokale und Online-Zahl stimmen überein
+            // Klassisches Hörspiel: wenige, lange Tracks; lokale und Online-Zahl stimmen überein
             if (localTrackCount == onlineTrackCount && onlineTrackCount <= 20)
             {
                 return TrackMatchKind.TbT;

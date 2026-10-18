@@ -36,7 +36,7 @@ namespace EchoPlay.AppleMusic.Clients
         /// Lädt alle Episoden zu einer importierbaren Serie.
         /// Die Methode lädt zunächst alle Alben des Künstlers und anschließend
         /// die Tracks jedes Albums über die iTunes Lookup API.
-        /// Schlägt das Laden der Tracks für ein einzelnes Album fehl, wird dieses übersprungen –
+        /// Schlägt das Laden der Tracks für ein einzelnes Album fehl, wird dieses übersprungen;
         /// die Episoden der übrigen Alben bleiben unberührt.
         /// </summary>
         /// <param name="sourceSeriesId">Die iTunes-Artist-ID als String.</param>
@@ -104,7 +104,7 @@ namespace EchoPlay.AppleMusic.Clients
             // (je >= 1,5 s → bei 230 Folgen ~6 min) werden mehrere Collection-IDs in einem
             // Lookup-Request gebündelt. Die iTunes-Lookup-API akzeptiert kommaseparierte IDs;
             // jeder Track trägt seine CollectionId zur Zuordnung. So kollabieren N rate-limitierte
-            // Requests zu ~N/100 – der Import dauert Sekunden statt Minuten.
+            // Requests zu ~N/100, der Import dauert Sekunden statt Minuten.
             //
             // Delta-Abgleich: Für bereits bekannte Folgen (Titel = Albumname) entfällt
             // der Track-Lookup; ihre Album-Metadaten (inkl. Cover-URL) kommen dennoch durch, damit
@@ -136,7 +136,7 @@ namespace EchoPlay.AppleMusic.Clients
                     continue;
                 }
 
-                // Lookup-Antworten enthalten je Album auch dessen Collection-Eintrag – nur Tracks
+                // Lookup-Antworten enthalten je Album auch dessen Collection-Eintrag; nur Tracks
                 // interessieren, zugeordnet über die CollectionId des Tracks.
                 foreach (ITunesTrackDto track in tracksResponse.Results)
                 {
@@ -164,7 +164,7 @@ namespace EchoPlay.AppleMusic.Clients
                 IReadOnlyList<ITunesTrackDto> tracks =
                     tracksByCollection.TryGetValue(album.CollectionId, out List<ITunesTrackDto>? found) ? found : [];
 
-                // Ein Album = eine Folge – Tracks werden nur für die Dauerberechnung verwendet
+                // Ein Album = eine Folge, Tracks werden nur für die Dauerberechnung verwendet
                 ImportEpisode episode = AppleMusicEpisodeMapper.MapAlbumToEpisode(album, tracks, orderIndex);
                 episodes.Add(episode);
                 orderIndex++;

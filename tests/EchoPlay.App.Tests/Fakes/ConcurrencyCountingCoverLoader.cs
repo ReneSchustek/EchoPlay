@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.Fakes
             }
 
             // Ein Umweg über den Aufgabenplaner, damit die Ladevorgänge sich wirklich
-            // überlappen können — ein sofort fertiger Aufruf liefe immer allein.
+            // überlappen können, denn ein sofort fertiger Aufruf liefe immer allein.
             await Task.Yield();
 
             _ = Interlocked.Decrement(ref _running);

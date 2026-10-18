@@ -33,7 +33,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den CoverService.
         /// </summary>
-        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes — jeder Datenbankzugriff läuft in einem eigenen.</param>
+        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes; jeder Datenbankzugriff läuft in einem eigenen.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public CoverService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
@@ -121,7 +121,7 @@ namespace EchoPlay.App.Services
         /// <param name="decodePixelWidth">
         /// Zielbreite in Bildpunkten, oder 0 für die volle Größe. Die Cover liegen mit 600
         /// Punkten Kantenlänge vor; eine Kachel ist 120 breit. Wer sie voll dekodiert, zahlt
-        /// das mit Zeit und Speicher — bei vierhundert Folgen einer Serie ist der Unterschied
+        /// das mit Zeit und Speicher. Bei vierhundert Folgen einer Serie ist der Unterschied
         /// nicht mehr theoretisch.
         /// </param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bild-Dekodierung via BitmapImage.SetSourceAsync: kaputte oder zugeschnittene Cover-Rohdaten liefern native WIC/COM-Fehler; für die UI reicht 'null' (Fallback-Cover).")]
@@ -133,7 +133,7 @@ namespace EchoPlay.App.Services
             {
                 BitmapImage bitmap = new();
 
-                // Muss vor SetSourceAsync stehen — danach ist die Größe bereits entschieden.
+                // Muss vor SetSourceAsync stehen, danach ist die Größe bereits entschieden.
                 if (decodePixelWidth > 0)
                 {
                     bitmap.DecodePixelWidth = decodePixelWidth;
@@ -181,7 +181,7 @@ namespace EchoPlay.App.Services
                 catch (DbUpdateException ex)
                 {
                     // Endgültiger Fehlschlag nach 3 Versuchen: nicht still verschlucken.
-                    // Die DB-first-Anzeige bleibt ohne diesen Write dauerhaft leer – der finale WARN
+                    // Die DB-first-Anzeige bleibt ohne diesen Write dauerhaft leer. Der finale WARN
                     // macht den Cover-Ausfall sichtbar (Zero-Warning-Regel: echtes Signal, kein Rauschen)
                     // und verhindert zugleich, dass die Exception aus einem Fire-and-forget-Cover-Task
                     // als unbeobachtete Ausnahme entweicht.

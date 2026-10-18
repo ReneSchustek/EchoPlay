@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Zwei Stellen tragen diese Klasse. Erstens das Sammelladen: Werte, die aus der
-    /// Ablage kommen, dürfen die Schaltfläche „Speichern" nicht aufwecken — sonst sieht
+    /// Ablage kommen, dürfen die Schaltfläche „Speichern" nicht aufwecken, sonst sieht
     /// jeder Seitenwechsel nach ungesicherten Änderungen aus. Zweitens die Weiche beim
     /// Muster: Ein Vorschlag wird nur dann ungefragt übernommen, wenn er allein steht und
     /// sicher genug ist; sonst entscheidet der Anwender.
@@ -28,7 +28,7 @@ namespace EchoPlay.App.Tests.ViewModels
     {
         private const string LibraryPath = @"D:\Media";
 
-        /// <summary>Das Muster, das ab Werk im Feld steht — Vergleichswert für „unverändert".</summary>
+        /// <summary>Das Muster, das ab Werk im Feld steht, als Vergleichswert für „unverändert".</summary>
         private const string DefaultPattern = "{number:000} - {title}";
 
         // ── Laden und Schreiben ──────────────────────────────────────────────────
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.ViewModels
             });
 
             // Käme hier ein Änderungssignal, stünde nach jedem Öffnen der Einstellungen
-            // „ungespeicherte Änderungen" — und die Warnung beim Verlassen verlöre ihren Sinn.
+            // „ungespeicherte Änderungen", und die Warnung beim Verlassen verlöre ihren Sinn.
             Assert.Equal(0, harness.UserEdits);
         }
 
@@ -123,7 +123,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             switch (field)
             {
-                // Die Bibliothek ist ab Werk an — die Änderung ist hier das Abschalten.
+                // Die Bibliothek ist ab Werk an, die Änderung ist hier das Abschalten.
                 case "enabled": harness.ViewModel.LocalLibraryEnabled = false; break;
                 case "path": harness.ViewModel.LocalLibraryRootPath = LibraryPath; break;
                 case "pattern": harness.ViewModel.EpisodeFolderPattern = "{nr}"; break;
@@ -234,7 +234,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.ViewModel.AnalyzePatternAsync();
 
             // Ein einziger Vorschlag, der auf fünfundneunzig von hundert Ordnern passt,
-            // braucht keine Rückfrage — sie wäre nur ein Klick ohne Alternative.
+            // braucht keine Rückfrage, sie wäre nur ein Klick ohne Alternative.
             Assert.Equal("{nr} {title}", harness.ViewModel.EpisodeFolderPattern);
             Assert.False(asked);
         }

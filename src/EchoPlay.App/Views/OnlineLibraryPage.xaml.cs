@@ -69,7 +69,7 @@ namespace EchoPlay.App.Views
         /// <summary>Schlüssel des Filters für durchgehörte Serien.</summary>
         private const string FilterKeyFinished = "finished";
 
-        /// <summary>Die Chips des Statusfilters — gehalten, weil sie einander ausschließen.</summary>
+        /// <summary>Die Chips des Statusfilters, gehalten, weil sie einander ausschließen.</summary>
         private Controls.FilterChip[] _statusChips = [];
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Setzt den Fokus auf die Suchbox – wird vom <see cref="OnlineLibraryViewModel.FocusSearchRequested"/>-Event
+        /// Setzt den Fokus auf die Suchbox; wird vom <see cref="OnlineLibraryViewModel.FocusSearchRequested"/>-Event
         /// ausgelöst, wenn der Empty-State-Button "Serie suchen" geklickt wurde.
         /// </summary>
         private void OnFocusSearchRequested()
@@ -160,7 +160,7 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Baut die Abschnitte neu und richtet die Buchstabenleiste danach aus. Die Leiste
         /// verschwindet, sobald die Liste nicht mehr nach Namen sortiert ist oder die Seite
-        /// Suchergebnisse statt der Bibliothek zeigt — sonst zeigte sie auf Sprungziele, die
+        /// Suchergebnisse statt der Bibliothek zeigt, sonst zeigte sie auf Sprungziele, die
         /// es gerade nicht gibt.
         /// </summary>
         private void UpdateSections()
@@ -226,7 +226,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Erst nach dem Neuaufbau der Abschnitte scrollen — vorher gibt es den Container
+            // Erst nach dem Neuaufbau der Abschnitte scrollen, denn vorher gibt es den Container
             // der Kachel noch nicht, und der Sprung liefe ins Leere.
             _ = DispatcherQueue.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
@@ -239,7 +239,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         /// <summary>
         /// Übernimmt einen umgeschalteten Statusfilter. Die Zustände schließen einander aus,
-        /// deshalb geht mit dem neuen Chip jeder other aus — und ein second Klick auf den
+        /// deshalb geht mit dem neuen Chip jeder other aus, und ein second Klick auf den
         /// aktiven Chip führt zurück zu „alle".
         /// </summary>
         private void OnFilterToggled(object? sender, Controls.FilterToggledEventArgs e)

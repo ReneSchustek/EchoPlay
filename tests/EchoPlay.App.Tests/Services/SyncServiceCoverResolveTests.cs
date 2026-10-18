@@ -18,12 +18,12 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Prüft, dass ein beim Einlesen gefundenes Serien-Cover in der Ablage landet — für
+    /// Prüft, dass ein beim Einlesen gefundenes Serien-Cover in der Ablage landet, für
     /// neu angelegte wie für bereits bekannte Serien.
     /// </summary>
     /// <remarks>
     /// Wird das Cover beim Einlesen übergangen, bleibt die Mediathek nach dem ersten Lauf
-    /// eine Wand aus Platzhaltern, obwohl die Bilder auf der Platte liegen — und der
+    /// eine Wand aus Platzhaltern, obwohl die Bilder auf der Platte liegen, und der
     /// Hintergrundlauf holt sie erst Minuten später nach.
     /// </remarks>
     public sealed class SyncServiceCoverResolveTests
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.Services
             _ = await fixture.Service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Bei einer bekannten Serie darf die Adresse des Anbieters als zweite Quelle
-            // mitgegeben werden — beim Neuanlegen gibt es sie noch gar nicht.
+            // mitgegeben werden, denn beim Neuanlegen gibt es sie noch gar nicht.
             (string _, string? coverUrl) = Assert.Single(fixture.LocalCovers.Calls);
             Assert.Equal("https://i.example.invalid/tkkg.jpg", coverUrl);
         }

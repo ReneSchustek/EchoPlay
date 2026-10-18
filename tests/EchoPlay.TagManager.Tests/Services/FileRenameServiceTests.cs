@@ -12,7 +12,7 @@ namespace EchoPlay.TagManager.Tests.Services
     /// Der Service baut eine Vorschau-Liste auf (<see cref="FileRenameService.BuildPreview"/>)
     /// und benennt Dateien tatsächlich um (<see cref="FileRenameService.RenameAsync"/>).
     /// Die Tests für <c>RenameAsync</c> arbeiten mit echten temporären MP3-Dateien, damit
-    /// das File.Move-Verhalten geprüft werden kann – ohne Mocks oder Fake-Dateisysteme.
+    /// das File.Move-Verhalten geprüft werden kann, ohne Mocks oder Fake-Dateisysteme.
     /// </para>
     /// </summary>
     public sealed class FileRenameServiceTests
@@ -78,8 +78,8 @@ namespace EchoPlay.TagManager.Tests.Services
         {
             FileRenameService service = CreateService();
 
-            // {filename} soll den aktuellen Dateinamen ohne Extension einfügen –
-            // nützlich wenn der Dateiname bereits sinnvoll ist und nur ergänzt werden soll
+            // {filename} soll den aktuellen Dateinamen ohne Extension einfügen,
+            // nützlich, wenn der Dateiname bereits sinnvoll ist und nur ergänzt werden soll
             AudioTag tag = new();
             IReadOnlyList<RenamePreviewItem> preview = service.BuildPreview(
                 [(@"C:\audio\001 - Titel.mp3", tag)],
@@ -167,7 +167,7 @@ namespace EchoPlay.TagManager.Tests.Services
         {
             FileRenameService service = CreateService();
 
-            // Doppelpunkt ist in Windows-Dateinamen verboten – er kommt in Serientiteln häufig vor
+            // Doppelpunkt ist in Windows-Dateinamen verboten, er kommt in Serientiteln häufig vor
             AudioTag tag = new() { Title = "Folge 1: Der Anfang" };
             IReadOnlyList<RenamePreviewItem> preview = service.BuildPreview(
                 [(@"C:\audio\file.mp3", tag)],
@@ -181,7 +181,7 @@ namespace EchoPlay.TagManager.Tests.Services
         {
             FileRenameService service = CreateService();
 
-            // Wenn alter und neuer Name identisch sind, soll IsUnchanged true sein –
+            // Wenn alter und neuer Name identisch sind, soll IsUnchanged true sein;
             // RenameAsync überspringt diese Einträge dann ohne File.Move-Aufruf
             AudioTag tag = new() { Title = "Unverändert" };
             IReadOnlyList<RenamePreviewItem> preview = service.BuildPreview(

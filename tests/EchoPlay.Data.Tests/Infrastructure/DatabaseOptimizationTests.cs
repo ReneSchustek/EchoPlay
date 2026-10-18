@@ -150,7 +150,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             SqliteConnection connection = new("DataSource=:memory:");
             connection.Open();
 
-            // Interceptor manuell triggern – simuliert das EF-Core-Verbindungsverhalten
+            // Interceptor manuell triggern, simuliert das EF-Core-Verbindungsverhalten
             SqlitePragmaInterceptor interceptor = new();
             interceptor.ConnectionOpened(connection, null!);
 
@@ -178,7 +178,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             command.CommandText = "PRAGMA journal_mode;";
             string result = (string)command.ExecuteScalar()!;
 
-            // In-Memory-DBs verwenden immer "memory" – WAL gilt nur für Datei-DBs.
+            // In-Memory-DBs verwenden immer "memory", WAL gilt nur für Datei-DBs.
             // Wichtig ist, dass der PRAGMA-Befehl ohne Fehler durchläuft.
             Assert.NotNull(result);
 

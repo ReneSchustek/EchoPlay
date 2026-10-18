@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.Views
     /// <summary>
     /// Hält die Bedienelemente für Screenreader und UI-Automation ansprechbar.
     /// Ohne Namen melden Kacheln ihren ViewModel-Typnamen
-    /// („EchoPlay.App.ViewModels.LocalArtistCardViewModel") und Icon-Buttons gar nichts —
+    /// („EchoPlay.App.ViewModels.LocalArtistCardViewModel") und Icon-Buttons gar nichts:
     /// WinUI fällt ohne <c>AutomationProperties.Name</c> auf <c>ToString()</c> zurück.
     /// Prüft die XAML-Dateien als XML, damit kein WinUI-Host nötig ist.
     /// </summary>
@@ -67,7 +67,7 @@ namespace EchoPlay.App.Tests.Views
 
                     // x:Uid genügt nur, wenn die .resw dazu auch wirklich einen Namen liefert.
                     // Gegenbeispiel aus dem Smoke-Test: LogRefreshButton hatte ein x:Uid, in der
-                    // .resw aber ausschließlich einen ToolTip — Screenreader lasen nichts vor.
+                    // .resw aber ausschließlich einen ToolTip, Screenreader lasen nichts vor.
                     string? uid = button.Attribute(X + "Uid")?.Value;
                     if (uid is not null && LocalizedNameKeys.Contains(uid)) continue;
 
@@ -91,7 +91,7 @@ namespace EchoPlay.App.Tests.Views
         /// Alle x:Uid-Werte, für die die deutsche .resw einen
         /// <c>&lt;Uid&gt;.AutomationProperties.Name</c> hinterlegt.
         /// Die englische Datei wird von <c>checker-i18n-check.sh</c> gegen die deutsche
-        /// abgeglichen — ein Schlüssel hier genügt daher als Beleg für beide Sprachen.
+        /// abgeglichen. Ein Schlüssel hier genügt daher als Beleg für beide Sprachen.
         /// </summary>
         private static readonly HashSet<string> LocalizedNameKeys = LoadLocalizedNameKeys();
 
@@ -117,7 +117,7 @@ namespace EchoPlay.App.Tests.Views
             XAttribute? content = button.Attribute("Content");
             if (content is not null)
             {
-                // Content="&#xE712;" ist ein Glyph, kein Text — Länge 1 als Heuristik.
+                // Content="&#xE712;" ist ein Glyph, kein Text (Länge 1 als Heuristik).
                 return content.Value.Length <= 2;
             }
 

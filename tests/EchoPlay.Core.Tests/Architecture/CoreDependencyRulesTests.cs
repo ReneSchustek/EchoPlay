@@ -6,7 +6,7 @@ namespace EchoPlay.Core.Tests.Architecture
 {
     /// <summary>
     /// Architektur-Guard: EchoPlay.Core ist die innerste Schicht. Sie darf auf kein
-    /// anderes EchoPlay-Modul verweisen — einzige erlaubte EchoPlay-Referenz ist
+    /// anderes EchoPlay-Modul verweisen. Einzige erlaubte EchoPlay-Referenz ist
     /// <c>EchoPlay.Logger.Abstractions</c>. Der Test friert diese Regel ein, damit ein
     /// versehentlicher Rück-Verweis (z.B. Core → Data/App) sofort rot wird.
     /// </summary>
@@ -25,7 +25,7 @@ namespace EchoPlay.Core.Tests.Architecture
                 .OrderBy(name => name, StringComparer.Ordinal)
                 .ToArray();
 
-            // Genau eine EchoPlay-Referenz erlaubt — und das muss Logger.Abstractions sein.
+            // Genau eine EchoPlay-Referenz erlaubt, und das muss Logger.Abstractions sein.
             string onlyReference = Assert.Single(echoPlayReferences);
             Assert.Equal("EchoPlay.Logger.Abstractions", onlyReference);
         }

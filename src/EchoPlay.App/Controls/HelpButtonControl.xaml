@@ -2,7 +2,7 @@
 <!-- Wiederverwendbarer Hilfe-Button mit angedocktem TeachingTip.
      Wird in allen Hauptseiten (Dashboard, Mediathek, Suche, Player, Settings, Statistik)
      verwendet und kapselt Button + TeachingTip + Click-Handler in einem Element.
-     Der Aufrufer setzt nur TipUid – der lokalisierte Subtitle wird daraus abgeleitet. -->
+     Der Aufrufer setzt nur TipUid, der lokalisierte Subtitle wird daraus abgeleitet. -->
 <UserControl
     x:Class="EchoPlay.App.Controls.HelpButtonControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

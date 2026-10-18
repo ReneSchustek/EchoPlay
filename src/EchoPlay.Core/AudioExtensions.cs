@@ -4,7 +4,7 @@ namespace EchoPlay.Core
 {
     /// <summary>
     /// Zentrale Definition aller unterstützten Audio-Dateierweiterungen.
-    /// Wird projektübergreifend verwendet – von Scanner, Player, Analyse und Fehlende-Folgen-Erkennung.
+    /// Wird projektübergreifend verwendet: von Scanner, Player, Analyse und Fehlende-Folgen-Erkennung.
     /// Dadurch bleibt die Liste konsistent und muss nur an einer Stelle gepflegt werden.
     /// </summary>
     public static class AudioExtensions
@@ -14,7 +14,7 @@ namespace EchoPlay.Core
         /// Diese Liste bestimmt, welche Dateien als Audioinhalte erkannt und wiedergegeben werden.
         /// </summary>
         /// <remarks>
-        /// Formate wie <c>.ape</c> oder <c>.mpc</c> fehlen bewusst – Windows Media Foundation
+        /// Formate wie <c>.ape</c> oder <c>.mpc</c> fehlen bewusst, denn Windows Media Foundation
         /// unterstützt sie nicht nativ, und Codec-Packs sind auf Endnutzer-PCs nicht garantiert.
         /// TagLib# kann deren Metadaten trotzdem lesen (siehe <c>TagService</c>).
         /// </remarks>

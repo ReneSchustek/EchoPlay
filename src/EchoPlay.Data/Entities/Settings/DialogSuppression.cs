@@ -13,7 +13,7 @@ namespace EchoPlay.Data.Entities.Settings
     /// Migration.
     /// <para>
     /// <see cref="Key"/> ist bewusst Text und nicht die Aufzählung <c>DialogKey</c>. Fällt ein
-    /// Dialog irgendwann weg, steht seine Zeile weiter in der Datenbank — sie soll dann
+    /// Dialog irgendwann weg, steht seine Zeile weiter in der Datenbank. Sie soll dann
     /// übergangen werden und nicht beim Lesen die ganze Abfrage reißen.
     /// </para>
     /// </remarks>

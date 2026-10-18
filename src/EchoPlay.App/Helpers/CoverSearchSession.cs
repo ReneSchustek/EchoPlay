@@ -15,7 +15,7 @@ namespace EchoPlay.App.Helpers
     /// stehen, welche Seite als Nächstes kommt und welche Kachel gewählt ist.
     /// </summary>
     /// <remarks>
-    /// Das war eine Methode mit acht lokalen Funktionen über gemeinsamem Zustand — also eine
+    /// Das war eine Methode mit acht lokalen Funktionen über gemeinsamem Zustand, also eine
     /// Klasse, die als Methode geschrieben war. Als Typ ist derselbe Ablauf lesbar: Die
     /// Felder sagen, was die Sitzung sich merkt, und jede Methode hat einen Namen statt
     /// einer Stelle im Ablauf.
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Helpers
         /// Richtet die Sitzung auf den fertig aufgebauten Dialog ein.
         /// </summary>
         /// <param name="searchFunc">Die eigentliche Suche; bekommt die gewünschte Seite mit.</param>
-        /// <param name="dialog">Der Dialog — die Sitzung schaltet dessen Übernehmen-Schaltfläche.</param>
+        /// <param name="dialog">Der Dialog; die Sitzung schaltet dessen Übernehmen-Schaltfläche.</param>
         /// <param name="queryBox">Das Suchfeld.</param>
         /// <param name="progressRing">Die Fortschrittsanzeige der Statuszeile.</param>
         /// <param name="statusText">Der Text der Statuszeile.</param>
@@ -93,7 +93,7 @@ namespace EchoPlay.App.Helpers
             }
             catch (OperationCanceledException)
             {
-                // Dialog wurde geschlossen — kein Fehlerzustand.
+                // Dialog wurde geschlossen, kein Fehlerzustand.
                 _progressRing.IsActive = false;
             }
             catch (Exception)
@@ -138,7 +138,7 @@ namespace EchoPlay.App.Helpers
 
         /// <summary>
         /// Holt die nächste Seite. Bleibt sie ohne neue Treffer, verschwindet die
-        /// Nachlade-Kachel — ein Knopf, der nichts mehr tut, ist schlimmer als keiner.
+        /// Nachlade-Kachel. Ein Knopf, der nichts mehr tut, ist schlimmer als keiner.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Nachladen weiterer Cover: Fehler der fremden Gegenstelle dürfen den Dialog nicht schließen; die Nachlade-Kachel bleibt stehen, damit der Nutzer es erneut versuchen kann.")]
         private async Task LoadMoreAsync()
@@ -167,7 +167,7 @@ namespace EchoPlay.App.Helpers
             }
             catch (OperationCanceledException)
             {
-                // Dialog geschlossen — nichts zu tun.
+                // Dialog geschlossen, nichts zu tun.
             }
             catch (Exception)
             {
@@ -182,7 +182,7 @@ namespace EchoPlay.App.Helpers
 
         /// <summary>
         /// Hängt Treffer an und liefert, wie viele davon neu waren. Erste Suche und
-        /// Nachladen teilen sich diesen Weg — sonst stünde der Kachelbau samt Auswahl
+        /// Nachladen teilen sich diesen Weg, sonst stünde der Kachelbau samt Auswahl
         /// zweimal da.
         /// </summary>
         private int AppendResults(IReadOnlyList<CoverSearchHit> results)
@@ -240,7 +240,7 @@ namespace EchoPlay.App.Helpers
         }
 
         /// <summary>
-        /// Hält die Nachlade-Kachel als letzte im Raster — oder entfernt sie, wenn nichts
+        /// Hält die Nachlade-Kachel als letzte im Raster oder entfernt sie, wenn nichts
         /// mehr nachzuladen ist.
         /// </summary>
         private void EnsureLoadMoreTile(bool morePossible)

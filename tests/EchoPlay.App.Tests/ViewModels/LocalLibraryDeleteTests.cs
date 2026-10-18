@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Das Löschen von der Platte ist der einzige Weg in EchoPlay, der Dateien des Anwenders
     /// unwiderruflich entfernt. Ohne die Rückfrage davor wäre ein Fehlklick nicht mehr
-    /// gutzumachen — deshalb steht sie hier als Zusage und nicht als Absprache.
+    /// gutzumachen, deshalb steht sie hier als Zusage und nicht als Absprache.
     ///
     /// Die Tests legen echte Ordner im Temp-Verzeichnis an.
     /// </remarks>

@@ -250,7 +250,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Temporärer Online-Status während einer einzelnen Aktion im Offline-Modus.
         /// Wird vom <see cref="Services.OnlineAccessGuard"/> gesetzt und nach Abschluss der Aktion
-        /// automatisch zurückgesetzt. Ändert nur die visuelle Anzeige in der Info-Leiste –
+        /// automatisch zurückgesetzt. Ändert nur die visuelle Anzeige in der Info-Leiste;
         /// die <see cref="Data.Entities.Settings.AppSettings.OfflineMode"/>-Einstellung bleibt unberührt.
         /// </summary>
         public bool IsTemporarilyOnline
@@ -332,7 +332,7 @@ namespace EchoPlay.App.ViewModels
         // ── Scan-Fortschritt ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// Der Fortschritt eines laufenden Vorgangs — Text, Balken und Taskleisten-Symbol.
+        /// Der Fortschritt eines laufenden Vorgangs: Text, Balken und Taskleisten-Symbol.
         /// Die Anzeige bindet direkt auf diesen Bereich; eine zweite Fassung der
         /// Eigenschaften auf dieser Ebene wäre nur eine Fehlerquelle.
         /// </summary>
@@ -372,7 +372,7 @@ namespace EchoPlay.App.ViewModels
             IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
 
-            // Einstellungen laden – gibt Theme, Sprache und aktiven Provider für die Anzeige
+            // Einstellungen laden; gibt Theme, Sprache und aktiven Provider für die Anzeige
             AppSettings settings = await settingsService.GetAsync();
             ActiveTheme = settings.ActiveTheme;
             ActiveLanguage = settings.ActiveLanguage;
@@ -401,15 +401,15 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync();
             SubscribedSeriesCount = subscribedSeries.Count;
 
-            // Alle Wiedergabestände einmalig laden – vermeidet N+1-Queries beim Episoden-Abgleich
+            // Alle Wiedergabestände einmalig laden, das vermeidet N+1-Queries beim Episoden-Abgleich
             IReadOnlyList<PlaybackState> allStates = await playbackService.GetAllAsync();
             HashSet<Guid> completedEpisodeIds = allStates
                 .Where(s => s.IsCompleted)
                 .Select(s => s.EpisodeId)
                 .ToHashSet();
 
-            // Alle Episoden der abonnierten Serien in einem einzigen Query laden –
-            // ein Query pro Serie wäre ein N+1-Problem.
+            // Alle Episoden der abonnierten Serien in einem einzigen Query laden,
+            // denn ein Query pro Serie wäre ein N+1-Problem.
             List<Guid> seriesIds = subscribedSeries.Select(s => s.Id).ToList();
             IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(seriesIds);
 
@@ -500,7 +500,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Speichert die neue Sprache in AppSettings und startet die App neu.
-        /// WinUI 3 kann Ressourcendateien nicht zur Laufzeit nachladen – der Neustart ist zwingend.
+        /// WinUI 3 kann Ressourcendateien nicht zur Laufzeit nachladen, der Neustart ist zwingend.
         /// </summary>
         /// <param name="languageCode">BCP-47-Sprachcode der gewünschten Sprache, z.B. "de" oder "en".</param>
         /// <returns>Der Task ist abgeschlossen, wenn die Sprache gespeichert und der Neustart angestoßen ist.</returns>
@@ -511,7 +511,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Persistenz, Sprachpräferenz und Neustart liegen im LanguageSwitchService –
+            // Persistenz, Sprachpräferenz und Neustart liegen im LanguageSwitchService;
             // die Einstellungsseite nutzt exakt denselben Weg.
             if (_languageSwitchService is not null)
             {

@@ -8,7 +8,7 @@ namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
     /// Sichtbarkeit der Aktion „In Spotify öffnen" auf der Folgen-Kachel.
-    /// Die Aktion selbst wird hier nicht ausgelöst — sie öffnet einen externen Link.
+    /// Die Aktion selbst wird hier nicht ausgelöst, denn sie öffnet einen externen Link.
     /// </summary>
     public sealed class EpisodeTileSpotifyTests
     {
@@ -53,7 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void OpenInSpotify_WithoutAlbumId_StaysAvailableViaSearch()
         {
             // Spotify soll unabhängig davon nutzbar sein, über welchen Anbieter importiert
-            // wurde — ohne Album-ID greift die Suche nach Serie und Folge.
+            // wurde; ohne Album-ID greift die Suche nach Serie und Folge.
             EpisodeTileViewModel tile = Build(spotifyAlbumId: null, hasLocalTrack: false);
 
             Assert.Equal(Visibility.Visible, tile.OpenInSpotifyVisibility);
@@ -90,12 +90,12 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void OpenInAppleMusic_NoLocalTrackAndAlbumKnown_IsVisible()
         {
-            // Der reale Bestand trägt ausschließlich Apple-IDs – ohne diese Aktion bliebe
+            // Der reale Bestand trägt ausschließlich Apple-IDs, ohne diese Aktion bliebe
             // das Kontextmenü dort leer.
             EpisodeTileViewModel tile = Build(null, hasLocalTrack: false, appleMusicAlbumId: ValidAppleAlbumId);
 
             Assert.Equal(Visibility.Visible, tile.OpenInAppleMusicVisibility);
-            // Spotify steht daneben zur Verfügung – ohne Album-ID über die Suche.
+            // Spotify steht daneben zur Verfügung, ohne Album-ID über die Suche.
             Assert.Equal(Visibility.Visible, tile.OpenInSpotifyVisibility);
         }
 

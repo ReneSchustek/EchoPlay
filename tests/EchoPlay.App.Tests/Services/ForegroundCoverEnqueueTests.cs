@@ -117,7 +117,7 @@ namespace EchoPlay.App.Tests.Services
                 CoverFetchPriority.Foreground);
 
             // Der Vorrang hält den Hintergrundlauf an, solange die sichtbare Ansicht
-            // wartet — geliefert werden muss trotzdem dasselbe.
+            // wartet; geliefert werden muss trotzdem dasselbe.
             byte[] result = await delivered.Task.WaitAsync(
                 TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
             Assert.Equal(FolderBytes, result);
@@ -177,7 +177,7 @@ namespace EchoPlay.App.Tests.Services
 
             await sut.RequestPriorityForSeriesAsync(SeriesId, TestContext.Current.CancellationToken);
 
-            // Eine unlesbare Datei darf die Folge nicht um ihr Cover bringen — die Adresse
+            // Eine unlesbare Datei darf die Folge nicht um ihr Cover bringen, die Adresse
             // des Anbieters bleibt als zweite Quelle.
             Assert.Equal([CoverUrl], downloader.RequestedUrls);
             Assert.Contains(episode.Id, coverService.StoredEpisodeCovers);
@@ -211,7 +211,7 @@ namespace EchoPlay.App.Tests.Services
             sut.EnqueueForEpisodes([Guid.NewGuid()], (_, _) => { });
 
             // Die Warteschlange läuft im Hintergrund. Reißt sie ab, wäre die Ausnahme
-            // nirgends zu greifen — sie muss im Lauf selbst enden und dort vermerkt werden.
+            // nirgends zu greifen, sie muss im Lauf selbst enden und dort vermerkt werden.
             string warning = await logger.FirstWarning.Task.WaitAsync(
                 TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
@@ -237,7 +237,7 @@ namespace EchoPlay.App.Tests.Services
             Assert.False(waiting.IsCompleted);
 
             // Der Hintergrundlauf darf erst weiterarbeiten, wenn die Anfrage der sichtbaren
-            // Seite durch ist — sonst nimmt er ihr die Verbindung zum Anbieter weg.
+            // Seite durch ist, sonst nimmt er ihr die Verbindung zum Anbieter weg.
             _ = loader.Release.TrySetResult([0x01]);
 
             await waiting.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);

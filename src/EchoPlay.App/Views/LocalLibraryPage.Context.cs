@@ -110,7 +110,7 @@ namespace EchoPlay.App.Views
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
                 // Vorschau im Hintergrund erstellen.
-                // Lokale Methode statt Lambda — `+=` und `-=` müssen dieselbe Delegate-Identität haben,
+                // Lokale Methode statt Lambda, denn `+=` und `-=` müssen dieselbe Delegate-Identität haben,
                 // sonst ist das Unsubscribe ein No-Op und der Handler hängt am VM weiter.
                 RestructurePreviewDisplay? preview = null;
                 void CapturePreview(RestructurePreviewDisplay p) => preview = p;

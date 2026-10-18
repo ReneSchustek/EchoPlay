@@ -7,7 +7,7 @@ namespace EchoPlay.App.Services
     /// Ermöglicht entkoppelte Benachrichtigung über Scan-Ereignisse.
     /// Registriert als Singleton, damit das Transient-ViewModel der lokalen Mediathek
     /// das Event auch nach einer Rücknavigation abonnieren kann.
-    /// Problem ohne diesen Service: Der Scan-Callback war ein Closure auf das alte ViewModel –
+    /// Problem ohne diesen Service: Der Scan-Callback war ein Closure auf das alte ViewModel;
     /// nach Navigation entstand ein neues ViewModel, das keine Callbacks mehr erhielt.
     /// </summary>
     public interface IScanEventService

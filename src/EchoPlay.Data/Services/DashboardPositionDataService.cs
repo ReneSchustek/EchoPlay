@@ -48,7 +48,7 @@ namespace EchoPlay.Data.Services
 
             _logger.Info("Speichere Reihenfolge für '{Section}' ({SeriesCount} Serien).", section, seriesIds.Count);
 
-            // Bestehende Positionen des Bereichs entfernen – Replace-Strategie ist einfacher
+            // Bestehende Positionen des Bereichs entfernen, denn die Replace-Strategie ist einfacher
             // und konsistenter als ein Merge, da die gesamte Reihenfolge auf einmal gesetzt wird.
             List<DashboardPosition> existing = await _context.DashboardPositions
                 .AsTracking()
@@ -73,8 +73,8 @@ namespace EchoPlay.Data.Services
             DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
             if (conflict is not null)
             {
-                // Paralleler Scope hat für dieselbe Section bereits Positionen geschrieben —
-                // ignorieren, da die zweite Reihenfolge gleichwertig ist.
+                // Paralleler Scope hat für dieselbe Section bereits Positionen geschrieben.
+                // Ignorieren, da die zweite Reihenfolge gleichwertig ist.
                 _logger.Warning("UNIQUE-Konflikt bei Dashboard-Positionen ignoriert: {Reason}", conflict.InnerException?.Message);
                 return;
             }

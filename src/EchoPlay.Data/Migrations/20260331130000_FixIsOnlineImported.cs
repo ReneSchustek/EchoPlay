@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Migrations
 
             // Korrektur: Die vorherige Migration hat IsOnlineImported zu breit gesetzt.
             // Serien mit gecachter AppleMusicArtistId (vom OnlineEpisodeChecker) sind
-            // keine echten Online-Imports – nur Serien ohne LocalFolderPath sind es.
+            // keine echten Online-Imports; nur Serien ohne LocalFolderPath sind es.
             // Erst alles zurücksetzen, dann nur die echten Online-Imports markieren.
             _ = migrationBuilder.Sql("""
                 UPDATE Series SET IsOnlineImported = 0;

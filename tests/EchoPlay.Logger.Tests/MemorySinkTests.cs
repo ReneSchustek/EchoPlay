@@ -55,7 +55,7 @@ namespace EchoPlay.Logger.Tests
             _ = Assert.Single(snapshot);
         }
 
-        // ── ILiveLogSink – Event ──────────────────────────────────────────────────
+        // ── ILiveLogSink: Event ──────────────────────────────────────────────────
 
         [Fact]
         public async Task WriteAsync_FiresLogEntryAdded()
@@ -88,7 +88,7 @@ namespace EchoPlay.Logger.Tests
         [Fact]
         public async Task WriteAsync_FiresEventEvenWhenBufferFull()
         {
-            // Das Event muss auch dann feuern, wenn der älteste Eintrag verdrängt wird –
+            // Das Event muss auch dann feuern, wenn der älteste Eintrag verdrängt wird,
             // sonst gehen Live-Updates bei vollem Puffer verloren
             MemorySink sink = new(capacity: 1);
             int callCount = 0;

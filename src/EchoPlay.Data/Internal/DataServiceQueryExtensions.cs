@@ -11,7 +11,7 @@ namespace EchoPlay.Data.Internal
     {
         /// <summary>
         /// Lädt eine Entität per Id im Tracking-Modus. Wird sie nicht gefunden, wird eine
-        /// einheitliche Warnung protokolliert und <c>null</c> zurückgegeben – der Aufrufer
+        /// einheitliche Warnung protokolliert und <c>null</c> zurückgegeben; der Aufrufer
         /// bricht die Operation dann typischerweise ab.
         /// </summary>
         /// <typeparam name="TEntity">Der Entitätstyp (mit Id).</typeparam>

@@ -41,7 +41,7 @@ namespace EchoPlay.AppleMusic.Scoring
         /// Steht der Name bereits für eine bekannte Hörspielserie, endet die Analyse dort:
         /// Die Bewertung nimmt solche Künstler ohnehin hart an
         /// (<see cref="HoerspielScoreCalculator.Evaluate"/>), jede Albenprüfung wäre für die
-        /// Tonne — und kostet vier Anfragen an der Ratenbremse.
+        /// Tonne und kostet vier Anfragen an der Ratenbremse.
         /// </remarks>
         /// <param name="source">Der iTunes-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
@@ -103,7 +103,7 @@ namespace EchoPlay.AppleMusic.Scoring
         /// <param name="HasAlbums">Ob der Künstler überhaupt Alben besitzt.</param>
         /// <param name="HasHoerspielStructure">Ob mindestens ein Album die Hörspiel-Struktur zeigt.</param>
         /// <param name="ArtworkUrl">
-        /// Die Cover-Adresse des ersten Albums. Sie ist das Cover der Serie — auf Künstlerebene
+        /// Die Cover-Adresse des ersten Albums. Sie ist das Cover der Serie, denn auf Künstlerebene
         /// liefert der Anbieter keines, auf Albenebene schon, und die Liste liegt hier ohnehin vor.
         /// </param>
         private readonly record struct AlbumAnalysis(bool HasAlbums, bool HasHoerspielStructure, string? ArtworkUrl)
@@ -174,7 +174,7 @@ namespace EchoPlay.AppleMusic.Scoring
         /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>
         /// <returns>
         /// Die Dauern je Album, oder <see langword="null"/>, wenn die Gegenstelle die Anfrage
-        /// vorübergehend nicht beantworten konnte. Dann bleibt die Strukturfrage offen —
+        /// vorübergehend nicht beantworten konnte. Dann bleibt die Strukturfrage offen;
         /// die Bewertung stützt sich auf Name und Genre.
         /// </returns>
         private async Task<IReadOnlyDictionary<long, List<TimeSpan>>?> LoadTrackDurationsAsync(

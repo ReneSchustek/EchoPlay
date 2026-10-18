@@ -8,7 +8,7 @@ namespace EchoPlay.App.ViewModels
     /// z.B. „Weitere Aktionen: Die drei ??? – Folge 240".
     /// </summary>
     /// <remarks>
-    /// Nötig, weil <c>x:Uid</c> innerhalb eines <c>DataTemplate</c> nicht zuverlässig greift –
+    /// Nötig, weil <c>x:Uid</c> innerhalb eines <c>DataTemplate</c> nicht zuverlässig greift;
     /// der Name muss also aus den Daten kommen. Ohne diese Verbindung nennt ein Screenreader
     /// entweder nur die Funktion (bei welchem Element?) oder nur den Titel (was tut der Knopf?).
     /// </remarks>

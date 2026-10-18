@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Der Anbieter liefert die Cover-Adresse beim Import kostenlos mit. Wird sie nicht
-    /// genutzt, landet dieselbe Folge später in der langsamen Online-Suchkette — mit
+    /// genutzt, landet dieselbe Folge später in der langsamen Online-Suchkette, mit
     /// Wartezeit für den Anwender und Last bei fremden Diensten.
     /// </remarks>
     public sealed class EpisodeCoverCacheProviderTests
@@ -49,7 +49,7 @@ namespace EchoPlay.App.Tests.Services
 
             await fixture.Service.CacheCoversAsync(fixture.SeriesId, ct: TestContext.Current.CancellationToken);
 
-            // Auch ohne Importdaten steht die Adresse an der Folge — etwa nach einem
+            // Auch ohne Importdaten steht die Adresse an der Folge, etwa nach einem
             // Nachimport.
             Assert.Equal([CoverUrl], fixture.Downloader.RequestedUrls);
         }
@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.Services
                 ct: TestContext.Current.CancellationToken);
 
             // Die Zuordnung läuft über den Titel. Passt er nicht, gehört das Cover zu einer
-            // anderen Folge — lieber keines als ein falsches.
+            // anderen Folge, denn lieber keines als ein falsches.
             Assert.Empty(fixture.Downloader.RequestedUrls);
         }
 
@@ -105,7 +105,7 @@ namespace EchoPlay.App.Tests.Services
 
             await fixture.Service.CacheCoversAsync(fixture.SeriesId, ct: TestContext.Current.CancellationToken);
 
-            // Ohne Adresse vom Anbieter bleibt nur die Suchkette — sonst trüge die Folge
+            // Ohne Adresse vom Anbieter bleibt nur die Suchkette, sonst trüge die Folge
             // dauerhaft einen Platzhalter.
             Assert.NotNull(search.LastSearchTitle);
             Assert.Contains(fixture.EpisodeId, fixture.CoverService.StoredEpisodeCovers);
@@ -134,7 +134,7 @@ namespace EchoPlay.App.Tests.Services
             await fixture.Service.CacheCoversAsync(fixture.SeriesId, ct: TestContext.Current.CancellationToken);
 
             // Wenn der eigene Bestand schon alles hergibt, ist jede Anfrage nach draußen
-            // überflüssig — und bei fremden Diensten obendrein unhöflich.
+            // überflüssig und bei fremden Diensten obendrein unhöflich.
             Assert.Empty(fixture.Downloader.RequestedUrls);
         }
 

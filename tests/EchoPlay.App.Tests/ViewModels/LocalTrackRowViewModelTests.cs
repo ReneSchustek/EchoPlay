@@ -70,8 +70,8 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             LocalTrackRowViewModel sut = Build(TimeSpan.Zero);
 
-            // Bis die Kennzeichnung gelesen ist, steht der aufgeräumte Dateiname da —
-            // die vorangestellte Nummer gehört nicht in die Beschriftung.
+            // Bis die Kennzeichnung gelesen ist, steht der aufgeräumte Dateiname da,
+            // denn die vorangestellte Nummer gehört nicht in die Beschriftung.
             Assert.Equal("Auftakt", sut.Title);
         }
 

@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// <c>SeriesDataService</c> sortiert nach <c>Title</c> und trennt keine Artikel ab.
-        /// „Die drei ???" steht in der Liste deshalb unter D — und die Leiste muss dorthin
+        /// „Die drei ???" steht in der Liste deshalb unter D, und die Leiste muss dorthin
         /// zeigen, nicht unter T.
         /// </summary>
         [Theory]
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Helpers
             Assert.Equal('#', AlphabetIndex.BucketOf(title));
 
         /// <summary>
-        /// Führende Leerzeichen dürfen einen Titel nicht ins Sammelfach schieben — sonst
+        /// Führende Leerzeichen dürfen einen Titel nicht ins Sammelfach schieben, sonst
         /// verschwindet ein Eintrag aus dem Buchstaben, unter dem er sichtbar steht.
         /// </summary>
         [Fact]
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Helpers
             Assert.Equal(AlphabetIndex.BucketOf("tkkg"), AlphabetIndex.BucketOf("TKKG"));
 
         /// <summary>
-        /// Die Leiste führt immer alle 27 Fächer — eine Leiste, die ihre Breite je nach Bestand
+        /// Die Leiste führt immer alle 27 Fächer. Eine Leiste, die ihre Breite je nach Bestand
         /// ändert, ist kein verlässlicher Anlaufpunkt.
         /// </summary>
         [Fact]
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Jeder Titel muss in genau einem Fach landen, das die Leiste auch anbietet — sonst
+        /// Jeder Titel muss in genau einem Fach landen, das die Leiste auch anbietet, sonst
         /// gäbe es Einträge, die über kein Fach erreichbar sind.
         /// </summary>
         [Theory]

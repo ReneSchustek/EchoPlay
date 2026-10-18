@@ -5,7 +5,7 @@ namespace EchoPlay.Data.Services.Interfaces
 {
     /// <summary>
     /// Zugriff auf verschlüsselte Einstellungswerte in der SecureSettings-Tabelle.
-    /// Arbeitet nur mit verschlüsselten Bytes — die Entschlüsselung erfolgt in der App-Schicht.
+    /// Arbeitet nur mit verschlüsselten Bytes, die Entschlüsselung erfolgt in der App-Schicht.
     /// </summary>
     public interface ISecureSettingsDataService
     {

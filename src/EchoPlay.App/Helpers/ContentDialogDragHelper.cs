@@ -20,7 +20,7 @@ namespace EchoPlay.App.Helpers
     /// </remarks>
     internal static class ContentDialogDragHelper
     {
-        /// <summary>Höhe des Titelbereichs in Pixeln – nur dort soll Drag starten.</summary>
+        /// <summary>Höhe des Titelbereichs in Pixeln; nur dort soll Drag starten.</summary>
         private const double DialogTitleBarHeight = 60.0;
         /// <summary>
         /// Aktiviert Drag-Funktionalität auf dem angegebenen ContentDialog.
@@ -34,7 +34,7 @@ namespace EchoPlay.App.Helpers
             Point dragStart = default;
             bool isDragging = false;
 
-            // Das Loaded-Event feuert nachdem der Dialog gerendert ist –
+            // Das Loaded-Event feuert, nachdem der Dialog gerendert ist,
             // erst dann ist der visuelle Baum verfügbar.
             dialog.Loaded += (sender, args) =>
             {
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Helpers
                 // PointerPressed im Titelbereich startet den Drag.
                 dialog.PointerPressed += (s, e) =>
                 {
-                    // Nur im oberen Bereich (Titel) den Drag starten – nicht im Content
+                    // Nur im oberen Bereich (Titel) den Drag starten, nicht im Content
                     Point position = e.GetCurrentPoint((UIElement)s).Position;
                     if (position.Y > DialogTitleBarHeight)
                     {

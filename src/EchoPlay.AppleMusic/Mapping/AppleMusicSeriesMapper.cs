@@ -7,7 +7,7 @@ namespace EchoPlay.AppleMusic.Mapping
 {
     /// <summary>
     /// Wandelt iTunes-Künstler-Daten in importierbare Serienmodelle um.
-    /// Die iTunes Search API liefert auf Künstler-Ebene weder Editorial Notes noch Artwork —
+    /// Die iTunes Search API liefert auf Künstler-Ebene weder Editorial Notes noch Artwork;
     /// die Beschreibung bleibt deshalb leer, das Cover stammt aus dem ersten Album der Serie.
     /// </summary>
     public static class AppleMusicSeriesMapper
@@ -19,7 +19,7 @@ namespace EchoPlay.AppleMusic.Mapping
         /// <param name="scoreResult">Das Ergebnis der Hörspiel-Bewertung.</param>
         /// <param name="coverImageUrl">
         /// Cover-Adresse aus der Albenprüfung. Bleibt sie leer, sucht die Trefferkarte das
-        /// Cover in der eigenen Datenbank — für bereits importierte Serien reicht das.
+        /// Cover in der eigenen Datenbank; für bereits importierte Serien reicht das.
         /// </param>
         /// <returns>Das importierbare Serienmodell.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",

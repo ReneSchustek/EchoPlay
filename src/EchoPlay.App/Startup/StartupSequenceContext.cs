@@ -13,7 +13,7 @@ namespace EchoPlay.App.Startup
     /// Der Startlauf bekommt sie fertig aufgelöst statt eines Dienst-Verzeichnisses, aus
     /// dem er sich selbst bedient: Ein Typ, der den Container festhält, verbirgt seine
     /// Abhängigkeiten vor jedem, der ihn liest oder testet. Was scoped ist (Datenbank),
-    /// kommt weiterhin über die Bereichs-Fabrik — der Startlauf öffnet dafür je Abschnitt
+    /// kommt weiterhin über die Bereichs-Fabrik; der Startlauf öffnet dafür je Abschnitt
     /// einen eigenen Bereich.
     /// </remarks>
     /// <param name="ScopeFactory">Öffnet die Bereiche für datenbanknahe Dienste.</param>
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Startup
         /// Löst die Dienste aus dem fertig gebauten Container auf.
         /// </summary>
         /// <remarks>
-        /// Die einzige Stelle, an der der Container als Ganzes gereicht wird — sie hält ihn
+        /// Die einzige Stelle, an der der Container als Ganzes gereicht wird. Sie hält ihn
         /// nicht fest, sondern liest ihn einmal aus und gibt das Ergebnis weiter.
         /// </remarks>
         /// <param name="services">Die Dienstsammlung des Hosts.</param>

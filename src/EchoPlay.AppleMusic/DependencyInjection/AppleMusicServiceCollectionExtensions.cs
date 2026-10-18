@@ -25,7 +25,7 @@ namespace EchoPlay.AppleMusic.DependencyInjection
         public static IServiceCollection AddAppleMusicImport(this IServiceCollection services)
         {
             // HttpClient mit BaseAddress und Timeout für die iTunes Search API.
-            // 15 Sekunden sind für eine Desktop-App das Maximum – danach ist die UX beschädigt.
+            // 15 Sekunden sind für eine Desktop-App das Maximum, danach ist die UX beschädigt.
             _ = services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(client =>
             {
                 client.BaseAddress = new Uri("https://itunes.apple.com/");
@@ -35,7 +35,7 @@ namespace EchoPlay.AppleMusic.DependencyInjection
             _ = services.AddScoped<ISeriesImportSearch, AppleMusicSeriesSearch>();
             _ = services.AddScoped<IEpisodeImportSource, AppleMusicEpisodeSource>();
 
-            // Keyed-Registrierungen für ImportService – Schlüssel entspricht ProviderType.AppleMusic.ToString().
+            // Keyed-Registrierungen für ImportService; der Schlüssel entspricht ProviderType.AppleMusic.ToString().
             _ = services.AddKeyedScoped<ISeriesImportSearch, AppleMusicSeriesSearch>("AppleMusic");
             _ = services.AddKeyedScoped<IEpisodeImportSource, AppleMusicEpisodeSource>("AppleMusic");
 
@@ -45,7 +45,7 @@ namespace EchoPlay.AppleMusic.DependencyInjection
 
             // Beide Verträge zeigen bewusst auf DIESELBE Instanz: Der Scorer merkt sich die
             // Cover-Adresse aus der Albenprüfung, und die Suche holt sie dort ab. Zwei
-            // getrennte Instanzen hätten getrennte Speicher — die Treffer blieben ohne Cover.
+            // getrennte Instanzen hätten getrennte Speicher, und die Treffer blieben ohne Cover.
             _ = services.AddScoped<AppleMusicHoerspielScorer>();
             _ = services.AddScoped<IHoerspielScorer<ITunesArtistDto>>(provider => provider.GetRequiredService<AppleMusicHoerspielScorer>());
             _ = services.AddScoped<IAppleMusicArtistScorer>(provider => provider.GetRequiredService<AppleMusicHoerspielScorer>());

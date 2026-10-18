@@ -11,7 +11,7 @@ namespace EchoPlay.LocalLibrary.Tests.Metadata
     /// <remarks>
     /// Diese Angaben entscheiden, wie eine Folge in der Mediathek heißt und in welcher
     /// Reihenfolge ihre Teile laufen. Steht in der Datei nichts, muss ein leerer Wert
-    /// herauskommen und keine Ausnahme — sonst bricht der Einlesevorgang an der ersten
+    /// herauskommen und keine Ausnahme, sonst bricht der Einlesevorgang an der ersten
     /// unbeschrifteten Datei ab.
     ///
     /// Die Tests arbeiten auf echten Dateien im Temp-Verzeichnis.

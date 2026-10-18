@@ -8,7 +8,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
     /// </summary>
     /// <remarks>
     /// Gebraucht für die Frage, ob ein Vorgang etwas ins Protokoll schreibt, das dort nicht
-    /// hingehört: Ein Abbruch ist kein Ausfall und darf keine Warnung erzeugen — sonst
+    /// hingehört: Ein Abbruch ist kein Ausfall und darf keine Warnung erzeugen, sonst
     /// behauptet das Protokoll Fehler, die keine sind, und verdeckt die echten.
     /// </remarks>
     internal sealed class CapturingLogSink : ILogSink

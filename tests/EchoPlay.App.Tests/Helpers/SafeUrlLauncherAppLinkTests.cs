@@ -4,7 +4,7 @@ namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
     /// Tests für den Schema-Wächter in <see cref="SafeUrlLauncher.TryOpenAppLink"/>.
-    /// Geprüft werden nur die Ablehnungspfade — sie kehren zurück, bevor irgendein Programm
+    /// Geprüft werden nur die Ablehnungspfade, denn sie kehren zurück, bevor irgendein Programm
     /// gestartet wird (kein echter Prozessstart aus Tests).
     /// </summary>
     public sealed class SafeUrlLauncherAppLinkTests
@@ -27,7 +27,7 @@ namespace EchoPlay.App.Tests.Helpers
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "Testparameter spiegelt die string-Signatur der geprüften Methode.")]
         public void TryOpenAppLink_ForeignScheme_IsRejected(string uri)
         {
-            // Nur das erwartete Schema darf durch — sonst startet ein fremdes Protokoll
+            // Nur das erwartete Schema darf durch, sonst startet ein fremdes Protokoll
             // ein beliebiges Programm.
             Assert.False(SafeUrlLauncher.TryOpenAppLink(uri, "spotify"));
         }

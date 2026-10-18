@@ -77,7 +77,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void Angefangen_ZaehltAuchEineGehoerteFolgeMitOffenerStelle()
         {
-            // Wer eine durchgehörte Folge erneut beginnt, findet sie sonst nirgends wieder —
+            // Wer eine durchgehörte Folge erneut beginnt, findet sie sonst nirgends wieder,
             // und damit auch keinen Weg zurück in die laufende Wiedergabe.
             SeriesEpisodeList list = BuildList(
                 Tile("Erneut begonnen", 1, PlaybackStatus.Finished, hasOpenPosition: true),
@@ -89,7 +89,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             list.EpisodeFilterIndex = 2;
 
-            // Gehört hat man sie trotzdem — sie verschwindet nicht aus „Durchgehört".
+            // Gehört hat man sie trotzdem; sie verschwindet nicht aus „Durchgehört".
             Assert.Equal(2, list.Episodes.Count);
         }
 
@@ -162,7 +162,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void NeueSerie_SetztReiterUndStatusfilterZurueck()
         {
-            // Sonst zeigte eine frisch geöffnete Serie die Einschränkung der vorigen —
+            // Sonst zeigte eine frisch geöffnete Serie die Einschränkung der vorigen
             // und wirkte leer, obwohl sie Folgen hat.
             SeriesEpisodeList list = BuildList(
                 Tile("Sonderfolge", isSpecialEpisode: true),

@@ -31,7 +31,7 @@ namespace EchoPlay.Data.Configurations
             _ = builder.Property(t => t.Duration)
                 .IsRequired();
 
-            // Restrict statt Cascade – LocalTracks dürfen nicht physisch gelöscht werden,
+            // Restrict statt Cascade, denn LocalTracks dürfen nicht physisch gelöscht werden,
             // wenn eine Episode physisch gelöscht würde. Das Projekt verwendet ausschließlich Soft-Delete.
             _ = builder.HasOne(t => t.Episode)
                 .WithMany()
@@ -39,7 +39,7 @@ namespace EchoPlay.Data.Configurations
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Kombi-Index statt eines einfachen EpisodeId-Index:
-            // GetByEpisodeIdAsync() sortiert immer nach TrackNumber – der Index deckt beides ab.
+            // GetByEpisodeIdAsync() sortiert immer nach TrackNumber, der Index deckt beides ab.
             _ = builder.HasIndex(t => new { t.EpisodeId, t.TrackNumber });
 
             // Purge-Index für DatabaseMaintenanceService

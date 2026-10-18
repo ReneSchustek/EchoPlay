@@ -6,7 +6,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="ScanEventService"/> — thread-sicherer Scan-Flag und
+    /// Tests für <see cref="ScanEventService"/>: thread-sicherer Scan-Flag und
     /// das <see cref="ScanEventService.SeriesSynced"/>-Event.
     /// </summary>
     public sealed class ScanEventServiceTests

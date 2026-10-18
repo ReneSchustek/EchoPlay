@@ -1,4 +1,4 @@
-# EchoPlay — Datenbank-Migrationen
+# EchoPlay: Datenbank-Migrationen
 
 Historischer Überblick aller EF-Core-Migrationen für die lokale SQLite-Datenbank. Stand 2026-09-01, 43 Migrationen.
 
@@ -6,14 +6,14 @@ Jede Migration erzeugt drei Artefakte, die zusammen in denselben Commit gehören
 
 ## Backup vor Migration
 
-Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.TryCreateBackupAsync` automatisch einen VACUUM-INTO-Snapshot in `db-backups/` an, bevor pending Migrationen ausgeführt werden. Opt-Out und Retention sind über `AppSettings.DbBackupEnabled` und `AppSettings.DbBackupRetentionCount` konfigurierbar. Der Weg zurück führt über diesen Snapshot: App beenden, `echoplay.db` durch die gewünschte Datei aus `db-backups/` ersetzen, App starten. Ein `Down`-Weg steht nicht für jede Migration zur Verfügung — Migration 38 etwa ist nicht umkehrbar.
+Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.TryCreateBackupAsync` automatisch einen VACUUM-INTO-Snapshot in `db-backups/` an, bevor pending Migrationen ausgeführt werden. Opt-Out und Retention sind über `AppSettings.DbBackupEnabled` und `AppSettings.DbBackupRetentionCount` konfigurierbar. Der Weg zurück führt über diesen Snapshot: App beenden, `echoplay.db` durch die gewünschte Datei aus `db-backups/` ersetzen, App starten. Ein `Down`-Weg steht nicht für jede Migration zur Verfügung, Migration 38 etwa ist nicht umkehrbar.
 
 ## Breaking Changes für Major-Upgrades
 
 | Migration | Wirkung | Was tun beim Upgrade |
 |---|---|---|
-| 28 — `AddCoverImagesTable` (2026-04-02) | Cover wandern von entity-gebundenen BLOB-Feldern (`Series.LocalCoverData`, `Episode.LocalCoverData`) in eine eigene `CoverImages`-Tabelle | Erst nach Migration 35 vollständig. Zwischenstände (v28–v34) haben beide Quellen parallel — UI nutzt `CoverService`. |
-| 33 — `AddSourceHashSecureSettingsProviderIds` (2026-04-13) | Cover-Integrity per SHA-256, Spotify-Secrets als DPAPI-Blob, Series-ProviderIds strukturiert | Bestehende Spotify-Credentials werden beim ersten Start mit neuer Spalte migriert. Lässt sich der DPAPI-Blob nicht mehr entschlüsseln — nach Profilwechsel oder Passwort-Reset durch einen Administrator —, löscht die App den Eintrag und fragt die Zugangsdaten neu ab. |
+| 28 — `AddCoverImagesTable` (2026-04-02) | Cover wandern von entity-gebundenen BLOB-Feldern (`Series.LocalCoverData`, `Episode.LocalCoverData`) in eine eigene `CoverImages`-Tabelle | Erst nach Migration 35 vollständig. Zwischenstände (v28–v34) haben beide Quellen parallel, die UI nutzt `CoverService`. |
+| 33 — `AddSourceHashSecureSettingsProviderIds` (2026-04-13) | Cover-Integrity per SHA-256, Spotify-Secrets als DPAPI-Blob, Series-ProviderIds strukturiert | Bestehende Spotify-Credentials werden beim ersten Start mit neuer Spalte migriert. Lässt sich der DPAPI-Blob nicht mehr entschlüsseln (nach Profilwechsel oder Passwort-Reset durch einen Administrator), löscht die App den Eintrag und fragt die Zugangsdaten neu ab. |
 | 35 — `MigrateLocalCoverDataToCoverImages` (2026-04-16) | Move-Migration: BLOB aus Entitäten → `CoverImages`-Tabelle, alte Spalten gelöscht | **Ohne Backup vor Migration potenziell zerstörerisch**: Migrationen 28–34 haben BLOB-Schatten; 35 löscht sie. `DatabaseInitializer`-Backup ist Pflicht-Vorbedingung. |
 
 ## Migrationen (chronologisch)
@@ -59,10 +59,10 @@ Seit Migration 34 (`AddDbBackupSettings`, 2026-04-16) legt `DatabaseInitializer.
 | 37 | 2026-07-21 | AddOnlineEpisodeSortIndex | Gemerkte Folgen-Sortierung der Online-Mediathek in `AppSettings` (Default 0 = Nummer aufsteigend) |
 | 38 | 2026-07-27 | BackfillWatchedForFavorites | Reine Datenmigration: setzt `IsWatched` für alle favorisierten Serien. Favorit impliziert seit dieser Version Überwachung; Bestände aus neu eingelesenen Bibliotheken hatten sonst favorisierte, aber unbeobachtete Serien und damit einen leeren Neuerscheinungen-Abschnitt. Nicht umkehrbar (`Down` bleibt leer) |
 | 39 | 2026-07-27 | AddWatchedTitles | Merkliste `WatchedTitles` (UNIQUE auf `NormalizedTitle`, gefiltert auf aktive Zeilen). Überlebt „Mediathek leeren" und gibt neu eingelesenen Serien ihre Überwachung zurück. Erstbestand wird nicht per SQL befüllt, sondern beim Start über `IWatchedTitleDataService.SyncFromWatchedSeriesAsync` mit dem echten Normalizer abgeglichen |
-| 40 | 2026-07-29 | AddSeriesCoverLastChecked | Spalte `Series.CoverLastChecked` (nullable TEXT), Gegenstück zu `Episodes.CoverLastChecked`. Der Hintergrunddienst sucht seit dieser Version auch Serien-Cover online; ohne den Zeitstempel fragte er bei jedem Durchlauf dieselben coverlosen Serien erneut bei den Anbietern an. NULL für den Bestand bedeutet „noch nie geprüft" – die erste Suche läuft also für alle bestehenden Serien |
-| 41 | 2026-08-13 | LautstaerkeInEinstellungen | Spalten `AppSettings.Volume` (REAL) und `AppSettings.IsMuted` (INTEGER) für den Lautstärkeregler beider Player. **Der Vorgabewert für `Volume` ist von Hand auf 1,0 gesetzt** — der Initialisierer der Entität gilt nur für neue Objekte, mit dem erzeugten 0,0 wäre die Anwendung nach dem Update stumm gewesen |
-| 42 | 2026-08-24 | AusgeblendeteHinweise | Tabelle `DialogSuppressions` (UNIQUE auf `Key`, gefiltert auf aktive Zeilen) für die dauerhaft ausgeblendeten Dialoge. Eine Zeile je Hinweis statt einer Spalte je Hinweis in `AppSettings` — die Anwendung kennt rund fünfzig ausblendbare Dialoge. Zurückholen ist ein Soft-Delete; der gefilterte Index erlaubt danach ein erneutes Ausblenden desselben Hinweises. Kein Bestandswert nötig: Eine leere Tabelle heißt „nichts ausgeblendet" |
-| 43 | 2026-09-01 | DoppelteFolgenEntfernen | Reine Datenbereinigung ohne Schemaänderung: entfernt je Serie und Anbieter-Album-Kennung die überzähligen Folgenzeilen und behält die älteste. Ursache war ein Re-Import, der jede Folge des Anbieters neu anlegte statt nur die fehlenden — lief er neben einem noch laufenden Erstimport, verdoppelte er den Bestand. Wiedergabestand, Cover und lokale Titel wandern vorher auf die verbleibende Zeile; `PlaybackStates.EpisodeId` und `CoverImages(EntityType, EntityId)` sind eindeutig, deshalb zieht je verbleibender Folge genau ein Eintrag um. Folgen ohne Anbieter-Kennung bleiben unangetastet — gleiche Titel in verschiedenen Ordnern sind lokal normal. Nicht umkehrbar (`Down` bleibt leer); gemessen auf einer 1,35-GB-Datenbank: 11 s, 1306 entfernte Zeilen, alle 3276 Gehört-Markierungen erhalten |
+| 40 | 2026-07-29 | AddSeriesCoverLastChecked | Spalte `Series.CoverLastChecked` (nullable TEXT), Gegenstück zu `Episodes.CoverLastChecked`. Der Hintergrunddienst sucht seit dieser Version auch Serien-Cover online; ohne den Zeitstempel fragte er bei jedem Durchlauf dieselben coverlosen Serien erneut bei den Anbietern an. NULL für den Bestand bedeutet „noch nie geprüft"; die erste Suche läuft also für alle bestehenden Serien |
+| 41 | 2026-08-13 | LautstaerkeInEinstellungen | Spalten `AppSettings.Volume` (REAL) und `AppSettings.IsMuted` (INTEGER) für den Lautstärkeregler beider Player. **Der Vorgabewert für `Volume` ist von Hand auf 1,0 gesetzt**, denn der Initialisierer der Entität gilt nur für neue Objekte, mit dem erzeugten 0,0 wäre die Anwendung nach dem Update stumm gewesen |
+| 42 | 2026-08-24 | AusgeblendeteHinweise | Tabelle `DialogSuppressions` (UNIQUE auf `Key`, gefiltert auf aktive Zeilen) für die dauerhaft ausgeblendeten Dialoge. Eine Zeile je Hinweis statt einer Spalte je Hinweis in `AppSettings`, weil die Anwendung rund fünfzig ausblendbare Dialoge kennt. Zurückholen ist ein Soft-Delete; der gefilterte Index erlaubt danach ein erneutes Ausblenden desselben Hinweises. Kein Bestandswert nötig: Eine leere Tabelle heißt „nichts ausgeblendet" |
+| 43 | 2026-09-01 | DoppelteFolgenEntfernen | Reine Datenbereinigung ohne Schemaänderung: entfernt je Serie und Anbieter-Album-Kennung die überzähligen Folgenzeilen und behält die älteste. Ursache war ein Re-Import, der jede Folge des Anbieters neu anlegte statt nur die fehlenden. Lief er neben einem noch laufenden Erstimport, verdoppelte er den Bestand. Wiedergabestand, Cover und lokale Titel wandern vorher auf die verbleibende Zeile; `PlaybackStates.EpisodeId` und `CoverImages(EntityType, EntityId)` sind eindeutig, deshalb zieht je verbleibender Folge genau ein Eintrag um. Folgen ohne Anbieter-Kennung bleiben unangetastet, denn gleiche Titel in verschiedenen Ordnern sind lokal normal. Nicht umkehrbar (`Down` bleibt leer); gemessen auf einer 1,35-GB-Datenbank: 11 s, 1306 entfernte Zeilen, alle 3276 Gehört-Markierungen erhalten |
 
 ## Prüf-Reflex vor jedem Migrations-Commit
 
@@ -71,14 +71,14 @@ ls src/EchoPlay.Data/Migrations/<Name>*
 # muss ZWEI Dateien zeigen: <Name>.cs UND <Name>.Designer.cs
 ```
 
-Fehlt die Designer-Datei, kennt EF Core die Migration nicht, `GetPendingMigrationsAsync()` liefert sie nicht, `MigrateAsync()` läuft leer durch — die App startet, jeder DB-Zugriff auf neue Spalten wirft erst zur Laufzeit `SQLite Error 1: no such column`. Weder Build noch Tests fangen das — zuletzt aufgetreten am 2026-04-13.
+Fehlt die Designer-Datei, kennt EF Core die Migration nicht, `GetPendingMigrationsAsync()` liefert sie nicht, `MigrateAsync()` läuft leer durch. Die App startet, jeder DB-Zugriff auf neue Spalten wirft erst zur Laufzeit `SQLite Error 1: no such column`. Weder Build noch Tests fangen das (zuletzt aufgetreten am 2026-04-13).
 
-Fix: `dotnet ef migrations remove` + `dotnet ef migrations add <Name>` — dann liegen beide Dateien vor.
+Fix: `dotnet ef migrations remove` + `dotnet ef migrations add <Name>`, dann liegen beide Dateien vor.
 
 Seit Migration 38 greift zusätzlich ein automatischer Schutz: `MigrationPipelineTests` führt die
 komplette Kette auf einer SQLite-In-Memory-Datenbank aus und prüft danach, dass keine Migration
 offen bleibt. Der restliche Test-Bestand baut Schemas per `EnsureCreated` direkt aus dem Modell
-und fasst Migrationen nie an — diese eine Testklasse ist der Wächter.
+und fasst Migrationen nie an. Diese eine Testklasse ist der Wächter.
 
 ## Neue Migration anlegen
 
@@ -92,11 +92,11 @@ nicht in `EchoPlay.App`. Zeigt man auf die App als Startup-Projekt, bricht der B
 
 Zwei Nacharbeiten sind Pflicht, weil der Generator sie nicht kennt:
 
-- **Analyzer-Konventionen** — `TreatWarningsAsErrors` gilt auch für Migrationen. Der erzeugte Code
+- **Analyzer-Konventionen.** `TreatWarningsAsErrors` gilt auch für Migrationen. Der erzeugte Code
   scheitert an CA1062 und IDE0058; also `ArgumentNullException.ThrowIfNull(migrationBuilder);` an
   den Anfang von `Up` und `Down` und die Rückgabewerte per `_ =` verwerfen.
-- **BOM entfernen** — EF schreibt die Datei mit UTF-8-BOM, `dotnet format whitespace` lehnt sie
+- **BOM entfernen:** EF schreibt die Datei mit UTF-8-BOM, `dotnet format whitespace` lehnt sie
   dann mit `error CHARSET` ab. Prüfen mit
   `dotnet format whitespace EchoPlay.slnx --verify-no-changes`.
 
-Danach Drei-Artefakt-Check, dann commit. Die Migration wird beim nächsten App-Start automatisch ausgeführt — `DatabaseInitializer` erzeugt vorher das VACUUM-INTO-Backup.
+Danach Drei-Artefakt-Check, dann commit. Die Migration wird beim nächsten App-Start automatisch ausgeführt; `DatabaseInitializer` erzeugt vorher das VACUUM-INTO-Backup.

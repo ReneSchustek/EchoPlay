@@ -143,7 +143,7 @@ namespace EchoPlay.App.Tests.Fakes
             {
                 series.IsWatched = isWatched;
 
-                // Die Merkliste selbst pflegt FakeWatchedTitleDataService – hier zählt
+                // Die Merkliste selbst pflegt FakeWatchedTitleDataService; hier zählt
                 // nur das Flag an der Serie.
             }
 

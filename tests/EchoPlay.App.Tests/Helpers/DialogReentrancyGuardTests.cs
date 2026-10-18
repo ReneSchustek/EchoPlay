@@ -5,7 +5,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
-    /// Tests für <see cref="DialogReentrancyGuard"/> — schützt WinUI 3 davor,
+    /// Tests für <see cref="DialogReentrancyGuard"/>; der schützt WinUI 3 davor,
     /// zwei ContentDialoge gleichzeitig zu öffnen (COMException).
     /// Gemeinsame Test-Collection zwingt sequentielle Ausführung, weil
     /// der Guard einen statischen Zähler teilt.

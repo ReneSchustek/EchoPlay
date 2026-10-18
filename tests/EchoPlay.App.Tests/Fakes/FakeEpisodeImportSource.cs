@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <param name="episodes">Die zurückzugebende Episodenliste.</param>
         /// <param name="failForSourceSeriesId">
         /// Für diese Serienkennung wird geworfen statt geliefert. Beim Prüfen aller Serien
-        /// scheitert im Betrieb regelmäßig eine einzelne — nur so lässt sich zeigen, dass
+        /// scheitert im Betrieb regelmäßig eine einzelne, und nur so lässt sich zeigen, dass
         /// die übrigen trotzdem an die Reihe kommen.
         /// </param>
         public FakeEpisodeImportSource(
@@ -51,7 +51,7 @@ namespace EchoPlay.App.Tests.Fakes
             }
 
             // knownEpisodeTitles steuert bei echten Quellen nur, ob der teure Track-Lookup
-            // (Dauer) entfällt – der zurückgegebene Satz enthält bekannte Alben weiterhin
+            // (Dauer) entfällt; der zurückgegebene Satz enthält bekannte Alben weiterhin
             // (Metadaten inkl. Cover), damit der Delta-Import Cover nachtragen kann.
             return Task.FromResult(_episodes);
         }

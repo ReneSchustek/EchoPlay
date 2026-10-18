@@ -37,7 +37,7 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Event-Handler für <see cref="ViewModels.LocalSettingsViewModel.PatternSelectionRequested"/>.
         /// Delegiert an den asynchronen Dialog-Methode.
-        /// async void ist hier korrekt – WinUI-Event-Handler dürfen keinen Task zurückgeben.
+        /// async void ist hier korrekt, denn WinUI-Event-Handler dürfen keinen Task zurückgeben.
         /// </summary>
         private async void OnPatternSelectionRequested(IReadOnlyList<PatternSuggestionDisplay> suggestions)
         {
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Zeigt einen ContentDialog mit RadioButtons für jeden Muster-Vorschlag.
-        /// Der Nutzer wählt eines der Muster aus und bestätigt – erst dann wird es übernommen.
+        /// Der Nutzer wählt eines der Muster aus und bestätigt. Erst dann wird es übernommen.
         /// </summary>
         private async Task ShowPatternSelectionDialogAsync(IReadOnlyList<PatternSuggestionDisplay> suggestions)
         {
@@ -66,7 +66,7 @@ namespace EchoPlay.App.Views
 
                 StackPanel itemPanel = new() { Spacing = 2 };
 
-                // Muster in Monospace-Schrift – erleichtert das Lesen der Platzhalter
+                // Muster in Monospace-Schrift, das erleichtert das Lesen der Platzhalter
                 RadioButton radio = new()
                 {
                     Content = suggestion.Pattern,

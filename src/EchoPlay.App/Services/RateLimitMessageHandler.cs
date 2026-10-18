@@ -13,7 +13,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <remarks>
     /// In der Resilience-Pipeline innerhalb des <c>StandardResilienceHandler</c>
-    /// registrieren — so wird jeder Retry-Versuch erneut gedrosselt.
+    /// registrieren, so wird jeder Retry-Versuch erneut gedrosselt.
     /// </remarks>
     public sealed class RateLimitMessageHandler : DelegatingHandler
     {

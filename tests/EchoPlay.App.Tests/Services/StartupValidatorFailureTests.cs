@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Der Startlauf steht zwischen dem Anwender und der Anwendung: Reißt er ab, sieht der
-    /// Anwender nur das Startbild. Keiner der Schritte hier ist unverzichtbar — weder die
+    /// Anwender nur das Startbild. Keiner der Schritte hier ist unverzichtbar, weder die
     /// Erreichbarkeitsprüfung noch das Nachladen der Cover noch der Abgleich der
     /// Neuerscheinungen. Sie dürfen scheitern, aber sie dürfen den Start nicht mitnehmen.
     ///
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Services
             StartupResult result = await sut.ValidateAsync(
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            // Die Anwendung startet trotzdem — nur eben mit dem Hinweis, dass online
+            // Die Anwendung startet trotzdem, nur eben mit dem Hinweis, dass online
             // gerade nichts geht.
             Assert.False(result.IsOnlineAvailable);
             Assert.Equal("StartupOnlineUnavailableHint", result.OnlineHintText);
@@ -193,7 +193,7 @@ namespace EchoPlay.App.Tests.Services
                 _ = services.AddScoped<IOnlineEpisodeChecker>(_ => episodeChecker);
             }
 
-            // Der eingesetzte Antwortgeber ersetzt die Gegenstelle vollständig —
+            // Der eingesetzte Antwortgeber ersetzt die Gegenstelle vollständig;
             // die Erreichbarkeitsprüfung verlässt den Testlauf nicht.
             _ = services.AddHttpClient("OnlineCheck")
                 .ConfigurePrimaryHttpMessageHandler(() => handler);

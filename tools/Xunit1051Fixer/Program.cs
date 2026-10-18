@@ -239,7 +239,7 @@ internal static class Program
             }
             // Text-Fallback für den Fall, dass die Compilation unvollständig geladen
             // wurde (z. B. EchoPlay.App.Tests mit WorkspaceFailure NETSDK1150 referenziert
-            // EchoPlay.App self-contained — Symbol-Resolution liefert dann kein Type).
+            // EchoPlay.App self-contained, Symbol-Resolution liefert dann kein Type).
             string exprText = arg.Expression.ToString();
             if (exprText == "CancellationToken.None"
                 || exprText.EndsWith(".CancellationToken", StringComparison.Ordinal)
@@ -284,7 +284,7 @@ internal static class Program
 
 // DocumentEditor wird hier neu eingeführt, weil wir den public-Reference-Pfad
 // vermeiden wollen. Sein Pendant aus Microsoft.CodeAnalysis.Editing benutzt
-// Workspaces.Common — bei uns reicht ein simpler ReplaceNode-Wrapper.
+// Workspaces.Common; bei uns reicht ein simpler ReplaceNode-Wrapper.
 internal sealed class DocumentEditor
 {
     private readonly Document _document;

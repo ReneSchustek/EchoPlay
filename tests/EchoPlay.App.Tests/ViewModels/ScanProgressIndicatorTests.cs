@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Das Zeichen der Taskleiste hängt am selben Zustand. Es lässt sich im Testlauf nicht
-    /// beobachten — ohne Fenster greift es ins Leere —, der sichtbare Teil der Zusage
+    /// beobachten (ohne Fenster greift es ins Leere), der sichtbare Teil der Zusage
     /// dagegen schon.
     /// </remarks>
     public sealed class ScanProgressIndicatorTests
@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.Update(new ScanProgress { StatusText = "Zähle Ordner …" });
 
-            // Solange der Umfang unbekannt ist, wäre ein Balken bei null irreführend —
+            // Solange der Umfang unbekannt ist, wäre ein Balken bei null irreführend:
             // er sähe aus, als ginge nichts voran.
             Assert.True(sut.IsIndeterminate);
         }

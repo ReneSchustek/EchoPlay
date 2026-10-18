@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="IProcessLauncher"/>. Protokolliert Startanfragen, statt sie
-    /// auszuführen — ein echter Start würde im Testhost den Testrunner selbst neu starten.
+    /// auszuführen, denn ein echter Start würde im Testhost den Testrunner selbst neu starten.
     /// </summary>
     internal sealed class FakeProcessLauncher : IProcessLauncher
     {
@@ -25,7 +25,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public string? CurrentExecutablePath { get; }
 
-        /// <summary>Alle angefragten Startpfade – für Assertions.</summary>
+        /// <summary>Alle angefragten Startpfade für Assertions.</summary>
         public List<string> StartedPaths { get; } = [];
 
         /// <inheritdoc/>

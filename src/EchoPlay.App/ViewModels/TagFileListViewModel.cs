@@ -54,7 +54,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Zeigt nur Dateien mit noch nicht gespeicherten Änderungen — der Blick vor dem
+        /// Zeigt nur Dateien mit noch nicht gespeicherten Änderungen, der Blick vor dem
         /// Sichern, wenn ein ganzer Ordner bearbeitet wurde.
         /// </summary>
         public bool ModifiedOnly
@@ -73,7 +73,7 @@ namespace EchoPlay.App.ViewModels
         public bool HasActiveFilter => !string.IsNullOrWhiteSpace(_searchText) || _modifiedOnly;
 
         /// <summary>
-        /// Sichtbarkeit des „Nichts gefunden"-Hinweises – der Ordner enthält Dateien, aber
+        /// Sichtbarkeit des „Nichts gefunden"-Hinweises: Der Ordner enthält Dateien, aber
         /// Suche oder Filter lassen keine übrig.
         /// </summary>
         public Visibility NoResultsVisibility =>
@@ -157,7 +157,7 @@ namespace EchoPlay.App.ViewModels
         public bool HasFiles => _files.Count > 0;
 
         /// <summary>
-        /// Ob die Formularfelder aktiv sind – bei Einzel- oder Mehrfachauswahl.
+        /// Ob die Formularfelder aktiv sind (bei Einzel- oder Mehrfachauswahl).
         /// </summary>
         public bool HasSelectedFile => _selectedFile is not null || _selectedFiles.Count > 1;
 
@@ -172,7 +172,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Wird ausgelöst, wenn sich die Auswahl geändert hat – das Top-VM lädt daraufhin
+        /// Wird ausgelöst, wenn sich die Auswahl geändert hat. Das Top-VM lädt daraufhin
         /// die Tag-Felder der neuen Auswahl und aktualisiert den Editor-Zustand.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Sub-VM -> Top-VM-Bridge: meldet die aktuelle Multi-Auswahl an den Orchestrator (LoadMultipleFileTagsAsync); Action<IReadOnlyList<...>> bleibt semantisch klarer als ein EventArgs-Wrapper mit identischem Inhalt.")]

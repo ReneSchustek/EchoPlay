@@ -65,9 +65,9 @@ namespace EchoPlay.App.Services
         /// Lädt fehlende Cover für Episoden einer Serie.
         /// Nur Episoden ohne Cover UND ohne aktiven Cooldown werden geprüft.
         /// Phase 1: Provider-URL aus Import-Daten (falls vorhanden).
-        /// Phase 2: Lokale DB durchsuchen (ICoverCopyService – Raw SQL).
+        /// Phase 2: Lokale DB durchsuchen (ICoverCopyService, Raw SQL).
         /// Phase 3: Online-Suchkette (CompositeCoverSearchService).
-        /// Nach der Suche wird <c>CoverLastChecked</c> gesetzt – egal ob Treffer oder nicht.
+        /// Nach der Suche wird <c>CoverLastChecked</c> gesetzt, egal ob Treffer oder nicht.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Public Entry-Point für Cover-Caching: HTTP-, IO- oder DB-Fehler aus den drei Such-Phasen (Provider-URL, lokale DB, Online-Kette) dürfen den Import/Scan nicht abbrechen; Abbrüche werden separat über OperationCanceledException behandelt.")]
         public async Task CacheCoversAsync(
@@ -83,7 +83,7 @@ namespace EchoPlay.App.Services
             }
             catch (OperationCanceledException)
             {
-                // Erwarteter Abbruch (z.B. Serienwechsel) – kein Log nötig
+                // Erwarteter Abbruch (z.B. Serienwechsel), kein Log nötig
             }
             catch (Exception ex)
             {
@@ -172,7 +172,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <remarks>
         /// Dieselbe Frage stellt sich zweimal: vor dem Herunterladen und noch einmal vor der
-        /// Online-Suche. Sie stand deshalb zweimal im Quelltext — zwei Fassungen derselben
+        /// Online-Suche. Sie stand deshalb zweimal im Quelltext: zwei Fassungen derselben
         /// Regel, die auseinanderlaufen können, ohne dass es auffällt.
         /// </remarks>
         private async Task<IReadOnlyList<Episode>> CollectMissingCoversAsync(
@@ -247,7 +247,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <remarks>
         /// Sequentiell und ohne Wartelimit: Die Adressen stehen schon fest, es ist ein Abruf
-        /// je Folge, und die Bilder liegen auf den Auslieferungsnetzen der Anbieter — nicht
+        /// je Folge, und die Bilder liegen auf den Auslieferungsnetzen der Anbieter, nicht
         /// auf deren Schnittstellen, für die das Wartelimit gilt.
         /// </remarks>
         /// <returns>Wie viele Cover geladen wurden.</returns>
@@ -291,7 +291,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Phase 3: Für den Rest die Online-Suchkette bemühen, mit Pause zwischen den Anfragen.
-        /// Der Zeitstempel wird auch ohne Treffer gesetzt — er trägt den Cooldown.
+        /// Der Zeitstempel wird auch ohne Treffer gesetzt, denn er trägt den Cooldown.
         /// </summary>
         /// <returns>Wie viele Cover gefunden wurden.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Cover-Suche je Folge: Fehler der fremden Gegenstellen dürfen die Schleife nicht verlassen; jede Folge wird unabhängig behandelt.")]
@@ -316,7 +316,7 @@ namespace EchoPlay.App.Services
                         onlineFound++;
                     }
 
-                    // Zeitstempel immer setzen – auch bei Nicht-Treffer (Cooldown)
+                    // Zeitstempel immer setzen, auch bei Nicht-Treffer (Cooldown)
                     using IServiceScope writeScope = _scopeFactory.CreateScope();
                     IEpisodeDataService writeService = writeScope.ServiceProvider
                         .GetRequiredService<IEpisodeDataService>();
@@ -328,7 +328,7 @@ namespace EchoPlay.App.Services
                 catch (OperationCanceledException)
                 {
                     // Abbruch ist kein Fehlschlag dieser Folge. Ohne diesen Zweig hätte der
-                    // catch darunter ihn als Warnung protokolliert — und weil er die Ausnahme
+                    // catch darunter ihn als Warnung protokolliert, und weil er die Ausnahme
                     // schluckt, wäre die Schleife noch eine Runde weitergelaufen, bis das
                     // ThrowIfCancellationRequested am Anfang greift.
                     throw;
@@ -383,7 +383,7 @@ namespace EchoPlay.App.Services
                 {
                     IReadOnlyList<CoverSearchResult> results = await coverSearch.SearchAsync(query, cancellationToken);
 
-                    // Ergebnisse nach Relevanz filtern – verhindert irrelevante Cover
+                    // Ergebnisse nach Relevanz filtern. Das verhindert irrelevante Cover
                     // (z.B. „Mimi Rutherford" bei Suche nach „Die drei ??? Kids")
                     CoverSearchResult? best = FindBestMatch(
                         results, seriesName, episodeNumber, shortTitle);

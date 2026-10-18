@@ -51,7 +51,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Serien mit lokalem Ordner – linke Spalte. Gefilterte Sicht auf <see cref="_allArtists"/>.
+        /// Serien mit lokalem Ordner (linke Spalte). Gefilterte Sicht auf <see cref="_allArtists"/>.
         /// </summary>
         public IReadOnlyList<LocalArtistCardViewModel> Artists
         {
@@ -67,7 +67,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Freitext-Suchfilter für die Serien-Kacheln. Filtert clientseitig auf Titel –
+        /// Freitext-Suchfilter für die Serien-Kacheln. Filtert clientseitig auf Titel,
         /// kein neuer DB-Query. Leerer String zeigt alle Serien.
         /// </summary>
         public string LocalSearchText
@@ -99,7 +99,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Übernimmt ein geändertes Filterkriterium, meldet es und wendet den Filter neu an.
-        /// Unveränderte Werte lösen nichts aus — sonst baute jede Zuweisung die Liste neu auf.
+        /// Unveränderte Werte lösen nichts aus, sonst baute jede Zuweisung die Liste neu auf.
         /// </summary>
         private void SetFilter<T>(T neu, Action<LocalArtistFilter> assign, string name, T alt)
         {
@@ -132,7 +132,7 @@ namespace EchoPlay.App.ViewModels
             ApplyFilters();
         }
 
-        /// <summary>Aktuell gewählte Serie – steuert die mittlere Spalte.</summary>
+        /// <summary>Aktuell gewählte Serie; steuert die mittlere Spalte.</summary>
         public LocalArtistCardViewModel? SelectedArtist
         {
             get => _selectedArtist;
@@ -162,14 +162,14 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des „Noch keine Serien"-Platzhalters – erscheint nur, wenn die
+        /// Sichtbarkeit des „Noch keine Serien"-Platzhalters. Er erscheint nur, wenn die
         /// Bibliothek wirklich leer ist.
         /// </summary>
         public Visibility ArtistsEmptyVisibility =>
             _allArtists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Sichtbarkeit des „Nichts gefunden"-Platzhalters – erscheint, wenn der Bestand
+        /// Sichtbarkeit des „Nichts gefunden"-Platzhalters. Er erscheint, wenn der Bestand
         /// gefüllt ist und erst Suche oder Filter ihn leer räumen.
         /// <para>
         /// Die Unterscheidung zum leeren Bestand ist der eigentliche Punkt: „Nichts da" führt
@@ -181,7 +181,7 @@ namespace EchoPlay.App.ViewModels
             _allArtists.Count > 0 && _artists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Sichtbarkeit des Folgen-Akkordeons – eingeblendet sobald eine Serie ausgewählt ist.
+        /// Sichtbarkeit des Folgen-Akkordeons, eingeblendet, sobald eine Serie ausgewählt ist.
         /// </summary>
         public Visibility EpisodesAccordionVisibility =>
             _selectedArtistIndex >= 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -193,7 +193,7 @@ namespace EchoPlay.App.ViewModels
         public Visibility SeriesActionsVisibility =>
             _selectedArtist?.LocalFolderPath is not null ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>Zugriff auf die ungefilterte Künstler-Liste – z.B. um eine Karte per ID zu finden.</summary>
+        /// <summary>Zugriff auf die ungefilterte Künstler-Liste, z.B. um eine Karte per ID zu finden.</summary>
         public IReadOnlyList<LocalArtistCardViewModel> AllArtists => _allArtists;
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 // Karte existiert bereits (z.B. früher im Scan mit noch 0 Folgen gemeldet):
-                // Zähler live nachziehen statt abzubrechen – sonst bleibt die Kachel auf "0 / 0"
+                // Zähler live nachziehen statt abzubrechen, sonst bleibt die Kachel auf "0 / 0"
                 // stehen, bis erst der abschließende Neuaufbau sie ersetzt.
                 LocalArtistCardViewModel? existing = _allArtists.FirstOrDefault(a => a.SeriesId == series.Id);
 
@@ -248,7 +248,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (UnauthorizedAccessException)
             {
-                // Keine Lese-/Schreibrechte – Karte erscheint beim abschließenden LoadAsync()
+                // Keine Lese-/Schreibrechte: Die Karte erscheint beim abschließenden LoadAsync()
             }
         }
 

@@ -39,7 +39,7 @@ namespace EchoPlay.Data.Migrations
                 columns: IndexColumns,
                 unique: true);
 
-            // Alte Spalte auf Series entfernen – Positionsdaten liegen jetzt in DashboardPositions
+            // Alte Spalte auf Series entfernen, die Positionsdaten liegen jetzt in DashboardPositions
             _ = migrationBuilder.DropColumn(
                 name: "DashboardSortOrder",
                 table: "Series");

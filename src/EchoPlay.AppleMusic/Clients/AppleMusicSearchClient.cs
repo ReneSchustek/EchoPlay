@@ -15,7 +15,7 @@ namespace EchoPlay.AppleMusic.Clients
 
         /// <summary>
         /// Obergrenze einer Lookup-Antwort. iTunes liefert höchstens so viele Alben je Anfrage,
-        /// unabhängig davon, welches <c>limit</c> in der Adresse steht – ein höherer Wert
+        /// unabhängig davon, welches <c>limit</c> in der Adresse steht. Ein höherer Wert
         /// täuscht nur Vollständigkeit vor. Gemessen an „Die drei ???": 200 Alben, und die
         /// jüngsten Folgen fehlten.
         /// </summary>
@@ -92,7 +92,7 @@ namespace EchoPlay.AppleMusic.Clients
 
             int albenImStandard = CountAlbums(standard);
 
-            // Unter dem Deckel ist der Bestand vollständig – eine zweite Anfrage brächte nichts.
+            // Unter dem Deckel ist der Bestand vollständig, eine zweite Anfrage brächte nichts.
             if (albenImStandard < LookupAlbumCap)
             {
                 return standard;
@@ -234,7 +234,7 @@ namespace EchoPlay.AppleMusic.Clients
                 T? result = await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions, ct).ConfigureAwait(false);
 
                 // Eine null-Deserialisierung deutet auf ein strukturelles API-Problem hin,
-                // nicht auf ein leeres Ergebnis – der Aufrufer muss das unterscheiden können.
+                // nicht auf ein leeres Ergebnis, denn der Aufrufer muss das unterscheiden können.
                 if (result is null)
                 {
                     _logger.Warning("iTunes-API lieferte null-Response für: {RelativeUrl}", relativeUrl);

@@ -42,7 +42,7 @@ namespace EchoPlay.App.Tests.ViewModels
             search.Publish(Series("Bibi Blocksberg", 100));
             await firstCard.WaitAsync(Frist, TestContext.Current.CancellationToken);
 
-            // Die Suche läuft noch — der zweite Treffer ist nicht einmal angefragt.
+            // Die Suche läuft noch, der zweite Treffer ist nicht einmal angefragt.
             _ = Assert.Single(vm.Results);
             Assert.Equal("Bibi Blocksberg", vm.Results[0].Title);
             Assert.True(vm.IsLoading);
@@ -111,8 +111,8 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task Search_ForALocalHit_AsksTheCoverPipelineWithTheDatabaseId()
         {
             // Der lokale Treffer hat keine Anbieter-Adresse. Damit die Kachel trotzdem ein
-            // Bild bekommt, muss die Quelle „Lokal" mit der Datenbank-Kennung ankommen —
-            // nur damit findet die Cover-Kette das gespeicherte Bild.
+            // Bild bekommt, muss die Quelle „Lokal" mit der Datenbank-Kennung ankommen,
+            // denn nur damit findet die Cover-Kette das gespeicherte Bild.
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "Bibi Blocksberg" };
             await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
@@ -145,7 +145,7 @@ namespace EchoPlay.App.Tests.ViewModels
         /// </summary>
         /// <remarks>
         /// Nur das Hinzufügen zählt: Jede Suche leert die Liste zuerst, und dieses Leeren
-        /// ist ebenfalls eine Änderung — darauf zu warten hieße, auf den Startschuss zu
+        /// ist ebenfalls eine Änderung. Darauf zu warten hieße, auf den Startschuss zu
         /// warten statt auf den ersten Treffer.
         /// </remarks>
         private static Task WaitForResultChange(SearchViewModel vm)

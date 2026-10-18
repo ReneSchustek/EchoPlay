@@ -18,7 +18,7 @@ namespace EchoPlay.Data.Migrations
                 table: "AppSettings",
                 type: "INTEGER",
                 nullable: false,
-                // 2 = LogLevel.Information – neue DBs starten direkt mit dem sinnvollen Standard.
+                // 2 = LogLevel.Information; neue DBs starten direkt mit dem sinnvollen Standard.
                 // Bestehende Zeilen erhalten denselben Wert, weil EF den defaultValue als ALTER TABLE DEFAULT einsetzt.
                 defaultValue: 2);
         }

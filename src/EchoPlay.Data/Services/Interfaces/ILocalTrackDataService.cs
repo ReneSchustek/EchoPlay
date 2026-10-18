@@ -31,7 +31,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <summary>
         /// Ersetzt alle lokalen Tracks einer Episode durch die übergebene Liste.
         /// Bestehende Einträge werden entfernt, die neuen werden hinzugefügt.
-        /// Diese Methode ist idempotent – ein erneuter Scan überschreibt den vorherigen.
+        /// Diese Methode ist idempotent: Ein erneuter Scan überschreibt den vorherigen.
         /// </summary>
         /// <param name="episodeId">ID der Episode.</param>
         /// <param name="tracks">Die neuen Tracks. Die <see cref="LocalTrack.EpisodeId"/> muss bereits gesetzt sein.</param>

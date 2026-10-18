@@ -5,10 +5,10 @@
     <ResourceDictionary.ThemeDictionaries>
 
         <!--
-            Ruhrcoder – industriell, direkter Kontrast, kompakt.
+            Ruhrcoder: industriell, direkter Kontrast, kompakt.
             Kernmerkmal: dunkle Navigations-Pane (#2F4858) gegen hellen Inhaltsbereich (#EEEEEE).
             Das erzeugt sofort das Gefühl einer zweigeteilt strukturierten Oberfläche.
-            Beide Dictionaries (Light/Dark) sind identisch – Ruhrcoder ist ein festes Helles Theme,
+            Beide Dictionaries (Light/Dark) sind identisch, denn Ruhrcoder ist ein festes Helles Theme,
             der ThemeService setzt RequestedTheme=Light.
         -->
 
@@ -16,7 +16,7 @@
 
             <!-- ── App-Hintergrund ─────────────────────────────────────────────── -->
             <!--
-                Industrielles Hellgrau – deutlich getrennt vom reinen Weiß der Karten.
+                Industrielles Hellgrau, deutlich getrennt vom reinen Weiß der Karten.
                 Schafft den "Arbeitsfläche hinter den Karten"-Eindruck.
             -->
             <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#EEEEEE"/>
@@ -110,8 +110,8 @@
             <SolidColorBrush x:Key="AccentPrimaryPressedBrush"  Color="#1F5A8A"/>
             <SolidColorBrush x:Key="AccentPrimaryDisabledBrush" Color="#B8D3E8"/>
 
-            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos —
-                 die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
+            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos,
+                 denn die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
             <SolidColorBrush x:Key="ButtonBackground"                      Color="#F0F0F0"/>
             <SolidColorBrush x:Key="ButtonBackgroundPointerOver"           Color="#E3E3E3"/>
             <SolidColorBrush x:Key="ButtonBackgroundPressed"               Color="#D9D9D9"/>
@@ -137,7 +137,7 @@
             <SolidColorBrush x:Key="AccentButtonBorderBrush"               Color="#2E6DA4"/>
 
             <!-- Umschalter im gehakten Zustand, etwa der aktive Filter. Ohne diese Schlüssel
-                 färbt Windows sie in seiner eigenen Akzentfarbe — auf jedem Rechner anders. -->
+                 färbt Windows sie in seiner eigenen Akzentfarbe, auf jedem Rechner anders. -->
             <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"            Color="#2E6DA4"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#3D83BB"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"     Color="#1F5A8A"/>
@@ -156,7 +156,7 @@
 
             <!--
                 Semantische Karten-Header-Ressourcen.
-                Entsprechen dem Pane-Farbton – wenn Karten den Split-Stil implementieren,
+                Entsprechen dem Pane-Farbton. Wenn Karten den Split-Stil implementieren,
                 verwenden sie diese Brushes für den oberen Bereich.
             -->
             <SolidColorBrush x:Key="CardHeaderBackgroundBrush" Color="#2F4858"/>
@@ -202,7 +202,7 @@
             <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="#D6E8F5"/>
             <SolidColorBrush x:Key="SelectionBorderBrush"     Color="#2E6DA4"/>
 
-            <!-- Typografie: Roboto – technisch, sachlich, direkt -->
+            <!-- Typografie: Roboto (technisch, sachlich, direkt) -->
             <!-- Download: https://fonts.google.com/specimen/Roboto -->
             <!-- TTF nach Assets/Fonts/ kopieren und im .csproj als Content deklarieren -->
 
@@ -220,7 +220,7 @@
 
         <!--
             Dark-Key ist erforderlich, damit WinUI 3 nicht in den Fallback geht.
-            Ruhrcoder ist ein fixes Helles Theme – identische Werte wie Light.
+            Ruhrcoder ist ein fixes Helles Theme mit identischen Werten wie Light.
         -->
         <ResourceDictionary x:Key="Dark">
 
@@ -283,8 +283,8 @@
             <SolidColorBrush x:Key="AccentPrimaryHoverBrush"               Color="#3D83BB"/>
             <SolidColorBrush x:Key="AccentPrimaryPressedBrush"             Color="#1F5A8A"/>
             <SolidColorBrush x:Key="AccentPrimaryDisabledBrush"            Color="#B8D3E8"/>
-            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos —
-                 die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
+            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos,
+                 denn die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
             <SolidColorBrush x:Key="ButtonBackground"                      Color="#F0F0F0"/>
             <SolidColorBrush x:Key="ButtonBackgroundPointerOver"           Color="#E3E3E3"/>
             <SolidColorBrush x:Key="ButtonBackgroundPressed"               Color="#D9D9D9"/>
@@ -310,7 +310,7 @@
             <SolidColorBrush x:Key="AccentButtonBorderBrush"               Color="#2E6DA4"/>
 
             <!-- Umschalter im gehakten Zustand, etwa der aktive Filter. Ohne diese Schlüssel
-                 färbt Windows sie in seiner eigenen Akzentfarbe — auf jedem Rechner anders. -->
+                 färbt Windows sie in seiner eigenen Akzentfarbe, auf jedem Rechner anders. -->
             <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"            Color="#2E6DA4"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#3D83BB"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"     Color="#1F5A8A"/>

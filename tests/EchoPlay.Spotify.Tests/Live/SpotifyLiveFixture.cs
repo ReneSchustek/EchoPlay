@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Live
 
             // Auth-Handler mit eigenem InnerHandler.
             // PooledConnectionLifetime = Zero verhindert, dass abgelaufene
-            // Verbindungen wiederverwendet werden – Spotify schließt
+            // Verbindungen wiederverwendet werden, denn Spotify schließt
             // Idle-Connections aggressiv, was sonst zu SocketExceptions führt.
             SpotifyAuthMessageHandler authHandler = new(tokenClient)
             {
@@ -70,7 +70,7 @@ namespace EchoPlay.Spotify.Tests.Live
                 }
             };
 
-            // Test-Fixture – Ausnahme von der IHttpClientFactory-Pflicht: die Factory bietet keinen Zugang
+            // Test-Fixture als Ausnahme von der IHttpClientFactory-Pflicht: Die Factory bietet keinen Zugang
             // zum SocketsHttpHandler-Setup, das wegen Spotifys Idle-Drops erforderlich ist (siehe oben).
             _apiHttpClient = new HttpClient(authHandler, disposeHandler: true)
             {

@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.Services
             SplashLifetimeController controller = new();
             using CancellationTokenSource cts = new();
 
-            // Cancellation kurz nach Beginn — Wartezeit muss vorzeitig enden.
+            // Cancellation kurz nach Beginn: Die Wartezeit muss vorzeitig enden.
             _ = Task.Run(async () =>
             {
                 await Task.Delay(50);

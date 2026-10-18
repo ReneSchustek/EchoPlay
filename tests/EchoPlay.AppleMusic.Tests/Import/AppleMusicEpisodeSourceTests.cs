@@ -109,7 +109,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
                 await episodeImport.GetEpisodesAsync(ScotlandYardArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture), cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
-            // Genau zwei Episoden – das fremde Detektiv-Clipper-Album darf nicht durchrutschen.
+            // Genau zwei Episoden, das fremde Detektiv-Clipper-Album darf nicht durchrutschen.
             Assert.Equal(2, episodes.Count);
             Assert.All(episodes, e => Assert.Contains("Scotland Yard", e.Title, StringComparison.Ordinal));
             Assert.DoesNotContain(episodes, e => e.Title.Contains("Detektiv Clipper", StringComparison.Ordinal));
@@ -117,7 +117,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
 
         /// <summary>
         /// Delta-Abgleich: Für bereits bekannte Folgen (Titel = Albumname) muss der teure Track-Lookup
-        /// entfallen – aber ihre Metadaten (inkl. Cover) müssen weiterhin zurückkommen, damit der
+        /// entfallen, aber ihre Metadaten (inkl. Cover) müssen weiterhin zurückkommen, damit der
         /// Delta-Import ein fehlendes Cover einer bestehenden Folge nachtragen kann. Nur für die
         /// unbekannte, neue Folge darf ein Track-Lookup ausgelöst werden.
         /// </summary>
@@ -177,14 +177,14 @@ namespace EchoPlay.AppleMusic.Tests.Import
                 TestContext.Current.CancellationToken);
 
             // ASSERT
-            // Beide Alben kommen zurück – die bekannte "Folge 1" wird nicht verschluckt (Cover-Nachtrag).
+            // Beide Alben kommen zurück: Die bekannte "Folge 1" wird nicht verschluckt (Cover-Nachtrag).
             Assert.Equal(2, episodes.Count);
             Assert.Contains(episodes, e => e.Title == "Folge 1");
             Assert.Contains(episodes, e => e.Title == "Folge 2");
             // Bekannte "Folge 1" behält ihre Cover-URL aus den Album-Metadaten (kein Track-Lookup nötig).
             Assert.Contains(episodes, e => e.Title == "Folge 1" && !string.IsNullOrEmpty(e.CoverImageUrl));
 
-            // Der teure Track-Lookup lief NUR für die neue, unbekannte Folge – nicht für "Folge 1".
+            // Der teure Track-Lookup lief NUR für die neue, unbekannte Folge, nicht für "Folge 1".
             Assert.Equal([NewCollectionId], client.LookedUpCollectionIds);
         }
 
@@ -214,7 +214,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
 
         /// <summary>
         /// Die Track-Lookups laufen gebündelt (ein Batch-Request statt N Einzel-Lookups),
-        /// die Episoden-Dauer wird korrekt aus den – über die CollectionId zugeordneten – Tracks
+        /// die Episoden-Dauer wird korrekt aus den (über die CollectionId zugeordneten) Tracks
         /// aufsummiert. Sichert zu, dass die Performance-Umstellung die Dauer nicht verliert.
         /// </summary>
         [Fact]

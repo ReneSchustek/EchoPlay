@@ -7,7 +7,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Kachel-ViewModel für den „Weiterhören"-Abschnitt der Startseite.
     /// Zeigt Serien an, bei denen der Nutzer mindestens eine Folge gehört hat,
-    /// aber noch nicht alle – ein Hinweis zum Weiterhören.
+    /// aber noch nicht alle; ein Hinweis zum Weiterhören.
     /// </summary>
     public sealed class UnheardSeriesCardViewModel
     {
@@ -46,7 +46,7 @@ namespace EchoPlay.App.ViewModels
                 unheardCount);
         }
 
-        /// <summary>Datenbank-ID der Serie – für Navigation zur Detailseite.</summary>
+        /// <summary>Datenbank-ID der Serie für die Navigation zur Detailseite.</summary>
         public Guid SeriesId { get; }
 
         /// <summary>Titel der Serie.</summary>

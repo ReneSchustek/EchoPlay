@@ -9,7 +9,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="ICoverService"/>. Zeichnet auf, für welche Serien-IDs ein Cover
-    /// angefordert wurde, und liefert stets <see langword="null"/> zurück – ein echtes
+    /// angefordert wurde, und liefert stets <see langword="null"/> zurück, ein echtes
     /// <see cref="BitmapImage"/> ist im headless Testhost (UseWinUI=false) nicht konstruierbar.
     /// Tests prüfen daher den <em>Nachlade-Versuch</em> (Aufrufzählung), nicht das Bitmap selbst.
     /// </summary>

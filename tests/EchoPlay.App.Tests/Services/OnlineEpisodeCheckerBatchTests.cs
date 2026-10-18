@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Die Prüfung läuft über alle beobachteten Serien. Bricht sie beim ersten Fehler ab,
-    /// bekommt der Anwender für den halben Bestand keine Neuerscheinungen mehr — und merkt
+    /// bekommt der Anwender für den halben Bestand keine Neuerscheinungen mehr und merkt
     /// es nicht, weil ein leerer Abschnitt aussieht wie „nichts Neues".
     /// </remarks>
     public sealed class OnlineEpisodeCheckerBatchTests
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.Services
                 TestContext.Current.CancellationToken);
 
             // Eine Folge mit Erscheinungsdatum in der Zukunft wird zusätzlich als
-            // Ankündigung geführt — daran unterscheidet die Startseite „schon da“ von
+            // Ankündigung geführt; daran unterscheidet die Startseite „schon da“ von
             // „kommt noch“.
             OnlineEpisodeCheckResult result = Assert.Single(results);
             _ = Assert.Single(result.AnnouncedEpisodes);
@@ -142,7 +142,7 @@ namespace EchoPlay.App.Tests.Services
                 TestContext.Current.CancellationToken);
 
             // Auch im Bericht über fehlende Folgen zählt eine noch nicht erschienene Folge
-            // als Ankündigung — wer sie sucht, findet sie sonst nirgends.
+            // als Ankündigung, denn wer sie sucht, findet sie sonst nirgends.
             OnlineEpisodeCheckResult result = Assert.Single(results);
             _ = Assert.Single(result.AnnouncedEpisodes);
             Assert.Equal(250, result.OnlineHighestNumber);

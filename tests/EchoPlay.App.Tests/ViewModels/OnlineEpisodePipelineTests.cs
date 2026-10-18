@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Tests der Episoden-Pipeline in der Online-Mediathek: Serienwahl, Aufbau der
     /// Folgenliste, Chargen beim Abruf der Bilddaten und Übernahme eines gewählten Covers.
     ///
-    /// Nicht geprüft ist das Setzen der Bildobjekte selbst — <c>BitmapImage</c> gehört an den
+    /// Nicht geprüft ist das Setzen der Bildobjekte selbst, denn <c>BitmapImage</c> gehört an den
     /// Zeichenfaden des Fensters. Ohne ihn liefert die Umwandlung nichts, die Kacheln behalten
     /// also ihren Platzhalter. Alles davor und danach läuft trotzdem durch; genau das ist hier
     /// festgehalten.
@@ -364,7 +364,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.SelectSeriesAsync(card);
 
             // Nach dem Nachladen im Hintergrund liest die Pipeline erneut, was inzwischen
-            // in der Ablage liegt — sonst blieben die frisch geholten Bilder unsichtbar,
+            // in der Ablage liegt, sonst blieben die frisch geholten Bilder unsichtbar,
             // bis der Anwender die Serie erneut öffnet.
             await harness.CoverImages.BatchesReached.WaitAsync(
                 TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken);
@@ -388,7 +388,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.SelectSeriesAsync(card);
 
             // Der Zwischenspeicher füllt sich nach und nach. Schaute die Pipeline nur einmal
-            // am Ende nach, blieben die Kacheln bis dahin leer — bei einer langen Serie
+            // am Ende nach, blieben die Kacheln bis dahin leer, bei einer langen Serie
             // sind das mehrere Minuten Platzhalter.
             await harness.CoverImages.BatchesReached.WaitAsync(
                 TimeSpan.FromSeconds(20), TestContext.Current.CancellationToken);

@@ -9,7 +9,7 @@ namespace EchoPlay.Core.Logging
     /// Reduziert vollständige Datei- und Verzeichnis-Pfade auf eine logging-sichere Form,
     /// damit der Username und tiefer Verzeichnisbaum in Crash-Reports und Log-Files
     /// nicht im Klartext erscheinen. Der Datei-Name bleibt sichtbar (Diagnostic-Wert),
-    /// das Verzeichnis wird durch einen 8-Zeichen-Hash ersetzt — gleiche Verzeichnisse
+    /// das Verzeichnis wird durch einen 8-Zeichen-Hash ersetzt. Gleiche Verzeichnisse
     /// erhalten denselben Hash, sodass Korrelation in einer Log-Sequenz möglich bleibt.
     /// </summary>
     public static class PathRedactor
@@ -36,7 +36,7 @@ namespace EchoPlay.Core.Logging
 
             if (string.IsNullOrEmpty(directory))
             {
-                // Reine Pfad-Trennzeichen ("\\", "/") liefern leeren Datei-Namen — Fallback.
+                // Reine Pfad-Trennzeichen ("\\", "/") liefern leeren Datei-Namen, daher der Fallback.
                 return string.IsNullOrEmpty(fileName) ? EmptyPlaceholder : fileName;
             }
 

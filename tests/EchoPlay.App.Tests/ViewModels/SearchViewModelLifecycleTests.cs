@@ -23,7 +23,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Beim Verlassen laufen noch Cover-Anfragen der Trefferkacheln. Werden sie nicht
-    /// abgebrochen, halten sie die Bilder der alten Treffer im Speicher — bei einer
+    /// abgebrochen, halten sie die Bilder der alten Treffer im Speicher. Bei einer
     /// Sitzung mit mehreren Suchen summiert sich das.
     /// </remarks>
     public sealed class SearchViewModelLifecycleTests

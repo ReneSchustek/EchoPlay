@@ -107,7 +107,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <summary>
         /// Zählt alle unterstützten Audiodateien im Verzeichnisbaum.
         /// Wird in Phase 1 auf dem Threadpool ausgeführt um den UI-Thread nicht zu blockieren.
-        /// Bei IO-Fehlern (z.B. fehlende Rechte) wird 0 zurückgegeben – Phase 4 läuft dann
+        /// Bei IO-Fehlern (z.B. fehlende Rechte) wird 0 zurückgegeben, Phase 4 läuft dann
         /// weiter mit indeterministischem Balken.
         /// </summary>
         /// <param name="rootPath">Absoluter Pfad zum Bibliotheks-Wurzelordner.</param>
@@ -130,19 +130,19 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (IOException)
             {
-                // IO-Fehler (inkl. PathTooLongException, DirectoryNotFoundException) – ohne Zählung läuft der Scan trotzdem
+                // IO-Fehler (inkl. PathTooLongException, DirectoryNotFoundException): Ohne Zählung läuft der Scan trotzdem
             }
             catch (UnauthorizedAccessException)
             {
-                // Zugriffsrechte – ohne Zählung läuft der Scan trotzdem
+                // Zugriffsrechte: Ohne Zählung läuft der Scan trotzdem
             }
             catch (SecurityException)
             {
-                // Zugriffsrechte – ohne Zählung läuft der Scan trotzdem
+                // Zugriffsrechte: Ohne Zählung läuft der Scan trotzdem
             }
             catch (ArgumentException)
             {
-                // Ungültiger Pfad – ohne Zählung läuft der Scan trotzdem
+                // Ungültiger Pfad: Ohne Zählung läuft der Scan trotzdem
             }
 
             return count;

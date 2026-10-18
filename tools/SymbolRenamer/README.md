@@ -1,6 +1,6 @@
 # SymbolRenamer
 
-Benennt Bezeichner über eine ganze Projektmappe um — Typen, Member, Parameter und lokale
+Benennt Bezeichner über eine ganze Projektmappe um: Typen, Member, Parameter und lokale
 Namen. Dahinter steckt dieselbe Maschinerie, die die Entwicklungsumgebung hinter „Symbol
 umbenennen" benutzt: Referenzen in allen geladenen Projekten wandern mit, **Kommentare,
 Zeichenketten und Ressourcenschlüssel bleiben unberührt**. Es ist kein Textersatz.
@@ -15,7 +15,7 @@ dotnet build tools\SymbolRenamer -c Release
 tools\SymbolRenamer\bin\Release\net10.0\SymbolRenamer.exe <projektwurzel> <auftrag.json> --dry-run
 ```
 
-Ohne `--dry-run` wird geschrieben. **Der Trockenlauf ist keine Formsache** — siehe unten.
+Ohne `--dry-run` wird geschrieben. **Der Trockenlauf ist keine Formsache**, siehe unten.
 
 ## Auftragsdatei
 
@@ -49,7 +49,7 @@ eine Zeile je Segment, `#` leitet einen Kommentar ein.
 
 ## Der Trockenlauf ist der eigentliche Arbeitsschritt
 
-Ein Segment ohne Eintrag bleibt stehen. Das ist die richtige Voreinstellung — es führt aber
+Ein Segment ohne Eintrag bleibt stehen. Das ist die richtige Voreinstellung, es führt aber
 zu **halb übersetzten Namen**, und die sind schlechter als der Ausgangszustand. Beim ersten
 Lauf dieses Werkzeugs auf sich selbst kam unter anderem heraus:
 
@@ -61,7 +61,7 @@ Lauf dieses Werkzeugs auf sich selbst kam unter anderem heraus:
 | `EigenschaftZu` → `PropertyToo` | falscher Eintrag: `zu=Too` passt hier nicht |
 
 Der letzte Fall ist der lehrreiche: Ein vorhandener Eintrag kann sachlich falsch sein, und
-das Werkzeug merkt es nicht. **Die Liste vor dem echten Lauf durchgehen, nicht überfliegen** —
+das Werkzeug merkt es nicht. **Die Liste vor dem echten Lauf durchgehen, nicht überfliegen**:
 fehlende Segmente ergänzen, unpassende Einträge vorher aus dem Wörterbuch nehmen.
 
 ## Was das Werkzeug nicht kann
@@ -70,8 +70,8 @@ fehlende Segmente ergänzen, unpassende Einträge vorher aus dem Wörterbuch neh
   umbenannt; die Datei behält ihren Namen. Das gehört von Hand nachgezogen, bei XAML-Seiten
   zusammen mit der `.xaml`-Datei daneben.
 - **Ressourcenschlüssel mitziehen.** `x:Uid="NavUeber"` holt seinen Text über `NavUeber.Content`
-  aus den Sprachdateien. Wird der Bezeichner umbenannt, bleibt der Schlüssel unangetastet —
-  richtig so, aber wer den Schlüssel selbst ändern will, ändert ihn in **allen** Sprachdateien
+  aus den Sprachdateien. Wird der Bezeichner umbenannt, bleibt der Schlüssel unangetastet.
+  Das ist richtig so, aber wer den Schlüssel selbst ändern will, ändert ihn in **allen** Sprachdateien
   von Hand.
 - **Bindungen prüfen.** `{Binding …}` löst zur Laufzeit auf. Ein umbenanntes Merkmal bindet
   danach still ins Leere. Nach jedem Lauf gehört das Programm gestartet, nicht nur gebaut.

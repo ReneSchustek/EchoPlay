@@ -2,7 +2,7 @@ namespace EchoPlay.LocalLibrary.Models
 {
     /// <summary>
     /// Ergebnis der Analyse für den Ordnerstruktur-Assistenten.
-    /// Enthält alle geplanten Verschiebe-Aktionen als Vorschau – noch wurde nichts verschoben.
+    /// Enthält alle geplanten Verschiebe-Aktionen als Vorschau; noch wurde nichts verschoben.
     /// </summary>
     public sealed class RestructurePreview
     {
@@ -17,7 +17,7 @@ namespace EchoPlay.LocalLibrary.Models
 
         /// <summary>
         /// Anzahl der Audiodateien, die verschoben werden sollen.
-        /// Entspricht <c>Actions.Count</c> – als Kurzform für die Anzeige.
+        /// Entspricht <c>Actions.Count</c>, als Kurzform für die Anzeige.
         /// </summary>
         public int FileCount => Actions.Count;
 

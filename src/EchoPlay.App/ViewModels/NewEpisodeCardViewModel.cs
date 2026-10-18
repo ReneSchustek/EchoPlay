@@ -34,13 +34,13 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Veröffentlichungsdatum der Folge. Entscheidet beim Klick darüber, ob der Sprung zum
-        /// Anbieter sinnvoll ist — vor dem Erscheinen steht dort nur eine Vorabveröffentlichung.
+        /// Anbieter sinnvoll ist, denn vor dem Erscheinen steht dort nur eine Vorabveröffentlichung.
         /// </summary>
         private readonly DateTime? _releaseDate;
 
         /// <summary>
         /// Anbieter-Kennungen der Folge, mitgegeben statt nachgeladen: Eine Neuerscheinung
-        /// stammt vom Anbieter und ist noch keine gespeicherte Folge — ihre Id steht in keiner
+        /// stammt vom Anbieter und ist noch keine gespeicherte Folge; ihre Id steht in keiner
         /// Tabelle, ein Nachladen fände nie etwas.
         /// </summary>
         private readonly string? _spotifyAlbumId;
@@ -58,7 +58,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="seriesId">ID der zugehörigen Serie.</param>
         /// <param name="seriesName">Anzeigename der Serie.</param>
         /// <param name="episodeTitle">Titel der Episode.</param>
-        /// <param name="coverImage">Cover-Bild der Serie – kann null sein.</param>
+        /// <param name="coverImage">Cover-Bild der Serie; kann null sein.</param>
         /// <param name="status">Aktueller Wiedergabestatus.</param>
         /// <param name="progressPercent">Fortschritt in Prozent (0–100) für den Fortschrittsbalken.</param>
         /// <param name="hasLocalTrack">Gibt an, ob lokale Audiodateien vorhanden sind.</param>
@@ -70,7 +70,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="episodeNumber">Folgennummer für die Anzeige, oder null wenn nicht bekannt.</param>
         /// <param name="releaseDate">Erscheinungsdatum für Ankündigungen, oder null.</param>
         /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
-        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable, Fallback auf <see cref="SystemClock"/>.</param>
         /// <param name="spotifyAlbumId">Spotify-Album-Kennung der Folge, sofern bekannt.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-Kennung der Folge, sofern bekannt.</param>
         [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase",
@@ -115,7 +115,7 @@ namespace EchoPlay.App.ViewModels
                 : null;
             IsOnlineOnly = !hasLocalTrack;
 
-            // Info-Zeile für das Kachel-Overlay – einheitliches Format:
+            // Info-Zeile für das Kachel-Overlay im einheitlichen Format:
             // "Nr. 170 · 03.04.2026 · online" (Neuerscheinung)
             // "Nr. 26 · 25.04.2026 · angekündigt" (Ankündigung)
             if (releaseDate.HasValue)
@@ -148,7 +148,7 @@ namespace EchoPlay.App.ViewModels
 
             if (releaseDate.HasValue && releaseDate.Value.Date > _clock.UtcNow.Date)
             {
-                // Nur das Datum – der Badge zeigt bereits "Angekündigt"
+                // Nur das Datum, der Badge zeigt bereits "Angekündigt"
                 ReleaseDateText = releaseDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
             }
             else
@@ -249,7 +249,7 @@ namespace EchoPlay.App.ViewModels
         public bool IsOnlineOnly { get; }
 
         /// <summary>
-        /// Cover-Bild – bevorzugt Episoden-Cover, dann Serien-Cover, oder null.
+        /// Cover-Bild: bevorzugt Episoden-Cover, dann Serien-Cover, oder null.
         /// Initial wird häufig das Serien-Cover gesetzt, damit die Kachel sofort sichtbar ist;
         /// <see cref="UpdateCoverImage"/> blendet das spezifischere Episoden-Cover nach.
         /// </summary>
@@ -371,7 +371,7 @@ namespace EchoPlay.App.ViewModels
         {
             // Maßgeblich ist das Veröffentlichungsdatum, nicht das Kennzeichen: Erst wenn das
             // Album vollständig zur Verfügung steht, lohnt der Sprung zum Anbieter. Apple Music
-            // führt angekündigte Alben zwar schon als Vorabveröffentlichung — zu hören gibt es
+            // führt angekündigte Alben zwar schon als Vorabveröffentlichung, zu hören gibt es
             // dort aber nichts, und der Nutzer landet außerhalb der Anwendung.
             bool nochNichtErschienen = _releaseDate.HasValue && _releaseDate.Value.Date > _clock.UtcNow.Date;
 
@@ -457,7 +457,7 @@ namespace EchoPlay.App.ViewModels
         /// <para>
         /// Über den Schlüssel und nicht über einen Farbwert im Quelltext: Der Nutzer wählt
         /// zwischen sechs Paletten, und eine hier fest verdrahtete Farbe stünde in fünf davon
-        /// daneben. Der Schlüsselsatz ist in allen Paletten vollständig — dass er hier zur
+        /// daneben. Der Schlüsselsatz ist in allen Paletten vollständig. Dass er hier zur
         /// Laufzeit gesucht wird, ändert daran nichts.
         /// </para>
         /// </summary>
@@ -471,7 +471,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                // Ohne WinUI-Runtime gibt es keine Palette — die Kachel bleibt ohne Farbe.
+                // Ohne WinUI-Runtime gibt es keine Palette, die Kachel bleibt ohne Farbe.
                 return null;
             }
         }

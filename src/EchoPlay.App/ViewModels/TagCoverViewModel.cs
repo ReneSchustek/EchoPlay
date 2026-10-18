@@ -48,13 +48,13 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des Cover-Bilds – sichtbar wenn ein Cover vorhanden ist.
+        /// Sichtbarkeit des Cover-Bilds, sichtbar, wenn ein Cover vorhanden ist.
         /// </summary>
         public Visibility CoverVisibility =>
             _coverImage is not null ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Rohdaten des aktuell gehaltenen Covers – benötigt für das Schreiben auf weitere
+        /// Rohdaten des aktuell gehaltenen Covers, benötigt für das Schreiben auf weitere
         /// Dateien (<c>ApplyCoverToAll</c>). <see langword="null"/> wenn kein Cover gesetzt ist.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Bildrohdaten werden direkt an TagLib-APIs (ByteVector) und an 'ApplyCoverToAll' übergeben; ein ReadOnlyMemory-Wrapper würde nur Kopien erzeugen.")]

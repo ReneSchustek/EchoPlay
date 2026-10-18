@@ -22,27 +22,27 @@ namespace EchoPlay.App.Services
     public sealed class ThemeService : IThemeService
     {
         /// <summary>
-        /// Alle bekannten Theme-Namen – entsprechen den Dateinamen in EchoPlay.App/Themes/.
+        /// Alle bekannten Theme-Namen; sie entsprechen den Dateinamen in EchoPlay.App/Themes/.
         /// </summary>
         private static readonly IReadOnlyList<string> KnownThemes =
             ["Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey"];
 
         /// <summary>
-        /// Themes mit fester dunkler Palette – ThemeService setzt RequestedTheme auf Dark,
+        /// Themes mit fester dunkler Palette. ThemeService setzt RequestedTheme auf Dark,
         /// damit WinUI die richtige ThemeDictionary-Sektion auswählt.
         /// </summary>
         private static readonly HashSet<string> DarkThemes =
             new(StringComparer.OrdinalIgnoreCase)
             { "MidnightLibrary", "ForestSignal", "AmberWhiskey" };
 
-        // ThemeService ist Singleton, IAppSettingsDataService ist Scoped – daher pro Zugriff
+        // ThemeService ist Singleton, IAppSettingsDataService ist Scoped, daher pro Zugriff
         // einen eigenen DI-Scope öffnen, damit der DbContext nicht als Captive gehalten wird.
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
 
         /// <summary>
         /// Gecachte ResourceDictionary-Instanzen je Theme-Name.
-        /// App.xaml lädt alle sechs Themes vorab – wir halten die Instanzen hier,
+        /// App.xaml lädt alle sechs Themes vorab. Wir halten die Instanzen hier,
         /// damit beim Wechsel kein erneutes XAML-Parsen nötig ist.
         /// </summary>
         private readonly Dictionary<string, ResourceDictionary> _cache =
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Services
                 ? settings.ActiveTheme
                 : "Ruhrcoder";
 
-            // App.xaml hat alle sechs Themes vorab geladen – Instanzen cachen, bevor wir die inaktiven entfernen.
+            // App.xaml hat alle sechs Themes vorab geladen. Instanzen cachen, bevor wir die inaktiven entfernen.
             // Beim späteren Theme-Wechsel können wir die gecachte Instanz direkt wiederverwenden,
             // ohne das XAML nochmals parsen zu müssen.
             CachePreloadedDictionaries();
@@ -121,13 +121,13 @@ namespace EchoPlay.App.Services
                 _activeThemeDictionary = null;
             }
 
-            // Namen vor dem Aufruf sichern – LoadAndApplyTheme überschreibt _activeThemeName
+            // Namen vor dem Aufruf sichern, denn LoadAndApplyTheme überschreibt _activeThemeName
             string previousThemeName = _activeThemeName;
             LoadAndApplyTheme(themeName);
 
             _logger.Info("Theme gewechselt: {PreviousThemeName} → {ThemeName}", previousThemeName, themeName);
 
-            // Persistierung im Hintergrund – ein Fehler darf den Theme-Wechsel nicht blockieren
+            // Persistierung im Hintergrund: Ein Fehler darf den Theme-Wechsel nicht blockieren
             _ = PersistThemeAsync(themeName);
         }
 
@@ -156,7 +156,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Durchsucht die aktuellen MergedDictionaries nach den bekannten Theme-Einträgen
         /// und speichert ihre Instanzen im Cache.
-        /// App.xaml lädt alle sechs Themes vorab – dieser Cache verhindert späteres XAML-Parsen.
+        /// App.xaml lädt alle sechs Themes vorab, dieser Cache verhindert späteres XAML-Parsen.
         /// </summary>
         private void CachePreloadedDictionaries()
         {
@@ -185,12 +185,12 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Fügt die ResourceDictionary des angegebenen Themes zu den MergedDictionaries hinzu
         /// und setzt <c>RequestedTheme</c> am Root-Element entsprechend der Theme-Helligkeit.
-        /// Verwendet die gecachte Instanz, falls vorhanden – andernfalls wird ein neues Dictionary erzeugt.
+        /// Verwendet die gecachte Instanz, falls vorhanden, andernfalls wird ein neues Dictionary erzeugt.
         /// </summary>
         /// <param name="themeName">Name des Themes.</param>
         private void LoadAndApplyTheme(string themeName)
         {
-            // Gecachte Instanz wiederverwenden – die ResourceDictionary wurde beim App-Start bereits geparst.
+            // Gecachte Instanz wiederverwenden. Die ResourceDictionary wurde beim App-Start bereits geparst.
             // Nur wenn kein Cache-Eintrag existiert, wird ein neues Dictionary erzeugt.
             if (!_cache.TryGetValue(themeName, out ResourceDictionary? dict))
             {
@@ -202,7 +202,7 @@ namespace EchoPlay.App.Services
             _activeThemeName = themeName;
 
             // RequestedTheme steuert, welche ThemeDictionary-Sektion (Light/Dark) WinUI auswählt.
-            // Beim Start ist Content noch null (Fenster wurde noch nicht erstellt) –
+            // Beim Start ist Content noch null (Fenster wurde noch nicht erstellt);
             // SyncRequestedTheme() übernimmt das Setzen nach der Fenstererstellung.
             if (App.MainWindow?.Content is FrameworkElement root)
             {
@@ -211,7 +211,7 @@ namespace EchoPlay.App.Services
                     : ElementTheme.Light;
 
                 // Kurz auf das Gegenteil schalten, damit WinUI alle ThemeResource-Bindungen
-                // neu auswertet – auch wenn der Zielwert identisch mit dem vorherigen ist
+                // neu auswertet, auch wenn der Zielwert identisch mit dem vorherigen ist
                 // (z.B. beim Wechsel zwischen zwei hellen oder zwei dunklen Themes).
                 // Beide Zuweisungen erfolgen synchron in einem Layout-Pass, kein Flackern.
                 root.RequestedTheme = targetTheme == ElementTheme.Dark

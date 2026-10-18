@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.Services
     /// Anwender davor sitzt und zusieht.
     /// </summary>
     /// <remarks>
-    /// Zwei Zusagen tragen diese Klasse. Erstens die Reihenfolge der Quellen — was schon in
+    /// Zwei Zusagen tragen diese Klasse. Erstens die Reihenfolge der Quellen: Was schon in
     /// der Ablage liegt, wird nicht erneut geholt, und die Platte kommt vor dem Netz.
     /// Zweitens der Zähler, an dem der Hintergrundlauf erkennt, dass er pausieren soll.
     /// </remarks>
@@ -103,7 +103,7 @@ namespace EchoPlay.App.Tests.Services
             _ = await coordinator.RequestCoverForSearchResultAsync(
                 ProviderKeys.Spotify, SpotifyArtistId, CoverUrl, TestContext.Current.CancellationToken);
 
-            // Die Suche läuft, während der Anwender zusieht — sie muss sich beim Wartelimit
+            // Die Suche läuft, während der Anwender zusieht, sie muss sich beim Wartelimit
             // als Vordergrund melden, sonst steht sie hinter dem Hintergrundlauf an.
             (string host, CoverFetchPriority priority) = Assert.Single(rateLimiter.Waits);
             Assert.Equal("i.example.com", host);
@@ -219,7 +219,7 @@ namespace EchoPlay.App.Tests.Services
 
             coordinator.EnqueueForEpisodes([], onCoverReady: null);
 
-            // Eine leere Warteschlange darf keinen Hintergrundlauf anwerfen — sonst zahlt
+            // Eine leere Warteschlange darf keinen Hintergrundlauf anwerfen, sonst zahlt
             // das Dashboard bei jedem Aufbau für nichts.
             Assert.False(coordinator.IsActive);
         }
@@ -241,7 +241,7 @@ namespace EchoPlay.App.Tests.Services
             byte[] result = await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
             // Was in der Ablage liegt, geht sofort an die Kachel. Ein Griff zur Platte wäre
-            // hier verschwendet — das Dashboard baut sich bei jedem Öffnen neu auf.
+            // hier verschwendet, denn das Dashboard baut sich bei jedem Öffnen neu auf.
             Assert.Equal(StoredBytes, result);
             Assert.Empty(loader.Calls);
         }
@@ -272,7 +272,7 @@ namespace EchoPlay.App.Tests.Services
 
             await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
-            // Dieselbe Folge steht im Dashboard mehrfach — als laufende Folge und als
+            // Dieselbe Folge steht im Dashboard mehrfach, als laufende Folge und als
             // Neuerscheinung. Ohne Entdopplung liefe die Arbeit dreifach.
             lock (reported)
             {
@@ -294,7 +294,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task EnqueueForEpisodes_OhneAblage_HoltDasCoverVonDerPlatte()
         {
             // Reihenfolge der Quellen: erst die Ablage, dann die Platte. Was von der Platte
-            // kommt, wandert in die Ablage — beim nächsten Aufbau fällt der Griff weg.
+            // kommt, wandert in die Ablage, beim nächsten Aufbau fällt der Griff weg.
 
             FakeEpisodeDataService episodes = new();
             Episode episode = new()
@@ -430,7 +430,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task RequestCoverForSearchResult_ForALocalHit_UsesTheCoverFromTheDatabase()
         {
-            // Ein Treffer aus dem eigenen Bestand trägt keine Anbieter-Adresse — sein Bild
+            // Ein Treffer aus dem eigenen Bestand trägt keine Anbieter-Adresse; sein Bild
             // liegt längst in der Datenbank. Startet der Weg dorthin nicht, bleibt die Kachel
             // leer, obwohl dieselbe Serie auf jeder anderen Seite ihr Cover zeigt.
             FakeSeriesDataService seriesService = new();

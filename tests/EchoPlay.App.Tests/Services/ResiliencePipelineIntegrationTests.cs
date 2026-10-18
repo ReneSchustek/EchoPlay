@@ -29,7 +29,7 @@ namespace EchoPlay.App.Tests.Services
             IHttpClientBuilder clientBuilder = services.AddHttpClient("Test");
             _ = clientBuilder.AddStandardResilienceHandler(options =>
             {
-                // Testfreundliche Werte — kein Backoff, damit der Test nicht sekundenlang läuft.
+                // Testfreundliche Werte ohne Backoff, damit der Test nicht sekundenlang läuft.
                 options.Retry.MaxRetryAttempts = 2;
                 options.Retry.Delay = TimeSpan.Zero;
                 options.Retry.BackoffType = Polly.DelayBackoffType.Constant;

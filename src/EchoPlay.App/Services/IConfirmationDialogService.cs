@@ -19,7 +19,7 @@ namespace EchoPlay.App.Services
         /// <param name="message">Die Frage oder Erklärung für den Benutzer.</param>
         /// <param name="key">
         /// Kennung der Rückfrage. Pflichtangabe, damit keine Aufrufstelle das Ausblenden
-        /// stillschweigend auslässt — der Übersetzer führt die Liste.
+        /// stillschweigend auslässt; der Übersetzer führt die Liste.
         /// </param>
         /// <returns><c>true</c>, wenn der Benutzer „Ja" gewählt hat; sonst <c>false</c>.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

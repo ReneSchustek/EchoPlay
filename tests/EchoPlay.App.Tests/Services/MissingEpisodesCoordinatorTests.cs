@@ -242,7 +242,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CheckSingleSeriesAsync_UnknownSeriesId_SkipsOnlineStep()
         {
-            // Ohne passenden Datensatz gibt es nichts abzugleichen – der Checker
+            // Ohne passenden Datensatz gibt es nichts abzugleichen, der Checker
             // darf dann gar nicht erst gerufen werden.
             FakeOnlineEpisodeChecker checker = new();
             MissingEpisodesCoordinator coordinator = BuildCoordinator(checker: checker);
@@ -267,7 +267,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CheckAllSeriesAsync_SkipsSeriesWithoutLocalFolder()
         {
-            // Ohne lokalen Ordner gibt es nichts zu vergleichen – solche Serien
+            // Ohne lokalen Ordner gibt es nichts zu vergleichen, solche Serien
             // gehören nicht in den Bericht, sonst steht dort eine Zeile ohne Aussage.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(
@@ -321,7 +321,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Legt einen Serienordner mit den genannten Folgenordnern an. Jeder bekommt eine
-        /// leere MP3-Datei, denn nur Ordner mit Audiodatei gelten als echte Folge —
+        /// leere MP3-Datei, denn nur Ordner mit Audiodatei gelten als echte Folge;
         /// ohne die zählt die Analyse den Ordner nicht mit.
         /// Zufälliger Name, weil xUnit die Testklassen parallel ausführt.
         /// </summary>
@@ -430,7 +430,7 @@ namespace EchoPlay.App.Tests.Services
             _ = await coordinator.CheckAllSeriesAsync(
                 MissingEpisodesMode.WithOnline, TestContext.Current.CancellationToken);
 
-            // Für die Prüfung geht die Anwendung vorübergehend online — der Anwender hat dem
+            // Für die Prüfung geht die Anwendung vorübergehend online, denn der Anwender hat dem
             // im Dialog zugestimmt. Bliebe der Stand danach stehen, zeigte die Statusleiste
             // dauerhaft „online", obwohl niemand mehr zugestimmt hat.
             Assert.NotNull(statusBar);

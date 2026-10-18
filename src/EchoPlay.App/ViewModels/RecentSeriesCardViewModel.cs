@@ -6,7 +6,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Kachel-ViewModel für den "Zuletzt gehört"-Abschnitt der Startseite.
     /// Repräsentiert eine Hörspielserie, bei der zuletzt eine Episode gehört wurde.
-    /// Dieses ViewModel ist rein lesend – es enthält keine Commands.
+    /// Dieses ViewModel ist rein lesend und enthält keine Commands.
     /// </summary>
     public sealed class RecentSeriesCardViewModel
     {
@@ -34,7 +34,7 @@ namespace EchoPlay.App.ViewModels
             CoverImage = coverImage;
         }
 
-        /// <summary>Datenbank-ID der Serie – wird bei der Navigation zur Detailseite übergeben.</summary>
+        /// <summary>Datenbank-ID der Serie; wird bei der Navigation zur Detailseite übergeben.</summary>
         public Guid SeriesId { get; }
 
         /// <summary>Titel der Serie, z.B. "Die drei ???".</summary>

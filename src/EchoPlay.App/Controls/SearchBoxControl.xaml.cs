@@ -10,7 +10,7 @@ namespace EchoPlay.App.Controls
     /// Suchfeld der Gestaltungslinie: filtert beim Tippen, lässt sich mit
     /// <see cref="VirtualKey.Escape"/> und über ein Löschen-Zeichen leeren.
     /// <para>
-    /// Der Platzhalter ist zugleich die Beschriftung für die Sprachausgabe — ein Feld, das
+    /// Der Platzhalter ist zugleich die Beschriftung für die Sprachausgabe. Ein Feld, das
     /// nur ein Lupensymbol trägt, wird sonst als „TextBox" vorgelesen.
     /// </para>
     /// </summary>
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Controls
         /// <summary>
         /// Wird ausgelöst, wenn die Eingabetaste im gefüllten Feld gedrückt wurde.
         /// <para>
-        /// Für Seiten, die neben dem Filtern noch etwas anzustoßen haben — die Online-Mediathek
+        /// Für Seiten, die neben dem Filtern noch etwas anzustoßen haben; die Online-Mediathek
         /// sucht damit beim Anbieter weiter. Das Filtern selbst braucht das nicht: Es geschieht
         /// schon beim Tippen.
         /// </para>
@@ -94,7 +94,7 @@ namespace EchoPlay.App.Controls
         //
         // Die innere TextBox ist rahmenlos, damit Lupe, Eingabe und Löschen-Zeichen als ein
         // Feld wirken. Damit verliert sie aber auch die Rückmeldung, die WinUI sonst selbst
-        // zeichnet: Zeiger darüber und — wichtiger — wo die Tastatur gerade steht. Beides
+        // zeichnet: Zeiger darüber und (wichtiger) wo die Tastatur gerade steht. Beides
         // holt der äußere Rahmen hier nach.
 
         private void OnFieldPointerEntered(object sender, PointerRoutedEventArgs e)
@@ -122,7 +122,7 @@ namespace EchoPlay.App.Controls
         }
 
         /// <summary>
-        /// Setzt den Zustand des Rahmens. Der Fokus hat Vorrang vor dem Zeiger — sonst
+        /// Setzt den Zustand des Rahmens. Der Fokus hat Vorrang vor dem Zeiger, sonst
         /// verschwände die Marke, sobald jemand mit der Maus daneben fährt.
         /// </summary>
         private void UpdateFieldState()
@@ -135,7 +135,7 @@ namespace EchoPlay.App.Controls
         {
             if (e.Key == VirtualKey.Enter)
             {
-                // Ein leeres Feld abzuschicken hätte nichts zu suchen — und die Taste bleibt
+                // Ein leeres Feld abzuschicken hätte nichts zu suchen, und die Taste bleibt
                 // frei für das, was das umgebende Fenster damit vorhat.
                 if (SearchText.Length == 0)
                 {
@@ -152,7 +152,7 @@ namespace EchoPlay.App.Controls
                 return;
             }
 
-            // Nur behandeln, wenn wirklich etwas zu leeren war — sonst schluckt das Suchfeld
+            // Nur behandeln, wenn wirklich etwas zu leeren war. Sonst schluckt das Suchfeld
             // die Taste, mit der ein umgebender Dialog geschlossen werden soll.
             if (SearchText.Length == 0)
             {

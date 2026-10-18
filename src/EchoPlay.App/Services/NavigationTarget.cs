@@ -2,7 +2,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Logische Ziel-Seiten der Anwendung.
-    /// ViewModels nennen nur diese Enum-Werte und kennen keine Page-Typen –
+    /// ViewModels nennen nur diese Enum-Werte und kennen keine Page-Typen,
     /// so bleiben sie frei von WinUI-Abhängigkeiten und testbar.
     /// </summary>
     public enum NavigationTarget

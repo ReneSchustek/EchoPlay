@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Hält die Liste der ausblendbaren Dialoge und die Sprachdateien zusammen.
     /// Ein neuer <see cref="DialogKey"/> ohne Namen stünde in den Einstellungen als
-    /// <c>[?DialogName_Xyz?]</c> — sichtbar erst zur Laufzeit und nur dem, der ihn
+    /// <c>[?DialogName_Xyz?]</c>, sichtbar erst zur Laufzeit und nur dem, der ihn
     /// ausgeblendet hat.
     /// </summary>
     public sealed class DialogKeyCoverageTests
@@ -64,7 +64,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void NoneIstKeinAusblendbarerDialog()
         {
-            // DialogKey.None steht für die Dialoge, die sich nicht ausblenden lassen —
+            // DialogKey.None steht für die Dialoge, die sich nicht ausblenden lassen;
             // er darf deshalb weder einen Namen noch einen Platz in der Liste bekommen.
             Assert.DoesNotContain($"DialogName_{DialogKey.None}", LoadKeys("de"));
         }

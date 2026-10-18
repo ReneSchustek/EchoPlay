@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.Services
             ConnectionTestResult result = await sut.TestAsync(
                 ProviderType.Both, TestContext.Current.CancellationToken);
 
-            // „Beide" heißt beide — ein grüner Haken, obwohl nur einer geprüft wurde,
+            // „Beide" heißt beide. Ein grüner Haken, obwohl nur einer geprüft wurde,
             // wäre schlimmer als gar kein Test.
             Assert.True(result.Success);
             Assert.Equal(1, apple.SearchArtistsCallCount);
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task TestAsync_WhenCredentialsAreMissing_ShowsTheReason()
         {
-            // Fehlende Zugangsdaten melden sich als ungültiger Zustand — genau das muss
+            // Fehlende Zugangsdaten melden sich als ungültiger Zustand, und genau das muss
             // in der Statuszeile stehen, sonst sucht der Anwender beim Netz.
             ConnectionTestCoordinator sut = Build(
                 apple: new ThrowingAppleClient(new InvalidOperationException("Keine Zugangsdaten hinterlegt")));

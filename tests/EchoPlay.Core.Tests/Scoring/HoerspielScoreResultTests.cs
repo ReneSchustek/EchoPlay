@@ -57,7 +57,7 @@ namespace EchoPlay.Core.Tests.Scoring
         [Fact]
         public void Yes_WithReasonNone_IsValid()
         {
-            // Reason = None ist zulässig – Score-basierte Entscheidung
+            // Reason = None ist zulässig (Score-basierte Entscheidung)
             HoerspielScoreResult result = HoerspielScoreResult.Yes(
                 "artist-1", HoerspielDecisionReason.None, 60, "");
 

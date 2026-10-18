@@ -4,7 +4,7 @@ namespace EchoPlay.Logger.Tests
 {
     /// <summary>
     /// Verifiziert die Default-Implementierung der Message-Template-Overloads in <see cref="ILogger"/>.
-    /// Strukturierte Sinks können die Methoden überschreiben — der Default-Pfad rendert per
+    /// Strukturierte Sinks können die Methoden überschreiben; der Default-Pfad rendert per
     /// String-Substitution und delegiert an den Plain-Message-Pfad.
     /// </summary>
     public sealed class TemplateOverloadTests

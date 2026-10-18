@@ -13,7 +13,7 @@ namespace EchoPlay.Logger.Tests.DependencyInjection
 {
     /// <summary>
     /// Prüft die DI-Registrierung des Loggers. Sie entscheidet, welche Senken überhaupt
-    /// existieren – ist hier etwas falsch verdrahtet, protokolliert die Anwendung still nichts,
+    /// existieren. Ist hier etwas falsch verdrahtet, protokolliert die Anwendung still nichts,
     /// und das fällt erst auf, wenn man ein Protokoll braucht.
     /// </summary>
     public sealed class LoggerServiceCollectionExtensionsTests : IDisposable
@@ -163,7 +163,7 @@ namespace EchoPlay.Logger.Tests.DependencyInjection
             catch (IOException)
             {
                 // Aufräumen ist Kür: hält die Datei-Senke die Datei noch, bleibt das
-                // Temp-Verzeichnis liegen — der Test soll deshalb nicht rot werden.
+                // Temp-Verzeichnis liegen, der Test soll deshalb nicht rot werden.
             }
         }
     }

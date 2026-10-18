@@ -11,7 +11,7 @@ namespace EchoPlay.Data.Context
     /// Warum ein Interceptor statt Connection-String-Optionen?
     /// SQLite unterstützt nicht alle PRAGMAs im Connection-String (z.B. <c>cache_size</c>,
     /// <c>mmap_size</c>, <c>temp_store</c>). Der Interceptor fängt das Öffnen der Verbindung ab
-    /// und führt die PRAGMAs direkt danach aus – bevor EF Core die erste Abfrage sendet.
+    /// und führt die PRAGMAs direkt danach aus, bevor EF Core die erste Abfrage sendet.
     ///
     /// Die gewählten Werte sind für eine Desktop-App mit lokaler SQLite-DB optimiert:
     /// Schnelle Reads, sichere Writes, kein Mehrbenutzerbetrieb.
@@ -34,7 +34,7 @@ namespace EchoPlay.Data.Context
 
         /// <summary>
         /// Wird asynchron aufgerufen, nachdem die SQLite-Verbindung geöffnet wurde.
-        /// Delegiert an die synchrone PRAGMA-Methode – SQLite-PRAGMAs sind extrem schnell
+        /// Delegiert an die synchrone PRAGMA-Methode, denn SQLite-PRAGMAs sind extrem schnell
         /// und blockieren nicht, daher kein Vorteil durch async.
         /// </summary>
         /// <param name="connection">Die geöffnete Datenbankverbindung.</param>
@@ -54,7 +54,7 @@ namespace EchoPlay.Data.Context
 
         /// <summary>
         /// Führt die PRAGMA-Befehle auf der geöffneten Verbindung aus.
-        /// Jeder PRAGMA-Befehl wird einzeln gesendet – SQLite verarbeitet pro Statement nur ein PRAGMA.
+        /// Jeder PRAGMA-Befehl wird einzeln gesendet, denn SQLite verarbeitet pro Statement nur ein PRAGMA.
         /// </summary>
         /// <param name="connection">Die geöffnete SQLite-Verbindung.</param>
         private static void ApplyPragmas(DbConnection connection)
@@ -69,7 +69,7 @@ namespace EchoPlay.Data.Context
 
             // NORMAL statt FULL: In Kombination mit WAL ausreichend sicher.
             // WAL garantiert Crash-Recovery auch ohne FULL-Sync nach jedem Commit.
-            // Reduziert fsync-Aufrufe deutlich – spürbar bei vielen kleinen Writes.
+            // Reduziert fsync-Aufrufe deutlich, spürbar bei vielen kleinen Writes.
             ExecutePragma(command, "PRAGMA synchronous = NORMAL;");
 
             // 64 MB Cache statt 2 MB Default: Hält häufig gelesene Seiten im RAM.
@@ -85,14 +85,14 @@ namespace EchoPlay.Data.Context
             // Beschleunigt ORDER BY, GROUP BY und DISTINCT bei komplexen Abfragen.
             ExecutePragma(command, "PRAGMA temp_store = MEMORY;");
 
-            // FK-Constraints erzwingen. SQLite-Default ist OFF – ohne dieses PRAGMA
+            // FK-Constraints erzwingen. SQLite-Default ist OFF, ohne dieses PRAGMA
             // werden Fremdschlüssel ignoriert und Dateninkonsistenzen nicht erkannt.
             ExecutePragma(command, "PRAGMA foreign_keys = ON;");
         }
 
         /// <summary>
         /// Führt ein einzelnes PRAGMA-Statement aus.
-        /// Fehler werden bewusst nicht gefangen – ein fehlgeschlagenes PRAGMA deutet
+        /// Fehler werden bewusst nicht gefangen, denn ein fehlgeschlagenes PRAGMA deutet
         /// auf ein ernstes Problem hin (z.B. gesperrte DB), das nicht ignoriert werden darf.
         /// </summary>
         /// <param name="command">Das wiederverwendbare Command-Objekt.</param>

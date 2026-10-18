@@ -23,7 +23,7 @@ namespace EchoPlay.LocalLibrary.Metadata
 
             TimeSpan duration = file.Properties.Duration;
 
-            // TrackNumber ist uint in TagLib – 0 bedeutet "nicht gesetzt"
+            // TrackNumber ist uint in TagLib, 0 bedeutet "nicht gesetzt"
             int trackNumber = (int)file.Tag.Track;
 
             return (duration, trackNumber);

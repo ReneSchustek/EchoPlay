@@ -168,7 +168,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit der Vorschlagsliste – nur wenn mindestens ein Vorschlag vorhanden ist.
+        /// Sichtbarkeit der Vorschlagsliste, nur wenn mindestens ein Vorschlag vorhanden ist.
         /// </summary>
         public Visibility PatternSuggestionsVisibility =>
             _patternSuggestionDisplays.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -210,12 +210,12 @@ namespace EchoPlay.App.ViewModels
 
             if (displays.Count == 1 && displays[0].MatchPercentage >= HighConfidenceThreshold)
             {
-                // Eindeutiges Ergebnis – direkt übernehmen, kein Dialog nötig
+                // Eindeutiges Ergebnis: direkt übernehmen, kein Dialog nötig
                 ApplyPatternSuggestion(displays[0].Pattern);
             }
             else if (displays.Count > 0)
             {
-                // Mehrere Treffer oder unsicheres Ergebnis – Nutzer entscheiden lassen
+                // Mehrere Treffer oder unsicheres Ergebnis, Nutzer entscheiden lassen
                 PatternSelectionRequested?.Invoke(displays);
             }
         }
@@ -236,7 +236,7 @@ namespace EchoPlay.App.ViewModels
 
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("LocalLibrarySync");
 
-            // Vor dem Start prüfen – SyncService würde sonst lautlos ein leeres SyncResult zurückgeben
+            // Vor dem Start prüfen, denn SyncService würde sonst lautlos ein leeres SyncResult zurückgeben
             if (!LocalLibraryEnabled)
             {
                 SyncStatusText = SafeResourceLoader.Get("SyncDisabledHint", "Lokale Bibliothek ist deaktiviert.");
@@ -273,7 +273,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Öffnet einen System-FolderPicker und setzt den Bibliothekspfad auf die gewählte Auswahl.
         /// </summary>
-        /// <param name="windowHandle">HWND des Hauptfensters – der WinRT-FolderPicker muss per
+        /// <param name="windowHandle">HWND des Hauptfensters; der WinRT-FolderPicker muss per
         /// <c>InitializeWithWindow</c> an ein Fenster gebunden werden.</param>
         /// <returns>Der Task ist abgeschlossen, wenn der Nutzer gewählt oder abgebrochen hat.</returns>
         public async Task BrowseLibraryFolderAsync(nint windowHandle)
@@ -283,7 +283,7 @@ namespace EchoPlay.App.ViewModels
             WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
             picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
 
-            // FileTypeFilter ist auch beim FolderPicker Pflicht – Wildcard genügt
+            // FileTypeFilter ist auch beim FolderPicker Pflicht, Wildcard genügt
             picker.FileTypeFilter.Add("*");
 
             StorageFolder? folder = await picker.PickSingleFolderAsync();

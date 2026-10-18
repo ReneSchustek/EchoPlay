@@ -6,9 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <!-- Kein WinUI – Tests laufen ohne echten XAML-Host -->
+    <!-- Kein WinUI, die Tests laufen ohne echten XAML-Host -->
     <UseWinUI>false</UseWinUI>
-    <!-- EchoPlay.App wird als x64 gebaut – Testprojekt muss dieselbe Architektur verwenden -->
+    <!-- EchoPlay.App wird als x64 gebaut, daher muss das Testprojekt dieselbe Architektur verwenden -->
     <PlatformTarget>x64</PlatformTarget>
     <!-- xunit.v3 ist self-contained-fähig; EchoPlay.App referenziert WindowsAppSDK
          (self-contained). Ohne SelfContained=true im Test-Projekt schlägt der NETSDK1151-Check
@@ -41,7 +41,7 @@
   <ItemGroup>
     <!-- "Always" statt "PreserveNewest": auf GitHub-CI haben dotnet test-Läufe
          eine eigene Output-Pipeline pro Projekt, PreserveNewest greift dort nicht
-         zuverlässig — Konfig-Datei muss bei jedem Lauf frisch ins Output-Verzeichnis. -->
+         zuverlässig; die Konfig-Datei muss bei jedem Lauf frisch ins Output-Verzeichnis. -->
     <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 

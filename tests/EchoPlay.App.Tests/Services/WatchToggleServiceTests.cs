@@ -76,10 +76,10 @@ namespace EchoPlay.App.Tests.Services
         public async Task ToggleAsync_UnknownSeries_DoesNotThrow()
         {
             (WatchToggleService toggle, _, _) = BuildService();
-            // Feste, im Bestand nicht vergebene ID – reproduzierbar statt zufällig.
+            // Feste, im Bestand nicht vergebene ID, reproduzierbar statt zufällig.
             Guid unknown = Helpers.TestIds.SeriesE;
 
-            // Toggle einer nicht existierenden Serie darf nicht schmeissen — der Service
+            // Toggle einer nicht existierenden Serie darf nicht schmeißen, der Service
             // tolleriert den NotFound-Pfad, weil SeriesDataService.SetWatchedAsync nur
             // eine Warnung loggt und kein Werfen vorsieht.
             await toggle.ToggleAsync(unknown, watch: false, CancellationToken.None);

@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
     /// Cover aus der Ablage übernommen.
     /// </summary>
     /// <remarks>
-    /// Der Schritt ist bewusst gutmütig gebaut — er darf das Einlesen nie scheitern lassen.
+    /// Der Schritt ist bewusst gutmütig gebaut: Er darf das Einlesen nie scheitern lassen.
     /// Genau deshalb braucht er Tests: Ohne sie sieht ein Abgleich, der gar nicht läuft,
     /// von außen aus wie einer, der nichts zu tun fand.
     /// <para>
@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            // Nur die Serie mit Ordner wird gefragt — für die andere gibt es nichts zu kopieren.
+            // Nur die Serie mit Ordner wird gefragt, für die andere gibt es nichts zu kopieren.
             Assert.Equal(1, coverCopy.CallCount);
         }
 

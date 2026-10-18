@@ -87,7 +87,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Kompakter Zählertext für das Overlay auf der Kachel.
-        /// Zeigt gehörte/gesamte Episoden – analog zur lokalen Mediathek.
+        /// Zeigt gehörte/gesamte Episoden, analog zur lokalen Mediathek.
         /// </summary>
         public string CountText => $"{FinishedCount} / {TotalEpisodeCount}";
 
@@ -192,8 +192,8 @@ namespace EchoPlay.App.ViewModels
             await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, Id, newValue);
             IsFavorite = newValue;
 
-            // Favorisieren aktiviert in der Datenschicht zugleich die Überwachung –
-            // ohne diese Zeile bliebe das Auge auf der Kachel bis zum nächsten Laden aus.
+            // Favorisieren aktiviert in der Datenschicht zugleich die Überwachung.
+            // Ohne diese Zeile bliebe das Auge auf der Kachel bis zum nächsten Laden aus.
             if (newValue)
             {
                 IsWatched = true;

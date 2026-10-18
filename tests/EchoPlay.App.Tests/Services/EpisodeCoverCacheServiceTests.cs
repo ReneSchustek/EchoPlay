@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Tests für <see cref="EpisodeCoverCacheService"/>. Der Dienst holt fehlende
     /// Folgen-Cover in drei Stufen: lokal kopieren, Provider-URL laden, online suchen.
-    /// Geprüft wird die Ablaufsteuerung — der Cooldown, das Überspringen vorhandener
+    /// Geprüft wird die Ablaufsteuerung: der Cooldown, das Überspringen vorhandener
     /// Cover und dass Fehler den Import nicht abbrechen.
     /// </summary>
     public sealed class EpisodeCoverCacheServiceTests
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CacheCoversAsync_AlwaysTriesLocalCopyFirst()
         {
-            // Lokale Kopie ist die billigste Quelle – sie läuft vor jedem Netzzugriff.
+            // Lokale Kopie ist die billigste Quelle, sie läuft vor jedem Netzzugriff.
             (EpisodeCoverCacheService service, FakeCoverCopyService copy, _) = Build(
                 clock: null,
                 new Episode { Title = "Folge 1" });
@@ -98,7 +98,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CacheCoversAsync_UnknownSeries_DoesNotThrow()
         {
-            // Der Aufrufer kann eine bereits gelöschte Serie übergeben – das darf
+            // Der Aufrufer kann eine bereits gelöschte Serie übergeben, das darf
             // den Import nicht abbrechen.
             (EpisodeCoverCacheService service, _, _) = Build();
 

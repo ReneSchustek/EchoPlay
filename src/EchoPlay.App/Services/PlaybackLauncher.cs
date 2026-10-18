@@ -18,14 +18,14 @@ namespace EchoPlay.App.Services
     internal static class PlaybackLauncher
     {
         /// <summary>
-        /// Lädt die Tracks der Episode und startet die Wiedergabe – fortgesetzt an der zuletzt
+        /// Lädt die Tracks der Episode und startet die Wiedergabe, fortgesetzt an der zuletzt
         /// gespeicherten Position, sofern dort noch etwas offen ist.
         /// </summary>
         /// <param name="scopeFactory">Die Scope-Factory des aufrufenden ViewModels.</param>
         /// <param name="playerService">Der Player-Service, der die Wiedergabe startet.</param>
         /// <param name="episodeId">Die ID der abzuspielenden Episode.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Der Task ist abgeschlossen, wenn die Wiedergabe angestoßen ist — nicht erst am Ende der Episode.</returns>
+        /// <returns>Der Task ist abgeschlossen, wenn die Wiedergabe angestoßen ist, nicht erst am Ende der Episode.</returns>
         public static async Task PlayEpisodeAsync(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
@@ -56,7 +56,7 @@ namespace EchoPlay.App.Services
                 durations.Add(track.Duration);
             }
 
-            // Fortsetzen, wo etwas offen ist — sonst von vorn. Der Hörstatus entscheidet das
+            // Fortsetzen, wo etwas offen ist, sonst von vorn. Der Hörstatus entscheidet das
             // nicht: Wer eine gehörte Folge erneut angefangen und in der Mitte aufgehört hat,
             // will genau dort weiter. Eine durchgehörte Folge steht dagegen mit ihrer Stelle
             // am Ende und beginnt deshalb wieder von vorn.
@@ -83,7 +83,7 @@ namespace EchoPlay.App.Services
         /// <param name="scopeFactory">Die Scope-Factory des aufrufenden ViewModels.</param>
         /// <param name="playerService">Der Player-Service, der die Wiedergabe startet.</param>
         /// <param name="episodeId">Die ID der Folge.</param>
-        /// <param name="seriesTitle">Serientitel — dient der Suche beim Anbieter, wenn keine Album-Kennung vorliegt.</param>
+        /// <param name="seriesTitle">Serientitel, dient der Suche beim Anbieter, wenn keine Album-Kennung vorliegt.</param>
         /// <param name="episodeTitle">Folgentitel, ebenfalls für die Suche.</param>
         /// <param name="spotifyAlbumId">Spotify-Album-Kennung, sofern der Aufrufer sie kennt.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-Kennung, sofern der Aufrufer sie kennt.</param>
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Services
             }
 
             // Die Kennungen kommen vom Aufrufer, nicht aus der Datenbank: Eine Neuerscheinung
-            // stammt vom Anbieter und ist noch keine gespeicherte Folge — ihre Id steht in
+            // stammt vom Anbieter und ist noch keine gespeicherte Folge, ihre Id steht in
             // keiner Tabelle. Ein Nachladen fände
             // deshalb nie etwas, und jeder Klick fiele auf die Suche zurück.
             // Wo eine echte Folge vorliegt, füllt der Aufrufer die Kennungen aus ihrem Datensatz.
@@ -131,7 +131,7 @@ namespace EchoPlay.App.Services
                 + $"Apple-Kennung {(string.IsNullOrWhiteSpace(appleMusicAlbumId) ? "fehlt" : "vorhanden")}.");
 
             // Reihenfolge: Erst die genauen Treffer beider Anbieter, dann erst die Suche.
-            // Andernfalls verdrängt eine unscharfe Spotify-Suche die exakte Apple-Kennung —
+            // Andernfalls verdrängt eine unscharfe Spotify-Suche die exakte Apple-Kennung,
             // gemessen an „Fünf Freunde Junior, Folge 17": dort gibt es nur die Apple-Kennung.
             if (TryOpenSpotifyAlbum(spotifyAlbumId))
             {
@@ -157,7 +157,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Ermittelt die Ziele beim Anbieter, ohne etwas zu öffnen. Getrennt vom Öffnen, damit
-        /// die Auswahl prüfbar ist — ein Test darf keinen Browser und keine fremde Anwendung
+        /// die Auswahl prüfbar ist. Ein Test darf keinen Browser und keine fremde Anwendung
         /// starten.
         /// </summary>
         /// <param name="spotifyAlbumId">Spotify-Album-Kennung der Folge, sofern bekannt.</param>
@@ -213,7 +213,7 @@ namespace EchoPlay.App.Services
     }
 
     /// <summary>
-    /// Ergebnis eines Klicks auf eine Folge — welcher Zweig der Regel „erst lokal, sonst
+    /// Ergebnis eines Klicks auf eine Folge: welcher Zweig der Regel „erst lokal, sonst
     /// online" gegriffen hat.
     /// </summary>
     internal enum EpisodeLaunchResult
@@ -224,7 +224,7 @@ namespace EchoPlay.App.Services
         /// <summary>Keine Datei vorhanden; die Folge ist beim Anbieter aufgegangen.</summary>
         OpenedAtProvider,
 
-        /// <summary>Weder Datei noch Anbieter-Verweis — hier bleibt nur der Hinweis.</summary>
+        /// <summary>Weder Datei noch Anbieter-Verweis, hier bleibt nur der Hinweis.</summary>
         NothingToPlay
     }
 }

@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Das Auswahlfeld arbeitet mit einem Index, der Filter mit einer Stufe. Stimmt die
-    /// Umrechnung nicht, wählt der Anwender „Fehler" und sieht trotzdem jede Kleinigkeit —
+    /// Umrechnung nicht, wählt der Anwender „Fehler" und sieht trotzdem jede Kleinigkeit,
     /// oder umgekehrt gar nichts mehr.
     ///
     /// Eigene Datei statt Ergänzung von <c>MaintenanceSettingsViewModelTests</c>: Die

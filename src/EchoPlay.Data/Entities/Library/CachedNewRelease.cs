@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Entities.Library
     /// <remarks>
     /// Jeder Eintrag entspricht einem iTunes-Album, das im konfigurierten Zeitfenster
     /// erschienen ist (oder angekündigt wurde). Die <see cref="CollectionId"/> ist der
-    /// eindeutige Schlüssel aus der iTunes-API – damit werden Duplikate beim erneuten
+    /// eindeutige Schlüssel aus der iTunes-API. Damit werden Duplikate beim erneuten
     /// Abruf verhindert.
     /// </remarks>
     public class CachedNewRelease : BaseEntity
@@ -24,7 +24,7 @@ namespace EchoPlay.Data.Entities.Library
         public Guid SeriesId { get; set; }
 
         /// <summary>
-        /// Navigation zur zugehörigen Serie – wird für Dashboard-Kacheln benötigt
+        /// Navigation zur zugehörigen Serie; wird für Dashboard-Kacheln benötigt
         /// (Serienname, Cover-Fallback).
         /// </summary>
         public Series Series { get; set; } = null!;
@@ -58,7 +58,7 @@ namespace EchoPlay.Data.Entities.Library
         public string? CoverUrl { get; set; }
 
         /// <summary>
-        /// iTunes-Collection-ID – eindeutiger Schlüssel für dieses Album in der iTunes-API.
+        /// iTunes-Collection-ID als eindeutiger Schlüssel für dieses Album in der iTunes-API.
         /// Wird als fachlicher Unique-Key verwendet, damit ein Album nicht mehrfach
         /// im Cache landet.
         /// </summary>

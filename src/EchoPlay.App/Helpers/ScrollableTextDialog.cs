@@ -19,15 +19,15 @@ namespace EchoPlay.App.Helpers
         /// Bei einer <see cref="COMException"/> (z.B. weil bereits ein anderer Dialog offen ist)
         /// liefert die Methode <see cref="ContentDialogResult.None"/> zurück und wirft nicht weiter.
         /// </summary>
-        /// <param name="xamlRoot">XamlRoot der aufrufenden Page – Pflicht für WinUI 3 ContentDialog.</param>
+        /// <param name="xamlRoot">XamlRoot der aufrufenden Page, Pflicht für WinUI 3 ContentDialog.</param>
         /// <param name="title">Titelzeile des Dialogs.</param>
-        /// <param name="content">Anzuzeigender Text – wird in einem ScrollViewer mit selektierbarem TextBlock dargestellt.</param>
+        /// <param name="content">Anzuzeigender Text, wird in einem ScrollViewer mit selektierbarem TextBlock dargestellt.</param>
         /// <param name="primaryButtonText">Optionaler Primärbutton (z.B. "Als TXT speichern"). Null = nur "Schließen".</param>
         /// <param name="closeButtonText">Beschriftung des "Schließen"-Buttons. Default: "Schließen".</param>
         /// <param name="maxHeight">Maximale Höhe des ScrollViewers. Default: 400.</param>
-        /// <param name="useMonospace">True schaltet Consolas ein – sinnvoll für Berichte und Dateilisten.</param>
+        /// <param name="useMonospace">True schaltet Consolas ein (sinnvoll für Berichte und Dateilisten).</param>
         /// <param name="monospaceFontSize">Schriftgröße bei Monospace-Modus (default 14, Berichte können kleiner laufen lassen).</param>
-        /// <param name="defaultButton">Welcher Button durch Enter ausgelöst wird – wichtig bei destruktiven Aktionen.</param>
+        /// <param name="defaultButton">Welcher Button durch Enter ausgelöst wird; wichtig bei destruktiven Aktionen.</param>
         public static async Task<ContentDialogResult> ShowAsync(
             XamlRoot xamlRoot,
             string title,
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Helpers
             }
             catch (COMException)
             {
-                // Ein anderer ContentDialog ist bereits offen – Aufrufer entscheidet,
+                // Ein anderer ContentDialog ist bereits offen. Der Aufrufer entscheidet,
                 // wie damit umgegangen wird. None signalisiert "Dialog wurde nicht gezeigt".
                 return ContentDialogResult.None;
             }

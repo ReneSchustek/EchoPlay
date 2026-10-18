@@ -104,7 +104,7 @@ namespace EchoPlay.App.Tests.Services
         /// <summary>
         /// Integrations-Test: Simuliert den Ablauf einer vollständigen User-Aktion
         /// (UA-Scope außen, zwei verschachtelte API-Scopes innen) und prüft, dass alle
-        /// Log-Zeilen den UA-Prefix als äußersten Scope tragen – so wie es der Support
+        /// Log-Zeilen den UA-Prefix als äußersten Scope tragen, so wie es der Support
         /// per Log-Viewer-Filter erwartet.
         /// </summary>
         [Fact]
@@ -130,7 +130,7 @@ namespace EchoPlay.App.Tests.Services
                 logger.Info("DB-Insert abgeschlossen");
             }
 
-            // Logger.LogAsync läuft fire-and-forget – ein kurzer Yield reicht, weil MemorySink synchron schreibt.
+            // Logger.LogAsync läuft fire-and-forget; ein kurzer Yield reicht, weil MemorySink synchron schreibt.
             await Task.Yield();
 
             IReadOnlyList<LogEntry> entries = sink.GetEntries();

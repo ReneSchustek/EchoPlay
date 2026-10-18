@@ -7,14 +7,14 @@ using System.Text;
 namespace EchoPlay.App.Helpers
 {
     /// <summary>
-    /// Ordnet Titel dem Buchstaben zu, unter dem sie in einer Liste stehen — die Grundlage
+    /// Ordnet Titel dem Buchstaben zu, unter dem sie in einer Liste stehen. Das ist die Grundlage
     /// für die Sprungleiste über der Mediathek und für deren Gruppenüberschriften.
     /// <para>
     /// Der Buchstabe folgt der Sortierung, die die Anwendung ohnehin verwendet, und erfindet
     /// keine eigene. <c>SeriesDataService</c> sortiert nach <c>Title</c>, ohne führende Artikel
     /// abzutrennen; „Die drei ???" steht damit unter <c>D</c>. Würde die Leiste hier eine
     /// eigene Regel anwenden und den Artikel abschneiden, zeigte der Sprung auf <c>D</c> auf
-    /// einen Eintrag, der in der Liste unter <c>T</c> steht — und der Nutzer landete im Nichts.
+    /// einen Eintrag, der in der Liste unter <c>T</c> steht, und der Nutzer landete im Nichts.
     /// </para>
     /// </summary>
     public static class AlphabetIndex

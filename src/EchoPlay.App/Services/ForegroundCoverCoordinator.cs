@@ -89,7 +89,7 @@ namespace EchoPlay.App.Services
         /// Callback mit den Rohdaten (nicht mit <c>BitmapImage</c>, da auf Hintergrund-Thread)
         /// aufgerufen.
         /// </summary>
-        /// <param name="episodeIds">Zu prüfende Episoden – Duplikate sind erlaubt, werden entfernt.</param>
+        /// <param name="episodeIds">Zu prüfende Episoden. Duplikate sind erlaubt, werden entfernt.</param>
         /// <param name="onCoverReady">Callback pro Episode, die ein Cover bekommen hat. Darf <see langword="null"/> sein.</param>
         /// <param name="priority">
         /// Priorität der Anfrage. <see cref="CoverFetchPriority.Foreground"/> läuft parallel
@@ -149,7 +149,7 @@ namespace EchoPlay.App.Services
             IReadOnlyDictionary<Guid, byte[]> existing =
                 await _coverService.GetEpisodeCoverBytesAsync(episodeIds, cancellationToken);
 
-            // Vorhandene Cover sofort zurückspielen – UI kann sich aktualisieren
+            // Vorhandene Cover sofort zurückspielen, damit die UI sich aktualisieren kann
             foreach ((Guid episodeId, byte[] bytes) in existing)
             {
                 onCoverReady?.Invoke(episodeId, bytes);
@@ -200,7 +200,7 @@ namespace EchoPlay.App.Services
         /// den Service als "Foreground aktiv", sodass der Hintergrund-Loop zwischen
         /// zwei Phasen pausiert, lädt fehlende Episoden-Cover zunächst lokal
         /// (<see cref="ILocalCoverLoader"/>, parallelisiert) und danach über die
-        /// Provider-URL. Keine Online-Suchkette – die bleibt dem langsamen Hintergrund-Loop
+        /// Provider-URL. Keine Online-Suchkette; die bleibt dem langsamen Hintergrund-Loop
         /// vorbehalten. Wird die Priorität abgebrochen (Nutzer verlässt die Detailseite),
         /// endet die Methode ohne Exception.
         /// </summary>
@@ -244,8 +244,8 @@ namespace EchoPlay.App.Services
                     MaxDegreeOfParallelism = ForegroundLocalParallelism
                 };
 
-                // Phase 1 (Foreground): lokale Quellen parallel. Keine externen HTTP-Calls
-                // – reines Dateisystem, daher Parallelismus sicher.
+                // Phase 1 (Foreground): lokale Quellen parallel. Keine externen HTTP-Calls,
+                // reines Dateisystem, daher Parallelismus sicher.
                 await Parallel.ForEachAsync(missing, parallelOptions, async (episode, token) =>
                 {
                     if (string.IsNullOrEmpty(episode.LocalFolderPath)) return;
@@ -316,13 +316,13 @@ namespace EchoPlay.App.Services
         /// danach Provider-URL über <see cref="IHostRateLimiter"/> mit
         /// <see cref="CoverFetchPriority.Foreground"/>. Markiert den Vorrang als
         /// "Foreground aktiv", sodass der Hintergrund-Loop pausiert. Persistiert das
-        /// Cover **nicht** in <c>CoverImages</c> – Such-Treffer sind noch nicht importiert.
+        /// Cover **nicht** in <c>CoverImages</c>, denn Such-Treffer sind noch nicht importiert.
         /// </summary>
         /// <param name="source">Quelle des Treffers aus <see cref="ProviderKeys"/>. Andere Werte verhindern den DB-Lookup.</param>
         /// <param name="sourceSeriesId">Kennung der Serie bei der Quelle (Anbieter-Kennung oder Datenbank-Kennung).</param>
         /// <param name="coverUrl">
         /// Cover-Adresse aus dem Such-Treffer. Bleibt sie leer, endet der Weg beim
-        /// Datenbank-Zweig — für Treffer aus dem eigenen Bestand ist das der einzige und
+        /// Datenbank-Zweig. Für Treffer aus dem eigenen Bestand ist das der einzige und
         /// zugleich der schnellste Weg.
         /// </param>
         /// <param name="ct">Abbruch-Token der laufenden Suche.</param>

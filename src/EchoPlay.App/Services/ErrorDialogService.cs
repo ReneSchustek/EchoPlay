@@ -10,7 +10,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Zeigt Fehler-Dialoge über den WinUI-3-ContentDialog an.
-    /// Content-Aufbau liegt in <see cref="ErrorDialogContent.Build"/> — testbar ohne XamlRoot.
+    /// Content-Aufbau liegt in <see cref="ErrorDialogContent.Build"/> und ist ohne XamlRoot testbar.
     /// </summary>
     public sealed class ErrorDialogService : IErrorDialogService
     {
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Services
         {
             if (await _suppressionService.IsSuppressedAsync(key, cancellationToken))
             {
-                // Ausgeblendet heißt ungesehen, nicht ungeschehen — das Protokoll behält den Vorgang.
+                // Ausgeblendet heißt ungesehen, nicht ungeschehen. Das Protokoll behält den Vorgang.
                 EmergencyTrace.Log($"ErrorDialogService: {title} — {message} (vom Nutzer dauerhaft ausgeblendet)");
                 return;
             }
@@ -66,7 +66,7 @@ namespace EchoPlay.App.Services
             ShowCoreAsync(title, message, DialogKey.None);
 
         /// <summary>
-        /// Zeigt den Dialog. Mit <see cref="DialogKey.None"/> entfällt das Häkchen — dann gibt
+        /// Zeigt den Dialog. Mit <see cref="DialogKey.None"/> entfällt das Häkchen. Dann gibt
         /// es nichts zu merken, und ein Kästchen ohne Wirkung wäre eine Lüge.
         /// </summary>
         /// <param name="title">Titel des Dialogs.</param>
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Services
             // Defense-in-Depth: bei Startup-Failures vor abgeschlossener MainWindow-Init
             // (siehe App.xaml.cs Fatal-Pfade) ist MainWindow oder XamlRoot null. Statt
             // NullReferenceException im Error-Service EmergencyTrace-Fallback, analog
-            // SplashWindow-Pfad — der reguläre Logger ist hier ggf. selbst noch nicht da.
+            // SplashWindow-Pfad: Der reguläre Logger ist hier ggf. selbst noch nicht da.
             XamlRoot? xamlRoot = _xamlRootProvider();
             if (xamlRoot is null)
             {

@@ -11,7 +11,7 @@ namespace EchoPlay.Core.Parsing
     public static partial class TrackDisplayTitle
     {
         /// <summary>
-        /// Für Anzeigen ohne eigene Nummernspalte — dort bleibt eine führende Zahl im
+        /// Für Anzeigen ohne eigene Nummernspalte, dort bleibt eine führende Zahl im
         /// Dateinamen stehen, weil sie sonst nirgends mehr auftaucht.
         /// </summary>
         public const int NoNumberShown = -1;
@@ -35,7 +35,7 @@ namespace EchoPlay.Core.Parsing
         /// <param name="filePath">Absoluter Pfad zur Audiodatei.</param>
         /// <param name="trackNumber">
         /// Nummer der Spur. Nur eine führende Zahl, die genau dieser Nummer entspricht, wird
-        /// entfernt — sonst gingen Titel wie „116 Klassenfahrt" verloren.
+        /// entfernt, sonst gingen Titel wie „116 Klassenfahrt" verloren.
         /// </param>
         /// <returns>Der aufgeräumte Dateiname. Leer nur, wenn der Pfad selbst leer ist.</returns>
         public static string FromFilePath(string filePath, int trackNumber)
@@ -54,7 +54,7 @@ namespace EchoPlay.Core.Parsing
 
         /// <summary>
         /// Prüft, ob ein Titel aus der Kennzeichnung eine echte Auskunft ist.
-        /// Leere Titel und Platzhalter wie „Track 01" gelten als nicht gepflegt — dort ist
+        /// Leere Titel und Platzhalter wie „Track 01" gelten als nicht gepflegt; dort ist
         /// der Dateiname die bessere Auskunft.
         /// </summary>
         /// <param name="tagTitle">Titel aus der Kennzeichnung der Datei.</param>

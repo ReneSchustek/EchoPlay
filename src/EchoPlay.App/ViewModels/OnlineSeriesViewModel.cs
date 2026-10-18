@@ -24,7 +24,7 @@ namespace EchoPlay.App.ViewModels
         private int _selectedSeriesIndex = -1;
 
         /// <summary>
-        /// Die aktuell sichtbaren Serien – gefiltert nach <see cref="SearchText"/> und
+        /// Die aktuell sichtbaren Serien, gefiltert nach <see cref="SearchText"/> und
         /// <see cref="StatusFilter"/>, sortiert nach <see cref="SeriesSortIndex"/>.
         /// </summary>
         public IReadOnlyList<SeriesCardViewModel> Series
@@ -40,7 +40,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Zugriff auf die vollständige, ungefilterte Serienliste – wird vom Top-VM
+        /// Zugriff auf die vollständige, ungefilterte Serienliste; wird vom Top-VM
         /// für Hintergrund-Cover-Downloads und für das Entfernen einzelner Serien gelesen.
         /// </summary>
         public IReadOnlyList<SeriesCardViewModel> AllSeries => _allSeries;

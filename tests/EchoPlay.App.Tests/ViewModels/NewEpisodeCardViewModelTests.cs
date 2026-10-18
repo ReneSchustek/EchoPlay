@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die Farbe des Kennzeichens kommt aus der Palette und bleibt ohne laufendes
-    /// Fenster leer — geprüft werden Text und Sichtbarkeit, die davon unabhängig sind.
+    /// Fenster leer; geprüft werden Text und Sichtbarkeit, die davon unabhängig sind.
     /// </remarks>
     public sealed class NewEpisodeCardViewModelTests
     {
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         /// <summary>
         /// Lässt einen abgelehnten Befehl auslaufen. Bei einer Ablehnung ändert sich
-        /// nichts, worauf sich warten ließe — deshalb ein paar Durchläufe der
+        /// nichts, worauf sich warten ließe, deshalb ein paar Durchläufe der
         /// Fortsetzungen statt einer Wartezeit.
         /// </summary>
         private static async Task SettleAsync()

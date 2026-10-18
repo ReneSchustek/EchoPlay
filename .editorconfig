@@ -1,4 +1,4 @@
-# EditorConfig – https://editorconfig.org
+# EditorConfig: https://editorconfig.org
 root = true
 
 # Alle Dateien
@@ -48,7 +48,7 @@ dotnet_diagnostic.CS4014.severity = error
 dotnet_diagnostic.CA2000.severity = error
 dotnet_diagnostic.CA2213.severity = error
 
-# Explizite Typen statt var — Projektregel, vom Build erzwungen.
+# Explizite Typen statt var. Projektregel, vom Build erzwungen.
 # Eine Regel, die nur in der Gewohnheit lebt, bricht beim ersten eiligen Commit. IDE0007/IDE0008 melden jede var-Deklaration, die drei csharp_style-
 # Einstellungen legen die Richtung fest.
 csharp_style_var_for_built_in_types = false:error
@@ -153,7 +153,7 @@ indent_size = 4
 # verlinken auf private Methoden über die generierten *.g.cs-Dateien.
 # Roslyn sieht diese Generated-Files bei `dotnet format` nicht zuverlässig
 # und meldet die Methoden + Pflicht-Parameter (sender, e/args) als ungenutzt.
-# IDE0051 + IDE0060 sind hier strukturell falsch — pro Datei abgeschaltet.
+# IDE0051 + IDE0060 sind hier strukturell falsch und deshalb pro Datei abgeschaltet.
 [**/{*.xaml.cs,*Page.*.cs,*Window.xaml.cs,*Control.xaml.cs}]
 dotnet_diagnostic.IDE0051.severity = none
 dotnet_diagnostic.IDE0060.severity = none

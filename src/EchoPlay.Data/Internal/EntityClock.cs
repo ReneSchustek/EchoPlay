@@ -9,7 +9,7 @@ namespace EchoPlay.Data.Internal
     /// </summary>
     public static class EntityClock
     {
-        /// <summary>Aktuell verwendete Uhr – per Default die System-Uhr.</summary>
+        /// <summary>Aktuell verwendete Uhr, per Default die System-Uhr.</summary>
         public static IClock Current { get; set; } = new SystemClock();
     }
 }

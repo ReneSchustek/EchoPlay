@@ -8,17 +8,17 @@ using System.Diagnostics.CodeAnalysis;
 namespace EchoPlay.Data.Tests.Infrastructure
 {
     /// <summary>
-    /// Führt die Migrationskette echt aus – im Gegensatz zum restlichen Test-Bestand, der Schemas
+    /// Führt die Migrationskette echt aus, im Gegensatz zum restlichen Test-Bestand, der Schemas
     /// per <c>EnsureCreated</c> aus dem Modell erzeugt und Migrationen damit nie anfasst.
     /// Deckt genau die Lücke ab, durch die eine fehlerhafte Migration sonst erst zur Laufzeit
     /// auffiele (fehlende Designer-Datei, ungültiges SQL, kaputte Reihenfolge).
     /// </summary>
     public sealed class MigrationPipelineTests
     {
-        // Letzte Migration vor der Backfill-Migration – Startpunkt für den Datenbestands-Test.
+        // Letzte Migration vor der Backfill-Migration, Startpunkt für den Datenbestands-Test.
         private const string BeforeBackfill = "20260721141222_AddOnlineEpisodeSortIndex";
 
-        // Letzte Migration vor der Dubletten-Bereinigung – Startpunkt für den Bestands-Test.
+        // Letzte Migration vor der Dubletten-Bereinigung (Startpunkt für den Bestands-Test).
         private const string BeforeDuplicateCleanup = "20260824102217_AusgeblendeteHinweise";
 
         private static SqliteConnection OpenConnection()
@@ -59,7 +59,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             using EchoPlayDbContext context = CreateContext(connection);
 
             // Auf den Stand vor der Backfill-Migration bringen und Altbestand einspielen:
-            // favorisiert, aber unbeobachtet – genau der Zustand, den die Migration reparieren soll.
+            // favorisiert, aber unbeobachtet: genau der Zustand, den die Migration reparieren soll.
             IMigrator migrator = context.GetService<IMigrator>();
             await migrator.MigrateAsync(BeforeBackfill, TestContext.Current.CancellationToken);
 
@@ -75,7 +75,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             Assert.Equal(1, await ScalarAsync(connection,
                 "SELECT COUNT(*) FROM Series WHERE IsFavorite = 1 AND IsWatched = 1;"));
 
-            // Nicht favorisierte Serien bleiben unangetastet – die Migration darf nicht pauschal überwachen.
+            // Nicht favorisierte Serien bleiben unangetastet, die Migration darf nicht pauschal überwachen.
             Assert.Equal(0, await ScalarAsync(connection,
                 "SELECT COUNT(*) FROM Series WHERE IsFavorite = 0 AND IsWatched = 1;"));
         }
@@ -93,7 +93,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 "INSERT INTO Series (Id, Title, IsSubscribed, IsFavorite, IsWatched, IsOnlineImported, IsCompleted, CreatedAt, IsDeleted) " +
                 "VALUES ('33333333-3333-3333-3333-333333333333', 'Die drei ???', 1, 0, 0, 1, 0, '2026-01-01', 0);");
 
-            // Zwei Zeilen derselben Folge – der Zustand nach einem Re-Import auf gefülltem Bestand.
+            // Zwei Zeilen derselben Folge. Das ist der Zustand nach einem Re-Import auf gefülltem Bestand.
             await ExecuteAsync(connection,
                 "INSERT INTO Episodes (Id, SeriesId, Title, AppleMusicAlbumId, Duration, TrackMatchKind, CreatedAt, IsDeleted) " +
                 "VALUES ('aaaaaaa1-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'Folge 230', 'am230', '00:00:00', 0, '2026-07-23 06:26:40', 0);");
@@ -101,7 +101,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 "INSERT INTO Episodes (Id, SeriesId, Title, AppleMusicAlbumId, Duration, TrackMatchKind, CreatedAt, IsDeleted) " +
                 "VALUES ('aaaaaaa2-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 'Folge 230', 'am230', '00:00:00', 0, '2026-07-23 06:30:27', 0);");
 
-            // Gehört wurde nur die jüngere Zeile – die Markierung muss den Umzug überleben.
+            // Gehört wurde nur die jüngere Zeile, die Markierung muss den Umzug überleben.
             await ExecuteAsync(connection,
                 "INSERT INTO PlaybackStates (Id, EpisodeId, LastPosition, IsCompleted, CreatedAt, IsDeleted) " +
                 "VALUES ('bbbbbbb1-0000-0000-0000-000000000001', 'aaaaaaa2-0000-0000-0000-000000000002', '00:12:00', 1, '2026-08-01', 0);");

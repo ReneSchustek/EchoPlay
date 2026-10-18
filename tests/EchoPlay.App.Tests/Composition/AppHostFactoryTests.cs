@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.Composition
     /// weiß. Kein Test konnte das sehen, weil keiner den echten Aufbau anfasste.
     /// <para>
     /// Geprüft wird über <see cref="ServiceProviderOptions.ValidateOnBuild"/>. Der Container
-    /// löst dabei die Konstruktorketten auf, ohne eine Instanz zu erzeugen — genau die
+    /// löst dabei die Konstruktorketten auf, ohne eine Instanz zu erzeugen. Genau die
     /// Trennung, die es hier braucht: Die Verdrahtung ist prüfbar, ohne dass ein
     /// WinUI-gebundener Dienst einen Fensterkontext verlangt, den es im Testlauf nicht gibt.
     /// </para>
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Tests.Composition
         {
             ServiceCollection services = CollectRegistrations();
 
-            // ValidateOnBuild meldet jede Kette, der ein Glied fehlt — gesammelt beim Bauen,
+            // ValidateOnBuild meldet jede Kette, der ein Glied fehlt, gesammelt beim Bauen,
             // nicht erst beim ersten Auflösen zur Laufzeit. ValidateScopes fängt zusätzlich
             // den Fall ab, dass ein Singleton einen kurzlebigen Dienst festhält.
             ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Composition
             HashSet<Type> registered = services.Select(descriptor => descriptor.ServiceType).ToHashSet();
 
             // Ohne diese vier startet die Anwendung zwar, aber die Navigation läuft ins
-            // Leere — der Fehler zeigt sich dann erst beim Klick, nicht beim Start.
+            // Leere, und der Fehler zeigt sich dann erst beim Klick, nicht beim Start.
             Assert.Contains(typeof(EchoPlay.App.ViewModels.MainWindowViewModel), registered);
             Assert.Contains(typeof(EchoPlay.App.ViewModels.StatusBarViewModel), registered);
             Assert.Contains(typeof(EchoPlay.App.ViewModels.DashboardViewModel), registered);
@@ -81,7 +81,7 @@ namespace EchoPlay.App.Tests.Composition
         }
 
         /// <summary>
-        /// Baut dieselbe Dienstsammlung, die auch der Host bekommt — über die echten
+        /// Baut dieselbe Dienstsammlung, die auch der Host bekommt, über die echten
         /// Registrierungsmethoden in derselben Reihenfolge. So prüft der Test die reale
         /// Verdrahtung und nicht eine nachgebaute Kopie davon.
         /// </summary>
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.Composition
 
         /// <summary>
         /// Liefert die Lebensdauer der zuletzt gewinnenden Registrierung. Der Container
-        /// nimmt bei mehrfacher Registrierung desselben Diensts die letzte — der Test
+        /// nimmt bei mehrfacher Registrierung desselben Diensts die letzte; der Test
         /// muss dieselbe nehmen, sonst prüft er eine überschriebene Zusage.
         /// </summary>
         private static ServiceLifetime LifetimeOf(ServiceCollection services, Type serviceType)

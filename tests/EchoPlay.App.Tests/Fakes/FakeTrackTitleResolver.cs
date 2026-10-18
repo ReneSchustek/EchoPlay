@@ -9,7 +9,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// <summary>
     /// Fake für <see cref="ITrackTitleResolver"/>.
     /// Liefert die hinterlegten Titel je Dateipfad; ohne Hinterlegung greift dieselbe
-    /// Rückfallebene wie in der Anwendung — der aufgeräumte Dateiname.
+    /// Rückfallebene wie in der Anwendung: der aufgeräumte Dateiname.
     /// </summary>
     internal sealed class FakeTrackTitleResolver : ITrackTitleResolver
     {

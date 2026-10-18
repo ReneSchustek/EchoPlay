@@ -7,7 +7,7 @@ using System;
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
-    /// Der Fortschritt eines laufenden Vorgangs in der unteren Leiste — und derselbe
+    /// Der Fortschritt eines laufenden Vorgangs in der unteren Leiste, und derselbe
     /// Fortschritt im Symbol der Taskleiste.
     /// </summary>
     /// <remarks>
@@ -74,7 +74,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Ob der Balken ohne festen Wert laufen soll — ein Vorgang läuft, aber die
+        /// Ob der Balken ohne festen Wert laufen soll: Ein Vorgang läuft, aber die
         /// Gesamtzahl der Dateien steht noch nicht fest.
         /// </summary>
         public bool IsIndeterminate => _isActive && _value <= 0;
@@ -108,7 +108,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Zeigt einen Text ohne Prozentwert — für Vorgänge, deren Umfang nicht feststeht.
+        /// Zeigt einen Text ohne Prozentwert, für Vorgänge, deren Umfang nicht feststeht.
         /// </summary>
         /// <param name="text">Der anzuzeigende Text.</param>
         public void SetText(string text)

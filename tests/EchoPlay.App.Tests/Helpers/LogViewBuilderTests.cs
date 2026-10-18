@@ -40,7 +40,7 @@ namespace EchoPlay.App.Tests.Helpers
         [Fact]
         public void BuildLines_WithoutViewer_ExplainsWhyNothingIsShown()
         {
-            // Ohne registrierten Puffer kann die Anzeige nie etwas enthalten – der
+            // Ohne registrierten Puffer kann die Anzeige nie etwas enthalten, der
             // Hinweis unterscheidet diesen Zustand von „nichts passiert".
             IReadOnlyList<string> lines = LogViewBuilder.BuildLines(
                 ["10:00 INFO Start"], isViewerAvailable: false);

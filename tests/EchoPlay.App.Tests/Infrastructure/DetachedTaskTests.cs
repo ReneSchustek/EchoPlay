@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// Sichert das Verhalten losgelöster Hintergrund-Aufgaben ab.
     /// <para>
     /// Anlass: Beim Schließen der Anwendung erschien eine <see cref="TaskCanceledException"/>,
-    /// obwohl nichts schiefgegangen war — ein nebenher laufender Cover-Abruf wurde vom
+    /// obwohl nichts schiefgegangen war: Ein nebenher laufender Cover-Abruf wurde vom
     /// Abbruch-Token beendet, und niemand sah sich sein Ergebnis an.
     /// </para>
     /// </summary>
@@ -86,7 +86,7 @@ namespace EchoPlay.App.Tests.Infrastructure
         }
 
         /// <summary>
-        /// Die Ausnahme muss abgerufen werden — sonst gilt die Aufgabe weiterhin als
+        /// Die Ausnahme muss abgerufen werden, sonst gilt die Aufgabe weiterhin als
         /// unbeobachtet und schlägt später beim Einsammeln durch den Speicherbereiniger auf.
         /// </summary>
         [Fact]

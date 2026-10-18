@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
-    /// Tests für <see cref="AccordionSplitHelper"/> – die Rechnung hinter dem Akkordeon
+    /// Tests für <see cref="AccordionSplitHelper"/>, die Rechnung hinter dem Akkordeon
     /// der Mediathek. Sie bestimmt, nach welcher Kachelreihe der Detailbereich aufklappt.
     /// Stimmt sie nicht, öffnet sich das Akkordeon an der falschen Stelle.
     /// </summary>
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Tests.Helpers
         [Fact]
         public void CalculateSplitIndex_LastRow_IsCappedAtTotalCount()
         {
-            // Die letzte Reihe ist meist nicht voll – der Schnitt darf nicht über das Ende gehen.
+            // Die letzte Reihe ist meist nicht voll, der Schnitt darf nicht über das Ende gehen.
             int split = AccordionSplitHelper.CalculateSplitIndex(
                 selectedIndex: 11, totalCount: 12, availableWidth: 740.0);
 

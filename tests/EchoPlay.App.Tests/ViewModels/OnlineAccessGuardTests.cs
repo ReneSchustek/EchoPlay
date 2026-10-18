@@ -86,7 +86,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains(nameof(StatusBarViewModel.OfflineSymbolVisibility), changedProperties);
         }
 
-        // ── FakeOnlineAccessGuard – Verhalten in ViewModels ─────────────────────
+        // ── FakeOnlineAccessGuard: Verhalten in ViewModels ─────────────────────
 
         [Fact]
         public async Task ImportSearch_Aborted_WhenGuardReturnsNull()

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="OnlineAccessGuard"/> – die Stelle, an der EchoPlay im
+    /// Tests für <see cref="OnlineAccessGuard"/>, die Stelle, an der EchoPlay im
     /// Offline-Modus nachfragt, bevor es doch ins Netz geht. Lehnt der Nutzer ab, muss die
     /// aufrufende Aktion sicher erkennen, dass sie nicht loslaufen darf.
     /// </summary>
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(1, dialog.CallCount);
             Assert.True(statusBar.IsTemporarilyOnline);
 
-            // Erst das Freigeben beendet den temporären Status – sonst bliebe die
+            // Erst das Freigeben beendet den temporären Status, sonst bliebe die
             // Statusleiste dauerhaft auf „Online", obwohl der Offline-Modus aktiv ist.
             scope!.Dispose();
             Assert.False(statusBar.IsTemporarilyOnline);

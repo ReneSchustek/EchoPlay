@@ -24,7 +24,7 @@ namespace EchoPlay.App.ViewModels
             {
                 if (SetProperty(ref _coverImage, value))
                 {
-                    // NoCoverVisibility hängt direkt vom Cover ab – bei Änderung mitfeuern
+                    // NoCoverVisibility hängt direkt vom Cover ab, bei Änderung mitfeuern
                     OnPropertyChanged(nameof(NoCoverVisibility));
                 }
             }
@@ -35,7 +35,7 @@ namespace EchoPlay.App.ViewModels
             _coverImage is null ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Setzt das Cover-Bild zurück – gibt hunderte Kachel-Bitmaps frühzeitig frei,
+        /// Setzt das Cover-Bild zurück und gibt hunderte Kachel-Bitmaps frühzeitig frei,
         /// statt sie bis zum nächsten GC-Lauf am Heap zu halten.
         /// </summary>
         public void ClearCoverImage()

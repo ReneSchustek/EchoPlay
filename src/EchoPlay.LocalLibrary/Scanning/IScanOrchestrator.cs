@@ -18,10 +18,10 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// Führt den vierphasigen Scan durch und meldet Phasen-Fortschritt über den
         /// <paramref name="progress"/>-Parameter.
         /// <para>
-        /// Phase 1 – Vorbereitung: Audiodateien zählen (Fortschrittsbalken indeterministisch).<br/>
-        /// Phase 2 – Serien erkennen: Ordnerstruktur ermitteln.<br/>
-        /// Phase 3 – Folgen ermitteln: Episodenordner pro Serie scannen.<br/>
-        /// Phase 4 – Tracks scannen: ID3-Metadaten lesen (deterministischer Fortschritt).
+        /// Phase 1 (Vorbereitung): Audiodateien zählen (Fortschrittsbalken indeterministisch).<br/>
+        /// Phase 2 (Serien erkennen): Ordnerstruktur ermitteln.<br/>
+        /// Phase 3 (Folgen ermitteln): Episodenordner pro Serie scannen.<br/>
+        /// Phase 4 (Tracks scannen): ID3-Metadaten lesen (deterministischer Fortschritt).
         /// </para>
         /// </summary>
         /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis der Bibliothek.</param>

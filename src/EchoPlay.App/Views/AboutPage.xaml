@@ -26,7 +26,7 @@
                 Style="{ThemeResource TitleTextBlockStyle}"
                 HorizontalAlignment="Center"/>
 
-            <!-- Versionsnummer – wird im Code-Behind gesetzt -->
+            <!-- Versionsnummer, wird im Code-Behind gesetzt -->
             <TextBlock
                 x:Name="VersionText"
                 Style="{ThemeResource CaptionTextBlockStyle}"

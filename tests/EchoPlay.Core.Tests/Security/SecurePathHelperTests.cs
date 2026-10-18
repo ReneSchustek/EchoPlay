@@ -72,7 +72,7 @@ namespace EchoPlay.Core.Tests.Security
         {
             string root = Path.Combine(Path.GetTempPath(), "echoplay-root");
 
-            // Wurzel selbst gilt als "innen" — sonst könnten Cleanup-Routinen ihren eigenen Root nicht prüfen.
+            // Wurzel selbst gilt als "innen", sonst könnten Cleanup-Routinen ihren eigenen Root nicht prüfen.
             Assert.True(SecurePathHelper.IsPathInside(root, root));
         }
 
@@ -91,7 +91,7 @@ namespace EchoPlay.Core.Tests.Security
         public void IsPathInside_WithAPathThatCannotBeResolved_SaysNo()
         {
             // Ein Pfad mit einem Nullzeichen lässt sich nicht in absolute Form bringen.
-            // Die Prüfung muss dann verneinen — ein „weiß nicht“ wäre hier ein Freibrief.
+            // Die Prüfung muss dann verneinen. Ein „weiß nicht“ wäre hier ein Freibrief.
             Assert.False(SecurePathHelper.IsPathInside("C:\\Media\\\0Folge", @"C:\Media"));
         }
 

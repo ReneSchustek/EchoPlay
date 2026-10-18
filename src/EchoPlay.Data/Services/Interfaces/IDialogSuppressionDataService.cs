@@ -7,7 +7,7 @@ namespace EchoPlay.Data.Services.Interfaces
     /// </summary>
     /// <remarks>
     /// Eigene Schnittstelle statt Anbau an <see cref="IAppSettingsDataService"/>: Die Liste ist
-    /// eine Menge von Zeilen, keine feste Anzahl Felder — sie wächst mit jedem neuen Dialog,
+    /// eine Menge von Zeilen, keine feste Anzahl Felder; sie wächst mit jedem neuen Dialog,
     /// ohne dass die Einstellungszeile breiter wird.
     /// </remarks>
     public interface IDialogSuppressionDataService

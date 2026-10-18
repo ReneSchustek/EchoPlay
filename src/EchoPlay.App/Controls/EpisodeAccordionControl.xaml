@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Wiederverwendbares Akkordeon für Episoden – identisches Layout in lokaler und Online-Mediathek.
+<!-- Wiederverwendbares Akkordeon für Episoden: identisches Layout in lokaler und Online-Mediathek.
      Border, GridView und dynamische Breitenberechnung sind zentral.
      Der Header liegt auf der Page außerhalb des ScrollViewers (Sticky-Verhalten). -->
 <UserControl
@@ -18,7 +18,7 @@
         CornerRadius="{StaticResource CardCornerRadius}">
 
         <StackPanel>
-            <!-- Episoden-Kachelgrid – kein eigenes Scrolling, äußerer ScrollViewer übernimmt.
+            <!-- Episoden-Kachelgrid ohne eigenes Scrolling, der äußere ScrollViewer übernimmt.
                  Der Header (Titel, Schließen, Sortierung) liegt auf der Page außerhalb des
                  ScrollViewers, damit er beim Scrollen fixiert bleibt. -->
             <GridView

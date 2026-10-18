@@ -5,7 +5,7 @@ namespace EchoPlay.Data.Entities.Library
 {
     /// <summary>
     /// Speichert Cover-Binärdaten getrennt von Metadaten.
-    /// Eine Zeile pro Entity (Serie oder Episode) – verknüpft über EntityType + EntityId.
+    /// Eine Zeile pro Entity (Serie oder Episode), verknüpft über EntityType + EntityId.
     /// Die Trennung verhindert, dass Metadaten-Queries MB an Bilddaten mitladen.
     /// </summary>
     public class CoverImage : BaseEntity

@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// </summary>
     /// <remarks>
     /// Das Wartelimit selbst ist anderswo geprüft. Hier zählt nur, ob die Aufrufer es
-    /// überhaupt fragen und mit welcher Dringlichkeit — ein Aufruf, der sich als
+    /// überhaupt fragen und mit welcher Dringlichkeit. Ein Aufruf, der sich als
     /// Vordergrund ausgibt, überholt die Hintergrundarbeit und darf nicht versehentlich
     /// als Hintergrund gestellt werden.
     /// </remarks>

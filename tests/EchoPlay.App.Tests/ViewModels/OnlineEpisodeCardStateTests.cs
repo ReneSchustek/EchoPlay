@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Der Erfolgsweg von „Im Browser öffnen" bleibt außen vor: Er startet eine fremde
-    /// Anwendung. Geprüft ist der Weg davor — die Kachel darf sich nicht als gehört
+    /// Anwendung. Geprüft ist der Weg davor: Die Kachel darf sich nicht als gehört
     /// eintragen, wenn die Adresse gar nicht geöffnet wurde.
     /// </remarks>
     public sealed class OnlineEpisodeCardStateTests
@@ -125,7 +125,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void OpenInBrowserCommand_WithANonWebAddress_DoesNotMarkTheEpisodeAsHeard()
         {
             // Nur http und https gehen an den Browser. Eine Datei- oder Eigenprotokoll-
-            // Adresse würde sonst ein beliebiges Programm starten — und die Folge wäre
+            // Adresse würde sonst ein beliebiges Programm starten, und die Folge wäre
             // obendrein als gehört vermerkt, ohne dass etwas passiert ist.
             OnlineEpisodeCardViewModel card = new(
                 TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1",

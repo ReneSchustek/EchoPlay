@@ -12,7 +12,7 @@ namespace EchoPlay.LocalLibrary.Tests.Infrastructure
     /// Das ist der Zustand eines getrennten Netzlaufwerks oder eines Ordners, den ein
     /// anderes Konto angelegt hat: <see cref="Directory.Exists(string)"/> sagt weiterhin
     /// ja, jeder Zugriff auf den Inhalt scheitert. Anders ist dieser Zweig nicht zu
-    /// erreichen — ein nicht vorhandener Ordner wird vorher abgefangen.
+    /// erreichen, denn ein nicht vorhandener Ordner wird vorher abgefangen.
     ///
     /// Die Sperre wird beim Freigeben in jedem Fall zurückgenommen; bleibt sie stehen,
     /// könnte der Ordner nicht mehr gelöscht werden.

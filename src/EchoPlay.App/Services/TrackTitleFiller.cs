@@ -74,7 +74,7 @@ namespace EchoPlay.App.Services
             }
             catch (OperationCanceledException)
             {
-                // Folge gewechselt oder Seite verlassen – der Dateiname bleibt stehen.
+                // Folge gewechselt oder Seite verlassen, der Dateiname bleibt stehen.
             }
         }
     }

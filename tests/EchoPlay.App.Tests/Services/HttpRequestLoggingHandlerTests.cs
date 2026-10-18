@@ -206,7 +206,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 InnerHandler = inner,
             };
-            // Test-Fixture – Ausnahme von der IHttpClientFactory-Pflicht: hier ist der DelegatingHandler selbst
+            // Test-Fixture als Ausnahme von der IHttpClientFactory-Pflicht: hier ist der DelegatingHandler selbst
             // das Prüfobjekt, und ein einzelner synchroner Testaufruf erzeugt keine Socket-Exhaustion.
             return new HttpClient(handler, disposeHandler: true);
         }

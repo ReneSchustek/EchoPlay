@@ -5,7 +5,7 @@ namespace EchoPlay.Data.Entities.Settings
 {
     /// <summary>
     /// Speichert die benutzerdefinierte Sortierposition einer Serie in einem Dashboard-Bereich.
-    /// Pro Serie und Bereich existiert maximal ein Eintrag – die Kombination aus
+    /// Pro Serie und Bereich existiert maximal ein Eintrag; die Kombination aus
     /// <see cref="SeriesId"/> und <see cref="Section"/> ist eindeutig.
     /// Wird von der Drag-&amp;-Drop-Logik auf dem Dashboard geschrieben und beim Laden
     /// für die Sortierung der Kachelreihen ausgewertet.

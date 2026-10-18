@@ -116,7 +116,7 @@ namespace EchoPlay.App.ViewModels
 
                 int renamedCount = await _ctx.FileRenameService.RenameAsync(filesWithTags, _renameVM.RenamePattern);
 
-                // Ordner neu laden – Dateinamen haben sich verändert
+                // Ordner neu laden, denn die Dateinamen haben sich verändert
                 await _reloadFolderAsync(_fileListVM.CurrentFolderPath);
 
                 if (renamedCount < previewCount)

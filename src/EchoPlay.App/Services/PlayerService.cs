@@ -25,7 +25,7 @@ namespace EchoPlay.App.Services
         private readonly MediaPlaybackList _playlist;
 
         // Die Spurdauern der laufenden Folge. Ohne sie kennt der Dienst nur die Stelle in
-        // der laufenden Datei — und die allein taugt nicht zum Fortsetzen.
+        // der laufenden Datei, und die allein taugt nicht zum Fortsetzen.
         private EpisodeTimeline _timeline = EpisodeTimeline.Empty;
         private readonly System.Timers.Timer _positionTimer;
         private readonly IServiceScopeFactory _scopeFactory;
@@ -218,7 +218,7 @@ namespace EchoPlay.App.Services
         /// Startet die Wiedergabe einer Trackliste ab dem angegebenen Index.
         /// Ein laufender Playback wird dabei gestoppt und ersetzt.
         /// </summary>
-        /// <param name="episodeId">ID der Episode – für PlaybackState-Persistenz.</param>
+        /// <param name="episodeId">ID der Episode für die PlaybackState-Persistenz.</param>
         /// <param name="trackPaths">Absolute Dateipfade der Audiotracks, in Reihenfolge.</param>
         /// <param name="startIndex">Index des ersten Tracks (0-basiert).</param>
         /// <param name="resumePosition">
@@ -264,7 +264,7 @@ namespace EchoPlay.App.Services
 
                 foreach (string path in trackPaths)
                 {
-                    // CA2000: MediaSource-Lebensdauer wird von der MediaPlaybackList verwaltet –
+                    // CA2000: MediaSource-Lebensdauer wird von der MediaPlaybackList verwaltet;
                     // Dispose erfolgt beim Entfernen aus der Playlist oder beim Player-Shutdown.
 #pragma warning disable CA2000
                     _playlist.Items.Add(
@@ -325,7 +325,7 @@ namespace EchoPlay.App.Services
             lock (_stateLock)
             {
                 episodeToSave = _currentEpisodeId;
-                // Gespeichert wird die Stelle in der Folge, nicht die in der Datei — sonst
+                // Gespeichert wird die Stelle in der Folge, nicht die in der Datei, sonst
                 // setzt die Wiedergabe später in der falschen Spur wieder ein.
                 positionToSave = _timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
                 ResetPlaybackState();
@@ -338,8 +338,8 @@ namespace EchoPlay.App.Services
 
             StateChanged?.Invoke(this, EventArgs.Empty);
 
-            // Media-Pipeline auf Hintergrund-Thread stoppen –
-            // Pause() und Items.Clear() können den UI-Thread deadlocken
+            // Media-Pipeline auf Hintergrund-Thread stoppen,
+            // denn Pause() und Items.Clear() können den UI-Thread deadlocken
             _ = System.Threading.Tasks.Task.Run(() =>
             {
                 try

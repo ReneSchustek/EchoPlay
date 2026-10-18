@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="LocalEpisodesViewModel"/> – die mittlere Spalte der lokalen
+    /// Tests für <see cref="LocalEpisodesViewModel"/>, die mittlere Spalte der lokalen
     /// Mediathek. Geprüft werden Laden, Filtern, Sortieren und die Trennung von regulären
     /// Folgen und Sonderfolgen. Das Nachladen der Cover erzeugt <c>BitmapImage</c>-Objekte
     /// und braucht einen UI-Thread; es bleibt dem Klick-Test am laufenden Programm vorbehalten.
@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         /// <summary>
         /// Baut eine Folge für die Testdaten. Eine Folge ohne Nummer gilt im ViewModel als
-        /// Sonderfolge – das Kennzeichen steht nicht in der Datenbank, sondern wird aus der
+        /// Sonderfolge; das Kennzeichen steht nicht in der Datenbank, sondern wird aus der
         /// fehlenden Nummer abgeleitet.
         /// </summary>
         private static Episode Episode(int? number, string title) => new()
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LoadForSeriesAsync_SkipsEpisodesWithoutLocalFolder()
         {
-            // Ohne lokalen Ordner gibt es keine abspielbare Datei – solche Folgen
+            // Ohne lokalen Ordner gibt es keine abspielbare Datei, solche Folgen
             // gehören nicht in die lokale Mediathek.
             Episode withoutFolder = Episode(3, "Nur online");
             withoutFolder.LocalFolderPath = null;
@@ -243,7 +243,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task AlsGehoert_SetztDenHakenSofortUndSchreibtDenStand()
         {
             // Ohne die sofortige Aktualisierung erschiene der Haken erst nach einem
-            // Serienwechsel — der Anwender hält den Klick dann für wirkungslos.
+            // Serienwechsel, und der Anwender hält den Klick dann für wirkungslos.
             FakePlaybackStateDataService states = new();
             (LocalEpisodesViewModel viewModel, _) = await LoadWithStatesAsync(states, Episode(1, "Der Superhund"));
             Guid episodeId = viewModel.Episodes[0].EpisodeId;
@@ -288,7 +288,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task Folgentitel_VerliertDenSeriennamenAmAnfang()
         {
             // Die Ordnernamen tragen den Seriennamen mit. Auf der Kachel steht er ohnehin
-            // schon darüber — zweimal derselbe Name kostet nur Platz.
+            // schon darüber, und zweimal derselbe Name kostet nur Platz.
             LocalEpisodesViewModel viewModel = await LoadAsync(
                 Episode(1, "TKKG - Der Superhund"),
                 Episode(2, "TKKG \u2013 Der Schatz"),

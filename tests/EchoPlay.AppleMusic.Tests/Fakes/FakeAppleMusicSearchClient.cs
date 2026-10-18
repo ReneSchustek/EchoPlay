@@ -111,8 +111,8 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
         /// <summary>
         /// Zeichnet die gebatchten Collection-IDs auf (analog zu <see cref="LookupTracksAsync"/>)
-        /// und liefert keine Tracks. Erlaubt Tests zu prüfen, für welche Alben – nach dem
-        /// Delta-Filter – ein Track-Lookup ausgelöst wurde.
+        /// und liefert keine Tracks. Erlaubt Tests zu prüfen, für welche Alben (nach dem
+        /// Delta-Filter) ein Track-Lookup ausgelöst wurde.
         /// </summary>
         /// <param name="collectionIds">Die iTunes-Collection-IDs des Batches.</param>
         /// <returns>Leere Lookup-Antwort.</returns>

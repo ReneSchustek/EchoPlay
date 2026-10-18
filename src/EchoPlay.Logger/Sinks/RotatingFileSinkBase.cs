@@ -48,7 +48,7 @@ namespace EchoPlay.Logger.Sinks
             catch (Exception ex)
             {
                 // Fallback bei Rechteproblem oder ungültigem Pfad: AppData\EchoPlay\<Ordner> nutzen.
-                // Das aktuelle Verzeichnis ist kein tauglicher Fallback – in installierten Apps
+                // Das aktuelle Verzeichnis ist kein tauglicher Fallback, denn in installierten Apps
                 // liegt das oft unter C:\Program Files\, wo Schreibzugriff verweigert wird.
                 System.Diagnostics.Trace.WriteLine($"{GetType().Name}: Konnte Verzeichnis nicht erstellen: {ex.Message}");
 
@@ -63,7 +63,7 @@ namespace EchoPlay.Logger.Sinks
                 }
                 catch (Exception)
                 {
-                    // Kein beschreibbares Verzeichnis verfügbar – Logging deaktiviert.
+                    // Kein beschreibbares Verzeichnis verfügbar, also Logging deaktiviert.
                     _logDirectory = string.Empty;
                 }
             }

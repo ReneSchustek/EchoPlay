@@ -5,7 +5,7 @@ namespace EchoPlay.Data.Services.Interfaces
     /// </summary>
     /// <remarks>
     /// Eigene Schnittstelle statt Anbau an <see cref="ISeriesDataService"/>: Die Merkliste ist ein
-    /// eigenes Aggregat. Sie überlebt bewusst das Leeren der Mediathek — dabei verschwinden die
+    /// eigenes Aggregat. Sie überlebt bewusst das Leeren der Mediathek, denn dabei verschwinden die
     /// <c>Series</c>-Zeilen physisch, die gemerkten Titel bleiben und geben neu eingelesenen
     /// Serien ihre Überwachung zurück.
     /// </remarks>
@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>
-        /// Eine Menge — die Aufrufer schlagen darin pro gescanntem Ordner nach, eine Liste
+        /// Eine Menge, denn die Aufrufer schlagen darin pro gescanntem Ordner nach, eine Liste
         /// würde die Schleife unbemerkt quadratisch machen.
         /// </returns>
         Task<IReadOnlySet<string>> GetAllAsync(CancellationToken cancellationToken = default);
@@ -29,7 +29,7 @@ namespace EchoPlay.Data.Services.Interfaces
         Task RememberAsync(string title, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Entfernt einen gemerkten Titel — der Nutzer hat die Überwachung bewusst abgeschaltet.
+        /// Entfernt einen gemerkten Titel, weil der Nutzer die Überwachung bewusst abgeschaltet hat.
         /// </summary>
         /// <param name="title">Der Serientitel in Originalschreibweise.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

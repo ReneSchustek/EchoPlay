@@ -23,7 +23,7 @@ namespace EchoPlay.Data.Services
         /// <summary>
         /// Lädt die Anwendungseinstellungen aus der Datenbank.
         /// Falls noch keine Einstellungen vorhanden sind, wird automatisch eine Standardinstanz erstellt und gespeichert.
-        /// Gibt immer einen gültigen Wert zurück – niemals null.
+        /// Gibt immer einen gültigen Wert zurück, niemals null.
         /// </summary>
         /// <returns>Die aktuellen <see cref="AppSettings"/>.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
@@ -40,7 +40,7 @@ namespace EchoPlay.Data.Services
                 return settings;
             }
 
-            // Beim ersten Start gibt es noch keine Einstellungen – Defaults anlegen und speichern.
+            // Beim ersten Start gibt es noch keine Einstellungen, also Defaults anlegen und speichern.
             _logger.Info("Keine Einstellungen gefunden – Standardkonfiguration wird erstellt.");
 
             AppSettings defaultSettings = new();

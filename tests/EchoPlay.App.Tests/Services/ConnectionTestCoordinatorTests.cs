@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Services
             ConnectionTestResult result = await coordinator.TestAsync(ProviderType.None, CancellationToken.None);
 
             Assert.False(result.Success);
-            // FakeLocalizationService liefert den Schlüssel selbst zurück — genau das ist hier
+            // FakeLocalizationService liefert den Schlüssel selbst zurück, und genau das ist hier
             // der Beweis: der Text kommt aus den Ressourcen, nicht hartkodiert aus dem Code.
             Assert.Equal("ConnectionTestNoProvider", result.ErrorDetail);
         }
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Services
         {
             private readonly Exception _ex;
             public ThrowingSpotifyClient(Exception ex) => _ex = ex;
-            // Task.FromException liefert ein faulted Task — semantisch identisch zu 'throw',
+            // Task.FromException liefert ein faulted Task, semantisch identisch zu 'throw',
             // aber ohne den throw-Variable-Pattern, der in synchronen Pfaden den Stacktrace verlieren würde.
             public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyArtistDto>>(_ex);
             public Task<IReadOnlyList<SpotifyAlbumDto>> SearchAlbumsAsync(string query, int limit, CancellationToken cancellationToken = default) => Task.FromException<IReadOnlyList<SpotifyAlbumDto>>(_ex);

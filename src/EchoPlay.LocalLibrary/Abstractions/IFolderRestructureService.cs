@@ -10,7 +10,7 @@ namespace EchoPlay.LocalLibrary.Abstractions
     {
         /// <summary>
         /// Analysiert den Serienordner und erstellt eine Vorschau der geplanten Verschiebungen.
-        /// Verändert nichts auf dem Dateisystem – nur lesen.
+        /// Verändert nichts auf dem Dateisystem, nur lesen.
         /// </summary>
         /// <param name="seriesFolderPath">Absoluter Pfad zum Serienordner.</param>
         /// <param name="folderPattern">

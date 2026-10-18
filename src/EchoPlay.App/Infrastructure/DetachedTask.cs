@@ -11,12 +11,12 @@ namespace EchoPlay.App.Infrastructure
     /// Anlass: Ein Hintergrundabruf wurde mit <c>_ = ...Async(...)</c> gestartet und sein
     /// Ergebnis verworfen. Beim Beenden der Anwendung bricht der Abbruch-Token diese Aufgabe
     /// ab; die Abbruch-Ausnahme bleibt dann unbeobachtet und taucht später auf, wenn der
-    /// Speicherbereiniger die Aufgabe einsammelt — zu einem Zeitpunkt, an dem die Anwendung
+    /// Speicherbereiniger die Aufgabe einsammelt, zu einem Zeitpunkt, an dem die Anwendung
     /// ihre Ausnahme-Behandlung längst abgemeldet hat. Der Nutzer sieht eine
     /// <see cref="TaskCanceledException"/> beim Schließen, obwohl nichts schiefgegangen ist.
     /// </para>
     /// <para>
-    /// Ein Abbruch ist hier <em>kein</em> Fehler, sondern der Normalfall beim Beenden — er
+    /// Ein Abbruch ist hier <em>kein</em> Fehler, sondern der Normalfall beim Beenden. Er
     /// wird geschluckt. Alles andere wird protokolliert, damit ein echter Fehler im
     /// Hintergrund nicht spurlos verschwindet.
     /// </para>
@@ -49,7 +49,7 @@ namespace EchoPlay.App.Infrastructure
                 {
                     if (finished.IsCanceled)
                     {
-                        // Beim Beenden erwartet — keine Meldung.
+                        // Beim Beenden erwartet, daher keine Meldung.
                         return;
                     }
 

@@ -21,7 +21,7 @@
     <EnableMsixTooling Condition="'$(WindowsPackageType)' != 'None'">true</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <!-- Deaktiviert den [ModuleInitializer]-basierten Windows-App-Runtime-Init-Code.
-         Bei MSIX-Deployment ist die Runtime bereits registriert – dieser Init ist redundant.
+         Bei MSIX-Deployment ist die Runtime bereits registriert, dieser Init ist redundant.
          Ohne dieses Flag schlägt das Laden der App-Assembly in Unit-Test-Prozessen fehl,
          da dort keine Windows App Runtime registriert ist (keine MSIX-Umgebung).
          NUR im MSIX-/Test-Build unterdrücken: Im self-contained-Setup-Publish (unpackaged)
@@ -35,7 +35,7 @@
        keine systemweit installierte Runtime nötig). In diesem Modus zieht das SDK die
        generierte Datei UndockedRegFreeWinRT-AutoInitializer.cs aus dem NuGet-Cache herein,
        die CA5392 verletzt (P/Invoke ohne DefaultDllImportSearchPaths). Fremd-/Generat-Code
-       außerhalb unserer .editorconfig — daher CA5392 ausschließlich im self-contained-Modus
+       außerhalb unserer .editorconfig. Daher CA5392 ausschließlich im self-contained-Modus
        unterdrücken; der normale (MSIX-)Build bleibt streng zero-warning. -->
   <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)' == 'true'">
     <NoWarn>$(NoWarn);CA5392</NoWarn>
@@ -57,7 +57,7 @@
         <RelativePath>$(AssemblyName).pri</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </ResolvedFileToPublish>
-      <!-- Denselben Projekt-Index zusätzlich als 'resources.pri' — den Default-Dateinamen des
+      <!-- Denselben Projekt-Index zusätzlich als 'resources.pri', den Default-Dateinamen des
            Windows-App-SDK-ResourceLoaders. Nur im unpackaged-Publish (WindowsPackageType=None);
            im MSIX-Tooling-Build ist resources.pri bereits ein Standard-Publish-Item und ein
            zweiter Eintrag löste NETSDK1152 (doppelter Publish-Pfad) aus. -->
@@ -70,7 +70,7 @@
   </Target>
 
   <!-- Lose Content-Dateien, die zur Laufzeit über ms-appx / echte Dateipfade geladen werden,
-       nimmt 'dotnet publish' (unpackaged) sonst nicht mit — sie liegen nur in der PRI des
+       nimmt 'dotnet publish' (unpackaged) sonst nicht mit, denn sie liegen nur in der PRI des
        normalen Builds. Ohne sie stirbt der Start:
          * Assets\ (favicon.ico, logo.png) → DirectoryNotFoundException bei Datei-Zugriff.
          * Themes\*.xaml → App.xaml lädt die sechs Paletten per Source="Themes/…"; fehlen sie,
@@ -105,7 +105,7 @@
          Page Remove verhindert, dass der XAML-Compiler sie als Pages behandelt.
 
          Als Muster und nicht als Einzelliste: Die Liste war einzeln gepflegt, und ein neu
-         angelegtes Wörterbuch fehlte darin — es wurde damit nie ins Ausgabeverzeichnis
+         angelegtes Wörterbuch fehlte darin, es wurde damit nie ins Ausgabeverzeichnis
          kopiert, während App.xaml es weiterhin lud. Der Start brach dann genau so ab, wie
          es beim Publish-Ziel oben beschrieben steht: noch vor der Logger-Initialisierung,
          ohne eine Zeile im Protokoll. Das Publish-Ziel arbeitet längst mit demselben
@@ -163,7 +163,7 @@
   <!-- Koppelt die Package.appxmanifest-Identity-Version an VersionPrefix (Directory.Build.props):
        stimmen beide nicht überein, bricht der Build hart ab. So bleibt VersionPrefix die einzige
        Versionsquelle und das Manifest kann nie unbemerkt driften. Bewusst nur eine Prüfung (XmlPeek,
-       read-only) statt Auto-Rewrite — ein XmlPoke würde die Manifest-Formatierung zerstören.
+       read-only) statt Auto-Rewrite, weil ein XmlPoke die Manifest-Formatierung zerstören würde.
        Bei einem Release VersionPrefix hochzählen und die vierstellige Manifest-Version (X.Y.Z.0)
        einmal nachziehen. Namespace-agnostisch via local-name() wegen des Default-Namespace. -->
   <Target Name="VerifyAppxManifestVersion" BeforeTargets="BeforeBuild">

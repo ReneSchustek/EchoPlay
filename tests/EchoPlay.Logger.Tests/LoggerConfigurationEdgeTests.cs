@@ -15,7 +15,7 @@ namespace EchoPlay.Logger.Tests
     /// </summary>
     /// <remarks>
     /// Die Aufbewahrung kommt aus den Einstellungen des Anwenders. Käme dort eine 0 an
-    /// und würde übernommen, löschte der nächste Lauf alle Protokolle — genau die, die
+    /// und würde übernommen, löschte der nächste Lauf alle Protokolle, genau die, die
     /// man nach einem Fehler braucht.
     /// </remarks>
     public sealed class LoggerConfigurationEdgeTests

@@ -19,7 +19,7 @@ namespace EchoPlay.Spotify.Tests.Clients
     /// </summary>
     /// <remarks>
     /// Der Adapter liest die Antwort Feld für Feld statt sie auf ein Objekt abzubilden.
-    /// Das ist Absicht — Spotify liefert je nach Album unterschiedlich vollständige
+    /// Das ist Absicht, denn Spotify liefert je nach Album unterschiedlich vollständige
     /// Datensätze. Ein fehlendes Feld darf deshalb den ganzen Import nicht kippen; der
     /// betroffene Eintrag fällt heraus, die übrigen bleiben.
     ///
@@ -189,7 +189,7 @@ namespace EchoPlay.Spotify.Tests.Clients
                 .GetArtistAlbumsAsync("art1", limit: 50, cancellationToken: TestContext.Current.CancellationToken);
 
             // Spotify liefert höchstens fünfzig Alben je Seite. „Die drei ???" hat über
-            // zweihundert Folgen — ohne das Weiterblättern fehlten drei Viertel davon.
+            // zweihundert Folgen, und ohne das Weiterblättern fehlten drei Viertel davon.
             Assert.Equal(2, alben.Count);
             Assert.Equal(2, handler.CallCount);
         }

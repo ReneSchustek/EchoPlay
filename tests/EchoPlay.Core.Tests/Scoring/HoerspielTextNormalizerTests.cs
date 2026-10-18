@@ -39,7 +39,7 @@ namespace EchoPlay.Core.Tests.Scoring
         public void Normalize_ReplacesUmlautUe()
         {
             // ü → ue
-            // Der erwartete Wert steht bewusst in ASCII-Schreibung — er ist das
+            // Der erwartete Wert steht bewusst in ASCII-Schreibung, denn er ist das
             // Ergebnis der Umwandlung und damit der Prüfgegenstand des Tests.
             const string Erwartet = "ueber";
 
@@ -78,7 +78,7 @@ namespace EchoPlay.Core.Tests.Scoring
         [Fact]
         public void Normalize_PreservesSpaces()
         {
-            // Leerzeichen bleiben erhalten – sie trennen Wörter
+            // Leerzeichen bleiben erhalten, sie trennen Wörter
             string result = HoerspielTextNormalizer.Normalize("Die drei Fragezeichen");
 
             Assert.Equal("die drei fragezeichen", result);

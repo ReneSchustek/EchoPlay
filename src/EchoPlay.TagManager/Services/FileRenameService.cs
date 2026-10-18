@@ -71,7 +71,7 @@ namespace EchoPlay.TagManager.Services
 
             foreach (RenamePreviewItem item in preview)
             {
-                // Unveränderte Dateien überspringen – File.Move auf denselben Namen würde sonst fehlschlagen
+                // Unveränderte Dateien überspringen, denn File.Move auf denselben Namen würde sonst fehlschlagen
                 if (item.IsUnchanged)
                 {
                     continue;
@@ -88,7 +88,7 @@ namespace EchoPlay.TagManager.Services
 
                 try
                 {
-                    // File.Move ist auf demselben Laufwerk atomar – kein Zwischenkopieren nötig
+                    // File.Move ist auf demselben Laufwerk atomar, kein Zwischenkopieren nötig
                     await Task.Run(() => File.Move(item.FilePath, item.NewFilePath, overwrite: false)).ConfigureAwait(false);
                     _logger.Debug(() => $"Umbenannt: \"{item.OldName}\" → \"{item.NewName}\"");
                     successCount++;
@@ -121,7 +121,7 @@ namespace EchoPlay.TagManager.Services
         {
             string result = pattern;
 
-            // Einfache Felder – leerer String wenn Tag nicht gesetzt
+            // Einfache Felder: leerer String, wenn Tag nicht gesetzt
             result = result.Replace("{title}", tag.Title ?? string.Empty, StringComparison.Ordinal);
             result = result.Replace("{album}", tag.Album ?? string.Empty, StringComparison.Ordinal);
             result = result.Replace("{artist}", tag.Artist ?? string.Empty, StringComparison.Ordinal);

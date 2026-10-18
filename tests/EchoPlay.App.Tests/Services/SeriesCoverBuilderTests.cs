@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Das Bild selbst wird nicht geprüft: Ein <see cref="BitmapImage"/> ist im Testhost ohne
-    /// WinUI nicht konstruierbar. Geprüft wird deshalb, <em>welche Quelle gefragt wird</em> —
+    /// WinUI nicht konstruierbar. Geprüft wird deshalb, <em>welche Quelle gefragt wird</em>,
     /// und genau das ist die Zusicherung dieses Typs.
     /// </remarks>
     public sealed class SeriesCoverBuilderTests
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task BuildAsync_FolderWithoutCoverFile_ReturnsNull()
         {
-            // Ein Ordner ohne cover.jpg ist kein Fehler – die Kachel bleibt ohne Bild.
+            // Ein Ordner ohne cover.jpg ist kein Fehler, die Kachel bleibt ohne Bild.
             string ordner = Path.Combine(Path.GetTempPath(), "EchoPlayCoverTest_" + Guid.NewGuid().ToString("N"));
             _ = Directory.CreateDirectory(ordner);
 
@@ -92,7 +92,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task TryBuildAsync_ReadErrorIsSwallowed()
         {
             // Beim Nachladen im Hintergrund darf ein unlesbares Cover den Aufbau der Liste
-            // nicht stören — dort bleibt der Platzhalter stehen.
+            // nicht stören, dort bleibt der Platzhalter stehen.
             SeriesCoverBuilder builder = new(new ThrowingCoverService());
 
             BitmapImage? cover = await builder.TryBuildAsync(MakeSeries(localFolderPath: null));

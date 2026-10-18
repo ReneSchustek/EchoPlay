@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für die internen pure-Funktion-Helper des <see cref="TagLookupCoordinator"/>.
-    /// Wir testen den Core direkt — der HttpClient-Pfad wäre ohne Live-API nicht sinnvoll
+    /// Wir testen den Core direkt, denn der HttpClient-Pfad wäre ohne Live-API nicht sinnvoll
     /// abdeckbar; die SearchAsync-Funktion delegiert ohnehin an einen DI-aufgelösten Service.
     /// </summary>
     public sealed class TagLookupCoordinatorTests

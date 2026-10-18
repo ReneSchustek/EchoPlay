@@ -10,7 +10,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 {
     /// <summary>
     /// Tests für <see cref="LocalLibraryScanner"/>.
-    /// Nutzt temporäre Verzeichnisse als echtes Dateisystem – kein Mocking nötig.
+    /// Nutzt temporäre Verzeichnisse als echtes Dateisystem, kein Mocking nötig.
     /// Jeder Test legt seine eigene Verzeichnisstruktur an und räumt sie im Teardown auf.
     /// </summary>
     public sealed class LocalLibraryScannerTests : IDisposable
@@ -89,7 +89,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanSeriesAsync_CollectsAllSupportedAudioFormats()
         {
-            // mp3, m4a, flac, ogg werden alle erkannt – andere Dateien werden ignoriert
+            // mp3, m4a, flac, ogg werden alle erkannt, andere Dateien werden ignoriert
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
 
@@ -125,7 +125,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanSeriesAsync_IncludesUnmatchedEpisodeFolders_WithNullNumber()
         {
-            // Ordner ohne Muster-Treffer werden trotzdem importiert – ParsedNumber bleibt null,
+            // Ordner ohne Muster-Treffer werden trotzdem importiert; ParsedNumber bleibt null,
             // der Ordnername dient als Titel. So gehen keine Hörspiele verloren.
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string matched = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
@@ -177,7 +177,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanSeriesAsync_TracksAreSortedAlphabetically()
         {
-            // Tracks werden sortiert zurückgegeben – Wiedergabereihenfolge muss korrekt sein
+            // Tracks werden sortiert zurückgegeben, denn die Wiedergabereihenfolge muss korrekt sein
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
 
@@ -239,7 +239,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             // Ordnernamen wie "001 - 42 Der Schatz" enthalten zwei Zahlen:
             // "001" = lokaler Sortierpräfix, "42" = eigentliche Episodennummer im Titel.
-            // Nach dem Parsen landet "42 Der Schatz" als Titel – das führende "42 " wird bereinigt.
+            // Nach dem Parsen landet "42 Der Schatz" als Titel, das führende "42 " wird bereinigt.
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Der Schatz")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
@@ -255,7 +255,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanSeriesAsync_FolderName_AlwaysPreferred_OverTagTitle()
         {
-            // Auch wenn Tag.Title gesetzt ist, gewinnt der Ordnername –
+            // Auch wenn Tag.Title gesetzt ist, gewinnt der Ordnername:
             // "Der Schatz" aus dem Ordner ist der Episodentitel, "Teil 1" der Kapitel-Titel.
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Der Schatz")).FullName;
@@ -297,7 +297,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public void GetSeriesFolders_ReturnsSeriesFolders_WithoutEpisodeScan()
         {
-            // Nur Ordner-Listing – keine Audiodateien nötig, kein Deep-Scan
+            // Nur Ordner-Listing, keine Audiodateien nötig, kein Deep-Scan
             _ = Directory.CreateDirectory(Path.Combine(_root, "TKKG"));
             _ = Directory.CreateDirectory(Path.Combine(_root, "Die drei Fragezeichen"));
 
@@ -321,8 +321,8 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             await File.WriteAllTextAsync(Path.Combine(seriesB, "001", "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             // Synchroner IProgress: Der Scanner ruft Report() direkt im Scan-Thread auf.
-            // Progress<T> würde die Callbacks über den Synchronization-Context marshallen –
-            // unter paralleler Test-Last drainen die ThreadPool-Callbacks nicht zuverlässig,
+            // Progress<T> würde die Callbacks über den Synchronization-Context marshallen,
+            // und unter paralleler Test-Last drainen die ThreadPool-Callbacks nicht zuverlässig,
             // was den Test flaky macht. Ein synchroner Collector erfasst deterministisch.
             List<string> reported = [];
             IProgress<LocalScanResult> onSeriesScanned = new SynchronousProgress<LocalScanResult>(r =>
@@ -357,7 +357,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanSeriesAsync_FlatFiles_NumberSpaceTitle()
         {
-            // Typ B3: "01 Titel.mp3" – Nummer + Leerzeichen + Titel
+            // Typ B3: "01 Titel.mp3" mit Nummer + Leerzeichen + Titel
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
             await File.WriteAllTextAsync(Path.Combine(seriesPath, "01 Erster Fall.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(Path.Combine(seriesPath, "02 Zweiter Fall.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
@@ -374,7 +374,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanSeriesAsync_FlatFiles_NoPattern_UsesFilenameAsTitle()
         {
-            // Typ B4: kein erkennbares Nummernmuster – Dateiname als Titel
+            // Typ B4: kein erkennbares Nummernmuster, Dateiname als Titel
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Michel")).FullName;
             await File.WriteAllTextAsync(Path.Combine(seriesPath, "Astrid Lindgren - Immer dieser Michel.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -428,7 +428,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
-            // Lose Datei direkt im Serienordner – soll ignoriert werden
+            // Lose Datei direkt im Serienordner soll ignoriert werden
             await File.WriteAllTextAsync(Path.Combine(seriesPath, "bonus.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
             IReadOnlyList<LocalScanResult> results =
@@ -518,7 +518,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 
         /// <summary>
         /// <see cref="IProgress{T}"/>-Implementierung, die den Callback synchron im
-        /// aufrufenden Thread ausführt – im Gegensatz zu <see cref="Progress{T}"/>, das
+        /// aufrufenden Thread ausführt, im Gegensatz zu <see cref="Progress{T}"/>, das
         /// über den Synchronization-Context bzw. den ThreadPool marshallt. So sind
         /// Report-Aufrufe im Test deterministisch prüfbar, ohne auf Callbacks zu warten.
         /// </summary>

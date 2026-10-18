@@ -51,7 +51,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         /// <summary>
-        /// Der Filter zeigt, was vor dem Sichern noch offen ist — bei einem Ordner mit
+        /// Der Filter zeigt, was vor dem Sichern noch offen ist. Bei einem Ordner mit
         /// hundert Dateien der einzige Weg, das zu überblicken.
         /// </summary>
         [Fact]
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         /// <summary>
-        /// Ohne geöffneten Ordner bleibt der „Nichts gefunden"-Hinweis aus — dort ist nichts
+        /// Ohne geöffneten Ordner bleibt der „Nichts gefunden"-Hinweis aus, denn dort ist nichts
         /// da, nicht nichts gefunden.
         /// </summary>
         [Fact]
@@ -120,7 +120,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         /// <summary>
         /// Ein neuer Ordner zeigt seine Dateien auch dann vollständig, wenn zuvor gesucht
-        /// wurde — sonst wirkte der frisch geöffnete Ordner halb leer.
+        /// wurde, sonst wirkte der frisch geöffnete Ordner halb leer.
         /// </summary>
         [Fact]
         public void SetFiles_AfterASearch_AppliesTheFilterToTheNewFolder()

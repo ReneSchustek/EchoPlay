@@ -20,7 +20,7 @@ namespace EchoPlay.AppleMusic.Clients
     /// Deshalb zwei Sparmaßnahmen vor der Bewertung: Die Vorauswahl
     /// (<see cref="AppleMusicArtistPrefilter"/>) wirft aus, was weder namentlich noch vom
     /// Genre her infrage kommt, und die Zahl der teuren Prüfungen ist begrenzt. Was dabei
-    /// wegfällt, steht im Protokoll — eine stille Kappung sähe aus wie ein vollständiges Ergebnis.
+    /// wegfällt, steht im Protokoll, denn eine stille Kappung sähe aus wie ein vollständiges Ergebnis.
     /// </remarks>
     internal sealed class AppleMusicSeriesSearch : ISeriesImportSearch
     {
@@ -73,7 +73,7 @@ namespace EchoPlay.AppleMusic.Clients
 
         /// <summary>
         /// Sucht nach importierbaren Hörspielserien und meldet jeden Treffer, sobald er feststeht.
-        /// Schlägt die Bewertung eines einzelnen Künstlers fehl, wird dieser übersprungen –
+        /// Schlägt die Bewertung eines einzelnen Künstlers fehl, wird dieser übersprungen;
         /// die restlichen Ergebnisse bleiben unberührt. Ein Abbruch der umgebenden Operation
         /// beendet die Suche dagegen sofort und gilt nicht als Fehlschlag.
         /// </summary>
@@ -179,7 +179,7 @@ namespace EchoPlay.AppleMusic.Clients
             {
                 // Ein Abbruch ist kein Fehlschlag: Der Nutzer tippt weiter, die Suche ist überholt.
                 // Ohne diesen Zweig meldete das Protokoll für jeden verbliebenen Künstler einen
-                // Ausfall, der keiner war — und verdeckte damit die echten.
+                // Ausfall, der keiner war, und verdeckte damit die echten.
                 throw;
             }
             catch (Exception ex)

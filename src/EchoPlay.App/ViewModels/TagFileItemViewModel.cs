@@ -25,7 +25,7 @@ namespace EchoPlay.App.ViewModels
             FilePath = filePath;
             FileName = Path.GetFileName(filePath);
 
-            // Relativer Pfad ab Stammordner – zeigt Unterordnerstruktur
+            // Relativer Pfad ab Stammordner, zeigt Unterordnerstruktur
             if (baseFolderPath is not null)
             {
                 RelativePath = Path.GetRelativePath(baseFolderPath, filePath);
@@ -40,12 +40,12 @@ namespace EchoPlay.App.ViewModels
         public string FilePath { get; }
 
         /// <summary>
-        /// Nur der Dateiname ohne Pfad – für interne Verwendung.
+        /// Nur der Dateiname ohne Pfad für interne Verwendung.
         /// </summary>
         public string FileName { get; }
 
         /// <summary>
-        /// Relativer Pfad ab dem Stammordner – zeigt Unterordner in der Dateiliste.
+        /// Relativer Pfad ab dem Stammordner; zeigt Unterordner in der Dateiliste.
         /// Z.B. „001 - Der Super-Papagei\track01.mp3".
         /// </summary>
         public string RelativePath { get; }
@@ -65,7 +65,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des Änderungshinweises – sichtbar wenn <see cref="IsModified"/> <c>true</c> ist.
+        /// Sichtbarkeit des Änderungshinweises, sichtbar, wenn <see cref="IsModified"/> <c>true</c> ist.
         /// </summary>
         public Visibility IsModifiedVisibility => IsModified ? Visibility.Visible : Visibility.Collapsed;
     }

@@ -99,7 +99,7 @@ namespace EchoPlay.App.Services
             }
             catch (OperationCanceledException)
             {
-                // Abbruch durch CancellationToken ist kein Fehler – nur Info.
+                // Abbruch durch CancellationToken ist kein Fehler, nur Info.
                 sw.Stop();
                 _logger.Info(FormatCancelLine(sw.ElapsedMilliseconds, attempt));
                 throw;
@@ -144,7 +144,7 @@ namespace EchoPlay.App.Services
         private static int IncrementAttempt(HttpRequestMessage request)
         {
             // HttpRequestMessage.Options bleibt bei Polly-Retries auf derselben Instanz erhalten.
-            // Sollte ein Retry-Handler die Nachricht klonen, startet der Zähler wieder bei 1 –
+            // Sollte ein Retry-Handler die Nachricht klonen, startet der Zähler wieder bei 1;
             // das entspricht dann der Sichtweise „neue Message, neuer Versuch".
             int next = 1;
             if (request.Options.TryGetValue(AttemptCountKey, out int previous))
@@ -223,7 +223,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Baut den Teil der URL bis einschließlich des Pfads — ohne Benutzerinformationen.
+        /// Baut den Teil der URL bis einschließlich des Pfads, ohne Benutzerinformationen.
         /// </summary>
         /// <param name="uri">Absolute Ziel-URI der Anfrage.</param>
         /// <returns>Schema, Host, Port und Pfad; ein vorhandenes <c>user:kennwort@</c> als <c>***@</c>.</returns>

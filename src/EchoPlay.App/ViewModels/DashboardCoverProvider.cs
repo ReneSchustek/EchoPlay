@@ -34,7 +34,7 @@ namespace EchoPlay.App.ViewModels
         private readonly Dictionary<Guid, List<NewEpisodeCardViewModel>> _pendingEpisodeCoverCards = [];
 
         // Cover-Bytes aus der Datenbank für den laufenden Durchgang. Einmal gefüllt, in allen
-        // Abschnitten wiederverwendet — statt einer Abfrage je Kachel.
+        // Abschnitten wiederverwendet statt einer Abfrage je Kachel.
         private IReadOnlyDictionary<Guid, byte[]> _episodeCoverBytesCache = new Dictionary<Guid, byte[]>();
 
         private ICoverViewModelFactory? _coverFactory;
@@ -103,7 +103,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="episodeId">Die Folge der Kachel, oder <see cref="Guid.Empty"/>.</param>
         /// <returns>
         /// Das Bild und die Angabe, ob es das echte Folgen-Cover ist. Beim Ersatzbild ist die
-        /// Angabe <see langword="false"/> — die Kachel gehört dann ins Nachtragen.
+        /// Angabe <see langword="false"/>; die Kachel gehört dann ins Nachtragen.
         /// </returns>
         public async Task<(BitmapImage? Cover, bool HasEpisodeCover)> ResolveCardCoverAsync(Series series, Guid episodeId)
         {
@@ -192,7 +192,7 @@ namespace EchoPlay.App.ViewModels
                 return fromCache;
             }
 
-            // Die Kachel war nicht im Vorablauf dabei — einzelne Abfrage, kein Dateisystem.
+            // Die Kachel war nicht im Vorablauf dabei: einzelne Abfrage, kein Dateisystem.
             return await _coverService.GetEpisodeCoverImageAsync(episodeId);
         }
 

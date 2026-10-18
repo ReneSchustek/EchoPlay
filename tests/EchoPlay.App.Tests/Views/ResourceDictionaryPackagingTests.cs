@@ -16,12 +16,12 @@ namespace EchoPlay.App.Tests.Views
     /// Anlass: Die Wörterbücher unter <c>Themes/</c> sind von der XAML-Übersetzung
     /// ausgenommen und werden als Inhaltsdateien mitkopiert. Diese Liste stand einzeln in der
     /// Projektdatei; ein neu angelegtes Wörterbuch fehlte darin und landete nie im
-    /// Ausgabeverzeichnis. <c>App.xaml</c> lud es trotzdem — die Anwendung brach beim Start ab,
+    /// Ausgabeverzeichnis. <c>App.xaml</c> lud es trotzdem. Die Anwendung brach beim Start ab,
     /// noch bevor der Logger stand, also ohne eine einzige Zeile im Protokoll.
     /// </para>
     /// <para>
     /// Weder Übersetzung noch Testlauf haben das bemerkt: Der Pfad wird erst zur Laufzeit
-    /// aufgelöst. Diese Prüfung schließt genau die Lücke — sie vergleicht, was geladen wird,
+    /// aufgelöst. Diese Prüfung schließt genau die Lücke: Sie vergleicht, was geladen wird,
     /// mit dem, was ausgeliefert wird.
     /// </para>
     /// </summary>
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Tests.Views
 
         /// <summary>
         /// Die eigentliche Zusage: Was geladen wird, muss auch mitkopiert werden. Fehlt der
-        /// Eintrag, startet die Anwendung nicht — und zwar ohne Protokoll und ohne Testfehler.
+        /// Eintrag, startet die Anwendung nicht, und zwar ohne Protokoll und ohne Testfehler.
         /// </summary>
         [Fact]
         public void EveryDictionaryLoadedByApp_IsShippedAsContent()
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Tests.Views
         }
 
         /// <summary>
-        /// Prüft, ob ein Eintrag der Projektdatei einen Pfad erfasst — als genaue Angabe oder
+        /// Prüft, ob ein Eintrag der Projektdatei einen Pfad erfasst, als genaue Angabe oder
         /// als Muster mit <c>*</c>.
         /// </summary>
         /// <param name="pattern">Eintrag aus der Projektdatei, etwa <c>Themes\*.xaml</c>.</param>

@@ -9,7 +9,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// App-Service für den Log-Viewer. Kapselt Dateisystemzugriffe auf das Log-Verzeichnis
     /// sowie das Filtern und Formatieren der Live-Einträge aus dem MemorySink.
-    /// Die Auswahl-State (aktuell gewählte Datei, Suchtext, Level) bleibt im ViewModel – der
+    /// Die Auswahl-State (aktuell gewählte Datei, Suchtext, Level) bleibt im ViewModel, der
     /// Coordinator bietet reine, testbare Operationen ohne eigenen Zustand.
     /// </summary>
     public interface ILogViewerCoordinator
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Services
         /// den <paramref name="searchText"/> (Groß-/Kleinschreibung ignoriert) nicht enthalten.
         /// </summary>
         /// <param name="searchText">Freitext-Filter. Leer → kein Textfilter.</param>
-        /// <param name="minimumLevel">Mindest-Level – alles darunter wird übersprungen.</param>
+        /// <param name="minimumLevel">Mindest-Level, alles darunter wird übersprungen.</param>
         /// <returns>Formatierte, gefilterte Einträge in chronologischer Reihenfolge.</returns>
         IReadOnlyList<string> BuildFilteredLiveEntries(string searchText, LogLevel minimumLevel);
     }

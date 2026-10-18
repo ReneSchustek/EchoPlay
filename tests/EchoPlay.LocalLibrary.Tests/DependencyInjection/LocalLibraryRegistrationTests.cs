@@ -20,7 +20,7 @@ namespace EchoPlay.LocalLibrary.Tests.DependencyInjection
     /// und die Mustererkennung auf einem nicht lesbaren Ordner.
     /// </summary>
     /// <remarks>
-    /// Fehlt eine Registrierung, fällt das erst beim Öffnen der betroffenen Seite auf —
+    /// Fehlt eine Registrierung, fällt das erst beim Öffnen der betroffenen Seite auf,
     /// zur Laufzeit, beim Anwender. Die Cover-Suche fasst fünf Anbieter zusammen; fehlt
     /// einer davon, scheitert nicht die Suche, sondern der Aufbau des Dienstes.
     /// </remarks>

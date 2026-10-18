@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für die „Weiterhören"-Kachel. Der Anzeigetext kommt aus den Ressourcen —
+    /// Tests für die „Weiterhören"-Kachel. Der Anzeigetext kommt aus den Ressourcen:
     /// Singular und Plural sind getrennte Schlüssel, weil sich das Englische anders
     /// beugt als das Deutsche.
     /// </summary>

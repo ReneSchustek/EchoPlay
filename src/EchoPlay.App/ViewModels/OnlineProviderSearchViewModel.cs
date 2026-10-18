@@ -55,7 +55,7 @@ namespace EchoPlay.App.ViewModels
         public Visibility ProviderSearchResultsVisibility =>
             _providerSearchResults.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>Gibt an, ob Suchergebnisse vorliegen – wird von den Top-VM-Visibilities gelesen.</summary>
+        /// <summary>Gibt an, ob Suchergebnisse vorliegen; wird von den Top-VM-Visibilities gelesen.</summary>
         public bool HasResults => _providerSearchResults.Count > 0;
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace EchoPlay.App.ViewModels
         public Visibility SpotifyFallbackHintVisibility =>
             _isSpotifyFallbackHintVisible ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>Leert die Suchergebnisse – z.B. nach einem Import oder beim Clear des Suchfelds.</summary>
+        /// <summary>Leert die Suchergebnisse, z.B. nach einem Import oder beim Clear des Suchfelds.</summary>
         public void ClearResults()
         {
             ProviderSearchResults = [];

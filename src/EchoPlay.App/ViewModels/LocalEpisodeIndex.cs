@@ -22,7 +22,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Beides verhindert eine Abfrage je Eintrag. Ohne diesen Zwischenschritt löste eine
-    /// Liste mit hundert Neuerscheinungen hundert Abfragen aus — und die Startseite wartete
+    /// Liste mit hundert Neuerscheinungen hundert Abfragen aus, und die Startseite wartete
     /// darauf, bevor sie den Abschnitt zeigen konnte.
     /// </remarks>
     internal sealed class LocalEpisodeIndex

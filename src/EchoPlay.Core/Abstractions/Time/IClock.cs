@@ -12,7 +12,7 @@ namespace EchoPlay.Core.Abstractions.Time
         DateTime UtcNow { get; }
     }
 
-    /// <summary>Standard-Implementierung – liest die System-Zeit.</summary>
+    /// <summary>Standard-Implementierung; liest die System-Zeit.</summary>
     public sealed class SystemClock : IClock
     {
         /// <inheritdoc />

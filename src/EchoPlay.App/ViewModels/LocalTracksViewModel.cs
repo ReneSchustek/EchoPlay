@@ -46,12 +46,12 @@ namespace EchoPlay.App.ViewModels
             OpenAllSeriesTracksCommand = new RelayCommand(() => OpenAllTracksByPath(_selectedArtist?.LocalFolderPath));
             OpenAllEpisodeTracksCommand = new RelayCommand(() => OpenAllTracksByPath(_selectedEpisode?.FolderPath));
 
-            // PlayEpisode ist initial inaktiv – wird per SetEnabled aktiviert sobald Tracks geladen sind.
+            // PlayEpisode ist initial inaktiv und wird per SetEnabled aktiviert, sobald Tracks geladen sind.
             PlayEpisodeCommand = new RelayCommand(PlayCurrentEpisode);
             PlayEpisodeCommand.SetEnabled(false);
         }
 
-        /// <summary>Tracks der gewählten Episode – rechte Spalte der Mediathek.</summary>
+        /// <summary>Tracks der gewählten Episode (rechte Spalte der Mediathek).</summary>
         public IReadOnlyList<LocalTrackRowViewModel> Tracks
         {
             get => _tracks;
@@ -81,7 +81,7 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        /// <summary>Der aktuell ausgewählte Künstler – wird für den OpenAllSeriesTracksCommand gebraucht.</summary>
+        /// <summary>Der aktuell ausgewählte Künstler; wird für den OpenAllSeriesTracksCommand gebraucht.</summary>
         public LocalArtistCardViewModel? SelectedArtist
         {
             get => _selectedArtist;
@@ -95,7 +95,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Sichtbarkeit der Tracks-Kopfzeile inkl. PlayEpisode-Button.
         /// Nur eingeblendet wenn Tracks geladen sind. Der Name entspricht dem der
-        /// Pass-Through-Eigenschaft in <see cref="LocalLibraryViewModel"/> — siehe
+        /// Pass-Through-Eigenschaft in <see cref="LocalLibraryViewModel"/>, siehe
         /// <see cref="TracksAccordionVisibility"/>.
         /// </summary>
         public Visibility TrackActionsVisibility =>
@@ -127,7 +127,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Spielt die Tracks der aktuellen Folge in sortierter Reihenfolge ab.</summary>
         public RelayCommand PlayEpisodeCommand { get; }
 
-        /// <summary>Der zuletzt vom Befehl angestoßene Wiedergabestart — für Tests.</summary>
+        /// <summary>Der zuletzt vom Befehl angestoßene Wiedergabestart (für Tests).</summary>
         internal Task PendingPlayback { get; private set; } = Task.CompletedTask;
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Startet die übergebene Folge — an der zuletzt gespeicherten Stelle, sofern sie nicht
+        /// Startet die übergebene Folge, und zwar an der zuletzt gespeicherten Stelle, sofern sie nicht
         /// abgeschlossen ist. Setzt bewusst nicht voraus, dass die Spuren rechts bereits
         /// angezeigt werden: Der Doppelklick auf eine Kachel soll auch dann greifen, wenn die
         /// Liste noch lädt.

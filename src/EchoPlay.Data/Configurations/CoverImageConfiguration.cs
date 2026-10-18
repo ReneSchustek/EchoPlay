@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Configurations
             _ = builder.Property(c => c.EntityId)
                    .IsRequired();
 
-            // Cover maximal 5 MB – schützt die Datenbank vor übergroßen Bildern
+            // Cover maximal 5 MB, das schützt die Datenbank vor übergroßen Bildern
             _ = builder.Property(c => c.ImageData)
                    .IsRequired()
                    .HasMaxLength(5_242_880);
@@ -42,7 +42,7 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.Property(c => c.LastChecked);
 
-            // Ein Cover pro aktiver Entity – Soft-deleted Einträge zählen nicht mit, sonst blockierten sie den Reinsert.
+            // Ein Cover pro aktiver Entity. Soft-deleted Einträge zählen nicht mit, sonst blockierten sie den Reinsert.
             _ = builder.HasIndex(c => new { c.EntityType, c.EntityId })
                    .IsUnique()
                    .HasFilter("IsDeleted = 0");

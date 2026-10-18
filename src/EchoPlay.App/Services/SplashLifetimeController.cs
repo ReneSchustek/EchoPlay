@@ -50,7 +50,7 @@ namespace EchoPlay.App.Services
             }
             catch (TaskCanceledException)
             {
-                // Cancellation beim Splash-Schließen ist erwartetes Verhalten — verschluckter Abbruch.
+                // Cancellation beim Splash-Schließen ist erwartetes Verhalten, daher wird der Abbruch verschluckt.
             }
         }
     }

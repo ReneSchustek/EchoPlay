@@ -14,11 +14,11 @@ namespace EchoPlay.Data.Migrations
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
             // Reine Datenbereinigung. Der Re-Import legte bisher jede Folge des Anbieters neu an,
-            // statt nur die fehlenden – wer ihn neben einem laufenden Erstimport auslöste, bekam
+            // statt nur die fehlenden. Wer ihn neben einem laufenden Erstimport auslöste, bekam
             // den gesamten Bestand ein zweites Mal. Betroffene Serien zeigten die Folgen doppelt.
             //
             // Behalten wird je Serie und Anbieter-Kennung der älteste Eintrag. Alles, was an den
-            // Dubletten hängt – Wiedergabestand, Cover, lokale Titel – wandert vorher auf ihn über,
+            // Dubletten hängt (Wiedergabestand, Cover, lokale Titel), wandert vorher auf ihn über,
             // damit die Bereinigung keine gehörten Folgen und keine Bilder kostet.
             _ = migrationBuilder.Sql("""
                 CREATE TEMP TABLE DoppelteFolgen AS
@@ -58,7 +58,7 @@ namespace EchoPlay.Data.Migrations
                 """);
 
             // Hat der verbleibende Eintrag noch gar keinen Wiedergabestand, wandert der weiteste
-            // Stand seiner Dubletten auf ihn über. Genau einer – auf PlaybackStates.EpisodeId
+            // Stand seiner Dubletten auf ihn über. Genau einer, denn auf PlaybackStates.EpisodeId
             // liegt ein UNIQUE-Index, ein zweiter Stand wäre ein Fehlschlag.
             _ = migrationBuilder.Sql("""
                 UPDATE PlaybackStates
@@ -82,7 +82,7 @@ namespace EchoPlay.Data.Migrations
                 DELETE FROM PlaybackStates WHERE EpisodeId IN (SELECT DubletteId FROM DoppelteFolgen);
                 """);
 
-            // Lokale Titel hängen an der Folge, nicht am Anbieter – sie ziehen vollständig um.
+            // Lokale Titel hängen an der Folge, nicht am Anbieter; sie ziehen vollständig um.
             _ = migrationBuilder.Sql("""
                 UPDATE LocalTracks
                 SET EpisodeId = (

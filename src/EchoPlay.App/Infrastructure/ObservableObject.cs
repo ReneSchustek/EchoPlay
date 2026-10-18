@@ -25,7 +25,7 @@ namespace EchoPlay.App.Infrastructure
         /// <param name="field">Das Backing-Field der Property.</param>
         /// <param name="value">Der neue Wert.</param>
         /// <param name="propertyName">
-        /// Name der Property – wird durch <c>[CallerMemberName]</c> automatisch vom Compiler befüllt.
+        /// Name der Property, wird durch <c>[CallerMemberName]</c> automatisch vom Compiler befüllt.
         /// Man muss den Namen nie als String tippen, was Tippfehler bei Bindings verhindert.
         /// </param>
         /// <returns><c>true</c> wenn der Wert geändert wurde, sonst <c>false</c>.</returns>
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Infrastructure
         /// <summary>
         /// Löst <see cref="PropertyChanged"/> für die angegebene Property aus.
         /// </summary>
-        /// <param name="propertyName">Name der geänderten Property – wird automatisch gefüllt.</param>
+        /// <param name="propertyName">Name der geänderten Property (wird automatisch gefüllt).</param>
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

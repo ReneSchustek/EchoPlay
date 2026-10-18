@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Der Suchlauf trägt die wichtigste Zusage: Solange der Anwender den Regler hält,
-    /// darf der Dienst die Position nicht überschreiben — sonst springt der Regler unter
+    /// darf der Dienst die Position nicht überschreiben, sonst springt der Regler unter
     /// dem Finger zurück.
     /// </remarks>
     public sealed class PlaybackTimeDisplayTests
@@ -61,7 +61,7 @@ namespace EchoPlay.App.Tests.ViewModels
             display.BeginSeek();
             display.PositionSeconds = 900;
 
-            // Der Dienst läuft weiter — der Regler bleibt trotzdem, wo der Anwender ihn hält.
+            // Der Dienst läuft weiter. Der Regler bleibt trotzdem, wo der Anwender ihn hält.
             player.SetState("Folge 1", isPlaying: true, positionSeconds: 20, durationSeconds: 3600);
             display.Refresh();
 

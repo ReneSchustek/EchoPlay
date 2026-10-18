@@ -6,7 +6,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 {
     /// <summary>
     /// Tests für den Ordnerstruktur-Assistenten.
-    /// Nutzt temporäre Verzeichnisse mit echten Dateien – kein Mocking.
+    /// Nutzt temporäre Verzeichnisse mit echten Dateien, ohne Mocking.
     /// </summary>
     public sealed class FolderRestructureServiceTests : IDisposable
     {

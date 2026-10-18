@@ -13,7 +13,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         private const string PatternNumberAndTitle = "{number:000} - {title}";
 
         /// <summary>
-        /// Muster ohne Nummer – nur Titel wird extrahiert.
+        /// Muster ohne Nummer: Nur der Titel wird extrahiert.
         /// </summary>
         private const string PatternTitleOnly = "{title}";
 
@@ -71,7 +71,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         {
             EpisodeFolderParser parser = new(PatternNumberAndTitle);
 
-            // .+ matcht Leerzeichen am Ende mit – TryParse muss sie via Trim() entfernen
+            // .+ matcht Leerzeichen am Ende mit, TryParse muss sie via Trim() entfernen
             bool result = parser.TryParse("001 - Titel mit Leerzeichen  ", out int? number, out string? title);
 
             Assert.True(result);
@@ -100,7 +100,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         [Fact]
         public void StripLeadingSequenceNumber_RemovesSpaceSeparatedPrefix()
         {
-            // Nur Leerzeichen als Separator – z.B. "42 Titeltext"
+            // Nur Leerzeichen als Separator, z.B. "42 Titeltext"
             string result = EpisodeFolderParser.StripLeadingSequenceNumber("42 Titeltext");
 
             Assert.Equal("Titeltext", result);
@@ -119,7 +119,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         public void StripLeadingSequenceNumber_HandlesDoublePrefixCorrectly()
         {
             // Praxisfall: "001 - 116 Klassenfahrt" → "001 - " wird gestripped, "116 " bleibt
-            // (nur der erste Präfix wird entfernt – kein rekursives Stripping)
+            // (nur der erste Präfix wird entfernt, kein rekursives Stripping)
             string result = EpisodeFolderParser.StripLeadingSequenceNumber("001 - 116 Klassenfahrt");
 
             Assert.Equal("116 Klassenfahrt", result);

@@ -15,7 +15,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Beide Wiedergabe-Ansichten zeigen denselben Wert, weil beide denselben
-    /// Wiedergabedienst bedienen — hier liegt nur die Bedienung, nicht der Zustand. Deshalb
+    /// Wiedergabedienst bedienen. Hier liegt nur die Bedienung, nicht der Zustand. Deshalb
     /// steht sie einmal und wird von beiden Ansichtsmodellen gehalten, statt zweimal
     /// zu entstehen und dabei auseinanderzulaufen.
     ///
@@ -40,7 +40,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Lautstärke in Prozent (0–100) — der Wert des Reglers.
+        /// Lautstärke in Prozent (0–100), der Wert des Reglers.
         /// </summary>
         public double VolumePercent
         {
@@ -55,7 +55,7 @@ namespace EchoPlay.App.ViewModels
 
                 _playerService.Volume = desired;
 
-                // Wer am Regler dreht, will hören — die Stummschaltung endet damit.
+                // Wer am Regler dreht, will hören, die Stummschaltung endet damit.
                 if (desired > 0 && _playerService.IsMuted)
                 {
                     _playerService.IsMuted = false;
@@ -85,7 +85,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Meldet alle abgeleiteten Werte als geändert. Wird gebraucht, wenn die Lautstärke
-        /// von außen gesetzt wurde — etwa beim Start aus den Einstellungen.
+        /// von außen gesetzt wurde, etwa beim Start aus den Einstellungen.
         /// </summary>
         public void Refresh() => RaiseAll();
 
@@ -115,7 +115,7 @@ namespace EchoPlay.App.ViewModels
             _playerService.IsMuted = neuStumm;
 
             // Ein voll heruntergedrehter Regler und aufgehobene Stummschaltung ergäben
-            // zusammen wieder Stille — dann bekommt die Wiedergabe eine hörbare Grundlage.
+            // zusammen wieder Stille, dann bekommt die Wiedergabe eine hörbare Grundlage.
             if (!neuStumm && _playerService.Volume <= 0)
             {
                 _playerService.Volume = MinimumAudibleVolume;

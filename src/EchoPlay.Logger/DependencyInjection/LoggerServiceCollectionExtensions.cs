@@ -57,7 +57,7 @@ namespace EchoPlay.Logger.DependencyInjection
                 sinks.Add(memorySink);
             }
 
-            // options-Referenz weitergeben – alle Logger lesen MinimumLevel daraus.
+            // options-Referenz weitergeben, denn alle Logger lesen MinimumLevel daraus.
             // So greift UpdateMinimumLevel() im LoggerManager sofort bei allen Loggern.
             LoggerFactory loggerFactory = new(sinks, options);
             LogCleanupService cleanupService = new(options);
@@ -69,7 +69,7 @@ namespace EchoPlay.Logger.DependencyInjection
             _ = services.AddSingleton<ILoggerFactory>(loggerFactory);
             _ = services.AddSingleton(loggerManager);
 
-            // MemorySink als Singleton registrieren – null wenn EnableMemorySink = false.
+            // MemorySink als Singleton registrieren (null, wenn EnableMemorySink = false).
             // SettingsViewModel prüft auf null und blendet den Log-Viewer aus.
             if (memorySink is not null)
             {

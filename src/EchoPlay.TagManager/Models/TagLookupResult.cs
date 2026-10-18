@@ -3,7 +3,7 @@ namespace EchoPlay.TagManager.Models
     /// <summary>
     /// Ergebnis eines Online-Metadaten-Lookups, z.B. von MusicBrainz.
     /// Wird im Tag-Editor als Vorlage angeboten und kann vom Nutzer übernommen werden.
-    /// Alle Felder sind unveränderlich – das Ergebnis wird nur gelesen, nie verändert.
+    /// Alle Felder sind unveränderlich, denn das Ergebnis wird nur gelesen, nie verändert.
     /// </summary>
     public sealed class TagLookupResult
     {

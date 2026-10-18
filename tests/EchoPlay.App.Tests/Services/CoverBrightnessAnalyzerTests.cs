@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Prüft die Helligkeitsmessung in der oberen linken Ecke eines Covers.
     /// Dort liegt der Rahmen des Auswahlkästchens: Auf hellem Grund braucht er einen
-    /// dunklen Rand, auf dunklem einen hellen — sonst sieht der Anwender nicht, was
+    /// dunklen Rand, auf dunklem einen hellen, sonst sieht der Anwender nicht, was
     /// er ausgewählt hat.
     ///
     /// Die Testbilder stehen als Bytefolge in der Datei; es wird keine Datei gelesen.
@@ -35,7 +35,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task AnalyzeBrightnessFromBytesAsync_GarbageBytes_ReturnsNull()
         {
-            // Nicht-Bild-Bytes sollen den Analyzer nicht zum Crash bringen — er muss
+            // Nicht-Bild-Bytes sollen den Analyzer nicht zum Crash bringen, er muss
             // sie als 'unbekannte Helligkeit' (null) abweisen.
             byte[] garbage = new byte[] { 0x00, 0xFF, 0x42, 0x13, 0x37, 0xCA, 0xFE, 0xBA, 0xBE };
 
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task AnalyzeBrightnessFromBytesAsync_TruncatedJpegHeader_ReturnsNull()
         {
-            // JPEG-Magic-Header ohne Datenrest — BitmapDecoder muss das als ungültig erkennen.
+            // JPEG-Magic-Header ohne Datenrest: BitmapDecoder muss das als ungültig erkennen.
             byte[] truncated = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
 
             bool? result = await CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(truncated);
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task AnalyzeBrightnessFromBytesAsync_HellesCover_MeldetHell()
         {
             // Die Ecke oben links trägt den Rahmen des Auswahlkästchens. Auf einem hellen
-            // Cover braucht er einen dunklen Rand — sonst verschwindet er im Bild.
+            // Cover braucht er einen dunklen Rand, sonst verschwindet er im Bild.
             bool? result = await CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(HellesBild);
 
             Assert.True(result);
@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.Services
 
         // ── Testbilder ───────────────────────────────────────────────
 
-        /// <summary>Ein 4×4 großes Bild in fast weiß, als Bytefolge — keine Datei im Test.</summary>
+        /// <summary>Ein 4×4 großes Bild in fast weiß, als Bytefolge (keine Datei im Test).</summary>
         private static readonly byte[] HellesBild =
         [
             0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,

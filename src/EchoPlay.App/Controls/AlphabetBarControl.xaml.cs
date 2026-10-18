@@ -61,7 +61,7 @@ namespace EchoPlay.App.Controls
 
         /// <summary>
         /// Vorlage für die Beschriftung der Sprachausgabe, mit <c>{0}</c> als Platzhalter für
-        /// den Buchstaben — etwa „Zu {0} springen". Ohne Vorlage liest die Sprachausgabe nur
+        /// den Buchstaben, etwa „Zu {0} springen". Ohne Vorlage liest die Sprachausgabe nur
         /// den nackten Buchstaben vor.
         /// </summary>
         public static readonly DependencyProperty AutomationNameFormatProperty =
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Controls
         }
 
         /// <summary>
-        /// Baut die Leiste neu auf. Sie führt immer alle Fächer — belegt oder nicht.
+        /// Baut die Leiste neu auf. Sie führt immer alle Fächer, belegt oder nicht.
         /// </summary>
         private void Rebuild()
         {
@@ -95,7 +95,7 @@ namespace EchoPlay.App.Controls
 
         private static string FormatAutomationName(string format, char letter)
         {
-            // Eine Vorlage ohne Platzhalter würde für alle 27 Fächer denselben Namen liefern —
+            // Eine Vorlage ohne Platzhalter würde für alle 27 Fächer denselben Namen liefern;
             // die Sprachausgabe könnte die Schaltflächen dann nicht auseinanderhalten.
             return format.Contains("{0}", StringComparison.Ordinal)
                 ? string.Format(System.Globalization.CultureInfo.CurrentCulture, format, letter)

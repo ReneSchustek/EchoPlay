@@ -17,7 +17,7 @@ namespace EchoPlay.Data.Migrations
         {
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
-            // Neue Tabelle für Cover-Binärdaten – getrennt von Metadaten
+            // Neue Tabelle für Cover-Binärdaten, getrennt von Metadaten
             _ = migrationBuilder.CreateTable(
                 name: "CoverImages",
                 columns: table => new

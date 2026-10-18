@@ -13,7 +13,7 @@ namespace EchoPlay.App.Tests.Helpers
     /// <remarks>
     /// Ersetzt Warteschleifen mit <c>Task.Delay</c>: Die sind unter Last erst zu kurz und dann
     /// zu langsam, und sie verstecken echte Fehler hinter einem Timeout. Hier weckt die
-    /// Benachrichtigung selbst — die Frist ist nur die Reißleine, damit ein kaputter Test
+    /// Benachrichtigung selbst. Die Frist ist nur die Reißleine, damit ein kaputter Test
     /// abbricht statt zu hängen.
     /// </remarks>
     internal static class ChangeSignals
@@ -22,12 +22,12 @@ namespace EchoPlay.App.Tests.Helpers
         private static readonly TimeSpan Deadline = TimeSpan.FromSeconds(5);
 
         /// <summary>
-        /// Wartet, bis <paramref name="condition"/> erfüllt ist — geweckt durch
+        /// Wartet, bis <paramref name="condition"/> erfüllt ist, geweckt durch
         /// <see cref="INotifyPropertyChanged.PropertyChanged"/>.
         /// </summary>
         /// <param name="source">Das beobachtete ViewModel.</param>
         /// <param name="condition">Der erwartete Zustand.</param>
-        /// <param name="description">Was erwartet wurde — erscheint in der Fehlermeldung.</param>
+        /// <param name="description">Was erwartet wurde; erscheint in der Fehlermeldung.</param>
         public static async Task WaitForAsync(
             INotifyPropertyChanged source,
             Func<bool> condition,
@@ -65,12 +65,12 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Wartet, bis <paramref name="condition"/> erfüllt ist — geweckt durch
+        /// Wartet, bis <paramref name="condition"/> erfüllt ist, geweckt durch
         /// <see cref="INotifyCollectionChanged.CollectionChanged"/>.
         /// </summary>
         /// <param name="source">Die beobachtete Sammlung.</param>
         /// <param name="condition">Der erwartete Zustand.</param>
-        /// <param name="description">Was erwartet wurde — erscheint in der Fehlermeldung.</param>
+        /// <param name="description">Was erwartet wurde; erscheint in der Fehlermeldung.</param>
         /// <remarks>
         /// Eigener Name statt Überladung: <c>ObservableCollection&lt;T&gt;</c> meldet beide
         /// Schnittstellen, eine Überladung wäre für den Compiler mehrdeutig.
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.Helpers
     /// </summary>
     /// <remarks>
     /// <see cref="Progress{T}"/> stellt seine Rückrufe über den SynchronizationContext bzw. den
-    /// ThreadPool zu — wann sie eintreffen, ist nicht vorhersagbar. Dieser Fake ruft direkt auf
+    /// ThreadPool zu, und wann sie eintreffen, ist nicht vorhersagbar. Dieser Fake ruft direkt auf
     /// und macht den Test damit unabhängig vom Zeitverhalten.
     /// </remarks>
     /// <typeparam name="T">Typ der Fortschrittsmeldung.</typeparam>

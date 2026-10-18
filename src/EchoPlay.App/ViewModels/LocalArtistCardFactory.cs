@@ -33,7 +33,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Lädt alle Serien mit lokalem Ordner und baut daraus Kacheln.
-        /// Die Cover kommen im Hintergrund nach — die Kacheln stehen sofort.
+        /// Die Cover kommen im Hintergrund nach, die Kacheln stehen sofort.
         /// </summary>
         /// <returns>Die Kacheln in der Reihenfolge, in der die Datenbank die Serien liefert.</returns>
         public async Task<IReadOnlyList<LocalArtistCardViewModel>> CreateAllAsync()
@@ -45,7 +45,7 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
             List<Series> localSeries = [.. allSeries.Where(series => series.LocalFolderPath is not null)];
 
-            // Folgenzähler in einer Sammelabfrage – ersetzt einen Aufruf je Serie
+            // Folgenzähler in einer Sammelabfrage; sie ersetzt einen Aufruf je Serie
             IReadOnlyDictionary<Guid, (int Total, int Local)> episodeCounts =
                 await episodeService.GetEpisodeCountsForSeriesAsync([.. localSeries.Select(series => series.Id)]);
 
@@ -70,7 +70,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Baut eine einzelne Kachel samt Zählern und Cover — für Serien, die während eines
+        /// Baut eine einzelne Kachel samt Zählern und Cover, für Serien, die während eines
         /// Einlesevorgangs gemeldet werden.
         /// </summary>
         /// <param name="series">Die gemeldete Serie.</param>
@@ -102,7 +102,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Trägt das Cover einer Kachel nach, die noch keines hat. Ein vorhandenes Bild bleibt
-        /// unangetastet — sonst flackerte die Kachel und die Datenbank würde ohne Grund gefragt.
+        /// unangetastet, sonst flackerte die Kachel und die Datenbank würde ohne Grund gefragt.
         /// </summary>
         /// <param name="card">Die Kachel.</param>
         /// <param name="series">Die zugehörige Serie.</param>

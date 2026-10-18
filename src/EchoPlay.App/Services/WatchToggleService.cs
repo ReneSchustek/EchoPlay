@@ -20,7 +20,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Service mit der Scope-Fabrik der Anwendung.
         /// </summary>
-        /// <param name="scopeFactory">DI-Scope-Fabrik – wird pro Toggle einmal verwendet.</param>
+        /// <param name="scopeFactory">DI-Scope-Fabrik; wird pro Toggle einmal verwendet.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public WatchToggleService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {

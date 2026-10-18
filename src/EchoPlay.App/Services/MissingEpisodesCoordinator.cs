@@ -315,7 +315,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Analysiert lokale Lücken und liefert sowohl die fehlenden Nummern als auch
         /// die höchste gefundene Nummer. Strukturierte Variante für den Gesamtbericht.
-        /// Läuft im Thread-Pool – darf keine UI-Elemente anfassen.
+        /// Läuft im Thread-Pool und darf keine UI-Elemente anfassen.
         /// </summary>
         /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners.</param>
         private static (List<int> Gaps, int MaxNumber) AnalyzeMissingEpisodesForReport(string seriesFolderPath)
@@ -327,12 +327,12 @@ namespace EchoPlay.App.Services
             }
             catch (IOException)
             {
-                // Serienordner nicht lesbar – kein Bericht möglich
+                // Serienordner nicht lesbar, kein Bericht möglich
                 return ([], 0);
             }
             catch (UnauthorizedAccessException)
             {
-                // Keine Leserechte – kein Bericht möglich
+                // Keine Leserechte, kein Bericht möglich
                 return ([], 0);
             }
 
@@ -354,8 +354,8 @@ namespace EchoPlay.App.Services
                         }
                     }
                 }
-                catch (IOException) { /* Einzelner Ordner nicht lesbar – Rest weiterscannen */ }
-                catch (UnauthorizedAccessException) { /* Kein Zugriff – überspringen */ }
+                catch (IOException) { /* Einzelner Ordner nicht lesbar, Rest weiterscannen */ }
+                catch (UnauthorizedAccessException) { /* Kein Zugriff, überspringen */ }
             }
 
             if (episodeFolderNames.Count == 0) return ([], 0);
@@ -410,8 +410,8 @@ namespace EchoPlay.App.Services
                         }
                     }
                 }
-                catch (IOException) { /* Einzelner Ordner nicht lesbar – Rest weiterscannen */ }
-                catch (UnauthorizedAccessException) { /* Kein Zugriff – überspringen */ }
+                catch (IOException) { /* Einzelner Ordner nicht lesbar, Rest weiterscannen */ }
+                catch (UnauthorizedAccessException) { /* Kein Zugriff, überspringen */ }
             }
 
             if (episodeFolderNames.Count == 0)

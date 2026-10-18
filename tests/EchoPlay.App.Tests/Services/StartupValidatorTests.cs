@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für <see cref="StartupValidator"/>.
-    /// Prüft die Startup-Validierungslogik mit Fakes – ohne HTTP-Calls oder Dateisystem.
+    /// Prüft die Startup-Validierungslogik mit Fakes, ohne HTTP-Calls oder Dateisystem.
     /// </summary>
     public sealed class StartupValidatorTests
     {
@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.Services
 
             ServiceProvider provider = services.BuildServiceProvider();
 
-            // BackgroundCoverService braucht echte DI-Infrastruktur – wir nutzen einen minimalen Stub.
+            // BackgroundCoverService braucht echte DI-Infrastruktur, wir nutzen einen minimalen Stub.
             // Im Default-Fall zählt FakeBackgroundCoverService nur die Aufrufe der Splash-/Hintergrund-Phasen
             // (keine DB-/Dateisystem-Arbeit). Tests, die den echten Pfad prüfen wollen, übergeben coverServiceOverride.
             BackgroundCoverService coverService = coverServiceOverride ?? new FakeBackgroundCoverService(
@@ -69,7 +69,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Einstellungen ohne Netzzugriff: Ohne aktiven Anbieter überspringt der Validator
-        /// den HTTP-Konnektivitätscheck und gilt trotzdem als online — damit lassen sich die
+        /// den HTTP-Konnektivitätscheck und gilt trotzdem als online. Damit lassen sich die
         /// Folgeschritte prüfen, ohne dass ein Test ins Netz geht.
         /// </summary>
         private static AppSettings OnlineOhneAnbieter() => new()
@@ -302,7 +302,7 @@ namespace EchoPlay.App.Tests.Services
                 loggerFactory,
                 new FakeClock());
 
-            // Act: Splash-Phase aufrufen — isOnlineAvailable=false verhindert Provider-Calls.
+            // Act: Splash-Phase aufrufen; isOnlineAvailable=false verhindert Provider-Calls.
             _ = await realService.RunSeriesCoversOnceAsync(isOnlineAvailable: false, CancellationToken.None);
 
             // Assert: Der Cover-Loader wurde genau einmal für den Serien-Ordner aufgerufen,
@@ -457,7 +457,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ValidateAsync_RecentCheck_SkipsProviderCheck()
         {
-            // Der Cache wurde vor weniger als 24 Stunden geprüft – ein erneuter Abruf
+            // Der Cache wurde vor weniger als 24 Stunden geprüft, ein erneuter Abruf
             // beim Anbieter wäre reine Last ohne neuen Erkenntniswert.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series

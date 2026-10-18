@@ -9,7 +9,7 @@ namespace EchoPlay.App.ViewModels
     /// <remarks>
     /// Beide Wiedergabe-Ansichten zeigen dieselben Zahlen, sehen aber verschieden aus: Der
     /// Mini-Player hat keinen Suchlauf und keine Umschaltung zwischen Rest- und Gesamtzeit.
-    /// Was sie teilen, ist die Rechnung — stünde sie in jeder Ansicht selbst, liefen die
+    /// Was sie teilen, ist die Rechnung. Stünde sie in jeder Ansicht selbst, liefen die
     /// Formatierungen auseinander.
     /// </remarks>
     internal static class PlaybackTimeFormat
@@ -47,7 +47,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Die verbleibende Zeit, nie negativ — beim Spurwechsel kann die gemeldete Position
+        /// Die verbleibende Zeit, nie negativ, denn beim Spurwechsel kann die gemeldete Position
         /// die Dauer für einen Augenblick überschreiten.
         /// </summary>
         /// <param name="position">Die aktuelle Stelle.</param>

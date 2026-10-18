@@ -13,8 +13,8 @@ namespace EchoPlay.Data.Tests.Services
     /// gegen SQLite.
     /// </summary>
     /// <remarks>
-    /// Gelöschte Serien und Folgen bleiben zunächst nur als gelöscht markiert stehen —
-    /// das macht ein Versehen rückgängig. Ohne die endgültige Bereinigung wüchse die
+    /// Gelöschte Serien und Folgen bleiben zunächst nur als gelöscht markiert stehen,
+    /// denn das macht ein Versehen rückgängig. Ohne die endgültige Bereinigung wüchse die
     /// Datenbank aber unbegrenzt weiter. Die Reihenfolge ist dabei nicht frei wählbar:
     /// Solange Spuren oder Hörstände auf eine Folge zeigen, verweigert SQLite deren
     /// Löschung.
@@ -43,7 +43,7 @@ namespace EchoPlay.Data.Tests.Services
 
             await sut.PurgeAsync(retentionDays: 30);
 
-            // Erst die Kinder, dann die Folge — sonst blockiert der Fremdschlüssel.
+            // Erst die Kinder, dann die Folge, sonst blockiert der Fremdschlüssel.
             Assert.Empty(await Context.LocalTracks.IgnoreQueryFilters().ToListAsync(TestContext.Current.CancellationToken));
             Assert.Empty(await Context.PlaybackStates.IgnoreQueryFilters().ToListAsync(TestContext.Current.CancellationToken));
             Assert.Empty(await Context.Episodes.IgnoreQueryFilters().ToListAsync(TestContext.Current.CancellationToken));
@@ -116,7 +116,7 @@ namespace EchoPlay.Data.Tests.Services
             DatabaseMaintenanceService sut = new(Context, NullLoggerFactory);
 
             // Der Befehl aktualisiert die Statistiken des Abfrageplaners. Er läuft beim
-            // Beenden — scheitert er dort, bliebe das Fenster offen.
+            // Beenden. Scheitert er dort, bliebe das Fenster offen.
             await sut.OptimizeAsync();
         }
 

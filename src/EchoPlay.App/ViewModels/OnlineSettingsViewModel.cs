@@ -65,7 +65,7 @@ namespace EchoPlay.App.ViewModels
             {
                 if (SetProperty(ref _activeProvider, value))
                 {
-                    // Testbutton sofort reagieren lassen – bei "Keine" ist kein Test sinnvoll
+                    // Testbutton sofort reagieren lassen, denn bei "Keine" ist kein Test sinnvoll
                     _testConnectionCommand.SetEnabled(!_isTestingConnection && value != ProviderType.None);
                     OnPropertyChanged(nameof(ActiveProviderTag));
                     MarkAsChanged();
@@ -104,7 +104,7 @@ namespace EchoPlay.App.ViewModels
             {
                 if (SetProperty(ref _isTestingConnection, value))
                 {
-                    // Button über RelayCommand steuern – bei "Keine" bleibt er dauerhaft deaktiviert
+                    // Button über RelayCommand steuern, denn bei "Keine" bleibt er dauerhaft deaktiviert
                     _testConnectionCommand.SetEnabled(!value && _activeProvider != ProviderType.None);
                 }
             }

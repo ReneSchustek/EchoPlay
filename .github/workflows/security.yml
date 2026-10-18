@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     # Die Aktion vergleicht zwei Stände miteinander, braucht also einen Diff. Beim Pull Request
     # kennt sie ihn selbst, beim Push muss er übergeben werden (siehe Schritte unten). Die
-    # Null-SHA steht für einen frisch angelegten Branch — dort gibt es keinen Vorgänger.
+    # Null-SHA steht für einen frisch angelegten Branch, dort gibt es keinen Vorgänger.
     # Für private Repositories verlangt die Aktion Advanced Security und bricht sonst ab.
     # Bei Zeitplan-Läufen bleibt der Job übersprungen, weil ohne neuen Stand nichts zu
     # vergleichen ist. Neue Advisories in unveränderten Abhängigkeiten findet dort der Job

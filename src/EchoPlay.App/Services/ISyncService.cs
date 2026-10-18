@@ -16,7 +16,7 @@ namespace EchoPlay.App.Services
         /// Startet den Sync-Vorgang und gibt eine Zusammenfassung des Ergebnisses zurück.
         /// </summary>
         /// <param name="progress">
-        /// Optionaler Fortschritts-Callback – erhält <see cref="ScanProgress"/>-Objekte
+        /// Optionaler Fortschritts-Callback, erhält <see cref="ScanProgress"/>-Objekte
         /// mit Text und prozentualem Fortschritt während Scan und Sync.
         /// </param>
         /// <param name="forceImportAll">

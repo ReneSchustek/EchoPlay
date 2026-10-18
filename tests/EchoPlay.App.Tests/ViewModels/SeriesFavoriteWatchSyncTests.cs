@@ -82,7 +82,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LocalArtistCard_ToggleFavoriteOff_LeavesWatchedUntouched()
         {
-            // Entfavorisieren darf die Überwachung nicht mit abschalten – das bleibt das Auge.
+            // Entfavorisieren darf die Überwachung nicht mit abschalten. Das bleibt das Auge.
             (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             LocalArtistCardViewModel card = new(

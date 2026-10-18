@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// <summary>
     /// Wächter-Test: Stellt sicher, dass der xunit.runner.json-Eintrag <c>"culture": "de-DE"</c>
     /// noch greift. Fällt der Eintrag heraus, kippen kulturabhängige Assertions (z. B. Monatsnamen
-    /// im Dashboard-Gruppierungs-Test) auf en-US-CI-Runnern lautlos durch — dieser Test fängt das
+    /// im Dashboard-Gruppierungs-Test) auf en-US-CI-Runnern lautlos durch, und dieser Test fängt das
     /// Versehen sofort beim ersten Lauf ab.
     ///
     /// Bewusst nur <see cref="CultureInfo.CurrentCulture"/>: xUnit setzt

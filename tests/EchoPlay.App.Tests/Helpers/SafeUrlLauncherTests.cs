@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
     /// Tests für <see cref="SafeUrlLauncher"/>. Geprüft werden ausschließlich die
-    /// Ablehnungs-Pfade — sie kehren vor dem eigentlichen <c>Process.Start</c> zurück
+    /// Ablehnungs-Pfade, denn sie kehren vor dem eigentlichen <c>Process.Start</c> zurück
     /// und starten daher keinen Browser. Der Erfolgsfall (http/https) würde real den
     /// Standard-Browser öffnen und ist deshalb nicht als Unit-Test abbildbar.
     /// </summary>

@@ -17,7 +17,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <returns>
         /// <see langword="true"/>, wenn die Page geladen werden darf.
-        /// <see langword="false"/>, wenn der Offline-Modus aktiv ist – in diesem Fall hat
+        /// <see langword="false"/>, wenn der Offline-Modus aktiv ist. In diesem Fall hat
         /// der Guard bereits einen Hinweisdialog gezeigt und die Rücknavigation ausgelöst.
         /// </returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
@@ -29,7 +29,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <returns>
         /// <see langword="true"/>, wenn die Page geladen werden darf.
-        /// <see langword="false"/>, wenn der Nur-Online-Modus aktiv ist – in diesem Fall hat
+        /// <see langword="false"/>, wenn der Nur-Online-Modus aktiv ist. In diesem Fall hat
         /// der Guard bereits einen Hinweisdialog gezeigt und die Rücknavigation ausgelöst.
         /// </returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

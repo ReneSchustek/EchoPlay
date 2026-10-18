@@ -17,7 +17,7 @@ namespace EchoPlay.Data.Entities.Library
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
-        /// Vergleichsform des Titels (<c>HoerspielTextNormalizer.Normalize</c>) – fachlicher Schlüssel.
+        /// Vergleichsform des Titels (<c>HoerspielTextNormalizer.Normalize</c>) als fachlicher Schlüssel.
         /// </summary>
         public string NormalizedTitle { get; set; } = string.Empty;
     }

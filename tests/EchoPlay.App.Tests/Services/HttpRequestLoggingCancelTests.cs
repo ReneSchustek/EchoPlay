@@ -10,7 +10,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Prüft, was die Anfrage-Protokollierung bei einem Abbruch schreibt — und wie sie mit
+    /// Prüft, was die Anfrage-Protokollierung bei einem Abbruch schreibt und wie sie mit
     /// Adressen umgeht, deren Abfrageteil kein gewöhnliches Schlüssel-Wert-Paar enthält.
     /// </summary>
     /// <remarks>
@@ -77,7 +77,7 @@ namespace EchoPlay.App.Tests.Services
                 InnerHandler = inner,
             };
 
-            // Test-Fixture — hier ist der DelegatingHandler selbst das Prüfobjekt.
+            // Test-Fixture: Hier ist der DelegatingHandler selbst das Prüfobjekt.
             return new HttpClient(handler, disposeHandler: true);
         }
 

@@ -14,7 +14,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     /// Kennzeichnung der ersten Spur und den Download vom Anbieter.
     /// </summary>
     /// <remarks>
-    /// Wer seine Hörspiele selbst gerippt hat, hat oft keine <c>cover.jpg</c> im Ordner —
+    /// Wer seine Hörspiele selbst gerippt hat, hat oft keine <c>cover.jpg</c> im Ordner,
     /// aber fast immer ein Bild in der Kennzeichnung der MP3. Ohne diese Stufe blieben
     /// genau diese Serien in der Mediathek grau.
     ///
@@ -98,7 +98,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             byte[]? resolved = await sut.ResolveAsync(
                 _ordner, "https://i.example.invalid/tkkg.jpg", TestContext.Current.CancellationToken);
 
-            // Einmal geholt, bleibt das Bild im Ordner — beim nächsten Start ohne Netz
+            // Einmal geholt, bleibt das Bild im Ordner. Beim nächsten Start ohne Netz
             // ist es trotzdem da.
             Assert.Equal(Bild, resolved);
             Assert.True(File.Exists(Path.Combine(_ordner, "cover.jpg")));

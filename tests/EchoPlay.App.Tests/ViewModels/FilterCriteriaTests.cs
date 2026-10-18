@@ -5,7 +5,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Prüft das Filterkriterium für sich — ohne ViewModel, ohne Liste, ohne
+    /// Prüft das Filterkriterium für sich, ohne ViewModel, ohne Liste, ohne
     /// Oberfläche. Was hier gilt, gilt in jeder Ansicht, die es benutzt.
     /// </summary>
     public sealed class FilterCriteriaTests

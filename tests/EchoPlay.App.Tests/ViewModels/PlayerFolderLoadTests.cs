@@ -16,7 +16,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Der Ordner ist die einfachste Art, ein Hörspiel abzuspielen, das nicht in der
     /// Mediathek steht. Käme dabei die Reihenfolge durcheinander, hörte der Anwender die
-    /// Folge in Bruchstücken — ohne dass etwas nach einem Fehler aussieht.
+    /// Folge in Bruchstücken, ohne dass etwas nach einem Fehler aussieht.
     ///
     /// Die Tests legen echte Dateien im Temp-Verzeichnis an und räumen sie wieder ab; der
     /// geprüfte Weg liest ein Verzeichnis und ist anders nicht zu erreichen.

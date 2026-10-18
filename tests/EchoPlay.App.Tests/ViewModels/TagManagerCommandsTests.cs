@@ -13,7 +13,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die Seite bindet an elf Befehle. Fehlt einer, bleibt die zugehörige Schaltfläche
-    /// wirkungslos — ohne Meldung, ohne Eintrag im Protokoll. Genauso die beiden
+    /// wirkungslos, ohne Meldung, ohne Eintrag im Protokoll. Genauso die beiden
     /// Statuszeilen: Sie dürfen nur erscheinen, wenn wirklich etwas läuft, sonst steht
     /// dauerhaft eine leere Zeile über der Dateiliste.
     /// </remarks>

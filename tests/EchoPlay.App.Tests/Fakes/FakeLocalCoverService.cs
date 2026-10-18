@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="ILocalCoverService"/>.
-    /// Liefert standardmäßig <see langword="null"/> — der Fall „im Ordner liegt kein
+    /// Liefert standardmäßig <see langword="null"/>, also den Fall „im Ordner liegt kein
     /// Cover“. Mit vorgegebenen Bilddaten lässt sich der Gegenfall prüfen: Was beim
     /// Einlesen gefunden wird, muss in der Ablage landen.
     /// </summary>

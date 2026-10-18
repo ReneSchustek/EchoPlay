@@ -6,14 +6,14 @@ namespace EchoPlay.Core.Security
     /// <summary>
     /// Pfad-Sicherheitsprüfungen gegen Traversal-Angriffe und Symlink-Escape.
     /// Die App schreibt Cover- und Tag-Dateien in Verzeichnisse, deren Pfad
-    /// aus DB-Werten oder Tag-Editor-Eingaben stammt — eine zentrale Helferklasse
+    /// aus DB-Werten oder Tag-Editor-Eingaben stammt; eine zentrale Helferklasse
     /// vermeidet, dass jede Schreibstelle eigene (oft unvollständige) Canonicalization implementiert.
     /// </summary>
     public static class SecurePathHelper
     {
         /// <summary>
         /// Prüft, ob <paramref name="candidate"/> tatsächlich innerhalb von
-        /// <paramref name="root"/> liegt — auch nach Auflösung relativer Anteile (<c>..</c>),
+        /// <paramref name="root"/> liegt, auch nach Auflösung relativer Anteile (<c>..</c>),
         /// Symlinks und Groß-/Kleinschreibung.
         /// </summary>
         /// <param name="candidate">Zu prüfender Pfad (Datei oder Verzeichnis).</param>
@@ -47,7 +47,7 @@ namespace EchoPlay.Core.Security
         }
 
         // Pfad in absolute Form bringen; bei ungültigen Zeichen oder zu langen Pfaden
-        // gibt .NET ArgumentException/PathTooLongException — die schlucken wir hier
+        // gibt .NET ArgumentException/PathTooLongException; die schlucken wir hier
         // und melden Failure, damit Aufrufer sicher 'false' zurückbekommen.
         private static string? TryGetFullPath(string path)
         {

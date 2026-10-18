@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Konstruktor-Tests für <see cref="ThemeService"/>.
-    /// InitializeAsync/ApplyTheme/PersistThemeAsync berühren Application.Current und App.MainWindow –
+    /// InitializeAsync/ApplyTheme/PersistThemeAsync berühren Application.Current und App.MainWindow;
     /// diese WinUI-3-Pfade sind im Unit-Test-Host nicht isolierbar und werden daher bewusst ausgespart.
     /// </summary>
     public sealed class ThemeServiceTests
@@ -36,7 +36,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void Constructor_AcceptsScopeFactory_WithoutResolvingSettingsServiceEagerly()
         {
-            // Der Fake wird nur registriert, aber nicht gebaut – der Konstruktor darf keinen Scope
+            // Der Fake wird nur registriert, aber nicht gebaut, denn der Konstruktor darf keinen Scope
             // öffnen, sonst wäre die Captive-Dependency-Auflösung wirkungslos.
             ServiceCollection services = new();
             int settingsBuilds = 0;

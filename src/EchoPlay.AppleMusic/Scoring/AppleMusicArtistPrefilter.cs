@@ -12,7 +12,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// eine einzige weitere Anfrage entschieden.
     /// </param>
     /// <param name="Relevance">
-    /// Rangwert für die Reihenfolge der Bewertung — je höher, desto eher wird der Künstler
+    /// Rangwert für die Reihenfolge der Bewertung: je höher, desto eher wird der Künstler
     /// geprüft. Sorgt dafür, dass die aussichtsreichen Treffer zuerst auf dem Schirm stehen.
     /// </param>
     internal readonly record struct AppleMusicArtistCandidate(
@@ -34,7 +34,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// </summary>
     /// <remarks>
     /// Die Künstlersuche liefert bis zu 25 Namen, von denen die meisten nichts mit dem
-    /// Suchbegriff zu tun haben — bei „Bibi" etwa Musikkünstler aus aller Welt. Jeder von
+    /// Suchbegriff zu tun haben, bei „Bibi" etwa Musikkünstler aus aller Welt. Jeder von
     /// ihnen kostete ungefiltert mehrere Anfragen an der Ratenbremse. Genre und Name stehen
     /// bereits in der Antwort; wer nach beiden Merkmalen nichts hergibt, kann auch durch
     /// eine Albenprüfung nicht mehr zum Hörspiel werden.
@@ -42,7 +42,7 @@ namespace EchoPlay.AppleMusic.Scoring
     internal static class AppleMusicArtistPrefilter
     {
         // Rangwerte der Vorauswahl. Die Abstände sind bewusst grob: Sie ordnen die
-        // Kandidaten, sie berechnen keine Bewertung — die macht der Scorer.
+        // Kandidaten, sie berechnen keine Bewertung; die macht der Scorer.
         private const int KnownSeriesRelevance = 1000;
         private const int ExactWordMatchRelevance = 100;
         private const int NameContainsRelevance = 50;

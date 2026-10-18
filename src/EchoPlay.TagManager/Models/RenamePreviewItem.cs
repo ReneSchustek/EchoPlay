@@ -26,7 +26,7 @@ namespace EchoPlay.TagManager.Models
 
         /// <summary>
         /// Vollständiger Zielpfad nach der Umbenennung.
-        /// Verzeichnis bleibt gleich – nur der Dateiname ändert sich.
+        /// Verzeichnis bleibt gleich, nur der Dateiname ändert sich.
         /// </summary>
         public string NewFilePath { get; init; } = string.Empty;
 

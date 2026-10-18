@@ -31,7 +31,7 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Verhindert eine Endlosschleife beim programmatischen Setzen der Theme-Auswahl.
         /// Ohne dieses Flag würde <see cref="SyncThemeRadioButton"/> das SelectionChanged-Event auslösen,
-        /// welches wiederum <see cref="OnThemeSelectionChanged"/> und damit <see cref="SettingsViewModel.ApplyTheme"/> aufruft –
+        /// welches wiederum <see cref="OnThemeSelectionChanged"/> und damit <see cref="SettingsViewModel.ApplyTheme"/> aufruft,
         /// was einen erneuten <see cref="SyncThemeRadioButton"/>-Aufruf und einen StackOverflow verursacht.
         /// </summary>
         private bool _isSyncingThemeRadioButtons;
@@ -78,7 +78,7 @@ namespace EchoPlay.App.Views
                 // Log-Datei-ComboBox: Live-Option direkt nach dem Laden vorauswählen
                 LogFileComboBox.SelectedItem = ViewModel.MaintenanceVM.SelectedLogFile;
 
-                // Erste Log-Einträge laden – der Setter von SelectedLogFile gibt keinen Refresh
+                // Erste Log-Einträge laden, denn der Setter von SelectedLogFile gibt keinen Refresh
                 // aus wenn der Wert sich beim Set nicht geändert hat (SetProperty gibt false zurück).
                 // RefreshLogView statt ViewModel.MaintenanceVM.RefreshLogs: Letzteres füllt nur die Liste im
                 // ViewModel, der RichTextBlock bliebe leer bis zum ersten Klick auf Aktualisieren.
@@ -108,7 +108,7 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Wird ausgelöst, wenn der Benutzer eine Theme-Kachel auswählt.
         /// Der Tag des GridViewItem enthält den Theme-Namen.
-        /// Die Änderung ist sofort sichtbar – kein Speichern nötig.
+        /// Die Änderung ist sofort sichtbar, kein Speichern nötig.
         /// </summary>
         private async void OnThemeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -170,7 +170,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnSaveClick(object sender, RoutedEventArgs e)
         {
-            // SaveAsync aktualisiert intern die StatusBar – kein zusätzlicher Refresh nötig.
+            // SaveAsync aktualisiert intern die StatusBar, kein zusätzlicher Refresh nötig.
             await AsyncEventHandler.RunSafelyAsync(() => ViewModel.SaveAsync());
         }
 
@@ -188,7 +188,7 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Verwirft alle nicht gespeicherten Änderungen und lädt die gespeicherten Einstellungen neu.
-        /// Der Nutzer bleibt auf der Einstellungsseite – die Navigation wird nicht beeinflusst.
+        /// Der Nutzer bleibt auf der Einstellungsseite; die Navigation wird nicht beeinflusst.
         /// </summary>
         private async void OnCancelClick(object sender, RoutedEventArgs e)
         {
@@ -205,7 +205,7 @@ namespace EchoPlay.App.Views
             {
                 ViewModel.MaintenanceVM.SelectedLogFile = option;
 
-                // Der Setter lädt nur die Einträge ins ViewModel – die Anzeige muss
+                // Der Setter lädt nur die Einträge ins ViewModel, die Anzeige muss
                 // getrennt nachgezogen werden, sonst zeigt sie weiter die alte Datei.
                 RefreshLogView();
             }

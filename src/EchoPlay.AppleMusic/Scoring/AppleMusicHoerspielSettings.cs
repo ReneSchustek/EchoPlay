@@ -31,7 +31,7 @@ namespace EchoPlay.AppleMusic.Scoring
         /// </summary>
         /// <remarks>
         /// Jede Albenprüfung kostet zwei Anfragen an einer Gegenstelle, die nur alle
-        /// anderthalb Sekunden eine annimmt. Bekannte Serien zählen nicht mit — sie stehen
+        /// anderthalb Sekunden eine annimmt. Bekannte Serien zählen nicht mit, sie stehen
         /// ohne Anfrage fest. Vier geprüfte Kandidaten halten den Suchlauf unter der
         /// Wartezeit, ab der eine Suche als hängend empfunden wird.
         /// </remarks>

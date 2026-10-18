@@ -11,7 +11,7 @@ namespace EchoPlay.App.Views
     /// <summary>
     /// Über-Seite der Anwendung.
     /// Zeigt App-Logo, Version, Beschreibung und Autorenangabe.
-    /// Kein ContentDialog – die Seite ist eine normale NavigationView-Seite
+    /// Kein ContentDialog, die Seite ist eine normale NavigationView-Seite
     /// ohne eigenen Schließen-Button. Navigieren geht über den Zurück-Pfeil des NavigationView.
     /// </summary>
     public sealed partial class AboutPage : Page
@@ -34,7 +34,7 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedTo(e);
 
-            // ToString(3) liefert "Major.Minor.Build" – die Build-Revision lassen wir weg
+            // ToString(3) liefert "Major.Minor.Build"; die Build-Revision lassen wir weg
             string version = typeof(App).Assembly
                 .GetName()
                 .Version?
@@ -42,8 +42,8 @@ namespace EchoPlay.App.Views
 
             VersionText.Text = $"Version {version}";
 
-            // Spenden-Einstieg nur zeigen, wenn ein echter PayPal-Handle hinterlegt ist –
-            // sonst bliebe ein toter Platzhalter-Link stehen.
+            // Spenden-Einstieg nur zeigen, wenn ein echter PayPal-Handle hinterlegt ist,
+            // denn sonst bliebe ein toter Platzhalter-Link stehen.
             SupportPanel.Visibility = SupportDonation.IsConfigured ? Visibility.Visible : Visibility.Collapsed;
         }
 

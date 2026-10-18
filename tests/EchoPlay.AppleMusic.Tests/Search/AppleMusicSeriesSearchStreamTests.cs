@@ -24,7 +24,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
         public async Task Search_ForAKnownSeries_DoesNotAskForAlbums()
         {
             // „Bibi Blocksberg" steht in der Liste bekannter Serien. Die Bewertung nimmt sie
-            // hart an — die vier Anfragen der Albenprüfung wären für die Tonne.
+            // hart an, die vier Anfragen der Albenprüfung wären für die Tonne.
             ConfigurableAppleMusicSearchClient client = new ConfigurableAppleMusicSearchClient()
                 .WithArtists([Artist(1, "Bibi Blocksberg", "Hörspiele")]);
 
@@ -80,7 +80,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
         public async Task Search_WithMoreCandidatesThanAllowed_LimitsTheExpensiveChecks()
         {
             // Sechs namentlich passende Künstler, aber nur vier dürfen die Albenprüfung
-            // auslösen. Bekannte Serien zählen nicht mit — sie kosten keine Anfrage.
+            // auslösen. Bekannte Serien zählen nicht mit, denn sie kosten keine Anfrage.
             ConfigurableAppleMusicSearchClient client = new ConfigurableAppleMusicSearchClient()
                 .WithArtists(
                 [
@@ -170,7 +170,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
 
             Assert.True(await stream.MoveNextAsync());
 
-            // Nach dem ersten Treffer ist erst ein Künstler bewertet — der zweite läuft noch.
+            // Nach dem ersten Treffer ist erst ein Künstler bewertet, der zweite läuft noch.
             _ = Assert.Single(scorer.ScoredArtists);
         }
 
@@ -220,7 +220,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
                 WrapperType = "track",
                 TrackId = trackId,
                 TrackName = $"Titel {trackId}",
-                // Eine Viertelstunde je Titel — das ist die Länge, an der die Heuristik ein
+                // Eine Viertelstunde je Titel: Das ist die Länge, an der die Heuristik ein
                 // Hörspiel von einem Musikstück unterscheidet.
                 TrackTimeMillis = 900_000
             };

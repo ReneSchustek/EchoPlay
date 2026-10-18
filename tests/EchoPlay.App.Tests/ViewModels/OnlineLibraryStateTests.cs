@@ -89,7 +89,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task Seitenstart_HaeltDieSeiteImNurLokalBetriebAn()
         {
-            // Sagt der Wächter Nein, darf die Seite nicht weiterladen — sonst laufen
+            // Sagt der Wächter Nein, darf die Seite nicht weiterladen, sonst laufen
             // Anbieter-Abfragen im ausdrücklich gewählten Offline-Betrieb.
             FakePageModeGuard guard = new(allow: false);
             (OnlineLibraryViewModel viewModel, _) = Build(pageModeGuard: guard);
@@ -123,8 +123,8 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task Folgensortierung_KehrtNachDemLadenZurueck()
         {
-            // Ohne Wiederherstellung stünde nach jedem Start wieder die Standardreihenfolge —
-            // die bewusste Wahl des Nutzers wäre nach einem Serienwechsel verloren.
+            // Ohne Wiederherstellung stünde nach jedem Start wieder die Standardreihenfolge,
+            // und die bewusste Wahl des Nutzers wäre nach einem Serienwechsel verloren.
             (OnlineLibraryViewModel viewModel, _) = Build(new AppSettings
             {
                 ActiveProvider = ProviderType.Spotify,
@@ -352,7 +352,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SerieMitFolgen_WirdNichtNachimportiert()
         {
-            // Der Nachimport ist eine Reparatur, keine Routine — wo Folgen liegen, wird
+            // Der Nachimport ist eine Reparatur, keine Routine. Wo Folgen liegen, wird
             // der Anbieter beim Laden nicht gefragt.
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };

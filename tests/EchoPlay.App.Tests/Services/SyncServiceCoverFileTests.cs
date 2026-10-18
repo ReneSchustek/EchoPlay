@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Damit sieht jeder Dateimanager und jeder andere Abspieler dasselbe Bild wie EchoPlay.
-    /// Eine bereits vorhandene Datei bleibt unangetastet — sie kann von Hand gepflegt sein.
+    /// Eine bereits vorhandene Datei bleibt unangetastet, denn sie kann von Hand gepflegt sein.
     ///
     /// Die Tests arbeiten auf echten Ordnern im Temp-Verzeichnis und räumen sie wieder ab;
     /// der geprüfte Schritt schreibt eine Datei und ist anders nicht festzuhalten.

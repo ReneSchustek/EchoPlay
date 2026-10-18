@@ -72,7 +72,7 @@ namespace EchoPlay.Core.Tests.Scoring
         [Fact]
         public void LooksLikeHoerspiel_ReturnsFalse_WhenNoLongTrack()
         {
-            // Kein einzelner Track ≥10 min – trotz hohem Durchschnitt kein Hörspiel
+            // Kein einzelner Track ≥10 min, trotz hohem Durchschnitt kein Hörspiel
             IReadOnlyList<TimeSpan> durations =
             [
                 TimeSpan.FromMinutes(9),

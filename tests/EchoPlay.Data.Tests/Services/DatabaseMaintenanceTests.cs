@@ -150,7 +150,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task ClearOnlineLibraryAsync_DeletesOnlyOnlineCovers()
         {
-            // Zwei Serien mit je einem Cover – nur Online-Cover soll gelöscht werden
+            // Zwei Serien mit je einem Cover, nur Online-Cover soll gelöscht werden
             Series onlineSeries = new() { Title = "Online", IsOnlineImported = true };
             Series localSeries = new() { Title = "Lokal", IsOnlineImported = false };
             Context.Series.AddRange(onlineSeries, localSeries);
@@ -174,7 +174,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task ClearLocalLibraryAsync_DeletesLocalOnlyCovers()
         {
-            // Rein lokale Serie mit Cover – Cover muss mitgelöscht werden
+            // Rein lokale Serie mit Cover, ihr Cover muss mitgelöscht werden
             Series localOnly = new() { Title = "Nur Lokal", IsOnlineImported = false };
             Series onlineSeries = new() { Title = "Online", IsOnlineImported = true };
             Context.Series.AddRange(localOnly, onlineSeries);

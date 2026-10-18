@@ -5,8 +5,8 @@ namespace EchoPlay.Core.Models.Import
 {
     /// <summary>
     /// Erzeugt <see cref="ImportEpisode"/>-Objekte aus provider-neutralen Bausteinen.
-    /// Kapselt die driftgefährdete Logik – Dauer-Summierung, Episodennummer-Extraktion
-    /// und den Objektaufbau –, damit Spotify- und Apple-Music-Mapper nur ihre eigenen
+    /// Kapselt die driftgefährdete Logik (Dauer-Summierung, Episodennummer-Extraktion
+    /// und den Objektaufbau), damit Spotify- und Apple-Music-Mapper nur ihre eigenen
     /// Felder extrahieren müssen.
     /// </summary>
     public static class ImportEpisodeFactory

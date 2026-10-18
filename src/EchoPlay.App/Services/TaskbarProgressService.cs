@@ -6,7 +6,7 @@ namespace EchoPlay.App.Services
     /// Steuert den Fortschrittsbalken unter dem Taskleisten-Symbol der Anwendung.
     ///
     /// Windows zeigt unterhalb von App-Icons in der Taskleiste einen farbigen Balken an,
-    /// wenn eine App Fortschritt meldet – das kennt man z.B. von Visual Studio während des Builds.
+    /// wenn eine App Fortschritt meldet. Das kennt man z.B. von Visual Studio während des Builds.
     /// Die Steuerung erfolgt über das COM-Interface <c>ITaskbarList3</c> aus der Windows Shell.
     ///
     /// Der Service ist als Singleton registriert und wird von <see cref="EchoPlay.App.ViewModels.StatusBarViewModel"/>
@@ -14,7 +14,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     public sealed class TaskbarProgressService
     {
-        // Mapping in TaskbarProgressStateExtensions — testbar ohne COM.
+        // Mapping in TaskbarProgressStateExtensions, damit testbar ohne COM.
 
         // COM-Instanz wird beim ersten Aufruf erzeugt und danach wiederverwendet.
         // null bedeutet: Initialisierung fehlgeschlagen oder noch nicht versucht.
@@ -42,7 +42,7 @@ namespace EchoPlay.App.Services
             }
             catch
             {
-                // Taskleisten-Fortschritt ist ein optisches Feature – Fehler dürfen die App nicht beeinflussen.
+                // Taskleisten-Fortschritt ist ein optisches Feature, Fehler dürfen die App nicht beeinflussen.
                 _taskbar = null;
             }
         }
@@ -115,7 +115,7 @@ namespace EchoPlay.App.Services
             {
                 _taskbar = (ITaskbarList3)new TaskbarInstance();
 
-                // HrInit muss vor jedem anderen Aufruf erfolgen – initialisiert die Shell-Integration.
+                // HrInit muss vor jedem anderen Aufruf erfolgen, denn es initialisiert die Shell-Integration.
                 _taskbar.HrInit();
             }
             catch
@@ -144,8 +144,8 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Das ITaskbarList3-Interface aus der Windows Shell.
-        /// Die Methodenreihenfolge im Interface entspricht exakt der COM-vtable –
-        /// das ist zwingend, sonst werden die falschen Methoden aufgerufen.
+        /// Die Methodenreihenfolge im Interface entspricht exakt der COM-vtable.
+        /// Das ist zwingend, sonst werden die falschen Methoden aufgerufen.
         ///
         /// Hier sind nur die Methoden bis SetProgressState definiert, weil wir
         /// die nachfolgenden (RegisterTab, ThumbBar, etc.) nicht benötigen.

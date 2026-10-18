@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.Services
     /// die Kopie von lokalen auf online bezogene Folgen.
     /// </summary>
     /// <remarks>
-    /// Die Zusage dieser Klasse ist, dass sie im Startbild ungebremst laufen darf — kein
+    /// Die Zusage dieser Klasse ist, dass sie im Startbild ungebremst laufen darf: kein
     /// Wartelimit, keine Zugangsdaten, kein Netz. Die Tests halten die Regeln fest, die das
     /// tragen: Es wird nur geladen, was fehlt, und nur dort, wo ein Ordner hinterlegt ist.
     /// </remarks>
@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await phases.LoadMissingLocalSeriesCoversAsync(TestContext.Current.CancellationToken);
 
-            // Ohne Ordner gibt es nichts zu lesen — die Serie darf gar nicht erst beim
+            // Ohne Ordner gibt es nichts zu lesen, die Serie darf gar nicht erst beim
             // Lader landen, sonst sucht der Startlauf im Nichts.
             Assert.Equal([SeriesFolder], loader.Calls.Select(call => call.FolderPath));
         }
@@ -258,7 +258,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>
-        /// Legt eine Serie an und liefert die Kennung, die der Fake dabei vergeben hat —
+        /// Legt eine Serie an und liefert die Kennung, die der Fake dabei vergeben hat;
         /// die Entitäten setzen ihre Kennung nicht selbst, das tut sonst die Datenbank.
         /// </summary>
         private static async Task<Guid> AddSeriesAsync(
@@ -296,7 +296,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Baut die Phasen über einen echten Bereichs-Erzeuger. Die Klasse holt ihre Dienste
-        /// je Aufruf aus einem eigenen Bereich — ein nachgebauter Erzeuger würde genau das
+        /// je Aufruf aus einem eigenen Bereich, ein nachgebauter Erzeuger würde genau das
         /// nicht prüfen.
         /// </summary>
         private static LocalCoverPhases BuildPhases(

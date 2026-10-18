@@ -36,7 +36,7 @@ namespace EchoPlay.App.Composition
         /// <remarks>
         /// Muss nach der Registrierung der Module laufen: <c>AddHttpClient&lt;T&gt;()</c> ist
         /// additiv, Basisadresse und Zeitgrenze aus den Modul-Erweiterungen bleiben erhalten.
-        /// Die Reihenfolge ist bewusst gewählt — die Wiederholungsregel wird zuerst
+        /// Die Reihenfolge ist bewusst gewählt: Die Wiederholungsregel wird zuerst
         /// angehängt und wirkt damit als äußerer Handler, die Ratenbremse liegt innen.
         /// So wartet jeder Wiederholungsversuch erneut an der Bremse und die Quote der
         /// fremden Schnittstelle bleibt gewahrt.
@@ -134,7 +134,7 @@ namespace EchoPlay.App.Composition
         /// Bewusst ohne Standard-Wiederholungsregel: Deren Zeitgrenze je Versuch ist für
         /// kleine, gepufferte Aufrufe gedacht und würde einen großen Datenstrom in ein
         /// Versuchsfenster zwängen. Zudem verlangt der eingebaute Schutzschalter eine
-        /// Messdauer von mindestens dem doppelten Versuchsfenster — eine Kopplung, die erst
+        /// Messdauer von mindestens dem doppelten Versuchsfenster. Eine Kopplung, die erst
         /// beim ersten Benutzen des Clients zuschlägt und den Download dann vollständig
         /// scheitern lässt. Ein fehlgeschlagener Download wird beim nächsten Start erneut
         /// angeboten.

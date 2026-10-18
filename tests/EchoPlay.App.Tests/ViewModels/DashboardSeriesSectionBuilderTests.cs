@@ -53,7 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
             IReadOnlyList<UnheardSeriesCardViewModel> cards = await sut.BuildUnheardSeriesAsync(
                 [series], episodes, new Dictionary<Guid, PlaybackState>());
 
-            // Nichts gehört heißt nichts weiterzuhören — die Serie gehört in den Bestand,
+            // Nichts gehört heißt nichts weiterzuhören; die Serie gehört in den Bestand,
             // nicht in diesen Abschnitt.
             Assert.Empty(cards);
         }
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.ViewModels
             IReadOnlyList<FavoriteSeriesCardViewModel> cards = await sut.BuildFavoriteCardsAsync(
                 [first, second], positions);
 
-            // Die selbst gelegte Reihenfolge schlägt die alphabetische — sonst wäre das
+            // Die selbst gelegte Reihenfolge schlägt die alphabetische, sonst wäre das
             // Sortieren per Ziehen und Ablegen beim nächsten Öffnen vergessen.
             Assert.Equal(["TKKG", "Bibi Blocksberg"], [.. Titles(cards)]);
         }

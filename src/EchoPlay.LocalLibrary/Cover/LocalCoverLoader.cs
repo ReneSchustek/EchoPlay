@@ -13,7 +13,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <inheritdoc/>
         public async Task<byte[]?> LoadAsync(string? episodeFolderPath, string? firstTrackPath)
         {
-            // Schritt 1: cover.jpg direkt im Episodenordner – schnellster und bevorzugter Weg.
+            // Schritt 1: cover.jpg direkt im Episodenordner als schnellster und bevorzugter Weg.
             // Viele Hörspiel-Rips enthalten ein standardisiertes cover.jpg im Ordner.
             if (!string.IsNullOrEmpty(episodeFolderPath))
             {
@@ -27,17 +27,17 @@ namespace EchoPlay.LocalLibrary.Cover
                     }
                     catch (IOException)
                     {
-                        // Leserechte fehlen oder Datei ist korrupt – ID3-Fallback versuchen
+                        // Leserechte fehlen oder Datei ist korrupt: ID3-Fallback versuchen
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        // Keine Leserechte – ID3-Fallback versuchen
+                        // Keine Leserechte, also ID3-Fallback versuchen
                     }
                 }
             }
 
             // Schritt 2: AlbumArt aus den ID3-Tags der ersten Audiodatei lesen.
-            // TagLib# ist synchron – Task.Run verhindert, dass der UI-Thread blockiert.
+            // TagLib# ist synchron, Task.Run verhindert, dass der UI-Thread blockiert.
             if (!string.IsNullOrEmpty(firstTrackPath) && File.Exists(firstTrackPath))
             {
                 // Lokale Variable, damit der Compiler die Nicht-Null-Garantie in der Lambda kennt
@@ -50,7 +50,7 @@ namespace EchoPlay.LocalLibrary.Cover
 
         /// <summary>
         /// Liest das erste eingebettete Bild aus den ID3-Tags der Audiodatei.
-        /// TagLib# wirft bei defekten Dateien Exceptions – alle werden still ignoriert.
+        /// TagLib# wirft bei defekten Dateien Exceptions; alle werden still ignoriert.
         /// </summary>
         /// <param name="trackPath">Absoluter Pfad zur Audiodatei.</param>
         /// <returns>Rohe Bilddaten des ersten Tags oder <see langword="null"/>.</returns>
@@ -60,7 +60,7 @@ namespace EchoPlay.LocalLibrary.Cover
             {
                 using TagLib.File tagFile = TagLib.File.Create(trackPath);
 
-                // Pictures[] enthält alle eingebetteten Bilder – wir nehmen das erste (AlbumArt-Konvention)
+                // Pictures[] enthält alle eingebetteten Bilder, wir nehmen das erste (AlbumArt-Konvention)
                 if (tagFile.Tag.Pictures is { Length: > 0 })
                 {
                     return tagFile.Tag.Pictures[0].Data.Data;
@@ -68,15 +68,15 @@ namespace EchoPlay.LocalLibrary.Cover
             }
             catch (TagLib.CorruptFileException)
             {
-                // Defekte Tag-Struktur – kein Cover extrahierbar
+                // Defekte Tag-Struktur, kein Cover extrahierbar
             }
             catch (TagLib.UnsupportedFormatException)
             {
-                // Unbekanntes Dateiformat – TagLib# kann die Datei nicht lesen
+                // Unbekanntes Dateiformat, TagLib# kann die Datei nicht lesen
             }
             catch (IOException)
             {
-                // Datei nicht lesbar – kein Absturz
+                // Datei nicht lesbar, aber kein Absturz
             }
 
             return null;

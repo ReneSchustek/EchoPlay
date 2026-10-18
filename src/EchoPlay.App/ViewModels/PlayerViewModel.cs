@@ -49,7 +49,7 @@ namespace EchoPlay.App.ViewModels
             Volume = new VolumeControl(playerService, scopeFactory);
             Time = new PlaybackTimeDisplay(playerService);
 
-            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests) – daher try-catch.
+            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests), daher try-catch.
             try
             {
                 _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
@@ -65,7 +65,7 @@ namespace EchoPlay.App.ViewModels
             NextCommand = new RelayCommand(() => _playerService.SkipToNext());
             PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
 
-            // Initialen Zustand aus dem PlayerService übernehmen – er läuft vielleicht schon
+            // Initialen Zustand aus dem PlayerService übernehmen, denn er läuft vielleicht schon
             RefreshFromPlayerService();
         }
 
@@ -140,7 +140,7 @@ namespace EchoPlay.App.ViewModels
         public PlaybackTimeDisplay Time { get; }
 
         /// <summary>
-        /// Titel der Playlist – Episodentitel oder Ordnername.
+        /// Titel der Playlist: Episodentitel oder Ordnername.
         /// Ersetzt die statische Überschrift "Tracks".
         /// </summary>
         public string PlaylistTitle
@@ -150,7 +150,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Untertitel der Playlist – Gesamtspielzeit und Trackanzahl (z.B. "1:12:34 · 8 Tracks").
+        /// Untertitel der Playlist: Gesamtspielzeit und Trackanzahl (z.B. "1:12:34 · 8 Tracks").
         /// </summary>
         public string PlaylistSubtitle
         {
@@ -170,12 +170,12 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Lädt alle Audiodateien aus dem angegebenen Ordner als Playlist.
         /// Unterstützt alle Formate aus <see cref="EchoPlay.Core.AudioExtensions.Supported"/>.
-        /// Sortiert nach Dateiname – entspricht in der Regel der Episodenreihenfolge.
+        /// Sortiert nach Dateiname, das entspricht in der Regel der Episodenreihenfolge.
         /// </summary>
         /// <param name="folderPath">Ordnerpfad mit den Audiodateien.</param>
         public void LoadFolder(string folderPath)
         {
-            // Alle Dateien holen und nach unterstützten Audioformaten filtern –
+            // Alle Dateien holen und nach unterstützten Audioformaten filtern;
             // Directory.GetFiles unterstützt kein Multi-Pattern, deshalb filtern wir selbst
             string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly)
                 .Where(EchoPlay.Core.AudioExtensions.IsAudioFile)
@@ -262,12 +262,12 @@ namespace EchoPlay.App.ViewModels
             UpdateCurrentTitle();
         }
 
-        /// <summary>Der Vorgang, der die Titel der Wiedergabeliste nachträgt — für Tests.</summary>
+        /// <summary>Der Vorgang, der die Titel der Wiedergabeliste nachträgt (für Tests).</summary>
         internal Task PendingTitleFill => _pendingTitleFill;
 
         /// <summary>
         /// Übernimmt die Wiedergabeliste, die gerade läuft, wenn sie eine andere ist als die
-        /// angezeigte. Nötig, weil die Wiedergabe meist woanders startet — aus der Mediathek,
+        /// angezeigte. Nötig, weil die Wiedergabe meist woanders startet: aus der Mediathek,
         /// der Serienansicht oder über „Weiterhören". Ohne diesen Abgleich zeigt die Seite den
         /// Platzhalter, während unten die Folge läuft.
         /// </summary>
@@ -317,7 +317,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Hebt den aktuell spielenden Track in der Playlist visuell hervor.
-        /// Verglichen wird der Dateipfad aus <see cref="IPlayerService.CurrentTrackPath"/> —
+        /// Verglichen wird der Dateipfad aus <see cref="IPlayerService.CurrentTrackPath"/>;
         /// der Anzeigename taugt dafür nicht, weil er aus der Kennzeichnung der Datei
         /// stammen kann und dann nicht mehr zum Dateinamen passt.
         /// </summary>
@@ -334,7 +334,7 @@ namespace EchoPlay.App.ViewModels
 
         private void OnPlayerStateChanged(object? sender, EventArgs e)
         {
-            // StateChanged feuert aus dem Positions-Timer-Thread des PlayerService – die
+            // StateChanged feuert aus dem Positions-Timer-Thread des PlayerService, die
             // gebundenen Properties dürfen aber nur auf dem UI-Thread verändert werden.
             // In Tests gibt es keinen UI-Thread, daher direkt aktualisieren.
             if (_dispatcherQueue is not null)
@@ -451,7 +451,7 @@ namespace EchoPlay.App.ViewModels
 
                 // Ab hier UI-Thread, und zwar wegen BitmapImage: Als DependencyObject aus
                 // Microsoft.UI.* gehört es dem Thread, auf dem es entsteht. Der Stream aus
-                // Windows.Storage.Streams ist systemweit registriert und liefe überall — er
+                // Windows.Storage.Streams ist systemweit registriert und liefe überall. Er
                 // entsteht hier nur, weil er einzig hier gebraucht wird.
                 using Windows.Storage.Streams.InMemoryRandomAccessStream randomAccessStream = new();
                 using Windows.Storage.Streams.DataWriter writer = new(randomAccessStream.GetOutputStreamAt(0));
@@ -464,7 +464,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception)
             {
-                // ID3-Tag fehlt oder ist beschädigt – kein Cover anzeigen, kein Absturz.
+                // ID3-Tag fehlt oder ist beschädigt: kein Cover anzeigen, kein Absturz.
                 // Häufige Ursachen: korrupte MP3-Datei, fehlende Leserechte, ungültiges Bildformat.
                 CoverImage = null;
             }

@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Beschafft das Cover einer Serie in fester Reihenfolge: erst die Datenbank, dann die
     /// <c>cover.jpg</c> im Serienordner. Wird dort eine gefunden, die noch nicht in der
-    /// Datenbank steht, wandert sie hinein — die Sammelabfrage der Kacheln ist danach schneller.
+    /// Datenbank steht, wandert sie hinein, und die Sammelabfrage der Kacheln ist danach schneller.
     /// </summary>
     public sealed class SeriesCoverBuilder : ISeriesCoverBuilder
     {
@@ -56,12 +56,12 @@ namespace EchoPlay.App.Services
             }
             catch (IOException)
             {
-                // Cover-Lese-Fehler ignorieren – Platzhalter bleibt
+                // Cover-Lese-Fehler ignorieren, der Platzhalter bleibt
                 return null;
             }
             catch (UnauthorizedAccessException)
             {
-                // Keine Leserechte – Platzhalter bleibt
+                // Keine Leserechte, der Platzhalter bleibt
                 return null;
             }
         }

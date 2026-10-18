@@ -13,8 +13,8 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
     /// Wiederherstellung nach einem Abbruch.
     /// </summary>
     /// <remarks>
-    /// Der Umbau verschiebt die Dateien des Anwenders. Bricht er auf halbem Weg ab —
-    /// abgezogenes Laufwerk, geschlossenes Fenster —, liegt sein Bestand halb hier und
+    /// Der Umbau verschiebt die Dateien des Anwenders. Bricht er auf halbem Weg ab
+    /// (abgezogenes Laufwerk, geschlossenes Fenster), liegt sein Bestand halb hier und
     /// halb dort. Deshalb wird jeder Schritt in ein Journal geschrieben und beim
     /// Scheitern zurückgenommen; bleibt das Journal liegen, holt der nächste Start es nach.
     ///
@@ -57,7 +57,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
             // Der Ordner ist da, sein Inhalt nicht lesbar. Eine leere Vorschau ist die
-            // ehrliche Antwort — der Dialog zeigt dann „nichts zu tun" statt zu stürzen.
+            // ehrliche Antwort, der Dialog zeigt dann „nichts zu tun" statt zu stürzen.
             RestructurePreview vorschau = sut.Analyze(gesperrt.Path, "{number} - {title}");
 
             Assert.True(vorschau.IsEmpty);
@@ -118,7 +118,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
                 },
                 new RestructureAction
                 {
-                    // Ein Pfad mit Nullzeichen lässt sich nicht anlegen — hier bricht der Umbau ab.
+                    // Ein Pfad mit Nullzeichen lässt sich nicht anlegen, hier bricht der Umbau ab.
                     SourcePath = zweiteQuelle,
                     TargetFolderPath = _wurzel + "\\\0kaputt",
                     TargetFolderName = "kaputt",

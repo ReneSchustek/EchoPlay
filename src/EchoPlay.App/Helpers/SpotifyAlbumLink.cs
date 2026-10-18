@@ -50,7 +50,7 @@ namespace EchoPlay.App.Helpers
 
         /// <summary>
         /// Baut einen Spotify-Suchlink für die Folge. Auffanglösung, wenn keine Album-ID
-        /// vorliegt — etwa weil die Serie über Apple Music importiert wurde.
+        /// vorliegt, etwa weil die Serie über Apple Music importiert wurde.
         /// </summary>
         /// <param name="searchTerms">Suchbegriffe, üblicherweise Serientitel und Folgentitel.</param>
         /// <param name="url">Der fertige Link, oder <see langword="null"/> ohne verwertbare Begriffe.</param>
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Helpers
                 return false;
             }
 
-            // EscapeDataString kodiert auch '/' und '?' – die Begriffe können damit den Pfad
+            // EscapeDataString kodiert auch '/' und '?'. Die Begriffe können damit den Pfad
             // nicht verlassen, egal was in Serien- oder Folgentitel steht.
             url = SearchUrlPrefix + Uri.EscapeDataString(query);
             return true;
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Helpers
                 return false;
             }
 
-            // Denselben kodierten Suchteil wiederverwenden – er ist bereits escaped.
+            // Denselben kodierten Suchteil wiederverwenden, er ist bereits escaped.
             uri = "spotify:search:" + webUrl[SearchUrlPrefix.Length..];
             return true;
         }

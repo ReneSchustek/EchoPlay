@@ -129,7 +129,7 @@ namespace EchoPlay.Data.Services
             DbUpdateException? conflict = await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false);
             if (conflict is not null)
             {
-                // Paralleler Scope hat denselben CollectionId eingefügt — ignorieren,
+                // Paralleler Scope hat denselben CollectionId eingefügt. Ignorieren,
                 // da Cache-Einträge redundant sind und der andere Wert gleichwertig ist.
                 _logger.Warning("UNIQUE-Konflikt beim Cache-Upsert ignoriert: {Reason}", conflict.InnerException?.Message);
                 return;
@@ -139,7 +139,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <inheritdoc />
-        /// <param name="cutoff">Stichtag — alles davor wird entfernt.</param>
+        /// <param name="cutoff">Stichtag; alles davor wird entfernt.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<int> RemoveOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default)
         {
@@ -160,7 +160,7 @@ namespace EchoPlay.Data.Services
             }
 
             // Physisches Löschen: Cache-Einträge sind keine fachlichen Daten,
-            // sondern API-Ergebnisse – Soft-Delete wäre hier unnötig.
+            // sondern API-Ergebnisse, Soft-Delete wäre hier unnötig.
             _context.CachedNewReleases.RemoveRange(expired);
             _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

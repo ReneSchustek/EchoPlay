@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Helpers
 {
     /// <summary>
-    /// Wiederverwendbarer Cover-Such-Dialog – wird von lokaler und Online-Mediathek genutzt.
+    /// Wiederverwendbarer Cover-Such-Dialog, den lokale und Online-Mediathek nutzen.
     /// Zeigt ein Suchfeld, Ergebnis-Kacheln und gibt den ausgewählten
     /// <see cref="CoverSearchHit"/> zurück. Der Helper kennt nur App-Modelle und ist
     /// nicht direkt von <see cref="EchoPlay.LocalLibrary.Cover"/> abhängig.
@@ -36,10 +36,10 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         /// <param name="initialQuery">Vorbelegter Suchbegriff (z.B. Folgentitel).</param>
         /// <param name="searchFunc">
-        /// Suchfunktion – meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.
+        /// Suchfunktion, meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.
         /// Bekommt die gewünschte Seite mit; eine leere Antwort heißt „nichts mehr da".
         /// </param>
-        /// <param name="xamlRoot">XamlRoot für den ContentDialog – kommt von der aufrufenden Page.</param>
+        /// <param name="xamlRoot">XamlRoot für den ContentDialog (kommt von der aufrufenden Page).</param>
         /// <returns>Das ausgewählte Cover oder null bei Abbruch.</returns>
         public static async Task<CoverSearchHit?> ShowAsync(
             string initialQuery,
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Helpers
             ContentDialog dialog = BuildDialog(xamlRoot, searchRow, statusRow, resultsPanel);
 
             // Schließt der Anwender den Dialog während einer laufenden Suche, bricht der
-            // Abruf über das Zeichen früh ab — sonst läuft er ungesehen weiter.
+            // Abruf über das Zeichen früh ab, sonst läuft er ungesehen weiter.
             using CancellationTokenSource dialogCts = new();
             dialog.Closing += (_, _) => dialogCts.Cancel();
 
@@ -178,7 +178,7 @@ namespace EchoPlay.App.Helpers
         }
 
         /// <summary>
-        /// Baut die Kachel „Weitere Ergebnisse laden" — bewusst im Raster und nicht als Knopf
+        /// Baut die Kachel „Weitere Ergebnisse laden", bewusst im Raster und nicht als Knopf
         /// darunter: Sie steht dort, wo die Treffer aufhören, und wird genau dann gesehen, wenn
         /// keiner gepasst hat.
         /// </summary>

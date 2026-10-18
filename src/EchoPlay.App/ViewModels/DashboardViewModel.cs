@@ -18,8 +18,8 @@ namespace EchoPlay.App.ViewModels
     /// ViewModel für die Startseite.
     /// </summary>
     /// <remarks>
-    /// Die Seite besteht aus fünf Abschnitten — Neuerscheinungen, Favoriten, Weiterhören,
-    /// „läuft gerade" und „zuletzt gehört" —, und jeder hat sein eigenes Ansichtsmodell.
+    /// Die Seite besteht aus fünf Abschnitten (Neuerscheinungen, Favoriten, Weiterhören,
+    /// „läuft gerade" und „zuletzt gehört"), und jeder hat sein eigenes Ansichtsmodell.
     /// Dieses hier liest die gemeinsame Datengrundlage einmal
     /// (<see cref="DashboardSnapshot"/>), lässt die Abschnitte daraus bauen und verteilt die
     /// Ergebnisse. Bindungen sprechen die Abschnitte direkt an, etwa
@@ -82,7 +82,7 @@ namespace EchoPlay.App.ViewModels
             FavoritenVM.FavoritesChanged += OnFavoritesChanged;
 
             // Die Prüfung auf Neuerscheinungen läuft nach dem Favorisieren im Hintergrund
-            // weiter — ohne dieses Abo bliebe die schon gezeichnete Seite auf altem Stand.
+            // weiter. Ohne dieses Abo bliebe die schon gezeichnete Seite auf altem Stand.
             _newReleaseEventService = context.NewReleaseEventService;
             if (_newReleaseEventService is not null)
             {
@@ -158,7 +158,7 @@ namespace EchoPlay.App.ViewModels
                 Hints.Apply(snapshot);
 
                 // Alle sichtbar werdenden Folgen-Cover in einer Abfrage, bevor die Abschnitte
-                // bauen — sonst löst jede Kachel ihre eigene aus.
+                // bauen, sonst löst jede Kachel ihre eigene aus.
                 await _coverProvider.BeginSessionAsync(snapshot.RelevantEpisodeIds, ct);
 
                 await LoadSectionsAsync(episodeService, positionService, snapshot, ct);
@@ -178,7 +178,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             // Kacheln, die nur das Serien-Cover zeigen, bekommen ihr Folgen-Cover an dieser
-            // Stelle nachgetragen — nach dem Zeichnen, nicht davor.
+            // Stelle nachgetragen, nach dem Zeichnen, nicht davor.
             _coverProvider.FlushPendingRefresh();
 
             _logger.Info("DashboardLoad total={ElapsedMs} ms", totalStopwatch.ElapsedMilliseconds);
@@ -226,7 +226,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Baut die vier Abschnitte, die aus den Wiedergabeständen kommen, und verteilt sie.
-        /// Jeder Schritt wird einzeln gemessen — so ist im Protokoll ablesbar, welcher
+        /// Jeder Schritt wird einzeln gemessen. So ist im Protokoll ablesbar, welcher
         /// Abschnitt einen langsamen Start verursacht.
         /// </summary>
         private async Task LoadSectionsAsync(

@@ -9,7 +9,7 @@ namespace EchoPlay.Spotify.Auth
     /// <summary>
     /// Kapselt den Client-Credentials-Flow zur Authentifizierung gegen die Spotify-Web-API.
     ///
-    /// Ist als Singleton ausgelegt — der Token-Cache wird prozessweit gehalten, damit
+    /// Ist als Singleton ausgelegt: Der Token-Cache wird prozessweit gehalten, damit
     /// mehrere DI-Scopes denselben Access-Token nutzen können. Parallele Token-Requests
     /// werden durch einen Semaphor serialisiert, sodass bei gleichzeitiger Anforderung
     /// nur ein einziger HTTP-Roundtrip zu <c>accounts.spotify.com</c> entsteht.
@@ -136,7 +136,7 @@ namespace EchoPlay.Spotify.Auth
                 using Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(contentStream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                // GetString()! – Null-Forgiving: Spotify garantiert "access_token" im Response,
+                // GetString()! ist Null-Forgiving: Spotify garantiert "access_token" im Response,
                 // wenn EnsureSuccessStatusCode() nicht geworfen hat.
                 string accessToken = document.RootElement.GetProperty("access_token").GetString()!;
                 int expiresInSeconds = document.RootElement.GetProperty("expires_in").GetInt32();

@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Services
     /// (<c>GetRequiredService&lt;ICoverService&gt;</c> statt <c>&lt;CoverService&gt;</c>),
     /// wodurch der DI-Container beim Auflösen von <see cref="IStartupValidator"/> endlos
     /// rekursierte und der App-Start (weißer Splash) einfror. Der Container erkennt nur
-    /// Konstruktor-, keine Factory-Zyklen — deshalb braucht es diese explizite Absicherung.
+    /// Konstruktor-, keine Factory-Zyklen, deshalb braucht es diese explizite Absicherung.
     /// </summary>
     public sealed class CoverServiceRegistrationTests
     {
@@ -25,7 +25,7 @@ namespace EchoPlay.App.Tests.Services
             // CoverService-Konstruktor braucht ILoggerFactory; IServiceScopeFactory stellt der Container selbst bereit.
             _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
 
-            // Die ECHTE Registrierungsmethode der App aufrufen — so schützt der Test die
+            // Die ECHTE Registrierungsmethode der App aufrufen, so schützt der Test die
             // reale Verdrahtung, nicht nur ein nachgebautes Muster.
             EchoPlay.App.App.RegisterCoverService(services);
 

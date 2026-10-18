@@ -207,7 +207,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
 
-            // Kein Import nötig – bereits vorhanden
+            // Kein Import nötig, bereits vorhanden
             _ = Assert.Single(vm.Results);
             Assert.True(vm.Results[0].IsImported);
         }
@@ -216,7 +216,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SearchCommand_LokaleSerieMitKuenstlerkennung_BleibtHinzufuegbar()
         {
             // Die Neuerscheinungs-Prüfung schreibt die Künstlerkennung auch auf lokal eingelesene
-            // Serien. Der Treffer darf deshalb nicht als „bereits vorhanden" gelten – sonst
+            // Serien. Der Treffer darf deshalb nicht als „bereits vorhanden" gelten, sonst
             // verschwindet der Hinzufügen-Knopf und der Künstler kommt nie in die Online-Mediathek.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series
@@ -285,7 +285,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SearchCommand_LocalScope_ReturnsLocalSeries()
         {
-            // Bei Scope "Lokal" dürfen nur Serien aus der Datenbank kommen – kein Provider-Aufruf
+            // Bei Scope "Lokal" dürfen nur Serien aus der Datenbank kommen (kein Provider-Aufruf)
             FakeSeriesDataService localData = new();
             await localData.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -299,7 +299,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Single(vm.Results);
             Assert.Equal("TKKG", vm.Results[0].Title);
             Assert.Equal("Lokal", vm.Results[0].SourceLabel);
-            // Lokale Einträge gelten als bereits importiert – Import-Button bleibt ausgeblendet
+            // Lokale Einträge gelten als bereits importiert, der Import-Button bleibt ausgeblendet
             Assert.True(vm.Results[0].IsImported);
         }
 
@@ -320,11 +320,11 @@ namespace EchoPlay.App.Tests.ViewModels
 
             SearchViewModel vm = BuildViewModel(onlineResults, scopeFactory: localFactory);
             vm.SelectedScopeIndex = 1; // Online
-            vm.SearchText = "e";       // würde "Fünf Freunde" lokal treffen – darf aber nicht erscheinen
+            vm.SearchText = "e";       // würde "Fünf Freunde" lokal treffen, darf aber nicht erscheinen
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
 
-            // Nur das Online-Ergebnis – lokale "Fünf Freunde" bleibt ausgeschlossen
+            // Nur das Online-Ergebnis; lokale "Fünf Freunde" bleibt ausgeschlossen
             _ = Assert.Single(vm.Results);
             Assert.Equal("TKKG", vm.Results[0].Title);
         }
@@ -402,7 +402,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SearchText_WhenCleared_TriggersReset()
         {
             // Setzt der Nutzer den Suchtext (X-Button im AutoSuggestBox oder Tastatur) auf leer,
-            // muss der Setter selbsttätig die Trefferliste leeren – sonst bleiben Karten stehen.
+            // muss der Setter selbsttätig die Trefferliste leeren, sonst bleiben Karten stehen.
             List<ImportSeries> results =
             [
                 new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "tkkg-1" }
@@ -425,7 +425,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SearchAsync_ClearsResultsImmediately_BeforeAwait()
         {
             // Trefferliste muss noch im selben Frame nach Enter leer sein, BEVOR der HTTP-Call
-            // antwortet – sonst zeigen die Kacheln während der Anfrage die alten Treffer.
+            // antwortet. Sonst zeigen die Kacheln während der Anfrage die alten Treffer.
             GatedSeriesImportSearch gated = new();
             SearchViewModel vm = BuildViewModel(searchResults: [], overrideSearch: gated);
 
@@ -437,7 +437,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.WaitForSearchCompleteAsync();
             _ = Assert.Single(vm.Results);
 
-            // Zweite Suche starten, Gate bewusst NICHT freigeben – Results muss bereits leer sein
+            // Zweite Suche starten, Gate bewusst NICHT freigeben: Results muss bereits leer sein
             vm.SearchText = "second";
             vm.SearchCommand.Execute(null);
 
@@ -462,7 +462,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchText = "second";
             vm.SearchCommand.Execute(null);
 
-            // Älteren Aufruf zuerst abschließen – seine Treffer sind veraltet
+            // Älteren Aufruf zuerst abschließen, seine Treffer sind veraltet
             gated.CompleteCall(0,
                 [new ImportSeries { Title = "stale", Source = "Spotify", SourceSeriesId = "s1" }]);
             gated.CompleteCall(1,
@@ -537,7 +537,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // SearchResultViewModel muss ein IProgress an ImportService.ImportAsync
             // durchreichen, damit die Karte während des Imports Fortschritt zeigt statt nur einen
-            // stummen Spinner. Progress<T> marshallt über den SynchronizationContext – für einen
+            // stummen Spinner. Progress<T> marshallt über den SynchronizationContext. Für einen
             // deterministischen Test wird ein Inline-Context installiert, der Reports synchron
             // ausführt (kein Task.Delay/Polling).
             List<ImportSeries> results =

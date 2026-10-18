@@ -19,7 +19,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// <remarks>
     /// Der gemeinsame <see cref="IHoerspielScorer{TSource}"/> liefert genau das, was er
     /// verspricht: eine Bewertung. Die Suche braucht darüber hinaus das Artwork, das bei der
-    /// Albenprüfung ohnehin durch die Hände geht — dafür dieser schmale Zusatzvertrag,
+    /// Albenprüfung ohnehin durch die Hände geht. Dafür dieser schmale Zusatzvertrag,
     /// statt die gemeinsame Bewertung um ein Anzeigemerkmal zu erweitern.
     /// </remarks>
     internal interface IAppleMusicArtistScorer

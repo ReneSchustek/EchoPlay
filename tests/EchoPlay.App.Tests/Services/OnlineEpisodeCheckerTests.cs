@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.Services
             // Sonderalben wie "Best of" haben keine Episodennummer
             int? result = OnlineEpisodeChecker.ExtractEpisodeNumber("Best of Die drei ???");
 
-            // "Best" enthält keine Zahl, aber "drei" auch nicht –
+            // "Best" enthält keine Zahl, aber "drei" auch nicht;
             // die Regex findet jedoch die 3 in "drei" nicht (das sind Buchstaben).
             // Tatsächlich: "???" enthält keine Zahl → null
             Assert.Null(result);
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ExtractEpisodeNumber_ThreeDigitNumber_ReturnsCorrectly()
         {
-            // Dreistellige Nummer – typisch für langlebige Serien
+            // Dreistellige Nummer, typisch für langlebige Serien
             int? result = OnlineEpisodeChecker.ExtractEpisodeNumber(
                 "Die drei ??? - 100 - Toteninsel");
 

@@ -42,7 +42,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Public Call-Counter für Tests.</summary>
         public int ApplyToAllCallCount { get; private set; }
 
-        /// <summary>Events für die Page – werden vom Top-VM an den Nutzer weitergereicht.</summary>
+        /// <summary>Events für die Page; werden vom Top-VM an den Nutzer weitergereicht.</summary>
         public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
 
         /// <inheritdoc cref="LookupResultsReady"/>

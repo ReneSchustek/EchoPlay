@@ -9,7 +9,7 @@ namespace EchoPlay.App.Services
     /// AppSettings-Lookup für das Ordnermuster, den Aufruf des
     /// <see cref="EchoPlay.LocalLibrary.Abstractions.IFolderRestructureService"/>
     /// und das Mapping auf das App-Display-Modell <see cref="RestructurePreviewDisplay"/>.
-    /// Hält keinen UI-State – das ViewModel kennt nur die zwei Methoden hier.
+    /// Hält keinen UI-State, das ViewModel kennt nur die zwei Methoden hier.
     /// </summary>
     public interface IFolderRestructureCoordinator
     {

@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// Hier zusammengezogen, weil dieselbe Aufwärtssuche zuvor in mehreren Testklassen stand.
     /// Der Weg vom Ausgabeverzeichnis zur Quelle hängt von Zielrahmenwerk, Laufzeitkennung und
     /// Konfiguration ab; wird er mehrfach geführt, stimmt nach dem nächsten Umzug nur noch eine
-    /// der Kopien — und der Test, der danebenliegt, wird stillschweigend grün, weil er nichts
+    /// der Kopien, und der Test, der danebenliegt, wird stillschweigend grün, weil er nichts
     /// mehr findet.
     /// </para>
     /// </summary>

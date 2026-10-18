@@ -37,7 +37,7 @@ namespace EchoPlay.App.Tests.Fakes
             _lookupFailure = lookupFailure;
         }
 
-        /// <summary>Anzahl der Künstler-Suchen – zeigt, ob die Artist-ID neu ermittelt wurde.</summary>
+        /// <summary>Anzahl der Künstler-Suchen; zeigt, ob die Artist-ID neu ermittelt wurde.</summary>
         public int SearchArtistsCallCount { get; private set; }
 
         /// <summary>Anzahl der Album-Abfragen.</summary>

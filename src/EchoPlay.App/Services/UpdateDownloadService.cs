@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     public sealed partial class UpdateDownloadService
     {
-        // Akzeptierte Versions-Tags: 1, 1.2, 1.2.3, 1.2.3.4 — strikt numerisch.
+        // Akzeptierte Versions-Tags: 1, 1.2, 1.2.3, 1.2.3.4 (strikt numerisch).
         // Schützt den Setup-Dateinamen gegen Path-Traversal-Versuche aus
         // manipulierten GitHub-Release-Tags.
         [GeneratedRegex(@"^\d+(\.\d+){0,3}$")]
@@ -26,7 +26,7 @@ namespace EchoPlay.App.Services
 
         // Hosts, von denen eine Setup-Datei bezogen werden darf. Die Download-URL stammt
         // aus dem Feld "browser_download_url" der GitHub-Release-API und ist damit ein
-        // Wert aus einer fremden Antwort — sie landet aber als ausführbare Datei auf dem
+        // Wert aus einer fremden Antwort. Sie landet aber als ausführbare Datei auf dem
         // Rechner des Nutzers. Ohne Bindung an bekannte Hosts würde eine manipulierte
         // Antwort (DNS-Hijack auf api.github.com, TLS-Interception über ein eingeschleustes
         // Root-Zertifikat, kompromittierter Release-Eintrag) genügen, um den Download auf
@@ -74,7 +74,7 @@ namespace EchoPlay.App.Services
         /// <param name="downloadUrl">Direkte Download-URL der Setup-Datei. Muss HTTPS sein und auf einen GitHub-Release-Host zeigen.</param>
         /// <param name="version">Versionsnummer für den Dateinamen (muss <c>^\d+(\.\d+){0,3}$</c> matchen).</param>
         /// <param name="expectedFileSize">Erwartete Größe der Setup-Datei in Bytes laut Release-Asset (0 = Vergleich überspringen).</param>
-        /// <param name="expectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Pflichtangabe — fehlt sie, wird nicht installiert.</param>
+        /// <param name="expectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Pflichtangabe: Fehlt sie, wird nicht installiert.</param>
         /// <param name="onProgress">Fortschritts-Callback (0.0–1.0). Null wenn kein Fortschritt gewünscht.</param>
         /// <param name="cancellationToken">Abbruch-Token für den Download.</param>
         /// <returns>True wenn der Installer gestartet wurde, false bei Fehler.</returns>
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Services
             Action<double>? onProgress = null,
             CancellationToken cancellationToken = default)
         {
-            // Version validieren, bevor sie in den Pfad fließt — sonst wäre Path-Traversal über
+            // Version validieren, bevor sie in den Pfad fließt, sonst wäre Path-Traversal über
             // einen manipulierten Release-Tag möglich (z. B. "../../foo").
             if (!VersionPattern().IsMatch(version))
             {
@@ -116,7 +116,7 @@ namespace EchoPlay.App.Services
                 string tempPath = Path.Combine(tempDirectory, $"EchoPlay-Setup-{version}.exe");
 
                 // Defense-in-Depth: trotz Whitelist-Regex bestätigen, dass der finale Pfad
-                // wirklich im %TEMP%-Verzeichnis liegt — schützt gegen Edge-Cases (z. B. wenn
+                // wirklich im %TEMP%-Verzeichnis liegt. Das schützt gegen Edge-Cases (z. B. wenn
                 // das Regex erweitert wird und versehentlich Trennzeichen durchlässt).
                 if (!SecurePathHelper.IsPathInside(tempPath, tempDirectory))
                 {
@@ -167,7 +167,7 @@ namespace EchoPlay.App.Services
                 }
 
                 // SHA-256-Hash-Pin: die eigentliche Integritätsprüfung. EchoPlay wird nicht
-                // per Authenticode signiert — der Hash aus dem Release-Body ist damit die
+                // per Authenticode signiert, der Hash aus dem Release-Body ist damit die
                 // einzige Kontrolle, die eine manipulierte Setup-Datei erkennt.
                 if (!await VerifyFileHashAsync(tempPath, expectedHashBytes, cancellationToken).ConfigureAwait(false))
                 {
@@ -175,7 +175,7 @@ namespace EchoPlay.App.Services
                     return false;
                 }
 
-                // Installer starten – die App beendet sich danach
+                // Installer starten, die App beendet sich danach
                 return _installerLauncher.Start(tempPath);
             }
             catch (Exception ex)

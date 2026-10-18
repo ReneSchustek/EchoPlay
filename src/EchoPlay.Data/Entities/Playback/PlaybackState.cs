@@ -64,7 +64,7 @@ namespace EchoPlay.Data.Entities.Playback
                 return;
             }
 
-            // Am Ende steht die Position auf der Gesamtdauer — auch beim zweiten Durchhören.
+            // Am Ende steht die Position auf der Gesamtdauer, auch beim zweiten Durchhören.
             // Daran erkennen die Ansichten, dass keine offene Stelle mehr übrig ist; ohne
             // diese Angleichung bliebe eine erneut gehörte Folge dauerhaft „angefangen".
             LastPosition = episodeDuration;
@@ -90,7 +90,7 @@ namespace EchoPlay.Data.Entities.Playback
 
             // Von Hand als gehört gekennzeichnet heißt: Es ist nichts mehr offen. Eine
             // stehengebliebene Position aus einem früheren Anlauf würde die Folge sonst
-            // weiterhin unter „Angefangen" führen — und damit dem widersprechen, was der
+            // weiterhin unter „Angefangen" führen und damit dem widersprechen, was der
             // Nutzer gerade gesagt hat.
             LastPosition = TimeSpan.Zero;
         }

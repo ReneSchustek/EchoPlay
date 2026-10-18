@@ -16,7 +16,7 @@ namespace EchoPlay.LocalLibrary.Tests.Fakes
         private readonly IReadOnlyList<LocalScanResult> _results;
         private readonly IReadOnlyList<string> _seriesFolders;
 
-        /// <summary>Anzahl der ScanSeriesAsync-Aufrufe – für Assertions in Tests.</summary>
+        /// <summary>Anzahl der ScanSeriesAsync-Aufrufe für Assertions in Tests.</summary>
         public int ScanCallCount { get; private set; }
 
         /// <summary>Zuletzt empfangene ScanProgress-Objekte.</summary>

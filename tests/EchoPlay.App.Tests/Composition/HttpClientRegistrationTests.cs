@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Composition
     /// seine eigene Zeitgrenze und seine eigene Kennung.
     /// </summary>
     /// <remarks>
-    /// Die Zeitgrenzen unterscheiden sich um zwei Größenordnungen — fünf Sekunden für die
+    /// Die Zeitgrenzen unterscheiden sich um zwei Größenordnungen: fünf Sekunden für die
     /// Erreichbarkeitsprüfung, fünf Minuten für das Herunterladen des Installationspakets.
     /// Griffe ein Verbraucher zum falschen Client, bräche entweder der Download nach
     /// wenigen Sekunden ab oder die Prüfung hinge minutenlang.

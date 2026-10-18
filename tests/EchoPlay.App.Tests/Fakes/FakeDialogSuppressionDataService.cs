@@ -9,7 +9,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="IDialogSuppressionDataService"/>. Hält die Schlüssel als reine
-    /// Liste und zählt die Lesezugriffe — daran hängt der Nachweis, dass der App-Dienst
+    /// Liste und zählt die Lesezugriffe, denn daran hängt der Nachweis, dass der App-Dienst
     /// wirklich zwischenspeichert.
     /// </summary>
     internal sealed class FakeDialogSuppressionDataService : IDialogSuppressionDataService

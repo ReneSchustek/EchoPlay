@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// über den während des Laufs schon Kacheln erscheinen.
     /// </summary>
     /// <remarks>
-    /// Der Neuaufbau löst jede Zuordnung zwischen Datenbank und Platte — deshalb steht die
+    /// Der Neuaufbau löst jede Zuordnung zwischen Datenbank und Platte, deshalb steht die
     /// Rückfrage hier unter Test. Die zweite Zusage ist unscheinbarer und wiegt schwerer:
     /// Ist die Datenbank leer, muss der Lauf alles einlesen, auch wenn in den Einstellungen
     /// das automatische Einlesen abgeschaltet ist. Ohne diese Ausnahme bliebe die Mediathek
@@ -167,7 +167,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await Task.Yield();
 
             // Der Neuaufbau löst jede Zuordnung zwischen Datenbank und Platte. Wer im
-            // Dialog ablehnt, behält seinen Stand — samt der Ordner, die er von Hand
+            // Dialog ablehnt, behält seinen Stand samt der Ordner, die er von Hand
             // zugewiesen hat.
             Assert.Equal(0, harness.SyncService.SyncCallCount);
             Assert.Equal(0, harness.ScanStartingCount);
@@ -188,7 +188,7 @@ namespace EchoPlay.App.Tests.ViewModels
             harness.ViewModel.ReInitializeCommand.Execute(null);
             await reloaded.Task;
 
-            // Nach dem Auflösen aller Zuordnungen muss alles neu eingelesen werden — auch
+            // Nach dem Auflösen aller Zuordnungen muss alles neu eingelesen werden, auch
             // hier zählt die Einstellung nicht, sonst bliebe der Bestand ohne Dateien.
             Assert.Equal(1, harness.SyncService.SyncCallCount);
             Assert.True(harness.SyncService.LastForceImportAll);
@@ -211,7 +211,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         /// <summary>
         /// Baut das Ansichtsmodell samt Umfeld und stellt einen Wartepunkt für den Lauf
-        /// bereit — die Befehle selbst liefern keinen, an dem ein Test hängen könnte.
+        /// bereit, denn die Befehle selbst liefern keinen, an dem ein Test hängen könnte.
         /// </summary>
         private sealed class Harness
         {

@@ -26,7 +26,7 @@ namespace EchoPlay.Data.Services
 
         // Compiled Query für die "Zuletzt gehört"-Liste: einmaliger Translate-Schritt beim
         // Static-Init, danach reine Parameter-Substitution. Globale Soft-Delete-Filter werden
-        // auch in CompileAsyncQuery angewendet (EF Core 10) – kein zusätzlicher WHERE-Klauselzwang.
+        // auch in CompileAsyncQuery angewendet (EF Core 10), kein zusätzlicher WHERE-Klauselzwang.
         private static readonly Func<EchoPlayDbContext, int, IAsyncEnumerable<RecentPlaybackRow>>
             GetRecentActiveCompiled = EF.CompileAsyncQuery(
                 (EchoPlayDbContext ctx, int maxRows) =>
@@ -80,7 +80,7 @@ namespace EchoPlay.Data.Services
             if (await _context.TrySaveChangesIgnoreUniqueAsync(cancellationToken).ConfigureAwait(false) is not null)
             {
                 // Paralleler Scope hat bereits einen PlaybackState für dieselbe Episode angelegt.
-                // Der erste Eintrag gewinnt — redundante Einfügung ignorieren.
+                // Der erste Eintrag gewinnt, redundante Einfügung ignorieren.
                 _logger.Warning("UNIQUE-Konflikt beim Anlegen von PlaybackState für Episode '{EpisodeId}' ignoriert.", playbackState.EpisodeId);
                 return;
             }
@@ -151,7 +151,7 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Liefert die N zuletzt aktiven Wiedergabestände als schmale Projektion.
-        /// Filterung („IsCompleted oder LastPosition &gt; 0") und Sortierung erfolgen serverseitig –
+        /// Filterung („IsCompleted oder LastPosition &gt; 0") und Sortierung erfolgen serverseitig,
         /// in Verbindung mit dem Index auf <c>LastPlayedAt</c> ein Index-Scan + Limit statt Tablescan.
         /// </summary>
         /// <param name="maxRows">Maximale Anzahl Zeilen. Werte ≤ 0 liefern eine leere Liste.</param>
@@ -175,7 +175,7 @@ namespace EchoPlay.Data.Services
             return rows;
         }
 
-        // Server-seitige Aggregations-Projektion. Bewusst privat – kein API-Vertrag,
+        // Server-seitige Aggregations-Projektion. Bewusst privat, kein API-Vertrag,
         // sondern reines Mapping-Ziel der GROUP-BY-Query.
         private sealed class PlaybackCountRow
         {
@@ -235,7 +235,7 @@ namespace EchoPlay.Data.Services
         {
             await MarkOneCompletedAsync(episodeId, completedAt, cancellationToken).ConfigureAwait(false);
 
-            // Dieselbe Folge kann zweimal in der Bibliothek stehen — einmal lokal eingelesen,
+            // Dieselbe Folge kann zweimal in der Bibliothek stehen: einmal lokal eingelesen,
             // einmal vom Anbieter importiert. Wer sie hört, hat sie gehört, egal über welche
             // Quelle. Ohne diesen Abgleich zeigt die andere Ansicht sie weiter als offen.
             foreach (Guid counterpartId in await GetCounterpartIdsAsync(episodeId, cancellationToken).ConfigureAwait(false))
@@ -284,7 +284,7 @@ namespace EchoPlay.Data.Services
         public async Task<int> SynchronizeCompletionAcrossSourcesAsync(CancellationToken cancellationToken = default)
         {
             // Altbestand: Wer vor dieser Änderung lokal gehört hat, hat 900+ Folgen, die
-            // online weiter als offen gelten. Die Abfrage ist bewusst idempotent — beim
+            // online weiter als offen gelten. Die Abfrage ist bewusst idempotent. Beim
             // ersten Lauf korrigiert sie den Rückstand, danach findet sie nichts mehr. Das
             // ersetzt einen Einmal-Schalter samt Migration: Ein Zustand, der sich selbst
             // erkennt, braucht kein Merkmal in den Einstellungen.
@@ -299,7 +299,7 @@ namespace EchoPlay.Data.Services
             }
 
             // Zuordnung über Serientitel + Folgennummer. Der Folgentitel wäre strenger, traf
-            // aber bei 0 von 925 Paaren der Produktivbibliothek zu — Begründung an
+            // aber bei 0 von 925 Paaren der Produktivbibliothek zu; Begründung an
             // GetCounterpartIdsAsync. Die Schlagwort-Stufe des Cover-Abgleichs bleibt trotzdem
             // draußen: serienübergreifend zu raten ist eine andere Größenordnung.
             List<EpisodeIdentityRow> rows = await _context.Episodes
@@ -344,7 +344,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <summary>
-        /// Liefert die Folgen, die dieselbe Folge aus der anderen Quelle darstellen —
+        /// Liefert die Folgen, die dieselbe Folge aus der anderen Quelle darstellen:
         /// gleicher Serientitel, gleiche Folgennummer.
         /// </summary>
         /// <remarks>
@@ -353,12 +353,12 @@ namespace EchoPlay.Data.Services
         /// <para>
         /// <b>Der Folgentitel gehört bewusst nicht dazu.</b> Er wäre die strengere Zuordnung,
         /// trifft in echten Daten aber nie: In der Produktivbibliothek stimmte er bei
-        /// <b>0 von 925</b> Paaren überein, weil die Quellen anders benennen — lokal
+        /// <b>0 von 925</b> Paaren überein, weil die Quellen anders benennen: lokal
         /// „Fünf Freunde beim Wanderzirkus", online „Folge 1: beim Wanderzirkus". Ein Abgleich
         /// mit Titelvergleich lief nachweislich ins Leere.
         /// </para>
         /// <para>
-        /// Folgen ohne Nummer bleiben außen vor — bei ihnen bliebe nur der Titel, und der taugt
+        /// Folgen ohne Nummer bleiben außen vor, denn bei ihnen bliebe nur der Titel, und der taugt
         /// nach dem oben Gesagten nicht. Umgekehrt kann eine Nummer mehrfach belegt sein
         /// (Kinofilm-Hörspiel neben der regulären Folge); dann werden beide mitgesetzt. Das ist
         /// gewollt: Wer die Folge kennt, kennt die Auflösung, egal in welcher Fassung.
@@ -391,7 +391,7 @@ namespace EchoPlay.Data.Services
 
         /// <summary>Identität einer Folge für den quellenübergreifenden Abgleich.</summary>
         /// <param name="EpisodeId">Die Folgen-Id.</param>
-        /// <param name="SeriesTitle">Titel der Serie — nicht deren Id, denn die unterscheidet die Quellen.</param>
+        /// <param name="SeriesTitle">Titel der Serie, nicht deren Id, denn die unterscheidet die Quellen.</param>
         /// <param name="Number">Folgennummer.</param>
         private sealed record EpisodeIdentityRow(Guid EpisodeId, string SeriesTitle, int Number);
 

@@ -7,7 +7,7 @@ namespace EchoPlay.App.Helpers
     /// <para>
     /// Die Schnittstelle ist schmal, damit die Frage „welcher Abschnitt gehört wohin, und wo
     /// landet ein Sprung" ohne laufende Oberfläche prüfbar bleibt. Übrig bleibt für WinUI nur
-    /// das Zuweisen der Liste und das Scrollen — beides ohne eigene Entscheidung.
+    /// das Zuweisen der Liste und das Scrollen, beides ohne eigene Entscheidung.
     /// </para>
     /// </summary>
     public interface ILetterSectionHost

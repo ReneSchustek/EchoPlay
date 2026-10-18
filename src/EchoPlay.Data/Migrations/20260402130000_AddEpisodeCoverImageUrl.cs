@@ -13,7 +13,7 @@ namespace EchoPlay.Data.Migrations
         {
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
-            // Provider-Cover-URL – bleibt auch nach dem Import verfügbar,
+            // Provider-Cover-URL; bleibt auch nach dem Import verfügbar,
             // damit Cover jederzeit nachgeladen werden können.
             _ = migrationBuilder.AddColumn<string>(
                 name: "CoverImageUrl",

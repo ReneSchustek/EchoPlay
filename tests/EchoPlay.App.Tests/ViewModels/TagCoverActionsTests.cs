@@ -16,7 +16,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Ein geladenes Cover lässt sich im Testlauf nicht setzen: <c>SetFromFile</c> erzeugt
     /// ein Bildobjekt, und das gehört an den Dispatcher. Geprüft ist deshalb der Weg ohne
-    /// Bild — er entscheidet, ob eine Rückfrage überhaupt erscheint — und das Entfernen,
+    /// Bild (er entscheidet, ob eine Rückfrage überhaupt erscheint) und das Entfernen,
     /// das ohne Bildobjekt auskommt.
     /// </remarks>
     public sealed class TagCoverActionsTests
@@ -51,7 +51,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task CoverAufAlle_OhneCoverFragtGarNicht()
         {
-            // Ohne geladenes Bild gäbe es nichts zu schreiben — die Rückfrage wäre eine
+            // Ohne geladenes Bild gäbe es nichts zu schreiben, die Rückfrage wäre eine
             // Zumutung ohne Zweck.
             Harness harness = Harness.Build();
 

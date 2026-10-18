@@ -74,7 +74,7 @@ namespace EchoPlay.App.ViewModels
             set { _ = SetProperty(ref _albumArtist, value); _ = _editedFields.Add(nameof(AlbumArtist)); _onUserEdit(); }
         }
 
-        /// <summary>Erscheinungsjahr als Text – muss beim Speichern in <c>uint</c> geparst werden.</summary>
+        /// <summary>Erscheinungsjahr als Text; muss beim Speichern in <c>uint</c> geparst werden.</summary>
         public string? Year
         {
             get => _year;
@@ -119,7 +119,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Befüllt die Formularfelder mit den Werten eines <see cref="AudioTag"/>.
-        /// Markiert bewusst keine Änderung – der Zustand wird nur aus der Datei geladen.
+        /// Markiert bewusst keine Änderung, denn der Zustand wird nur aus der Datei geladen.
         /// </summary>
         /// <param name="tag">Die gelesenen Tags einer Datei.</param>
         public void PopulateFromTag(AudioTag tag)
@@ -184,7 +184,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Übernimmt Felder aus einem Lookup-Ergebnis ins Formular und speichert gleichzeitig
         /// die gemeinsamen Felder als Batch-Tag für <c>ApplyToAll</c> zwischen.
-        /// Nur nicht-null-Felder werden übernommen – bestehende Werte bleiben erhalten.
+        /// Nur nicht-null-Felder werden übernommen, bestehende Werte bleiben erhalten.
         /// </summary>
         /// <param name="result">Das vom Nutzer gewählte oder vom Auto-Lookup gefundene Ergebnis.</param>
         public void ApplyLookupResult(TagLookupResult result)
@@ -213,7 +213,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Baut ein <see cref="AudioTag"/> aus den aktuellen Formularfeldern zusammen.
         /// Leere Strings werden als <see langword="null"/> übergeben, damit TagLib# bestehende Werte entfernt.
-        /// Jahreszahl und Tracknummern werden aus Strings geparst – ungültige Eingaben werden ignoriert.
+        /// Jahreszahl und Tracknummern werden aus Strings geparst; ungültige Eingaben werden ignoriert.
         /// </summary>
         public AudioTag BuildAudioTagFromFields()
         {
@@ -251,7 +251,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Baut ein <see cref="AudioTag"/> nur mit den gemeinsamen Feldern aus dem Formular.
-        /// Title und TrackNumber werden bewusst ausgelassen – die bleiben datei-individuell.
+        /// Title und TrackNumber werden bewusst ausgelassen; die bleiben datei-individuell.
         /// </summary>
         public AudioTag BuildSharedTagFromFields()
         {

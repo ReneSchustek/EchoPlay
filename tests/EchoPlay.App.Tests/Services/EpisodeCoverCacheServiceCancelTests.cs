@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Prüft, dass ein Abbruch im <see cref="EpisodeCoverCacheService"/> nicht als
     /// Fehlschlag einer Folge protokolliert wird. Der Dienst fing in beiden Schleifen
-    /// pauschal <c>Exception</c> — damit landete jeder Abbruch als Warnung im Protokoll,
+    /// pauschal <c>Exception</c>, damit landete jeder Abbruch als Warnung im Protokoll,
     /// und weil der Zweig die Ausnahme schluckte, lief die Schleife noch eine Runde weiter.
     /// </summary>
     public sealed class EpisodeCoverCacheServiceCancelTests
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.Services
 
             await service.CacheCoversAsync(series.Id, ct: cts.Token);
 
-            // Der öffentliche Einstiegspunkt schluckt den Abbruch bewusst — er darf aber
+            // Der öffentliche Einstiegspunkt schluckt den Abbruch bewusst, er darf aber
             // nicht als Fehlschlag der Folge im Protokoll erscheinen.
             Assert.DoesNotContain(logger.Entries, e => e.Level == "Warning");
 

@@ -7,7 +7,7 @@ namespace EchoPlay.Core.Tests.Models
 {
     /// <summary>
     /// Prüft, welche Rückfragen als „ohne Rückweg" gelten. Die Liste steuert einen
-    /// Warnhinweis in den Einstellungen — sie zu weit oder zu eng zu fassen wäre beides
+    /// Warnhinweis in den Einstellungen. Sie zu weit oder zu eng zu fassen wäre beides
     /// eine falsche Auskunft an den Nutzer.
     /// </summary>
     public sealed class DialogKeyExtensionsTests
@@ -32,7 +32,7 @@ namespace EchoPlay.Core.Tests.Models
         public void AllesAndere_HatEinenRueckweg(DialogKey key)
         {
             // Löschen läuft in EchoPlay über Soft-Delete und bleibt bis zum Ablauf von
-            // DbPurgeDays umkehrbar — deshalb gehört auch das Löschen von der Platte
+            // DbPurgeDays umkehrbar, deshalb gehört auch das Löschen von der Platte
             // nicht in die Warnliste.
             Assert.False(key.WritesFilesWithoutUndo());
         }

@@ -72,7 +72,7 @@ namespace EchoPlay.App.ViewModels
                 _setHasNoProvider(settings.ActiveProvider == ProviderType.None);
                 bool hasNoProvider = settings.ActiveProvider == ProviderType.None;
 
-                // Alle Wiedergabestände einmalig laden – für die Serien-Zähler und Episoden-Häkchen
+                // Alle Wiedergabestände einmalig laden, für die Serien-Zähler und Episoden-Häkchen
                 IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
                 _state.CompletedEpisodeIds = allStates
                     .Where(s => s.IsCompleted)
@@ -91,7 +91,7 @@ namespace EchoPlay.App.ViewModels
 
                     IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id);
 
-                    // Nach einer Migration können Episoden fehlen – automatisch nachladen
+                    // Nach einer Migration können Episoden fehlen, dann automatisch nachladen
                     if (episodes.Count == 0 && !hasNoProvider)
                     {
                         _setLoadingStatusText(string.Format(
@@ -104,7 +104,7 @@ namespace EchoPlay.App.ViewModels
 
                             if (reImported > 0)
                             {
-                                // Neuer Scope für die erneute Abfrage – der aktuelle Scope sieht
+                                // Neuer Scope für die erneute Abfrage, denn der aktuelle Scope sieht
                                 // die gerade per ImportService geschriebenen Daten evtl. nicht sofort
                                 using IServiceScope freshScope = _ctx.ScopeFactory.CreateScope();
                                 IEpisodeDataService freshEpisodeService = freshScope.ServiceProvider
@@ -139,7 +139,7 @@ namespace EchoPlay.App.ViewModels
 
                 _seriesVM.SetAllSeries(cards);
 
-                // Cover im Hintergrund herunterladen – UI ist bereits sichtbar (Platzhalter),
+                // Cover im Hintergrund herunterladen, die UI ist bereits sichtbar (Platzhalter),
                 // Cover erscheinen progressiv sobald der Download fertig ist.
                 _ = CacheSeriesCoversAsync(dbSeries);
             }

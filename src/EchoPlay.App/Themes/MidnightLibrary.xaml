@@ -4,7 +4,7 @@
 
     <ResourceDictionary.ThemeDictionaries>
 
-        <!-- MidnightLibrary ist ein dunkles Theme – beide Dictionaries zeigen dieselbe Palette.
+        <!-- MidnightLibrary ist ein dunkles Theme, beide Dictionaries zeigen dieselbe Palette.
              RequestedTheme wird vom ThemeService auf Dark gesetzt. -->
 
         <!-- Light-Key ist erforderlich, damit WinUI 3 nicht in den Fallback geht. -->
@@ -41,8 +41,8 @@
             <SolidColorBrush x:Key="AccentPrimaryHoverBrush"              Color="#7A75FF"/>
             <SolidColorBrush x:Key="AccentPrimaryPressedBrush"            Color="#3F39D6"/>
             <SolidColorBrush x:Key="AccentPrimaryDisabledBrush"           Color="#2A2560"/>
-            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos —
-                 die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
+            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos,
+                 denn die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
             <SolidColorBrush x:Key="ButtonBackground"                      Color="#22263A"/>
             <SolidColorBrush x:Key="ButtonBackgroundPointerOver"           Color="#2B314A"/>
             <SolidColorBrush x:Key="ButtonBackgroundPressed"               Color="#333957"/>
@@ -68,7 +68,7 @@
             <SolidColorBrush x:Key="AccentButtonBorderBrush"               Color="#5B4DFF"/>
 
             <!-- Umschalter im gehakten Zustand, etwa der aktive Filter. Ohne diese Schlüssel
-                 färbt Windows sie in seiner eigenen Akzentfarbe — auf jedem Rechner anders. -->
+                 färbt Windows sie in seiner eigenen Akzentfarbe, auf jedem Rechner anders. -->
             <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"            Color="#5B4DFF"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#7A75FF"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"     Color="#3F39D6"/>
@@ -152,7 +152,7 @@
             <SolidColorBrush x:Key="NavigationViewButtonForegroundPointerOver"       Color="#E2E4F3"/>
             <SolidColorBrush x:Key="NavigationViewButtonForegroundPressed"           Color="#9499C3"/>
 
-            <!-- Kachel der Linie: Kopf farbig, Körper hell — nicht umgekehrt. -->
+            <!-- Kachel der Linie: Kopf farbig, Körper hell (nicht umgekehrt). -->
             <SolidColorBrush x:Key="CardHeaderBackgroundBrush" Color="#5B4DFF"/>
             <SolidColorBrush x:Key="CardHeaderForegroundBrush" Color="#FFFFFF"/>
             <SolidColorBrush x:Key="CardBodyBackgroundBrush"   Color="#1B1E2B"/>
@@ -206,8 +206,8 @@
             <SolidColorBrush x:Key="AccentPrimaryPressedBrush"  Color="#3F39D6"/>
             <SolidColorBrush x:Key="AccentPrimaryDisabledBrush" Color="#2A2560"/>
 
-            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos —
-                 die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
+            <!-- Schaltflächen: die Schlüssel, die WinUI liest. Eigene Namen bleiben wirkungslos,
+                 denn die Vorlage löst sie im eigenen Wörterbuch auf und kommt hier nie an. -->
             <SolidColorBrush x:Key="ButtonBackground"                      Color="#22263A"/>
             <SolidColorBrush x:Key="ButtonBackgroundPointerOver"           Color="#2B314A"/>
             <SolidColorBrush x:Key="ButtonBackgroundPressed"               Color="#333957"/>
@@ -233,7 +233,7 @@
             <SolidColorBrush x:Key="AccentButtonBorderBrush"               Color="#5B4DFF"/>
 
             <!-- Umschalter im gehakten Zustand, etwa der aktive Filter. Ohne diese Schlüssel
-                 färbt Windows sie in seiner eigenen Akzentfarbe — auf jedem Rechner anders. -->
+                 färbt Windows sie in seiner eigenen Akzentfarbe, auf jedem Rechner anders. -->
             <SolidColorBrush x:Key="ToggleButtonBackgroundChecked"            Color="#5B4DFF"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#7A75FF"/>
             <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed"     Color="#3F39D6"/>
@@ -327,7 +327,7 @@
             <SolidColorBrush x:Key="NavigationViewButtonForegroundPointerOver"       Color="#E2E4F3"/>
             <SolidColorBrush x:Key="NavigationViewButtonForegroundPressed"           Color="#9499C3"/>
 
-            <!-- Kachel der Linie: Kopf farbig, Körper hell — nicht umgekehrt. -->
+            <!-- Kachel der Linie: Kopf farbig, Körper hell (nicht umgekehrt). -->
             <SolidColorBrush x:Key="CardHeaderBackgroundBrush" Color="#5B4DFF"/>
             <SolidColorBrush x:Key="CardHeaderForegroundBrush" Color="#FFFFFF"/>
             <SolidColorBrush x:Key="CardBodyBackgroundBrush"   Color="#1B1E2B"/>

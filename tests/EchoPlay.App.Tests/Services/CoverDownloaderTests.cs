@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task DownloadAsync_Timeout_ReturnsNull()
         {
             // HttpClient meldet eine Zeitüberschreitung als TaskCanceledException, obwohl
-            // niemand abgebrochen hat. Sie darf nicht als Abbruch durchgeworfen werden —
+            // niemand abgebrochen hat. Sie darf nicht als Abbruch durchgeworfen werden,
             // sonst reißt ein langsamer Anbieter den ganzen Hintergrundlauf ab.
             CoverDownloader downloader = Build(new ThrowingHandler(
                 new TaskCanceledException("timeout", new TimeoutException())));

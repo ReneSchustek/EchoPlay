@@ -7,7 +7,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Liefert zur Laufzeit die vollständigen <see cref="SpotifyOptions"/> inklusive
     /// Credentials aus dem Credential-Store. Gibt <see langword="null"/> zurück, wenn
-    /// keine Credentials gesetzt sind — der Aufrufer muss dann den Spotify-Flow überspringen.
+    /// keine Credentials gesetzt sind. Der Aufrufer muss dann den Spotify-Flow überspringen.
     /// </summary>
     public interface ISpotifyOptionsProvider
     {

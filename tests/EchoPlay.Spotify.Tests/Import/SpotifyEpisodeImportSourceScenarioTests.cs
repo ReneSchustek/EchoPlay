@@ -16,7 +16,7 @@ namespace EchoPlay.Spotify.Tests.Import
     public sealed class SpotifyEpisodeImportSourceScenarioTests
     {
         /// <summary>
-        /// Stellt sicher, dass Episoden albumübergreifend nach ReleaseDate sortiert werden –
+        /// Stellt sicher, dass Episoden albumübergreifend nach ReleaseDate sortiert werden,
         /// neueste zuerst, damit bei einem abgebrochenen Import die aktuellsten Folgen zuerst vorliegen.
         /// </summary>
         [Fact]
@@ -41,7 +41,7 @@ namespace EchoPlay.Spotify.Tests.Import
             IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("artist-ddf", cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
-            // Ein Album = eine Episode – zwei Alben ergeben zwei Episoden.
+            // Ein Album = eine Episode, zwei Alben ergeben zwei Episoden.
             Assert.Equal(2, episodes.Count);
 
             // Die Episode aus dem späteren Album muss zuerst erscheinen (Sortierung nach ReleaseDate absteigend).

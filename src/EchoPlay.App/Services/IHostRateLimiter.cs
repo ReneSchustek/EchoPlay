@@ -6,11 +6,11 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Zentrale Drosselung für externe API-Aufrufe. Jeder Host hat sein eigenes
-    /// Minimum-Intervall — der Aufrufer wartet per <see cref="WaitAsync(string, CancellationToken)"/>
+    /// Minimum-Intervall. Der Aufrufer wartet per <see cref="WaitAsync(string, CancellationToken)"/>
     /// bis der nächste Aufruf erlaubt ist. Ersetzt verteilte <c>Task.Delay</c>-Aufrufe durch
     /// ein konfigurierbares, pro-Host-basiertes Rate-Limiting.
     /// Implementierungen halten interne <c>SemaphoreSlim</c>-Handles, daher ist
-    /// <see cref="IDisposable"/> Pflicht — der DI-Container gibt die Singleton-Instanz
+    /// <see cref="IDisposable"/> Pflicht, denn der DI-Container gibt die Singleton-Instanz
     /// beim Host-Shutdown frei.
     /// </summary>
     public interface IHostRateLimiter : IDisposable
@@ -28,7 +28,7 @@ namespace EchoPlay.App.Services
         /// Wartet mit expliziter Priorität. <see cref="CoverFetchPriority.Foreground"/> überholt
         /// Background-Wartende, damit sichtbare UI-Anfragen Vorrang vor dem Hintergrund-Scan
         /// erhalten. Default-Implementierung ruft <see cref="WaitAsync(string, CancellationToken)"/>
-        /// auf – Implementierungen dürfen die Methode überschreiben, um die Priorität zu nutzen.
+        /// auf. Implementierungen dürfen die Methode überschreiben, um die Priorität zu nutzen.
         /// </summary>
         /// <param name="host">Hostname.</param>
         /// <param name="priority">Priorität der Anfrage.</param>

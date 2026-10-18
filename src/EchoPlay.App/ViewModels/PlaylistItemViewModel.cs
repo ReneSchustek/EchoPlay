@@ -25,7 +25,7 @@ namespace EchoPlay.App.ViewModels
             FullPath = fullPath;
 
             // Bis der Titel aus der Kennzeichnung gelesen ist, steht hier der aufgeräumte
-            // Dateiname – ohne Endung und ohne die Zeilennummer, die links daneben steht.
+            // Dateiname ohne Endung und ohne die Zeilennummer, die links daneben steht.
             _title = TrackDisplayTitle.FromFilePath(fullPath, index + 1);
         }
 
@@ -45,7 +45,7 @@ namespace EchoPlay.App.ViewModels
             private set => SetProperty(ref _title, value);
         }
 
-        /// <summary>Vollständiger Dateipfad – wird für die Wiedergabe benötigt.</summary>
+        /// <summary>Vollständiger Dateipfad; wird für die Wiedergabe benötigt.</summary>
         public string FullPath { get; }
 
         /// <inheritdoc/>

@@ -18,13 +18,13 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Das fertige Bildobjekt entsteht am Fenster und lässt sich im Testlauf nicht
-    /// erzeugen. Geprüft ist deshalb, wo die Fabrik nachsieht und wo bewusst nicht —
+    /// erzeugen. Geprüft ist deshalb, wo die Fabrik nachsieht und wo bewusst nicht, denn
     /// jeder überflüssige Griff auf die Platte kostet bei einer vollen Übersicht
     /// hundertfach Zeit.
     /// </remarks>
     public sealed class CoverViewModelFactoryTests
     {
-        /// <summary>Ein Ordner ohne cover.jpg — er existiert bewusst nicht.</summary>
+        /// <summary>Ein Ordner ohne cover.jpg; er existiert bewusst nicht.</summary>
         private const string FolderWithoutCover = @"D:\Media\TKKG\Folge 001";
 
         [Fact]

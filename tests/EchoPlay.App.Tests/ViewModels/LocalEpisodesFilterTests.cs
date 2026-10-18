@@ -14,13 +14,13 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Prüft Reiter, Filter und Sortierung der Folgenliste in der lokalen Mediathek — und
+    /// Prüft Reiter, Filter und Sortierung der Folgenliste in der lokalen Mediathek und
     /// was die Liste zeigt, solange nichts geladen ist.
     /// </summary>
     /// <remarks>
     /// Reiter, Filter und Sortierung greifen auf denselben Bestand. Wirkt eine der drei
     /// Einstellungen nicht sofort, sieht der Anwender eine Liste, die zu seiner Auswahl
-    /// nicht passt — und hält die Filter für kaputt.
+    /// nicht passt, und hält die Filter für kaputt.
     /// </remarks>
     public sealed class LocalEpisodesFilterTests
     {
@@ -106,7 +106,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.EpisodeTabIndex = 1;
 
-            // Der zweite Reiter zeigt die Sonderfolgen — sie tragen keine Nummer.
+            // Der zweite Reiter zeigt die Sonderfolgen, die keine Nummer tragen.
             Assert.Equal(1, sut.EpisodeTabIndex);
             LocalEpisodeCardViewModel only = Assert.Single(sut.Episodes);
             Assert.Null(only.EpisodeNumber);
@@ -133,7 +133,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.LoadForSeriesAsync(BuildArtist(scopeFactory), [Episode(1, "Erste")], [], []);
             await sut.LoadForSeriesAsync(BuildArtist(scopeFactory), [Episode(2, "Zweite")], [], []);
 
-            // Beim Serienwechsel bricht das Nachladen der Cover der vorigen Serie ab —
+            // Beim Serienwechsel bricht das Nachladen der Cover der vorigen Serie ab,
             // sonst landeten deren Bilder auf den neuen Kacheln.
             LocalEpisodeCardViewModel only = Assert.Single(sut.Episodes);
             Assert.Equal(2, only.EpisodeNumber);

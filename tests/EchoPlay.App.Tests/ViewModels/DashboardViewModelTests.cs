@@ -176,7 +176,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, cacheService: cacheService);
             await vm.LoadAsync();
 
-            // Kacheln werden synchron aus dem Cache gebaut – kein Delay nötig.
+            // Kacheln werden synchron aus dem Cache gebaut, kein Delay nötig.
             // Gruppiert wird nach Monat, nicht nach Serie.
             _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups);
             _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups[0].Episodes);
@@ -194,7 +194,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
             Guid seriesId = seriesService.All[0].Id;
 
-            // Lokale Episode mit Folgennummer 230 – als gehört markiert
+            // Lokale Episode mit Folgennummer 230, als gehört markiert
             await episodeService.AddAsync(new Episode
             {
                 Title = "Gehörte Folge",
@@ -230,7 +230,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService, cacheService: cacheService);
             await vm.LoadAsync();
 
-            // Gehörte Folge wurde gefiltert – keine Neuerscheinungen übrig
+            // Gehörte Folge wurde gefiltert, keine Neuerscheinungen übrig
             Assert.Empty(vm.NeuerscheinungenVM.NewEpisodeGroups);
         }
 
@@ -519,14 +519,14 @@ namespace EchoPlay.App.Tests.ViewModels
 
             card.MarkAsPlayedCommand.Execute(null);
 
-            // Task.FromResult-Fakes laufen synchron – Status ist sofort gesetzt
+            // Task.FromResult-Fakes laufen synchron, der Status ist sofort gesetzt
             Assert.Equal(PlaybackStatus.Finished, card.Status);
         }
 
         [Fact]
         public async Task LoadAsync_OnlineEpisodeCompleted_AppearsInRecentSeries()
         {
-            // Online-Folgen haben LastPosition = 0 aber IsCompleted = true –
+            // Online-Folgen haben LastPosition = 0 aber IsCompleted = true;
             // diese müssen trotzdem unter "Zuletzt gehört" erscheinen
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
@@ -836,7 +836,7 @@ namespace EchoPlay.App.Tests.ViewModels
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
 
-            // Ohne CoverService-Registrierung gibt es kein Cover – die Kachel erscheint trotzdem.
+            // Ohne CoverService-Registrierung gibt es kein Cover, die Kachel erscheint trotzdem.
             _ = Assert.Single(vm.InProgressVM.Items);
             Assert.False(vm.InProgressVM.Items[0].HasEpisodeCover);
 

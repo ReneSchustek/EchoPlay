@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// Implementierung des <see cref="IDatabaseMaintenanceService"/>.
-    /// Nutzt EF8-Bulk-Delete (<c>ExecuteDeleteAsync</c>) für effiziente Massenbereinigungen –
+    /// Nutzt EF8-Bulk-Delete (<c>ExecuteDeleteAsync</c>) für effiziente Massenbereinigungen:
     /// kein Laden in den Change-Tracker, direkte DELETE-Statements gegen SQLite.
     /// </summary>
     /// <param name="context">Der EF-Core-Kontext für direkte DB-Operationen.</param>
@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Services
             int purged = 0;
 
             // Phase 1: Kinder gelöschter Episoden bereinigen.
-            // Reihenfolge wichtig – FK-Einschränkungen verbieten Löschen mit aktiven Referenzen.
+            // Reihenfolge wichtig, denn FK-Einschränkungen verbieten Löschen mit aktiven Referenzen.
 
             // LocalTracks und PlaybackStates für einzeln gelöschte Episoden entfernen
             purged += await _context.LocalTracks
@@ -48,7 +48,7 @@ namespace EchoPlay.Data.Services
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
             // Phase 2: Kinder gelöschter Serien bereinigen.
-            // Nicht alle Episoden einer gelöschten Serie müssen selbst IsDeleted=true haben –
+            // Nicht alle Episoden einer gelöschten Serie müssen selbst IsDeleted=true haben,
             // daher explizit über die Series-Navigation navigieren.
             purged += await _context.LocalTracks
                 .IgnoreQueryFilters()
@@ -65,7 +65,7 @@ namespace EchoPlay.Data.Services
                 .Where(e => e.Series.IsDeleted && e.Series.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            // Serien selbst als letztes – alle abhängigen Einträge wurden bereits entfernt
+            // Serien selbst als letztes, denn alle abhängigen Einträge wurden bereits entfernt
             purged += await _context.Series
                 .IgnoreQueryFilters()
                 .Where(s => s.IsDeleted && s.DeletedAt < cutoff)
@@ -87,7 +87,7 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc/>
         public async Task VacuumAsync()
         {
-            // VACUUM schreibt die gesamte SQLite-Datei neu – freigegebene Seiten werden zurückgewonnen.
+            // VACUUM schreibt die gesamte SQLite-Datei neu, freigegebene Seiten werden zurückgewonnen.
             // Der Befehl ist synchron auf DB-Ebene, daher via ExecuteSqlRawAsync aufrufen.
             _ = await _context.Database.ExecuteSqlRawAsync("VACUUM;").ConfigureAwait(false);
             _logger.Info("SQLite VACUUM abgeschlossen – Datenbankdatei neu geschrieben, freie Seiten zurückgewonnen.");
@@ -97,7 +97,7 @@ namespace EchoPlay.Data.Services
         public async Task ClearLibraryAsync()
         {
             // Reihenfolge ist FK-kritisch: zuerst Blatt-Tabellen, dann Wurzel-Tabellen.
-            // EF Core erzeugt direkte DELETE-Statements – kein Laden in den Change-Tracker.
+            // EF Core erzeugt direkte DELETE-Statements, kein Laden in den Change-Tracker.
 
             int tracks = await _context.LocalTracks
                 .IgnoreQueryFilters()
@@ -115,7 +115,7 @@ namespace EchoPlay.Data.Services
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            // Alle Cover löschen – keine Entity-Zuordnung mehr vorhanden
+            // Alle Cover löschen, denn es ist keine Entity-Zuordnung mehr vorhanden
             int covers = await _context.CoverImages
                 .IgnoreQueryFilters()
                 .ExecuteDeleteAsync().ConfigureAwait(false);

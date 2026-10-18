@@ -13,7 +13,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     /// Prüft die Cover-Beschaffung, wenn ein Ordner oder eine Datei nicht lesbar ist.
     /// </summary>
     /// <remarks>
-    /// Cover liegen im Bestand des Anwenders — auf Netzlaufwerken, in Ordnern anderer
+    /// Cover liegen im Bestand des Anwenders: auf Netzlaufwerken, in Ordnern anderer
     /// Konten, in Dateien, die gerade geschrieben werden. Jede Stufe der Suche muss
     /// deshalb auf die nächste weiterreichen können, statt aufzugeben. Ein fehlendes
     /// Bild ist ein Schönheitsfehler; ein Abbruch kostet die ganze Ansicht.
@@ -49,7 +49,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             byte[]? resolved = await sut.ResolveAsync(_serie, null, TestContext.Current.CancellationToken);
 
             // Der Unterordner „Cover" ist die erste Stufe. Ist er nicht lesbar, geht es
-            // mit den Dateien im Serienordner weiter — nicht mit einem Fehler.
+            // mit den Dateien im Serienordner weiter, nicht mit einem Fehler.
             Assert.Null(resolved);
         }
 
@@ -104,7 +104,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             using FileStream sperre = new(spur, FileMode.Open, FileAccess.Read, FileShare.None);
 
             // Während die Wiedergabe läuft, hält sie die Datei. Der Cover-Lader darf
-            // daran nicht scheitern — die Kachel bleibt eben grau.
+            // daran nicht scheitern, die Kachel bleibt eben grau.
             byte[]? geladen = await new LocalCoverLoader().LoadAsync(_serie, spur);
 
             Assert.Null(geladen);
@@ -117,7 +117,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             await File.WriteAllTextAsync(fremd, "irgendein Inhalt", TestContext.Current.CancellationToken);
 
             // Eine Endung, die die Kennzeichnungs-Bibliothek nicht kennt, ist kein Fehler
-            // des Anwenders — sie liefert einfach kein Bild.
+            // des Anwenders, sie liefert einfach kein Bild.
             byte[]? geladen = await new LocalCoverLoader().LoadAsync(_serie, fremd);
 
             Assert.Null(geladen);

@@ -2,7 +2,7 @@ namespace EchoPlay.Data.Entities.Settings
 {
     /// <summary>
     /// Erweiterungsmethoden für <see cref="ProviderType"/>. Ermöglicht die Prüfung,
-    /// ob ein bestimmter Anbieter im gewählten Modus enthalten ist — besonders relevant
+    /// ob ein bestimmter Anbieter im gewählten Modus enthalten ist, besonders relevant
     /// für <see cref="ProviderType.Both"/>, der sowohl Apple Music als auch Spotify einschließt.
     /// </summary>
     public static class ProviderTypeExtensions

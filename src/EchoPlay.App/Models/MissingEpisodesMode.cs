@@ -7,7 +7,7 @@ namespace EchoPlay.App.Models
     /// </summary>
     public enum MissingEpisodesMode
     {
-        /// <summary>Nutzer hat abgebrochen – keine Prüfung.</summary>
+        /// <summary>Nutzer hat abgebrochen, keine Prüfung.</summary>
         Cancel,
         /// <summary>Nur lokale Ordnerstruktur prüfen (kein Netzwerk).</summary>
         OfflineOnly,

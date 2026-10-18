@@ -10,7 +10,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Speichert Spotify-Credentials DPAPI-verschlüsselt in der SQLite-Datenbank.
-    /// DPAPI ist an den Windows-Benutzer gebunden — die Daten sind nur auf derselben
+    /// DPAPI ist an den Windows-Benutzer gebunden: Die Daten sind nur auf derselben
     /// Maschine und mit demselben Benutzerkonto entschlüsselbar.
     /// </summary>
     public sealed class SpotifyCredentialStore : ISpotifyCredentialStore
@@ -19,8 +19,8 @@ namespace EchoPlay.App.Services
         private const string KeyClientSecret = "Spotify:ClientSecret";
 
         // Zusätzliche Entropie für DPAPI. Ohne sie kann jeder Prozess im selben
-        // Benutzerkontext den Blob mit einem blanken Unprotect-Aufruf entschlüsseln —
-        // genau das tun handelsübliche Credential-Stealer, die reihum über bekannte
+        // Benutzerkontext den Blob mit einem blanken Unprotect-Aufruf entschlüsseln.
+        // Genau das tun handelsübliche Credential-Stealer, die reihum über bekannte
         // Ablageorte laufen. Mit Entropie muss ein Angreifer diesen Wert kennen, also
         // gezielt gegen EchoPlay arbeiten. Die Entropie ist kein Geheimnis (sie steht im
         // Programmcode) und ersetzt keine Schlüsselverwaltung; sie hebt nur die Hürde
@@ -89,7 +89,7 @@ namespace EchoPlay.App.Services
             catch (CryptographicException ex)
             {
                 // Nach Windows-Profil-Migration oder PC-Wechsel sind die Cipher-Bytes nicht mehr
-                // entschlüsselbar. Ohne Aufräumen loggt jeder Start denselben Fehler — daher
+                // entschlüsselbar. Ohne Aufräumen loggt jeder Start denselben Fehler, daher
                 // löschen wir die korrupten Records und erzwingen eine Neu-Eingabe durch den Nutzer.
                 _logger.Warning("Spotify-Credentials konnten nicht entschlüsselt werden ({Reason}). Korrupte Records werden entfernt.", ex.Message);
 

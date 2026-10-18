@@ -55,7 +55,7 @@ namespace EchoPlay.App.ViewModels
             _scopeFactory = scopeFactory;
             Volume = new VolumeControl(playerService, scopeFactory);
 
-            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests) – daher try-catch.
+            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests), daher try-catch.
             try
             {
                 _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
@@ -75,7 +75,7 @@ namespace EchoPlay.App.ViewModels
             _playerService.ErrorOccurred += OnErrorOccurred;
         }
 
-        /// <summary>Der Vorgang, der den Titel aus der Kennzeichnung nachlädt — für Tests.</summary>
+        /// <summary>Der Vorgang, der den Titel aus der Kennzeichnung nachlädt (für Tests).</summary>
         internal Task PendingTitleLoad { get; private set; } = Task.CompletedTask;
 
         /// <summary>Titel des aktuell laufenden Tracks.</summary>
@@ -91,14 +91,14 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public VolumeControl Volume { get; }
 
-        /// <summary>Aktuelle Position in Sekunden – für den Slider.</summary>
+        /// <summary>Aktuelle Position in Sekunden für den Slider.</summary>
         public double PositionSeconds
         {
             get => _positionSeconds;
             private set => SetProperty(ref _positionSeconds, value);
         }
 
-        /// <summary>Gesamtdauer des aktuellen Tracks in Sekunden – als Slider-Maximum.</summary>
+        /// <summary>Gesamtdauer des aktuellen Tracks in Sekunden als Slider-Maximum.</summary>
         public double DurationSeconds
         {
             get => _durationSeconds;
@@ -123,7 +123,7 @@ namespace EchoPlay.App.ViewModels
         /// Beschriftung des Folgen-Balkens, etwa „Folge 49 %".
         /// </summary>
         /// <remarks>
-        /// Ohne sie ist ein schmaler Balken unter der Zeitanzeige nicht zu deuten — er sieht
+        /// Ohne sie ist ein schmaler Balken unter der Zeitanzeige nicht zu deuten, er sieht
         /// aus wie ein zweiter Positionsregler, meint aber die ganze Folge.
         /// </remarks>
         public string EpisodeProgressText
@@ -133,7 +133,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des Folgen-Fortschritts — nur bei bekannter Gesamtdauer und mehr
+        /// Sichtbarkeit des Folgen-Fortschritts: nur bei bekannter Gesamtdauer und mehr
         /// als einer Datei.
         /// </summary>
         public Visibility EpisodeProgressVisibility =>
@@ -199,7 +199,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des MiniPlayers – eingeblendet sobald ein Track geladen ist.
+        /// Sichtbarkeit des MiniPlayers, eingeblendet, sobald ein Track geladen ist.
         /// </summary>
         public Visibility MiniPlayerVisibility =>
             string.IsNullOrEmpty(_trackTitle) ? Visibility.Collapsed : Visibility.Visible;
@@ -257,7 +257,7 @@ namespace EchoPlay.App.ViewModels
 
         private void OnStateChanged(object? sender, EventArgs e)
         {
-            // StateChanged kann aus dem Timer-Thread kommen – UI-Dispatch erforderlich.
+            // StateChanged kann aus dem Timer-Thread kommen, daher ist UI-Dispatch erforderlich.
             // In Tests gibt es keinen UI-Thread, daher direkt aktualisieren.
             if (_dispatcherQueue is not null)
             {
@@ -271,7 +271,7 @@ namespace EchoPlay.App.ViewModels
 
         private void OnErrorOccurred(object? sender, string message)
         {
-            // ErrorOccurred kann aus beliebigen Threads kommen – UI-Dispatch erforderlich
+            // ErrorOccurred kann aus beliebigen Threads kommen, daher ist UI-Dispatch erforderlich
             if (_dispatcherQueue is not null)
             {
                 _ = _dispatcherQueue.TryEnqueue(() => ErrorMessage = message);
@@ -319,8 +319,8 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Setzt den angezeigten Titel: sofort den aufgeräumten Dateinamen, danach — sobald
-        /// gelesen — den Titel aus der Kennzeichnung. Damit steht unten dasselbe wie in der
+        /// Setzt den angezeigten Titel: sofort den aufgeräumten Dateinamen, danach (sobald
+        /// gelesen) den Titel aus der Kennzeichnung. Damit steht unten dasselbe wie in der
         /// Wiedergabeliste der Player-Seite.
         /// </summary>
         private void UpdateTrackTitle()
@@ -336,7 +336,7 @@ namespace EchoPlay.App.ViewModels
 
             if (string.Equals(path, _titleSourcePath, StringComparison.OrdinalIgnoreCase))
             {
-                // Derselbe Track wie beim letzten Tick – der Titel steht schon.
+                // Derselbe Track wie beim letzten Tick, der Titel steht schon.
                 return;
             }
 

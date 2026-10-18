@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Koordinator mit der Scope-Fabrik der Anwendung.
         /// </summary>
-        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes — jeder Datenbankzugriff läuft in einem eigenen.</param>
+        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes; jeder Datenbankzugriff läuft in einem eigenen.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public FolderRestructureCoordinator(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory)
         {
@@ -47,7 +47,7 @@ namespace EchoPlay.App.Services
 
             string folderPattern = await LoadFolderPatternAsync(cancellationToken);
 
-            // Dateisystem-Zugriff in den Thread-Pool – Analyze öffnet IO und kann blockieren.
+            // Dateisystem-Zugriff in den Thread-Pool, denn Analyze öffnet IO und kann blockieren.
             RestructurePreview preview = await Task.Run(() =>
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();

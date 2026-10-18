@@ -20,14 +20,14 @@ namespace EchoPlay.LocalLibrary.Cover
     /// 2. Für jede MBID wird ein Cover Art Archive-Eintrag geprüft.
     /// 3. Gefundene Cover werden als <see cref="CoverSearchResult"/> zurückgegeben.
     ///
-    /// MusicBrainz schreibt einen aussagekräftigen User-Agent-Header vor –
+    /// MusicBrainz schreibt einen aussagekräftigen User-Agent-Header vor;
     /// Anfragen ohne diesen Header werden gedrosselt oder abgelehnt.
     /// </remarks>
     public sealed class CoverArtArchiveSearchService : ICoverSearchService
     {
         private readonly HttpClient _httpClient;
 
-        // Maximale Anzahl Ergebnisse – 9 Kacheln passen in 3×3-Grid des Auswahldialogs
+        // Maximale Anzahl Ergebnisse, denn 9 Kacheln passen in 3×3-Grid des Auswahldialogs
         private const int MaxResults = 9;
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace EchoPlay.LocalLibrary.Cover
                 return [];
             }
 
-            // MusicBrainz kennt offset — Nachladen ist hier eine echte Folgeabfrage.
+            // MusicBrainz kennt offset, Nachladen ist hier eine echte Folgeabfrage.
             CoverSearchWindow window = page.ToWindow(MaxResults, supportsOffset: true);
 
             MusicBrainzReleaseSearchResponse? searchResponse;
@@ -65,7 +65,7 @@ namespace EchoPlay.LocalLibrary.Cover
             try
             {
                 string encodedTitle = Uri.EscapeDataString(title);
-                // MaxResults ist ein int – bei URI-Werten ist Kulturunabhängigkeit garantiert
+                // MaxResults ist ein int, bei URI-Werten ist Kulturunabhängigkeit garantiert
                 string url = $"https://musicbrainz.org/ws/2/release?query={encodedTitle}&limit={window.Limit}&offset={window.Offset}&fmt=json";
 
                 searchResponse = await _httpClient.GetFromJsonAsync<MusicBrainzReleaseSearchResponse>(
@@ -91,8 +91,8 @@ namespace EchoPlay.LocalLibrary.Cover
                     continue;
                 }
 
-                // Cover Art Archive gibt HTTP 404 zurück wenn kein Cover vorhanden –
-                // HEAD-Request vermeidet unnötigen Download zum Prüfen der Verfügbarkeit
+                // Cover Art Archive gibt HTTP 404 zurück wenn kein Cover vorhanden;
+                // der HEAD-Request vermeidet unnötigen Download zum Prüfen der Verfügbarkeit
                 bool hasCover = await HasCoverAsync(release.Id, ct).ConfigureAwait(false);
 
                 if (!hasCover)

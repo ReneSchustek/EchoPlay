@@ -10,13 +10,13 @@ namespace EchoPlay.App.Tests.Fakes
     /// <summary>
     /// Fake für <see cref="ITagLookupService"/>.
     /// Gibt vorab konfigurierte Suchergebnisse zurück, ohne das Netzwerk zu verwenden.
-    /// Zeichnet die zuletzt empfangene Suchanfrage auf – für Assertions in Tests.
+    /// Zeichnet die zuletzt empfangene Suchanfrage auf, für Assertions in Tests.
     /// </summary>
     internal sealed class FakeTagLookupService : ITagLookupService
     {
         private readonly IReadOnlyList<TagLookupResult> _results;
 
-        /// <summary>Zuletzt empfangene Suchanfrage – für Assertions.</summary>
+        /// <summary>Zuletzt empfangene Suchanfrage für Assertions.</summary>
         public string? LastQuery { get; private set; }
 
         /// <summary>

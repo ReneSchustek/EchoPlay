@@ -16,7 +16,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Kachel-ViewModel für eine Episode in der Online-Mediathek.
     /// Zeigt Titel, Nummer, Erscheinungsdatum und Cover.
-    /// Online-Episoden haben keine lokalen Tracks – stattdessen gibt es
+    /// Online-Episoden haben keine lokalen Tracks, stattdessen gibt es
     /// einen „Im Browser öffnen"-Button für den Direktzugriff beim Provider.
     /// </summary>
     public sealed class OnlineEpisodeCardViewModel : CoverCardViewModelBase
@@ -35,7 +35,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="isCompleted">Ob die Episode als gehört markiert ist.</param>
         /// <param name="providerUrl">URL zum Öffnen beim Provider oder null.</param>
         /// <param name="scopeFactory">Für DB-Zugriff beim Setzen des Gehört-Status. Null in Tests.</param>
-        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable – Fallback auf <see cref="SystemClock"/>.</param>
+        /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable, Fallback auf <see cref="SystemClock"/>.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
         /// <param name="spotifyAlbumId">Spotify-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
         public OnlineEpisodeCardViewModel(
@@ -118,7 +118,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Anzeigetext: nur der Titel, da online-importierte Episoden den Albumnamen
         /// als Titel haben (z.B. "125 - Die drei ??? und der Karpaten-Hund").
-        /// Die EpisodeNumber ist die Track-Nummer im Album, nicht die Folgennummer –
+        /// Die EpisodeNumber ist die Track-Nummer im Album, nicht die Folgennummer;
         /// sie wird deshalb nicht im Anzeigetext dargestellt.
         /// </summary>
         public string DisplayText => Title;
@@ -136,7 +136,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void OpenInBrowser()
         {
-            // Nur http/https-Links im Browser öffnen – schützt gegen manipulierte
+            // Nur http/https-Links im Browser öffnen, das schützt gegen manipulierte
             // ProviderUrls (z.B. file:// oder Custom-Protocol), die per ShellExecute
             // sonst beliebige Programme starten könnten.
             if (!EchoPlay.App.Helpers.SafeUrlLauncher.TryOpenInBrowser(ProviderUrl))
@@ -144,7 +144,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Folge als gehört markieren – der Nutzer öffnet die App/Webseite zum Anhören,
+            // Folge als gehört markieren, denn der Nutzer öffnet die App/Webseite zum Anhören,
             // also gilt sie als gehört. Kann über Kontextmenü rückgängig gemacht werden.
             IsCompleted = true;
             _ = PersistCompletedStatusAsync();
@@ -193,7 +193,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception)
             {
-                // DB-Fehler beim Status-Setzen ist nicht kritisch – UI zeigt Häkchen trotzdem
+                // DB-Fehler beim Status-Setzen ist nicht kritisch, die UI zeigt Häkchen trotzdem
             }
         }
     }

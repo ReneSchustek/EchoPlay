@@ -4,8 +4,8 @@ namespace EchoPlay.App.Services
     /// Abstrahiert den Seitenwechsel innerhalb der Haupt-ContentFrame-Shell.
     /// ViewModels und Views rufen ausschließlich diesen Dienst auf, nie direkt
     /// <c>Frame.Navigate</c>. So bleiben ViewModels testbar ohne WinUI-Abhängigkeit
-    /// und jede Seite weiß nur, welches logische Ziel sie ansteuern will –
-    /// nicht welche Page-Klasse tatsächlich dahintersteht.
+    /// und jede Seite weiß nur, welches logische Ziel sie ansteuern will,
+    /// nicht, welche Page-Klasse tatsächlich dahintersteht.
     /// </summary>
     public interface INavigationService
     {

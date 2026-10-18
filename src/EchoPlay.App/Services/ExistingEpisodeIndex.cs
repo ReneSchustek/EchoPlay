@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// Import, Re-Import und Delta-Abgleich stellen ihm dieselbe Frage: „Kenne ich diese Folge schon?"
     /// </summary>
     /// <remarks>
-    /// Die Anbieter-Kennung (Album-ID) entscheidet zuerst – sie bleibt stabil, auch wenn der
+    /// Die Anbieter-Kennung (Album-ID) entscheidet zuerst, weil sie stabil bleibt, auch wenn der
     /// Anbieter den Albumnamen später ändert. Der Titel ist der Rückfall für Folgen, die ohne
     /// Kennung in der Datenbank stehen: lokal eingelesene und solche aus älteren Importen.
     /// <para>
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Services
         public IReadOnlySet<string> Titles => _titles;
 
         /// <summary>
-        /// Nimmt eine Folge in den Index auf. Der erste Eintrag je Kennung bzw. Titel gewinnt –
+        /// Nimmt eine Folge in den Index auf. Der erste Eintrag je Kennung bzw. Titel gewinnt,
         /// so trifft ein späteres Nachschlagen bei doppelten Titeln immer denselben Datensatz.
         /// </summary>
         /// <param name="episode">Die aufzunehmende Folge.</param>

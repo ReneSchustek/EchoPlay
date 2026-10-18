@@ -11,13 +11,13 @@ namespace EchoPlay.Core.Models
         NotMatched = 0,
 
         /// <summary>
-        /// Track-by-Track – lokale und Online-Tracks stimmen in Anzahl und Struktur überein.
+        /// Track-by-Track: Lokale und Online-Tracks stimmen in Anzahl und Struktur überein.
         /// Gilt wenn lokale Trackanzahl gleich Online-Trackanzahl und beide ≤ 20.
         /// </summary>
         TbT = 1,
 
         /// <summary>
-        /// Streaming-Struktur – viele kurze Tracks auf beiden Seiten.
+        /// Streaming-Struktur mit vielen kurzen Tracks auf beiden Seiten.
         /// Gilt wenn lokale und Online-Trackanzahl beide > 20.
         /// </summary>
         Streaming = 2,

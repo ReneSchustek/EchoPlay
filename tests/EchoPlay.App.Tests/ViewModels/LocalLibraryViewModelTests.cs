@@ -77,7 +77,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task LoadAsync_OnlyShowsSeriesWithLocalFolder()
         {
             // Nur Serien, für die der Scanner einen Ordner gefunden hat, erscheinen in der linken Spalte.
-            // Serien ohne LocalFolderPath werden bewusst ausgeblendet – sie wurden noch nicht gescannt.
+            // Serien ohne LocalFolderPath werden bewusst ausgeblendet, denn sie wurden noch nicht gescannt.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
@@ -105,7 +105,7 @@ namespace EchoPlay.App.Tests.ViewModels
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService);
             await vm.Actions.LoadAsync();
 
-            // Nur TKKG hat einen lokalen Ordner – Bibi bleibt unsichtbar
+            // Nur TKKG hat einen lokalen Ordner, Bibi bleibt unsichtbar
             _ = Assert.Single(vm.ArtistsVM.Artists);
             Assert.Equal("TKKG", vm.ArtistsVM.Artists[0].Title);
         }
@@ -155,7 +155,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SelectEpisodeAsync_LoadsTracksInOrder()
         {
-            // Tracks werden nach TrackNumber aufsteigend gelistet – wichtig für mehrteilige Folgen.
+            // Tracks werden nach TrackNumber aufsteigend gelistet, wichtig für mehrteilige Folgen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
@@ -235,7 +235,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeTrackTitleResolver titleResolver = new();
             titleResolver.TitlesByPath[ersterTeil] = "Das leere Haus (Teil 1)";
-            // Zweiter Teil ohne Titel in der Datei – dort greift die Rückfallebene.
+            // Zweiter Teil ohne Titel in der Datei, dort greift die Rückfallebene.
 
             LocalLibraryViewModel vm = BuildViewModel(
                 seriesService,
@@ -254,7 +254,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ScanCommand_TriggersSyncService()
         {
-            // ScanCommand muss den SyncService aufrufen – ohne echten Scanner
+            // ScanCommand muss den SyncService aufrufen, ohne echten Scanner
             FakeSyncService syncService = new(result: new SyncResult
             {
                 TracksCreated = 5,
@@ -395,7 +395,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task PlayEpisodeCommand_PassesTrackPathsInOrder()
         {
             // PlayEpisodeCommand muss alle Track-Pfade in aufsteigender TrackNumber-Reihenfolge
-            // an den PlayerService übergeben – wichtig für die korrekte Wiedergabereihenfolge.
+            // an den PlayerService übergeben, wichtig für die korrekte Wiedergabereihenfolge.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakePlayerService playerService = new();
@@ -498,7 +498,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task PlayEpisodeAsync_StartsTheEpisode_WithoutItsTracksBeingShown()
         {
-            // Der Doppelklick startet über die Folgen-Id, nicht über die angezeigte Liste –
+            // Der Doppelklick startet über die Folgen-Id, nicht über die angezeigte Liste,
             // sonst liefe er ins Leere, solange die Spurenliste rechts noch lädt.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
@@ -568,7 +568,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ShowMissingEpisodesAsync_NonExistentFolder_ReportsNoFolder()
         {
-            // Bei nicht-existierendem Ordner soll eine entsprechende Meldung kommen –
+            // Bei nicht-existierendem Ordner soll eine entsprechende Meldung kommen;
             // die Dateisystem-Analyse läuft nicht, weil der Ordner fehlt.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();

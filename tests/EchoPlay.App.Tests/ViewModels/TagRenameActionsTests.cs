@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Meldung, wenn nicht alle Dateien durchkamen.
     /// </summary>
     /// <remarks>
-    /// Der Vorgang lässt sich nicht rückgängig machen — das steht so im Dialog. Damit sind
+    /// Der Vorgang lässt sich nicht rückgängig machen, das steht so im Dialog. Damit sind
     /// drei Dinge Zusagen und keine Nebensachen: Eine Ablehnung benennt nichts um, ein
     /// Teilerfolg wird gemeldet statt verschwiegen, und der Ladezustand fällt auch im
     /// Fehlerfall zurück, sonst bleibt die Ansicht gesperrt.
@@ -96,7 +96,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.PreviewRenameAsync();
 
             // Bliebe der Ladezustand stehen, wäre die Ansicht nach einem einzigen
-            // Lesefehler dauerhaft gesperrt — ohne dass ein Neustart naheläge.
+            // Lesefehler dauerhaft gesperrt, ohne dass ein Neustart naheläge.
             Assert.Equal([true, false], harness.LoadingStates);
         }
 
@@ -242,7 +242,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await harness.Actions.ExecuteRenameAsync();
 
-            // Ohne Zusage passiert nichts — auch kein kurzes Aufblitzen des Ladebalkens.
+            // Ohne Zusage passiert nichts, auch kein kurzes Aufblitzen des Ladebalkens.
             Assert.Empty(harness.LoadingStates);
         }
 
@@ -286,7 +286,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             public string? ReloadedPath { get; private set; }
 
-            /// <summary>Setzt den geöffneten Ordner — sonst steigen beide Aktionen sofort aus.</summary>
+            /// <summary>Setzt den geöffneten Ordner, sonst steigen beide Aktionen sofort aus.</summary>
             public void OpenFolder() => FileList.SetFiles([], FolderPath);
 
             public static Harness Build(

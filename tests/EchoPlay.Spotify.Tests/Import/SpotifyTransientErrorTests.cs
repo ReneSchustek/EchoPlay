@@ -22,7 +22,7 @@ namespace EchoPlay.Spotify.Tests.Import
     /// <remarks>
     /// Eine Serie mit zweihundert Folgen bedeutet zweihundert Anfragen. Dass eine davon
     /// scheitert, ist der Normalfall. Bricht der Import deswegen ab, hat der Anwender nach
-    /// minutenlangem Warten gar nichts — statt hundertneunundneunzig Folgen.
+    /// minutenlangem Warten gar nichts statt hundertneunundneunzig Folgen.
     /// </remarks>
     public sealed class SpotifyTransientErrorTests
     {
@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Import
                 TestContext.Current.CancellationToken);
 
             // Beim Abgleich auf neue Folgen kostet jede bekannte Folge sonst eine
-            // zusätzliche Anfrage — bei zweihundert Folgen zweihundert überflüssige.
+            // zusätzliche Anfrage, bei zweihundert Folgen zweihundert überflüssige.
             Assert.Equal(0, client.TrackCalls);
         }
 
@@ -100,7 +100,7 @@ namespace EchoPlay.Spotify.Tests.Import
                 "TKKG", TestContext.Current.CancellationToken);
 
             // Die Bewertung ist eine Heuristik über mehrere Merkmale. Scheitert sie für
-            // einen Treffer, fällt dieser heraus — die übrigen bleiben in der Liste.
+            // einen Treffer, fällt dieser heraus, die übrigen bleiben in der Liste.
             Assert.Empty(treffer);
         }
 

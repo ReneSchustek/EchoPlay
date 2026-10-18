@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Geprüft wird der Abbruchweg, nicht der Erfolgsweg: Das fertige Bildobjekt entsteht am
     /// Fenster und lässt sich im Testlauf nicht erzeugen. Der Abbruch ist dafür der Teil, der
-    /// im Betrieb zählt — wer eine Serie verlässt, während noch dreißig Kacheln nachladen,
+    /// im Betrieb zählt: Wer eine Serie verlässt, während noch dreißig Kacheln nachladen,
     /// erwartet, dass die Arbeit endet und nicht im Hintergrund weiterläuft.
     /// </remarks>
     public sealed class LocalEpisodeCoverLoaderTests
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await loader.LoadSingleAsync(BuildCard(episode), episode);
 
             // Steht das Cover schon in der Ablage, ist jeder Griff auf die Platte verschenkte
-            // Zeit — bei vierhundert Kacheln vierhundertmal.
+            // Zeit, bei vierhundert Kacheln vierhundertmal.
             Assert.Empty(coverLoader.Calls);
         }
 
@@ -129,7 +129,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await loader.LoadSingleAsync(BuildCard(episode), episode);
 
-            // Die Kennzeichnung der ersten Spur trägt das Cover — nicht die, die zufällig
+            // Die Kennzeichnung der ersten Spur trägt das Cover, nicht die, die zufällig
             // zuerst in der Ablage steht.
             Assert.Equal(FolderWithoutCover + @"\Spur01.mp3", coverLoader.Calls[0].FirstTrackPath);
         }
@@ -137,7 +137,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LoadSingle_WithCoverBytesFromTheFolder_KeepsThePlaceholder()
         {
-            // Die Bilddaten kommen an, das Bildobjekt entsteht am Fenster — im Testlauf
+            // Die Bilddaten kommen an, das Bildobjekt entsteht am Fenster; im Testlauf
             // bleibt die Kachel deshalb bei ihrem Platzhalter. Geprüft ist, dass der Weg
             // bis dahin durchläuft, statt an den Bilddaten zu scheitern.
             ConcurrencyCountingCoverLoader coverLoader = new();
@@ -205,7 +205,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         // ── Aufbau ───────────────────────────────────────────────────────
 
-        /// <summary>Ein Ordner, in dem kein cover.jpg liegt — er existiert bewusst nicht.</summary>
+        /// <summary>Ein Ordner, in dem kein cover.jpg liegt; er existiert bewusst nicht.</summary>
         private const string FolderWithoutCover = @"D:\Media\TKKG\Folge 001";
 
         private static List<(LocalEpisodeCardViewModel Card, Episode Episode)> BuildQueue(int count)
@@ -221,7 +221,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         private static EchoPlay.App.Services.CoverService BuildCoverService()
         {
-            // Eine einzige Ablage für alle Bereiche — mit einem neuen Nachbau je Bereich
+            // Eine einzige Ablage für alle Bereiche, denn mit einem neuen Nachbau je Bereich
             // fände das Lesen nie, was das Schreiben zuvor hinterlegt hat.
             FakeCoverImageDataService coverImages = new();
             ServiceCollection services = new();

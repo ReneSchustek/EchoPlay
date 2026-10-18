@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Der Zwischenspeicher überlebt das Abschalten der Beobachtung. Würde er ungefiltert
     /// angezeigt, sähe der Anwender Neuerscheinungen zu Serien, die er ausdrücklich nicht
-    /// mehr verfolgt — und der Abschnitt verlöre seinen Sinn.
+    /// mehr verfolgt, und der Abschnitt verlöre seinen Sinn.
     /// </remarks>
     public sealed class NewReleaseGroupBuilderTests
     {
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.ViewModels
             IReadOnlyList<NewEpisodesGroupViewModel> groups =
                 await fixture.Builder.BuildAsync([series], TestContext.Current.CancellationToken);
 
-            // Heruntergeladen heißt nicht gehört — die Folge bleibt eine Neuerscheinung,
+            // Heruntergeladen heißt nicht gehört, die Folge bleibt eine Neuerscheinung,
             // bis der Anwender sie durch hat.
             NewEpisodesGroupViewModel group = Assert.Single(groups);
             _ = Assert.Single(group.Episodes);

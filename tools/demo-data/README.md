@@ -1,7 +1,7 @@
 # Demo-Bibliothek für Aufnahmen
 
 Bilder der Anwendung für Webseite, Tutorials und Release-Notizen dürfen die private Sammlung
-des Autors nicht zeigen — dort stehen gekaufte Serien mit Covern, die Verlagen gehören. Die
+des Autors nicht zeigen, denn dort stehen gekaufte Serien mit Covern, die Verlagen gehören. Die
 Skripte hier bauen stattdessen eine eigene Bibliothek auf: zwanzig gemeinfreie Titel, selbst
 gesetzte Cover, Sprachproben aus dem Windows-Bestand als Tonspur.
 
@@ -11,7 +11,7 @@ jemandem gehört.
 ## Wichtig: die Datenbank liegt fest
 
 `DatabasePathProvider` fragt `Environment.GetFolderPath(SpecialFolder.LocalApplicationData)`.
-Das liest **nicht** die Umgebungsvariable `LOCALAPPDATA` — ein `$env:LOCALAPPDATA` vor dem
+Das liest **nicht** die Umgebungsvariable `LOCALAPPDATA`; ein `$env:LOCALAPPDATA` vor dem
 Start umzubiegen bringt also nichts (nachgemessen). Wer die echte Sammlung nicht anfassen
 will, benennt den Ordner um und stellt ihn hinterher zurück:
 
@@ -25,7 +25,7 @@ Rename-Item "$env:LOCALAPPDATA\EchoPlay.beiseite" 'EchoPlay'
 ```
 
 Der Ordner ist rund 4,7 GB groß. Vor dem Umbenennen prüfen, dass kein `EchoPlay.App`-Prozess
-mehr läuft — sonst hält er die Datenbank offen.
+mehr läuft, sonst hält er die Datenbank offen.
 
 ## Reihenfolge
 
@@ -60,7 +60,7 @@ dotnet script tools\demo-data\4-seed-database.csx -- "$env:LOCALAPPDATA\EchoPlay
 Die Reihenfolge ist nicht beliebig: Schritt 4 setzt Hörstände auf Folgen, die es erst nach
 dem Einlesen gibt.
 
-Drei Schritte fassen fremde Daten an, wenn der Pfad danebenzeigt — sie prüfen deshalb vorher
+Drei Schritte fassen fremde Daten an, wenn der Pfad danebenzeigt. Sie prüfen deshalb vorher
 und brechen ab, statt zu schreiben:
 
 | Schritt | Gefahr | Schranke |
@@ -78,16 +78,16 @@ Lauf dasselbe Ergebnis liefert.
 ## Fallstricke, die Zeit gekostet haben
 
 **`IsSubscribed` ist keine Überwachung.** Das Feld sagt, ob eine Serie zur Bibliothek gehört.
-Wer es auf 0 setzt, macht alle Serien unsichtbar — die Überwachung steckt in `IsWatched`.
+Wer es auf 0 setzt, macht alle Serien unsichtbar, denn die Überwachung steckt in `IsWatched`.
 
 **Überwachte Serien holen echte Cover.** Steht eine Demo-Serie auf überwacht und trägt einen
 Namen, den es wirklich gibt, fragt die Anwendung beim Anbieter nach und zeigt dessen Cover im
-Dashboard. Genau das soll nicht ins Bild — deshalb setzt Schritt 4 die Neuerscheinungen
+Dashboard. Genau das soll nicht ins Bild, deshalb setzt Schritt 4 die Neuerscheinungen
 selbst und verlässt sich nicht auf eine Abfrage.
 
 **MP3 ist ein Stromformat.** Die Windows-Sprachproben sind 14 Sekunden lang; die
 Wiedergabeansicht zeigt dann „0:13 / -0:00" und sieht kaputt aus. Schritt 3 schreibt die
-Bilddaten hinter dem ID3-Kopf mehrfach hintereinander — das Ergebnis ist länger und bleibt
+Bilddaten hinter dem ID3-Kopf mehrfach hintereinander. Das Ergebnis ist länger und bleibt
 abspielbar.
 
 **Vollbild taugt nicht als Aufnahme.** Auf einem breiten Bildschirm ist die halbe Fläche leer,

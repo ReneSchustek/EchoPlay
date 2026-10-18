@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="IDashboardPositionDataService"/>.
-    /// Speichert Positionen in-memory – kein Datenbankzugriff.
+    /// Speichert Positionen in-memory, kein Datenbankzugriff.
     /// </summary>
     internal sealed class FakeDashboardPositionDataService : IDashboardPositionDataService
     {
@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// </summary>
         /// <param name="saveFailure">
         /// Wird beim Speichern geworfen, wenn gesetzt. Die echte Ablage kann während einer
-        /// Wartung gesperrt sein — ohne diesen Fall bliebe der Behandlungszweig ungeprüft.
+        /// Wartung gesperrt sein, denn ohne diesen Fall bliebe der Behandlungszweig ungeprüft.
         /// </param>
         public FakeDashboardPositionDataService(Exception? saveFailure = null)
         {

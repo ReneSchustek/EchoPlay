@@ -9,13 +9,13 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <remarks>
     /// Ohne diese Meldung bliebe die bereits gerenderte Startseite auf dem alten Stand,
-    /// bis der Nutzer erneut dorthin navigiert – der Hintergrund-Check würde unsichtbar bleiben.
+    /// bis der Nutzer erneut dorthin navigiert; der Hintergrund-Check würde unsichtbar bleiben.
     /// </remarks>
     public interface INewReleaseEventService
     {
         /// <summary>
         /// Wird ausgelöst, nachdem Einträge im Neuerscheinungen-Cache ergänzt oder entfernt wurden.
-        /// Handler müssen selbst auf den UI-Thread wechseln – die Auslöser laufen im Hintergrund.
+        /// Handler müssen selbst auf den UI-Thread wechseln, denn die Auslöser laufen im Hintergrund.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Reine Signalmeldung ohne Nutzlast; ein EventArgs-Wrapper brächte keinen Informationsgewinn und würde nur Zeremonie hinzufügen.")]
         event Action? CacheChanged;

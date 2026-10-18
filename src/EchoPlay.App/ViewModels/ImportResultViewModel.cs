@@ -49,13 +49,13 @@ namespace EchoPlay.App.ViewModels
         public bool IsAlreadyImported { get; }
 
         /// <summary>
-        /// Sichtbarkeit des Import-Buttons – ausgeblendet wenn bereits importiert.
+        /// Sichtbarkeit des Import-Buttons, ausgeblendet, wenn bereits importiert.
         /// </summary>
         public Visibility ImportButtonVisibility =>
             IsAlreadyImported ? Visibility.Collapsed : Visibility.Visible;
 
         /// <summary>
-        /// Sichtbarkeit des „Vorhanden"-Texts – eingeblendet wenn bereits importiert.
+        /// Sichtbarkeit des „Vorhanden"-Texts, eingeblendet, wenn bereits importiert.
         /// </summary>
         public Visibility AlreadyImportedTextVisibility =>
             IsAlreadyImported ? Visibility.Visible : Visibility.Collapsed;

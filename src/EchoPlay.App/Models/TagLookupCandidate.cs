@@ -5,7 +5,7 @@ namespace EchoPlay.App.Models
     /// Eine reine Anzeigerepräsentation, damit der Views-Ordner keinen Kontakt zu
     /// Domänen- oder Modul-Typen aus <c>EchoPlay.TagManager</c> braucht.
     /// </summary>
-    /// <param name="Index">Position in der ursprünglichen Ergebnisliste – wird beim Zurückübertragen ans ViewModel benötigt.</param>
+    /// <param name="Index">Position in der ursprünglichen Ergebnisliste, wird beim Zurückübertragen ans ViewModel benötigt.</param>
     /// <param name="Title">Titel des Releases.</param>
     /// <param name="Artist">Interpret.</param>
     /// <param name="Album">Albumname.</param>

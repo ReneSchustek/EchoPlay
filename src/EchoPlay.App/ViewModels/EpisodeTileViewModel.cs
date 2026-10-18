@@ -13,7 +13,7 @@ namespace EchoPlay.App.ViewModels
     /// Kachel-ViewModel für eine Episode in der Folgen-Ansicht der <see cref="EchoPlay.App.Views.SeriesDetailPage"/>.
     /// Entspricht dem Konzept von <see cref="LocalEpisodeCardViewModel"/>, erweitert um
     /// Wiedergabeinformationen und ein optionales Episodenbild.
-    /// Das ViewModel ist unveränderlich – bei Datenänderungen wird es neu erzeugt.
+    /// Das ViewModel ist unveränderlich; bei Datenänderungen wird es neu erzeugt.
     /// </summary>
     public sealed class EpisodeTileViewModel
     {
@@ -39,7 +39,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="spotifyAlbumId">Spotify-Album-ID der Folge, sofern bekannt.</param>
         /// <param name="hasLocalTrack">Ob mindestens eine lokale Audiodatei vorliegt.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-ID der Folge, sofern bekannt.</param>
-        /// <param name="seriesTitle">Serientitel – Suchbegriff für Spotify, wenn keine Album-ID vorliegt.</param>
+        /// <param name="seriesTitle">Serientitel als Suchbegriff für Spotify, wenn keine Album-ID vorliegt.</param>
         /// <param name="hasOpenPosition">Ob die Folge an einer offenen Stelle steht, an der weitergehört werden kann.</param>
         public EpisodeTileViewModel(
             Guid episodeId,
@@ -87,8 +87,8 @@ namespace EchoPlay.App.ViewModels
         public bool IsSpecialEpisode { get; }
 
         /// <summary>
-        /// Cover-Bild der Episode. Null wenn kein Cover vorhanden –
-        /// die UI zeigt dann ein Platzhalter-Icon.
+        /// Cover-Bild der Episode. Null wenn kein Cover vorhanden,
+        /// dann zeigt die UI dann ein Platzhalter-Icon.
         /// </summary>
         public BitmapImage? CoverImage { get; }
 
@@ -194,7 +194,7 @@ namespace EchoPlay.App.ViewModels
         public string? AppleMusicAlbumId { get; }
 
         /// <summary>
-        /// Sichtbarkeit der Aktion „In Apple Music öffnen" – gleiche Regel wie bei Spotify:
+        /// Sichtbarkeit der Aktion „In Apple Music öffnen", gleiche Regel wie bei Spotify:
         /// nur für Folgen ohne lokale Datei und mit bekannter Album-ID.
         /// </summary>
         public Visibility OpenInAppleMusicVisibility =>
@@ -204,7 +204,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Öffnet das zugehörige Album in Apple Music (App oder Webseite).
-        /// Startet dort nichts — die Wiedergabe löst der Nutzer selbst aus.
+        /// Startet dort nichts, die Wiedergabe löst der Nutzer selbst aus.
         /// </summary>
         /// <returns><see langword="true"/>, wenn der Link geöffnet werden konnte.</returns>
         public bool OpenInAppleMusic()

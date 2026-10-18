@@ -13,7 +13,7 @@ namespace EchoPlay.Data.Migrations
         {
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
-            // Zeitpunkt des letzten App-Starts – Referenz für den 60-Tage-Neuerscheinungen-Filter
+            // Zeitpunkt des letzten App-Starts als Referenz für den 60-Tage-Neuerscheinungen-Filter
             _ = migrationBuilder.AddColumn<DateTime>(
                 name: "LastAppStart",
                 table: "AppSettings",

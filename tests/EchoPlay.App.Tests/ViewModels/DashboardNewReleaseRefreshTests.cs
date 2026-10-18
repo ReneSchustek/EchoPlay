@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             events.RaiseCacheChanged();
 
-            // Ohne Dispatcher (Unit-Test) lädt das VM direkt – auf den Abschluss warten.
+            // Ohne Dispatcher (Unit-Test) lädt das VM direkt, also auf den Abschluss warten.
             await ChangeSignals.WaitForCollectionAsync(
                 vm.NeuerscheinungenVM.NewEpisodeGroups,
                 () => vm.NeuerscheinungenVM.NewEpisodeGroups.Count > 0,
@@ -93,7 +93,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
             vm.Dispose();
 
-            // Nach Dispose darf das Event kein Nachladen mehr auslösen – das VM ist entsorgt,
+            // Nach Dispose darf das Event kein Nachladen mehr auslösen, denn das VM ist entsorgt,
             // sein Lifecycle-Token abgebrochen.
             events.RaiseCacheChanged();
         }

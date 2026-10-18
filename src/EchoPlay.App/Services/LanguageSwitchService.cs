@@ -109,7 +109,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                // Der neue Prozess läuft bereits – das Beenden des alten darf nicht hart scheitern.
+                // Der neue Prozess läuft bereits, das Beenden des alten darf nicht hart scheitern.
                 _logger.Warning("Beenden nach Sprachwechsel fehlgeschlagen: {Reason}", ex.Message);
                 return true;
             }

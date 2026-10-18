@@ -23,8 +23,8 @@ namespace EchoPlay.Data.Services.Interfaces
 
         /// <summary>
         /// Kompaktiert die SQLite-Datenbankdatei.
-        /// VACUUM schreibt die gesamte Datenbank um und gibt freigegebenen Speicher zurück –
-        /// nur sinnvoll nach größeren Löschvorgängen oder auf expliziten Nutzerwunsch.
+        /// VACUUM schreibt die gesamte Datenbank um und gibt freigegebenen Speicher zurück,
+        /// das ist nur sinnvoll nach größeren Löschvorgängen oder auf expliziten Nutzerwunsch.
         /// Nicht für den App-Start empfohlen, da der Vorgang bei großen DBs spürbar dauern kann.
         /// </summary>
         /// <returns>Der Task ist abgeschlossen, wenn die Datenbankdatei neu geschrieben ist.</returns>
@@ -32,7 +32,7 @@ namespace EchoPlay.Data.Services.Interfaces
 
         /// <summary>
         /// Fordert SQLite auf, interne Statistiken zu aktualisieren und den Query-Planer zu optimieren.
-        /// Sollte beim App-Shutdown aufgerufen werden – die gesammelten Statistiken einer Sitzung
+        /// Sollte beim App-Shutdown aufgerufen werden, denn die gesammelten Statistiken einer Sitzung
         /// verbessern die Abfrageplanung beim nächsten Start.
         /// </summary>
         /// <returns>Der Task ist abgeschlossen, wenn SQLite seine Statistiken aktualisiert hat.</returns>
@@ -60,7 +60,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <remarks>
         /// Hard-Delete analog zu <see cref="ClearLibraryAsync"/>: Soft-Delete-Bypass ist
         /// notwendig, weil ein erneuter Online-Import sonst über soft-gelöschte Datensätze
-        /// stolpert. Nur online-importierte Serien sind betroffen — lokale Bibliothek bleibt
+        /// stolpert. Nur online-importierte Serien sind betroffen, die lokale Bibliothek bleibt
         /// unberührt.
         /// </remarks>
         Task ClearOnlineLibraryAsync();
@@ -73,7 +73,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <remarks>
         /// Hard-Delete für rein lokale Serien (Soft-Delete-Bypass): nach „Lokale Bibliothek
-        /// trennen" muss der nächste Scan dieselben Pfade wieder neu anlegen können — Soft-Delete-
+        /// trennen" muss der nächste Scan dieselben Pfade wieder neu anlegen können. Soft-Delete-
         /// Reste würden den Re-Scan blockieren.
         /// </remarks>
         Task ClearLocalLibraryAsync();

@@ -96,7 +96,7 @@
             </ComboBox>
         </Grid>
 
-        <!-- Hörzustand als Chips. Sie schließen einander aus – eine Folge ist ungehört,
+        <!-- Hörzustand als Chips. Sie schließen einander aus: Eine Folge ist ungehört,
              angefangen oder durchgehört. Kein aktiver Chip heißt alle. -->
         <ctrl:FilterBarControl
             x:Name="EpisodeFilterBar"
@@ -145,7 +145,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Tab-Leiste: Folgen / Sonderfolgen – nur sichtbar wenn Sonderfolgen existieren -->
+                <!-- Tab-Leiste: Folgen / Sonderfolgen, nur sichtbar, wenn Sonderfolgen existieren -->
                 <StackPanel
                     Grid.Row="0"
                     Orientation="Horizontal"
@@ -237,7 +237,7 @@
                                                 <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
 
-                                            <!-- Kontextmenü oben rechts – überlagert den Text-Bereich -->
+                                            <!-- Kontextmenü oben rechts, überlagert den Text-Bereich -->
                                             <Button
                                         AutomationProperties.Name="{x:Bind ActionsAutomationName}"
                                                 Content="&#xE712;"
@@ -336,7 +336,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Aktionsleiste: "Ganze Folge abspielen" – nur sichtbar wenn Tracks vorhanden -->
+                <!-- Aktionsleiste: "Ganze Folge abspielen", nur sichtbar, wenn Tracks vorhanden -->
                 <Button
                     Grid.Row="0"
                     x:Uid="SeriesDetailPlayEpisodeButton"

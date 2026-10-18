@@ -51,7 +51,7 @@ namespace EchoPlay.LocalLibrary.Cover
                 return;
             }
 
-            // Vorhandene Cover nicht überschreiben – der Nutzer könnte sie manuell angepasst haben
+            // Vorhandene Cover nicht überschreiben, denn der Nutzer könnte sie manuell angepasst haben
             if (File.Exists(targetPath))
             {
                 return;

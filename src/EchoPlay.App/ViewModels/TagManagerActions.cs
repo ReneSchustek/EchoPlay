@@ -63,7 +63,7 @@ namespace EchoPlay.App.ViewModels
                 setIsLoading, setBatchProgress, setHasUnsavedChanges);
         }
 
-        /// <summary>Lookup-Ergebnisse für die Page – weitergereicht von <see cref="TagLookupActions"/>.</summary>
+        /// <summary>Lookup-Ergebnisse für die Page, weitergereicht von <see cref="TagLookupActions"/>.</summary>
         public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady
         {
             add => _lookupActions.LookupResultsReady += value;

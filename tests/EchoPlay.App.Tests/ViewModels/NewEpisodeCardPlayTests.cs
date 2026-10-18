@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Anwender beim Anbieter vor einem Album, das dort nichts abspielt.
     ///
     /// Der Fall „bereits erschienen, aber nicht lokal vorhanden" bleibt bewusst außen vor:
-    /// Er baut eine Suchadresse und öffnet sie im Browser — ein Test darf keine fremde
+    /// Er baut eine Suchadresse und öffnet sie im Browser, und ein Test darf keine fremde
     /// Anwendung starten.
     /// </remarks>
     public sealed class NewEpisodeCardPlayTests

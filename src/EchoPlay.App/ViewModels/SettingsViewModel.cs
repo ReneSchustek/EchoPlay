@@ -38,7 +38,7 @@ namespace EchoPlay.App.ViewModels
         private readonly StatusBarViewModel _statusBar;
         private readonly ILanguageSwitchService? _languageSwitchService;
 
-        // Referenz auf die geladene Entität – nötig für SaveAsync, um den EF-Track nicht zu verlieren
+        // Referenz auf die geladene Entität, nötig für SaveAsync, um den EF-Track nicht zu verlieren
         private AppSettings? _loadedSettings;
 
         private bool _isLoading;
@@ -61,7 +61,7 @@ namespace EchoPlay.App.ViewModels
             _loggerManager = context.LoggerManager;
             _statusBar = context.StatusBar;
 
-            // Sub-VMs mit gemeinsamem Edit-Callback – jede Nutzeränderung setzt HasUnsavedChanges
+            // Sub-VMs mit gemeinsamem Edit-Callback; jede Nutzeränderung setzt HasUnsavedChanges
             GeneralVM = new GeneralSettingsViewModel(OnSubVmUserEdit);
             OnlineVM = new OnlineSettingsViewModel(
                 context.ConnectionTestCoordinator, context.CredentialStore, context.OptionsProvider, OnSubVmUserEdit);
@@ -149,7 +149,7 @@ namespace EchoPlay.App.ViewModels
                 // Spotify-Verknüpfungsstatus aus dem Credential-Store laden
                 OnlineVM.LoadSpotifyStatus();
 
-                // Log-Dateien asynchron laden – darf ruhig parallel zur restlichen Initialisierung laufen
+                // Log-Dateien asynchron laden, das darf ruhig parallel zur restlichen Initialisierung laufen
                 await MaintenanceVM.LoadLogFilesAsync();
 
                 await HiddenDialogsVM.LoadAsync();
@@ -164,7 +164,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Prüft, ob die Einstellungsseite verlassen werden darf. Bei ungespeicherten
         /// Änderungen wird der Nutzer gefragt, ob gespeichert werden soll. Navigiert wird
-        /// in jedem Fall (bei „Nein" werden Änderungen verworfen) – lediglich der
+        /// in jedem Fall (bei „Nein" werden Änderungen verworfen), lediglich der
         /// Speichern-Schritt ist optional.
         /// </summary>
         public async Task<bool> CanLeaveAsync()
@@ -181,12 +181,12 @@ namespace EchoPlay.App.ViewModels
 
             if (shouldSave)
             {
-                // SaveAsync aktualisiert intern die StatusBar – Provider- und Offline-Änderungen
+                // SaveAsync aktualisiert intern die StatusBar. Provider- und Offline-Änderungen
                 // wirken sich sofort auf die Nav-Leiste aus.
                 await SaveAsync();
             }
 
-            // Auch bei „Nein" darf navigiert werden – Änderungen werden dann verworfen
+            // Auch bei „Nein" darf navigiert werden, Änderungen werden dann verworfen
             return true;
         }
 
@@ -214,18 +214,18 @@ namespace EchoPlay.App.ViewModels
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
             await settingsService.SaveAsync(_loadedSettings);
 
-            // StatusBar sofort aktualisieren – Offline-Symbol, Menü-Sichtbarkeit der
+            // StatusBar sofort aktualisieren: Offline-Symbol, Menü-Sichtbarkeit der
             // Online-Mediathek und Provider-Anzeige müssen ohne Seitenwechsel reagieren.
             await _statusBar.RefreshAsync();
 
-            // LoggerManager sofort informieren – beide Werte gelten ab jetzt für alle laufenden Logger
+            // LoggerManager sofort informieren, denn beide Werte gelten ab jetzt für alle laufenden Logger
             _loggerManager.UpdateRetentionDays(_loadedSettings.LogRetentionDays);
             _loggerManager.UpdateMinimumLevel(_loadedSettings.MinimumLogLevel);
 
             HasUnsavedChanges = false;
 
-            // Hinweis wenn Offline-Modus deaktiviert, aber kein Provider konfiguriert ist –
-            // ohne Provider bleibt die Online-Mediathek unsichtbar, was den Nutzer verwirren kann.
+            // Hinweis wenn Offline-Modus deaktiviert, aber kein Provider konfiguriert ist:
+            // Ohne Provider bleibt die Online-Mediathek unsichtbar, was den Nutzer verwirren kann.
             if (!GeneralVM.OfflineMode && OnlineVM.ActiveProvider == ProviderType.None)
             {
                 await _errorDialogService.ShowAsync(
@@ -248,7 +248,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Speichert alle Einstellungen und wechselt die Oberflächensprache.
-        /// WinUI 3 kann Ressourcendateien nicht zur Laufzeit neu laden – der Neustart ist zwingend.
+        /// WinUI 3 kann Ressourcendateien nicht zur Laufzeit neu laden, der Neustart ist zwingend.
         /// Der Nutzer bestätigt ihn vorher, damit ungespeicherte Arbeit nicht überrascht verschwindet.
         /// </summary>
         /// <param name="languageCode">Der BCP-47-Sprachcode der gewählten Sprache.</param>
@@ -297,7 +297,7 @@ namespace EchoPlay.App.ViewModels
 
             if (!restarted)
             {
-                // Sprache ist persistiert, nur der Neustart kam nicht zustande – der Nutzer
+                // Sprache ist persistiert, nur der Neustart kam nicht zustande. Der Nutzer
                 // darf nicht im Glauben bleiben, die Auswahl sei verloren.
                 await _errorDialogService.ShowAsync(
                     _localizationService.Get("LanguageRestartTitle"),

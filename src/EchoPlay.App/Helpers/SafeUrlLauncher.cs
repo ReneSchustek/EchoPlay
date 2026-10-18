@@ -49,7 +49,7 @@ namespace EchoPlay.App.Helpers
 
         /// <summary>
         /// Öffnet eine Anwendungs-URI eines fest vorgegebenen Schemas, z.B. <c>spotify:album:…</c>.
-        /// Damit landet der Nutzer in der installierten App, in der er angemeldet ist — im
+        /// Damit landet der Nutzer in der installierten App, in der er angemeldet ist. Im
         /// Browser ist er das meist nicht.
         /// </summary>
         /// <param name="uri">Die zu öffnende URI.</param>
@@ -95,7 +95,7 @@ namespace EchoPlay.App.Helpers
             }
             catch (Exception)
             {
-                // Kein Handler registriert – der Aufrufer nimmt den Web-Link.
+                // Kein Handler registriert, der Aufrufer nimmt den Web-Link.
                 return false;
             }
         }

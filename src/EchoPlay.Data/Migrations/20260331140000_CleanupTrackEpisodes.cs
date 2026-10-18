@@ -36,7 +36,7 @@ namespace EchoPlay.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Rückgängig nicht möglich – gelöschte Episoden können nicht wiederhergestellt werden.
+            // Rückgängig nicht möglich, denn gelöschte Episoden können nicht wiederhergestellt werden.
             // Die Serien bleiben erhalten und können neu importiert werden.
         }
     }

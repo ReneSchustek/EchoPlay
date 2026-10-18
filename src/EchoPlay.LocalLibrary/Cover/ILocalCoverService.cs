@@ -6,7 +6,7 @@ namespace EchoPlay.LocalLibrary.Cover
     /// <summary>
     /// Ermittelt das Coverbild einer Hörspielserie und speichert es dauerhaft im Serienordner.
     /// Durch die Ablage als <c>cover.jpg</c> auf der Festplatte bleibt das Cover auch nach einer
-    /// Datenbank-Neu-Initialisierung erhalten – es muss dann nicht erneut online gesucht werden.
+    /// Datenbank-Neu-Initialisierung erhalten, es muss dann nicht erneut online gesucht werden.
     /// </summary>
     public interface ILocalCoverService
     {

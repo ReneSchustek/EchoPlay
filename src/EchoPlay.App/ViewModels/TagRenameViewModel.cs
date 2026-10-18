@@ -15,7 +15,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class TagRenameViewModel : ObservableObject
     {
-        // Intern gehaltene Vorschau-Items vom Modul-Typ – für die tatsächliche Umbenennung
+        // Intern gehaltene Vorschau-Items vom Modul-Typ für die tatsächliche Umbenennung
         private IReadOnlyList<RenamePreviewItem> _renamePreviewItems = [];
 
         // App-eigene Display-Modelle, an die die Page bindet
@@ -34,7 +34,7 @@ namespace EchoPlay.App.ViewModels
             {
                 if (SetProperty(ref _renamePattern, value))
                 {
-                    // Nach Musteränderung alte Vorschau zurücksetzen – sie wäre veraltet
+                    // Nach Musteränderung alte Vorschau zurücksetzen, sie wäre veraltet
                     SetPreviewItems([]);
                 }
             }
@@ -56,7 +56,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit der Vorschauliste – sichtbar sobald eine Vorschau berechnet wurde.
+        /// Sichtbarkeit der Vorschauliste, sichtbar, sobald eine Vorschau berechnet wurde.
         /// </summary>
         public Visibility RenamePreviewVisibility =>
             _renamePreviewItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

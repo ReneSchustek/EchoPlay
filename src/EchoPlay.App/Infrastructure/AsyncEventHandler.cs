@@ -12,7 +12,7 @@ namespace EchoPlay.App.Infrastructure
     /// Sicherer Wrapper für <c>async void</c>-Event-Handler in WinUI-3-Pages und
     /// Windows. Fängt alle Exceptions ab, loggt mit Operationsnamen und zeigt einen
     /// Fehlerdialog. <see cref="OperationCanceledException"/> wird stillschweigend
-    /// geschluckt – beabsichtigte Abbrüche sind keine Fehler.
+    /// geschluckt, denn beabsichtigte Abbrüche sind keine Fehler.
     /// </summary>
     internal static class AsyncEventHandler
     {
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Infrastructure
             }
             catch (OperationCanceledException)
             {
-                // Beabsichtigter Abbruch – keine Meldung, kein Log
+                // Beabsichtigter Abbruch: keine Meldung, kein Log
             }
             catch (Exception ex)
             {
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Infrastructure
                 }
                 catch
                 {
-                    // Dialog konnte nicht angezeigt werden – Logging hat bereits stattgefunden
+                    // Dialog konnte nicht angezeigt werden, Logging hat bereits stattgefunden
                 }
             }
         }

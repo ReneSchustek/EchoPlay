@@ -66,7 +66,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Hüllt <see cref="RefreshNewReleasesAsync"/> für den Hintergrundlauf ab.
         /// Ohne diese Klammer würde eine Exception als unbeobachtete Task-Exception erst
-        /// im Finalizer auftauchen – etwa wenn der Scope beim App-Ende schon entsorgt ist.
+        /// im Finalizer auftauchen, etwa wenn der Scope beim App-Ende schon entsorgt ist.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Nachlauf ohne Aufrufer: DB-, Provider- oder Lifecycle-Fehler (entsorgter Scope beim App-Ende) dürfen weder die UI stören noch als unbeobachtete Task-Exception hochkommen. Der Cache wird beim nächsten App-Start ohnehin neu geprüft.")]
         private static async Task RefreshNewReleasesSafeAsync(IServiceScopeFactory scopeFactory, Guid seriesId)
@@ -77,7 +77,7 @@ namespace EchoPlay.App.Services
             }
             catch (Exception)
             {
-                // Bewusst geschluckt – siehe Methoden-Kommentar.
+                // Bewusst geschluckt, siehe Methoden-Kommentar.
             }
         }
 

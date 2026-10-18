@@ -49,7 +49,7 @@ $templates = @(
 )
 
 # Schutz vor dem Fehlgriff: Dieses Skript überschreibt jede gefundene MP3-Datei. Zeigt der
-# Pfad woandershin — auf einen Tippfehler, auf ein Laufwerk mit der echten Sammlung —, wäre
+# Pfad woandershin (auf einen Tippfehler, auf ein Laufwerk mit der echten Sammlung), wäre
 # der Bestand hinüber. Deshalb erst prüfen, dann schreiben.
 if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
     throw "Der Ordner existiert nicht: $Root"

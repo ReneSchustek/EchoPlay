@@ -63,7 +63,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des Favoriten-Abschnitts – sichtbar sobald mindestens eine Serie da ist.
+        /// Sichtbarkeit des Favoriten-Abschnitts, sichtbar, sobald mindestens eine Serie da ist.
         /// </summary>
         public Visibility FavoriteSectionVisibility =>
             _favoriteSeries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -85,7 +85,7 @@ namespace EchoPlay.App.ViewModels
         {
             ArgumentNullException.ThrowIfNull(items);
 
-            // Alte Karten-Handler vor dem Ersetzen lösen — bei wiederholtem SetItems mit
+            // Alte Karten-Handler vor dem Ersetzen lösen, bei wiederholtem SetItems mit
             // denselben Card-Instanzen (z.B. Dashboard-Reload) würden sonst Handler
             // akkumulieren. Der CollectionChanged-Handler auf der ObservableCollection
             // selbst wird im Setter von FavoriteSeries bereits sauber umgehängt.
@@ -133,7 +133,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Reagiert auf Umsortierungen der Favoriten-Sammlung durch das ListView.
-        /// <see cref="ObservableCollection{T}"/> meldet zwei Events (Remove + Add) – gespeichert
+        /// <see cref="ObservableCollection{T}"/> meldet zwei Events (Remove + Add). Gespeichert
         /// wird nur beim Add, um Doppel-Speicherungen zu vermeiden.
         /// </summary>
         private void OnFavoriteSeriesReordered(object? sender, NotifyCollectionChangedEventArgs e)

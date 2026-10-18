@@ -17,7 +17,7 @@ namespace EchoPlay.Data.Migrations
             // Spalte an Series: beim Leeren der Mediathek verschwinden die Series-Zeilen
             // physisch, die Überwachung soll das überleben.
             // Der Erstbestand wird nicht hier befüllt, sondern beim Start über den Normalizer
-            // abgeglichen – SQL kann dessen Regeln nicht identisch nachbilden.
+            // abgeglichen, denn SQL kann dessen Regeln nicht identisch nachbilden.
             _ = migrationBuilder.CreateTable(
                 name: "WatchedTitles",
                 columns: table => new

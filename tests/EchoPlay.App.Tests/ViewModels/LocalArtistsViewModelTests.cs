@@ -16,7 +16,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="LocalArtistsViewModel"/> – Schwerpunkt auf dem Zusammenspiel von
+    /// Tests für <see cref="LocalArtistsViewModel"/> mit Schwerpunkt auf dem Zusammenspiel von
     /// Live-Kachel-Update während des Scans (Commit 67f7adb) und Cover-Nachbau.
     /// </summary>
     public sealed class LocalArtistsViewModelTests
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Regression zu Commit 67f7adb: Eine schon im Live-Scan angelegte Karte
             // ohne Cover muss beim erneuten SeriesSynced-Report einen Cover-Nachbau auslösen.
             // Vor dem Fix kehrte der Existing-Zweig nach UpdateCounts zurück, ohne das Cover
-            // erneut zu bauen – die Serie blieb die ganze Session ohne Bild.
+            // erneut zu bauen, und die Serie blieb die ganze Session ohne Bild.
             LocalArtistsViewModel vm = BuildViewModel(out FakeCoverService cover, out FakeEpisodeDataService episodes);
             Series series = MakeSeries(TestIds.SeriesA, "Benjamin Blümchen");
             await episodes.AddRangeAsync([

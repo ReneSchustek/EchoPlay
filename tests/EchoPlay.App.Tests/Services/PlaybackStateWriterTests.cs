@@ -11,7 +11,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Prüft das Sichern des Hörstands — die Stelle, an der zuletzt aufgehört wurde.
+    /// Prüft das Sichern des Hörstands, also der Stelle, an der zuletzt aufgehört wurde.
     /// </summary>
     /// <remarks>
     /// Geht das schief, merkt es der Anwender sofort: Die Folge beginnt wieder von vorn. Zwei
@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.Services
 
             await writer.SaveAsync(EpisodeId, Position);
 
-            // Ein zweiter Datensatz für dieselbe Folge wäre ein doppelter Hörstand — welcher
+            // Ein zweiter Datensatz für dieselbe Folge wäre ein doppelter Hörstand, und welcher
             // dann beim nächsten Öffnen gewinnt, wäre Zufall.
             Assert.Equal(0, data.AddCallCount);
             Assert.Equal(1, data.UpdateCallCount);
@@ -91,7 +91,7 @@ namespace EchoPlay.App.Tests.Services
             using PlaybackStateWriter writer = BuildWriter(data);
 
             // Der Aufrufer ist die laufende Wiedergabe. Fliegt hier ein Fehler heraus, bricht
-            // sie ab — und das wäre schlimmer als ein verlorener Hörstand.
+            // sie ab, und das wäre schlimmer als ein verlorener Hörstand.
             await writer.SaveAsync(EpisodeId, Position);
 
             Assert.Equal(0, data.AddCallCount);
@@ -107,7 +107,7 @@ namespace EchoPlay.App.Tests.Services
             Task pending = writer.SaveAsync(EpisodeId, Position);
 
             // Der zweite Aufruf trifft auf die belegte Sperre. Er darf nicht warten, sondern
-            // fällt aus — der nächste Durchlauf bringt ohnehin einen aktuelleren Stand.
+            // fällt aus, denn der nächste Durchlauf bringt ohnehin einen aktuelleren Stand.
             await writer.SaveAsync(EpisodeId, TimeSpan.FromMinutes(20));
 
             Assert.Equal(1, data.ReadCallCount);
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.Services
             await writer.SaveAsync(EpisodeId, TimeSpan.FromMinutes(20));
 
             // Die Sperre darf nur den gleichzeitigen Zugriff verhindern, nicht den nächsten
-            // regulären — sonst stünde der Hörstand nach dem ersten Schreiben still.
+            // regulären, sonst stünde der Hörstand nach dem ersten Schreiben still.
             Assert.Equal(1, data.AddCallCount);
             Assert.Equal(1, data.UpdateCallCount);
         }

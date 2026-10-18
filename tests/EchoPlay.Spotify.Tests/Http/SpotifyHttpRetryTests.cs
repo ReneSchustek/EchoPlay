@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Http
         [Fact]
         public async Task SendWithRetryAsync_DoesNotRetry_On404()
         {
-            // 404 ist kein transienter Fehler – kein Retry
+            // 404 ist kein transienter Fehler, also kein Retry
             StubHttpMessageHandler handler = new();
             handler.EnqueueResponse(new HttpResponseMessage(HttpStatusCode.NotFound));
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
@@ -75,7 +75,7 @@ namespace EchoPlay.Spotify.Tests.Http
         [Fact]
         public async Task SendWithRetryAsync_DoesNotRetry_On401()
         {
-            // Ungültige Zugangsdaten (401) sind kein transienter Fehler – kein Retry
+            // Ungültige Zugangsdaten (401) sind kein transienter Fehler, also kein Retry
             StubHttpMessageHandler handler = new();
             handler.EnqueueResponse(new HttpResponseMessage(HttpStatusCode.Unauthorized));
             HttpClient client = new(handler) { BaseAddress = new Uri("http://fake/") };
@@ -90,7 +90,7 @@ namespace EchoPlay.Spotify.Tests.Http
         [Fact]
         public async Task SendWithRetryAsync_ReturnsLastResponse_WhenAllRetriesExhaustedWith5xx()
         {
-            // Alle 3 Versuche scheitern – letzte fehlerhafte Antwort wird zurückgegeben
+            // Alle 3 Versuche scheitern, die letzte fehlerhafte Antwort wird zurückgegeben
             StubHttpMessageHandler handler = new();
             handler.EnqueueResponse(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
             handler.EnqueueResponse(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));

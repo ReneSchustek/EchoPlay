@@ -13,7 +13,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Prüft, wann die Wiedergabeseite die laufende Liste übernimmt.
     /// </summary>
     /// <remarks>
-    /// Die Wiedergabe startet fast immer woanders — in der Mediathek, der Serienansicht
+    /// Die Wiedergabe startet fast immer woanders: in der Mediathek, der Serienansicht
     /// oder über „Weiterhören". Ohne den Abgleich zeigt die Seite den Platzhalter,
     /// während unten die Folge läuft. Er darf aber auch nicht bei jedem Positions-Tick
     /// zuschlagen: Ein Neuaufbau der Liste alle 500 ms löscht die gerade nachgetragenen
@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             playerService.SimulateExternalPlayback([@"D:\Media\01.mp3", @"D:\Media\02.mp3"], @"D:\Media\01.mp3");
 
-            // Gleiche Anzahl, andere Dateien — der Anwender hat eine andere Folge gestartet.
+            // Gleiche Anzahl, andere Dateien: Der Anwender hat eine andere Folge gestartet.
             // Ein Vergleich nur über die Anzahl würde das übersehen.
             playerService.SimulateExternalPlayback([@"D:\Media\01.mp3", @"D:\Media\09.mp3"], @"D:\Media\09.mp3");
 
@@ -62,8 +62,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             playerService.SimulateExternalPlayback([@"D:\Media\01.mp3"], @"D:\Media\01.mp3");
 
-            // Das Bild selbst entsteht erst im Fenster. Ohne Fenster bleibt der Platz leer —
-            // die Seite muss trotzdem stehen und die Liste zeigen.
+            // Das Bild selbst entsteht erst im Fenster. Ohne Fenster bleibt der Platz leer,
+            // aber die Seite muss trotzdem stehen und die Liste zeigen.
             _ = Assert.Single(sut.PlaylistItems);
         }
 

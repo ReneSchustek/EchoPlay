@@ -8,7 +8,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die Treffer erscheinen einzeln, sobald sie feststehen. Eine Sortierung am Ende gäbe
-    /// es dafür nicht mehr — jede Karte muss beim Einfügen wissen, wohin sie gehört.
+    /// es dafür nicht mehr. Jede Karte muss beim Einfügen wissen, wohin sie gehört.
     /// </remarks>
     public sealed class SearchResultRankTests
     {
@@ -24,7 +24,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void Create_WhenOnlyTheArtistContainsTheQuery_MarksTheHit()
         {
-            // Bei Album-Treffern steht der Serienname im Künstlerfeld — auch der zählt.
+            // Bei Album-Treffern steht der Serienname im Künstlerfeld, auch der zählt.
             ImportSeries album = new()
             {
                 SourceSeriesId = "1",

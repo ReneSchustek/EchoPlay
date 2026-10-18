@@ -61,7 +61,7 @@ namespace EchoPlay.App.Services
 
             // Defense-in-Depth analog ErrorDialogService: vor abgeschlossener
             // MainWindow-Init ist MainWindow oder XamlRoot null. Die Antwort ist dann
-            // "nicht bestätigt" — eine Rückfrage, die niemand sehen konnte, darf keine
+            // "nicht bestätigt", denn eine Rückfrage, die niemand sehen konnte, darf keine
             // Zustimmung sein, und alle Aufrufer brechen bei false ab.
             XamlRoot? xamlRoot = _xamlRootProvider();
             if (xamlRoot is null)

@@ -10,7 +10,7 @@ namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Sucht Cover-Kandidaten über die kostenlose iTunes Search API.
-    /// Kein API-Key nötig – die API ist öffentlich und rate-limited auf ca. 20 Requests/Minute.
+    /// Kein API-Key nötig, die API ist öffentlich und rate-limited auf ca. 20 Requests/Minute.
     /// </summary>
     /// <remarks>
     /// Die iTunes Search API liefert Album-Artwork in festen Größen (100×100 als Standard).
@@ -29,7 +29,7 @@ namespace EchoPlay.LocalLibrary.Cover
         }
 
         /// <summary>
-        /// Die iTunes Search API kennt keinen Versatz — nur <c>limit</c>. Nachladen holt deshalb
+        /// Die iTunes Search API kennt keinen Versatz, nur <c>limit</c>. Nachladen holt deshalb
         /// mehr und verwirft den bereits gezeigten Anfang.
         /// </summary>
         protected override bool SupportsOffset => false;
@@ -54,7 +54,7 @@ namespace EchoPlay.LocalLibrary.Cover
                 return null;
             }
 
-            // iTunes liefert 100×100 als Standard – Größe im URL-String austauschen
+            // iTunes liefert 100×100 als Standard, daher die Größe im URL-String austauschen
             string thumbnailUrl = album.ArtworkUrl100.Replace("100x100bb", "250x250bb", StringComparison.Ordinal);
             string fullUrl = album.ArtworkUrl100.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
 

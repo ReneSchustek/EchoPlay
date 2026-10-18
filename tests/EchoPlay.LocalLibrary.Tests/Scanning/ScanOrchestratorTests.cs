@@ -85,7 +85,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanAsync_EmptyDirectory_ReturnsEmptyList()
         {
-            // Leeres Verzeichnis liefert keine Scan-Ergebnisse – kein Absturz.
+            // Leeres Verzeichnis liefert keine Scan-Ergebnisse, kein Absturz.
             FakeLocalLibraryScanner scanner = new();
             ScanOrchestrator orchestrator = new(scanner);
 
@@ -110,7 +110,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public async Task ScanAsync_NonExistentDirectory_ReturnsEmpty()
         {
-            // Nicht existierender Pfad darf keinen Fehler werfen – leere Liste zurückgeben.
+            // Nicht existierender Pfad darf keinen Fehler werfen, sondern eine leere Liste zurückgeben.
             FakeLocalLibraryScanner scanner = new();
             ScanOrchestrator orchestrator = new(scanner);
 

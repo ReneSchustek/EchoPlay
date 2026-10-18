@@ -4,7 +4,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
 {
     /// <summary>
     /// Tests für <see cref="LocalEpisodeNumbers"/>.
-    /// Die Testdaten stammen aus einer echten Sammlung mit 92 Serienordnern — jeder Fall hier
+    /// Die Testdaten stammen aus einer echten Sammlung mit 92 Serienordnern; jeder Fall hier
     /// hat dort zu einer falschen Meldung geführt (2978 gemeldete Lücken vor der Korrektur, 78 danach).
     /// </summary>
     public sealed class LocalEpisodeNumbersTests
@@ -94,7 +94,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         public void Scan_LoneNumberFittingCollectionSize_IsKept()
         {
             // Gegenprobe zur Lupin-Regel: Folge 5 neben Sonderfolge und Bonusordner ist
-            // plausibel — verworfen wird nur, was nicht zur Sammlungsgröße passt.
+            // plausibel, verworfen wird nur, was nicht zur Sammlungsgröße passt.
             string[] folders = ["000 - Sonderfolge", "005 - Fünfte Folge", "Bonus - Extra"];
 
             Assert.Equal([5], LocalEpisodeNumbers.Scan(folders));

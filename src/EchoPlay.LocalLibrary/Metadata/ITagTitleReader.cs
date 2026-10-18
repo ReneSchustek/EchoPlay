@@ -13,7 +13,7 @@ namespace EchoPlay.LocalLibrary.Metadata
         /// <returns>
         /// Ein Tupel aus <c>Title</c> und <c>Album</c>.
         /// Leere Strings, wenn die Tags nicht gesetzt sind.
-        /// Wirft Ausnahmen bei unlesbar oder nicht unterstützten Formaten –
+        /// Wirft Ausnahmen bei unlesbar oder nicht unterstützten Formaten;
         /// der Aufrufer ist verantwortlich für eine angemessene Fehlerbehandlung.
         /// </returns>
         (string Title, string Album) Read(string filePath);

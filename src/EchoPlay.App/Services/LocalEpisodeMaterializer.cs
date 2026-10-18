@@ -106,7 +106,7 @@ namespace EchoPlay.App.Services
                         "Auto-Import: Neue Serie \"{SeriesName}\" mit {CreatedEpisodes} Episoden angelegt",
                         entry.ScanResult.SeriesName, created);
 
-                    // Erneut melden – jetzt sind die Episoden persistiert. Die in Phase 3 mit noch
+                    // Erneut melden, jetzt sind die Episoden persistiert. Die in Phase 3 mit noch
                     // 0 Episoden angelegte Kachel zieht dadurch live auf die korrekte Zahl nach,
                     // statt bis zum Abschluss-Reload auf "0 / 0" zu verharren.
                     _scanEventService.RaiseSeriesSynced(entry.Series);
@@ -138,7 +138,7 @@ namespace EchoPlay.App.Services
                     tracksCreated += created;
                 }
 
-                // Bestehende Serie fertig abgeglichen – Kachelzähler live nachziehen.
+                // Bestehende Serie fertig abgeglichen, Kachelzähler live nachziehen.
                 _scanEventService.RaiseSeriesSynced(entry.Series);
             }
 

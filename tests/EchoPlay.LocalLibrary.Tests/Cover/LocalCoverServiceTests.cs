@@ -10,13 +10,13 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     /// <summary>
     /// Tests für <see cref="LocalCoverService"/>.
     /// Nutzt temporäre Verzeichnisse als echtes Dateisystem.
-    /// Netzwerkzugriffe werden nicht durchgeführt – kein echtes <see cref="CoverService"/> nötig.
+    /// Netzwerkzugriffe werden nicht durchgeführt, kein echtes <see cref="CoverService"/> nötig.
     /// </summary>
     public sealed class LocalCoverServiceTests : IDisposable
     {
         private readonly string _root;
 
-        // Minimaler JPEG-Header – reicht für Byte-Vergleiche in Tests
+        // Minimaler JPEG-Header, reicht für Byte-Vergleiche in Tests
         private static readonly byte[] JpegA = [0xFF, 0xD8, 0xFF, 0xE0, 0x01];
         private static readonly byte[] JpegB = [0xFF, 0xD8, 0xFF, 0x02];
         private static readonly byte[] JpegC = [0xFF, 0xD8, 0xFF, 0x03];
@@ -60,7 +60,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task ResolveAsync_ReturnsCoverBytes_WhenFolderJpgExists()
         {
-            // folder.jpg – üblich wenn cover.jpg fehlt (z.B. ältere Windows-Media-Player-Bibliotheken)
+            // folder.jpg ist üblich, wenn cover.jpg fehlt (z.B. ältere Windows-Media-Player-Bibliotheken)
             await File.WriteAllBytesAsync(Path.Combine(_root, "folder.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
 
             byte[]? result = await BuildService().ResolveAsync(_root, coverImageUrl: null, cancellationToken: TestContext.Current.CancellationToken);
@@ -71,7 +71,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task ResolveAsync_ReturnsCoverBytes_WhenAlbumArtLargeExists()
         {
-            // Windows Media Player erzeugt AlbumArt_*_Large.jpg automatisch – letzter Fallback
+            // Windows Media Player erzeugt AlbumArt_*_Large.jpg automatisch (letzter Fallback)
             string wmpFile = Path.Combine(_root, "AlbumArt_{9C849FDB-D1AC-4B16-9A54-3AD2F74CE9A9}_Large.jpg");
             await File.WriteAllBytesAsync(wmpFile, JpegC, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -85,7 +85,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task ResolveAsync_ReturnsFrontCover_WhenCoverSubfolderContainsFrontJpg()
         {
-            // Cover/front.jpg ist das Erkennungsbild – hat Vorrang vor generischen Dateinamen
+            // Cover/front.jpg ist das Erkennungsbild und hat Vorrang vor generischen Dateinamen
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
             await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
             await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
@@ -98,7 +98,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task ResolveAsync_IgnoresBackCover_InCoverSubfolder()
         {
-            // back.jpg zeigt die Rückseite – wird übersprungen, auch wenn kein front.jpg existiert
+            // back.jpg zeigt die Rückseite und wird übersprungen, auch wenn kein front.jpg existiert
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
             await File.WriteAllBytesAsync(Path.Combine(coverDir, "back.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -123,7 +123,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task ResolveAsync_CoverSubfolder_HasPriority_OverSeriesFolderFile()
         {
-            // Cover-Unterordner wird zuerst geprüft – cover.jpg direkt im Serienordner kommt danach
+            // Cover-Unterordner wird zuerst geprüft, cover.jpg direkt im Serienordner kommt danach
             string coverDir = Directory.CreateDirectory(Path.Combine(_root, "Cover")).FullName;
             await File.WriteAllBytesAsync(Path.Combine(coverDir, "front.jpg"), JpegA, cancellationToken: TestContext.Current.CancellationToken);
             await File.WriteAllBytesAsync(Path.Combine(_root, "cover.jpg"), JpegB, cancellationToken: TestContext.Current.CancellationToken);
@@ -160,7 +160,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         /// </summary>
         private static LocalCoverService BuildService()
         {
-            // Test-Fixture – Ausnahme von der IHttpClientFactory-Pflicht: da kein Test eine coverImageUrl
+            // Test-Fixture, Ausnahme von der IHttpClientFactory-Pflicht: da kein Test eine coverImageUrl
             // übergibt, bleibt der HttpClient ungenutzt und kann kein Socket-Leak verursachen.
             return new LocalCoverService(new CoverService(new HttpClient()));
         }

@@ -16,7 +16,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Alles hier gehört zur Serie als Ganzes und wird bei jedem Ladelauf gemeinsam
-    /// gesetzt — anders als die Folgenliste darunter, die auf jede Filteränderung reagiert.
+    /// gesetzt, anders als die Folgenliste darunter, die auf jede Filteränderung reagiert.
     /// </remarks>
     public sealed class SeriesHeader : ObservableObject
     {
@@ -60,7 +60,7 @@ namespace EchoPlay.App.ViewModels
             private set => SetProperty(ref _seriesDescription, value);
         }
 
-        /// <summary>Sichtbarkeit des Beschreibungstexts — ohne Text bleibt der Platz leer.</summary>
+        /// <summary>Sichtbarkeit des Beschreibungstexts. Ohne Text bleibt der Platz leer.</summary>
         public Visibility DescriptionVisibility =>
             string.IsNullOrWhiteSpace(_seriesDescription) ? Visibility.Collapsed : Visibility.Visible;
 

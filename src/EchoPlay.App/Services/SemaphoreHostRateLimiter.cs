@@ -39,7 +39,7 @@ namespace EchoPlay.App.Services
         /// <param name="suffixIntervals">
         /// Minimum-Intervall pro Host-Endung, etwa <c>.mzstatic.com</c>. Greift, wenn kein
         /// exakter Hostname passt. Auslieferungsnetze für Bilder verteilen ihre Anfragen auf
-        /// wechselnde Rechnernamen — die alle einzeln einzutragen wäre eine Liste, die bei
+        /// wechselnde Rechnernamen. Die alle einzeln einzutragen wäre eine Liste, die bei
         /// jeder Umstellung der Gegenstelle veraltet.
         /// </param>
         public SemaphoreHostRateLimiter(
@@ -80,13 +80,13 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        /// <param name="host">Hostname des Anbieters — die Begrenzung gilt pro Host, nicht global.</param>
+        /// <param name="host">Hostname des Anbieters; die Begrenzung gilt pro Host, nicht global.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public Task WaitAsync(string host, CancellationToken ct = default)
             => WaitAsync(host, CoverFetchPriority.Background, ct);
 
         /// <inheritdoc/>
-        /// <param name="host">Hostname des Anbieters — die Begrenzung gilt pro Host, nicht global.</param>
+        /// <param name="host">Hostname des Anbieters; die Begrenzung gilt pro Host, nicht global.</param>
         /// <param name="priority">Vorrang der Anfrage: Vordergrund-Anfragen bekommen einen eigenen Slot.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public async Task WaitAsync(string host, CoverFetchPriority priority, CancellationToken ct = default)
@@ -122,7 +122,7 @@ namespace EchoPlay.App.Services
         /// Wartet den konfigurierten Mindestabstand seit dem letzten Aufruf für
         /// <paramref name="host"/> ab und setzt den Zeitstempel neu.
         /// </summary>
-        /// <param name="host">Hostname des Anbieters — die Begrenzung gilt pro Host, nicht global.</param>
+        /// <param name="host">Hostname des Anbieters; die Begrenzung gilt pro Host, nicht global.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         private async Task WaitForSlotAsync(string host, CancellationToken ct)
         {

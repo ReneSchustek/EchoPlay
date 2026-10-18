@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Der Sammelabruf spricht für jede Serie einen fremden Dienst an. Drei Zusagen hängen
     /// daran: Ohne Netzfreigabe geht nichts hinaus, eine Serie, die scheitert, hält die
-    /// übrigen nicht auf, und zwischen zwei Abrufen wird gedrosselt — sonst sperrt der
+    /// übrigen nicht auf, und zwischen zwei Abrufen wird gedrosselt, sonst sperrt der
     /// Anbieter nach wenigen Serien aus.
     /// <para>
     /// Eigene Datei statt Ergänzung von <c>OnlineSubActionsTests</c>: Die Datei liegt
@@ -61,7 +61,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.RefreshAllOnlineSeriesAsync();
 
             // Eine Serie, die von der Platte gelesen wurde, hat beim Anbieter nichts zu
-            // suchen — die Abfrage fände nichts und kostete nur ein Zeitfenster.
+            // suchen, denn die Abfrage fände nichts und kostete nur ein Zeitfenster.
             Assert.Equal(["spotify-1"], harness.ImportSource.RequestedSeriesIds);
         }
 
@@ -160,7 +160,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await harness.Actions.RemoveSeriesAsync(UnknownSeriesId);
 
-            // Eine Rückfrage zu einer Serie, die es nicht gibt, nennt keinen Titel — der
+            // Eine Rückfrage zu einer Serie, die es nicht gibt, nennt keinen Titel, und der
             // Anwender bestätigte etwas Unbenanntes.
             Assert.Equal(0, harness.Confirmation.CallCount);
             Assert.Equal(1, harness.Actions.RemoveSeriesCallCount);
@@ -308,7 +308,7 @@ namespace EchoPlay.App.Tests.ViewModels
                         provider.GetRequiredService<EpisodeCoverCacheService>(),
                         provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>()),
                     ErrorDialogService: new FakeErrorDialogService(),
-                    // Der Fortschrittstext hat Platzhalter — als Muster mitgegeben, sonst
+                    // Der Fortschrittstext hat Platzhalter, als Muster mitgegeben, sonst
                     // verschluckt der Schlüssel die eingesetzten Werte.
                     LocalizationService: new FakeLocalizationService(new Dictionary<string, string>
                     {

@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Die Analyse liest echte Ordner. Sie liegen im Temp-Verzeichnis, tragen einen
-    /// eindeutigen Namen und werden am Ende jedes Tests wieder entfernt — genauso wie in
+    /// eindeutigen Namen und werden am Ende jedes Tests wieder entfernt, genauso wie in
     /// <see cref="MissingEpisodesCoordinatorTests"/>.
     /// </remarks>
     public sealed class MissingEpisodesOnlineReportTests
@@ -153,7 +153,7 @@ namespace EchoPlay.App.Tests.Services
                     fixture.SeriesId, folder, MissingEpisodesMode.OfflineOnly,
                     cancellationToken: TestContext.Current.CancellationToken);
 
-                // Ohne Nummern gibt es keine Lücken zu melden — wohl aber die Zahl der
+                // Ohne Nummern gibt es keine Lücken zu melden, wohl aber die Zahl der
                 // gefundenen Ordner, damit der Anwender die Benennung nachbessern kann.
                 string only = Assert.Single(result);
                 Assert.Contains("2", only, StringComparison.Ordinal);

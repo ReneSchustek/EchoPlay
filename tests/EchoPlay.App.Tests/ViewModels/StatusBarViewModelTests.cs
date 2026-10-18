@@ -220,7 +220,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_AppleMusic_ShowsAppleMusicRegardlessOfCredentials()
         {
-            // Apple Music ist nicht credential-abhängig – Anzeige bleibt unverändert.
+            // Apple Music ist nicht credential-abhängig, die Anzeige bleibt unverändert.
             StatusBarViewModel vm = BuildViewModelWithProvider(
                 ProviderType.AppleMusic, credentialsProvider: null);
 
@@ -252,7 +252,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
             vm.IsTemporarilyOnline = true;
 
-            // Während einer einzelnen zugestimmten Aktion zeigt die Leiste „Online" — sonst
+            // Während einer einzelnen zugestimmten Aktion zeigt die Leiste „Online", sonst
             // stünde dort „Offline", während gerade Daten aus dem Netz kommen.
             Assert.Equal("Online", vm.OnlineOfflineText);
             Assert.NotEqual("", vm.OnlineOfflineGlyph);
@@ -277,7 +277,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Text, Symbol, Farbe und die Sichtbarkeit des Offline-Zeichens hängen alle am
             // selben Zustand. Fehlt eine Meldung, bleibt ein Teil der Leiste auf dem alten
-            // Stand stehen — die Anzeige widerspricht sich dann selbst.
+            // Stand stehen. Die Anzeige widerspricht sich dann selbst.
             Assert.Contains(nameof(StatusBarViewModel.OnlineOfflineText), reported);
             Assert.Contains(nameof(StatusBarViewModel.OnlineOfflineGlyph), reported);
             Assert.Contains(nameof(StatusBarViewModel.OfflineSymbolVisibility), reported);

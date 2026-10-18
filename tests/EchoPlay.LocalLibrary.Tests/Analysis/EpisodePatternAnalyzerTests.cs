@@ -48,7 +48,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
 
             foreach (string name in mp3FileNames)
             {
-                // Leere Datei anlegen – der Analyzer prüft nur die Extension
+                // Leere Datei anlegen, der Analyzer prüft nur die Extension
                 File.WriteAllBytes(Path.Combine(seriesFolder, name), []);
             }
 
@@ -58,7 +58,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         // ── Tests: klassische Zwei-Ebenen-Struktur ────────────────────────────────
 
         /// <summary>
-        /// Muster "{number:000} - {title}" – der häufigste Standard in deutschen Hörspielen.
+        /// Muster "{number:000} - {title}", der häufigste Standard in deutschen Hörspielen.
         /// Drei???-Struktur: Serienordner / "001 - Titel" / Audiodateien.
         /// </summary>
         [Fact]
@@ -89,7 +89,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Muster "{*} - {number:000} - {title}" – Serienname als Präfix.
+        /// Muster "{*} - {number:000} - {title}" mit Serienname als Präfix.
         /// Beispiel: "Die drei Ausrufezeichen - 001 - Die Handy-Falle".
         /// </summary>
         [Fact]
@@ -117,7 +117,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Muster "Folge {number:000} - {title}" – typisch für einige deutsche Produktionen.
+        /// Muster "Folge {number:000} - {title}", typisch für einige deutsche Produktionen.
         /// </summary>
         [Fact]
         public async Task Analyze_FolgePattern_IsTopSuggestion()
@@ -145,7 +145,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Muster "{number:000}_{title}" – Unterstrich statt Leerzeichen und Bindestrich.
+        /// Muster "{number:000}_{title}": Unterstrich statt Leerzeichen und Bindestrich.
         /// </summary>
         [Fact]
         public async Task Analyze_UnderscorePattern_IsTopSuggestion()
@@ -173,7 +173,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Muster "{title} - {number:000}" – Titel vorangestellt, Nummer am Ende.
+        /// Muster "{title} - {number:000}": Titel vorangestellt, Nummer am Ende.
         /// </summary>
         [Fact]
         public async Task Analyze_TitleFirstPattern_IsTopSuggestion()
@@ -201,7 +201,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Muster "{number} - {title}" – ohne führende Nullen.
+        /// Muster "{number} - {title}" ohne führende Nullen.
         /// </summary>
         [Fact]
         public async Task Analyze_NumberWithoutPaddingPattern_IsTopSuggestion()
@@ -232,7 +232,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         // ── Tests: flache Serien ──────────────────────────────────────────────────
 
         /// <summary>
-        /// Flache Serie – MP3-Dateien direkt im Serienordner, kein Episodenordner.
+        /// Flache Serie: MP3-Dateien direkt im Serienordner, kein Episodenordner.
         /// Beispiel: "Die Dr3i - 001 - Das Seeungeheuer.mp3".
         /// </summary>
         [Fact]
@@ -260,7 +260,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Flache Serie mit Standard-Muster – der IsFlatStructure-Flag muss gesetzt sein,
+        /// Flache Serie mit Standard-Muster. Der IsFlatStructure-Flag muss gesetzt sein,
         /// wenn das Muster ausschließlich aus Dateinamen stammt.
         /// </summary>
         [Fact]
@@ -301,7 +301,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         // ── Tests: Grenzfälle ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// Kein passendes Muster – alle Ordner haben ein unbekanntes Format.
+        /// Kein passendes Muster, alle Ordner haben ein unbekanntes Format.
         /// Ergebnis muss leer sein (kein Absturz, kein Fallback-Vorschlag).
         /// </summary>
         [Fact]
@@ -327,7 +327,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Nicht existierender Ordner – muss leer zurückgeben, keine Exception.
+        /// Nicht existierender Ordner: muss leer zurückgeben, keine Exception.
         /// </summary>
         [Fact]
         public async Task Analyze_NonExistentFolder_ReturnsEmpty()
@@ -339,7 +339,7 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
         }
 
         /// <summary>
-        /// Leerer Bibliotheksordner (keine Serien-Unterordner) – muss leer zurückgeben.
+        /// Leerer Bibliotheksordner (keine Serien-Unterordner) muss leer zurückgeben.
         /// </summary>
         [Fact]
         public async Task Analyze_EmptyLibraryRoot_ReturnsEmpty()

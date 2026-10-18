@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Wege, eine Serie loszuwerden.
     /// </summary>
     /// <remarks>
-    /// Zwei dieser Vorgänge löschen — einer nur den Eintrag, einer die Dateien. Beide fragen
+    /// Zwei dieser Vorgänge löschen: einer nur den Eintrag, einer die Dateien. Beide fragen
     /// vorher nach, und beide müssen die Ablehnung ernst nehmen. Ein Test darauf ist billiger
     /// als der Anruf eines Anwenders, dessen Hörspielsammlung verschwunden ist.
     /// <para>
@@ -68,7 +68,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.MarkAllAsReadAsync(series.Id);
 
             // „Alles gehört" muss jede Folge treffen. Bliebe eine offen, stünde die Serie
-            // weiter unter den angefangenen — genau das wollte der Anwender beenden.
+            // weiter unter den angefangenen, und genau das wollte der Anwender beenden.
             System.Collections.Generic.IReadOnlyList<PlaybackState> states =
                 await harness.PlaybackService.GetAllAsync(TestContext.Current.CancellationToken);
 
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await harness.Actions.DeleteSeriesFromLibraryAsync(series.Id);
 
-            // Nur der Eintrag geht — die Dateien bleiben liegen und werden beim nächsten
+            // Nur der Eintrag geht, die Dateien bleiben liegen und werden beim nächsten
             // Einlesen wiedergefunden.
             Assert.Empty(harness.SeriesService.All);
         }
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.ShowMissingEpisodesAsync(Guid.NewGuid());
 
             // Fehlt der Koordinator, gibt es keinen Bericht. Ein leeres Ergebnis zu melden
-            // hieße „nichts fehlt" — das wäre eine Aussage, die niemand geprüft hat.
+            // hieße „nichts fehlt", und das wäre eine Aussage, die niemand geprüft hat.
             Assert.False(reported);
         }
 

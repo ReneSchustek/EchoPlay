@@ -37,7 +37,7 @@ namespace EchoPlay.App.Views
             _navigationService = App.Services.GetRequiredService<INavigationService>();
             InitializeComponent();
 
-            // handledEventsToo: true ist der Schlüssel – damit empfängt der MainScrollViewer
+            // handledEventsToo: true ist der Schlüssel: Damit empfängt der MainScrollViewer
             // das Mausrad-Event auch dann, wenn ein innerer horizontaler ScrollViewer es
             // bereits als "handled" markiert hat. Ohne diesen Trick schlucken die horizontalen
             // ScrollViewer das vertikale Mausrad komplett (bekanntes WinUI-3-Problem).
@@ -126,7 +126,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Empfängt Mausrad-Events auf dem vertikalen Haupt-ScrollViewer – auch wenn ein
+        /// Empfängt Mausrad-Events auf dem vertikalen Haupt-ScrollViewer, auch wenn ein
         /// innerer horizontaler ScrollViewer das Event bereits als handled markiert hat.
         /// Scrollt den MainScrollViewer vertikal um das Mausrad-Delta.
         /// </summary>
@@ -336,8 +336,8 @@ namespace EchoPlay.App.Views
             }
 
             // Pfeil-Visibility für die Kachelreihen wird vom HorizontalTileRowControl
-            // selbst über RegisterPropertyChangedCallback auf ScrollableWidth gesetzt –
-            // hier ist nichts mehr zu tun.
+            // selbst über RegisterPropertyChangedCallback auf ScrollableWidth gesetzt,
+            // daher ist hier nichts mehr zu tun.
         }
 
         /// <summary>

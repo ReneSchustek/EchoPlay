@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="ICoverDownloader"/>. Liefert je URL feste Bytes und protokolliert
-    /// die angefragten URLs. Ohne Eintrag kommt <see langword="null"/> zurück — das ist der
+    /// die angefragten URLs. Ohne Eintrag kommt <see langword="null"/> zurück, das ist der
     /// Fall „Download fehlgeschlagen", auf den die Aufrufer reagieren müssen.
     /// </summary>
     internal sealed class FakeCoverDownloader : ICoverDownloader

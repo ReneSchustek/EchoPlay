@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Composition
     /// <remarks>
     /// Die Basisadressen stehen in der Konfiguration, damit sie ohne neue Fassung
     /// umgestellt werden können. Greift der Wert nicht durch, zeigt sich das erst beim
-    /// ersten Suchlauf — als Fehler, der nach einem Netzproblem aussieht.
+    /// ersten Suchlauf, als Fehler, der nach einem Netzproblem aussieht.
     /// </remarks>
     public sealed class ProviderRegistrationTests
     {

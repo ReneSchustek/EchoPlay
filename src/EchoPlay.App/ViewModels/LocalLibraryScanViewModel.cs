@@ -38,7 +38,7 @@ namespace EchoPlay.App.ViewModels
         private readonly LocalLibraryReset _libraryReset;
 
         /// <summary>
-        /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst und
+        /// DispatcherQueue des UI-Threads; wird im Konstruktor auf dem UI-Thread erfasst und
         /// später genutzt, um Hintergrundthread-Callbacks des <see cref="IScanEventService"/>
         /// auf den UI-Thread zu marshallen. In Unit-Tests ohne WinUI-3-Dispatcher bleibt das Feld <see langword="null"/>.
         /// </summary>
@@ -84,9 +84,9 @@ namespace EchoPlay.App.ViewModels
             _onSeriesSynced = onSeriesSynced;
             _libraryReset = new LocalLibraryReset(scopeFactory);
 
-            // DispatcherQueue auf dem UI-Thread erfassen – Events des Scan-Dienstes treffen später
+            // DispatcherQueue auf dem UI-Thread erfassen, denn Events des Scan-Dienstes treffen später
             // vom Hintergrundthread ein und müssen auf den UI-Thread gemarshallt werden.
-            // In Unit-Tests existiert kein WinUI-3-Dispatcher – dort bleibt _dispatcherQueue null.
+            // In Unit-Tests existiert kein WinUI-3-Dispatcher, dort bleibt _dispatcherQueue null.
             try
             {
                 _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
@@ -142,7 +142,7 @@ namespace EchoPlay.App.ViewModels
         public bool IsNotScanning => !_isScanning;
 
         /// <summary>
-        /// Sichtbarkeit des Scan-Overlays – eingeblendet während ein Scan oder eine Neu-Initialisierung läuft.
+        /// Sichtbarkeit des Scan-Overlays, eingeblendet, während ein Scan oder eine Neu-Initialisierung läuft.
         /// </summary>
         public Visibility IsScanningVisibility => _isScanning ? Visibility.Visible : Visibility.Collapsed;
 
@@ -201,7 +201,7 @@ namespace EchoPlay.App.ViewModels
         public ICommand ReInitializeCommand { get; }
 
         /// <summary>
-        /// Fordert das Hinzufügen eines Ordners an – die Page liefert über
+        /// Fordert das Hinzufügen eines Ordners an. Die Page liefert über
         /// <see cref="AddFolderRequested"/> das HWND des Hauptfensters nach.
         /// </summary>
         public ICommand AddFolderCommand { get; }
@@ -216,7 +216,7 @@ namespace EchoPlay.App.ViewModels
         public event Action? AddFolderRequested;
 
         /// <summary>
-        /// Wird ausgelöst, sobald der Bibliotheksinhalt aus der Datenbank neu geladen werden muss –
+        /// Wird ausgelöst, sobald der Bibliotheksinhalt aus der Datenbank neu geladen werden muss,
         /// z.B. nach Abschluss eines Scans, einer Neu-Initialisierung oder einem Ordnerpicker-Ergebnis.
         /// Das übergeordnete ViewModel reagiert darauf und füllt Kacheln, Episoden und Tracks neu.
         /// </summary>
@@ -289,7 +289,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Listen des übergeordneten ViewModels leeren – veraltete Kacheln dürfen nicht stehen bleiben.
+            // Listen des übergeordneten ViewModels leeren, denn veraltete Kacheln dürfen nicht stehen bleiben.
             ScanStarting?.Invoke();
 
             IsScanning = true;
@@ -321,7 +321,7 @@ namespace EchoPlay.App.ViewModels
 
                 SyncResult result = await _syncService.SyncAsync(progress, forceImportAll: forceImportAll);
 
-                // Fortschrittsbalken sofort ausblenden – bevor der Reload die Liste neu befüllt.
+                // Fortschrittsbalken sofort ausblenden, bevor der Reload die Liste neu befüllt.
                 // Sonst wirkt die Ladezeit der DB-Ansicht wie ein "hängengebliebener" Scan.
                 _statusBar.ScanProgress.Clear();
                 SyncStatusText = $"Scan abgeschlossen: {result.TracksCreated} Tracks angelegt, {result.EpisodesUpdated} Episoden aktualisiert";
@@ -345,7 +345,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Setzt die lokale Bibliothek vollständig zurück und startet einen Neu-Scan.
         /// Rein lokale Serien (ohne Online-ID) werden per Soft-Delete entfernt.
-        /// Online-importierte Serien behalten ihre Metadaten – nur der lokale Pfad und
+        /// Online-importierte Serien behalten ihre Metadaten, nur der lokale Pfad und
         /// die Track-Zuordnungen werden gelöscht. Wiedergabestatus bleibt in jedem Fall erhalten.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuinitialisierung vom Command: DB-/IO-Fehler beim Leeren und Neuanlegen der Bibliothek dürfen den Command nicht reißen; Fehler werden als Status angezeigt.")]
@@ -361,7 +361,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Anzeige sofort leeren – der Nutzer sieht das Reset unmittelbar, bevor der lange DB-Cleanup beginnt.
+            // Anzeige sofort leeren. Der Nutzer sieht das Reset unmittelbar, bevor der lange DB-Cleanup beginnt.
             ScanStarting?.Invoke();
 
             IsScanning = true;
@@ -387,7 +387,7 @@ namespace EchoPlay.App.ViewModels
                     _statusBar.ScanProgress.Update(p);
                 });
 
-                // forceImportAll: true – nach dem Reset müssen alle Serienordner neu importiert werden,
+                // forceImportAll: true, denn nach dem Reset müssen alle Serienordner neu importiert werden,
                 // unabhängig davon ob AutoImportAfterScan in den Einstellungen aktiviert ist.
                 SyncResult result = await _syncService.SyncAsync(progress, forceImportAll: true);
 
@@ -418,7 +418,7 @@ namespace EchoPlay.App.ViewModels
         /// ViewModel die Ansicht aktualisiert. Bricht der Benutzer ab, bleibt der bisherige Zustand erhalten.
         /// </summary>
         /// <param name="windowHandle">
-        /// HWND des Hauptfensters – WinRT-FolderPicker muss per <c>InitializeWithWindow</c>
+        /// HWND des Hauptfensters; der WinRT-FolderPicker muss per <c>InitializeWithWindow</c>
         /// an ein Fenster gebunden werden.
         /// </param>
         public async Task PickFolderAsync(nint windowHandle)
@@ -450,10 +450,10 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Öffnet den Ordnerpicker, legt den gewählten Ordner als neue lokale Serie an
         /// und meldet danach <see cref="LibraryReloaded"/>. Wurde der Ordner bereits als Serienordner
-        /// zugeordnet, wird kein Duplikat erstellt – der Nutzer erhält stattdessen einen stillen Abbruch.
+        /// zugeordnet, wird kein Duplikat erstellt, der Nutzer erhält stattdessen einen stillen Abbruch.
         /// </summary>
         /// <param name="windowHandle">
-        /// HWND des Hauptfensters – WinRT-FolderPicker muss per <c>InitializeWithWindow</c>
+        /// HWND des Hauptfensters; der WinRT-FolderPicker muss per <c>InitializeWithWindow</c>
         /// an ein Fenster gebunden werden.
         /// </param>
         public async Task AddFolderAsync(nint windowHandle)
@@ -496,8 +496,8 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Löst <see cref="LibraryReloaded"/> aus, falls ein Abonnement vorhanden ist.
-        /// Ohne Abonnenten wird der Aufruf stillschweigend übersprungen – relevant für Tests,
-        /// die den Scan ohne angehängtes Top-ViewModel ausführen.
+        /// Ohne Abonnenten wird der Aufruf stillschweigend übersprungen (relevant für Tests,
+        /// die den Scan ohne angehängtes Top-ViewModel ausführen).
         /// </summary>
         private async Task RaiseLibraryReloadedAsync()
         {

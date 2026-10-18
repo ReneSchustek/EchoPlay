@@ -165,7 +165,7 @@
                     IsOpen="False"
                     IsClosable="True"/>
 
-                <!-- Abschnitt: Neuerscheinungen – gruppiert nach Serie, eine Reihe pro Serie.
+                <!-- Abschnitt: Neuerscheinungen, gruppiert nach Serie, eine Reihe pro Serie.
                      Überschrift bleibt sichtbar während des Ladens UND wenn Ergebnisse vorliegen. -->
                 <TextBlock
                     x:Uid="DashboardHeadingNew"
@@ -186,7 +186,7 @@
                         VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Hinweis wenn keine Favoriten gesetzt – erscheint statt der leeren Kachelreihe -->
+                <!-- Hinweis wenn keine Favoriten gesetzt; erscheint statt der leeren Kachelreihe -->
                 <TextBlock
                     x:Uid="DashboardNoFavoritesHint"
                     Visibility="{x:Bind ViewModel.Hints.NoFavoritesHintVisibility, Mode=OneWay}"
@@ -203,7 +203,7 @@
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
-                <!-- Neuerscheinungen: monatlich gruppiert – "Angekündigt" ganz oben,
+                <!-- Neuerscheinungen: monatlich gruppiert, "Angekündigt" ganz oben,
                      dann Monate absteigend (neuester zuerst). -->
                 <ItemsControl
                     ItemsSource="{x:Bind ViewModel.NeuerscheinungenVM.NewEpisodeGroups, Mode=OneWay}"
@@ -223,7 +223,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Abschnitt: Favoriten – nur einblenden wenn favorisierte Serien vorhanden -->
+                <!-- Abschnitt: Favoriten, nur einblenden wenn favorisierte Serien vorhanden -->
                 <TextBlock
                     x:Uid="DashboardHeadingFavorites"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
@@ -270,7 +270,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:FavoriteSeriesCardViewModel">
-                                <!-- Kein Button als Wrapper – ein Full-Size-Button schluckt alle Pointer-Events
+                                <!-- Kein Button als Wrapper, denn ein Full-Size-Button schluckt alle Pointer-Events
                                      und verhindert, dass das ListView den Drag starten kann.
                                      Navigation zur Detailseite läuft über ListView.ItemClick. -->
                                 <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}"
@@ -307,7 +307,7 @@
                     </Button>
                 </Grid>
 
-                <!-- Abschnitt: Weiterhören – Serien mit mindestens 1 gehörten + ungehörten Folgen -->
+                <!-- Abschnitt: Weiterhören: Serien mit mindestens 1 gehörten + ungehörten Folgen -->
                 <TextBlock
                     x:Uid="DashboardHeadingUnheard"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
@@ -318,7 +318,7 @@
                     ItemsSource="{x:Bind ViewModel.WeiterhoerenVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource UnheardSeriesTileTemplate}"/>
 
-                <!-- Abschnitt: Läuft gerade – nur einblenden wenn Episoden mit Fortschritt vorhanden -->
+                <!-- Abschnitt: Läuft gerade, nur einblenden wenn Episoden mit Fortschritt vorhanden -->
                 <TextBlock
                     x:Uid="DashboardHeadingInProgress"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
@@ -329,7 +329,7 @@
                     ItemsSource="{x:Bind ViewModel.InProgressVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource InProgressTileTemplate}"/>
 
-                <!-- Abschnitt: Zuletzt gehört – nur einblenden wenn Einträge vorhanden -->
+                <!-- Abschnitt: Zuletzt gehört, nur einblenden wenn Einträge vorhanden -->
                 <TextBlock
                     x:Uid="DashboardHeadingRecent"
                     Style="{ThemeResource SubtitleTextBlockStyle}"

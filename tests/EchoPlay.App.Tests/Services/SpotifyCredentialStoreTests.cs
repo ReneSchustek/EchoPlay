@@ -157,7 +157,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task GetAsync_ReadsLegacyBlobWithoutEntropy_AndRewritesIt()
         {
             // Credentials, die vor der Entropie-Umstellung gespeichert wurden, müssen
-            // weiterhin lesbar sein — und beim ersten Lesen auf das neue Format wandern,
+            // weiterhin lesbar sein und beim ersten Lesen auf das neue Format wandern,
             // damit der schwächere Blob nicht dauerhaft liegen bleibt.
             (SpotifyCredentialStore store, FakeSecureSettingsDataService fakeService) = BuildStore();
 

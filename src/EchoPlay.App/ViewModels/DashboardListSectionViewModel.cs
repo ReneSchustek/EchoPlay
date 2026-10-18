@@ -31,7 +31,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit der Sektion – sichtbar sobald mindestens ein Eintrag vorhanden ist.
+        /// Sichtbarkeit der Sektion, sichtbar, sobald mindestens ein Eintrag vorhanden ist.
         /// </summary>
         public Visibility SectionVisibility =>
             _items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

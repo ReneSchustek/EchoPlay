@@ -63,8 +63,8 @@ namespace EchoPlay.Core.Tests.Http
         [Fact]
         public void IsTransient_ForATimeoutWithoutCancellation_SaysYes()
         {
-            // Die Gegenstelle hat nicht rechtzeitig geantwortet, niemand hat abgebrochen —
-            // das bleibt ein überspringbarer Ladefehler.
+            // Die Gegenstelle hat nicht rechtzeitig geantwortet, niemand hat abgebrochen:
+            // Das bleibt ein überspringbarer Ladefehler.
             Assert.True(TransientRequestError.IsTransient(
                 new TaskCanceledException("Zeitgrenze überschritten"), TestContext.Current.CancellationToken));
         }
@@ -73,7 +73,7 @@ namespace EchoPlay.Core.Tests.Http
         public void IsTransient_ForANetworkErrorDuringCancellation_StillSaysYes()
         {
             // Die Ausnahme gilt nur dem Abbruch selbst. Ein echter Netzfehler bleibt ein
-            // Netzfehler, auch wenn zufällig gerade abgebrochen wurde — sonst verschwänden
+            // Netzfehler, auch wenn zufällig gerade abgebrochen wurde, sonst verschwänden
             // Ausfälle genau dann, wenn viel los ist.
             using CancellationTokenSource cts = new();
             cts.Cancel();

@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Views
     /// <para>
     /// Zwei Zusagen stehen hier, und die erste ist die wichtigere: EchoPlay führt sechs
     /// Farbpaletten, von denen zur Laufzeit immer nur eine geladen ist. Fehlt ein Schlüssel in
-    /// einer davon, bricht die Bindung <em>genau in diesem Theme</em> — und das fällt nicht beim
+    /// einer davon, bricht die Bindung <em>genau in diesem Theme</em>, und das fällt nicht beim
     /// Bauen auf, sondern beim Nutzer, der zufällig dieses Theme gewählt hat. Vor Einführung
     /// dieser Prüfung führten vier der sechs Paletten 55 Schlüssel und zwei davon 87.
     /// </para>
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.Views
         ];
 
         /// <summary>
-        /// <c>Transparent</c> ist keine Farbe der Marke, sondern eine Aussage über die Fläche —
+        /// <c>Transparent</c> ist keine Farbe der Marke, sondern eine Aussage über die Fläche
         /// und deshalb ausdrücklich erlaubt.
         /// </summary>
         private static readonly string[] AllowedNamedValues = ["Transparent"];
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Views
                 RegexOptions.Compiled);
 
         /// <summary>
-        /// Die eigentliche Zusage: Jede Palette belegt denselben Satz Schlüssel — und zwar in
+        /// Die eigentliche Zusage: Jede Palette belegt denselben Satz Schlüssel, und zwar in
         /// beiden Abschnitten, die WinUI kennt.
         /// </summary>
         [Fact]
@@ -108,7 +108,7 @@ namespace EchoPlay.App.Tests.Views
 
         /// <summary>
         /// Jede Palette muss beide Abschnitte führen. Fehlt einer, fällt WinUI für dieses Theme
-        /// auf seine eigenen Vorgabefarben zurück — sichtbar als schwarze Schrift auf dunklem
+        /// auf seine eigenen Vorgabefarben zurück, sichtbar als schwarze Schrift auf dunklem
         /// Grund, und zwar nur bei dem einen Theme.
         /// </summary>
         [Fact]
@@ -139,7 +139,7 @@ namespace EchoPlay.App.Tests.Views
 
         /// <summary>
         /// Wer in einer Ansicht eine Farbe fest hinschreibt, hat die Linie an dieser Stelle
-        /// verlassen — und niemand findet es beim nächsten Theme-Wechsel wieder.
+        /// verlassen, und niemand findet es beim nächsten Theme-Wechsel wieder.
         /// </summary>
         [Fact]
         public void NoView_HardCodesAColorValue()
@@ -175,7 +175,7 @@ namespace EchoPlay.App.Tests.Views
                 return false;
             }
 
-            // Ein Wert dieser Form ist praktisch immer eine Farbe — unabhängig davon, hinter
+            // Ein Wert dieser Form ist praktisch immer eine Farbe, unabhängig davon, hinter
             // welchem Attribut er steht. Fängt auch Setter-Value und Animationsziele ab.
             if (HexColor.IsMatch(wert)) return true;
 
@@ -185,7 +185,7 @@ namespace EchoPlay.App.Tests.Views
             string name = attribute.Name.LocalName;
             if (ColorAttributes.Contains(name, StringComparer.Ordinal)) return true;
 
-            // <Setter Property="Foreground" Value="White"/> — die Farbe steht im Value,
+            // <Setter Property="Foreground" Value="White"/>: Die Farbe steht im Value,
             // die Rolle im Property daneben.
             return name == "Value"
                 && element.Name.LocalName == "Setter"
@@ -205,7 +205,7 @@ namespace EchoPlay.App.Tests.Views
 
         /// <summary>
         /// Alles, was Oberfläche ist: Seiten, Bausteine, Fenster. Ohne die Wörterbücher unter
-        /// <c>Themes/</c> — dort gehören Farben ausdrücklich hin.
+        /// <c>Themes/</c>, denn dort gehören Farben ausdrücklich hin.
         /// </summary>
         private static IEnumerable<string> EnumerateViewFiles() =>
             Directory

@@ -11,8 +11,8 @@ namespace EchoPlay.App.Services
     /// <inheritdoc/>
     public sealed class FilePickerService : IFilePickerService
     {
-        // Window-Handle wird zur Aufrufzeit aus App.MainWindow gezogen, nicht im Konstruktor —
-        // beim App-Start ist das Fenster noch nicht aktiviert, und ein Neustart kann die
+        // Window-Handle wird zur Aufrufzeit aus App.MainWindow gezogen, nicht im Konstruktor:
+        // Beim App-Start ist das Fenster noch nicht aktiviert, und ein Neustart kann die
         // MainWindow-Referenz wechseln.
         private static Window MainWindow =>
             App.MainWindow ?? throw new InvalidOperationException(

@@ -101,7 +101,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task Verlassen_MitAblehnungNavigiertOhneZuSpeichern()
         {
-            // "Nein" verwirft die Änderung bewusst — die Seite darf trotzdem verlassen werden,
+            // "Nein" verwirft die Änderung bewusst. Die Seite darf trotzdem verlassen werden,
             // sonst sitzt der Nutzer in den Einstellungen fest.
             FakeAppSettingsDataService settingsService = new();
             FakeConfirmationDialogService confirmation = new(result: false);

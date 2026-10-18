@@ -43,7 +43,7 @@ namespace EchoPlay.App.Tests
         [Fact]
         public void IsConfigured_IsTrue_WhenRealHandleIsSet()
         {
-            // Ein echter Handle ist hinterlegt (kein Platzhalter mehr) – der Spenden-Button
+            // Ein echter Handle ist hinterlegt (kein Platzhalter mehr), der Spenden-Button
             // wird dadurch sichtbar geschaltet.
             Assert.True(SupportDonation.IsConfigured);
         }

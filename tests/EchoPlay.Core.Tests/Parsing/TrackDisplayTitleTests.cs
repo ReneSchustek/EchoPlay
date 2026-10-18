@@ -4,7 +4,7 @@ namespace EchoPlay.Core.Tests.Parsing
 {
     /// <summary>
     /// Prüft, wie der Anzeigename einer Spur zustande kommt: Titel aus der Kennzeichnung
-    /// bevorzugt, Dateiname als Rückfallebene — aufgeräumt, aber nie leer.
+    /// bevorzugt, Dateiname als Rückfallebene: aufgeräumt, aber nie leer.
     /// </summary>
     public sealed class TrackDisplayTitleTests
     {
@@ -61,7 +61,7 @@ namespace EchoPlay.Core.Tests.Parsing
         [Fact]
         public void Choose_TagTitleContainsPlaceholderWord_IsStillUsed()
         {
-            // Nur der reine Platzhalter zählt – "Der Track ins Nichts" ist ein echter Titel.
+            // Nur der reine Platzhalter zählt, "Der Track ins Nichts" ist ein echter Titel.
             string result = TrackDisplayTitle.Choose(
                 "Der Track ins Nichts",
                 @"C:\Audio\Serie\04 - Irgendwas.mp3",
@@ -85,7 +85,7 @@ namespace EchoPlay.Core.Tests.Parsing
         [InlineData(@"C:\Audio\1 Das leere Haus.mp3")]
         public void FromFilePath_LeadingNumberIsTheTrackNumber_IsRemoved(string filePath)
         {
-            // Die Nummer steht bereits in eigener Spalte – zweimal wäre sie zu viel.
+            // Die Nummer steht bereits in eigener Spalte. Zweimal wäre sie zu viel.
             string result = TrackDisplayTitle.FromFilePath(filePath, trackNumber: 1);
 
             Assert.Equal("Das leere Haus", result);
@@ -103,7 +103,7 @@ namespace EchoPlay.Core.Tests.Parsing
         [Fact]
         public void FromFilePath_NumberIsNotFollowedBySeparator_IsKept()
         {
-            // Kassetten-Rips wie "01a Spuk" tragen eine Seitenkennung – da wird nichts entfernt.
+            // Kassetten-Rips wie "01a Spuk" tragen eine Seitenkennung, da wird nichts entfernt.
             string result = TrackDisplayTitle.FromFilePath(@"C:\Audio\01a Spuk in der Werkstatt.mp3", trackNumber: 1);
 
             Assert.Equal("01a Spuk in der Werkstatt", result);

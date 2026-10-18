@@ -7,7 +7,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <remarks>
     /// Eigene Klasse, weil die Regel keine Oberfläche braucht: Das Zeigen des Dialogs ist
-    /// ohne Fensterkontext nicht prüfbar, diese Regel schon — und sie ist der Teil, bei dem
+    /// ohne Fensterkontext nicht prüfbar, diese Regel schon, und sie ist der Teil, bei dem
     /// ein Fehler weh tut.
     /// </remarks>
     public static class DialogSuppressionDecision
@@ -19,7 +19,7 @@ namespace EchoPlay.App.Services
         /// <param name="isCheckBoxChecked">Ob der Nutzer das Häkchen gesetzt hat.</param>
         /// <param name="isAffirmative">
         /// Bei Rückfragen: ob der Nutzer zugestimmt hat. Bei Hinweisen immer
-        /// <see langword="true"/> — dort gibt es nur eine Schaltfläche.
+        /// <see langword="true"/>, dort gibt es nur eine Schaltfläche.
         /// </param>
         /// <returns><see langword="true"/>, wenn der Dialog künftig ausbleiben soll.</returns>
         /// <remarks>

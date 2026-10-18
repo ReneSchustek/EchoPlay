@@ -35,28 +35,28 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
             _ = services.AddTransient<IEpisodePatternAnalyzer, EpisodePatternAnalyzer>();
             _ = services.AddScoped<IFolderRestructureService, FolderRestructureService>();
 
-            // CoverService benötigt einen HttpClient – wird über IHttpClientFactory bereitgestellt
+            // CoverService benötigt einen HttpClient, der über IHttpClientFactory bereitgestellt wird
             _ = services.AddHttpClient<CoverService>();
 
             // ── Cover-Suche: fünf Anbieter, alle kostenlos und ohne API-Key ────────
 
-            // Cover Art Archive (MusicBrainz) – Album-Cover, User-Agent ist Pflicht
+            // Cover Art Archive (MusicBrainz): Album-Cover, User-Agent ist Pflicht
             _ = services.AddHttpClient<CoverArtArchiveSearchService>(client =>
             {
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(
                     "EchoPlay/1.0 (https://ruhrcoder.de)");
             });
 
-            // iTunes Search API – Album-Cover
+            // iTunes Search API: Album-Cover
             _ = services.AddHttpClient<ITunesCoverSearchService>();
 
-            // Deezer Künstler-Profilbilder – ideal für Serien-Cover
+            // Deezer Künstler-Profilbilder, ideal für Serien-Cover
             _ = services.AddHttpClient<DeezerArtistCoverSearchService>();
 
-            // Deezer Album-Cover – dritte Quelle für Folgen-Cover
+            // Deezer Album-Cover als dritte Quelle für Folgen-Cover
             _ = services.AddHttpClient<DeezerAlbumCoverSearchService>();
 
-            // Discogs – physische Releases (CD, Kassette), User-Agent ist Pflicht.
+            // Discogs: physische Releases (CD, Kassette), User-Agent ist Pflicht.
             // Besonders wertvoll für ältere Hörspielserien, die auf Streaming-Plattformen fehlen.
             _ = services.AddHttpClient<DiscogsCoverSearchService>(client =>
             {
@@ -65,8 +65,8 @@ namespace EchoPlay.LocalLibrary.DependencyInjection
             });
 
             // Composite-Service: fasst alle Anbieter zusammen und fragt parallel ab.
-            // Der Composite ist die einzige Implementierung von ICoverSearchService –
-            // Konsumenten (ViewModel) bekommen automatisch alle Anbieter.
+            // Der Composite ist die einzige Implementierung von ICoverSearchService,
+            // daher bekommen Konsumenten (ViewModel) automatisch alle Anbieter.
             // Reihenfolge: Künstlerbilder zuerst (Serien-Cover), dann Album-Cover.
             _ = services.AddTransient<ICoverSearchService>(provider =>
             {

@@ -9,12 +9,12 @@ namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
     /// Prüft die Umrechnung zwischen dem Auswahlfeld der Einstellungen und dem hinterlegten
-    /// Anbieter — und den Hinweis, wenn gespeicherte Zugangsdaten nicht mehr lesbar sind.
+    /// Anbieter und den Hinweis, wenn gespeicherte Zugangsdaten nicht mehr lesbar sind.
     /// </summary>
     /// <remarks>
     /// Die Oberfläche kennt nur Zeichenketten, der Bestand nur den Aufzählungswert. Stimmt
     /// die Umrechnung nicht, wählt der Anwender „Apple Music" und die Suche fragt weiter
-    /// bei Spotify — ohne jede Meldung.
+    /// bei Spotify, ohne jede Meldung.
     /// </remarks>
     public sealed class OnlineProviderTagTests
     {
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.ActiveProviderTag = tag;
 
-            // Ein unbekannter Wert darf nicht stillschweigend bei Spotify landen — „kein
+            // Ein unbekannter Wert darf nicht stillschweigend bei Spotify landen; „kein
             // Anbieter" ist die ehrliche Antwort.
             Assert.Equal(expected, sut.ActiveProvider);
         }
@@ -66,7 +66,7 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSpotifyCredentialStore store = new() { SimulateCryptographicFailure = true };
             OnlineSettingsViewModel sut = BuildViewModel(out _, store);
 
-            // Der Fehlschlag zeigt sich erst beim Lesen — danach steht das Kennzeichen.
+            // Der Fehlschlag zeigt sich erst beim Lesen, danach steht das Kennzeichen.
             _ = await store.GetAsync(TestContext.Current.CancellationToken);
 
             sut.LoadSpotifyStatus();

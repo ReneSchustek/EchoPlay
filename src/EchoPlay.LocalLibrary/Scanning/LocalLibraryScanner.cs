@@ -34,7 +34,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         }
 
         /// <summary>
-        /// Gibt alle direkten Unterordner des Wurzelverzeichnisses zurück – ohne Episodenscan.
+        /// Gibt alle direkten Unterordner des Wurzelverzeichnisses zurück, ohne Episodenscan.
         /// Extrem schnell: nur ein <c>Directory.GetDirectories</c>-Aufruf, kein IO auf Dateiebene.
         /// Gibt eine leere Liste zurück wenn das Verzeichnis nicht existiert oder ein IO-Fehler auftritt.
         /// </summary>
@@ -55,26 +55,26 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// Läuft auf einem Hintergrundthread (Task.Run), damit der UI-Thread nicht blockiert wird.
         /// Ermittelt vor der Scan-Schleife die Gesamtanzahl aller Audiodateien, um einen
         /// deterministischen Fortschrittsbalken zu ermöglichen.
-        /// Episodenordner werden unabhängig vom konfigurierten Muster importiert –
-        /// stimmt der Ordnername nicht mit dem Muster überein, wird der Ordnername als Titel verwendet.
+        /// Episodenordner werden unabhängig vom konfigurierten Muster importiert:
+        /// Stimmt der Ordnername nicht mit dem Muster überein, wird der Ordnername als Titel verwendet.
         /// </summary>
         /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis der Bibliothek.</param>
         /// <param name="folderPattern">
         /// Muster für Episodenordner, z.B. <c>"{number:000} - {title}"</c>.
         /// Unterstützte Platzhalter: <c>{number}</c>, <c>{number:000}</c>, <c>{title}</c>.
-        /// Passt der Ordnername nicht, wird er trotzdem importiert – nur <see cref="LocalEpisodeScan.ParsedNumber"/>
+        /// Passt der Ordnername nicht, wird er trotzdem importiert, nur <see cref="LocalEpisodeScan.ParsedNumber"/>
         /// bleibt dann <see langword="null"/>.
         /// </param>
         /// <param name="progress">
-        /// Optionaler Fortschritts-Callback – erhält <see cref="ScanProgress"/> nach jeder
+        /// Optionaler Fortschritts-Callback; erhält <see cref="ScanProgress"/> nach jeder
         /// verarbeiteten Episode. Null wenn kein Fortschritt gemeldet werden soll.
         /// </param>
         /// <param name="onSeriesScanned">
         /// Optionaler Callback, der nach jeder vollständig gescannten Serie aufgerufen wird.
         /// Ermöglicht es dem Aufrufer, Serien sofort zu verarbeiten, ohne auf das Gesamtergebnis
-        /// zu warten – Grundlage für die progressive Anzeige in der UI.
+        /// zu warten, als Grundlage für die progressive Anzeige in der UI.
         /// </param>
-        /// <param name="ct">Abbruchtoken – ermöglicht sauberes Beenden bei App-Schließen.</param>
+        /// <param name="ct">Abbruchtoken; ermöglicht sauberes Beenden bei App-Schließen.</param>
         /// <returns>
         /// Liste aller gefundenen Serien mit ihren Episoden.
         /// Gibt eine leere Liste zurück, wenn das Verzeichnis nicht existiert oder leer ist.
@@ -86,8 +86,8 @@ namespace EchoPlay.LocalLibrary.Scanning
             IProgress<LocalScanResult>? onSeriesScanned = null,
             CancellationToken ct = default)
         {
-            // Task.Run lagert den synchronen Dateisystem-Zugriff auf den Threadpool aus –
-            // der UI-Thread bleibt während des Scans vollständig reaktionsfähig.
+            // Task.Run lagert den synchronen Dateisystem-Zugriff auf den Threadpool aus,
+            // damit der UI-Thread während des Scans vollständig reaktionsfähig bleibt.
             // Progress<T> leitet die Callbacks sicher auf den UI-Thread zurück.
             // CancellationToken wird an Task.Run übergeben, damit der Task vor dem Start
             // abbrechbar ist, und an ExecuteScan, damit auch die Schleife darin abbricht.
@@ -114,8 +114,8 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return [];
             }
 
-            // Gesamtzahl aller Audiodateien vor der Scan-Schleife ermitteln –
-            // nur so ist ein deterministischer Fortschrittsbalken möglich.
+            // Gesamtzahl aller Audiodateien vor der Scan-Schleife ermitteln,
+            // denn nur so ist ein deterministischer Fortschrittsbalken möglich.
             int totalFiles = CountSupportedFiles(rootPath);
             int processedFiles = 0;
 
@@ -126,7 +126,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
             foreach (string seriesFolder in seriesFolders)
             {
-                // Abbruchprüfung pro Serie – ermöglicht sauberes Beenden bei App-Schließen
+                // Abbruchprüfung pro Serie, ermöglicht sauberes Beenden bei App-Schließen
                 ct.ThrowIfCancellationRequested();
                 LocalScanResult? scanResult = ScanSeries(
                     seriesFolder,
@@ -152,7 +152,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <summary>
         /// Scannt einen einzelnen Serienordner und gibt das Ergebnis zurück.
         /// Meldet nach jeder Episode den aktuellen Fortschritt.
-        /// Episodenordner ohne Mustert-Treffer werden trotzdem importiert –
+        /// Episodenordner ohne Mustert-Treffer werden trotzdem importiert;
         /// der Ordnername wird dann als Episodentitel verwendet.
         /// </summary>
         private LocalScanResult? ScanSeries(
@@ -171,7 +171,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 string folderName = Path.GetFileName(episodeFolder);
 
                 // Versuche, Nummer und Titel aus dem Ordnernamen zu parsen.
-                // Kein Treffer ist kein Fehler – der Ordnername dient dann als Titel.
+                // Kein Treffer ist kein Fehler, der Ordnername dient dann als Titel.
                 bool matched = parser.TryParse(folderName, out int? number, out string? parsedTitle);
                 _logger.Debug(matched
                     ? $"Muster erkannt: '{folderName}' → Nummer {number}, Titel '{parsedTitle}'"
@@ -179,7 +179,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                 List<string> trackPaths = CollectTrackPaths(episodeFolder);
 
-                // Ordner ohne Audiodateien überspringen – leer bedeutet keine Folge
+                // Ordner ohne Audiodateien überspringen, denn leer bedeutet keine Folge
                 if (trackPaths.Count == 0)
                 {
                     _logger.Debug(() => $"Episodenordner ohne Audiodateien übersprungen: {folderName}");
@@ -198,7 +198,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                     TrackPaths = trackPaths
                 });
 
-                // Fortschritt nach jeder Episode melden – Tracks dieser Episode zählen hoch
+                // Fortschritt nach jeder Episode melden, die Tracks dieser Episode zählen hoch
                 processedFiles += trackPaths.Count;
                 progress?.Report(new ScanProgress
                 {
@@ -209,7 +209,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
 
             // Flache Serie: Audiodateien direkt im Serienordner.
-            // Greift wenn keine Episoden aus Unterordnern gefunden wurden –
+            // Greift, wenn keine Episoden aus Unterordnern gefunden wurden,
             // auch bei vorhandenen Unterordnern (z.B. Pumuckl hat einen "Kinderparty"-Ordner
             // ohne Audio, aber 86 MP3-Dateien direkt im Serienordner).
             if (episodes.Count == 0)
@@ -220,7 +220,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 {
                     _logger.Debug(() => $"Flache Serie erkannt: {seriesName} – {flatTracks.Count} Audiodateien direkt im Ordner");
 
-                    // Mehrere Parser-Muster probieren – Dateinamen folgen anderen Konventionen
+                    // Mehrere Parser-Muster probieren, denn Dateinamen folgen anderen Konventionen
                     // als Ordnernamen (z.B. "Karl May - 001 - Durch die Wüste")
                     EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(parser);
 
@@ -275,12 +275,12 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// nicht den Episodentitel. Der Ordnername ist die verlässlichste Quelle.
         /// </para>
         /// </summary>
-        /// <param name="trackPaths">Audiodateien der Episode – der erste Track wird für Album-Tag genutzt.</param>
+        /// <param name="trackPaths">Audiodateien der Episode; der erste Track wird für Album-Tag genutzt.</param>
         /// <param name="folderDerivedTitle">Aus dem Ordnernamen ermittelter Titel (kann Laufnummern enthalten).</param>
         /// <returns>Bester verfügbarer Episodentitel oder null, wenn keiner ermittelt werden konnte.</returns>
         private string? ResolveEpisodeTitle(List<string> trackPaths, string? folderDerivedTitle)
         {
-            // Ordnername hat Vorrang – der Nutzer hat die Episoden nach diesem Schema abgelegt
+            // Ordnername hat Vorrang, denn der Nutzer hat die Episoden nach diesem Schema abgelegt
             if (folderDerivedTitle is not null)
             {
                 return EpisodeFolderParser.StripLeadingSequenceNumber(folderDerivedTitle);
@@ -303,7 +303,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
         /// <summary>
         /// Liest den ID3-Album-Tag der angegebenen Audiodatei.
-        /// <c>Tag.Title</c> wird nicht verwendet – er enthält den Kapitel-Titel, nicht den Episodentitel.
+        /// <c>Tag.Title</c> wird nicht verwendet, denn er enthält den Kapitel-Titel, nicht den Episodentitel.
         /// Fehlerhafte oder nicht unterstützte Dateien geben null zurück.
         /// </summary>
         /// <param name="filePath">Absoluter Pfad zur Audiodatei.</param>
@@ -332,7 +332,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
         /// <summary>
         /// Zählt alle unterstützten Audiodateien im angegebenen Verzeichnis rekursiv.
-        /// Gibt 0 zurück bei IO-Fehlern – der Aufrufer soll dann indeterministischen Fortschritt zeigen.
+        /// Gibt 0 zurück bei IO-Fehlern; der Aufrufer soll dann indeterministischen Fortschritt zeigen.
         /// </summary>
         /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis.</param>
         /// <returns>Anzahl der Audiodateien oder 0 bei Fehler.</returns>

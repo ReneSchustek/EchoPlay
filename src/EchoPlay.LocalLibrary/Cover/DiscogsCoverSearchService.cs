@@ -9,7 +9,7 @@ namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Sucht Cover über die kostenlose Discogs-Datenbank-API.
-    /// Discogs hat eine große Sammlung physischer Releases (Vinyl, CD, Kassette) mit Scans –
+    /// Discogs hat eine große Sammlung physischer Releases (Vinyl, CD, Kassette) mit Scans,
     /// besonders wertvoll für ältere Hörspielserien, die auf den Streaming-Plattformen fehlen.
     /// </summary>
     /// <remarks>
@@ -37,7 +37,7 @@ namespace EchoPlay.LocalLibrary.Cover
             SearchJsonAsync<DiscogsSearchResponse, DiscogsRelease>(
                 title,
                 page,
-                // Discogs blättert über page, und zwar einsbasiert — daher Offset/Limit + 1.
+                // Discogs blättert über page, und zwar einsbasiert, daher Offset/Limit + 1.
                 static (encodedTitle, window) => $"https://api.discogs.com/database/search?q={encodedTitle}&type=release&per_page={window.Limit}&page={(window.Offset / window.Limit) + 1}",
                 static response => response.Results,
                 MapRelease,
@@ -46,7 +46,7 @@ namespace EchoPlay.LocalLibrary.Cover
         private static CoverSearchResult? MapRelease(DiscogsRelease release, string fallbackTitle)
         {
             // Discogs liefert ein Thumbnail und eine Cover-URL.
-            // Manche Releases haben kein Bild – die filtern wir raus.
+            // Manche Releases haben kein Bild; die filtern wir raus.
             if (string.IsNullOrWhiteSpace(release.CoverImage)
                 || string.IsNullOrWhiteSpace(release.Thumb))
             {

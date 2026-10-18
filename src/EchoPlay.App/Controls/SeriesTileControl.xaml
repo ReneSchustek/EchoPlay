@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Wiederverwendbare Serien-Kachel (140×140) mit Cover, Text-Overlay und optionalen Buttons.
-     Wird in lokaler und Online-Mediathek identisch verwendet – DRY statt duplizierter DataTemplates.
+     Wird in lokaler und Online-Mediathek identisch verwendet (DRY statt duplizierter DataTemplates).
      Optionales V-Icon unter der Kachel zeigt die aktive Serie im Akkordeon.
 
      Kachelform der Gestaltungslinie: kleiner Eckenradius, Haarlinie als Rand, kein
-     Schlagschatten. Beim Überfahren wechselt der Rand die Farbe — die Kachel hebt sich
+     Schlagschatten. Beim Überfahren wechselt der Rand die Farbe; die Kachel hebt sich
      nicht an.
 
      Das Cover bleibt die Fläche der Kachel und wird nicht durch einen farbigen Kopf
@@ -84,7 +84,7 @@
                  unter der Untergrenze für ein Bedienziel: Drei Schaltflächen zu 40 Punkten
                  nähmen auf einer 148 Punkte breiten Kachel fast die ganze Breite ein und
                  verdeckten das Cover, das hier der eigentliche Inhalt ist. Jede der drei
-                 Aktionen ist zusätzlich über das Kontextmenü der Kachel erreichbar — das
+                 Aktionen ist zusätzlich über das Kontextmenü der Kachel erreichbar. Das
                  ist der zweite Weg, den die Vorgabe für kleine Ziele verlangt. -->
             <Button
                 x:Name="FavoriteButton"
@@ -123,7 +123,7 @@
         </Grid>
         </Border>
 
-        <!-- V-Pfeil unter der Kachel – zeigt an welche Serie im Akkordeon aufgeklappt ist -->
+        <!-- V-Pfeil unter der Kachel, zeigt an, welche Serie im Akkordeon aufgeklappt ist -->
         <FontIcon
             x:Name="SelectedIndicator"
             Glyph="&#xE70D;"

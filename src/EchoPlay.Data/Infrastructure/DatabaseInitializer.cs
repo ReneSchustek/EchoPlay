@@ -11,7 +11,7 @@ namespace EchoPlay.Data.Infrastructure
     /// <summary>
     /// Stellt sicher, dass alle ausstehenden EF-Core-Migrationen beim App-Start eingespielt werden.
     /// Vor einer Migration mit offenen Änderungen wird die bestehende SQLite-Datei per
-    /// <c>VACUUM INTO</c> snapshot-artig dupliziert – SQLite konsolidiert dabei WAL-Journal und
+    /// <c>VACUUM INTO</c> snapshot-artig dupliziert. SQLite konsolidiert dabei WAL-Journal und
     /// Hauptdatei in eine konsistente Kopie, sodass der Nutzer bei einem Schema-Bruch zurückrollen kann.
     /// Muss einmalig aufgerufen werden, bevor andere Datenbankzugriffe stattfinden.
     /// </summary>
@@ -38,7 +38,7 @@ namespace EchoPlay.Data.Infrastructure
         /// <summary>
         /// Wendet alle ausstehenden Migrationen an und erstellt die Datenbank falls nötig.
         /// Ist kein Schema vorhanden, wird es vollständig aufgebaut.
-        /// Fehler werden nicht unterdrückt – ohne lauffähiges Schema kann die App nicht starten.
+        /// Fehler werden nicht unterdrückt, denn ohne lauffähiges Schema kann die App nicht starten.
         /// </summary>
         /// <param name="cancellationToken">
         /// Abbruch-Token. Greift bei Vorprüfung und Backup; die Migration selbst läuft je
@@ -70,8 +70,8 @@ namespace EchoPlay.Data.Infrastructure
         /// Liest die Backup-Einstellungen aus der Datenbank. Wirft die Abfrage eine
         /// <see cref="SqliteException"/> (Tabelle/Spalte existiert noch nicht, z. B. bei
         /// Erstinstallation oder vor der Einführung der Backup-Spalten), werden die
-        /// Default-Werte zurückgegeben – Backup an, fünf Kopien.
-        /// Intern zum Testen – die öffentliche API bleibt <see cref="InitializeAsync"/>.
+        /// Default-Werte zurückgegeben: Backup an, fünf Kopien.
+        /// Intern zum Testen, die öffentliche API bleibt <see cref="InitializeAsync"/>.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         internal async Task<(bool Enabled, int RetentionCount)> TryReadBackupSettingsAsync(
@@ -101,7 +101,7 @@ namespace EchoPlay.Data.Infrastructure
         /// <summary>
         /// Erstellt per <c>VACUUM INTO</c> einen konsistenten Snapshot der Datenbankdatei und
         /// räumt alte Backups auf, sodass maximal <paramref name="retentionCount"/> Kopien bestehen bleiben.
-        /// Fehler werden geloggt, brechen die Migration aber nicht ab – ein
+        /// Fehler werden geloggt, brechen die Migration aber nicht ab, denn ein
         /// fehlender Backup-Schritt ist besser als ein verweigerter App-Start.
         /// </summary>
         /// <param name="retentionCount">Anzahl der zu behaltenden Backups.</param>
@@ -121,7 +121,7 @@ namespace EchoPlay.Data.Infrastructure
             string dbPath = connectionBuilder.DataSource;
 
             // In-Memory-DBs (`:memory:`) und leere Pfade haben keinen physischen Snapshot
-            // und werden schlicht übersprungen – relevant für Tests und unkonfigurierte Umgebungen.
+            // und werden schlicht übersprungen (relevant für Tests und unkonfigurierte Umgebungen).
             if (string.IsNullOrEmpty(dbPath)
                 || string.Equals(dbPath, ":memory:", StringComparison.OrdinalIgnoreCase)
                 || !File.Exists(dbPath))
@@ -132,7 +132,7 @@ namespace EchoPlay.Data.Infrastructure
             try
             {
                 // Grund: dbPath stammt aus IConfiguration (ConnectionStrings:Default),
-                // nicht aus User-Input — Path-Traversal-Risiko greift hier nicht.
+                // nicht aus User-Input, das Path-Traversal-Risiko greift hier nicht.
 #pragma warning disable SCS0018
                 long dbSize = new FileInfo(dbPath).Length;
 #pragma warning restore SCS0018
@@ -146,7 +146,7 @@ namespace EchoPlay.Data.Infrastructure
                 string timestamp = EntityClock.Current.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
                 string backupPath = $"{dbPath}.backup-{timestamp}";
 
-                // VACUUM INTO akzeptiert keine Parameter-Bindings – Single Quotes verdoppeln,
+                // VACUUM INTO akzeptiert keine Parameter-Bindings, daher Single Quotes verdoppeln,
                 // damit auch Pfade mit Hochkomma sicher eingebettet werden.
                 string escapedPath = backupPath.Replace("'", "''", StringComparison.Ordinal);
 
@@ -220,7 +220,7 @@ namespace EchoPlay.Data.Infrastructure
         /// <summary>
         /// Behält maximal <paramref name="retentionCount"/> Backup-Dateien und löscht die
         /// ältesten. Name-Sortierung genügt, weil der Zeitstempel ISO-sortierbar ist.
-        /// Intern zum Testen – das Retention-Verhalten ist unabhängig vom DbContext.
+        /// Intern zum Testen, das Retention-Verhalten ist unabhängig vom DbContext.
         /// </summary>
         internal void CleanupOldBackups(string dbPath, int retentionCount)
         {

@@ -8,7 +8,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// Findet die Sprachdateien der Anwendung im Quellbaum.
     /// </summary>
     /// <remarks>
-    /// Sucht ausgehend vom Wurzelverzeichnis, statt das Ordner-Layout fest zu verdrahten —
+    /// Sucht ausgehend vom Wurzelverzeichnis, statt das Ordner-Layout fest zu verdrahten;
     /// so übersteht die Suche einen Umzug der Projekte.
     /// </remarks>
     internal static class ResourcePathResolver

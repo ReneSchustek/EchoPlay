@@ -106,7 +106,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Soft-deletete PlaybackStates dürfen nicht gezählt werden – die Episode rutscht
+        /// Soft-deletete PlaybackStates dürfen nicht gezählt werden, die Episode rutscht
         /// damit zurück in die NotStarted-Kategorie.
         /// </summary>
         [Fact]
@@ -272,7 +272,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Soft-deletete States dürfen nicht in der Liste auftauchen – global Query Filter greift.
+        /// Soft-deletete States dürfen nicht in der Liste auftauchen (global Query Filter greift).
         /// </summary>
         [Fact]
         public async Task GetRecentActive_ExcludesSoftDeletedStates()
@@ -301,7 +301,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Negative oder Null-Werte für <c>maxRows</c> erzeugen weder Query noch Allokation –
+        /// Negative oder Null-Werte für <c>maxRows</c> erzeugen weder Query noch Allokation,
         /// Schutz vor versehentlich entgrenzten DB-Aufrufen.
         /// </summary>
         [Fact]
@@ -351,7 +351,7 @@ namespace EchoPlay.Data.Tests.Services
 
         /// <summary>
         /// Sichert ab, dass die compiled Query bei wiederholten Aufrufen mit unterschiedlichen
-        /// <c>maxRows</c>-Werten unabhängig korrekt limitiert – das Delegate cached keine Parameter.
+        /// <c>maxRows</c>-Werten unabhängig korrekt limitiert. Das Delegate cached keine Parameter.
         /// </summary>
         [Fact]
         public async Task GetRecentActive_RepeatedCallsWithDifferentLimits_ReturnIndependentResults()

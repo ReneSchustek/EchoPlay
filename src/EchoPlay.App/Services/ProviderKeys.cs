@@ -14,7 +14,7 @@ namespace EchoPlay.App.Services
         public const string AppleMusic = "AppleMusic";
 
         /// <summary>
-        /// Quelle eines Treffers aus dem eigenen Bestand. Kein Anbieter-Schlüssel — die
+        /// Quelle eines Treffers aus dem eigenen Bestand. Kein Anbieter-Schlüssel; die
         /// Cover-Pipeline erkennt daran, dass die Kennung eine Datenbank-Kennung ist.
         /// </summary>
         public const string Local = "Lokal";

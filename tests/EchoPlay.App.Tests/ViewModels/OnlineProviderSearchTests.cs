@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die Reihenfolge ist die eigentliche Leistung der Suche: Treffer, die den Suchbegriff
-    /// im Namen tragen, stehen vorn — erst danach entscheidet die Bewertung des Anbieters.
+    /// im Namen tragen, stehen vorn, erst danach entscheidet die Bewertung des Anbieters.
     /// Ohne diese Regel verschwindet die gesuchte Serie zwischen gleichnamigen Alben.
     /// </remarks>
     public sealed class OnlineProviderSearchTests
@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task Suche_KennzeichnetBereitsVorhandeneSerien()
         {
-            // Ohne die Kennzeichnung böte die Kachel ein zweites Mal „hinzufügen" an —
+            // Ohne die Kennzeichnung böte die Kachel ein zweites Mal „hinzufügen" an,
             // und der Anwender fragte sich, warum nichts passiert.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(
@@ -138,7 +138,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             viewModel.AddSelectedCommand.Execute(null);
 
-            // Die Serie liegt schon in der Ablage — ein zweiter Import würde sie doppeln.
+            // Die Serie liegt schon in der Ablage, ein zweiter Import würde sie doppeln.
             _ = Assert.Single(seriesService.All);
         }
 

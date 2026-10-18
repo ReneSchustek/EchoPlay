@@ -25,13 +25,13 @@ namespace EchoPlay.App
     /// </summary>
     public sealed partial class MainWindow : Window
     {
-        /// <summary>ViewModel des Hauptfensters – Shell-Logik und Navigation.</summary>
+        /// <summary>ViewModel des Hauptfensters: Shell-Logik und Navigation.</summary>
         public MainWindowViewModel ViewModel { get; }
 
-        /// <summary>ViewModel für den MiniPlayer – von XAML über x:Bind referenziert.</summary>
+        /// <summary>ViewModel für den MiniPlayer, von XAML über x:Bind referenziert.</summary>
         public MiniPlayerViewModel MiniPlayer { get; }
 
-        /// <summary>ViewModel für die Info-Leiste – von XAML über x:Bind referenziert.</summary>
+        /// <summary>ViewModel für die Info-Leiste, von XAML über x:Bind referenziert.</summary>
         public StatusBarViewModel StatusBar { get; }
 
         private readonly PlayerService _playerService;
@@ -49,7 +49,7 @@ namespace EchoPlay.App
 
             InitializeComponent();
 
-            // NavigationService mit dem Shell-Frame verbinden – genau einmal, direkt nach InitializeComponent.
+            // NavigationService mit dem Shell-Frame verbinden, genau einmal und direkt nach InitializeComponent.
             NavigationService navigation = App.Services.GetRequiredService<NavigationService>();
             navigation.Initialize(ContentFrame);
 
@@ -57,10 +57,10 @@ namespace EchoPlay.App
             const int defaultSpeedIndex = 1;
             SpeedComboBox.SelectedIndex = defaultSpeedIndex;
 
-            // Startgröße – groß genug für die NavigationView mit aufgeklapptem Pane
+            // Startgröße, groß genug für die NavigationView mit aufgeklapptem Pane
             AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 750));
 
-            // Icon für Taskleiste und Titelleiste – muss nach InitializeComponent gesetzt werden.
+            // Icon für Taskleiste und Titelleiste. Muss nach InitializeComponent gesetzt werden.
             // Absoluter Pfad ab dem App-Verzeichnis: ein relativer Pfad löst gegen das
             // Arbeitsverzeichnis auf und schlägt fehl (kein Taskleisten-Symbol), sobald die App
             // nicht aus ihrem Installationsordner heraus gestartet wird.
@@ -69,14 +69,14 @@ namespace EchoPlay.App
             // Zurück-Button nach jeder Navigation aktualisieren
             ContentFrame.Navigated += (_, _) => NavView.IsBackEnabled = ContentFrame.CanGoBack;
 
-            // Menüpunkt-Sichtbarkeit an ViewModel-Properties binden –
+            // Menüpunkt-Sichtbarkeit an ViewModel-Properties binden,
             // ohne x:Bind, weil NavigationViewItem.Visibility keine BindableCustomProperty ist.
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-            // PlayPause-Icon initialisieren – Pause-Glyph, weil der Button immer pausiert/resumt
+            // PlayPause-Icon initialisieren: Pause-Glyph, weil der Button immer pausiert/resumt
             MiniPlayer.PropertyChanged += OnMiniPlayerPropertyChanged;
 
-            // Info-Leiste beim Fensterstart befüllen – Fehler sind nicht kritisch, aber werden geloggt.
+            // Info-Leiste beim Fensterstart befüllen. Fehler sind nicht kritisch, aber werden geloggt.
             // Logger wird über die Factory erzeugt; ein Root-ILogger ist bewusst nicht im DI-Container registriert.
             EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory =
                 App.Services.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>();
@@ -275,7 +275,7 @@ namespace EchoPlay.App
         /// <summary>
         /// Schreibt die eingestellte Lautstärke in die Einstellungen, sobald der Nutzer den
         /// Regler loslässt. Während des Ziehens wirkt sie sofort, gespeichert wird aber erst
-        /// am Ende — sonst löste jede Zwischenstellung einen Schreibvorgang aus.
+        /// am Ende, sonst löste jede Zwischenstellung einen Schreibvorgang aus.
         /// </summary>
         private async void OnVolumeSliderReleased(object sender, PointerRoutedEventArgs e)
         {
@@ -284,7 +284,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Speichert die Lautstärke auch dann, wenn der Regler mit der Tastatur bedient
-        /// wurde — dort gibt es kein Loslassen der Maus.
+        /// wurde; dort gibt es kein Loslassen der Maus.
         /// </summary>
         private async void OnVolumeSliderLostFocus(object sender, RoutedEventArgs e)
         {
@@ -369,7 +369,7 @@ namespace EchoPlay.App
         /// Der Weg über <see cref="NavigationView.SelectedItem"/> statt direkt über den
         /// Navigationsdienst ist Absicht: So wandert die Markierung im Menü mit, und die
         /// Abfrage auf ungespeicherte Änderungen der Einstellungsseite greift weiterhin.
-        /// Für Tastaturnutzer bleibt der Menüpunkt „Player" der Weg — er führt zum selben Ziel.
+        /// Für Tastaturnutzer bleibt der Menüpunkt „Player" der Weg, er führt zum selben Ziel.
         /// </summary>
         private void OnMiniPlayerTapped(object sender, TappedRoutedEventArgs e)
         {
@@ -387,7 +387,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Prüft, ob der Ursprung eines Klicks innerhalb eines Bedienelements des Mini-Players
-        /// liegt. Die Suche endet am Panel selbst — darüber hinaus interessiert sie nicht.
+        /// liegt. Die Suche endet am Panel selbst. Darüber hinaus interessiert sie nicht.
         /// </summary>
         /// <param name="source">Das Element, auf dem der Klick entstanden ist.</param>
         /// <returns><see langword="true"/>, wenn ein Bedienelement getroffen wurde.</returns>

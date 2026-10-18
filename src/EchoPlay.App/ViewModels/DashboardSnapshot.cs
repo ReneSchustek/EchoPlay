@@ -19,7 +19,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Alle Abschnitte der Startseite leiten sich hieraus ab. Deshalb wird der Bestand
-    /// einmal am Stück gelesen statt je Abschnitt erneut — sonst entstünde für jede Kachel
+    /// einmal am Stück gelesen statt je Abschnitt erneut, sonst entstünde für jede Kachel
     /// eine eigene Abfrage.
     /// </remarks>
     /// <param name="SubscribedSeries">Alle abonnierten Serien.</param>
@@ -47,7 +47,7 @@ namespace EchoPlay.App.ViewModels
         public bool HasWatchedSeries => SubscribedSeries.Any(s => s.IsWatched);
 
         /// <summary>
-        /// Die Folgen, deren Cover in diesem Durchgang sichtbar werden können — alles, wozu
+        /// Die Folgen, deren Cover in diesem Durchgang sichtbar werden können: alles, wozu
         /// ein Wiedergabestand vorliegt.
         /// </summary>
         public IReadOnlyList<Guid> RelevantEpisodeIds
@@ -65,7 +65,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Liest die Datengrundlage. Die Serien werden bei jedem Aufruf frisch geholt — die
+        /// Liest die Datengrundlage. Die Serien werden bei jedem Aufruf frisch geholt, denn die
         /// Überwachung kann sich während der Sitzung ändern.
         /// </summary>
         /// <param name="seriesService">Zugriff auf Serien und Favoriten.</param>

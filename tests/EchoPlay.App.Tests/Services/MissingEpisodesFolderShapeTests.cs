@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
     /// Unterordner haben, aber keine Audiodateien.
     /// </summary>
     /// <remarks>
-    /// Ein Serienordner enthält oft Beiwerk — Bilder, Textdateien, ein Verzeichnis für
+    /// Ein Serienordner enthält oft Beiwerk: Bilder, Textdateien, ein Verzeichnis für
     /// Booklets. Zählte die Analyse solche Ordner als Folgen mit, meldete sie Lücken, die
     /// es nicht gibt, und der Anwender suchte nach Folgen, die er längst hat.
     ///
@@ -105,7 +105,7 @@ namespace EchoPlay.App.Tests.Services
                 cancellationToken: TestContext.Current.CancellationToken);
 
             // Ein abgezogenes Laufwerk oder ein umbenannter Ordner darf den ganzen Bericht
-            // nicht kippen — die Serie erscheint, nur eben ohne Angaben.
+            // nicht kippen; die Serie erscheint, nur eben ohne Angaben.
             SeriesMissingEpisodesResult entry = Assert.Single(report.Results);
             Assert.Empty(entry.LocalGaps);
             Assert.Equal(0, entry.LocalHighestNumber);

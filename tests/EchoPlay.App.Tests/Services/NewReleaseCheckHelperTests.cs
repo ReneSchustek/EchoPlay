@@ -15,7 +15,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="NewReleaseCheckHelper"/> — die Sofortprüfung, die läuft,
+    /// Tests für <see cref="NewReleaseCheckHelper"/>, die Sofortprüfung, die läuft,
     /// sobald der Anwender eine Serie unter Beobachtung stellt.
     /// </summary>
     public sealed class NewReleaseCheckHelperTests
@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Services
             await NewReleaseCheckHelper.CheckAndCacheSingleSeriesAsync(
                 new Series { Title = "TKKG" }, provider, TestContext.Current.CancellationToken);
 
-            // Im Offline-Betrieb darf die Anwendung nicht nach draußen telefonieren —
+            // Im Offline-Betrieb darf die Anwendung nicht nach draußen telefonieren,
             // auch nicht für eine einzelne Serie.
             Assert.Equal(0, checker.CheckCallCount);
         }
@@ -122,7 +122,7 @@ namespace EchoPlay.App.Tests.Services
                 series, provider, TestContext.Current.CancellationToken);
 
             // Erst der Eintrag im Zwischenspeicher macht die Neuerscheinung beim nächsten
-            // Besuch der Übersicht sichtbar — ohne ihn war der Abruf umsonst.
+            // Besuch der Übersicht sichtbar; ohne ihn war der Abruf umsonst.
             IReadOnlyList<CachedNewRelease> cached = await cache.GetAllAsync(TestContext.Current.CancellationToken);
             CachedNewRelease entry = Assert.Single(cached);
             Assert.Equal("TKKG - Folge 240 - Der neue Fall", entry.Title);

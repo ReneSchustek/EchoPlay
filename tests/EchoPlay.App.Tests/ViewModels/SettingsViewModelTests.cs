@@ -55,7 +55,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            // StatusBar.RefreshAsync benötigt diese Services – sonst schlägt SaveAsync fehl
+            // StatusBar.RefreshAsync benötigt diese Services, sonst schlägt SaveAsync fehl
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
@@ -197,7 +197,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.LoadAsync();
 
-            // Zwei sequenzielle Aufrufe – da FakeSyncService synchron zurückgibt,
+            // Zwei sequenzielle Aufrufe: Da FakeSyncService synchron zurückgibt,
             // ist IsSyncing nach dem ersten Aufruf bereits false
             await vm.LocalVM.SyncAsync();
             await vm.LocalVM.SyncAsync();
@@ -298,7 +298,7 @@ namespace EchoPlay.App.Tests.ViewModels
             });
             SettingsViewModel vm = BuildViewModel(settings);
 
-            // Jedes Property einzeln testen – Load setzt HasUnsavedChanges zurück
+            // Jedes Property einzeln testen, denn Load setzt HasUnsavedChanges zurück
             await vm.LoadAsync();
             vm.GeneralVM.ActiveTheme = "PaperCoffee";
             Assert.True(vm.HasUnsavedChanges);
@@ -370,7 +370,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void LogFilter_MeldetPropertyChanged_DamitDieAnzeigeNeuZeichnet()
         {
-            // Die Protokollanzeige der Einstellungsseite hängt nicht per Binding am ViewModel —
+            // Die Protokollanzeige der Einstellungsseite hängt nicht per Binding am ViewModel,
             // der RichTextBlock wird im Code-Behind von Hand gefüllt. Es gibt also nur ein
             // Signal, an dem die Seite ein Neuzeichnen erkennen kann: diese Meldungen. Fehlen
             // sie, wirkt der Filter erst beim nächsten Klick auf "Aktualisieren".
@@ -426,7 +426,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void LogLevelFilterIndex_RoundTrip_MapsCorrectly()
         {
-            // Index 0=Debug, 1=Info, 2=Warning, 3=Error – Hin- und Rückumrechnung korrekt
+            // Index 0=Debug, 1=Info, 2=Warning, 3=Error; Hin- und Rückumrechnung korrekt
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings);
 

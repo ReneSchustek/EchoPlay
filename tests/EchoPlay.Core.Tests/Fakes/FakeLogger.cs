@@ -7,7 +7,7 @@ namespace EchoPlay.Core.Tests.Fakes
 {
     /// <summary>
     /// Minimaler Fake für <see cref="ILogger"/>.
-    /// Verwirft alle Nachrichten – dient nur der Dependency-Erfüllung in Tests.
+    /// Verwirft alle Nachrichten und dient nur der Dependency-Erfüllung in Tests.
     /// </summary>
     internal sealed class FakeLogger : ILogger
     {

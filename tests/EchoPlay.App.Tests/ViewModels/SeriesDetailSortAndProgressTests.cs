@@ -103,7 +103,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ProgressText_UsesLocalizedPattern()
         {
-            // Der Text steht in den Ressourcen – auf englischer Oberfläche darf hier
+            // Der Text steht in den Ressourcen. Auf englischer Oberfläche darf hier
             // nichts Deutsches stehen bleiben.
             FakeLocalizationService localization = new(new Dictionary<string, string>
             {

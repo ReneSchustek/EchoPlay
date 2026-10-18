@@ -8,7 +8,7 @@ namespace EchoPlay.AppleMusic.Mapping
     /// </summary>
     /// <remarks>
     /// Die Suchantwort liefert das Artwork nur in 100 Pixeln (<c>artworkUrl100</c>). Die
-    /// Trefferkachel ist 160 Pixel breit und wird auf hochauflösenden Schirmen skaliert —
+    /// Trefferkachel ist 160 Pixel breit und wird auf hochauflösenden Schirmen skaliert;
     /// ein 100er-Bild sieht dort ausgefranst aus. Die Größe steht im letzten Pfadstück der
     /// Adresse (<c>…/100x100bb.jpg</c>) und lässt sich austauschen, ohne eine weitere
     /// Anfrage zu stellen.
@@ -28,7 +28,7 @@ namespace EchoPlay.AppleMusic.Mapping
         /// <param name="size">Die gewünschte Kantenlänge in Pixeln.</param>
         /// <returns>
         /// Die angepasste Adresse. Trägt die Adresse keine erkennbare Größe, kommt sie
-        /// unverändert zurück — eine geratene Umschrift wäre schlechter als das kleine Bild.
+        /// unverändert zurück, denn eine geratene Umschrift wäre schlechter als das kleine Bild.
         /// Bei <see langword="null"/> oder Leertext bleibt es bei <see langword="null"/>.
         /// </returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",

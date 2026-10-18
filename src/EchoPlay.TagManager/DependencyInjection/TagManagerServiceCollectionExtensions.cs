@@ -24,7 +24,7 @@ namespace EchoPlay.TagManager.DependencyInjection
             _ = services.AddTransient<IFileRenameService, FileRenameService>();
 
             // MusicBrainz erwartet einen eindeutigen User-Agent im Format
-            // "AppName/Version (contact@example.com)" – sonst droht ein 403.
+            // "AppName/Version (contact@example.com)", sonst droht ein 403.
             _ = services.AddHttpClient<ITagLookupService, MusicBrainzLookupService>(client =>
             {
                 client.BaseAddress = new Uri("https://musicbrainz.org/");

@@ -64,7 +64,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Liste der verfügbaren Sprachen für die UI-Auswahl.
-        /// Einmalig beim Konstruktor initialisiert – keine Datenbankabfrage nötig.
+        /// Einmalig beim Konstruktor initialisiert, keine Datenbankabfrage nötig.
         /// </summary>
         public IReadOnlyList<LanguageOption> AvailableLanguages { get; } =
         [
@@ -210,11 +210,11 @@ namespace EchoPlay.App.ViewModels
             ArgumentNullException.ThrowIfNull(settings);
             settings.ActiveTheme = ActiveTheme;
             settings.ActiveLanguage = ActiveLanguage;
-            // Mindestwert 7, Maximum 365 – unter einer Woche sind Neuerscheinungen kaum sinnvoll
+            // Mindestwert 7, Maximum 365, denn unter einer Woche sind Neuerscheinungen kaum sinnvoll
             settings.NewReleaseDays = Math.Clamp(NewReleaseDays, 7, 365);
             settings.OfflineMode = OfflineMode;
             settings.OnlineOnlyMode = OnlineOnlyMode;
-            // Mindestwert 1 sicherstellen – 0 Tage würde alle Logs sofort löschen
+            // Mindestwert 1 sicherstellen, denn 0 Tage würde alle Logs sofort löschen
             settings.LogRetentionDays = Math.Max(1, LogRetentionDays);
             settings.MinimumLogLevel = MinimumLogLevel;
         }

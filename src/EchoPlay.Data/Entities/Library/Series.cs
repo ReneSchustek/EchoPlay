@@ -31,8 +31,8 @@ namespace EchoPlay.Data.Entities.Library
         /// Gegenstück zu <see cref="Episode.CoverLastChecked"/> und aus demselben Grund da:
         /// Ohne den Zeitstempel würde der Hintergrunddienst bei jedem Durchlauf dieselben
         /// coverlosen Serien erneut bei den Anbietern anfragen.
-        /// Null bedeutet: noch nie geprüft. Nach einer Suche wird der Zeitpunkt gesetzt —
-        /// auch ohne Treffer — und erst nach Ablauf des Cooldowns (7 Tage) erneut gesucht.
+        /// Null bedeutet: noch nie geprüft. Nach einer Suche wird der Zeitpunkt gesetzt
+        /// (auch ohne Treffer) und erst nach Ablauf des Cooldowns (7 Tage) erneut gesucht.
         /// </summary>
         public DateTime? CoverLastChecked { get; set; }
 
@@ -63,16 +63,16 @@ namespace EchoPlay.Data.Entities.Library
         /// <summary>
         /// Gibt an, ob die Serie über eine Online-Suche (Spotify/Apple Music) importiert wurde.
         /// Nur Serien mit diesem Flag erscheinen in der Online-Mediathek.
-        /// Wird ausschließlich vom ImportService beim expliziten Import gesetzt –
-        /// nicht vom OnlineEpisodeChecker bei der automatischen iTunes-Prüfung.
-        /// Standard <see langword="false"/> – lokal gescannte Serien sind nicht online-importiert.
+        /// Wird ausschließlich vom ImportService beim expliziten Import gesetzt,
+        /// aber nicht vom OnlineEpisodeChecker bei der automatischen iTunes-Prüfung.
+        /// Standard <see langword="false"/>, denn lokal gescannte Serien sind nicht online-importiert.
         /// </summary>
         public bool IsOnlineImported { get; set; }
 
         /// <summary>
         /// Gibt an, ob der Nutzer diese Serie abonniert hat.
         /// Nur abonnierte Serien erscheinen im Dashboard und in der Mediathek.
-        /// Standard <see langword="false"/> – bestehende Serien gelten nach der Migration als nicht abonniert.
+        /// Standard <see langword="false"/>: Bestehende Serien gelten nach der Migration als nicht abonniert.
         /// </summary>
         public bool IsSubscribed { get; set; }
 
@@ -82,14 +82,14 @@ namespace EchoPlay.Data.Entities.Library
         /// <see cref="IsSubscribed"/> und <see cref="IsFavorite"/> sind unabhängig voneinander:
         /// Man kann eine Serie abonnieren (in der Bibliothek haben), ohne sie zu favorisieren,
         /// und umgekehrt.
-        /// Standard <see langword="false"/> – bestehende Serien sind nach der Migration nicht favorisiert.
+        /// Standard <see langword="false"/>, bestehende Serien sind nach der Migration nicht favorisiert.
         /// </summary>
         public bool IsFavorite { get; set; }
 
         /// <summary>
         /// Gibt an, ob die Serie auf Neuerscheinungen und Ankündigungen überwacht wird.
         /// Nur überwachte Serien erscheinen im Dashboard unter Neuerscheinungen.
-        /// Standard <see langword="false"/> – der Nutzer entscheidet bewusst, welche Serien überwacht werden.
+        /// Standard <see langword="false"/>, denn der Nutzer entscheidet bewusst, welche Serien überwacht werden.
         /// </summary>
         public bool IsWatched { get; set; }
 

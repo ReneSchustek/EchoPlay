@@ -8,14 +8,14 @@ namespace EchoPlay.LocalLibrary.Cover
     /// </summary>
     /// <remarks>
     /// Ein eigener Typ statt eines <see langword="int"/>-Parameters, aus zwei Gründen: Der
-    /// bestehende Aufruf <c>SearchAsync(titel, ct)</c> bleibt eindeutig — mit einem
+    /// bestehende Aufruf <c>SearchAsync(titel, ct)</c> bleibt eindeutig, mit einem
     /// <see langword="int"/> hätte der Compiler das Abbruch-Token als Seitenzahl binden können.
     /// Und die Umrechnung Seite → Abschnitt liegt an einer Stelle statt in jedem Anbieter.
     /// </remarks>
     /// <param name="Index">Nullbasierte Seitennummer.</param>
     public readonly record struct CoverSearchPage(int Index)
     {
-        /// <summary>Die erste Seite — das Verhalten aller Aufrufer, die nicht nachladen.</summary>
+        /// <summary>Die erste Seite, das Verhalten aller Aufrufer, die nicht nachladen.</summary>
         public static CoverSearchPage First => new(0);
 
         /// <summary>Die nächste Seite nach dieser.</summary>
@@ -28,7 +28,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <param name="supportsOffset">
         /// <see langword="true"/>, wenn die API einen Versatz kennt (MusicBrainz <c>offset</c>,
         /// Deezer <c>index</c>). <see langword="false"/> bei APIs, die nur eine Obergrenze
-        /// kennen — dann wird mehr geholt und der Anfang verworfen, siehe
+        /// kennen. Dann wird mehr geholt und der Anfang verworfen, siehe
         /// <see cref="CoverSearchWindow.SkipLocally"/>.
         /// </param>
         /// <returns>Grenze und Versatz für die Anfrage.</returns>

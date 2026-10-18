@@ -16,7 +16,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Sichert Suche und Filter der lokalen Mediathek ab — samt der Unterscheidung, ob gar
+    /// Sichert Suche und Filter der lokalen Mediathek ab, samt der Unterscheidung, ob gar
     /// nichts da ist oder ob nur die Suche nichts findet. Beide Fälle sehen gleich leer aus
     /// und verlangen vom Nutzer Gegenteiliges.
     /// </summary>
@@ -120,7 +120,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         /// <summary>
         /// Unvollständig heißt: Es sind Folgen bekannt, von denen welche fehlen. Eine Serie
-        /// ganz ohne bekannte Folgen zählt nicht dazu — dort fehlt die Auskunft, nicht der
+        /// ganz ohne bekannte Folgen zählt nicht dazu, denn dort fehlt die Auskunft, nicht der
         /// Bestand.
         /// </summary>
         [Fact]

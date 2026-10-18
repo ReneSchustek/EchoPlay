@@ -8,9 +8,9 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Reihenfolge der Gruppen im Dashboard (von oben nach unten):
-    /// 1. "Angekündigt" – Episoden mit Datum in der Zukunft
+    /// 1. "Angekündigt": Episoden mit Datum in der Zukunft
     /// 2. Aktueller Monat (z.B. "März 2026")
-    /// 3. Vormonat, usw. – absteigend bis zum Cutoff
+    /// 3. Vormonat, usw., absteigend bis zum Cutoff
     /// </remarks>
     public sealed class NewEpisodesGroupViewModel
     {
@@ -31,7 +31,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Überschrift der Gruppe – wird als Titel über der Kachelreihe angezeigt.
+        /// Überschrift der Gruppe; wird als Titel über der Kachelreihe angezeigt.
         /// Beispiele: "Angekündigt", "März 2026", "Februar 2026".
         /// </summary>
         public string GroupLabel { get; }

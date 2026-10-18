@@ -143,7 +143,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [InlineData(2, "2 geänderte Dateien werden gespeichert.")]
         public async Task TagSaveActions_SaveAllAsync_AsksWithMatchingPluralForm(int fileCount, string erwartet)
         {
-            // Die Rückfrage nennt eine Anzahl – bei genau einer Datei muss die
+            // Die Rückfrage nennt eine Anzahl. Bei genau einer Datei muss die
             // Einzahlform stehen, sonst liest sich der Dialog falsch.
             List<(string, AudioTag)> folderFiles = [];
             for (int i = 1; i <= fileCount; i++)
@@ -244,7 +244,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await sut.RemoveAllTagsAsync();
 
-            // Nach dem Entfernen muss auch die Anzeige leer sein — sonst stünden dort Werte,
+            // Nach dem Entfernen muss auch die Anzeige leer sein, sonst stünden dort Werte,
             // die in der Datei nicht mehr existieren, und der nächste Speichern-Klick
             // schriebe sie zurück.
             Assert.Equal(1, tagService.RemoveAllCallCount);
@@ -306,7 +306,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 setBatchProgress: _ => { }, setHasUnsavedChanges: v => unsavedChangesRaised = v,
                 refreshCommandStates: () => { }, previewRenameAsync: () => Task.CompletedTask);
 
-            // Ohne vorherige Suche ist die Trefferliste leer — jeder Index liegt daneben.
+            // Ohne vorherige Suche ist die Trefferliste leer, jeder Index liegt daneben.
             // Der Anwender klickt in einer Liste, die sich zwischenzeitlich geändert haben
             // kann; ein Zugriff daneben wäre ein Absturz mitten im Bearbeiten.
             sut.ApplyLookupCandidate(index);

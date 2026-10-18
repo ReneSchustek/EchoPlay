@@ -5,7 +5,7 @@ namespace EchoPlay.App.Infrastructure
 {
     /// <summary>
     /// <see cref="ICommand"/>-Implementierung, die eine Aktion mit Parameter kapselt.
-    /// Wird verwendet, wenn derselbe Command mit unterschiedlichen Werten aufgerufen werden soll –
+    /// Wird verwendet, wenn derselbe Command mit unterschiedlichen Werten aufgerufen werden soll,
     /// z.B. Theme-Wechsel mit dem Theme-Namen als Parameter.
     ///
     /// WinUI 3 übergibt den <c>CommandParameter</c> des auslösenden Elements als <see langword="object"/>
@@ -32,7 +32,7 @@ namespace EchoPlay.App.Infrastructure
         }
 
         /// <inheritdoc/>
-        /// <returns>Immer <see langword="true"/> – das Command ist stets ausführbar.</returns>
+        /// <returns>Immer <see langword="true"/>, das Command ist stets ausführbar.</returns>
         public bool CanExecute(object? parameter) => true;
 
         /// <inheritdoc/>

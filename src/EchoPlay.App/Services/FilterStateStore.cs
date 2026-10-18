@@ -8,7 +8,7 @@ namespace EchoPlay.App.Services
     /// <para>
     /// Nötig, weil die ViewModels der Seiten kurzlebig sind: Beim Verlassen werden sie
     /// freigegeben, beim Zurückkehren neu erzeugt. Ohne diese Ablage stünde die Liste nach
-    /// jedem Ausflug in eine Detailansicht wieder ungefiltert da — und der Nutzer tippt seine
+    /// jedem Ausflug in eine Detailansicht wieder ungefiltert da, und der Nutzer tippt seine
     /// Suche jedes Mal neu.
     /// </para>
     /// <para>
@@ -33,7 +33,7 @@ namespace EchoPlay.App.Services
             ArgumentException.ThrowIfNullOrWhiteSpace(pageKey);
 
             // Der Typ gehört in den Schlüssel: Zwei Seiten könnten denselben Namen tragen und
-            // verschiedene Kriterien führen — dann bekäme eine von beiden ein Objekt des
+            // verschiedene Kriterien führen. Dann bekäme eine von beiden ein Objekt des
             // falschen Typs und der Zugriff bräche zur Laufzeit.
             string key = $"{pageKey}:{typeof(T).FullName}";
 

@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Configurations
         {
             _ = builder.ToTable("AppSettings");
 
-            // EpisodeFolderPattern ist Pflicht – ohne Muster kann kein Ordner korrekt zugeordnet werden
+            // EpisodeFolderPattern ist Pflicht, denn ohne Muster kann kein Ordner korrekt zugeordnet werden
             _ = builder.Property(settings => settings.EpisodeFolderPattern)
                 .IsRequired()
                 .HasMaxLength(256);
@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(64);
 
-            // Sprachcode: BCP-47-Format ("de", "en") – 16 Zeichen für mögliche Erweiterungen wie "zh-Hans"
+            // Sprachcode: BCP-47-Format ("de", "en"); 16 Zeichen für mögliche Erweiterungen wie "zh-Hans"
             _ = builder.Property(settings => settings.ActiveLanguage)
                 .IsRequired()
                 .HasMaxLength(16);

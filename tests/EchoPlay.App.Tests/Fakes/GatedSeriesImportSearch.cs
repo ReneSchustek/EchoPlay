@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Fakes
         public Task<IReadOnlyList<ImportSeries>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             // RunContinuationsAsynchronously verhindert, dass die Fortsetzung der awaitenden
-            // Methode synchron im SetResult-Aufruf läuft – sonst kann der Test versehentlich
+            // Methode synchron im SetResult-Aufruf läuft, sonst kann der Test versehentlich
             // den Fortschritt der gerade laufenden Suche im selben Stack beobachten.
             TaskCompletionSource<IReadOnlyList<ImportSeries>> tcs =
                 new(TaskCreationOptions.RunContinuationsAsynchronously);

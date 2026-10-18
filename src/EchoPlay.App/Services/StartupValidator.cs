@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Führt alle Startup-Validierungen während des Begrüßungsbildschirms durch.
     /// Die Ergebnisse werden im <see cref="StartupResult"/> zusammengefasst, damit das Dashboard
-    /// direkt auf aktuelle, bereinigte Daten zugreifen kann – ohne eigene Checks.
+    /// direkt auf aktuelle, bereinigte Daten zugreifen kann, ohne eigene Checks.
     /// </summary>
     public sealed class StartupValidator : IStartupValidator
     {
@@ -127,7 +127,7 @@ namespace EchoPlay.App.Services
         /// <param name="CutoffDate">Älteres gilt nicht mehr als Neuerscheinung.</param>
         /// <param name="CacheCleared">
         /// Ob der Zwischenspeicher in diesem Lauf geleert wird. Das Merkmal wird erst ganz
-        /// am Ende zurückgesetzt — scheitert der Neuaufbau, versucht es der nächste Start
+        /// am Ende zurückgesetzt. Scheitert der Neuaufbau, versucht es der nächste Start
         /// erneut.
         /// </param>
         private sealed record StartupContext(
@@ -150,7 +150,7 @@ namespace EchoPlay.App.Services
             return new StartupContext(settings, subscribedSeries, cutoffDate, settings.ClearCacheOnNextStart);
         }
 
-        /// <summary>Leert Neuerscheinungen und Cover — der Neuaufbau läuft danach an.</summary>
+        /// <summary>Leert Neuerscheinungen und Cover. Der Neuaufbau läuft danach an.</summary>
         private async Task ClearCachesAsync(
             ICachedNewReleaseDataService cacheService,
             ICoverImageDataService coverImageService,
@@ -164,7 +164,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Schritt 1: Erreichbarkeit prüfen. Ohne Anbieter oder im Offline-Modus entfällt
-        /// die Prüfung — dann gilt „nicht online" ohne Hinweis, weil es kein Fehler ist.
+        /// die Prüfung, dann gilt „nicht online" ohne Hinweis, weil es kein Fehler ist.
         /// </summary>
         private async Task<(bool IsAvailable, string? Hint)> CheckOnlineAsync(
             AppSettings settings, Action<string>? onStatus, CancellationToken cancellationToken)
@@ -260,7 +260,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Schritt 6: Im Startbild werden ausschließlich fehlende Serien-Cover geholt.
-        /// Folgen-Cover gehören nicht auf den Startpfad — die trägt der Hintergrunddienst
+        /// Folgen-Cover gehören nicht auf den Startpfad; die trägt der Hintergrunddienst
         /// nach, wenn das Fenster steht. Kein Folgen-Durchlauf, kein Lesen von
         /// Kennzeichnungen, kein Anbieter-Aufruf für Folgen.
         /// </summary>
@@ -289,7 +289,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Schritt 7: Das Merkmal zurücksetzen — auch wenn der Neuaufbau nur teilweise
+        /// Schritt 7: Das Merkmal zurücksetzen, auch wenn der Neuaufbau nur teilweise
         /// gelang, damit der Zwischenspeicher nicht bei jedem Start erneut geleert wird.
         /// Eigener Bereich aus demselben Grund wie in Schritt 5.
         /// </summary>
@@ -369,7 +369,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Prüft, ob das lokale Bibliotheksverzeichnis existiert und lesbar ist.
-        /// Ein reiner <see cref="Directory.Exists"/>-Check reicht nicht – das Verzeichnis könnte
+        /// Ein reiner <see cref="Directory.Exists"/>-Check reicht nicht, denn das Verzeichnis könnte
         /// existieren, aber nicht lesbar sein (z.B. Netzlaufwerk ohne Verbindung).
         /// </summary>
         /// <param name="path">Pfad zum lokalen Bibliotheksverzeichnis.</param>
@@ -383,7 +383,7 @@ namespace EchoPlay.App.Services
                     return false;
                 }
 
-                // Lesezugriff testen – löst IOException bei nicht erreichbaren Netzlaufwerken aus
+                // Lesezugriff testen (löst IOException bei nicht erreichbaren Netzlaufwerken aus)
                 _ = Directory.GetDirectories(path);
                 return true;
             }
@@ -483,8 +483,8 @@ namespace EchoPlay.App.Services
             }
             catch (Exception ex)
             {
-                // Fehler beim Refresh dürfen den Startup nicht blockieren –
-                // der Cache enthält dann weiterhin die alten (bereinigten) Daten.
+                // Fehler beim Refresh dürfen den Startup nicht blockieren,
+                // denn der Cache enthält dann weiterhin die alten (bereinigten) Daten.
                 string innerMsg = ex.InnerException?.Message ?? "keine InnerException";
                 _logger.Warning("Neuerscheinungen-Refresh fehlgeschlagen: {Reason} | Inner: {InnerReason}", ex.Message, innerMsg);
             }

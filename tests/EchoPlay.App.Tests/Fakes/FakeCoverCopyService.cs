@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="ICoverCopyService"/>.
-    /// Tut nichts und meldet null kopierte Cover – ausreichend für Tests, die nur
+    /// Tut nichts und meldet null kopierte Cover, ausreichend für Tests, die nur
     /// den Aufrufpfad der Episoden-Pipeline prüfen wollen.
     /// </summary>
     internal sealed class FakeCoverCopyService : ICoverCopyService

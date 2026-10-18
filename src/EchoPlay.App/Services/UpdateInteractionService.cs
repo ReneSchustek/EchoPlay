@@ -13,7 +13,7 @@ namespace EchoPlay.App.Services
     /// Wege zum selben Dialog: die Prüfung beim Start, die im Startbild läuft, und die
     /// Prüfung auf Knopfdruck von der Über-Seite. Beide teilen sich Dialog, Download und
     /// Installationsstart; sie unterscheiden sich nur darin, wie der Fortschritt gezeigt
-    /// wird — im Startbild als Statuszeile, sonst als eigener Fortschrittsdialog.
+    /// wird: im Startbild als Statuszeile, sonst als eigener Fortschrittsdialog.
     /// </summary>
     public sealed class UpdateInteractionService
     {
@@ -41,7 +41,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Prüft auf Knopfdruck auf eine Aktualisierung und führt den Nutzer durch das
         /// Ergebnis: Aktualisierungs-Dialog bei verfügbarer Version, sonst der Hinweis
-        /// „bereits aktuell". Fehler werden abgefangen und als Hinweis angezeigt — der
+        /// „bereits aktuell". Fehler werden abgefangen und als Hinweis angezeigt. Der
         /// Aufruf wirft nie.
         /// </summary>
         /// <param name="xamlRoot">Die Zeichenwurzel des Hauptfensters für die Dialoge.</param>
@@ -74,7 +74,7 @@ namespace EchoPlay.App.Services
         /// Prüft beim Start auf eine Aktualisierung. Läuft im Startbild, bevor das
         /// Hauptfenster erscheint; der Fortschritt geht deshalb in dessen Statuszeile.
         /// Ist keine neuere Version da, geschieht nichts. Fehler werden protokolliert und
-        /// verschluckt — der Start darf daran nicht scheitern.
+        /// verschluckt, denn der Start darf daran nicht scheitern.
         /// </summary>
         /// <param name="xamlRoot">Die Zeichenwurzel des Startbilds für die Dialoge.</param>
         /// <param name="reportStatus">Nimmt die Statuszeile des Startbilds entgegen.</param>
@@ -119,7 +119,7 @@ namespace EchoPlay.App.Services
             }
             else if (result == ContentDialogResult.None)
             {
-                // „Version überspringen" — in der Datenbank merken, damit sie beim nächsten
+                // „Version überspringen": in der Datenbank merken, damit sie beim nächsten
                 // Start nicht erneut angeboten wird.
                 await _checkService.SkipVersionAsync(update.Version);
                 _logger.Info("Version {Version} übersprungen", update.Version);
@@ -202,7 +202,7 @@ namespace EchoPlay.App.Services
             /// <summary>Der Download beginnt.</summary>
             void Begin();
 
-            /// <summary>Der Download ist beendet — gleich ob erfolgreich oder nicht.</summary>
+            /// <summary>Der Download ist beendet, gleich ob erfolgreich oder nicht.</summary>
             void End();
         }
 
@@ -241,7 +241,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Statuszeile des Startbilds. Ein zweiter Dialog käme dort nicht in Frage — WinUI
+        /// Statuszeile des Startbilds. Ein zweiter Dialog käme dort nicht in Frage, denn WinUI
         /// erlaubt je Zeichenwurzel nur einen offenen Dialog, und der Angebots-Dialog ist
         /// zu diesem Zeitpunkt gerade erst geschlossen.
         /// </summary>

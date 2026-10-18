@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// Deckt den Fatal-Log-Pfad für globale Exception-Hooks ab
     /// (<see cref="AppDomain.UnhandledException"/> und <see cref="TaskScheduler.UnobservedTaskException"/>).
     /// Der Pfad mit <see langword="null"/>-Logger (EmergencyTrace-Fallback) wird ebenfalls geprüft,
-    /// ohne <c>Trace.Listeners</c> zu koppeln — Kriterium ist, dass kein Crash auftritt.
+    /// ohne <c>Trace.Listeners</c> zu koppeln. Kriterium ist, dass kein Crash auftritt.
     /// </summary>
     public sealed class FatalExceptionHandlerTests
     {
@@ -95,7 +95,7 @@ namespace EchoPlay.App.Tests.Infrastructure
         public void HandleUnobservedTaskException_TaskCanceled_LogsAsInfo()
         {
             // Beim App-Shutdown werden DI-Scopes disposed, pending DB-/HTTP-Tasks
-            // canceln still. Die Tasks sind dann unbeobachtet — der Handler muss
+            // canceln still. Die Tasks sind dann unbeobachtet, und der Handler muss
             // erkennen, dass das erwartetes Verhalten ist, und nicht als Error loggen.
             CapturingLogger logger = new();
             AggregateException aggregate = new(new TaskCanceledException("shutdown"));

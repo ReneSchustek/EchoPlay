@@ -55,7 +55,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task Badges_ZeigenEinzahlUndMehrzahl()
         {
-            // Die Info-Leiste beschriftet die Zahl selbst — bei genau einer Serie
+            // Die Info-Leiste beschriftet die Zahl selbst. Bei genau einer Serie
             // darf dort nicht "1 Serien" stehen.
             FakeSeriesDataService oneSeries = new();
             await oneSeries.AddAsync(
@@ -95,7 +95,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void NeueFolgen_OhneTrefferBleibenBadgeUndTrennerAus()
         {
-            // Ohne neue Folgen zeigt die Leiste weder Badge noch Trennstrich —
+            // Ohne neue Folgen zeigt die Leiste weder Badge noch Trennstrich,
             // sonst steht dort ein Hinweis auf nichts.
             StatusBarViewModel sut = BuildViewModel();
 
@@ -237,7 +237,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void ThemeWechsel_IgnoriertLeerenNamen()
         {
-            // Ein leerer Name käme aus einem falsch verdrahteten Menüeintrag —
+            // Ein leerer Name käme aus einem falsch verdrahteten Menüeintrag,
             // das Thema darf davon nicht wechseln.
             FakeThemeService themeService = new();
             StatusBarViewModel sut = BuildViewModel(themeService: themeService);

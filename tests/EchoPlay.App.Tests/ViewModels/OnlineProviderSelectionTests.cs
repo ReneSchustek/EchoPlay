@@ -16,11 +16,11 @@ namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
     /// Prüft das Übernehmen mehrerer Suchtreffer auf einmal: Was ticked ist, wird
-    /// eingelesen — was schon in der Mediathek steht, bleibt außen vor.
+    /// eingelesen; was schon in der Mediathek steht, bleibt außen vor.
     /// </summary>
     /// <remarks>
     /// Der Sammel-Import ist der Weg für jemanden, der eine ganze Reihe auf einmal
-    /// aufnimmt. Übergeht er die Auswahl, holt er entweder zu viel oder nichts — und
+    /// aufnimmt. Übergeht er die Auswahl, holt er entweder zu viel oder nichts, und
     /// beides fällt erst auf, wenn der Anwender die Mediathek durchsieht.
     /// </remarks>
     public sealed class OnlineProviderSelectionTests
@@ -79,7 +79,7 @@ namespace EchoPlay.App.Tests.ViewModels
             sut.AddSelectedCommand.Execute(null);
 
             // Eine bereits alreadyTheree Serie ein zweites Mal einzulesen erzeugt Doppel in
-            // der Mediathek — der Treffer trägt deshalb schon vor dem Klick den Vermerk.
+            // der Mediathek, daher trägt der Treffer schon vor dem Klick den Vermerk.
             Assert.True(alreadyThere.IsImported);
             _ = Assert.Single(seriesService.All);
         }

@@ -47,7 +47,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             }
             catch (IOException)
             {
-                // Bei SQLite-Leaks o. ä. das Cleanup nicht durchreißen lassen – Tests bleiben grün.
+                // Bei SQLite-Leaks o. ä. das Cleanup nicht durchreißen lassen, Tests bleiben grün.
             }
         }
 
@@ -68,7 +68,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         [Fact]
         public async Task InitializeAsync_On_FileDb_Creates_Backup_Via_VacuumInto()
         {
-            // Leere Datei-DB – alle Migrationen sind pending → Backup soll angelegt werden.
+            // Leere Datei-DB: Alle Migrationen sind pending → Backup soll angelegt werden.
             using (EchoPlayDbContext context = CreateFileContext())
             {
                 DatabaseInitializer initializer = new(context);
@@ -107,7 +107,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         [Fact]
         public async Task TryReadBackupSettingsAsync_ReturnsDefaults_WhenNoAppSettingsRow()
         {
-            // Migrationen bauen das Schema auf, legen aber keine AppSettings-Zeile an –
+            // Migrationen bauen das Schema auf, legen aber keine AppSettings-Zeile an,
             // das macht später der AppSettingsDataService bei erstem Zugriff. Für den
             // Backup-Check ist das ein valider „noch-keine-Nutzerdaten"-Zustand.
             using EchoPlayDbContext context = CreateFileContext();

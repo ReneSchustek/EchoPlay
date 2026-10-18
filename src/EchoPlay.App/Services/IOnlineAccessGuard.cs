@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <returns>
         /// Ein <see cref="IDisposable"/>, das den temporären Online-Status beim Dispose beendet.
-        /// <see langword="null"/>, wenn der Nutzer den Dialog abgelehnt hat – die Aktion soll abgebrochen werden.
+        /// <see langword="null"/>, wenn der Nutzer den Dialog abgelehnt hat. Die Aktion soll abgebrochen werden.
         /// Im Online-Modus wird ein No-Op-Disposable zurückgegeben (kein Dialog).
         /// </returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

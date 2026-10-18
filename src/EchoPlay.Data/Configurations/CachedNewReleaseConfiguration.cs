@@ -35,7 +35,7 @@ namespace EchoPlay.Data.Configurations
             // Kombi-Index für schnelle Abfragen: "alle Neuerscheinungen einer Serie im Zeitfenster"
             _ = builder.HasIndex(c => new { c.SeriesId, c.ReleaseDate });
 
-            // Beziehung zur Serie: Cascade Delete – wenn eine Serie gelöscht wird,
+            // Beziehung zur Serie: Cascade Delete. Wenn eine Serie gelöscht wird,
             // werden auch ihre gecachten Neuerscheinungen entfernt.
             _ = builder.HasOne(c => c.Series)
                 .WithMany()

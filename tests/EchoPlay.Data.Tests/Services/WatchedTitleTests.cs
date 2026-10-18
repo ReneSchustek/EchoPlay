@@ -7,7 +7,7 @@ namespace EchoPlay.Data.Tests.Services
 {
     /// <summary>
     /// Tests für die Merkliste überwachter Serientitel. Sie ist der einzige Zustand, der ein
-    /// Leeren der Mediathek überlebt – ohne sie startet jede neu eingelesene Serie unbeobachtet.
+    /// Leeren der Mediathek überlebt. Ohne sie startet jede neu eingelesene Serie unbeobachtet.
     /// </summary>
     public sealed class WatchedTitleTests : DbTestBase
     {
@@ -76,7 +76,7 @@ namespace EchoPlay.Data.Tests.Services
             await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
             await service.SetWatchedAsync(series.Id, true, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Der Unique-Index würde beim zweiten Insert werfen – die Prüfung muss vorher greifen.
+            // Der Unique-Index würde beim zweiten Insert werfen, die Prüfung muss vorher greifen.
             Assert.Equal(1, await Context.WatchedTitles.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
         }
 
@@ -116,7 +116,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task SyncFromWatchedSeries_DuplicateTitles_AddsOnlyOnce()
         {
-            // Die Produktivdatenbank enthält Serien-Duplikate mit identischem Titel –
+            // Die Produktivdatenbank enthält Serien-Duplikate mit identischem Titel;
             // ohne Dedup würde der Unique-Index den ganzen Startlauf abbrechen.
             Series first = await DataBuilder.PersistSeriesAsync("TKKG");
             Series second = await DataBuilder.PersistSeriesAsync("TKKG");

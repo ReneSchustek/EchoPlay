@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Ein Einlesevorgang über eine große Sammlung läuft minutenlang. Ohne belastbare
-    /// Anzeige weiß der Anwender nicht, ob noch etwas passiert — und bricht ab, während
+    /// Anzeige weiß der Anwender nicht, ob noch etwas passiert, und bricht ab, während
     /// die Anwendung arbeitet.
     /// </remarks>
     public sealed class LocalLibraryScanProgressTests
@@ -110,7 +110,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await reloaded.Task.WaitAsync(
                 System.TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
-            // Nach dem Zurücksetzen ist keine Zuordnung mehr da — der Lauf muss jeden
+            // Nach dem Zurücksetzen ist keine Zuordnung mehr da, der Lauf muss jeden
             // Ordner erneut einlesen, unabhängig von der Einstellung zum Auto-Import.
             Assert.Equal(1, sync.SyncCallCount);
             Assert.True(sync.LastForceImportAll);

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.TagManager.Abstractions
 {
     /// <summary>
-    /// Benennt Audiodateien nach einem konfigurierbaren Muster um – ähnlich wie MP3Tag.
+    /// Benennt Audiodateien nach einem konfigurierbaren Muster um, ähnlich wie MP3Tag.
     /// Unterstützte Platzhalter: <c>{title}</c>, <c>{album}</c>, <c>{artist}</c>,
     /// <c>{year}</c>, <c>{track}</c>, <c>{track:00}</c>, <c>{track:000}</c>, <c>{filename}</c>.
     /// </summary>
@@ -17,7 +17,7 @@ namespace EchoPlay.TagManager.Abstractions
         /// das den alten und den neuen Namen enthält.
         /// </summary>
         /// <param name="files">
-        /// Liste von Dateipfad-Tag-Paaren – typischerweise aus <see cref="ITagService.ReadFolderAsync"/>.
+        /// Liste von Dateipfad-Tag-Paaren, typischerweise aus <see cref="ITagService.ReadFolderAsync"/>.
         /// </param>
         /// <param name="pattern">
         /// Muster mit Platzhaltern, z.B. <c>"{track:00} - {title}"</c>.
@@ -36,7 +36,7 @@ namespace EchoPlay.TagManager.Abstractions
         /// Dateien, die nicht umbenannt werden können (z.B. gesperrt), werden geloggt und übersprungen.
         /// </summary>
         /// <param name="files">
-        /// Liste von Dateipfad-Tag-Paaren – muss aktuell sein (nicht gecacht vom Laden).
+        /// Liste von Dateipfad-Tag-Paaren; muss aktuell sein (nicht gecacht vom Laden).
         /// </param>
         /// <param name="pattern">
         /// Muster mit Platzhaltern, z.B. <c>"{track:00} - {title}"</c>.

@@ -30,7 +30,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         /// <remarks>
         /// Sortiert wie der echte Dienst nach <see cref="LocalTrack.TrackNumber"/>. Ohne diese
-        /// Sortierung gibt der Fake eine Reihenfolge zurück, die es in der Anwendung nicht gibt —
+        /// Sortierung gibt der Fake eine Reihenfolge zurück, die es in der Anwendung nicht gibt,
         /// und Aufrufer, die sich auf die Reihenfolge verlassen, fielen im Test durch, obwohl sie
         /// richtig sind.
         /// </remarks>

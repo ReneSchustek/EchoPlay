@@ -76,7 +76,7 @@ namespace EchoPlay.App.Composition
         }
 
         /// <summary>
-        /// Registriert den Client für die Token-Anfrage. Die Zeitgrenze bleibt kurz — eine
+        /// Registriert den Client für die Token-Anfrage. Die Zeitgrenze bleibt kurz, denn eine
         /// hängende Token-Anfrage blockiert jeden weiteren Aufruf der Schnittstelle.
         /// </summary>
         private static void AddTokenClient(IServiceCollection services, SpotifyOptions baseOptions)
@@ -94,7 +94,7 @@ namespace EchoPlay.App.Composition
 
             // Singleton: Der Token-Zwischenspeicher lebt prozessweit, parallele Anforderungen
             // werden intern serialisiert. Die Zugangsdaten werden erst beim ersten Abruf
-            // geholt — kein blockierendes Warten auf eine asynchrone Quelle.
+            // geholt, also kein blockierendes Warten auf eine asynchrone Quelle.
             _ = services.AddSingleton<SpotifyTokenClient>();
 
             // Transient, damit jede Client-Instanz ihren eigenen Handler bekommt.
@@ -107,7 +107,7 @@ namespace EchoPlay.App.Composition
         /// <remarks>
         /// Die Wiederholungsregel wird zuerst angehängt und liegt damit außen, der
         /// Anmelde-Handler innen. So bekommt jeder Wiederholungsversuch einen frischen
-        /// Token. Die Standardregel wiederholt nur 408/429/5xx und Zeitüberschreitungen —
+        /// Token. Die Standardregel wiederholt nur 408/429/5xx und Zeitüberschreitungen;
         /// die 401-Erneuerung im Anmelde-Handler bleibt davon unberührt.
         /// </remarks>
         private static void AddApiClient(IServiceCollection services, SpotifyOptions baseOptions)

@@ -3,7 +3,7 @@ using EchoPlay.App.Helpers;
 namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
-    /// Tests für <see cref="SpotifyAlbumLink"/>. Prüfen ausschließlich den Linkbau —
+    /// Tests für <see cref="SpotifyAlbumLink"/>. Prüfen ausschließlich den Linkbau;
     /// geöffnet wird nichts (kein echter Prozessstart aus Tests).
     /// </summary>
     public sealed class SpotifyAlbumLinkTests
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Helpers
         [InlineData("4aawyAB9vmqN3uQ7Fj/../x")]
         public void TryBuild_IdWithPathOrQueryCharacters_IsRejected(string id)
         {
-            // Die ID landet ungeprüft im Pfad einer URL — alles außer Base62 muss draußen bleiben.
+            // Die ID landet ungeprüft im Pfad einer URL, also muss alles außer Base62 draußen bleiben.
             Assert.False(SpotifyAlbumLink.TryBuild(id, out _));
         }
 

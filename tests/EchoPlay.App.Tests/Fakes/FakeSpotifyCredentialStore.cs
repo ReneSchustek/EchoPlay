@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Ist gesetzt, scheitert das Speichern mit dieser Meldung. Bildet den Fall ab, in dem
-        /// die Verschlüsselung des Benutzerprofils nicht greift — dann darf der Anwender den
+        /// die Verschlüsselung des Benutzerprofils nicht greift; dann darf der Anwender den
         /// Grund sehen, statt dass der Befehl reißt.
         /// </summary>
         public string? FailSaveWith { get; set; }

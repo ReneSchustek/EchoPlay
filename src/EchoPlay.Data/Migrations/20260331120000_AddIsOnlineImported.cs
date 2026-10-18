@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Migrations
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
             // Neues Flag: trennt Online-importierte Serien von lokal gescannten.
-            // Standard: false – bestehende lokal gescannte Serien bleiben unsichtbar in der Online-Mediathek.
+            // Standard: false, bestehende lokal gescannte Serien bleiben unsichtbar in der Online-Mediathek.
             _ = migrationBuilder.AddColumn<bool>(
                 name: "IsOnlineImported",
                 table: "Series",

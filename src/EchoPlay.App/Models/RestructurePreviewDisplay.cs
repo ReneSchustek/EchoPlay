@@ -45,7 +45,7 @@ namespace EchoPlay.App.Models
         public IReadOnlyList<RestructureActionDisplay> Actions { get; }
 
         /// <summary>
-        /// Originale LocalLibrary-Vorschau – nur innerhalb des App-Assemblies sichtbar,
+        /// Originale LocalLibrary-Vorschau, nur innerhalb des App-Assemblies sichtbar,
         /// damit der Restrukturierungs-Service beim Ausführen das vollständige Modell erhält.
         /// </summary>
         internal EchoPlay.LocalLibrary.Models.RestructurePreview Original => _original;

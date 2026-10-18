@@ -19,7 +19,7 @@ namespace EchoPlay.App.Services
         /// <param name="message">Die Meldung für den Benutzer.</param>
         /// <param name="key">
         /// Kennung des Hinweises. Pflichtangabe, damit keine Aufrufstelle das Ausblenden
-        /// stillschweigend auslässt — der Übersetzer führt die Liste.
+        /// stillschweigend auslässt; der Übersetzer führt die Liste.
         /// </param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task ShowAsync(string title, string message, DialogKey key, CancellationToken cancellationToken = default);

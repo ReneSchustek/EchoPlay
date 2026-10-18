@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task SendAsync_WaitsPerRequest_EvenWhenRepeated()
         {
             // Bei einem Retry in der Resilience-Pipeline ruft der innere RateLimit-Handler
-            // erneut WaitAsync auf — die API-Quota wird auch bei Wiederholungen eingehalten.
+            // erneut WaitAsync auf, damit die API-Quota auch bei Wiederholungen eingehalten wird.
             RecordingRateLimiter limiter = new();
             RecordingInnerHandler inner = new(HttpStatusCode.OK);
             RateLimitMessageHandler sut = new(limiter) { InnerHandler = inner };

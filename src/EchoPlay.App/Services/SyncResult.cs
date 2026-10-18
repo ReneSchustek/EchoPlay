@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
         public int SeriesMatched { get; init; }
 
         /// <summary>
-        /// Lokale Serienordner ohne Datenbank-Treffer – kein Fehler, nur gezählt.
+        /// Lokale Serienordner ohne Datenbank-Treffer (kein Fehler, nur gezählt).
         /// </summary>
         public int SeriesUnmatched { get; init; }
 
@@ -28,7 +28,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Gibt eine lesbare Zusammenfassung des Sync-Ergebnisses zurück.
         /// Wenn Ordner gefunden wurden, aber keine passende Serie in der Datenbank vorhanden ist,
-        /// erscheint ein Hinweis – das ist der häufigste Grund für "0 Ergebnisse" nach einem Erst-Scan.
+        /// erscheint ein Hinweis, denn das ist der häufigste Grund für "0 Ergebnisse" nach einem Erst-Scan.
         /// </summary>
         /// <returns>Formatierter Ergebnis-Text für die UI-Anzeige.</returns>
         public override string ToString()
@@ -39,7 +39,7 @@ namespace EchoPlay.App.Services
                 $"Tracks: {TracksCreated} angelegt";
 
             // Wenn Ordner gefunden wurden, aber kein einziger gematcht werden konnte,
-            // sind noch keine Serien in der Datenbank vorhanden – erst importieren, dann scannen
+            // sind noch keine Serien in der Datenbank vorhanden: erst importieren, dann scannen
             if (SeriesMatched == 0 && SeriesUnmatched > 0)
             {
                 basis += $"\n{SeriesUnmatched} Ordner gefunden, aber keine passende Serie in der Datenbank vorhanden.";

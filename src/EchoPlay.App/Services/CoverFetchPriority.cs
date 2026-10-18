@@ -9,10 +9,10 @@ namespace EchoPlay.App.Services
     /// </summary>
     public enum CoverFetchPriority
     {
-        /// <summary>Periodischer Hintergrund-Scan – wird von Foreground-Anfragen überholt.</summary>
+        /// <summary>Periodischer Hintergrund-Scan, wird von Foreground-Anfragen überholt.</summary>
         Background,
 
-        /// <summary>Sichtbare UI-Anfrage – erhält Vorrang vor Background-Consumern.</summary>
+        /// <summary>Sichtbare UI-Anfrage, erhält Vorrang vor Background-Consumern.</summary>
         Foreground
     }
 }

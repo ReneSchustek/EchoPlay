@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// <remarks>
     /// Bewusst nur der Zusammenbau der Steuerelemente. Was die Texte sind, entscheiden
     /// <see cref="ConfirmationDialogContent"/> und <see cref="ErrorDialogContent"/>, und ob
-    /// das Häkchen etwas bewirkt, entscheidet <see cref="DialogSuppressionDecision"/> — beide
+    /// das Häkchen etwas bewirkt, entscheidet <see cref="DialogSuppressionDecision"/>. Beide
     /// bleiben ohne Fensterkontext prüfbar.
     /// </remarks>
     internal sealed class SuppressibleDialogContent

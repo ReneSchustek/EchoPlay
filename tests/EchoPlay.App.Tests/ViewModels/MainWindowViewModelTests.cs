@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="MainWindowViewModel"/> – es entscheidet, welche Menüpunkte
+    /// Tests für <see cref="MainWindowViewModel"/>, das entscheidet, welche Menüpunkte
     /// überhaupt erscheinen. Ein Fehler hier versteckt ganze Programmteile.
     /// </summary>
     public sealed class MainWindowViewModelTests

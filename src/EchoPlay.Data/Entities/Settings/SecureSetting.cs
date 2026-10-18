@@ -5,7 +5,7 @@ namespace EchoPlay.Data.Entities.Settings
 {
     /// <summary>
     /// Speichert verschlüsselte Einstellungswerte (z. B. Spotify-Credentials).
-    /// Der Klartext wird nie in dieser Entity gehalten — die Verschlüsselung
+    /// Der Klartext wird nie in dieser Entity gehalten, die Verschlüsselung
     /// erfolgt in der App-Schicht (DPAPI), hier liegen nur die Cipher-Bytes.
     /// </summary>
     public sealed class SecureSetting : BaseEntity

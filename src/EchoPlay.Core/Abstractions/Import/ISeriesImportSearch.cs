@@ -18,12 +18,12 @@ namespace EchoPlay.Core.Abstractions.Import
 
         /// <summary>
         /// Sucht wie <see cref="SearchAsync"/>, meldet jeden Treffer aber, sobald er feststeht.
-        /// Die Reihenfolge ist die Reihenfolge der Bewertung — der sicherste Treffer zuerst.
+        /// Die Reihenfolge ist die Reihenfolge der Bewertung, der sicherste Treffer zuerst.
         /// </summary>
         /// <remarks>
         /// Die Standardfassung sammelt das Ergebnis von <see cref="SearchAsync"/> ein und gibt es
         /// am Stück aus. Anbieter, deren Bewertung je Kandidat einzeln fertig wird, überschreiben
-        /// sie — dann steht der erste Treffer auf dem Schirm, während die übrigen noch laufen.
+        /// sie. Dann steht der erste Treffer auf dem Schirm, während die übrigen noch laufen.
         /// </remarks>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="cancellationToken">Abbruchtoken der umgebenden Operation.</param>

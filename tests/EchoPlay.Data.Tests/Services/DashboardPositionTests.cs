@@ -14,7 +14,7 @@ namespace EchoPlay.Data.Tests.Services
     {
         /// <summary>
         /// Legt eine Serie in der DB an und gibt ihre Id zurück.
-        /// DashboardPositions referenzieren Serien über FK –
+        /// DashboardPositions referenzieren Serien über FK;
         /// ohne existierende Serie schlägt SaveChanges fehl.
         /// </summary>
         private async Task<Guid> CreateSeriesAsync(string title = "Test-Serie")
@@ -27,7 +27,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task GetBySectionAsync_ReturnsEmptyList_WhenNoPositionsExist()
         {
-            // Leere Datenbank – es dürfen keine Positionen zurückkommen
+            // Leere Datenbank: Es dürfen keine Positionen zurückkommen
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
 
             IReadOnlyList<DashboardPosition> result = await service.GetBySectionAsync("Neuerscheinungen", cancellationToken: TestContext.Current.CancellationToken);
@@ -117,7 +117,7 @@ namespace EchoPlay.Data.Tests.Services
             await service.SaveOrderAsync("Favoriten", [seriesA, seriesB], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
-            // Zweite Reihenfolge: B vor A – muss die erste komplett ersetzen
+            // Zweite Reihenfolge: B vor A, muss die erste komplett ersetzen
             await service.SaveOrderAsync("Favoriten", [seriesB, seriesA], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
@@ -133,7 +133,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task GetBySectionAsync_ReturnsOnlyRequestedSection()
         {
-            // Positionen in zwei verschiedenen Bereichen anlegen –
+            // Positionen in zwei verschiedenen Bereichen anlegen,
             // Abfrage für einen Bereich darf nur dessen Einträge liefern
             Guid seriesFav = await CreateSeriesAsync("Favorit");
             Guid seriesNeu = await CreateSeriesAsync("Neuerscheinung");

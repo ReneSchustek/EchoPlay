@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Speichern der Reihenfolge nach dem Verschieben und das Abmelden der Rückrufe.
     /// </summary>
     /// <remarks>
-    /// Die Reihenfolge ist eine Nutzerentscheidung, die einen Neustart überleben muss —
+    /// Die Reihenfolge ist eine Nutzerentscheidung, die einen Neustart überleben muss,
     /// deshalb steht das Speichern hier unter Test und nicht nur das Anzeigen. Der zweite
     /// Schwerpunkt sind die Rückrufe: Sie werden an jeder Kachel angemeldet, und wenn sie
     /// beim Ersetzen der Reihe nicht abgemeldet werden, meldet jede spätere Änderung sich
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Tests.ViewModels
             harness.DragToFront(0);
             await Task.Yield();
 
-            // Zweimal dieselbe Kachel zu setzen ist der Regelfall — die Ansicht lädt neu.
+            // Zweimal dieselbe Kachel zu setzen ist der Regelfall, denn die Ansicht lädt neu.
             // Häuften sich die Rückrufe dabei an, schriebe ein einziges Verschieben so oft
             // in die Ablage, wie die Ansicht seit dem Start geladen wurde.
             _ = Assert.Single(harness.ViewModel.FavoriteSeries);
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.ViewModel.SaveFavoriteSeriesOrderAsync();
 
             // Eine gesperrte Ablage darf die Übersicht nicht mitreißen. Die Reihenfolge ist
-            // dann nicht gespeichert — die Ansicht bleibt aber bedienbar.
+            // dann nicht gespeichert, die Ansicht bleibt aber bedienbar.
             Assert.Equal(1, harness.Positions.SaveCallCount);
         }
 
@@ -171,7 +171,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 ViewModel.FavoriteSeries.Insert(0, dragged);
             }
 
-            /// <summary>Baut eine Kachel ohne Bild — das Bildobjekt entstünde nur am Fenster.</summary>
+            /// <summary>Baut eine Kachel ohne Bild, denn das Bildobjekt entstünde nur am Fenster.</summary>
             public FavoriteSeriesCardViewModel BuildCard(string seriesName) =>
                 new(Guid.NewGuid(), seriesName, coverImage: null, ScopeFactory,
                     new FakeConfirmationDialogService());

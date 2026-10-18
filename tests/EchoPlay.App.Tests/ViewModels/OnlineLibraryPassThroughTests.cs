@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Jede dieser Eigenschaften ist eine Weiche. Zeigt eine davon auf das falsche
-    /// Unter-Ansichtsmodell, wirkt eine Bedienung ins Leere — und das fällt in der
+    /// Unter-Ansichtsmodell, wirkt eine Bedienung ins Leere, und das fällt in der
     /// Oberfläche erst auf, wenn jemand genau diesen Regler benutzt.
     /// </remarks>
     public sealed class OnlineLibraryPassThroughTests
@@ -137,7 +137,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.ReloadAfterImportAsync();
 
             // Nach dem Import gehört die Serie in die Mediathek, nicht mehr in die
-            // Trefferliste — sonst lädt der Anwender sie ein zweites Mal ein.
+            // Trefferliste, sonst lädt der Anwender sie ein zweites Mal ein.
             Assert.Empty(sut.ProviderSearchVM.ProviderSearchResults);
         }
 
@@ -160,7 +160,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.FocusSearchCommand.Execute(null);
 
-            // Ohne Suchbegriff gibt es nichts zu suchen — der Zeiger springt trotzdem ins
+            // Ohne Suchbegriff gibt es nichts zu suchen, der Zeiger springt trotzdem ins
             // Feld, damit der Anwender sofort tippen kann.
             Assert.Equal(1, focusRequests);
         }
@@ -212,7 +212,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await ChangeSignals.WaitForAsync(
                 sut, () => settings.SaveCallCount > 0, "Die Sortierung ist gespeichert");
 
-            // Die gewählte Sortierung soll den Programmstart überleben — sonst springt die
+            // Die gewählte Sortierung soll den Programmstart überleben, sonst springt die
             // Folgenliste bei jedem Öffnen auf die Vorgabe zurück.
             AppSettings stored = await settings.GetAsync(TestContext.Current.CancellationToken);
             Assert.Equal(2, stored.OnlineEpisodeSortIndex);

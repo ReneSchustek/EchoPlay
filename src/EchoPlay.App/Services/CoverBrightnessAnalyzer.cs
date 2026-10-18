@@ -8,7 +8,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Analysiert die Helligkeit eines Cover-Bildes in der oberen linken Ecke.
-    /// Statische Utility-Klasse – <see cref="BitmapDecoder"/> und
+    /// Statische Utility-Klasse: <see cref="BitmapDecoder"/> und
     /// <see cref="InMemoryRandomAccessStream"/> gehören zum Betriebssystem, sind
     /// systemweit registriert und laufen auch ohne WinUI-Hosting. Die Klasse ist
     /// deshalb vollständig durch Unit-Tests abgedeckt.
@@ -29,7 +29,7 @@ namespace EchoPlay.App.Services
         public static async Task<bool?> AnalyzeBrightnessFromBytesAsync(byte[] coverBytes)
         {
             // Guard vor dem try: ohne ihn wäre die NullReferenceException aus AsBuffer()
-            // vom CA1031-Catch zu "Helligkeit unbekannt" verschluckt worden — der Aufrufer
+            // vom CA1031-Catch zu "Helligkeit unbekannt" verschluckt worden, und der Aufrufer
             // hätte den Programmierfehler nie gesehen.
             ArgumentNullException.ThrowIfNull(coverBytes);
 

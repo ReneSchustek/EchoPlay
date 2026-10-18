@@ -19,7 +19,7 @@ namespace EchoPlay.App.Views
             {
                 await ViewModel.MaintenanceVM.RunMaintenanceAsync();
 
-                // Abschlussdialog – der Nutzer sieht klar, ob die Bereinigung geklappt hat.
+                // Abschlussdialog, damit der Nutzer klar sieht, ob die Bereinigung geklappt hat.
                 // MaintenanceStatusText enthält bei Erfolg eine Bestätigung, bei Fehler die Meldung.
                 ContentDialog resultDialog = new()
                 {
@@ -40,11 +40,11 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Überträgt den neuen Zahlenwert der NumberBox in die ViewModel-Property.
-        /// NumberBox.Value ist <see langword="double"/> – explizite Konvertierung in <see langword="int"/> nötig.
+        /// NumberBox.Value ist <see langword="double"/>, daher ist eine explizite Konvertierung in <see langword="int"/> nötig.
         /// </summary>
         private void OnDbPurgeDaysChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
         {
-            // NaN tritt auf, wenn der Nutzer ein ungültiges Zeichen eingibt – ignorieren
+            // NaN tritt auf, wenn der Nutzer ein ungültiges Zeichen eingibt; ignorieren
             if (!double.IsNaN(args.NewValue))
             {
                 ViewModel.MaintenanceVM.DbPurgeDays = (int)args.NewValue;
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Setzt die Bibliothek zurück – je nach gewähltem Scope: Online, Lokal oder Alle.
+        /// Setzt die Bibliothek zurück, je nach gewähltem Scope: Online, Lokal oder Alle.
         /// </summary>
         private async void OnResetClick(object sender, RoutedEventArgs e)
         {

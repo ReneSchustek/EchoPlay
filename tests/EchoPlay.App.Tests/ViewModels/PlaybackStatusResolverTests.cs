@@ -6,7 +6,7 @@ using System;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="PlaybackStatusResolver"/> – die eine Stelle, an der aus dem
+    /// Tests für <see cref="PlaybackStatusResolver"/>, die eine Stelle, an der aus dem
     /// gespeicherten Wiedergabezustand der angezeigte Status wird. Sie entscheidet über
     /// das Symbol auf jeder Kachel und über den Zähler „X von Y Folgen gehört".
     /// </summary>
@@ -54,7 +54,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void Resolve_MarkedAsPlayedWithoutPosition_IsFinished()
         {
-            // „Als gehört markieren" setzt nur IsCompleted — die Position bleibt null.
+            // „Als gehört markieren" setzt nur IsCompleted, die Position bleibt null.
             // Vor der Korrektur galt eine so markierte Folge weiter als nicht begonnen.
             PlaybackState state = new() { EpisodeId = Helpers.TestIds.EpisodeA };
             state.MarkCompleted(Helpers.TestIds.ReferenceDate);
@@ -113,7 +113,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void HasOpenPosition_SecondPassFinished_IsFalseAgain()
         {
-            // Nach dem zweiten Durchhören ist wieder nichts offen — sonst bliebe die Folge
+            // Nach dem zweiten Durchhören ist wieder nichts offen, sonst bliebe die Folge
             // dauerhaft unter „Angefangen" stehen.
             PlaybackState state = new() { EpisodeId = Helpers.TestIds.EpisodeA };
             state.UpdatePosition(TimeSpan.FromHours(1), TimeSpan.FromHours(1));
@@ -129,7 +129,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void HasOpenPosition_UnknownDuration_PositionDecidesAlone()
         {
             // Rund die Hälfte des Bestands führt keine Dauer. Dort gibt es nichts, wogegen
-            // sich die Position prüfen ließe — also gilt sie. Der Hörstatus darf hier nicht
+            // sich die Position prüfen ließe. Also gilt sie. Der Hörstatus darf hier nicht
             // entscheiden, sonst bliebe genau der Fall unsichtbar, um den es geht.
             PlaybackState state = new()
             {

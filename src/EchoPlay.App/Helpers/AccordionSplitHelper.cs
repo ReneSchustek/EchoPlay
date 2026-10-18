@@ -6,14 +6,14 @@ namespace EchoPlay.App.Helpers
     /// <summary>
     /// Berechnet die Aufteilung einer Kachelliste in Top- und Bottom-Bereich
     /// für das Akkordeon-Layout. Die Aufteilung erfolgt anhand der gewählten
-    /// Kachel – das Akkordeon klappt direkt unterhalb der Reihe auf,
+    /// Kachel. Das Akkordeon klappt direkt unterhalb der Reihe auf,
     /// in der die gewählte Kachel steht.
     /// </summary>
     public static class AccordionSplitHelper
     {
         /// <summary>
         /// Breite eines Serien-Kachel-Slots (Kachel + Margin).
-        /// Zentral definiert – beide Mediathek-Pages nutzen denselben Wert.
+        /// Zentral definiert, beide Mediathek-Pages nutzen denselben Wert.
         /// </summary>
         public const double SeriesTileSlotWidth = 148.0;
 

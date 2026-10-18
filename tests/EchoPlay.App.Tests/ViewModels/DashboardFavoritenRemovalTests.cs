@@ -16,7 +16,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die Kachel meldet das Entfernen selbst. Hört der Abschnitt nicht zu, bliebe sie
-    /// stehen, bis der Anwender die Seite neu betritt — und ein Klick auf die Kachel
+    /// stehen, bis der Anwender die Seite neu betritt, und ein Klick auf die Kachel
     /// führte zu einer Serie, die längst nicht mehr in den Favoriten steht.
     /// </remarks>
     public sealed class DashboardFavoritenRemovalTests

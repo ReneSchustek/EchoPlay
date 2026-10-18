@@ -9,7 +9,7 @@ namespace EchoPlay.App.Controls
     /// <para>
     /// Trägt bewusst keine Farbe: Ob ein Buchstabe belegt und ob er der aktive ist, zeigt
     /// die Leiste über Schriftschnitt und Rahmen. Ein Zustand, der allein an der Farbe
-    /// hängt, ist für einen Teil der Nutzer gar kein Zustand — und eine Farbe im Quelltext
+    /// hängt, ist für einen Teil der Nutzer gar kein Zustand. Eine Farbe im Quelltext
     /// wäre zugleich an der Palette vorbei.
     /// </para>
     /// </summary>
@@ -48,8 +48,8 @@ namespace EchoPlay.App.Controls
         /// <summary>Schriftschnitt: Der aktive Buchstabe steht fett.</summary>
         /// <remarks>
         /// Der Zahlwert steht hier absichtlich statt <c>FontWeights.Bold</c>: Jene Klasse ist
-        /// eine WinRT-Komponente und lässt sich ohne laufenden XAML-Host nicht ansprechen —
-        /// die Darstellungsregel wäre damit nur in der fertigen Anwendung prüfbar.
+        /// eine WinRT-Komponente und lässt sich ohne laufenden XAML-Host nicht ansprechen,
+        /// womit die Darstellungsregel nur in der fertigen Anwendung prüfbar wäre.
         /// </remarks>
         public FontWeight LabelWeight => new() { Weight = IsCurrent ? BoldWeight : NormalWeight };
 

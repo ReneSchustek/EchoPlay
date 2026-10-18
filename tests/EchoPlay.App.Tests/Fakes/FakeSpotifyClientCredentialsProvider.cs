@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="ISpotifyClientCredentialsProvider"/>.
-    /// Gibt entweder ein konfiguriertes Credentials-Objekt oder <see langword="null"/> zurück —
+    /// Gibt entweder ein konfiguriertes Credentials-Objekt oder <see langword="null"/> zurück,
     /// passend für Tests, die den Spotify-Fallback-Pfad im <c>ImportService</c> abdecken.
     /// </summary>
     internal sealed class FakeSpotifyClientCredentialsProvider : ISpotifyClientCredentialsProvider

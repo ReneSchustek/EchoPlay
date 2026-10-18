@@ -16,7 +16,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
     /// </summary>
     /// <remarks>
     /// Der Einlesevorgang läuft über die ganze Mediathek. Ein einzelner Ordner ohne
-    /// Leserechte — ein getrenntes Netzlaufwerk, ein Ordner eines anderen Kontos — darf
+    /// Leserechte (ein getrenntes Netzlaufwerk, ein Ordner eines anderen Kontos) darf
     /// ihn nicht abbrechen: Der Anwender bekäme sonst nach minutenlangem Warten gar
     /// nichts, obwohl alle übrigen Serien lesbar sind.
     ///
@@ -61,7 +61,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             IReadOnlyList<LocalScanResult> ergebnisse = await sut.ScanSeriesAsync(
                 _wurzel, "{number}", ct: TestContext.Current.CancellationToken);
 
-            // Die Serie liefert keine Folgen — aber der Lauf endet ordentlich.
+            // Die Serie liefert keine Folgen, aber der Lauf endet ordentlich.
             Assert.NotNull(ergebnisse);
         }
 
@@ -102,7 +102,7 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
                 _wurzel, "{number} - {title}", ct: TestContext.Current.CancellationToken);
 
             // Liegen die Dateien ohne Folgenordner direkt in der Serie, darf der
-            // Einlesevorgang sie nicht übergehen — sonst fällt eine ganze Serie durch.
+            // Einlesevorgang sie nicht übergehen, sonst fällt eine ganze Serie durch.
             LocalScanResult serienErgebnis = Assert.Single(ergebnisse);
             LocalEpisodeScan folge = Assert.Single(serienErgebnis.Episodes);
             Assert.Equal(1, folge.TrackCount);
@@ -151,13 +151,13 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             _ = await sut.ScanAsync(gesperrt.Path, "{number}", cancellationToken: TestContext.Current.CancellationToken);
 
             // Die Vorab-Zählung ist nur für den Fortschrittsbalken da. Scheitert sie,
-            // läuft der Einlesevorgang trotzdem — eben ohne Prozentangabe.
+            // läuft der Einlesevorgang trotzdem, eben ohne Prozentangabe.
             Assert.Equal(1, scanner.ScanCallCount);
         }
 
         // ── Aufbau ───────────────────────────────────────────────────────────────
 
-        /// <summary>Fortschrittsempfänger ohne eigenen Faden — meldet sofort im Aufrufer.</summary>
+        /// <summary>Fortschrittsempfänger ohne eigenen Faden; meldet sofort im Aufrufer.</summary>
         private sealed class SynchronousProgress : IProgress<ScanProgress>
         {
             private readonly Action<ScanProgress> _handler;

@@ -57,7 +57,7 @@ namespace EchoPlay.App.Tests.Services
 
             await limiter.WaitAsync("host-a", ct: TestContext.Current.CancellationToken);
 
-            // Host-B wurde noch nie aufgerufen — darf sofort zurückkehren
+            // Host-B wurde noch nie aufgerufen und darf sofort zurückkehren
             Stopwatch sw = Stopwatch.StartNew();
             await limiter.WaitAsync("host-b", ct: TestContext.Current.CancellationToken);
             sw.Stop();
@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Zwei verschiedene Hosts, damit wirklich der Vorrang geprüft wird und nicht die
             // Reihenfolge am gemeinsamen Semaphore: Die Background-Anfrage geht auf einen Host,
-            // der noch nie aufgerufen wurde und kein Intervall kennt — sie liefe also sofort
+            // der noch nie aufgerufen wurde und kein Intervall kennt, sie liefe also sofort
             // durch. Sie muss trotzdem warten, solange eine Foreground-Anfrage im Flug ist.
             SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
             {
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Tests.Services
 
             // Direkt aufrufen und nicht über Task.Run: WaitAsync zählt den Foreground-Vorrang
             // synchron hoch, bevor es das erste Mal wartet. Damit steht die Reservierung fest,
-            // sobald der Aufruf zurückkehrt — eine über Task.Run gestartete Anfrage kann unter
+            // sobald der Aufruf zurückkehrt. Eine über Task.Run gestartete Anfrage kann unter
             // Last später anlaufen, und dann sieht die Background-Anfrage keinen Vorrang.
             Task foreground = limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
             Task background = limiter.WaitAsync("background.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
@@ -116,7 +116,7 @@ namespace EchoPlay.App.Tests.Services
             // Ein zweiter Dispose ist idempotent und darf nicht werfen.
             limiter.Dispose();
 
-            // Nach Dispose ist die Instanz unbenutzbar — WaitAsync muss werfen,
+            // Nach Dispose ist die Instanz unbenutzbar, WaitAsync muss werfen,
             // damit Konsumenten den Shutdown-Fehler sofort bemerken statt auf einen
             // disposeten Semaphore zu warten.
             _ = await Assert.ThrowsAsync<ObjectDisposedException>(
@@ -146,7 +146,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task WaitAsync_ForAnApiHost_IgnoresTheImageSuffixes()
         {
-            // Der exakte Eintrag schlägt die Endung — sonst würde eine großzügige Regel für
+            // Der exakte Eintrag schlägt die Endung, sonst würde eine großzügige Regel für
             // Bildhosts versehentlich auch die API entfesseln.
             SemaphoreHostRateLimiter limiter = new(
                 new Dictionary<string, TimeSpan> { ["itunes.apple.com"] = TimeSpan.FromMilliseconds(300) },

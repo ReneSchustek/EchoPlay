@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Der Mini-Abspieler bekommt seine Werte über ein Ereignis des Abspieldienstes. Kommt
-    /// eine Meldung nicht an, friert die Leiste bei den Werten der vorigen Folge ein —
+    /// eine Meldung nicht an, friert die Leiste bei den Werten der vorigen Folge ein,
     /// sichtbar falsch, aber ohne Fehlermeldung.
     ///
     /// Eigene Datei statt Ergänzung von <c>MiniPlayerViewModelTests</c>: Die liegt bereits

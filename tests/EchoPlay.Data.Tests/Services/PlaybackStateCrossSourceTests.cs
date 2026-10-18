@@ -6,7 +6,7 @@ using EchoPlay.Data.Tests.Infrastructure;
 namespace EchoPlay.Data.Tests.Services
 {
     /// <summary>
-    /// Dieselbe Folge kann zweimal in der Bibliothek stehen — einmal lokal eingelesen, einmal
+    /// Dieselbe Folge kann zweimal in der Bibliothek stehen: einmal lokal eingelesen, einmal
     /// vom Anbieter importiert. „Gehört" muss dann für beide gelten, sonst zeigt die andere
     /// Ansicht sie weiter als offen. In der Produktivdatenbank waren davon 904 Folgen betroffen.
     /// </summary>
@@ -32,7 +32,7 @@ namespace EchoPlay.Data.Tests.Services
         public async Task MarkCompleted_TransfersWithDifferentEpisodeTitle()
         {
             // Der Folgentitel darf nicht Teil der Zuordnung sein: Lokal und online benennen
-            // dieselbe Folge unterschiedlich — in der Produktivbibliothek bei 0 von 925 Paaren
+            // dieselbe Folge unterschiedlich, in der Produktivbibliothek bei 0 von 925 Paaren
             // gleich. Mit Titelvergleich hätte der Abgleich nie gegriffen.
             Series lokaleSerie = await DataBuilder.PersistSeriesAsync("TKKG");
             Series onlineSerie = await DataBuilder.PersistSeriesAsync("TKKG");
@@ -100,7 +100,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Synchronize_HoltDenAltbestandNachUndIstDanachStill()
         {
-            // Altfall: lokal gehört, online offen — der Zustand, den 904 Folgen hatten, bevor
+            // Altfall: lokal gehört, online offen. Das ist der Zustand, den 904 Folgen hatten, bevor
             // die Spiegelung existierte.
             (Episode lokal, Episode online) = await ZweiQuellenAsync("TKKG Junior", 3, "Der Hund von Baskerville");
 
@@ -139,7 +139,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Legt dieselbe Folge zweimal an — in zwei Serien mit identischem Titel, wie es beim
+        /// Legt dieselbe Folge zweimal an, in zwei Serien mit identischem Titel, wie es beim
         /// Nebeneinander von lokalem Einlesen und Anbieter-Import entsteht.
         /// </summary>
         private async Task<(Episode Lokal, Episode Online)> ZweiQuellenAsync(string serie, int nummer, string folge)
@@ -151,7 +151,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Persistiert eine Folge mit Nummer — der Builder setzt nur den Titel, der Abgleich
+        /// Persistiert eine Folge mit Nummer. Der Builder setzt nur den Titel, der Abgleich
         /// braucht aber beides.
         /// </summary>
         private async Task<Episode> FolgeAsync(Series serie, int nummer, string titel)

@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Tests.Services
     /// <remarks>
     /// Die Suche über die Anbieter-Kennung ist der Weg, auf dem ein Import eine bereits
     /// vorhandene Serie wiedererkennt. Findet er sie nicht, legt er sie ein zweites Mal
-    /// an — genau die Duplikate, die im Bestand des Anwenders stehen.
+    /// an, genau die Duplikate, die im Bestand des Anwenders stehen.
     /// </remarks>
     public sealed class DataServiceGapTests : DbTestBase
     {
@@ -350,7 +350,7 @@ namespace EchoPlay.Data.Tests.Services
 
             // Der Zwischenspeicher trägt keine fachlichen Daten. Ein als gelöscht
             // markierter Eintrag darf eine erneut gemeldete Folge nicht dauerhaft
-            // verstecken — sonst fehlt sie auf der Startseite, bis jemand aufräumt.
+            // verstecken, sonst fehlt sie auf der Startseite, bis jemand aufräumt.
             CachedNewRelease wieder = Assert.Single(
                 await Context.CachedNewReleases.ToListAsync(TestContext.Current.CancellationToken));
             Assert.False(wieder.IsDeleted);

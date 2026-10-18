@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Tests für <see cref="MaintenanceSettingsViewModel"/> – Datenbankpflege und
+    /// Tests für <see cref="MaintenanceSettingsViewModel"/>: Datenbankpflege und
     /// Bibliotheks-Reset. Diese Befehle löschen Daten; entsprechend wichtig sind der
     /// Doppelklick-Schutz und dass der Lauf-Zustand auch im Fehlerfall zurückgesetzt wird.
     /// </summary>
@@ -109,7 +109,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void IsLogViewerAvailable_FollowsTheCoordinator()
         {
-            // Ohne Speicher-Senke gibt es nichts anzuzeigen – der Bereich blendet sich aus.
+            // Ohne Speicher-Senke gibt es nichts anzuzeigen, der Bereich blendet sich aus.
             (MaintenanceSettingsViewModel withViewer, _, _) = Build(logViewerAvailable: true);
             (MaintenanceSettingsViewModel withoutViewer, _, _) = Build(logViewerAvailable: false);
 
@@ -223,7 +223,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task RunMaintenanceAsync_BereinigtMitDenEingestelltenTagenUndKompaktiert()
         {
-            // Der eingestellte Aufbewahrungszeitraum muss beim Dienst ankommen — sonst
+            // Der eingestellte Aufbewahrungszeitraum muss beim Dienst ankommen, sonst
             // löscht die Wartung mehr oder weniger, als der Nutzer gewählt hat.
             (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
             viewModel.DbPurgeDays = 14;

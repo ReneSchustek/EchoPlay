@@ -7,16 +7,16 @@ namespace EchoPlay.LocalLibrary.Scanning
     /// </summary>
     internal static class ScanPhaseLabels
     {
-        /// <summary>Phase 1 – Audiodateien zählen, bevor der Scan startet.</summary>
+        /// <summary>Phase 1: Audiodateien zählen, bevor der Scan startet.</summary>
         internal const string Preparation = "Vorbereitung …";
 
-        /// <summary>Phase 2 – Serienordner erkennen und zuordnen.</summary>
+        /// <summary>Phase 2: Serienordner erkennen und zuordnen.</summary>
         internal const string Series = "Serien werden ermittelt …";
 
-        /// <summary>Phase 3 – Episodenordner pro Serie verarbeiten.</summary>
+        /// <summary>Phase 3: Episodenordner pro Serie verarbeiten.</summary>
         internal const string Episodes = "Folgen werden ermittelt …";
 
-        /// <summary>Phase 4 – ID3-Metadaten der Audiodateien lesen.</summary>
+        /// <summary>Phase 4: ID3-Metadaten der Audiodateien lesen.</summary>
         internal const string Tracks = "Tracks werden gescannt …";
     }
 }

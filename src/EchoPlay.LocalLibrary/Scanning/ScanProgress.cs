@@ -10,10 +10,10 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <summary>
         /// Aktuelle Scan-Phase (1–4).
         /// <list type="bullet">
-        ///   <item>1 – Vorbereitung (Dateianzahl ermitteln)</item>
-        ///   <item>2 – Serien erkennen</item>
-        ///   <item>3 – Folgen ermitteln</item>
-        ///   <item>4 – Tracks scannen</item>
+        ///   <item>1: Vorbereitung (Dateianzahl ermitteln)</item>
+        ///   <item>2: Serien erkennen</item>
+        ///   <item>3: Folgen ermitteln</item>
+        ///   <item>4: Tracks scannen</item>
         /// </list>
         /// 0 bedeutet: keine Phasen-Information verfügbar (Legacy-Modus).
         /// </summary>
@@ -62,7 +62,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <summary>
         /// Fortschritt in Prozent (0–100).
         /// Priorität: Audiodateien (Scanner-Phase) vor Serien (DB-Sync-Phase).
-        /// Gibt 0 zurück wenn beide Zähler unbekannt sind – indeterministischer Balken.
+        /// Gibt 0 zurück wenn beide Zähler unbekannt sind (indeterministischer Balken).
         /// </summary>
         public double PercentComplete =>
             TotalFiles > 0 ? ProcessedFiles / (double)TotalFiles * 100.0 :

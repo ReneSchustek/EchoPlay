@@ -63,7 +63,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task TrackTitle_TrackHasNoTag_KeepsTheNumberInTheFileName()
         {
-            // Der Mini-Player hat keine Nummernspalte – die Nummer muss also stehen bleiben.
+            // Der Mini-Player hat keine Nummernspalte, die Nummer muss also stehen bleiben.
             const string spur = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
 
             FakePlayerService playerService = new();
@@ -116,7 +116,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void PlayCommand_CallsResume()
         {
-            // PlayCommand entspricht Resume – nicht Play (kein neuer Track)
+            // PlayCommand entspricht Resume, nicht Play (kein neuer Track)
             FakePlayerService playerService = new();
             MiniPlayerViewModel vm = BuildViewModel(playerService);
 
@@ -152,7 +152,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void PlaybackRate_SameValue_DoesNotPropagate()
         {
-            // SetProperty gibt false zurück wenn der Wert gleich bleibt – kein Seiteneffekt
+            // SetProperty gibt false zurück, wenn der Wert gleich bleibt, also kein Seiteneffekt
             FakePlayerService playerService = new();
             MiniPlayerViewModel vm = BuildViewModel(playerService);
 

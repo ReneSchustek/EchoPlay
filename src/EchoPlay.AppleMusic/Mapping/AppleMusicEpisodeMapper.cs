@@ -6,7 +6,7 @@ namespace EchoPlay.AppleMusic.Mapping
 {
     /// <summary>
     /// Transformiert ein iTunes-Album (Collection) in eine einzelne Import-Episode.
-    /// Ein Album bei iTunes entspricht einer Hörspielfolge – die einzelnen Tracks
+    /// Ein Album bei iTunes entspricht einer Hörspielfolge, die einzelnen Tracks
     /// innerhalb des Albums sind Kapitel, keine eigenständigen Folgen.
     /// </summary>
     public static class AppleMusicEpisodeMapper
@@ -16,7 +16,7 @@ namespace EchoPlay.AppleMusic.Mapping
         /// Die Tracks werden zu einer Gesamtdauer aufsummiert.
         /// </summary>
         /// <param name="album">Das iTunes-Album (Collection).</param>
-        /// <param name="tracks">Die Tracks des Albums – nur für die Dauerberechnung.</param>
+        /// <param name="tracks">Die Tracks des Albums, nur für die Dauerberechnung.</param>
         /// <param name="orderIndex">Fachliche Sortierposition innerhalb der Serie.</param>
         /// <returns>Eine Import-Episode die das gesamte Album repräsentiert.</returns>
         public static ImportEpisode MapAlbumToEpisode(ITunesCollectionDto album, IReadOnlyList<ITunesTrackDto> tracks, int orderIndex)
@@ -24,8 +24,8 @@ namespace EchoPlay.AppleMusic.Mapping
             ArgumentNullException.ThrowIfNull(album);
             ArgumentNullException.ThrowIfNull(tracks);
 
-            // Collection-ID statt Track-ID – ein Album = eine Folge.
-            // iTunes liefert 100px-Thumbnails – für höhere Auflösung "100x100" durch "600x600" ersetzen.
+            // Collection-ID statt Track-ID, denn ein Album = eine Folge.
+            // iTunes liefert 100px-Thumbnails; für höhere Auflösung "100x100" durch "600x600" ersetzen.
             return ImportEpisodeFactory.Create(
                 sourceEpisodeId: album.CollectionId.ToString(CultureInfo.InvariantCulture),
                 title: album.CollectionName,

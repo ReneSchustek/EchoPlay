@@ -18,7 +18,7 @@
                                 Margin="0,8,16,0" Canvas.ZIndex="1"/>
 
         <!-- Seitenkopf: Titel und Zeile, worauf sich die Zahlen beziehen. Ohne Primäraktion
-             und ohne Suche — die Seite zeigt Kennzahlen, keine Liste. -->
+             und ohne Suche, denn die Seite zeigt Kennzahlen, keine Liste. -->
         <ctrl:PageHeaderControl
             x:Name="StatistikHeader"
             Grid.Row="0"

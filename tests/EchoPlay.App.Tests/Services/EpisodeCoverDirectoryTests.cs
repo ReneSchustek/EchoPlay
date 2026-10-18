@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Die Datei ist die Brücke zu allen anderen Programmen, die den Ordner lesen. Sie darf
-    /// aber nur entstehen, wenn der Anwender das eingestellt hat — in einer Sammlung, die
+    /// aber nur entstehen, wenn der Anwender das eingestellt hat, in einer Sammlung, die
     /// woanders gepflegt wird, ist eine fremde Datei im Ordner eine Zumutung.
     ///
     /// Die Tests arbeiten auf echten Ordnern im Temp-Verzeichnis und räumen sie wieder ab;
@@ -136,7 +136,7 @@ namespace EchoPlay.App.Tests.Services
                 BuildArtistCard(localFolderPath: null), hit, TestContext.Current.CancellationToken);
 
             // Ohne Meldung sieht der Anwender nur, dass sein Klick auf den Treffer nichts
-            // bewirkt — und sucht den Fehler bei sich.
+            // bewirkt, und sucht den Fehler bei sich.
             _ = Assert.Single(errorDialog.ShownDialogs);
         }
 

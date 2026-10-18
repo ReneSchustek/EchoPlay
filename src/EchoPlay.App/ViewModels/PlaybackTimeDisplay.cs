@@ -14,7 +14,7 @@ namespace EchoPlay.App.ViewModels
     /// Suchlauf am Regler.
     /// </summary>
     /// <remarks>
-    /// Das sind zwei Zeitachsen nebeneinander — die der Datei und die der Folge. Wer beide im
+    /// Das sind zwei Zeitachsen nebeneinander: die der Datei und die der Folge. Wer beide im
     /// Ansichtsmodell des Players führt, hat dort acht Felder liegen, die nur miteinander zu
     /// tun haben und mit nichts sonst.
     /// </remarks>
@@ -49,7 +49,7 @@ namespace EchoPlay.App.ViewModels
             ToggleTimeDisplayCommand = new RelayCommand(ToggleTimeDisplay);
         }
 
-        /// <summary>Aktuelle Abspielposition in Sekunden — der Wert des Reglers.</summary>
+        /// <summary>Aktuelle Abspielposition in Sekunden, der Wert des Reglers.</summary>
         public double PositionSeconds
         {
             get => _positionSeconds;
@@ -64,7 +64,7 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        /// <summary>Gesamtdauer der laufenden Datei in Sekunden — das Maximum des Reglers.</summary>
+        /// <summary>Gesamtdauer der laufenden Datei in Sekunden, das Maximum des Reglers.</summary>
         public double DurationSeconds
         {
             get => _durationSeconds;
@@ -76,7 +76,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <remarks>
         /// Der Regler darüber zeigt die laufende Datei. Bei einer Folge aus vier Dateien sagt
-        /// „Minute 12" allein nichts — erst dieser Wert beantwortet, wie weit man im Hörspiel ist.
+        /// „Minute 12" allein nichts. Erst dieser Wert beantwortet, wie weit man im Hörspiel ist.
         /// </remarks>
         public double EpisodeProgressPercent
         {
@@ -93,7 +93,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Sichtbarkeit des Folgen-Fortschritts. Er erscheint nur, wenn die Gesamtdauer bekannt
-        /// ist und die Folge aus mehr als einer Datei besteht — sonst doppelte er den Regler
+        /// ist und die Folge aus mehr als einer Datei besteht, sonst doppelte er den Regler
         /// darüber.
         /// </summary>
         public Visibility EpisodeProgressVisibility =>

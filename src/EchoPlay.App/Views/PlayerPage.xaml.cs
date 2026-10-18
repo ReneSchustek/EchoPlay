@@ -15,7 +15,7 @@ namespace EchoPlay.App.Views
     /// Vollständiger Player mit Playlist-Verwaltung.
     /// Unterstützt das Öffnen von Ordnern (alle MP3-Dateien) und einzelner Dateien.
     /// Der FolderPicker/FileOpenPicker erfordert WinRT-Interop, da WinUI 3 kein Fenster-Handle
-    /// automatisch bereitstellt – es muss explizit übergeben werden.
+    /// automatisch bereitstellt, es muss explizit übergeben werden.
     /// </summary>
     public sealed partial class PlayerPage : Page
     {
@@ -111,7 +111,7 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Speichert die Lautstärke auch dann, wenn der Regler mit der Tastatur bedient
-        /// wurde — dort gibt es kein Loslassen der Maus.
+        /// wurde, denn dort gibt es kein Loslassen der Maus.
         /// </summary>
         private async void OnVolumeSliderLostFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {

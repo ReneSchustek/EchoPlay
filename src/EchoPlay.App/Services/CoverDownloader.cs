@@ -51,14 +51,14 @@ namespace EchoPlay.App.Services
                 byte[] data = await client.GetByteArrayAsync(uri, cancellationToken).ConfigureAwait(false);
 
                 // Leere Antwort wie einen Fehler behandeln: ein 0-Byte-Cover ist in
-                // CoverImages schlimmer als kein Cover — der Platzhalter greift dann nicht
+                // CoverImages schlimmer als kein Cover. Der Platzhalter greift dann nicht
                 // mehr, und die Nachlade-Läufe halten den Eintrag für erledigt.
                 return data.Length > 0 ? data : null;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // Abbruch des Aufrufers. Ein HTTP-Timeout kommt ebenfalls als
-                // TaskCanceledException, hat aber kein gesetztes Token — der fällt unten
+                // TaskCanceledException, hat aber kein gesetztes Token; der fällt unten
                 // in den null-Zweig.
                 throw;
             }

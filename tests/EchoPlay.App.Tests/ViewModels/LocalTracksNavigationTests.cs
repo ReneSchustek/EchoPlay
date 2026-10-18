@@ -53,7 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
             LocalTracksViewModel sut = Build(requested.Add);
             sut.SelectedArtist = BuildArtistCard(localFolderPath: null);
 
-            // Eine reine Online-Serie hat keinen Ordner — der Tag-Manager hätte nichts
+            // Eine reine Online-Serie hat keinen Ordner, der Tag-Manager hätte nichts
             // zu öffnen.
             sut.OpenAllSeriesTracksCommand.Execute(null);
 

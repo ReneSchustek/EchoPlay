@@ -33,7 +33,7 @@ namespace EchoPlay.App.Services
         [GeneratedRegex(@"^\s*SHA-?256\s*[:=]\s*([0-9a-fA-F]{64})\b", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
         private static partial Regex Sha256Pattern();
 
-        // Drei oder mehr Zeilenumbrüche in Folge — bleibt übrig, wo die Hash-Zeile stand.
+        // Drei oder mehr Zeilenumbrüche in Folge; bleibt übrig, wo die Hash-Zeile stand.
         [GeneratedRegex(@"(\r?\n){3,}")]
         private static partial Regex BlankLineRunPattern();
 
@@ -129,7 +129,7 @@ namespace EchoPlay.App.Services
                 string releaseBody = release.Body ?? string.Empty;
                 string expectedSha256 = ExtractSha256(releaseBody);
 
-                // Ohne brauchbaren Hash ist das Release nicht installierbar — der Downloader
+                // Ohne brauchbaren Hash ist das Release nicht installierbar, der Downloader
                 // lehnt es ohnehin ab. Es trotzdem anzubieten heißt, den Nutzer zu einem
                 // Update einzuladen, das systematisch scheitert. Die Warnung bleibt, damit ein
                 // Release mit vergessener Hash-Zeile diagnostizierbar ist.
@@ -189,7 +189,7 @@ namespace EchoPlay.App.Services
         /// weder angeboten noch installiert.
         /// </summary>
         /// <param name="releaseBody">Markdown-Body des GitHub-Releases.</param>
-        /// <returns>Hex-String (64 Zeichen, beliebige Groß-/Kleinschreibung) oder leer. Der Vergleich im Updater nutzt <c>Convert.FromHexString</c> und ist daher case-insensitive — eine Normalisierung an dieser Stelle wäre Overhead und würde CA1308 auslösen.</returns>
+        /// <returns>Hex-String (64 Zeichen, beliebige Groß-/Kleinschreibung) oder leer. Der Vergleich im Updater nutzt <c>Convert.FromHexString</c> und ist daher case-insensitive. Eine Normalisierung an dieser Stelle wäre Overhead und würde CA1308 auslösen.</returns>
         internal static string ExtractSha256(string releaseBody)
         {
             if (string.IsNullOrEmpty(releaseBody))
@@ -208,7 +208,7 @@ namespace EchoPlay.App.Services
         /// <remarks>
         /// Der Hash ist eine Angabe für den Updater, keine Release-Notiz: 64 Hex-Zeichen sagen
         /// dem Nutzer nichts und verdrängen im Dialog, was ihn interessiert. Er wird separat in
-        /// <see cref="UpdateInfo.ExpectedSha256"/> geführt und dort geprüft — hier fällt nur die
+        /// <see cref="UpdateInfo.ExpectedSha256"/> geführt und dort geprüft. Hier fällt nur die
         /// Anzeige weg. Die Überschrift „Integritätsprüfung", unter der die Zeile im
         /// Release-Text steht, verliert damit ihren Inhalt und fliegt als leer gewordener
         /// Absatz mit heraus.

@@ -20,7 +20,7 @@ namespace EchoPlay.App.Views
     /// Folgen-Bereich direkt nach der Reihe der gewählten Kachel auf. Bei Auswahl
     /// einer Folge erscheinen die Tracks in einer Spalte rechts daneben.
     /// Navigation zum Tag-Manager wird über das <see cref="LocalLibraryViewModel.NavigateToTagManagerRequested"/>-Event
-    /// ausgelöst – ViewModels navigieren nicht selbst, die Page-Ebene übernimmt das.
+    /// ausgelöst, denn ViewModels navigieren nicht selbst, die Page-Ebene übernimmt das.
     /// Kontextmenü-Handler, Cover- und Fehlende-Folgen-Dialoge liegen in den Partial-Klassen.
     /// </summary>
     public sealed partial class LocalLibraryPage : Page
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Beschriftet Seitenkopf, Suchfeld, Filterleiste und den „Nichts gefunden"-Hinweis.
         /// Die Texte stehen im Quelltext und nicht als x:Uid, weil x:Uid nur die Eigenschaften
-        /// eingebauter Steuerelemente bedient — die eigenen Bausteine gingen leer aus.
+        /// eingebauter Steuerelemente bedient, die eigenen Bausteine gingen leer aus.
         /// </summary>
         private void InitializeHeaderAndFilters()
         {
@@ -166,7 +166,7 @@ namespace EchoPlay.App.Views
             EpisodeAccordion.GridView.SelectionChanged -= OnEpisodeSelectionChanged;
             EpisodeAccordion.GridView.DoubleTapped -= OnEpisodeDoubleTapped;
             ViewModel.Deactivate();
-            // VM disposed — Scan-Event-Subscriptions, Sub-VM-Ketten und Koordinatoren freigeben.
+            // VM disposed: Scan-Event-Subscriptions, Sub-VM-Ketten und Koordinatoren freigeben.
             ViewModel.Dispose();
         }
 
@@ -245,7 +245,7 @@ namespace EchoPlay.App.Views
         /// <summary>
         /// Startet die Folge, auf die der Nutzer doppelt geklickt hat.
         /// Der erste Klick des Doppelklicks hat sie bereits ausgewählt und damit ihre Spuren
-        /// geladen — gespielt wird trotzdem über die Folgen-Id, damit der Doppelklick auch
+        /// geladen. Gespielt wird trotzdem über die Folgen-Id, damit der Doppelklick auch
         /// dann greift, wenn die Liste rechts noch lädt.
         /// </summary>
         private async void OnEpisodeDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -278,7 +278,7 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Reagiert auf das <see cref="LocalLibraryScanViewModel.AddFolderRequested"/>-Event.
-        /// Das ViewModel selbst kennt das HWND nicht – die Page liefert es.
+        /// Das ViewModel selbst kennt das HWND nicht, die Page liefert es.
         /// </summary>
         private async void OnAddFolderRequested()
         {
@@ -287,7 +287,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Schließt den Folgenbereich komplett – setzt die Serienauswahl zurück.
+        /// Schließt den Folgenbereich komplett und setzt die Serienauswahl zurück.
         /// Die Serien-Kacheln füllen wieder die volle Breite, kein Akkordeon sichtbar.
         /// </summary>
         private void OnCloseEpisodePanelClick(object sender, RoutedEventArgs e)
@@ -304,7 +304,7 @@ namespace EchoPlay.App.Views
                 return;
             }
 
-            // Erst nach dem Neuaufbau der Abschnitte scrollen — vorher gibt es den Container
+            // Erst nach dem Neuaufbau der Abschnitte scrollen, denn vorher gibt es den Container
             // der Kachel noch nicht, und der Sprung liefe ins Leere.
             _ = DispatcherQueue.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,

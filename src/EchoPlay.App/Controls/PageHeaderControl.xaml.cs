@@ -8,8 +8,8 @@ namespace EchoPlay.App.Controls
     /// Seitenkopf der Gestaltungslinie: Titel, erklärende Zeile, Primäraktion rechts.
     /// <para>
     /// Als gemeinsamer Baustein, damit der bequeme Weg auch der richtige ist: Wer den
-    /// Seitenkopf fertig vorfindet, baut ihn nicht auf jeder Seite neu — und damit jedes Mal
-    /// ein wenig anders.
+    /// Seitenkopf fertig vorfindet, baut ihn nicht auf jeder Seite neu (und damit jedes Mal
+    /// ein wenig anders).
     /// </para>
     /// </summary>
     public sealed partial class PageHeaderControl : UserControl
@@ -89,7 +89,7 @@ namespace EchoPlay.App.Controls
         /// <summary>
         /// Wird beim Klick auf die Primäraktion ausgelöst.
         /// <para>
-        /// Für Aktionen, die das Fenster brauchen — eine Ordnerauswahl etwa verlangt das
+        /// Für Aktionen, die das Fenster brauchen. Eine Ordnerauswahl etwa verlangt das
         /// Fensterhandle, das ein ViewModel nicht kennt. Wo ein Befehl genügt, ist
         /// <see cref="ActionCommand"/> der bessere Weg.
         /// </para>

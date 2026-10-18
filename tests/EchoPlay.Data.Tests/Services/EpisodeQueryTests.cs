@@ -141,7 +141,7 @@ namespace EchoPlay.Data.Tests.Services
 
         /// <summary>
         /// Eine ausschließlich aus Soft-Delete bestehende Serie liefert keinen Eintrag im
-        /// Ergebnis – Schutz vor Geistereinträgen im Dashboard.
+        /// Ergebnis (Schutz vor Geistereinträgen im Dashboard).
         /// </summary>
         [Fact]
         public async Task GetEpisodeCountsForSeriesAsync_OnlyDeletedEpisodes_OmitsSeriesFromResult()

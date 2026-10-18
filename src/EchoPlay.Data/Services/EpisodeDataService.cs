@@ -106,7 +106,7 @@ namespace EchoPlay.Data.Services
             }
 
             // Compiled Query: Expression-Tree wurde einmalig beim Static-Init übersetzt.
-            // Materialisierung erfolgt streamend – Dictionary-Aufbau ohne Zwischen-List.
+            // Materialisierung erfolgt streamend, der Dictionary-Aufbau läuft ohne Zwischen-List.
             Dictionary<Guid, (int Total, int Local)> result = [];
 
             await foreach (EpisodeCountRow row in GetEpisodeCountsCompiled(_context, seriesIds).ConfigureAwait(false))
@@ -153,7 +153,7 @@ namespace EchoPlay.Data.Services
                 return new Dictionary<Guid, Episode>(0);
             }
 
-            // Doppel-IDs ignorieren – das Set vermeidet redundante Parameter im IN-Filter
+            // Doppel-IDs ignorieren; das Set vermeidet redundante Parameter im IN-Filter
             HashSet<Guid> idSet = new(ids);
 
             List<Episode> rows = await _context.Episodes
@@ -235,7 +235,7 @@ namespace EchoPlay.Data.Services
 
         /// <inheritdoc/>
         /// <param name="episodeId">Datenbank-ID der Episode.</param>
-        /// <param name="checkedAt">Zeitpunkt der letzten Cover-Prüfung — verhindert, dass dieselbe Episode ständig erneut geprüft wird.</param>
+        /// <param name="checkedAt">Zeitpunkt der letzten Cover-Prüfung; verhindert, dass dieselbe Episode ständig erneut geprüft wird.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SetCoverLastCheckedAsync(Guid episodeId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {

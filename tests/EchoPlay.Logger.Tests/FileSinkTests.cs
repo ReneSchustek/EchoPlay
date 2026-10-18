@@ -138,7 +138,7 @@ namespace EchoPlay.Logger.Tests
         }
 
         /// <summary>
-        /// Parallele WriteAsync-Aufrufer verzahnen Zeilen nicht — der SemaphoreSlim serialisiert
+        /// Parallele WriteAsync-Aufrufer verzahnen Zeilen nicht, denn der SemaphoreSlim serialisiert
         /// den Datei-Zugriff, damit jede Log-Zeile vollständig und in genau einer Zeile steht.
         /// </summary>
         [Fact]
@@ -175,7 +175,7 @@ namespace EchoPlay.Logger.Tests
         }
 
         /// <summary>
-        /// Nach Dispose werden neue Writes still ignoriert — kein ObjectDisposedException beim App-Shutdown.
+        /// Nach Dispose werden neue Writes still ignoriert, kein ObjectDisposedException beim App-Shutdown.
         /// </summary>
         [Fact]
         public async Task WriteAsync_NachDispose_IstNoOp()

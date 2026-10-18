@@ -47,7 +47,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task StopAsync_RespectsTimeout_WhenIterationIgnoresCancellation()
         {
             // InitialDelay = Zero, damit die Iteration sofort in LoadMissingLocalCoversAsync landet
-            // und dort auf dem HangingServiceScopeFactory.CreateScope() blockiert — unabhängig vom CT.
+            // und dort auf dem HangingServiceScopeFactory.CreateScope() blockiert, unabhängig vom CT.
             BackgroundCoverServiceOptions options = new()
             {
                 InitialDelay = TimeSpan.Zero,
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Services
             Assert.True(sw.ElapsedMilliseconds >= 400,
                 $"Erwartet >= 400 ms (Timeout soll tatsächlich abgewartet werden), tatsächlich {sw.ElapsedMilliseconds} ms.");
 
-            // Hang aufheben — blockierter ThreadPool-Thread darf nach dem Test wieder frei werden.
+            // Hang aufheben, damit der blockierte ThreadPool-Thread nach dem Test wieder frei werden darf.
             hangingFactory.Release();
         }
 
@@ -129,7 +129,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>
-        /// Fake-ScopeFactory, die CreateScope() nie aufrufen lässt — der Test cancelt den
+        /// Fake-ScopeFactory, die CreateScope() nie aufrufen lässt; der Test cancelt den
         /// Service bereits im InitialDelay. Wirft beim unerwarteten Aufruf, damit Abweichungen
         /// im Ablauf laut schlagen.
         /// </summary>

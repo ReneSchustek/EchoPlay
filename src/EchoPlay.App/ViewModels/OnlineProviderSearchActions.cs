@@ -48,7 +48,7 @@ namespace EchoPlay.App.ViewModels
         ///
         /// Reset-/Abbruch-Disziplin: Trefferliste und Status-Hinweise werden noch
         /// vor dem ersten <c>await</c> geleert. <see cref="StartNewCoverScope"/> macht
-        /// gleichzeitig eine eventuell laufende Vorgänger-Suche obsolet – nach jedem Await
+        /// gleichzeitig eine eventuell laufende Vorgänger-Suche obsolet. Nach jedem Await
         /// prüfen wir auf <see cref="CancellationToken.IsCancellationRequested"/> und
         /// verwerfen Treffer der veralteten Suche.
         /// </summary>
@@ -62,7 +62,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Offenes Akkordeon schließen – sonst überlagern sich Suchergebnisse und Folgen-Panel
+            // Offenes Akkordeon schließen, sonst überlagern sich Suchergebnisse und Folgen-Panel
             _seriesVM.DeselectSeries();
             _episodesVM.Clear();
 
@@ -70,8 +70,8 @@ namespace EchoPlay.App.ViewModels
             _providerSearchVM.ProviderSearchResults = [];
             _providerSearchVM.IsSpotifyFallbackHintVisible = false;
 
-            // Vorherige Cover-Loads abbrechen UND ältere Provider-Suche obsolet machen –
-            // beide nutzen denselben Token-Lebenszyklus.
+            // Vorherige Cover-Loads abbrechen UND ältere Provider-Suche obsolet machen,
+            // denn beide nutzen denselben Token-Lebenszyklus.
             CancellationToken coverToken = StartNewCoverScope();
 
             try
@@ -130,7 +130,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                // Obsolete Suche: Fehler nicht mehr anzeigen – die neue Suche bestimmt den Status.
+                // Obsolete Suche: Fehler nicht mehr anzeigen, die neue Suche bestimmt den Status.
                 if (coverToken.IsCancellationRequested) return;
 
                 await _ctx.ErrorDialogService.ShowAsync(
@@ -138,7 +138,7 @@ namespace EchoPlay.App.ViewModels
             }
             finally
             {
-                // Loader nur zurücksetzen, wenn diese Suche noch die aktuelle ist –
+                // Loader nur zurücksetzen, wenn diese Suche noch die aktuelle ist,
                 // sonst flackert der Spinner beim Back-to-Back-Wechsel zwischen den Suchen.
                 if (!coverToken.IsCancellationRequested)
                 {
@@ -202,7 +202,7 @@ namespace EchoPlay.App.ViewModels
             try { old.Cancel(); }
             catch (ObjectDisposedException)
             {
-                // CTS war bereits disposed – Cancel ist dann ein No-Op, der weiter unten folgende
+                // CTS war bereits disposed; Cancel ist dann ein No-Op, der weiter unten folgende
                 // Dispose-Aufruf ist idempotent. Bewusster Schluck ohne Logging.
             }
             old.Dispose();

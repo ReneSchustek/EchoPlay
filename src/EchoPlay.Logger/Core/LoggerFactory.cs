@@ -6,14 +6,14 @@ namespace EchoPlay.Logger.Core
     /// <summary>
     /// Standard-Implementierung der LoggerFactory.
     /// Verwaltet Sinks und erstellt Logger-Instanzen.
-    /// Alle erzeugten Logger teilen dieselbe <see cref="LoggerOptions"/>-Instanz –
+    /// Alle erzeugten Logger teilen dieselbe <see cref="LoggerOptions"/>-Instanz;
     /// eine Änderung von <c>MinimumLevel</c> wirkt damit sofort auf alle Logger.
     /// </summary>
     /// <remarks>
     /// Erstellt eine neue LoggerFactory.
     /// </remarks>
     /// <param name="sinks">Liste der Ausgabeziele für alle Logger.</param>
-    /// <param name="options">Geteilte Konfiguration – insbesondere <c>MinimumLevel</c> ist zur Laufzeit änderbar.</param>
+    /// <param name="options">Geteilte Konfiguration; insbesondere <c>MinimumLevel</c> ist zur Laufzeit änderbar.</param>
     public sealed class LoggerFactory(IEnumerable<ILogSink> sinks, LoggerOptions options) : ILoggerFactory
     {
         private readonly List<ILogSink> _sinks = [.. sinks];

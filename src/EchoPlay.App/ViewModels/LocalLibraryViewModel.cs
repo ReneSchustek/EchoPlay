@@ -12,7 +12,7 @@ namespace EchoPlay.App.ViewModels
     /// direkt nach der gewählten Kachelreihe auf. Bei Auswahl einer Folge erscheinen die Tracks
     /// in einer festen Spalte rechts neben den Folgen-Kacheln.
     /// Nur Serien und Folgen mit einem lokal gefundenen Ordner (<c>LocalFolderPath != null</c>)
-    /// werden angezeigt – alles andere fehlt noch und soll per Scan gefunden werden.
+    /// werden angezeigt, alles andere fehlt noch und soll per Scan gefunden werden.
     /// </summary>
     /// <remarks>
     /// Die Seite besteht aus vier Bereichen, und jeder hat sein eigenes Ansichtsmodell:
@@ -41,14 +41,14 @@ namespace EchoPlay.App.ViewModels
         {
             _pageModeGuard = context.PageModeGuard;
 
-            // Bereich für die Episoden-Spalte – kapselt Filter, Sortierung, Cover-Laden und
+            // Bereich für die Episoden-Spalte; kapselt Filter, Sortierung, Cover-Laden und
             // den Gehört-Status.
             EpisodesVM = new LocalEpisodesViewModel(context.ScopeFactory, context.CoverLoader, context.Clock, context.CoverService, context.Logger);
 
-            // Bereich für die Track-Spalte – kapselt Trackliste, PlayCommand und Tag-Manager-Sprünge.
+            // Bereich für die Track-Spalte; kapselt Trackliste, PlayCommand und Tag-Manager-Sprünge.
             TracksVM = new LocalTracksViewModel(context.PlayerService, context.ScopeFactory, RequestTagManagerNavigation);
 
-            // Bereich für die Künstler-/Serien-Spalte – kapselt Liste, Suchfilter, Cover-Build,
+            // Bereich für die Künstler-/Serien-Spalte; kapselt Liste, Suchfilter, Cover-Build,
             // AppendArtistCard und Auswahl-State.
             // Der Filter kommt aus der Ablage, nicht aus dem ViewModel: Beim Verlassen der
             // Seite wird dieses hier freigegeben, beim Zurückkehren neu erzeugt. Ohne die
@@ -58,7 +58,7 @@ namespace EchoPlay.App.ViewModels
                 new SeriesCoverBuilder(context.CoverService),
                 context.FilterState?.GetOrCreate<LocalArtistFilter>("LocalLibrary"));
 
-            // Bereich für Scan, Neu-Initialisierung und Ordnerauswahl – bekommt als Callback eine
+            // Bereich für Scan, Neu-Initialisierung und Ordnerauswahl; bekommt als Callback eine
             // Referenz auf ArtistsVM.AppendArtistCardAsync, damit live eintreffende Serien sofort
             // in der lokalen Kachelgrid erscheinen.
             ScanVM = new LocalLibraryScanViewModel(
@@ -70,7 +70,7 @@ namespace EchoPlay.App.ViewModels
                 context.ScanEventService,
                 series => _ = ArtistsVM.AppendArtistCardAsync(series));
 
-            // Orchestrator für alle Async-Aktionen – bekommt die Bereiche und alle Services,
+            // Orchestrator für alle Async-Aktionen; bekommt die Bereiche und alle Services,
             // die nur für Aktionen benötigt werden.
             Actions = new LocalLibraryActions(
                 context.ScopeFactory,
@@ -88,7 +88,7 @@ namespace EchoPlay.App.ViewModels
                 EpisodesVM,
                 TracksVM);
 
-            // ScanStarting leert die Listen, bevor ein Scan loslegt – veraltete Kacheln sollen
+            // ScanStarting leert die Listen, bevor ein Scan loslegt, denn veraltete Kacheln sollen
             // während des Scans nicht sichtbar bleiben.
             ScanVM.ScanStarting += OnScanStarting;
 
@@ -113,17 +113,17 @@ namespace EchoPlay.App.ViewModels
         public LocalLibraryScanViewModel ScanVM { get; }
 
         /// <summary>
-        /// Sub-ViewModel für die Episoden-Spalte – Filter, Sortierung, Cover und Gehört-Status.
+        /// Sub-ViewModel für die Episoden-Spalte: Filter, Sortierung, Cover und Gehört-Status.
         /// </summary>
         public LocalEpisodesViewModel EpisodesVM { get; }
 
         /// <summary>
-        /// Sub-ViewModel für die Track-Spalte – Trackliste, PlayCommand und Tag-Manager-Sprünge.
+        /// Sub-ViewModel für die Track-Spalte: Trackliste, PlayCommand und Tag-Manager-Sprünge.
         /// </summary>
         public LocalTracksViewModel TracksVM { get; }
 
         /// <summary>
-        /// Sub-ViewModel für die Künstler-/Serien-Spalte – Liste, Filter, Cover, Auswahl-State.
+        /// Sub-ViewModel für die Künstler-/Serien-Spalte: Liste, Filter, Cover, Auswahl-State.
         /// </summary>
         public LocalArtistsViewModel ArtistsVM { get; }
 
@@ -182,7 +182,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Hebt die Serienauswahl auf – der gesamte Folgenbereich verschwindet.
+        /// Hebt die Serienauswahl auf, der gesamte Folgenbereich verschwindet.
         /// Koordiniert die drei Listen: Künstler-Auswahl löschen, Episoden-Liste leeren,
         /// Track-Panel ausblenden.
         /// </summary>

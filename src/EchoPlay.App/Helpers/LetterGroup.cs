@@ -30,7 +30,7 @@ namespace EchoPlay.App.Helpers
             HoldsSelection = holdsSelection;
         }
 
-        /// <summary>Buchstabe des Abschnitts — zugleich seine Überschrift.</summary>
+        /// <summary>Buchstabe des Abschnitts, zugleich seine Überschrift.</summary>
         public char Letter { get; }
 
         /// <summary>Beschriftung der Abschnittsüberschrift.</summary>

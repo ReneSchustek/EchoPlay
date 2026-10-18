@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Der Abschnitt ist einer von mehreren auf der Startseite. Reißt sein Aufbau ab,
-    /// bleibt die ganze Seite leer — obwohl Mediathek, Favoriten und Weiterhören völlig
+    /// bleibt die ganze Seite leer, obwohl Mediathek, Favoriten und Weiterhören völlig
     /// unabhängig davon sind. Deshalb endet ein Fehler hier in einer leeren Liste und
     /// nicht in einer Ausnahme.
     /// </remarks>
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 cached: CachedRelease(series.Id));
 
             // Eine Datenbank auf einem getrennten Netzlaufwerk sieht so aus. Die Startseite
-            // zeigt dann eben keine Neuerscheinungen — mehr darf nicht passieren.
+            // zeigt dann eben keine Neuerscheinungen. Mehr darf nicht passieren.
             IReadOnlyList<NewEpisodesGroupViewModel> groups =
                 await sut.BuildAsync([series], TestContext.Current.CancellationToken);
 

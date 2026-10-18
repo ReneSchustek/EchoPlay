@@ -16,7 +16,7 @@ namespace EchoPlay.App.Controls
         /// <summary>Breite eines Kachel-Slots (140px Kachel + 8px Margin).</summary>
         private const double TileSlotWidth = 148.0;
 
-        /// <summary>Debounce für SizeChanged – nur bei Änderung der Kachelanzahl pro Reihe.</summary>
+        /// <summary>Debounce für SizeChanged, greift nur bei Änderung der Kachelanzahl pro Reihe.</summary>
         private int _lastTilesPerRow;
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Controls
         // ── GridView-Zugriff ────────────────────────────────────────────────────
 
         /// <summary>
-        /// SelectionMode des internen GridViews – lokal braucht Single-Selection für Track-Anzeige.
+        /// SelectionMode des internen GridViews. Lokal braucht Single-Selection für Track-Anzeige.
         /// </summary>
         public static readonly DependencyProperty SelectionModeProperty =
             DependencyProperty.Register(nameof(SelectionMode), typeof(ListViewSelectionMode), typeof(EpisodeAccordionControl),

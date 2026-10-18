@@ -10,7 +10,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
     /// <remarks>
     /// Die Suche nach „Bibi" lieferte 25 Künstler, darunter Musikkünstler aus aller Welt.
     /// Jeder von ihnen kostete vier Anfragen an einer Gegenstelle, die nur alle anderthalb
-    /// Sekunden antwortet — zusammen über zwei Minuten für eine Suche.
+    /// Sekunden antwortet, zusammen über zwei Minuten für eine Suche.
     /// </remarks>
     public sealed class AppleMusicArtistPrefilterTests
     {
@@ -33,7 +33,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
         [Fact]
         public void SelectCandidates_WithHoerspielGenreOnly_KeepsTheArtist()
         {
-            // Der Name sagt nichts, das Genre schon — die Albenprüfung kann hier noch etwas finden.
+            // Der Name sagt nichts, das Genre schon. Die Albenprüfung kann hier noch etwas finden.
             List<ITunesArtistDto> artists =
             [
                 new ITunesArtistDto { ArtistId = 2, ArtistName = "Kiddinx", PrimaryGenreName = "Hörspiele" },
@@ -60,7 +60,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
 
             Assert.Equal(2, result.Candidates.Count);
 
-            // Die bekannte Serie steht vorn und ist als solche erkannt — sie braucht keine
+            // Die bekannte Serie steht vorn und ist als solche erkannt. Sie braucht keine
             // einzige weitere Anfrage, ihr Treffer steht sofort auf dem Schirm.
             Assert.Equal("Bibi Blocksberg", result.Candidates[0].Artist.ArtistName);
             Assert.True(result.Candidates[0].IsKnownSeries);

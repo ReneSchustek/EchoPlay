@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die eigentliche Arbeit macht der Cover-Koordinator. Hier zählt, dass die Seite ihn
-    /// überhaupt erreicht — und dass sie ohne ihn still bleibt statt zu reißen. Ohne
+    /// überhaupt erreicht und dass sie ohne ihn still bleibt statt zu reißen. Ohne
     /// Koordinator läuft die Anwendung im abgespeckten Betrieb; ein Klick auf „Cover suchen"
     /// darf dann nichts tun, aber auch nichts kaputt machen.
     /// </remarks>

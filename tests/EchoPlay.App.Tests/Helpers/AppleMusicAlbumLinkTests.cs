@@ -3,7 +3,7 @@ using EchoPlay.App.Helpers;
 namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
-    /// Tests für <see cref="AppleMusicAlbumLink"/>. Prüfen ausschließlich den Linkbau —
+    /// Tests für <see cref="AppleMusicAlbumLink"/>. Prüfen ausschließlich den Linkbau;
     /// geöffnet wird nichts (kein echter Prozessstart aus Tests).
     /// </summary>
     public sealed class AppleMusicAlbumLinkTests

@@ -32,7 +32,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Dateipfad des aktuell laufenden Tracks. Null, wenn nichts spielt.
-        /// Über ihn findet eine angezeigte Wiedergabeliste ihre laufende Zeile — der
+        /// Über ihn findet eine angezeigte Wiedergabeliste ihre laufende Zeile. Der
         /// Anzeigename taugt dafür nicht, weil er aus der Kennzeichnung stammen kann.
         /// </summary>
         string? CurrentTrackPath { get; }
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Dateipfade der laufenden Wiedergabeliste, in Reihenfolge. Leer, wenn nichts spielt.
         /// Damit kann eine Seite die laufende Wiedergabe anzeigen, die sie nicht selbst
-        /// gestartet hat — sonst bliebe sie leer, obwohl unten der Abspieler läuft.
+        /// gestartet hat, sonst bliebe sie leer, obwohl unten der Abspieler läuft.
         /// </summary>
         IReadOnlyList<string> CurrentTrackPaths { get; }
 
@@ -89,7 +89,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Startet die Wiedergabe einer Trackliste ab dem angegebenen Index.
         /// </summary>
-        /// <param name="episodeId">ID der Episode – für PlaybackState-Persistenz.</param>
+        /// <param name="episodeId">ID der Episode für die PlaybackState-Persistenz.</param>
         /// <param name="trackPaths">Absolute Dateipfade der Audiotracks, in Reihenfolge.</param>
         /// <param name="startIndex">Index des ersten Tracks (0-basiert).</param>
         /// <param name="resumePosition">
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Services
         /// </param>
         /// <param name="trackDurations">
         /// Die Dauern der Spuren in derselben Reihenfolge wie <paramref name="trackPaths"/>.
-        /// Ohne sie kennt der Dienst nur die laufende Spur — die Folge bleibt dann ohne
+        /// Ohne sie kennt der Dienst nur die laufende Spur, die Folge bleibt dann ohne
         /// Gesamtfortschritt.
         /// </param>
         void Play(

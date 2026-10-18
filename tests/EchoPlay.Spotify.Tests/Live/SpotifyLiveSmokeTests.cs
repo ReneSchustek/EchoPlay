@@ -61,7 +61,7 @@ namespace EchoPlay.Spotify.Tests.Live
         [Fact(Explicit = true)]
         public async Task SpotifyApi_GetArtistAlbums_ReturnsAlbums()
         {
-            // ARRANGE – Künstler suchen, um eine gültige Artist-ID zu erhalten
+            // ARRANGE: Künstler suchen, um eine gültige Artist-ID zu erhalten
             IReadOnlyList<SpotifyArtistDto> artists =
                 await _apiClient.SearchArtistsAsync("Die drei ???", 1, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -87,7 +87,7 @@ namespace EchoPlay.Spotify.Tests.Live
         [Fact(Explicit = true)]
         public async Task SpotifyApi_GetAlbumTracks_ReturnsTracks()
         {
-            // ARRANGE – Künstler und Album suchen
+            // ARRANGE: Künstler und Album suchen
             IReadOnlyList<SpotifyArtistDto> artists =
                 await _apiClient.SearchArtistsAsync("Die drei ???", 1, cancellationToken: TestContext.Current.CancellationToken);
 

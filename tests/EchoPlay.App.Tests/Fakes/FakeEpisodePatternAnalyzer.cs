@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="IEpisodePatternAnalyzer"/>.
-    /// Gibt vorgegebene Vorschläge zurück – kein Dateisystemzugriff in Tests.
+    /// Gibt vorgegebene Vorschläge zurück, kein Dateisystemzugriff in Tests.
     /// </summary>
     internal sealed class FakeEpisodePatternAnalyzer : IEpisodePatternAnalyzer
     {
@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <param name="suggestions">
         /// Was die Untersuchung liefert. Leer, wenn nicht angegeben. Die Zahl der Vorschläge
         /// und ihre Trefferquote entscheiden darüber, ob ein Muster ungefragt übernommen
-        /// wird — ein Nachbau, der immer nichts findet, kann diese Weiche nicht zeigen.
+        /// wird, denn ein Nachbau, der immer nichts findet, kann diese Weiche nicht zeigen.
         /// </param>
         public FakeEpisodePatternAnalyzer(IReadOnlyList<PatternSuggestion>? suggestions = null)
         {

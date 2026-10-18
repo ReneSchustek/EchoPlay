@@ -174,14 +174,14 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="TagFileListViewModel.HasFiles"/>
         public bool HasFiles => FileListVM.HasFiles;
 
-        /// <summary>Freitextsuche über Dateiname und Unterordner – Pass-Through zum <see cref="FileListVM"/>.</summary>
+        /// <summary>Freitextsuche über Dateiname und Unterordner (Pass-Through zum <see cref="FileListVM"/>).</summary>
         public string SearchText
         {
             get => FileListVM.SearchText;
             set => FileListVM.SearchText = value;
         }
 
-        /// <summary>Filter „nur geänderte Dateien" – Pass-Through zum <see cref="FileListVM"/>.</summary>
+        /// <summary>Filter „nur geänderte Dateien" (Pass-Through zum <see cref="FileListVM"/>).</summary>
         public bool ModifiedOnly
         {
             get => FileListVM.ModifiedOnly;
@@ -189,7 +189,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des „Nichts gefunden"-Hinweises – Pass-Through zum <see cref="FileListVM"/>.
+        /// Sichtbarkeit des „Nichts gefunden"-Hinweises, Pass-Through zum <see cref="FileListVM"/>.
         /// </summary>
         public Visibility NoResultsVisibility => FileListVM.NoResultsVisibility;
 
@@ -283,7 +283,7 @@ namespace EchoPlay.App.ViewModels
         public Visibility IsLookingUpVisibility => IsLookingUp ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Statustext des Auto-Lookups – zeigt die verwendete Suchanfrage während der Suche,
+        /// Statustext des Auto-Lookups; zeigt die verwendete Suchanfrage während der Suche,
         /// danach eine leere Zeichenkette.
         /// </summary>
         public string AutoLookupStatusText
@@ -401,14 +401,14 @@ namespace EchoPlay.App.ViewModels
         // ── Statische Helfer (für Tests beibehalten) ────────────────────────────
 
         /// <summary>
-        /// Baut die Suchanfrage aus dem Ordnerkontext – delegiert an den statischen Core-Helper.
+        /// Baut die Suchanfrage aus dem Ordnerkontext und delegiert an den statischen Core-Helper.
         /// Bleibt als Shim, damit bestehende Unit-Tests weiter kompilieren.
         /// </summary>
         internal static string BuildAutoLookupQuery(string? folderPath)
             => TagLookupCoordinator.BuildAutoLookupQueryCore(folderPath);
 
         /// <summary>
-        /// Wählt den besten Treffer aus den Lookup-Ergebnissen – delegiert an den statischen Core-Helper.
+        /// Wählt den besten Treffer aus den Lookup-Ergebnissen und delegiert an den statischen Core-Helper.
         /// Bleibt als Shim, damit bestehende Unit-Tests weiter kompilieren.
         /// </summary>
         internal static TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)

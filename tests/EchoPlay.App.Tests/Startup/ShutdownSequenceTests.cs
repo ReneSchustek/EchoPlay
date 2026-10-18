@@ -29,7 +29,7 @@ namespace EchoPlay.App.Tests.Startup
 
             ShutdownSequence.Run(host, new FakeLoggerFactory().CreateLogger("Test"));
 
-            // Die Hintergrunddienste fehlen — trotzdem laufen Optimierung und Freigabe.
+            // Die Hintergrunddienste fehlen, trotzdem laufen Optimierung und Freigabe.
             Assert.Equal(1, maintenance.OptimizeCount);
             Assert.True(host.WasDisposed);
         }
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.Startup
             SyncHost host = new(new ServiceCollection().BuildServiceProvider());
 
             // Die Optimierung ist reine Vorsorge für den nächsten Start. Fehlt der Dienst,
-            // wird sie übersprungen — das Fenster schließt trotzdem.
+            // wird sie übersprungen, das Fenster schließt trotzdem.
             ShutdownSequence.Run(host, new FakeLoggerFactory().CreateLogger("Test"));
 
             Assert.True(host.WasDisposed);
@@ -80,7 +80,7 @@ namespace EchoPlay.App.Tests.Startup
             ShutdownSequence.Run(host, new FakeLoggerFactory().CreateLogger("Test"));
 
             // Der Wiedergabedienst sichert beim Freigeben noch die Abspielposition. Kann
-            // der Host asynchron freigeben, muss dieser Weg genommen werden — sonst geht
+            // der Host asynchron freigeben, muss dieser Weg genommen werden, sonst geht
             // die zuletzt gehörte Stelle verloren.
             Assert.True(host.WasDisposedAsync);
             Assert.False(host.WasDisposed);

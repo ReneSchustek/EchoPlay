@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Die Abfrage beim Anbieter dauert bei vielen Serien Minuten. Ohne den Ladehinweis
-    /// sähe der Anwender in dieser Zeit einen leeren Bereich und hielte ihn für kaputt —
+    /// sähe der Anwender in dieser Zeit einen leeren Bereich und hielte ihn für kaputt,
     /// und ein Abschnitt, der ohne Inhalt und ohne Abfrage stehen bleibt, ist Ballast.
     /// </remarks>
     public sealed class DashboardNeuerscheinungenViewModelTests
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.SetGroups([BuildGroup("Januar 2026")]);
 
-            // Sobald die ersten Gruppen da sind, ist der Hinweis überflüssig — er stünde
+            // Sobald die ersten Gruppen da sind, ist der Hinweis überflüssig, er stünde
             // sonst über einer bereits gefüllten Liste.
             Assert.Equal(Visibility.Collapsed, sut.NewReleasesLoadingVisibility);
         }

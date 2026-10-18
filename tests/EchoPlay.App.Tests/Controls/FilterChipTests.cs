@@ -8,7 +8,7 @@ namespace EchoPlay.App.Tests.Controls
 {
     /// <summary>
     /// Sichert ab, dass ein wirkender Filter sichtbar ist. Ein Filter, der wirkt, aber nicht
-    /// zu sehen ist, erzeugt den Eindruck fehlender Daten — und man sucht den Fehler in den
+    /// zu sehen ist, erzeugt den Eindruck fehlender Daten, und man sucht den Fehler in den
     /// Daten statt in der Leiste.
     /// </summary>
     public sealed class FilterChipTests

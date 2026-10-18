@@ -7,7 +7,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Infrastructure
 {
     /// <summary>
-    /// Tests für <see cref="AsyncEventHandler.RunSafelyAsync"/> — das Sicherheitsnetz
+    /// Tests für <see cref="AsyncEventHandler.RunSafelyAsync"/>, das Sicherheitsnetz
     /// für async-void-UI-Handler. Jede Exception muss geloggt und als Dialog gezeigt
     /// werden; <see cref="OperationCanceledException"/> ist ein gewollter Abbruch.
     /// </summary>
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.Infrastructure
         public async Task RunSafelyAsync_WhenTheErrorDialogItselfFails_StillReturnsQuietly()
         {
             // Das Sicherheitsnetz darf kein zweites Loch haben: Schägt die Anzeige der
-            // Meldung fehl — etwa weil das Fenster gerade schließt —, wäre der ursprüngliche
+            // Meldung fehl (etwa weil das Fenster gerade schließt), wäre der ursprüngliche
             // Fehler samt Absturz zurück. Der Protokolleintrag steht da bereits.
             ThrowingErrorDialogService dialog = new();
             CapturingLogger logger = new();

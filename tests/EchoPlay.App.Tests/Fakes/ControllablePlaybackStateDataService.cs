@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// Hörstand zählen zwei Fälle, die man ohne Steuerung nicht deterministisch trifft: ein
     /// zweiter Schreibversuch, während der erste noch läuft, und ein Schreibvorgang, der
     /// scheitert, ohne die Wiedergabe zu stören. Angehalten wird über
-    /// <see cref="TaskCompletionSource"/> statt über Wartezeiten — sonst hinge der Test an
+    /// <see cref="TaskCompletionSource"/> statt über Wartezeiten, sonst hinge der Test an
     /// der Uhr statt an der Sache.
     /// </remarks>
     internal sealed class ControllablePlaybackStateDataService : IPlaybackStateDataService
@@ -31,7 +31,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Wie oft ein vorhandener Hörstand fortgeschrieben wurde.</summary>
         public int UpdateCallCount { get; private set; }
 
-        /// <summary>Wie oft überhaupt gelesen wurde — auch das zählt als begonnener Versuch.</summary>
+        /// <summary>Wie oft überhaupt gelesen wurde; auch das zählt als begonnener Versuch.</summary>
         public int ReadCallCount { get; private set; }
 
         /// <summary>Ist gesetzt, scheitert jeder Schreibvorgang mit dieser Meldung.</summary>

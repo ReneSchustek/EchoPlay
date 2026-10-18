@@ -10,7 +10,7 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Die Folgenliste einer Serienansicht: welcher Reiter gilt, welcher Status-Filter,
-    /// welcher Suchbegriff und welche Sortierung — und was davon übrig bleibt.
+    /// welcher Suchbegriff und welche Sortierung, und was davon übrig bleibt.
     /// </summary>
     /// <remarks>
     /// Die vier Kriterien wirken zusammen und hängen alle an derselben Neuberechnung.
@@ -30,7 +30,7 @@ namespace EchoPlay.App.ViewModels
         private string _episodeSearchText = string.Empty;
         private int _episodeTabIndex;
 
-        /// <summary>Die Folgen, die nach Reiter, Filter und Suche übrig bleiben — sortiert.</summary>
+        /// <summary>Die Folgen, die nach Reiter, Filter und Suche übrig bleiben, sortiert.</summary>
         public IReadOnlyList<EpisodeTileViewModel> Episodes
         {
             get => _episodes;
@@ -102,7 +102,7 @@ namespace EchoPlay.App.ViewModels
             !string.IsNullOrWhiteSpace(_episodeSearchText) || _episodeFilterIndex != 0;
 
         /// <summary>
-        /// Sichtbarkeit des „Nichts gefunden"-Hinweises — die Serie hat Folgen, aber Suche
+        /// Sichtbarkeit des „Nichts gefunden"-Hinweises: Die Serie hat Folgen, aber Suche
         /// oder Filter lassen keine übrig.
         /// </summary>
         public Visibility NoResultsVisibility =>
@@ -110,7 +110,7 @@ namespace EchoPlay.App.ViewModels
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-        /// <summary>Ob die Serie Sonderfolgen hat — nur dann erscheint deren Reiter.</summary>
+        /// <summary>Ob die Serie Sonderfolgen hat; nur dann erscheint deren Reiter.</summary>
         public bool HasSpecialEpisodes => _allEpisodes.Any(e => e.IsSpecialEpisode);
 
         /// <summary>Anzahl der Sonderfolgen für die Beschriftung des Reiters.</summary>
@@ -118,7 +118,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Übernimmt den Bestand einer neu geladenen Serie. Reiter und Status-Filter fallen
-        /// dabei auf ihren Ausgangswert zurück — sonst zeigte eine frisch geöffnete Serie
+        /// dabei auf ihren Ausgangswert zurück, sonst zeigte eine frisch geöffnete Serie
         /// die Einschränkung der vorigen.
         /// </summary>
         /// <param name="episodes">Alle Folgen der Serie, Sonderfolgen eingeschlossen.</param>
@@ -174,7 +174,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <remarks>
         /// „Angefangen" fragt nach der offenen Stelle, nicht nach dem Hörstatus: Eine
-        /// bereits gehörte Folge, die erneut begonnen wurde, gehört dorthin — sonst gibt es
+        /// bereits gehörte Folge, die erneut begonnen wurde, gehört dorthin, sonst gibt es
         /// keinen Weg zurück in die laufende Wiedergabe. Sie bleibt dabei auch unter
         /// „Durchgehört" stehen, denn gehört hat man sie.
         /// </remarks>

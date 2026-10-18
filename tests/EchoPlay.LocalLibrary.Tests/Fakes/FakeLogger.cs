@@ -5,7 +5,7 @@ using System;
 namespace EchoPlay.LocalLibrary.Tests.Fakes
 {
     /// <summary>
-    /// Minimaler Fake für <see cref="ILogger"/> – verwirft alle Nachrichten.
+    /// Minimaler Fake für <see cref="ILogger"/>; verwirft alle Nachrichten.
     /// </summary>
     internal sealed class FakeLogger : ILogger
     {

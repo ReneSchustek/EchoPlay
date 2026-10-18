@@ -14,7 +14,7 @@ namespace EchoPlay.App.Services
     /// <remarks>
     /// Kein <c>CancellationToken</c> in den Signaturen: die WinRT-Picker nehmen keinen
     /// entgegen, und ein Dialog, den der Nutzer offen hat, wird nicht von außen
-    /// abgebrochen — er wird geschlossen.
+    /// abgebrochen, er wird geschlossen.
     /// </remarks>
     public interface IFilePickerService
     {

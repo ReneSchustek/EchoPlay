@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.Services
             Episode episode = new() { SeriesId = series.Id, Title = EpisodeTitle };
             await episodeService.AddAsync(episode, TestContext.Current.CancellationToken);
 
-            // Kein Zugang hinterlegt — Spotify scheidet aus, obwohl die Kennung da ist.
+            // Kein Zugang hinterlegt, also scheidet Spotify aus, obwohl die Kennung da ist.
             FakeSpotifyCredentialStore credentials = new();
 
             OnlineCoverPhases phases = BuildPhases(seriesService, episodeService, credentials);
@@ -130,7 +130,7 @@ namespace EchoPlay.App.Tests.Services
 
             int updated = await phases.UpdateMissingCoverUrlsAsync(TestContext.Current.CancellationToken);
 
-            // Eine vorhandene Adresse wird nicht überschrieben — sonst wandert ein von Hand
+            // Eine vorhandene Adresse wird nicht überschrieben, sonst wandert ein von Hand
             // gesetztes Bild bei jedem Durchlauf zurück auf das des Anbieters.
             Assert.Equal(0, updated);
             Assert.Equal(existingUrl, episode.CoverImageUrl);
@@ -189,7 +189,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Baut die Phasen mit je einer Anbieter-Quelle unter ihrem Schlüssel. Die Klasse
-        /// holt sie als benannten Dienst — welchen Schlüssel sie wählt, ist genau die
+        /// holt sie als benannten Dienst, und welchen Schlüssel sie wählt, ist genau die
         /// Entscheidung, die hier geprüft wird.
         /// </summary>
         private static OnlineCoverPhases BuildPhases(

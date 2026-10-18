@@ -42,7 +42,7 @@ namespace EchoPlay.App.Infrastructure
         /// Loggt eine Exception aus <see cref="TaskScheduler.UnobservedTaskException"/> und markiert sie
         /// als beobachtet, damit der Prozess nicht vom TaskScheduler abgebrochen wird.
         /// <see cref="OperationCanceledException"/> (inkl. <see cref="TaskCanceledException"/>) ist
-        /// beim Shutdown erwartbar — Page-LoadAsync-Tasks werden vom DI-Scope-Dispose abgebrochen,
+        /// beim Shutdown erwartbar: Page-LoadAsync-Tasks werden vom DI-Scope-Dispose abgebrochen,
         /// die Tasks selbst werden nicht mehr beobachtet. Wird auf Info-Level geloggt, damit der
         /// erwartete Shutdown-Pfad keinen Error-Eintrag erzeugt.
         /// </summary>

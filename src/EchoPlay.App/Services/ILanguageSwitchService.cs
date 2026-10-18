@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Kapselt den Sprachwechsel der Oberfläche an einer Stelle – Einstellungsseite und
+    /// Kapselt den Sprachwechsel der Oberfläche an einer Stelle: Einstellungsseite und
     /// Statusleiste teilen sich denselben Weg.
     /// </summary>
     /// <remarks>

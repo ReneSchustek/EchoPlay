@@ -56,7 +56,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc />
         /// <param name="results">Die Treffer des Anbieters, aus denen der beste gewählt wird.</param>
-        /// <param name="loadedTrackCount">Anzahl der im Ordner geladenen Tracks — der beste Treffer hat genau so viele.</param>
+        /// <param name="loadedTrackCount">Anzahl der im Ordner geladenen Tracks; der beste Treffer hat genau so viele.</param>
         public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
             => SelectBestMatchCore(results, loadedTrackCount);
 

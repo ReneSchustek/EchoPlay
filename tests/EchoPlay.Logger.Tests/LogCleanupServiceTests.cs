@@ -9,7 +9,7 @@ namespace EchoPlay.Logger.Tests
     /// Da der Dienst auf das Dateisystem zugreift, verwendet jede Testinstanz ein eigenes temporäres Verzeichnis.
     /// </summary>
     // Bewusst DateTime.Now: Der Logger bleibt ohne IClock, damit er von keiner anderen
-    // Schicht abhängt — LogCleanupService benutzt deshalb selbst DateTime.Now. Die
+    // Schicht abhängt, LogCleanupService benutzt deshalb selbst DateTime.Now. Die
     // Cutoff-Berechnung ist relativ zu „jetzt", also müssen die Test-Dateien es auch sein.
     public sealed class LogCleanupServiceTests : IDisposable
     {
@@ -89,7 +89,7 @@ namespace EchoPlay.Logger.Tests
         [Fact]
         public void Cleanup_BeyondRetentionDays_DeletesOldFiles()
         {
-            // Datei ist 10 Tage alt – überschreitet die konfigurierte Aufbewahrung von 7 Tagen
+            // Datei ist 10 Tage alt und überschreitet die konfigurierte Aufbewahrung von 7 Tagen
             string alteDatei = Path.Combine(_tempDirectory, "2026-02-01.log");
             File.WriteAllText(alteDatei, "Alter Eintrag");
             File.SetLastWriteTime(alteDatei, DateTime.Now.AddDays(-10));
@@ -114,7 +114,7 @@ namespace EchoPlay.Logger.Tests
         [Fact]
         public void Cleanup_WithinRetentionDays_DeletesNoFiles()
         {
-            // Datei ist 1 Tag alt – liegt innerhalb der Aufbewahrung von 7 Tagen
+            // Datei ist 1 Tag alt und liegt innerhalb der Aufbewahrung von 7 Tagen
             string aktuelleLogDatei = Path.Combine(_tempDirectory, "2026-03-01.log");
             File.WriteAllText(aktuelleLogDatei, "Aktueller Eintrag");
             File.SetLastWriteTime(aktuelleLogDatei, DateTime.Now.AddDays(-1));

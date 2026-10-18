@@ -83,7 +83,7 @@ namespace EchoPlay.App.Views
         /// Abonniert das LookupResultsReady-Event des ViewModels beim Navigieren zur Seite.
         /// Das Event wird hier (nicht im ViewModel) verarbeitet, weil der Anzeige-Dialog WinUI-spezifisch ist.
         /// Wenn ein Ordnerpfad als Navigationsparameter übergeben wurde (z.B. von der lokalen Mediathek),
-        /// wird der Ordner direkt geladen – der Nutzer muss ihn nicht manuell auswählen.
+        /// wird der Ordner direkt geladen, der Nutzer muss ihn nicht manuell auswählen.
         /// </summary>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -196,7 +196,7 @@ namespace EchoPlay.App.Views
         /// </summary>
         private void OnAutoLookupApplied(object? sender, TagLookupCandidate result)
         {
-            // Kurze Bestätigung statt Dialog – die Tags sind bereits übernommen
+            // Kurze Bestätigung statt Dialog, denn die Tags sind bereits übernommen
             AutoLookupInfoBar.Message = $"Tags übernommen: {result.Artist} – {result.Album}";
             AutoLookupInfoBar.IsOpen = true;
         }

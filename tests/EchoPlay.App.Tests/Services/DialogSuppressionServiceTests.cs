@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task NichtLesbareTabelle_ZeigtDenDialogUndVersuchtEsErneut()
         {
             // Vor der ersten Migration oder bei gesperrter Datenbank ist die Tabelle nicht
-            // lesbar. Ein nicht lesbarer Merkzettel darf keinen Hinweis verschlucken — und
+            // lesbar. Ein nicht lesbarer Merkzettel darf keinen Hinweis verschlucken, und
             // das Ergebnis darf auch nicht zwischengespeichert werden.
             (DialogSuppressionService service, FakeDialogSuppressionDataService data) = Build();
             data.ReadFailure = new InvalidOperationException("no such table: DialogSuppressions");

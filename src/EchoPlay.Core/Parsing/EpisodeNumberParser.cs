@@ -11,8 +11,8 @@ namespace EchoPlay.Core.Parsing
     {
         /// <summary>
         /// Extrahiert die erste Zahl aus einem Albumtitel als Folgennummer.
-        /// Nur Zahlen zwischen 1 und 999 werden als gültige Folgennummern akzeptiert –
-        /// größere Werte sind typischerweise Jahreszahlen oder Katalognummern.
+        /// Nur Zahlen zwischen 1 und 999 werden als gültige Folgennummern akzeptiert,
+        /// denn größere Werte sind typischerweise Jahreszahlen oder Katalognummern.
         /// </summary>
         /// <param name="albumTitle">Der Albumtitel, z.B. "Folge 42 – Der blaue Tod".</param>
         /// <returns>Die extrahierte Folgennummer oder null wenn keine gültige Zahl gefunden.</returns>

@@ -24,7 +24,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             ArgumentNullException.ThrowIfNull(fileNameWithoutExt);
             ArgumentNullException.ThrowIfNull(fileParsers);
 
-            // Kassetten-Rips zuerst – muss vor den generischen Parsern laufen, damit
+            // Kassetten-Rips zuerst, das muss vor den generischen Parsern laufen, damit
             // "{number} {title}" nicht fälschlich "01" als Nummer und "a Titel" als Titel liest.
             if (CassetteRipParser.TryParse(fileNameWithoutExt, out int? cassetteNumber, out string? cassetteTitle))
             {
@@ -39,7 +39,7 @@ namespace EchoPlay.LocalLibrary.Parsing
                 }
             }
 
-            // Kein Muster erkannt – Dateiname als Titel, keine Nummer.
+            // Kein Muster erkannt, also Dateiname als Titel, keine Nummer.
             return (null, fileNameWithoutExt);
         }
     }

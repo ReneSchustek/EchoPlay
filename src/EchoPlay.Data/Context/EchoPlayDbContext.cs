@@ -11,12 +11,12 @@ namespace EchoPlay.Data.Context
     /// Konfiguriert das Mapping und implementiert globale Abfragefilter für das Soft-Delete-System.
     ///
     /// Der Primary-Constructor-Syntax (C# 12) übergibt <paramref name="options"/> direkt
-    /// an <see cref="DbContext"/> – kein separater Konstruktorkörper notwendig.
+    /// an <see cref="DbContext"/>, kein separater Konstruktorkörper notwendig.
     /// </summary>
     public class EchoPlayDbContext(DbContextOptions<EchoPlayDbContext> options) : DbContext(options)
     {
         // DbSet-Properties als Expression-Body (=> Set<T>()): EF Core gibt intern immer
-        // dieselbe DbSet-Instanz zurück – kein Backing-Field notwendig.
+        // dieselbe DbSet-Instanz zurück, kein Backing-Field notwendig.
 
         /// <summary>Serien.</summary>
         public DbSet<Series> Series => Set<Series>();
@@ -62,11 +62,11 @@ namespace EchoPlay.Data.Context
             base.OnModelCreating(modelBuilder);
 
             // Sucht automatisch alle IEntityTypeConfiguration<T>-Klassen im Assembly
-            // und wendet sie an – jede Entität hat eine eigene Konfigurationsklasse.
+            // und wendet sie an; jede Entität hat eine eigene Konfigurationsklasse.
             _ = modelBuilder.ApplyConfigurationsFromAssembly(typeof(EchoPlayDbContext).Assembly);
 
             // Globaler Query Filter: Jede Abfrage bekommt automatisch "AND IsDeleted = 0"
-            // angehängt. Soft-Delete ist damit transparent – kein Aufrufer muss daran denken.
+            // angehängt. Soft-Delete ist damit transparent, kein Aufrufer muss daran denken.
             _ = modelBuilder.Entity<Series>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<Episode>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<PlaybackState>().HasQueryFilter(entity => !entity.IsDeleted);

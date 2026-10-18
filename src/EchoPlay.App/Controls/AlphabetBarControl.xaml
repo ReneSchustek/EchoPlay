@@ -4,7 +4,7 @@
 
     Sie springt, sie filtert nicht. Ein Klick auf M scrollt zur Gruppe M; der übrige
     Bestand bleibt sichtbar. Wer beim Stöbern filtert, verliert den Überblick über den
-    Bestand — und genau den will man dabei behalten.
+    Bestand, und genau den will man dabei behalten.
 
     Buchstaben ohne Einträge sind deaktiviert, nicht ausgeblendet: Eine Leiste, die ihre
     Breite je nach Bestand ändert, ist kein verlässlicher Anlaufpunkt.
@@ -19,7 +19,7 @@
     Der aktive Buchstabe ist am Schriftschnitt und am Rahmen zu erkennen, nicht allein an
     der Farbe.
 
-    Die Schaltflächen messen 40 Punkte in einer Zelle von 44 — die Untergrenze für ein
+    Die Schaltflächen messen 40 Punkte in einer Zelle von 44. Das ist die Untergrenze für ein
     Bedienziel, das sich mit dem Finger treffen lässt, plus Luft dazwischen. Enger gesetzt
     wäre die Leiste zwar einzeilig, aber für einen Teil der Nutzer nicht mehr bedienbar.
 -->

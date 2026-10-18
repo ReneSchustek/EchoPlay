@@ -16,7 +16,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Beim Verlassen der Seite laufen noch Cover-Anfragen und Datenbankzugriffe. Werden
-    /// sie nicht abgebrochen, schreiben sie in ein Ansichtsmodell, das niemand mehr sieht —
+    /// sie nicht abgebrochen, schreiben sie in ein Ansichtsmodell, das niemand mehr sieht,
     /// und halten es samt seiner Bilder im Speicher.
     /// </remarks>
     public sealed class SeriesDetailLifecycleTests

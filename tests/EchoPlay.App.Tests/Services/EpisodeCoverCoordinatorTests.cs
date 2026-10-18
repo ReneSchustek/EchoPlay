@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
     /// Wege, auf denen das Anwenden eines Covers vorzeitig endet.
     /// </summary>
     /// <remarks>
-    /// Die Erfolgspfade der Apply-Methoden bleiben außen vor — sie schreiben Dateien und
+    /// Die Erfolgspfade der Apply-Methoden bleiben außen vor, denn sie schreiben Dateien und
     /// erzeugen am Ende ein Bildobjekt, das an den Dispatcher gehört. Ihre Abbruchwege sind
     /// dagegen prüfbar und wichtiger, als sie aussehen: Dort entscheidet sich, ob ein
     /// gescheiterter Download dem Anwender gemeldet wird oder ob die Kachel einfach leer
@@ -139,7 +139,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Baut eine Folgen-Kachel ohne Cover und ohne Ordner. Ohne Ordner bleibt das
-        /// Schreiben der cover.jpg aus — geprüft wird die Ablage, nicht das Dateisystem.
+        /// Schreiben der cover.jpg aus; geprüft wird die Ablage, nicht das Dateisystem.
         /// </summary>
         private static LocalEpisodeCardViewModel BuildEpisodeCard()
             => new(
@@ -151,7 +151,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Baut eine Künstler-Kachel ohne Cover. Der Bildwert bleibt leer, weil ein
-        /// Bildobjekt im Testlauf nicht erzeugbar ist — für die geprüften Abbruchwege
+        /// Bildobjekt im Testlauf nicht erzeugbar ist, für die geprüften Abbruchwege
         /// spielt er keine Rolle.
         /// </summary>
         private static LocalArtistCardViewModel BuildArtistCard()
@@ -221,7 +221,7 @@ namespace EchoPlay.App.Tests.Services
             await coordinator.ApplySelectedSeriesCoverAsync(card, hit, TestContext.Current.CancellationToken);
 
             // Scheitert der Download stillschweigend, klickt der Anwender auf einen Treffer
-            // und nichts passiert — er hält die Auswahl für kaputt statt die Verbindung.
+            // und nichts passiert. Er hält die Auswahl für kaputt statt die Verbindung.
             _ = Assert.Single(errorDialog.ShownDialogs);
             Assert.Null(card.CoverImage);
         }

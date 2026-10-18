@@ -9,7 +9,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// (en-US-Default) hat sich gezeigt, dass die JSON-Variante nicht zuverlässig
     /// greift, weil der VSTest-Adapter den Pfad zur JSON-Datei je nach Build-Konfig
     /// nicht findet. Der ModuleInitializer wird vom CLR vor jedem Test-Lauf in
-    /// dieser Assembly ausgeführt — unabhängig davon, ob xunit.runner.json
+    /// dieser Assembly ausgeführt, unabhängig davon, ob xunit.runner.json
     /// kopiert wurde oder nicht.
     ///
     /// Nur für App.Tests bewusst gepinnt: andere Test-Projekte könnten kulturneutral

@@ -6,7 +6,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Beschafft das Cover einer Serie und legt die Reihenfolge der Quellen fest.
-    /// Eigener Typ, damit diese Reihenfolge für sich prüfbar ist — am Ansichtsmodell hing sie
+    /// Eigener Typ, damit diese Reihenfolge für sich prüfbar ist. Am Ansichtsmodell hing sie
     /// zuvor an der ganzen Seite.
     /// </summary>
     public interface ISeriesCoverBuilder
@@ -23,7 +23,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Wie <see cref="BuildAsync"/>, schluckt aber Lesefehler.
         /// Für das Nachladen im Hintergrund: Ein fehlendes Bild darf den Aufbau der Liste nicht
-        /// stören — dort bleibt dann der Platzhalter stehen.
+        /// stören; dort bleibt dann der Platzhalter stehen.
         /// </summary>
         /// <param name="series">Die Serie, deren Cover gesucht wird.</param>
         /// <returns>Das Bild oder <see langword="null"/>.</returns>

@@ -8,7 +8,7 @@ namespace EchoPlay.TagManager.Services
 {
     /// <summary>
     /// Sucht Metadaten über die MusicBrainz-REST-API.
-    /// MusicBrainz ist eine freie, gemeinschaftlich gepflegte Musikdatenbank –
+    /// MusicBrainz ist eine freie, gemeinschaftlich gepflegte Musikdatenbank;
     /// kein API-Key notwendig, aber die Nutzungsbedingungen fordern einen eindeutigen User-Agent
     /// und erlauben maximal eine Anfrage pro Sekunde für anonyme Requests.
     /// </summary>
@@ -91,7 +91,7 @@ namespace EchoPlay.TagManager.Services
 
         /// <summary>
         /// Wandelt ein <see cref="MusicBrainzRelease"/>-DTO in ein <see cref="TagLookupResult"/> um.
-        /// Das Erscheinungsjahr wird aus dem <c>date</c>-Feld extrahiert –
+        /// Das Erscheinungsjahr wird aus dem <c>date</c>-Feld extrahiert, denn
         /// MusicBrainz liefert Datumsangaben unterschiedlicher Genauigkeit ("2023", "2023-05-01").
         /// </summary>
         private static TagLookupResult MapToTagLookupResult(MusicBrainzRelease release)
@@ -101,7 +101,7 @@ namespace EchoPlay.TagManager.Services
                 ? release.ArtistCredits[0].Artist?.Name
                 : null;
 
-            // Nur das Jahr extrahieren – die ersten 4 Zeichen des date-Felds
+            // Nur das Jahr extrahieren, also die ersten 4 Zeichen des date-Felds
             uint? year = null;
             if (!string.IsNullOrEmpty(release.Date) && release.Date.Length >= 4)
             {

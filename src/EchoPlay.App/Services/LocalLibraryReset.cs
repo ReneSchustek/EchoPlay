@@ -14,7 +14,7 @@ namespace EchoPlay.App.Services
     /// gespeicherte Cover verschwinden, damit ein Neu-Einlesen von vorn beginnt.
     /// </summary>
     /// <remarks>
-    /// Rein lokale Serien werden ganz entfernt — ohne Dateien bliebe von ihnen nichts übrig.
+    /// Rein lokale Serien werden ganz entfernt, denn ohne Dateien bliebe von ihnen nichts übrig.
     /// Serien, die vom Anbieter stammen, behalten ihre Angaben und verlieren nur die
     /// Zuordnung zur Festplatte.
     /// </remarks>
@@ -26,7 +26,7 @@ namespace EchoPlay.App.Services
         /// Richtet das Zurücksetzen ein.
         /// </summary>
         /// <param name="scopeFactory">
-        /// Für einen eigenen Datenbankbereich — der Vorgang läuft auf einem Hintergrundfaden,
+        /// Für einen eigenen Datenbankbereich, weil der Vorgang auf einem Hintergrundfaden läuft
         /// und der Datenbankzugriff verträgt keine geteilte Nutzung.
         /// </param>
         public LocalLibraryReset(IServiceScopeFactory scopeFactory)
@@ -60,7 +60,7 @@ namespace EchoPlay.App.Services
 
                 if (isLocalOnly)
                 {
-                    // Rein lokale Serie ganz entfernen — das nimmt Folgen, Spuren und Hörstände mit.
+                    // Rein lokale Serie ganz entfernen. Das nimmt Folgen, Spuren und Hörstände mit.
                     await seriesService.DeleteAsync(series.Id);
                     continue;
                 }
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Services
                     episodeService, trackService, series.Id, episodeIdsToResetCover);
             }
 
-            // Gespeicherte Cover löschen — sie werden beim nächsten Einlesen neu geholt. Ohne
+            // Gespeicherte Cover löschen; sie werden beim nächsten Einlesen neu geholt. Ohne
             // dieses Zurücksetzen bliebe das alte Bild in der Datenbank stehen, selbst wenn
             // inzwischen ein anderes auf der Festplatte liegt.
             _ = await coverImageService.DeleteByEntitiesAsync(CoverEntityTypes.Series, seriesIdsToResetCover);
@@ -96,7 +96,7 @@ namespace EchoPlay.App.Services
                 episode.LocalFolderPath = null;
                 episode.LocalTrackCount = null;
 
-                // Zurück auf den Ausgangszustand — es gibt keinen lokalen Abgleich mehr.
+                // Zurück auf den Ausgangszustand, es gibt keinen lokalen Abgleich mehr.
                 episode.TrackMatchKind = TrackMatchKind.NotMatched;
                 await episodeService.UpdateAsync(episode);
 

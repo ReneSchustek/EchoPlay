@@ -100,7 +100,7 @@
                                 Text="{x:Bind RelativePath}"
                                 TextTrimming="CharacterEllipsis"
                                 ToolTipService.ToolTip="{x:Bind FilePath}"/>
-                            <!-- Änderungsmarkierung – sichtbar wenn IsModified true -->
+                            <!-- Änderungsmarkierung, sichtbar, wenn IsModified true -->
                             <TextBlock
                                 x:Uid="TagManagerUnsavedMark"
                                 FontSize="10"

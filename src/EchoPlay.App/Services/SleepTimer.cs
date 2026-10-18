@@ -46,7 +46,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="elapsed">Die Zeit seit dem letzten Takt.</param>
         /// <returns>
-        /// <see langword="true"/>, sobald der Zeitgeber abgelaufen ist — dann soll die
+        /// <see langword="true"/>, sobald der Zeitgeber abgelaufen ist, dann soll die
         /// Wiedergabe anhalten. Danach ist er abgeschaltet und meldet nicht erneut.
         /// </returns>
         public bool Tick(TimeSpan elapsed)

@@ -43,7 +43,7 @@ if (-not (Test-Path $config)) {
 
 $modus = if ($History) { 'git' } else { 'dir' }
 
-# Nicht $args verwenden — das ist eine automatische Variable von PowerShell.
+# Nicht $args verwenden, denn das ist eine automatische Variable von PowerShell.
 $gitleaksArgs = @($modus, $repoRoot, '--config', $config, '--no-banner')
 
 if ($Json) {

@@ -50,7 +50,7 @@ namespace EchoPlay.Core.Scoring
             ArgumentNullException.ThrowIfNull(result);
 
             // TryAdd schlägt lautlos fehl, wenn der Key bereits existiert.
-            // Das ist gewollt – der erste Scorer gewinnt. Wir unterscheiden im Log,
+            // Das ist gewollt: Der erste Scorer gewinnt. Wir unterscheiden im Log,
             // damit Diagnosedaten nicht lügen.
             bool wasAdded = _cache.TryAdd(result.ArtistId, result);
 

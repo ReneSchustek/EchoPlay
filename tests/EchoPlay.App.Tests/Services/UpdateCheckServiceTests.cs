@@ -13,7 +13,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Verifiziert den GitHub-Releases-basierten Update-Check für die wichtigsten
-    /// Pfade — Offline-Modus, HTTP-Fehler, SkippedVersion.
+    /// Pfade: Offline-Modus, HTTP-Fehler, SkippedVersion.
     /// </summary>
     public sealed class UpdateCheckServiceTests
     {
@@ -108,7 +108,7 @@ namespace EchoPlay.App.Tests.Services
 
             string hash = UpdateCheckService.ExtractSha256(body);
 
-            // Groß-/Kleinschreibung wird nicht normalisiert — der Vergleich im Updater
+            // Groß-/Kleinschreibung wird nicht normalisiert, der Vergleich im Updater
             // läuft über Convert.FromHexString und ist case-insensitive.
             Assert.Equal("ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890", hash);
         }
@@ -132,7 +132,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ExtractSha256_HashTooShort_ReturnsEmpty()
         {
-            // 60 Hex-Zeichen statt 64 — Pattern matcht nicht, weil \b nach genau 64 erwartet wird.
+            // 60 Hex-Zeichen statt 64, das Pattern matcht nicht, weil \b nach genau 64 erwartet wird.
             string body = "SHA256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd";
 
             string hash = UpdateCheckService.ExtractSha256(body);
@@ -143,7 +143,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ExtractSha256_NonHexChars_ReturnsEmpty()
         {
-            // 'g'..'z' sind keine Hex-Zeichen — Pattern lehnt ab.
+            // 'g'..'z' sind keine Hex-Zeichen, das Pattern lehnt ab.
             string body = "SHA256: gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg";
 
             string hash = UpdateCheckService.ExtractSha256(body);
@@ -175,7 +175,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CheckForUpdateAsync_ReleaseOhneHashZeile_BietetKeinUpdateAn()
         {
-            // Ein Release ohne brauchbaren Hash ist nicht installierbar — der Downloader lehnt
+            // Ein Release ohne brauchbaren Hash ist nicht installierbar, der Downloader lehnt
             // es ohnehin ab. Es anzubieten hieße, zu einem Update einzuladen, das systematisch
             // scheitert.
             FakeAppSettingsDataService settings = new(new AppSettings());
@@ -190,7 +190,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CheckForUpdateAsync_ReleaseMitHashZeile_BietetUpdateAn()
         {
-            // Gegenstück: Mit gültiger Hash-Zeile kommt das Angebot durch — sonst würde der
+            // Gegenstück: Mit gültiger Hash-Zeile kommt das Angebot durch, sonst würde der
             // Test darüber auch bei einem kaputten Update-Check bestehen.
             const string hash = "d3811116eb3683555d77374287d21a44286c78f2818057b43a20e402ec57c172";
             FakeAppSettingsDataService settings = new(new AppSettings());
@@ -274,7 +274,7 @@ namespace EchoPlay.App.Tests.Services
 
             UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
-            // Übersprungen wurde eine andere Fassung — die neue darf trotzdem erscheinen.
+            // Übersprungen wurde eine andere Fassung, die neue darf trotzdem erscheinen.
             Assert.NotNull(result);
         }
 
@@ -314,7 +314,7 @@ namespace EchoPlay.App.Tests.Services
             Assert.Null(result);
         }
 
-        /// <summary>Ein formal gültiger Hash — der Inhalt spielt für diese Tests keine Rolle.</summary>
+        /// <summary>Ein formal gültiger Hash; der Inhalt spielt für diese Tests keine Rolle.</summary>
         private const string ValidHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
         private static string ReleaseJson(string tag, string body) =>

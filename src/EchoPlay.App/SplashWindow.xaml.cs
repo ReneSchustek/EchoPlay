@@ -29,7 +29,7 @@ namespace EchoPlay.App
         // Per LogicalName in der csproj fixiert, damit MSBuild-Heuristiken den Namen nicht ändern.
         private const string LogoResourceName = "EchoPlay.App.Assets.logo.png";
 
-        // Fallback-Pfad — greift nur, wenn die Embedded-Resource fehlt.
+        // Fallback-Pfad: greift nur, wenn die Embedded-Resource fehlt.
         // In Produktion existiert der Pfad nicht; der Splash zeigt dann kein Logo, statt zu crashen.
         private const string FallbackLogoPath = @"F:\Entwicklung\_Icons\Icon_Ruhrcoder_quadrat.png";
 
@@ -44,7 +44,7 @@ namespace EchoPlay.App
             ZentriereUndGroesse();
             EntferneTitelleiste();
 
-            // WCAG 1.1.1: Logo dekorativ markieren — Screen-Reader skippt es.
+            // WCAG 1.1.1: Logo dekorativ markieren, damit der Screen-Reader es skippt.
             // Bewusst per Code-Behind statt XAML, weil das XAML-Markup-Pattern unter
             // unpackaged WinUI 3 einen Markup-Reader-Bug auslöst
             // (Stack-Trace: "Window.Title set more than once" beim Parser-Pass).
@@ -115,7 +115,7 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Blendet die Titelleiste aus – der Splash wirkt als reines Branding-Fenster ohne Fensterchrom.
+        /// Blendet die Titelleiste aus. Der Splash wirkt als reines Branding-Fenster ohne Fensterchrom.
         /// </summary>
         private void EntferneTitelleiste()
         {
@@ -130,7 +130,7 @@ namespace EchoPlay.App
         /// <summary>
         /// Versucht den Dev-Maschinen-Fallback aus <see cref="FallbackLogoPath"/> zu laden.
         /// Schlägt das fehl (z. B. in Produktion, wo der Pfad nicht existiert), bleibt der Splash
-        /// ohne Logo — bewusst, damit der Start nicht an einem Branding-Asset hängt.
+        /// ohne Logo, bewusst, damit der Start nicht an einem Branding-Asset hängt.
         /// </summary>
         private async Task LoadFallbackLogoAsync()
         {
@@ -161,7 +161,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Dekodiert beliebige <see cref="Stream"/>-Daten als <see cref="BitmapImage"/>.
-        /// Liefert <c>null</c>, wenn die Daten kein gültiges Bild sind — der Aufrufer entscheidet,
+        /// Liefert <c>null</c>, wenn die Daten kein gültiges Bild sind; der Aufrufer entscheidet,
         /// ob er einen Fallback versucht oder das Logo weglässt.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "BitmapImage.SetSourceAsync wirft bei korrupten Bilddaten native WIC/COM-Fehler ohne stabile Typ-Hierarchie; für den Splash reicht ein null-Rückgabewert plus EmergencyTrace, ohne den App-Start zu blockieren.")]

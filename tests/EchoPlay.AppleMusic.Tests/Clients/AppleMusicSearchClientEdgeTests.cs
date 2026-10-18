@@ -20,7 +20,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
     /// <remarks>
     /// Der Adapter steht zwischen der Anwendung und einer fremden Gegenstelle, auf deren
     /// Verhalten niemand Einfluss hat. Eine Antwort, die sich nicht lesen lässt, darf nicht
-    /// als leeres Ergebnis durchgehen — sonst sähe der Anwender „keine Treffer", wo in
+    /// als leeres Ergebnis durchgehen, sonst sähe der Anwender „keine Treffer", wo in
     /// Wahrheit die Gegenstelle kaputt ist.
     /// </remarks>
     public sealed class AppleMusicSearchClientEdgeTests
@@ -81,7 +81,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 [], TestContext.Current.CancellationToken);
 
             // Ohne Alben gibt es nichts zu holen. Eine Anfrage ohne Kennungen liefert bei
-            // iTunes einen Fehler — die spart sich der Adapter.
+            // iTunes einen Fehler. Die spart sich der Adapter.
             Assert.Empty(result.Results);
             Assert.Empty(handler.RequestUris);
         }

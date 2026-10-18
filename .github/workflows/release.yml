@@ -31,7 +31,7 @@ jobs:
         run: dotnet list package --vulnerable --include-transitive
 
       # PublishReadyToRun=false nur im Gate-Build: Die App wird über ihr Publish-Profil
-      # schon hier mit RID win-x64 gebaut, wodurch R2R triggert — dessen Runtime-Package
+      # schon hier mit RID win-x64 gebaut, wodurch R2R triggert; dessen Runtime-Package
       # steckt aber nicht im RID-losen restore (NETSDK1094). Das echte R2R läuft im
       # publish-setup.ps1-Schritt (eigener RID-Restore). Der Gate-Build braucht nur
       # Kompilierung + Zero-Warning, kein R2R.

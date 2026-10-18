@@ -8,7 +8,7 @@ namespace EchoPlay.App.Controls
     /// <summary>
     /// Ein Filter der Filterleiste, als Chip zum Umschalten.
     /// <para>
-    /// Was gewählt ist, sieht man ohne zu klicken — deshalb Chips und keine Aufklappliste.
+    /// Was gewählt ist, sieht man ohne zu klicken. Deshalb Chips und keine Aufklappliste.
     /// Der aktive Zustand hängt an Schriftschnitt und Rahmen, nicht allein an der Farbe.
     /// </para>
     /// </summary>
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Controls
 
         /// <summary>Schriftschnitt: Ein wirkender Filter steht fett.</summary>
         /// <remarks>
-        /// Zahlwert statt <c>FontWeights.SemiBold</c> — jene Klasse ist eine WinRT-Komponente
+        /// Zahlwert statt <c>FontWeights.SemiBold</c>, denn jene Klasse ist eine WinRT-Komponente
         /// und ohne laufenden XAML-Host nicht ansprechbar.
         /// </remarks>
         public FontWeight LabelWeight => new() { Weight = IsActive ? SemiBoldWeight : NormalWeight };

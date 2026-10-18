@@ -3,7 +3,7 @@
 
     Warum als benannte Stile und nicht als Vorgabe für alle Textblöcke: Ein pauschaler
     Standardstil schlägt die Vererbung und färbt damit gerade die Beschriftungen um, die
-    absichtlich auf einer farbigen Fläche stehen — weiße Schrift auf dem Kachelkopf würde
+    absichtlich auf einer farbigen Fläche stehen. Weiße Schrift auf dem Kachelkopf würde
     zu dunkler Schrift auf dunklem Grund. Der Weg ist der Stil an der Stelle, nicht die
     Gießkanne.
 
@@ -35,7 +35,7 @@
 
          Die Großschreibung steht nicht im Stil: Ein TextBlock in WinUI kennt keine
          Umwandlung der Schreibweise bei der Darstellung. Der Text wird deshalb bereits
-         großgeschrieben übergeben — bei übersetzten Texten in der Ressourcendatei. -->
+         großgeschrieben übergeben, bei übersetzten Texten in der Ressourcendatei. -->
     <Style x:Key="SectionHeaderTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -45,7 +45,7 @@
 
     <!-- ── Fließtext und Nebentext ────────────────────────────────────────────
          Jeder Textblock bekommt einen Stil: Ein Bedienelement ohne Stil erbt nicht die
-         Textfarbe der Anwendung, sondern die Vorgabe des Rahmenwerks — im dunklen
+         Textfarbe der Anwendung, sondern die Vorgabe des Rahmenwerks. Im dunklen
          Erscheinungsbild steht die Stelle dann schwarz auf dunklem Grund und ist weg. -->
     <Style x:Key="BodyTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
@@ -62,28 +62,28 @@
 
     <!-- ── Schaltfläche mit reinem Symbol ─────────────────────────────────────
          Ein Symbol allein ergibt eine sehr kleine Fläche: Zeichen plus Innenabstand
-         landen bei rund 30 Punkten. Für ein Bedienziel sind 40 die Untergrenze — darunter
+         landen bei rund 30 Punkten. Für ein Bedienziel sind 40 die Untergrenze, darunter
          trifft es nicht mehr zuverlässig, wer keine ruhige Hand oder einen Finger statt
          einer Maus benutzt.
 
          Als Stil und nicht als Angabe an jeder Schaltfläche, weil es sonst bei der
          nächsten neuen wieder vergessen wird. Die Beschriftung für die Sprachausgabe
-         bleibt Sache der Stelle — sie ist überall eine andere. -->
+         bleibt Sache der Stelle, sie ist überall eine andere. -->
     <!-- ── Primäraktion ──────────────────────────────────────────────────────
          Die eine hervorgehobene Schaltfläche einer Seite, rechts im Seitenkopf.
 
          Setzt auf den eingebauten AccentButtonStyle auf. Der frühere Kommentar begründete
          das Gegenteil: Alle sechs Paletten seien gleichzeitig eingehängt, deshalb behielte
          die Schaltfläche die Akzentfarbe der zuletzt deklarierten. Nachgemessen am
-         13.08.2026 stimmt das nicht mehr — der Theme-Dienst entfernt beim Start alle
+         13.08.2026 stimmt das nicht mehr: Der Theme-Dienst entfernt beim Start alle
          Paletten und hängt genau eine ein (ThemeService.RemoveAllThemeDictionaries, dann
          AddThemeDictionary). Und seit die Schaltflächen aus der Palette kommen, belegt jede
          Palette AccentButtonBackground samt PointerOver, Pressed und Disabled selbst.
 
          Der eigene Stil hatte dafür einen sichtbaren Preis: Die Zustände der
          Standardvorlage setzen die Fläche unmittelbar am Inhalt und gewinnen gegen jeden
-         Setter. Beim Überfahren galt deshalb die stille Fläche des gewöhnlichen Knopfes —
-         die Primäraktion kippte von Akzent auf Grau. Über den Basisstil greifen die
+         Setter. Beim Überfahren galt deshalb die stille Fläche des gewöhnlichen Knopfes,
+         und die Primäraktion kippte von Akzent auf Grau. Über den Basisstil greifen die
          Zustände der Palette. -->
     <Style x:Key="PrimaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
         <Setter Property="MinHeight" Value="{StaticResource TouchTargetMinSize}"/>
@@ -97,7 +97,7 @@
          48 Punkte Höhe sind das Bedienziel; die Breite darf darunter bleiben, weil der
          Pfeil in einer Reihe sitzt, die selbst schon Zielfläche ist.
 
-         Stand zweimal wortgleich in zwei Ansichten — einmal davon mit fest verdrahtetem
+         Stand zweimal wortgleich in zwei Ansichten, einmal davon mit fest verdrahtetem
          Eckenradius. Ein Stil, der an zwei Orten gepflegt werden muss, läuft auseinander;
          genau das war dort schon passiert. -->
     <Style x:Key="ScrollArrowButtonStyle" TargetType="Button">

@@ -12,7 +12,7 @@ namespace EchoPlay.App.ViewModels
     /// Zeilen-ViewModel für einen lokalen Track in der rechten Spalte der lokalen Mediathek.
     /// Der "Im Tag-Manager bearbeiten"-Befehl delegiert die Navigation über einen Callback
     /// an <see cref="LocalLibraryViewModel"/>, der das <see cref="LocalLibraryViewModel.NavigateToTagManagerRequested"/>-Event feuert.
-    /// ViewModels sollen nicht direkt navigieren – die Page-Ebene übernimmt das.
+    /// ViewModels sollen nicht direkt navigieren, die Page-Ebene übernimmt das.
     /// </summary>
     public sealed class LocalTrackRowViewModel : ObservableObject, ITrackTitleTarget
     {
@@ -47,7 +47,7 @@ namespace EchoPlay.App.ViewModels
 
             OpenInTagManagerCommand = new RelayCommand(() =>
             {
-                // Den übergeordneten Ordner übergeben – der Tag-Manager lädt alle Audiodateien
+                // Den übergeordneten Ordner übergeben, denn der Tag-Manager lädt alle Audiodateien
                 // des Ordners, sodass der Nutzer die gewünschte Datei direkt auswählen kann
                 string? folder = Path.GetDirectoryName(filePath);
                 if (!string.IsNullOrWhiteSpace(folder))

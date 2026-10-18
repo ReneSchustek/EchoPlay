@@ -118,7 +118,7 @@
 
         </NavigationView>
 
-        <!-- MiniPlayer – eingeblendet sobald etwas spielt -->
+        <!-- MiniPlayer, eingeblendet, sobald etwas spielt -->
         <Grid
             Grid.Row="1"
             x:Name="MiniPlayerPanel"
@@ -234,7 +234,7 @@
                     Minimum="0"
                     Maximum="{x:Bind MiniPlayer.DurationSeconds, Mode=OneWay}"
                     ValueChanged="OnSeekSliderChanged"/>
-                <!-- Zeitanzeige bündig unter dem Slider – Margin 12 px wie in PlayerPage -->
+                <!-- Zeitanzeige bündig unter dem Slider (Margin 12 px wie in PlayerPage) -->
                 <Grid Margin="12,-4,12,0">
                     <TextBlock
                         Text="{x:Bind MiniPlayer.ElapsedText, Mode=OneWay}"
@@ -277,7 +277,7 @@
 
             <!-- Schließen-Button: oben rechts im MiniPlayer, wie ein klassischer Fenster-Schließen-Button.
                  Überlagert alle drei Spalten, damit er immer in der rechten oberen Ecke sitzt.
-                 Click statt Command, damit nach Stop() das Panel sofort ausgeblendet wird –
+                 Click statt Command, damit nach Stop() das Panel sofort ausgeblendet wird;
                  das reine Command + DispatcherQueue-Dispatch hat eine Race-Condition mit
                  MediaPlaybackList.CurrentItemChanged. -->
             <Button
@@ -295,7 +295,7 @@
 
         </Grid>
 
-        <!-- Scan-Fortschrittsbalken – 3 px hoch, nur sichtbar während ein Scan läuft.
+        <!-- Scan-Fortschrittsbalken: 3 px hoch, nur sichtbar, während ein Scan läuft.
              IsIndeterminate wechselt automatisch: deterministisch sobald TotalFiles bekannt ist. -->
         <ProgressBar
             Grid.Row="2"
@@ -404,7 +404,7 @@
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Margin="8,0"/>
 
-                <!-- Neue Folgen – Separator und Badge nur sichtbar wenn > 0 -->
+                <!-- Neue Folgen. Separator und Badge nur sichtbar, wenn > 0 -->
                 <Rectangle
                     Width="1"
                     Height="16"
@@ -418,7 +418,7 @@
                     Margin="8,0"
                     Visibility="{x:Bind StatusBar.NewEpisodesVisibility, Mode=OneWay}"/>
 
-                <!-- Roter Hinweis auf ungespeicherte Einstellungen – nur sichtbar wenn Änderungen offen -->
+                <!-- Roter Hinweis auf ungespeicherte Einstellungen, nur sichtbar, wenn Änderungen offen -->
                 <Rectangle
                     Width="1"
                     Height="16"
@@ -435,7 +435,7 @@
 
             </StackPanel>
 
-            <!-- Mittlere Gruppe: Scan-Fortschrittstext – nur sichtbar während ein Scan läuft -->
+            <!-- Mittlere Gruppe: Scan-Fortschrittstext (nur sichtbar, während ein Scan läuft) -->
             <TextBlock
                 Grid.Column="1"
                 Text="{x:Bind StatusBar.ScanProgress.Text, Mode=OneWay}"
@@ -510,7 +510,7 @@
         </Grid>
 
         <!-- Theme-Wechsel-Overlay: semitr. Deckfolie mit Ladeindikator während das neue Theme angewendet wird.
-             Statische Farbe statt ThemeResource – sonst würde der Overlay selbst beim Wechsel aufleuchten.
+             Statische Farbe statt ThemeResource, sonst würde der Overlay selbst beim Wechsel aufleuchten.
              Liegt über allen anderen Inhalten (letztes Kind im Grid = höchster Z-Index). -->
         <Grid
             x:Name="ThemeLoadingOverlay"

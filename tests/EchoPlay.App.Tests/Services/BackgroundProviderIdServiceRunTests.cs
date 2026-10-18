@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task Start_UndStop_BeendenDenHintergrundlauf()
         {
             // Der Lauf beginnt mit einer Wartezeit, damit der Programmstart frei bleibt.
-            // Das Beenden muss trotzdem sofort greifen — sonst hängt der Programmschluss.
+            // Das Beenden muss trotzdem sofort greifen, sonst hängt der Programmschluss.
             (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
 
             service.Start();
@@ -142,7 +142,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task Start_MehrfachBleibtEinLauf()
         {
-            // Zwei Aufrufe dürfen keinen zweiten Lauf erzeugen — sonst liefe die
+            // Zwei Aufrufe dürfen keinen zweiten Lauf erzeugen, sonst liefe die
             // Anreicherung doppelt über denselben Bestand.
             (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
 

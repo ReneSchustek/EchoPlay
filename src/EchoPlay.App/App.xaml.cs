@@ -95,7 +95,7 @@ namespace EchoPlay.App
                 TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
                 // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
-                // Logo aus Embedded-Resource laden, bevor das Fenster aktiviert wird — sonst
+                // Logo aus Embedded-Resource laden, bevor das Fenster aktiviert wird, sonst
                 // flackert der Splash kurz ohne Logo (BitmapImage.SetSourceAsync ist asynchron).
                 splash = new SplashWindow();
                 await splash.LoadEmbeddedLogoAsync();
@@ -141,7 +141,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Zeigt dem Nutzer einen Fehlerdialog, wenn der App-Start nicht abgeschlossen werden konnte,
-        /// und beendet die Anwendung kontrolliert. Loggt in Trace und – falls verfügbar – über den
+        /// und beendet die Anwendung kontrolliert. Loggt in Trace und (falls verfügbar) über den
         /// App-Logger, damit der Fehler auch ohne sichtbares Hauptfenster nachvollziehbar ist.
         /// </summary>
         /// <param name="splash">Das Splash-Fenster, sofern bereits erzeugt.</param>
@@ -172,7 +172,7 @@ namespace EchoPlay.App
             }
             catch
             {
-                // Dialog konnte nicht angezeigt werden – Logging bleibt als Diagnose-Quelle
+                // Dialog konnte nicht angezeigt werden. Logging bleibt als Diagnose-Quelle
             }
 
             try { splash?.Close(); } catch { /* Schließen darf das Exit nicht blockieren */ }
@@ -210,7 +210,7 @@ namespace EchoPlay.App
         /// <param name="e">Enthält die nicht abgefangene Exception und ermöglicht optionales Unterdrücken des Absturzes.</param>
         private async void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
-            // Absturz verhindern – die Exception wird als Dialog angezeigt
+            // Absturz verhindern, die Exception wird als Dialog angezeigt
             e.Handled = true;
 
             if (AppLogger is not null)
@@ -219,7 +219,7 @@ namespace EchoPlay.App
             }
             else
             {
-                // Fallback falls Logger noch nicht initialisiert – EmergencyTrace kapselt
+                // Fallback, falls Logger noch nicht initialisiert ist. EmergencyTrace kapselt
                 // bewusst Trace.WriteLine, damit die Ausgabe auch im Release-Build erhalten bleibt.
                 EchoPlay.Logger.Core.EmergencyTrace.Log($"[FATAL] Nicht behandelte Exception: {e.Exception}");
             }
@@ -228,13 +228,13 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Zeigt den Fehlerdialog zu einer nicht behandelten Exception — aber nur, wenn das
+        /// Zeigt den Fehlerdialog zu einer nicht behandelten Exception, aber nur, wenn das
         /// Hauptfenster schon offen ist.
         /// </summary>
         /// <remarks>
         /// WinUI 3 erlaubt je Zeichenwurzel nur einen offenen Dialog. Stammt die
         /// ursprüngliche Exception selbst aus einem fehlgeschlagenen Dialog, würde ein
-        /// zweiter Aufruf dieselbe COM-Exception werfen — eine endlose Kaskade.
+        /// zweiter Aufruf dieselbe COM-Exception werfen: eine endlose Kaskade.
         /// </remarks>
         /// <param name="message">Die Meldung der Exception.</param>
         private static async Task ShowUnhandledExceptionDialogAsync(string message)
@@ -254,7 +254,7 @@ namespace EchoPlay.App
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                // Ein anderer ContentDialog ist bereits offen – Fehlerdialog verwerfen.
+                // Ein anderer ContentDialog ist bereits offen, also Fehlerdialog verwerfen.
                 // Der Fehler wurde bereits geloggt, der Nutzer muss nicht zweimal informiert werden.
             }
         }

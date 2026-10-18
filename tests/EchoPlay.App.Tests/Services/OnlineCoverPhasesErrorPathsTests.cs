@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
     /// <remarks>
     /// Die beiden Fälle sehen im Quelltext ähnlich aus und müssen sich trotzdem
     /// unterschiedlich verhalten: Ein Anbieterfehler betrifft eine Serie und darf den Lauf
-    /// über die übrigen nicht beenden. Ein Abbruch betrifft den ganzen Lauf — würde er wie
+    /// über die übrigen nicht beenden. Ein Abbruch betrifft den ganzen Lauf. Würde er wie
     /// ein Serienfehler behandelt, liefe die Schleife nach dem Schließen des Fensters
     /// weiter, bis zufällig die nächste Abbruchprüfung greift.
     /// </remarks>
@@ -68,7 +68,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>
-        /// Eine online importierte Serie mit genau einer Folge ohne Cover-Adresse — der
+        /// Eine online importierte Serie mit genau einer Folge ohne Cover-Adresse als
         /// Ausgangszustand, den der Nachtrag verbessern soll.
         /// </summary>
         private static async Task<(FakeSeriesDataService Series, FakeEpisodeDataService Episodes, Episode Episode)> SeedAsync()

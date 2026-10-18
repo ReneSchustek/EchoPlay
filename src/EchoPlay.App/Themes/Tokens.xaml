@@ -4,7 +4,7 @@
 
     Warum hier und nicht in den sechs Paletten: Diese Werte ändern sich mit dem gewählten
     Theme nicht. Nur Farben wechseln. Stünden sie in jeder Palette, müsste eine Änderung an
-    der Kachelform sechsmal nachgezogen werden — und wäre nach dem dritten Mal uneinheitlich.
+    der Kachelform sechsmal nachgezogen werden und wäre nach dem dritten Mal uneinheitlich.
 
     Enthält bewusst keinen Farbwert. Farben stehen in den Paletten, die Markenfarben des
     Startbilds in Brand.xaml.
@@ -56,7 +56,7 @@
     <!-- Zeilenhöhe 1.65 im Fließtext, auf die Körpergröße gerechnet. -->
     <x:Double x:Key="LineHeightBody">23</x:Double>
 
-    <!-- Abschnittsüberschriften sind klein, gesperrt und in Großbuchstaben — das
+    <!-- Abschnittsüberschriften sind klein, gesperrt und in Großbuchstaben, das
          auffälligste Merkmal der Linie. Sie ersetzen große Zwischenüberschriften.
          WinUI rechnet CharacterSpacing in Tausendstel des Schriftgrads: 0.08em = 80. -->
     <x:Int32 x:Key="SectionHeaderCharacterSpacing">80</x:Int32>

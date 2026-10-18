@@ -4,7 +4,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für die Anbieter-Auswahl aus <see cref="PlaybackLauncher"/>.
-    /// Geprüft wird ausschließlich, welche Ziele entstehen — geöffnet wird hier nichts:
+    /// Geprüft wird ausschließlich, welche Ziele entstehen; geöffnet wird hier nichts:
     /// Ein Test startet weder Browser noch fremde Anwendung.
     /// </summary>
     public sealed class PlaybackLauncherTargetTests

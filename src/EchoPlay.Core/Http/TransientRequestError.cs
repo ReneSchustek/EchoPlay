@@ -27,7 +27,7 @@ namespace EchoPlay.Core.Http
         /// Abbruch aber nicht mehr als tolerierbaren Fehler.
         /// </summary>
         /// <remarks>
-        /// Ein abgebrochener HTTP-Aufruf meldet sich als <see cref="TaskCanceledException"/> —
+        /// Ein abgebrochener HTTP-Aufruf meldet sich als <see cref="TaskCanceledException"/>,
         /// dieselbe Ausnahme, die auch eine Zeitüberschreitung erzeugt. Ohne den Blick auf das
         /// Abbruchzeichen sind beide nicht zu unterscheiden, und dann schreibt jeder
         /// abgebrochene Vorgang eine Warnung über einen Ausfall, den es nie gab. Die echten
@@ -37,7 +37,7 @@ namespace EchoPlay.Core.Http
         /// <param name="cancellationToken">Das Abbruchzeichen der umgebenden Operation.</param>
         /// <returns>
         /// <c>true</c>, wenn der Fehler tolerierbar ist. <c>false</c> bei einem angeforderten
-        /// Abbruch — die Ausnahme gehört dann nach oben durchgereicht.
+        /// Abbruch; die Ausnahme gehört dann nach oben durchgereicht.
         /// </returns>
         public static bool IsTransient(Exception ex, CancellationToken cancellationToken) =>
             !(cancellationToken.IsCancellationRequested && ex is OperationCanceledException)

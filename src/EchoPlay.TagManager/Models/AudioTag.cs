@@ -5,7 +5,7 @@ namespace EchoPlay.TagManager.Models
     /// <summary>
     /// Flaches Datenmodell für alle Standard-Audio-Metadaten.
     /// Wird von <see cref="Abstractions.ITagService"/> als Lese- und Schreib-DTO verwendet.
-    /// Felder mit dem Wert <see langword="null"/> werden beim Schreiben ignoriert –
+    /// Felder mit dem Wert <see langword="null"/> werden beim Schreiben ignoriert;
     /// der bestehende Wert in der Datei bleibt erhalten.
     /// </summary>
     public sealed class AudioTag
@@ -20,7 +20,7 @@ namespace EchoPlay.TagManager.Models
         public string? Artist { get; set; }
 
         /// <summary>
-        /// Albumkünstler – oft abweichend vom Track-Künstler,
+        /// Albumkünstler, oft abweichend vom Track-Künstler,
         /// z.B. "TKKG" als Albumkünstler statt der einzelnen Sprecher.
         /// </summary>
         public string? AlbumArtist { get; set; }

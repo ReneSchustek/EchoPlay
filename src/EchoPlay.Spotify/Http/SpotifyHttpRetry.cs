@@ -5,7 +5,7 @@ namespace EchoPlay.Spotify.Http
     /// <summary>
     /// Kapselt die Retry-Logik für transiente HTTP-Fehler der Spotify-API.
     ///
-    /// Wiederholungsversuche erfolgen ausschließlich bei transienten Fehlern –
+    /// Wiederholungsversuche erfolgen ausschließlich bei transienten Fehlern:
     /// Netzwerkausfälle, Server-Fehler (5xx) und Rate-Limiting (429).
     /// Anwendungsfehler (4xx außer 429) und Parse-Fehler werden sofort weitergegeben.
     /// </summary>
@@ -72,7 +72,7 @@ namespace EchoPlay.Spotify.Http
                 }
             }
 
-            // Alle Versuche erschöpft – letzten Verbindungsfehler weitergeben.
+            // Alle Versuche erschöpft, den letzten Verbindungsfehler weitergeben.
             throw lastConnectionException!;
         }
 

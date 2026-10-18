@@ -13,7 +13,7 @@ namespace EchoPlay.Data.Migrations
         {
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
-            // Für Bestandsinstallationen weiterhin Backups aktivieren – erst ein expliziter
+            // Für Bestandsinstallationen weiterhin Backups aktivieren; erst ein expliziter
             // Opt-Out in den Einstellungen schaltet die Funktion ab.
             _ = migrationBuilder.AddColumn<bool>(
                 name: "DbBackupEnabled",

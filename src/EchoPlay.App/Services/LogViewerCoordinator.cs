@@ -14,7 +14,7 @@ namespace EchoPlay.App.Services
     /// Standardimplementierung von <see cref="ILogViewerCoordinator"/>.
     /// Nutzt den <see cref="LoggerManager"/> um das Log-Verzeichnis zu bestimmen und den
     /// optionalen <see cref="MemorySink"/>, um Live-Einträge zu liefern.
-    /// Ist kein MemorySink registriert, bleibt die Live-Ansicht leer – die Datei-Funktionen
+    /// Ist kein MemorySink registriert, bleibt die Live-Ansicht leer. Die Datei-Funktionen
     /// arbeiten davon unabhängig weiter.
     /// </summary>
     public sealed class LogViewerCoordinator : ILogViewerCoordinator
@@ -64,7 +64,7 @@ namespace EchoPlay.App.Services
                     result.Add(new LogFileOption(fileName, lastWrite, path));
                 }
 
-                // Absteigend sortieren – neueste Datei steht oben in der ComboBox
+                // Absteigend sortieren, die neueste Datei steht oben in der ComboBox
                 result.Sort((a, b) => b.Date.CompareTo(a.Date));
                 return result;
             });
@@ -86,7 +86,7 @@ namespace EchoPlay.App.Services
             }
             catch (IOException)
             {
-                // Datei möglicherweise gerade gesperrt – stilles Ignorieren, leere Liste zurückgeben
+                // Datei möglicherweise gerade gesperrt: stilles Ignorieren, leere Liste zurückgeben
                 return [];
             }
             catch (UnauthorizedAccessException)

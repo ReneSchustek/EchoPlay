@@ -5,7 +5,7 @@ namespace EchoPlay.LocalLibrary.Parsing
 {
     /// <summary>
     /// Ermittelt aus Ordnernamen einer Serie die vorhandenen Folgennummern und die Lücken dazwischen.
-    /// Gemeinsame Grundlage für die Fehlende-Folgen-Analyse und den Online-Abgleich – läge
+    /// Gemeinsame Grundlage für die Fehlende-Folgen-Analyse und den Online-Abgleich. Läge
     /// dieselbe Logik doppelt vor, liefe sie auseinander.
     /// </summary>
     /// <remarks>
@@ -13,10 +13,10 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// jeweils aus gemessenen Fehlbefunden an einer 92-Serien-Sammlung abgeleitet:
     /// <list type="bullet">
     /// <item>Jeder Ordner wird gegen <b>alle</b> Muster geprüft. Sonst zählen Ordner, die zufällig
-    /// anders benannt sind, als fehlend — bei „Sherlock Holmes – Die geheimen Fälle" 38 von 67.</item>
+    /// anders benannt sind, als fehlend, bei „Sherlock Holmes – Die geheimen Fälle" 38 von 67.</item>
     /// <item>Ordner, die nur aus einer Zahl bestehen („001"), werden erkannt. Alle übrigen Muster
     /// verlangen einen Titelteil.</item>
-    /// <item>Nur Zahlen von 1 bis 999 gelten als Folgennummer — dieselbe Regel wie in
+    /// <item>Nur Zahlen von 1 bis 999 gelten als Folgennummer, dieselbe Regel wie in
     /// <see cref="EpisodeNumberParser"/>. „Stenkelfeld 2008" würde sonst als Folge 2008 gelesen und
     /// erzeugte 1999 erfundene Lücken.</item>
     /// </list>
@@ -35,7 +35,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             "{number:000}_{title}",
             "{number:000} {title}",
             "{title} - {number:000}",
-            // Ordner ohne Titelteil, z.B. „001" — kein anderes Muster deckt das ab.
+            // Ordner ohne Titelteil, z.B. „001", denn kein anderes Muster deckt das ab.
             "{number:000}"
         ];
 
@@ -93,7 +93,7 @@ namespace EchoPlay.LocalLibrary.Parsing
         /// <returns>Die fehlenden Nummern, aufsteigend.</returns>
         /// <remarks>
         /// Bewusst ab der kleinsten vorhandenen Nummer statt ab 1: Wer eine Serie erst ab Folge 50
-        /// sammelt, hat keine 49 Lücken — er hat 49 Folgen, die er nicht besitzen will.
+        /// sammelt, hat keine 49 Lücken. Er hat 49 Folgen, die er nicht besitzen will.
         /// </remarks>
         public static IReadOnlyList<int> FindGaps(IReadOnlyList<int> numbers)
         {
@@ -162,7 +162,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             }
             catch (RegexMatchTimeoutException)
             {
-                // Pathologischer Ordnername – gilt als „keine Nummer".
+                // Pathologischer Ordnername, gilt als „keine Nummer".
             }
 
             return null;

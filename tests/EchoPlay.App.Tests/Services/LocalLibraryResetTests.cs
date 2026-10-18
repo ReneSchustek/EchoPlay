@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="LocalLibraryReset"/> — das Zurücksetzen vor einer Neu-Einlesung.
+    /// Tests für <see cref="LocalLibraryReset"/>, das Zurücksetzen vor einer Neu-Einlesung.
     /// </summary>
     /// <remarks>
     /// Der Vorgang ist am laufenden Programm nicht prüfbar: Er löst die Verbindung zwischen
-    /// Datenbank und Festplatte für den gesamten Bestand. Dass er die richtige Grenze zieht —
-    /// rein lokale Serien ganz weg, Anbieter-Serien nur ohne Zuordnung — steht deshalb hier.
+    /// Datenbank und Festplatte für den gesamten Bestand. Dass er die richtige Grenze zieht
+    /// (rein lokale Serien ganz weg, Anbieter-Serien nur ohne Zuordnung), steht deshalb hier.
     /// </remarks>
     public sealed class LocalLibraryResetTests
     {
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ClearLocalAssignmentsAsync_ProviderSeries_KeepsSeriesWithoutFolder()
         {
-            // Eine vom Anbieter importierte Serie behält ihre Angaben — verloren geht nur
+            // Eine vom Anbieter importierte Serie behält ihre Angaben, verloren geht nur
             // die Zuordnung zur Festplatte.
             (LocalLibraryReset reset, FakeSeriesDataService series, _, _, _) = Build();
 
@@ -86,7 +86,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ClearLocalAssignmentsAsync_Episodes_LoseFolderTrackCountAndMatch()
         {
-            // Die Folge muss danach aussehen wie vor dem ersten Einlesen — sonst hielte die
+            // Die Folge muss danach aussehen wie vor dem ersten Einlesen, sonst hielte die
             // Anzeige sie weiterhin für abgeglichen.
             (LocalLibraryReset reset,
              FakeSeriesDataService series,

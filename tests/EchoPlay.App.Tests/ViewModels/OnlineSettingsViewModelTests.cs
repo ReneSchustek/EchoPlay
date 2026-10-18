@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Zugangsdaten sind der Teil der Einstellungen, bei dem ein stiller Fehlschlag am
     /// teuersten ist: Der Anwender sieht „Verknüpft", die Anmeldung scheitert später im
     /// Hintergrund, und die Suche liefert wortlos nichts. Deshalb prüfen die Tests vor allem,
-    /// was in der Statuszeile steht — sie ist die einzige Rückmeldung, die er bekommt.
+    /// was in der Statuszeile steht, denn sie ist die einzige Rückmeldung, die er bekommt.
     /// </remarks>
     public sealed class OnlineSettingsViewModelTests
     {
@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await viewModel.TestConnectionAsync();
 
-            // Ohne gewählten Anbieter gibt es nichts zu prüfen — ein Aufruf ins Leere
+            // Ohne gewählten Anbieter gibt es nichts zu prüfen; ein Aufruf ins Leere
             // erzeugte nur eine Fehlermeldung, die der Anwender nicht einordnen kann.
             Assert.Empty(coordinator.Calls);
             Assert.Null(viewModel.ConnectionTestSuccess);
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.False(viewModel.ConnectionTestSuccess);
 
-            // Ohne den Grund bleibt dem Anwender nur „ging nicht" — damit kann er nichts
+            // Ohne den Grund bleibt dem Anwender nur „ging nicht", und damit kann er nichts
             // anfangen, und der nächste Versuch ist derselbe.
             Assert.Contains(reason, viewModel.ConnectionTestResultText, System.StringComparison.Ordinal);
             Assert.False(viewModel.IsTestingConnection);
@@ -156,7 +156,7 @@ namespace EchoPlay.App.Tests.ViewModels
             viewModel.TestAndSaveSpotifyCommand.Execute(null);
             await WaitUntilIdleAsync(viewModel);
 
-            // Der Befehl darf nicht reißen — der Anwender bekommt den Fehler in der
+            // Der Befehl darf nicht reißen. Der Anwender bekommt den Fehler in der
             // Statuszeile und kann es erneut versuchen.
             Assert.False(viewModel.IsSpotifyLinked);
             Assert.NotEmpty(viewModel.SpotifyStatus);
@@ -211,7 +211,7 @@ namespace EchoPlay.App.Tests.ViewModels
             int edits = 0;
             OnlineSettingsViewModel viewModel = BuildViewModel(onUserEdit: () => edits++);
 
-            // Der Ausgangswert ist AppleMusic — gewechselt wird deshalb auf Spotify.
+            // Der Ausgangswert ist AppleMusic, gewechselt wird deshalb auf Spotify.
             viewModel.ActiveProvider = ProviderType.Spotify;
 
             Assert.Equal(1, edits);

@@ -20,7 +20,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Der Weg zu einem Cover hat drei Stufen (Datenbank, <c>cover.jpg</c> im Ordner,
-    /// Kennzeichnung der ersten Spur) und dazu zwei Fäden — die Bilddaten kommen vom
+    /// Kennzeichnung der ersten Spur) und dazu zwei Fäden: Die Bilddaten kommen vom
     /// Hintergrund, das Bildobjekt darf nur auf dem Oberflächenfaden entstehen. Das ist eine
     /// eigene Aufgabe und gehört nicht in das Ansichtsmodell der Liste.
     /// </remarks>
@@ -59,7 +59,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverService">Liest Cover aus der Datenbank; ohne ihn entfällt die Stufe.</param>
         /// <param name="logger">Protokollkanal; darf fehlen.</param>
         /// <param name="dispatcherQueue">
-        /// Der Oberflächenfaden. Fehlt er — etwa im Test —, entsteht das Bildobjekt direkt.
+        /// Der Oberflächenfaden. Fehlt er (etwa im Test), entsteht das Bildobjekt direkt.
         /// </param>
         public LocalEpisodeCoverLoader(
             IServiceScopeFactory scopeFactory,
@@ -76,7 +76,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Lädt das Cover einer einzelnen Kachel. Gedacht für die erste, sichtbare Charge —
+        /// Lädt das Cover einer einzelnen Kachel. Gedacht für die erste, sichtbare Charge;
         /// der Aufruf erfolgt bereits auf dem Oberflächenfaden, das Bildobjekt darf hier also
         /// unmittelbar entstehen.
         /// </summary>
@@ -96,13 +96,13 @@ namespace EchoPlay.App.ViewModels
             }
             catch
             {
-                // Cover-Laden darf die Oberfläche nicht aufhalten — der Platzhalter bleibt stehen.
+                // Cover-Laden darf die Oberfläche nicht aufhalten, der Platzhalter bleibt stehen.
             }
         }
 
         /// <summary>
         /// Lädt die übrigen Cover in Chargen nach. Jede Charge wird fertig abgearbeitet, bevor
-        /// die nächste beginnt; bei Abbruch — etwa einem Serienwechsel — endet es sofort.
+        /// die nächste beginnt; bei Abbruch (etwa einem Serienwechsel) endet es sofort.
         /// </summary>
         /// <param name="queue">Die noch offenen Kacheln mit ihren Folgen.</param>
         /// <param name="cancellationToken">Endet mit dem Verlassen der Serie.</param>
@@ -169,7 +169,7 @@ namespace EchoPlay.App.ViewModels
                     }
                     catch (OperationCanceledException)
                     {
-                        // Serienwechsel — erwarteter Abbruch.
+                        // Serienwechsel, also erwarteter Abbruch.
                     }
                     catch
                     {
@@ -188,14 +188,14 @@ namespace EchoPlay.App.ViewModels
             }
             catch (OperationCanceledException)
             {
-                // Serienwechsel — erwarteter Abbruch.
+                // Serienwechsel, also erwarteter Abbruch.
             }
 
             throttle.Dispose();
         }
 
         /// <summary>
-        /// Setzt das Bild auf der Kachel — auf dem Oberflächenfaden, weil das Bildobjekt ein
+        /// Setzt das Bild auf der Kachel, und zwar auf dem Oberflächenfaden, weil das Bildobjekt ein
         /// COM-Objekt ist. Ohne diesen Umweg scheitert es mit einem Fehler, den der
         /// umgebende Auffangblock schluckt, und die Kachel bliebe leer.
         /// </summary>
@@ -204,7 +204,7 @@ namespace EchoPlay.App.ViewModels
         {
             if (_dispatcherQueue is null)
             {
-                // Tests ohne Oberflächenfaden — direkt setzen.
+                // Tests ohne Oberflächenfaden: direkt setzen.
                 card.CoverImage = await EchoPlay.App.Services.CoverService.ConvertToBitmapAsync(bytes, TileDecodeWidth);
                 return;
             }
@@ -221,7 +221,7 @@ namespace EchoPlay.App.ViewModels
                 }
                 catch
                 {
-                    // Fehler auf dem Oberflächenfaden — der Platzhalter bleibt stehen.
+                    // Fehler auf dem Oberflächenfaden. Der Platzhalter bleibt stehen.
                 }
                 finally
                 {
@@ -255,7 +255,7 @@ namespace EchoPlay.App.ViewModels
                 }
             }
 
-            // Die erste Spur wird nur gesucht, wenn im Ordner kein Cover liegt — sonst läge
+            // Die erste Spur wird nur gesucht, wenn im Ordner kein Cover liegt, sonst läge
             // ein Datenbankzugriff je Kachel ohne Nutzen an.
             string? firstTrackPath = null;
 

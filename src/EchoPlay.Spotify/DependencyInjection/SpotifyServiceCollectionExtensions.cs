@@ -23,7 +23,7 @@ namespace EchoPlay.Spotify.DependencyInjection
             _ = services.AddScoped<ISeriesImportSearch, SpotifySeriesImportSearch>();
             _ = services.AddScoped<IEpisodeImportSource, SpotifyEpisodeImportSource>();
 
-            // Keyed-Registrierungen für ImportService – Schlüssel entspricht ProviderType.Spotify.ToString().
+            // Keyed-Registrierungen für ImportService; der Schlüssel entspricht ProviderType.Spotify.ToString().
             _ = services.AddKeyedScoped<ISeriesImportSearch, SpotifySeriesImportSearch>("Spotify");
             _ = services.AddKeyedScoped<IEpisodeImportSource, SpotifyEpisodeImportSource>("Spotify");
 

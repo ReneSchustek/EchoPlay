@@ -2,7 +2,7 @@ namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Lädt ein Cover-Bild aus dem Episodenordner oder den ID3-Tags.
-    /// Gibt rohe Bilddaten zurück – die Konvertierung in ein UI-Bild obliegt dem Aufrufer.
+    /// Gibt rohe Bilddaten zurück; die Konvertierung in ein UI-Bild obliegt dem Aufrufer.
     /// </summary>
     public interface ILocalCoverLoader
     {

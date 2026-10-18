@@ -9,7 +9,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Jede Zeile bringt ihre eigene Schaltfläche mit. Der Umweg über einen Befehl mit
-    /// Parameter wäre in einer Vorlage nur mit <c>DataContext</c>-Griffen zu binden — so
+    /// Parameter wäre in einer Vorlage nur mit <c>DataContext</c>-Griffen zu binden. So
     /// steht in der Vorlage schlicht <c>{x:Bind RestoreCommand}</c>.
     /// </remarks>
     /// <param name="Key">Der ausgeblendete Dialog.</param>

@@ -175,7 +175,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SelectEpisodeAsync_ShowsTitleFromTheFile_AndFallsBackToTheFileName()
         {
             // Rechte Spalte der Serienansicht: gepflegte Datei zeigt den Titel, die
-            // ungepflegte den Dateinamen – beide ohne Endung und ohne die Nummer,
+            // ungepflegte den Dateinamen, beide ohne Endung und ohne die Nummer,
             // die in der Spalte davor steht.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series { Title = "Sherlock Holmes" }, cancellationToken: TestContext.Current.CancellationToken);
@@ -421,7 +421,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await vm.PlayEpisodeAsync(episode.Id);
 
-            // Die Stelle liegt mitten in der Folge — dort wird fortgesetzt.
+            // Die Stelle liegt mitten in der Folge, dort wird fortgesetzt.
             Assert.Equal(TimeSpan.FromMinutes(50), playerService.PlayCalls[0].ResumePosition);
         }
 

@@ -29,7 +29,7 @@ namespace EchoPlay.Logger.Core
         /// </summary>
         /// <param name="loggerFactory">Die Logger-Factory.</param>
         /// <param name="cleanupService">Der Cleanup-Service für alte Log-Dateien.</param>
-        /// <param name="options">Die Logger-Optionen – werden nach DB-Init mit gespeichertem RetentionDays aktualisiert.</param>
+        /// <param name="options">Die Logger-Optionen; werden nach DB-Init mit gespeichertem RetentionDays aktualisiert.</param>
         public LoggerManager(LoggerFactory loggerFactory, LogCleanupService cleanupService, LoggerOptions options)
         {
             Factory = loggerFactory;
@@ -55,7 +55,7 @@ namespace EchoPlay.Logger.Core
         /// <summary>
         /// Setzt das Mindest-Log-Level zur Laufzeit.
         /// Da alle Logger dieselbe <see cref="LoggerOptions"/>-Instanz halten, wirkt die Änderung
-        /// sofort ohne Neustart – kein erneutes Erstellen der Logger-Instanzen nötig.
+        /// sofort ohne Neustart, kein erneutes Erstellen der Logger-Instanzen nötig.
         /// </summary>
         /// <param name="level">Das neue Mindest-Level. Einträge unterhalb werden nicht mehr geschrieben.</param>
         public void UpdateMinimumLevel(Models.LogLevel level)

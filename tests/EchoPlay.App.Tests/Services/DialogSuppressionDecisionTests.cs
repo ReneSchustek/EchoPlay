@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Die Regel hinter dem Häkchen. Das Zeigen des Dialogs braucht ein Fenster und ist
-    /// deshalb nicht prüfbar — diese Entscheidung schon, und sie ist die, bei der ein
+    /// deshalb nicht prüfbar, diese Entscheidung schon, und sie ist die, bei der ein
     /// Fehler weh tut: Ein gemerktes „Abbrechen" würde eine Schaltfläche stumm
     /// wirkungslos machen.
     /// </summary>

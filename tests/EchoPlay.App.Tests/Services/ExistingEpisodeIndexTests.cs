@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Sichert die Wiedererkennung bestehender Folgen ab. Sie entscheidet, ob ein Import
-    /// eine Folge anlegt oder stehen lässt – und damit, ob der Bestand doppelt wird.
+    /// eine Folge anlegt oder stehen lässt, und damit, ob der Bestand doppelt wird.
     /// </summary>
     public sealed class ExistingEpisodeIndexTests
     {
@@ -30,7 +30,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void TryFind_ErkenntFolgeAmTitel_WennKeineKennungGespeichertIst()
         {
-            // Lokal eingelesene Folgen haben keine Album-Kennung – für sie bleibt der Titel
+            // Lokal eingelesene Folgen haben keine Album-Kennung, für sie bleibt der Titel
             // der einzige Anker.
             ExistingEpisodeIndex index = new(
             [

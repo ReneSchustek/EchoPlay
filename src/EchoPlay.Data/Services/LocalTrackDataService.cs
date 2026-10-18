@@ -55,7 +55,7 @@ namespace EchoPlay.Data.Services
 
             // Alle Tracks der angefragten Episoden in einem Roundtrip laden,
             // dann clientseitig je Episode den niedrigsten Tracknummer-Eintrag wählen.
-            // GroupBy + First würde EF zu mehreren Subqueries zwingen – die clientseitige
+            // GroupBy + First würde EF zu mehreren Subqueries zwingen, die clientseitige
             // Variante ist hier schneller, weil die Track-Anzahl pro Episode klein ist.
             List<LocalTrack> allTracks = await _context.LocalTracks
                 .Where(track => episodeIds.Contains(track.EpisodeId))
@@ -88,7 +88,7 @@ namespace EchoPlay.Data.Services
 
             _logger.Debug(() => $"Speichere {tracks.Count} Track(s) für Episode '{episodeId}'.");
 
-            // Vorhandene Einträge hart löschen – Scan-Ergebnisse sind keine Stammdaten
+            // Vorhandene Einträge hart löschen, denn Scan-Ergebnisse sind keine Stammdaten
             List<LocalTrack> existing = await _context.LocalTracks
                 .AsTracking()
                 .Where(track => track.EpisodeId == episodeId)

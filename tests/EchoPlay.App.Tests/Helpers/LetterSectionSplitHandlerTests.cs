@@ -31,7 +31,7 @@ namespace EchoPlay.App.Tests.Helpers
             /// <summary>Der zuletzt angesprungene Abschnitt.</summary>
             public LetterSection? BroughtIntoView { get; private set; }
 
-            /// <summary>Ob das Anspringen gelingt — bildet eine noch nicht gebaute Liste ab.</summary>
+            /// <summary>Ob das Anspringen gelingt; bildet eine noch nicht gebaute Liste ab.</summary>
             public bool CanBringIntoView { get; set; } = true;
 
             public bool TryBringIntoView(LetterSection section)
@@ -100,7 +100,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Ist die Liste nicht nach Namen sortiert, entfällt die Gliederung — sonst behauptete
+        /// Ist die Liste nicht nach Namen sortiert, entfällt die Gliederung, sonst behauptete
         /// sie eine Ordnung, die es dort nicht gibt.
         /// </summary>
         [Fact]
@@ -126,7 +126,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Der Sprung sucht den Abschnitt, in dem der Buchstabe beginnt — und findet ihn auch,
+        /// Der Sprung sucht den Abschnitt, in dem der Buchstabe beginnt, und findet ihn auch,
         /// wenn er unterhalb des Folgenbereichs steht.
         /// </summary>
         [Fact]
@@ -154,7 +154,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// Die Fortsetzung unterhalb des Folgenbereichs trägt denselben Buchstaben, ist aber
-        /// nicht sein Anfang — ein Sprung dorthin landete mitten im Abschnitt.
+        /// nicht sein Anfang, und ein Sprung dorthin landete mitten im Abschnitt.
         /// </summary>
         [Fact]
         public void BringLetterIntoView_SkipsTheContinuationWithoutHeader()
@@ -171,7 +171,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// Nach dem Zuklappen des Folgenbereichs führt der Weg zurück zu der Serie, die offen
-        /// war — nicht an den Anfang und nicht an eine zufällige Stelle.
+        /// war, nicht an den Anfang und nicht an eine zufällige Stelle.
         /// </summary>
         [Fact]
         public void BringItemIntoView_FindsTheSectionHoldingTheTile()
@@ -185,7 +185,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Auch wenn die Kachel unterhalb des Folgenbereichs steht — dort landet nach dem
+        /// Auch wenn die Kachel unterhalb des Folgenbereichs steht: Dort landet nach dem
         /// Aufklappen alles, was hinter der gewählten Serie kommt.
         /// </summary>
         [Fact]
@@ -226,8 +226,8 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Findet die Anzeigestelle den Abschnitt nicht — etwa weil die Liste noch nicht
-        /// aufgebaut ist —, meldet der Handler das, statt einen Sprung vorzutäuschen.
+        /// Findet die Anzeigestelle den Abschnitt nicht (etwa weil die Liste noch nicht
+        /// aufgebaut ist), meldet der Handler das, statt einen Sprung vorzutäuschen.
         /// </summary>
         [Fact]
         public void BringLetterIntoView_WhenTheHostCannotReachIt_ReportsFailure()
@@ -241,7 +241,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Die Größenänderung rechnet nur neu, wenn sich die Kachelzahl je Reihe ändert — sonst
+        /// Die Größenänderung rechnet nur neu, wenn sich die Kachelzahl je Reihe ändert, sonst
         /// baute jede Pixelbewegung am Fensterrand die ganze Liste neu auf.
         /// </summary>
         [Fact]

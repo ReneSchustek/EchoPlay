@@ -71,7 +71,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return EmptyPreview(seriesFolderPath);
             }
 
-            // Parser für die Nummern/Titel-Extraktion – gleiche Muster wie im Scanner
+            // Parser für die Nummern/Titel-Extraktion mit denselben Mustern wie im Scanner
             EpisodeFolderParser configuredParser = new(folderPattern);
             EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(configuredParser);
 
@@ -105,7 +105,7 @@ namespace EchoPlay.LocalLibrary.Scanning
                 });
             }
 
-            // Nach Episodennummer sortieren – Dateien ohne Nummer ans Ende
+            // Nach Episodennummer sortieren, Dateien ohne Nummer ans Ende
             actions.Sort((a, b) =>
             {
                 int numA = a.EpisodeNumber ?? int.MaxValue;
@@ -125,7 +125,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             };
         }
 
-        /// <summary>Dateiname des Journals im Serienordner – wird bei erfolgreichem Umbau gelöscht.</summary>
+        /// <summary>Dateiname des Journals im Serienordner; wird bei erfolgreichem Umbau gelöscht.</summary>
         public const string JournalFileName = ".echoplay-restructure-journal.json";
 
         /// <inheritdoc />
@@ -149,7 +149,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
                     string destination = Path.Combine(action.TargetFolderPath, action.FileName);
 
-                    // Prüfen ob die Zieldatei bereits existiert – Kollision vermeiden
+                    // Prüfen, ob die Zieldatei bereits existiert, um eine Kollision zu vermeiden
                     if (File.Exists(destination))
                     {
                         _logger.Warning("Zieldatei existiert bereits, übersprungen: {Destination}", PathRedactor.Redact(destination));
@@ -199,7 +199,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         }
 
         /// <summary>
-        /// Versucht, ein liegengebliebenes Journal im Serienordner wiederzugeben – etwa nach einem
+        /// Versucht, ein liegengebliebenes Journal im Serienordner wiederzugeben, etwa nach einem
         /// Prozess-Crash zwischen zwei <c>File.Move</c>-Operationen. Gibt die Zahl der zurückgerollten
         /// Dateien zurück (0 wenn kein Journal existiert oder keine Einträge zu rollen sind).
         /// </summary>
@@ -278,7 +278,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
             {
-                // Journal ist Best-Effort – der Umbau läuft auch ohne persistentes Journal weiter.
+                // Journal ist Best-Effort, der Umbau läuft auch ohne persistentes Journal weiter.
                 _logger.Warning("Journal '{JournalPath}' konnte nicht geschrieben werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
             }
         }
@@ -322,11 +322,11 @@ namespace EchoPlay.LocalLibrary.Scanning
                 }
                 catch (IOException)
                 {
-                    // Aufräumen ist Best-Effort – Fehler hier sind nicht kritisch
+                    // Aufräumen ist Best-Effort, Fehler hier sind nicht kritisch
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    // Keine Rechte zum Löschen – nicht kritisch
+                    // Keine Rechte zum Löschen, nicht kritisch
                 }
             }
         }

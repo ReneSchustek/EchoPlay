@@ -67,7 +67,7 @@
             </Button>
         </StackPanel>
 
-        <!-- Suchbereich als Chips. Genau einer ist immer aktiv – ohne Bereich gäbe es
+        <!-- Suchbereich als Chips. Genau einer ist immer aktiv, denn ohne Bereich gäbe es
              nichts zu durchsuchen. -->
         <ctrl:FilterBarControl
             x:Name="SucheScopeBar"

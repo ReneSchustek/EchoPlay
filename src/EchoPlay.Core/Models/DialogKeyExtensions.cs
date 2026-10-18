@@ -13,7 +13,7 @@ namespace EchoPlay.Core.Models
         /// <remarks>
         /// Alles Übrige in EchoPlay ist ein Soft-Delete und lässt sich bis zum Ablauf von
         /// <c>DbPurgeDays</c> zurückholen. Der Tag-Manager schreibt dagegen in die Dateien
-        /// selbst — wer diese Rückfragen abschaltet, verliert die letzte Bremse davor.
+        /// selbst. Wer diese Rückfragen abschaltet, verliert die letzte Bremse davor.
         /// </remarks>
         private static readonly HashSet<DialogKey> WithoutUndo =
         [

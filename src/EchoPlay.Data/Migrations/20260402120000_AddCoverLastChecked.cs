@@ -13,7 +13,7 @@ namespace EchoPlay.Data.Migrations
         {
             ArgumentNullException.ThrowIfNull(migrationBuilder);
 
-            // Zeitpunkt der letzten Cover-Suche – verhindert wiederholtes
+            // Zeitpunkt der letzten Cover-Suche; verhindert wiederholtes
             // Durchsuchen bei Episoden ohne Treffer (Cooldown: 7 Tage).
             _ = migrationBuilder.AddColumn<DateTime>(
                 name: "CoverLastChecked",

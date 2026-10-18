@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void SelectBestMatch_ReturnsExactTrackCountMatch_WhenAvailable()
         {
-            // Ein Ergebnis hat exakt 8 Tracks – das ist der beste Treffer
+            // Ein Ergebnis hat exakt 8 Tracks, das ist der beste Treffer
             IReadOnlyList<TagLookupResult> results =
             [
                 new TagLookupResult { Title = "Falsch", TrackCount = 5 },
@@ -122,7 +122,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task AutoLookupAsync_FiresAutoLookupApplied_WhenExactTrackCountMatches()
         {
-            // Ein Ordner mit 3 Tracks – das MusicBrainz-Ergebnis hat exakt 3 Tracks → Auto-Apply
+            // Ein Ordner mit 3 Tracks; das MusicBrainz-Ergebnis hat exakt 3 Tracks → Auto-Apply
             IReadOnlyList<(string, AudioTag)> folderFiles =
             [
                 (@"D:\test\track1.mp3", new AudioTag()),

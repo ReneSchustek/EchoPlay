@@ -43,7 +43,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <summary>
-        /// Zustandsloses Disposable – Dispose tut nichts.
+        /// Zustandsloses Disposable, Dispose tut nichts.
         /// </summary>
         private sealed class NoOpDisposable : IDisposable
         {

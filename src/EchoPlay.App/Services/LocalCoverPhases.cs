@@ -91,7 +91,7 @@ namespace EchoPlay.App.Services
                 if (ct.IsCancellationRequested) break;
                 if (existingSeries.ContainsKey(series.Id)) continue;
 
-                // firstTrackPath bewusst null – für Serien-Cover kein ID3-Fallback.
+                // firstTrackPath bewusst null, für Serien-Cover kein ID3-Fallback.
                 byte[]? coverBytes = await coverLoader.LoadAsync(series.LocalFolderPath, null);
 
                 if (coverBytes is not null)
@@ -193,7 +193,7 @@ namespace EchoPlay.App.Services
         }
         /// <summary>
         /// Kopiert vorhandene Cover von lokalen Episoden auf Online-Episoden derselben Serie.
-        /// Nutzt <see cref="ICoverCopyService"/> – reines SQL (INSERT OR IGNORE), kein Netzwerk.
+        /// Nutzt <see cref="ICoverCopyService"/>: reines SQL (INSERT OR IGNORE), kein Netzwerk.
         /// Nur Episoden ohne vorhandenes Cover werden befüllt.
         /// Schnell genug für den Splash (eine SQL-Query pro Online-Serie).
         /// </summary>

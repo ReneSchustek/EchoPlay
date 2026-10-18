@@ -25,7 +25,7 @@ namespace EchoPlay.App.Services
     internal sealed class OnlineEpisodeChecker : IOnlineEpisodeChecker
     {
         /// <summary>
-        /// Pause zwischen iTunes-API-Aufrufen – iTunes erlaubt ~20 Requests/Minute.
+        /// Pause zwischen iTunes-API-Aufrufen, denn iTunes erlaubt ~20 Requests/Minute.
         /// 1,5 Sekunden sind ein guter Kompromiss: schnell genug für viele Serien,
         /// aber unter dem Limit von ~20 Anfragen pro Minute.
         /// </summary>
@@ -81,7 +81,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Gemeinsame Schleife für sequenzielle Serienprüfungen mit Rate-Limiting.
-        /// Jede Serie wird einzeln geprüft – Fehler bei einer Serie blockieren die restlichen nicht.
+        /// Jede Serie wird einzeln geprüft; Fehler bei einer Serie blockieren die restlichen nicht.
         /// </summary>
         /// <param name="subscribedSeries">Zu prüfende Serien.</param>
         /// <param name="checkFunc">Prüflogik pro Serie (CheckSingle oder CheckNewReleases).</param>
@@ -297,7 +297,7 @@ namespace EchoPlay.App.Services
                         });
                     }
 
-                    // Albumname merken – wird für die Fehlende-Folgen-Liste benötigt
+                    // Albumname merken, er wird für die Fehlende-Folgen-Liste benötigt
                     _ = episodesByNumber.TryAdd(episodeNumber.Value, album.CollectionName);
 
                     if (episodeNumber.Value > onlineHighest)
@@ -362,7 +362,7 @@ namespace EchoPlay.App.Services
             ITunesResponseDto<ITunesArtistDto> searchResponse = await _appleMusicClient
                 .SearchArtistsAsync(series.Title, limit: 5, ct);
 
-            // Den besten Treffer nehmen – idealerweise exakte Übereinstimmung im Namen
+            // Den besten Treffer nehmen, idealerweise exakte Übereinstimmung im Namen
             ITunesArtistDto? bestMatch = searchResponse.Results
                 .FirstOrDefault(a => string.Equals(a.ArtistName, series.Title, StringComparison.OrdinalIgnoreCase))
                 ?? searchResponse.Results.FirstOrDefault();

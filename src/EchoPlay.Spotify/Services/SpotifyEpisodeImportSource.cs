@@ -25,7 +25,7 @@ namespace EchoPlay.Spotify.Services
 
         /// <summary>
         /// Lädt alle Episoden zu einer importierbaren Serie und stellt diese in stabiler Reihenfolge bereit.
-        /// Schlägt das Laden der Tracks für ein einzelnes Album fehl, wird dieses übersprungen –
+        /// Schlägt das Laden der Tracks für ein einzelnes Album fehl, wird dieses übersprungen;
         /// die Episoden der übrigen Alben bleiben unberührt.
         /// </summary>
         /// <param name="sourceSeriesId">Die Spotify-Artist-ID der Serie.</param>
@@ -43,11 +43,11 @@ namespace EchoPlay.Spotify.Services
 
             _logger.Debug(() => $"Spotify-Episodenimport gestartet für Künstler '{sourceSeriesId}'.");
 
-            // Kein künstliches Limit – alle Alben laden, auch bei Serien mit 200+ Folgen.
+            // Kein künstliches Limit: alle Alben laden, auch bei Serien mit 200+ Folgen.
             // Die Pagination im ApiClient iteriert seitenweise (je 50) bis alle geladen sind.
             IReadOnlyList<SpotifyAlbumDto> albums = await _apiClient.GetArtistAlbumsAsync(sourceSeriesId, limit: int.MaxValue, cancellationToken).ConfigureAwait(false);
 
-            // Neueste zuerst – bei einem abgebrochenen Import (App-Shutdown) liegen so die
+            // Neueste zuerst, denn bei einem abgebrochenen Import (App-Shutdown) liegen so die
             // aktuellsten Folgen bereits vor, statt als Letzte wegzufallen.
             IEnumerable<SpotifyAlbumDto> orderedAlbums = albums.OrderByDescending(a => a.ReleaseDate);
 
@@ -87,7 +87,7 @@ namespace EchoPlay.Spotify.Services
                     }
                 }
 
-                // Ein Album = eine Folge – Tracks werden nur für die Dauerberechnung verwendet
+                // Ein Album = eine Folge, Tracks werden nur für die Dauerberechnung verwendet
                 ImportEpisode episode = SpotifyEpisodeMapper.MapAlbumToEpisode(album, tracks, orderIndex);
                 episodes.Add(episode);
                 orderIndex++;

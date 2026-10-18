@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Schreibt den Hörstand einer Folge in die Datenbank — die Stelle, an der zuletzt
+    /// Schreibt den Hörstand einer Folge in die Datenbank: die Stelle, an der zuletzt
     /// aufgehört wurde, und wann das war.
     /// </summary>
     /// <remarks>
     /// Das läuft nebenher, während die Wiedergabe weitergeht: alle dreißig Sekunden, beim
-    /// Anhalten und beim Beenden der Anwendung. Zwei Regeln machen es unauffällig — es darf
+    /// Anhalten und beim Beenden der Anwendung. Zwei Regeln machen es unauffällig. Es darf
     /// nie zwei Schreibvorgänge gleichzeitig geben, und ein gescheiterter Schreibvorgang darf
     /// die Wiedergabe nicht stören. Beides gehört hierher und nicht in die Ansteuerung des
     /// Abspielgeräts.
@@ -46,8 +46,8 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Speichert die Stelle für eine Folge. Ohne Folgenkennung — etwa bei der Wiedergabe
-        /// eines Ordners — passiert nichts.
+        /// Speichert die Stelle für eine Folge. Ohne Folgenkennung (etwa bei der Wiedergabe
+        /// eines Ordners) passiert nichts.
         /// </summary>
         /// <param name="episodeId">Die Folge, für die gespeichert wird.</param>
         /// <param name="position">Die Stelle in der Folge, nicht in der laufenden Datei.</param>
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Services
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IPlaybackStateDataService service = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-                // Das Sichern darf nicht an einem fremden Abbruchzeichen scheitern — die
+                // Das Sichern darf nicht an einem fremden Abbruchzeichen scheitern, die
                 // Gleichzeitigkeit regelt die eigene Sperre.
                 PlaybackState? existing = await service.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
 

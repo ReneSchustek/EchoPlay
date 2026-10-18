@@ -59,7 +59,7 @@ namespace EchoPlay.Spotify.Tests.Auth
 
             using HttpResponseMessage response = await client.GetAsync(new Uri("v1/me", UriKind.Relative), cancellationToken: TestContext.Current.CancellationToken);
 
-            // Genau zwei Versuche — kein dritter Refresh, kein Infinite-Loop.
+            // Genau zwei Versuche, kein dritter Refresh, kein Infinite-Loop.
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.Equal(2, api.CallCount);
         }

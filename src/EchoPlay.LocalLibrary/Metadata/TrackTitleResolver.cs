@@ -41,7 +41,7 @@ namespace EchoPlay.LocalLibrary.Metadata
                 return [];
             }
 
-            // TagLib# arbeitet synchron und öffnet jede Datei einzeln – auf einem Netzlaufwerk
+            // TagLib# arbeitet synchron und öffnet jede Datei einzeln. Auf einem Netzlaufwerk
             // dauert das spürbar. Der Aufrufer zeigt die Liste deshalb schon vorher mit dem
             // Dateinamen an und tauscht die Titel nach.
             return await Task.Run(() => ReadTitles(tracks, cancellationToken), cancellationToken).ConfigureAwait(false);
@@ -66,7 +66,7 @@ namespace EchoPlay.LocalLibrary.Metadata
 
         /// <summary>
         /// Ermittelt den Anzeigenamen einer einzelnen Spur.
-        /// Ist die Datei nicht lesbar, bleibt der aufgeräumte Dateiname stehen – die Liste
+        /// Ist die Datei nicht lesbar, bleibt der aufgeräumte Dateiname stehen, die Liste
         /// darf an keiner Stelle leer bleiben.
         /// </summary>
         private string ReadTitle(TrackTitleRequest track)

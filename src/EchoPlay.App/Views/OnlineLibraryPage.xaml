@@ -142,7 +142,7 @@
                 SearchText="{x:Bind ViewModel.SearchText, Mode=TwoWay}"
                 Submitted="OnSearchSubmitted"/>
 
-            <!-- Beim Anbieter suchen – nur Icon, Tooltip erklärt die Funktion -->
+            <!-- Beim Anbieter suchen: nur Icon, Tooltip erklärt die Funktion -->
             <Button
                 Grid.Column="1"
                 x:Uid="OnlineProviderSearchButton"
@@ -189,7 +189,7 @@
         </Grid>
 
         <!-- Statusfilter als Chips. Sie schließen einander aus: Eine Serie ist neu, am Hören
-             oder durchgehört — kein Zustand, den man mehrfach ankreuzt. Kein aktiver Chip
+             oder durchgehört, kein Zustand, den man mehrfach ankreuzt. Kein aktiver Chip
              heißt „alle". -->
         <ctrl:FilterBarControl
             x:Name="OnlineFilterBar"
@@ -199,7 +199,7 @@
             FilterToggled="OnFilterToggled"/>
 
         <!-- Buchstabenleiste: springt zum Abschnitt. Sie erscheint nur bei Sortierung nach
-             Namen — bei „Meiste Folgen" gäbe es keine Buchstaben-Ordnung, auf die sie zeigen
+             Namen, denn bei „Meiste Folgen" gäbe es keine Buchstaben-Ordnung, auf die sie zeigen
              könnte. Ebenso nicht über Suchergebnissen, die keine Bibliothek sind. -->
         <ctrl:AlphabetBarControl
             x:Name="SeriesAlphabetBar"
@@ -250,7 +250,7 @@
                 ActionCommand="{x:Bind ViewModel.FocusSearchCommand}"/>
         </Grid>
 
-        <!-- Provider-Suchergebnisse – Layout 1:1 wie Serien-Kacheln -->
+        <!-- Provider-Suchergebnisse, Layout 1:1 wie Serien-Kacheln -->
         <GridView
             Grid.Row="5"
             ItemsSource="{x:Bind ViewModel.ProviderSearchResults, Mode=OneWay}"
@@ -307,7 +307,7 @@
                                     FontSize="10"/>
                             </StackPanel>
                         </Border>
-                        <!-- Checkbox oben links – weiß auf dunklem Cover.
+                        <!-- Checkbox oben links, weiß auf dunklem Cover.
                              Lightweight Styling: lokale Theme-Overrides für die Checkbox-Umrandung -->
                         <CheckBox
                             IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
@@ -321,7 +321,7 @@
                                 <StaticResource x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" ResourceKey="ControlOnDarkMediaBrush"/>
                             </CheckBox.Resources>
                         </CheckBox>
-                        <!-- Checkbox oben links – schwarz auf hellem Cover -->
+                        <!-- Checkbox oben links, schwarz auf hellem Cover -->
                         <CheckBox
                             IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
                             Visibility="{x:Bind DarkBorderVisibility, Mode=OneWay}"
@@ -392,7 +392,7 @@
             VerticalScrollBarVisibility="Auto">
 
             <StackPanel Padding="0,16,0,0">
-                <!-- Serien – Abschnitte oberhalb der Aufklappstelle -->
+                <!-- Serien: Abschnitte oberhalb der Aufklappstelle -->
                 <ItemsControl
                     x:Name="TopSectionsHost"
                     ItemTemplate="{StaticResource OnlineLetterSectionTemplate}"/>
@@ -405,8 +405,8 @@
                     Margin="0,8,0,0"
                     Visibility="{x:Bind ViewModel.LoadingEpisodesVisibility, Mode=OneWay}"/>
 
-                <!-- Akkordeon: Folgen-Bereich – wiederverwendbares Control -->
-                <!-- Episoden-Kacheln ohne Header – Header ist fixiert in Row 2 -->
+                <!-- Akkordeon: Folgen-Bereich als wiederverwendbares Control -->
+                <!-- Episoden-Kacheln ohne Header (Header ist fixiert in Row 2) -->
                 <ctrl:EpisodeAccordionControl
                     x:Name="EpisodeExpansionPanel"
                     Margin="16,0,0,0"
@@ -445,7 +445,7 @@
                     </ctrl:EpisodeAccordionControl.EpisodeTemplate>
                 </ctrl:EpisodeAccordionControl>
 
-                <!-- Serien – Fortsetzung unterhalb der Aufklappstelle -->
+                <!-- Serien: Fortsetzung unterhalb der Aufklappstelle -->
                 <ItemsControl
                     x:Name="BottomSectionsHost"
                     Margin="0,0,0,16"

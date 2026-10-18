@@ -73,12 +73,12 @@ namespace EchoPlay.App.Startup
             AppSettings appSettings = await settingsService.GetAsync();
 
             // Die Sprachvorgabe wird bei jedem Start neu gesetzt. Ohne Paket-Identität
-            // überlebt sie den Prozess nicht — ohne diese Zeile startet die Anwendung
+            // überlebt sie den Prozess nicht. Ohne diese Zeile startet die Anwendung
             // trotz gewählter Sprache wieder in der Systemsprache, während die Auswahl
             // unbenutzt in der Datenbank liegt.
             _ = _context.LanguageSwitchService.ApplyOverride(appSettings.ActiveLanguage);
 
-            // Die Lautstärke gilt ab dem ersten Ton — sie hier zu setzen ist früh genug,
+            // Die Lautstärke gilt ab dem ersten Ton, sie hier zu setzen ist früh genug,
             // weil vor dem Hauptfenster nichts abgespielt wird.
             _context.PlayerService.Volume = appSettings.Volume;
             _context.PlayerService.IsMuted = appSettings.IsMuted;
@@ -93,7 +93,7 @@ namespace EchoPlay.App.Startup
         }
 
         /// <summary>
-        /// Plant die Datenbank-Wartung im Hintergrund. Kein kritischer Pfad — sie darf den
+        /// Plant die Datenbank-Wartung im Hintergrund. Kein kritischer Pfad, sie darf den
         /// Start nicht verzögern. Fehler werden protokolliert, aber nicht durchgereicht.
         /// </summary>
         /// <param name="dbPurgeDays">Aufbewahrungsdauer für gelöschte Datensätze in Tagen.</param>
@@ -112,7 +112,7 @@ namespace EchoPlay.App.Startup
 
                     // Der Hörstatus wird quellenübergreifend abgeglichen. Das läuft hier
                     // mit, weil es dieselbe Bedingung erfüllt: Wartungsarbeit, die den
-                    // Start nicht aufhalten darf. Der Aufruf ist idempotent — nach dem
+                    // Start nicht aufhalten darf. Der Aufruf ist idempotent: nach dem
                     // ersten Lauf findet er nichts mehr und kostet eine Abfrage.
                     IPlaybackStateDataService playbackStates =
                         scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
@@ -131,13 +131,13 @@ namespace EchoPlay.App.Startup
         /// </summary>
         /// <returns>
         /// Der eingerichtete Farbschema-Dienst. Der Aufrufer gleicht damit nach dem Öffnen
-        /// des Fensters das angeforderte Schema nach — vorher gibt es kein Fenster, dem es
+        /// des Fensters das angeforderte Schema nach. Vorher gibt es kein Fenster, dem es
         /// zugewiesen werden könnte.
         /// </returns>
         public async Task<ThemeService> StartBackgroundServicesAsync()
         {
             // Ergänzt fehlende Anbieter-Kennungen. Kein Dateisystem-Durchlauf, kein
-            // Cover-Download — läuft nebenher, ohne das Startbild aufzuhalten.
+            // Cover-Download: läuft nebenher, ohne das Startbild aufzuhalten.
             _context.ProviderIdService.Start();
 
             // Das Farbschema wird vor dem Öffnen des Fensters gesetzt, damit nichts flackert.

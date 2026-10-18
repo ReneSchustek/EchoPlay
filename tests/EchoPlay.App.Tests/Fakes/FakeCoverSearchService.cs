@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.Fakes
             LastPage = page;
             _ = _firstSearch.TrySetResult(title);
 
-            // Nachladen liefert nichts mehr — Tests, die nur die erste Seite brauchen, bleiben
+            // Nachladen liefert nichts mehr; Tests, die nur die erste Seite brauchen, bleiben
             // damit unverändert, und der Dialog blendet das Nachladen korrekt aus.
             return Task.FromResult(page.Index == 0 ? _results : []);
         }

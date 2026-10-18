@@ -15,19 +15,19 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="LogViewerCoordinator"/> — Filter, Aufbereitung der Zeilen und
+    /// Tests für <see cref="LogViewerCoordinator"/>: Filter, Aufbereitung der Zeilen und
     /// die beiden Wege, die ohne vorhandene Dateien auskommen.
     /// </summary>
     /// <remarks>
     /// Das Anlegen echter Protokolldateien bleibt außen vor. Die beiden Fälle, in denen
-    /// nichts da ist — kein Verzeichnis, keine Datei — sind trotzdem prüfbar, und genau
+    /// nichts da ist (kein Verzeichnis, keine Datei), sind trotzdem prüfbar, und genau
     /// sie treffen den Anwender: beim ersten Start und wenn eine Datei gerade rotiert.
     /// </remarks>
     public sealed class LogViewerCoordinatorTests
     {
         private static LoggerManager BuildLoggerManager()
         {
-            // Minimaler LoggerManager ohne Dateilogging — Coordinator nutzt nur LogDirectory.
+            // Minimaler LoggerManager ohne Dateilogging, denn der Coordinator nutzt nur LogDirectory.
             string tmp = Path.Combine(Path.GetTempPath(), "echoplay-tests-" + Guid.NewGuid().ToString("N"));
             LoggerOptions options = new() { LogDirectory = tmp, EnableFileLogging = false, EnableAutoCleanup = false };
             LoggerFactory factory = new([], options);
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Tests.Services
             LogViewerCoordinator coordinator = new(manager, memorySink: null);
 
             // Ohne Puffer gibt es nichts anzuzeigen. Eine leere Liste ist hier die
-            // richtige Antwort — nicht ein Fehler, der die Ansicht aufreißt.
+            // richtige Antwort, nicht ein Fehler, der die Ansicht aufreißt.
             Assert.Empty(coordinator.BuildFilteredLiveEntries(string.Empty, LogLevel.Debug));
         }
 
@@ -92,7 +92,7 @@ namespace EchoPlay.App.Tests.Services
             IReadOnlyList<string> entries = coordinator.BuildFilteredLiveEntries("IMPORT", LogLevel.Debug);
 
             // Der Suchtext kommt aus einem Eingabefeld. Wer dort „import" tippt, erwartet die
-            // Zeile mit „Import" — auf die Schreibweise achtet beim Suchen niemand.
+            // Zeile mit „Import", denn auf die Schreibweise achtet beim Suchen niemand.
             string only = Assert.Single(entries);
             Assert.Contains("Import", only, StringComparison.Ordinal);
         }
@@ -193,7 +193,7 @@ namespace EchoPlay.App.Tests.Services
             await sink.WriteAsync(new LogEntry(DateTime.UtcNow, LogLevel.Information, "Fertig", "ImportService", []));
             LogViewerCoordinator coordinator = new(manager, sink);
 
-            // Wer nach der Herkunft sucht, tippt den Namen des Dienstes ein — nicht den
+            // Wer nach der Herkunft sucht, tippt den Namen des Dienstes ein, nicht den
             // Text der Meldung, den er ja gerade sucht.
             _ = Assert.Single(coordinator.BuildFilteredLiveEntries("ImportService", LogLevel.Trace));
         }

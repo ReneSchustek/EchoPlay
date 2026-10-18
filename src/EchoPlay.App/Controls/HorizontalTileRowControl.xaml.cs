@@ -31,7 +31,7 @@ namespace EchoPlay.App.Controls
         {
             InitializeComponent();
 
-            // ScrollableWidth ändert sich erst nachdem der Content tatsächlich gelayoutet ist –
+            // ScrollableWidth ändert sich erst, nachdem der Content tatsächlich gelayoutet ist.
             // PropertyChangedCallback fängt diesen Moment zuverlässig ab.
             _ = TilesScrollViewer.RegisterPropertyChangedCallback(
                 ScrollViewer.ScrollableWidthProperty,
@@ -42,7 +42,7 @@ namespace EchoPlay.App.Controls
         }
 
         /// <summary>
-        /// Datenquelle für die Kachelreihe – wird an das interne ItemsControl weitergereicht.
+        /// Datenquelle für die Kachelreihe, wird an das interne ItemsControl weitergereicht.
         /// </summary>
         public static readonly DependencyProperty ItemsSourceProperty =
             DependencyProperty.Register(
@@ -62,12 +62,12 @@ namespace EchoPlay.App.Controls
         {
             HorizontalTileRowControl control = (HorizontalTileRowControl)d;
             control.TilesItemsControl.ItemsSource = e.NewValue;
-            // Nach einem ItemsSource-Wechsel kann sich die ScrollableWidth ändern –
+            // Nach einem ItemsSource-Wechsel kann sich die ScrollableWidth ändern;
             // der RegisterPropertyChangedCallback feuert dann automatisch und aktualisiert die Pfeile.
         }
 
         /// <summary>
-        /// Template für die einzelnen Kacheln – wird an das interne ItemsControl weitergereicht.
+        /// Template für die einzelnen Kacheln, wird an das interne ItemsControl weitergereicht.
         /// </summary>
         public static readonly DependencyProperty ItemTemplateProperty =
             DependencyProperty.Register(

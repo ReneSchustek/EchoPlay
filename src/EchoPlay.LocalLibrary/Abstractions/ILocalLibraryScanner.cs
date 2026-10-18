@@ -10,7 +10,7 @@ namespace EchoPlay.LocalLibrary.Abstractions
     {
         /// <summary>
         /// Gibt alle direkten Unterordner des Wurzelverzeichnisses zurück.
-        /// Sehr schnell – nur <c>Directory.GetDirectories</c>, kein Dateisystem-Scan tiefer.
+        /// Sehr schnell: nur <c>Directory.GetDirectories</c>, kein Dateisystem-Scan tiefer.
         /// Ermöglicht dem SyncService eine sofortige Vorab-Anzeige aller erkannten Serienordner.
         /// Bei IO-Fehlern wird eine leere Liste zurückgegeben.
         /// </summary>
@@ -27,15 +27,15 @@ namespace EchoPlay.LocalLibrary.Abstractions
         /// Unterstützte Platzhalter: <c>{number}</c>, <c>{number:000}</c>, <c>{title}</c>.
         /// </param>
         /// <param name="progress">
-        /// Optionaler Fortschritts-Callback – erhält <see cref="ScanProgress"/> nach jeder
+        /// Optionaler Fortschritts-Callback; erhält <see cref="ScanProgress"/> nach jeder
         /// verarbeiteten Episode. Null wenn kein Fortschritt gemeldet werden soll.
         /// </param>
         /// <param name="onSeriesScanned">
         /// Optionaler Callback, der nach jeder vollständig gescannten Serie aufgerufen wird.
         /// Ermöglicht es dem Aufrufer, Serien sofort zu verarbeiten, ohne auf das Gesamtergebnis
-        /// zu warten – Grundlage für die progressive Anzeige in der UI.
+        /// zu warten, als Grundlage für die progressive Anzeige in der UI.
         /// </param>
-        /// <param name="ct">Abbruchtoken – ermöglicht sauberes Beenden bei App-Schließen.</param>
+        /// <param name="ct">Abbruchtoken; ermöglicht sauberes Beenden bei App-Schließen.</param>
         /// <returns>
         /// Liste aller gefundenen Serien mit ihren Episoden.
         /// Gibt eine leere Liste zurück, wenn das Verzeichnis nicht existiert oder leer ist.

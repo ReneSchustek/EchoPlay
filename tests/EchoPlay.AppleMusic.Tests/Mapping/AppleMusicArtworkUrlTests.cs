@@ -7,7 +7,7 @@ namespace EchoPlay.AppleMusic.Tests.Mapping
     /// </summary>
     /// <remarks>
     /// Die Suchantwort liefert nur ein Bild mit 100 Pixeln Kantenlänge. Auf einer Kachel von
-    /// 160 Pixeln ist das sichtbar unscharf — die Größe steht im Pfad und lässt sich ohne
+    /// 160 Pixeln ist das sichtbar unscharf. Die Größe steht im Pfad und lässt sich ohne
     /// eine weitere Anfrage austauschen.
     /// </remarks>
     public sealed class AppleMusicArtworkUrlTests
@@ -35,7 +35,7 @@ namespace EchoPlay.AppleMusic.Tests.Mapping
         [Fact]
         public void WithSize_WithoutASizeInThePath_ReturnsTheUrlUnchanged()
         {
-            // Eine geratene Umschrift führte zu einer Adresse, hinter der kein Bild liegt —
+            // Eine geratene Umschrift führte zu einer Adresse, hinter der kein Bild liegt;
             // dann lieber das kleine Bild als gar keines.
             const string url = "https://example.com/cover";
 

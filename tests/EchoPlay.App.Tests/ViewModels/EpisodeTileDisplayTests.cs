@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Fortschrittsbalken, Haken und Platzhalter.
     /// </summary>
     /// <remarks>
-    /// Die Kachel ist rein darstellend — genau deshalb fällt ein Fehler hier nirgends auf,
+    /// Die Kachel ist rein darstellend, und genau deshalb fällt ein Fehler hier nirgends auf,
     /// außer beim Anwender: Eine Folge, die als gehört gilt, obwohl sie es nicht ist,
     /// verschwindet aus seinem Blick.
     /// </remarks>

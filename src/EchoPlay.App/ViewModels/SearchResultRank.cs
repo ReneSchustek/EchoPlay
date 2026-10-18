@@ -9,7 +9,7 @@ namespace EchoPlay.App.ViewModels
     /// <param name="MatchesQuery">Ob Titel oder Künstler den Suchbegriff enthalten.</param>
     /// <param name="Score">Die Bewertung des Anbieters.</param>
     /// <remarks>
-    /// Die Treffer erscheinen einzeln, sobald sie feststehen — eine Sortierung am Ende gäbe
+    /// Die Treffer erscheinen einzeln, sobald sie feststehen. Eine Sortierung am Ende gäbe
     /// es dafür nicht mehr, sie käme erst, wenn der letzte Anbieter geantwortet hat. Der Rang
     /// wird deshalb je Treffer gebildet, und die Karte wandert beim Einfügen an ihre Stelle.
     /// </remarks>

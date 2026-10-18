@@ -49,11 +49,11 @@ namespace EchoPlay.App.ViewModels
         /// der Page abgebrochen wird. Hält verwaiste HTTP-Requests aus alten Suchläufen draußen.
         /// </param>
         /// <param name="parentViewModel">
-        /// Optionale Referenz auf das übergeordnete SearchViewModel – wird nach
+        /// Optionale Referenz auf das übergeordnete SearchViewModel; wird nach
         /// erfolgreichem Hinzufügen benachrichtigt, um den Erfolgshinweis zu zeigen.
         /// </param>
         /// <param name="onImportCompleted">
-        /// Optionaler Callback nach erfolgreichem Import – z.B. zum Neuladen der Serienliste
+        /// Optionaler Callback nach erfolgreichem Import, z.B. zum Neuladen der Serienliste
         /// in der Online-Mediathek. Wird zusätzlich zu <paramref name="parentViewModel"/> aufgerufen.
         /// </param>
         public SearchResultViewModel(
@@ -88,8 +88,8 @@ namespace EchoPlay.App.ViewModels
 
             // Cover einmal über die zentrale Pipeline laden, BitmapImage erstellen UND Helligkeit analysieren.
             // Auch ohne Adresse: Der erste Schritt der Pipeline ist der Blick in die eigene
-            // Datenbank, und der trägt jeden Treffer, dessen Serie bereits importiert ist —
-            // auf Künstlerebene liefert Apple Music überhaupt kein Artwork.
+            // Datenbank, und der trägt jeden Treffer, dessen Serie bereits importiert ist,
+            // denn auf Künstlerebene liefert Apple Music überhaupt kein Artwork.
             if (_backgroundCoverService is not null && !string.IsNullOrEmpty(importSeries.SourceSeriesId))
             {
                 CoverLoadTask = LoadCoverAndAnalyzeAsync(importSeries.CoverImageUrl);
@@ -113,7 +113,7 @@ namespace EchoPlay.App.ViewModels
         private BitmapImage? _coverImage;
 
         /// <summary>
-        /// Coverbild der Serie – wird asynchron aus den heruntergeladenen Bytes erstellt.
+        /// Coverbild der Serie; wird asynchron aus den heruntergeladenen Bytes erstellt.
         /// Null zeigt den Platzhalter an.
         /// </summary>
         public BitmapImage? CoverImage
@@ -284,14 +284,14 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 // Progress<T> wird auf dem UI-Thread konstruiert und marshallt die Berichte
-                // dorthin zurück – der Import selbst läuft mit ConfigureAwait(false) im Hintergrund.
+                // dorthin zurück, der Import selbst läuft mit ConfigureAwait(false) im Hintergrund.
                 IProgress<string> progress = new Progress<string>(text => ImportStatusText = text);
                 _ = await _importService.ImportAsync(_importSeries, progress, _cancellationToken);
-                // Erst nach erfolgreichem Import den Status setzen – kein optimistisches Update
+                // Erst nach erfolgreichem Import den Status setzen, kein optimistisches Update
                 IsImported = true;
                 _parentViewModel?.NotifySeriesAdded();
 
-                // Callback für die aufrufende Seite – z.B. Online-Mediathek Serienliste aktualisieren
+                // Callback für die aufrufende Seite, z.B. Online-Mediathek Serienliste aktualisieren
                 if (_onImportCompleted is not null)
                 {
                     await _onImportCompleted();

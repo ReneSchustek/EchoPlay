@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void All_Returns_Exactly_Six_Themes()
         {
-            // Sechs Themes sind konfiguriert – wenn eines fehlt oder eines zu viel ist, stimmt etwas nicht
+            // Sechs Themes sind konfiguriert. Wenn eines fehlt oder eines zu viel ist, stimmt etwas nicht
             IReadOnlyList<ThemePreviewViewModel> themes = ThemePreviewViewModel.All;
 
             Assert.Equal(6, themes.Count);
@@ -38,7 +38,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void All_Tags_Are_Unique()
         {
-            // Keine doppelten Tags – sonst würde SyncThemeRadioButton das falsche Theme auswählen
+            // Keine doppelten Tags, sonst würde SyncThemeRadioButton das falsche Theme auswählen
             IReadOnlyList<ThemePreviewViewModel> themes = ThemePreviewViewModel.All;
 
             int distinctCount = themes.Select(t => t.Tag).Distinct().Count();

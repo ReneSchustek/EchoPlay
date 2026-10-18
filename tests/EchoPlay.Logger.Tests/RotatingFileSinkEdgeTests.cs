@@ -16,8 +16,8 @@ namespace EchoPlay.Logger.Tests
     /// </summary>
     /// <remarks>
     /// Die Protokollierung ist Beiwerk. Sie darf den Start der Anwendung nicht verhindern,
-    /// wenn das Verzeichnis nicht beschreibbar ist, und sie darf beim Schreiben nicht werfen
-    /// — sonst reißt sie genau den Weg ab, den sie dokumentieren soll.
+    /// wenn das Verzeichnis nicht beschreibbar ist, und sie darf beim Schreiben nicht werfen,
+    /// sonst reißt sie genau den Weg ab, den sie dokumentieren soll.
     ///
     /// Die Tests arbeiten auf echten Ordnern im Temp-Verzeichnis.
     /// </remarks>
@@ -34,7 +34,7 @@ namespace EchoPlay.Logger.Tests
             try
             {
                 // Ein Pfad mit Nullzeichen lässt sich nicht anlegen. Die Anwendung muss
-                // trotzdem starten — nur eben mit dem Ausweichordner.
+                // trotzdem starten, nur eben mit dem Ausweichordner.
                 using ProbeSink sink = new("C:\\\0kein-pfad", fallbackFolder);
 
                 Assert.True(Directory.Exists(fallbackPath));
@@ -76,7 +76,7 @@ namespace EchoPlay.Logger.Tests
                 await sink.WriteAsync(Entry("erste Zeile nach der Rotation"));
 
                 // Ohne Rotation wüchse eine Datei über den Tag hinweg, bis kein Editor sie
-                // mehr öffnet — genau dann, wenn man sie am dringendsten braucht.
+                // mehr öffnet, genau dann, wenn man sie am dringendsten braucht.
                 Assert.True(File.Exists(Path.Combine(folder, $"{today}_001.log")));
             }
             finally
@@ -124,7 +124,7 @@ namespace EchoPlay.Logger.Tests
                 sut.Cleanup();
 
                 // Ohne Obergrenze frisst das Protokoll über Monate die Platte voll. Die
-                // ältesten Dateien gehen zuerst — der jüngste Lauf ist der interessante.
+                // ältesten Dateien gehen zuerst, denn der jüngste Lauf ist der interessante.
                 Assert.True(Directory.GetFiles(folder, "*.log").Length < 3);
             }
             finally

@@ -25,7 +25,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Gleicht die lokale Bibliothek (Dateisystem) mit den in der Datenbank
     /// gespeicherten Serien und Episoden ab. Der Sync ist manuell auslösbar
-    /// und idempotent — jeder Durchlauf überschreibt vorherige Ergebnisse.
+    /// und idempotent; jeder Durchlauf überschreibt vorherige Ergebnisse.
     ///
     /// Die Hauptmethode <see cref="SyncAsync"/> orchestriert vier Phasen
     /// (Detection / Scan / Materialize-Series / Materialize-Episodes), jede
@@ -39,7 +39,7 @@ namespace EchoPlay.App.Services
         private readonly IScanEventService _scanEventService;
         private readonly ICoverService _coverService;
 
-        // Bringt Folgen und Spuren in die Datenbank — die vierte Phase des Einlesens.
+        // Bringt Folgen und Spuren in die Datenbank, die vierte Phase des Einlesens.
         private readonly LocalEpisodeMaterializer _episodeMaterializer;
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace EchoPlay.App.Services
             IAppSettingsDataService settingsService = sp.GetRequiredService<IAppSettingsDataService>();
             AppSettings settings = await settingsService.GetAsync(cancellationToken);
 
-            // Kein aktiver Bibliothekspfad — Sync nicht möglich
+            // Kein aktiver Bibliothekspfad, Sync nicht möglich
             if (!settings.LocalLibraryEnabled || string.IsNullOrWhiteSpace(settings.LocalLibraryRootPath))
             {
                 return new SyncResult();
@@ -111,7 +111,7 @@ namespace EchoPlay.App.Services
             _scanEventService.BeginScan();
             try
             {
-                // Phase 1: Sofortige Erkennung bekannter Serien — emit-only
+                // Phase 1: Sofortige Erkennung bekannter Serien (emit-only)
                 DetectionResult detection = await RunDetectionPhaseAsync(
                     sp, settings, progress, onSeriesSynced, cancellationToken);
 
@@ -168,7 +168,7 @@ namespace EchoPlay.App.Services
 
             IReadOnlyList<Series> dbSeries = await seriesService.GetAllAsync(cancellationToken);
 
-            // Alle bereits genutzten Ordnerpfade vorberechnen — verhindert Duplikate.
+            // Alle bereits genutzten Ordnerpfade vorberechnen, das verhindert Duplikate.
             HashSet<string> usedFolderPaths = new(
                 dbSeries
                     .Where(s => s.LocalFolderPath is not null)
@@ -178,7 +178,7 @@ namespace EchoPlay.App.Services
             progress?.Report(new ScanProgress { StatusText = SafeResourceLoader.Get("ScanStatusDetectingFolders") });
             IReadOnlyList<string> seriesFolders = scanner.GetSeriesFolders(settings.LocalLibraryRootPath!);
 
-            // Bekannte Serien sofort melden — der Nutzer sieht sie noch vor dem
+            // Bekannte Serien sofort melden. Der Nutzer sieht sie noch vor dem
             // eigentlichen Filesystem-Scan.
             foreach (string folder in seriesFolders)
             {

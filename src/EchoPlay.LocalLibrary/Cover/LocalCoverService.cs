@@ -10,7 +10,7 @@ namespace EchoPlay.LocalLibrary.Cover
     /// Implementierung von <see cref="ILocalCoverService"/>.
     /// Ermittelt das Serien-Logo (Erkennungsbild der Serie) aus lokalen Dateien
     /// oder lädt es per URL herunter. ID3-Tags aus Episoden-Tracks werden bewusst
-    /// ignoriert – sie enthalten Episoden-Artwork, nicht das Serien-Logo.
+    /// ignoriert, denn sie enthalten Episoden-Artwork, nicht das Serien-Logo.
     /// Gefundene Cover werden als <c>cover.jpg</c> im Serienordner persistiert.
     /// </summary>
     public sealed class LocalCoverService : ILocalCoverService
@@ -29,7 +29,7 @@ namespace EchoPlay.LocalLibrary.Cover
             "album.jpg"
         ];
 
-        // Bekannte Windows-Media-Player-Thumbnails – werden nur als letzter Fallback genutzt,
+        // Bekannte Windows-Media-Player-Thumbnails; werden nur als letzter Fallback genutzt,
         // da sie automatisch erzeugt und oft klein oder beschnitten sind.
         private const string AlbumArtLargePattern = "AlbumArt_*_Large.jpg";
 
@@ -47,7 +47,7 @@ namespace EchoPlay.LocalLibrary.Cover
         {
             // ── Schritt 1: Cover-Unterordner ──────────────────────────────────────
             // Manche Serien haben einen "Cover"-Unterordner mit front.jpg / cover.jpg.
-            // Rückseiten ("back") werden ignoriert – wir wollen das Erkennungsbild.
+            // Rückseiten ("back") werden ignoriert, wir wollen das Erkennungsbild.
             byte[]? coverSubfolder = TryReadCoverSubfolder(seriesFolder);
 
             if (coverSubfolder is not null)
@@ -56,7 +56,7 @@ namespace EchoPlay.LocalLibrary.Cover
             }
 
             // ── Schritt 2: Lokale Cover-Datei im Serienordner ─────────────────────
-            // Schnellster Weg – kein Netzwerk, kein ID3-Parsing
+            // Schnellster Weg: kein Netzwerk, kein ID3-Parsing
             byte[]? localFile = TryReadLocalCoverFile(seriesFolder);
 
             if (localFile is not null)
@@ -66,7 +66,7 @@ namespace EchoPlay.LocalLibrary.Cover
 
             // ── Schritt 3: Online-Download ────────────────────────────────────────
             // Nur wenn eine URL konfiguriert ist (z.B. Spotify- oder Apple-Music-Coverbild).
-            // ID3-Cover aus Episoden-Tracks werden nicht verwendet – sie enthalten
+            // ID3-Cover aus Episoden-Tracks werden nicht verwendet, denn sie enthalten
             // Episoden-Artwork, nicht das Serien-Logo.
             if (!string.IsNullOrWhiteSpace(coverImageUrl))
             {
@@ -78,7 +78,7 @@ namespace EchoPlay.LocalLibrary.Cover
                 }
                 catch (HttpRequestException)
                 {
-                    // Netzwerkfehler ignorieren – kein Cover ist kein Abbruchgrund
+                    // Netzwerkfehler ignorieren, denn kein Cover ist kein Abbruchgrund
                 }
                 catch (IOException)
                 {
@@ -91,7 +91,7 @@ namespace EchoPlay.LocalLibrary.Cover
 
         /// <summary>
         /// Sucht im <c>Cover</c>-Unterordner nach einem Front-Cover.
-        /// Dateien mit „back" im Namen werden übersprungen – sie zeigen die Rückseite.
+        /// Dateien mit „back" im Namen werden übersprungen, denn sie zeigen die Rückseite.
         /// Dateien mit „front" im Namen haben Vorrang vor generischen Dateinamen.
         /// </summary>
         /// <returns>Rohe Bilddaten oder <see langword="null"/> wenn kein Unterordner oder kein Cover gefunden.</returns>
@@ -125,7 +125,7 @@ namespace EchoPlay.LocalLibrary.Cover
                 return null;
             }
 
-            // Rückseiten-Dateien ausfiltern – "back" im Dateinamen (Groß-/Kleinschreibung egal)
+            // Rückseiten-Dateien ausfiltern: "back" im Dateinamen (Groß-/Kleinschreibung egal)
             string[] candidates = imageFiles
                 .Where(f => !Path.GetFileNameWithoutExtension(f)
                     .Contains("back", StringComparison.OrdinalIgnoreCase))

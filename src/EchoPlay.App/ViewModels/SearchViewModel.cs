@@ -32,14 +32,14 @@ namespace EchoPlay.App.ViewModels
         private readonly IErrorDialogService _errorDialogService;
         private readonly ILocalizationService _localizationService;
 
-        // Die Durchführung einer Suche — Anbieter fragen, Bestand durchsuchen, Treffer bauen.
+        // Die Durchführung einer Suche: Anbieter fragen, Bestand durchsuchen, Treffer bauen.
         // Das Ansichtsmodell hält davon nur noch Eingabe, Zustand und Liste.
         private readonly SearchRunner _searchRunner;
 
-        // Wird nur für lokale Suche benötigt – in Tests ohne lokale Serien kann null übergeben werden
+        // Wird nur für lokale Suche benötigt; in Tests ohne lokale Serien kann null übergeben werden
         private readonly IServiceScopeFactory? _scopeFactory;
 
-        // Zentraler Navigationsdienst – in Unit-Tests optional, damit der Ctor testbar bleibt
+        // Zentraler Navigationsdienst, in Unit-Tests optional, damit der Ctor testbar bleibt
         private readonly INavigationService? _navigationService;
 
         // Page-Mode-Guard prüft den Offline-Modus beim Betreten der Page; null in Tests
@@ -51,7 +51,7 @@ namespace EchoPlay.App.ViewModels
 
         // Protokolliert Start, ersten Treffer und Gesamtdauer einer Suche. Ohne diese drei
         // Marken lässt sich am Protokoll nicht nachrechnen, wie lange der Nutzer auf die
-        // erste Kachel gewartet hat — und genau das ist die Zahl, auf die es hier ankommt.
+        // erste Kachel gewartet hat, und genau das ist die Zahl, auf die es hier ankommt.
         private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
 
         private readonly Stopwatch _searchStopwatch = new();
@@ -66,7 +66,7 @@ namespace EchoPlay.App.ViewModels
         private int _selectedScopeIndex;
 
         // Eine feste Instanz, die nur geleert und befüllt wird: Die Treffer erscheinen
-        // einzeln, während die Suche noch läuft — ein Austausch der ganzen Liste würde die
+        // einzeln, während die Suche noch läuft. Ein Austausch der ganzen Liste würde die
         // Bindung bei jedem Treffer neu aufziehen.
         private readonly ObservableCollection<SearchResultViewModel> _results = [];
 
@@ -76,7 +76,7 @@ namespace EchoPlay.App.ViewModels
         private readonly List<SearchResultRank> _onlineRanks = [];
 
         // Liste statt Single-TCS: bei Back-to-Back-Suchen laufen mehrere Aufrufe parallel,
-        // die alle abgewartet werden müssen – der älteste verwirft seine Ergebnisse, der
+        // die alle abgewartet werden müssen: Der älteste verwirft seine Ergebnisse, der
         // neueste schreibt sie. Tests warten über WaitForSearchCompleteAsync auf alle.
         private readonly object _inflightSearchesLock = new();
         private readonly List<TaskCompletionSource<bool>> _inflightSearches = [];
@@ -103,7 +103,7 @@ namespace EchoPlay.App.ViewModels
         /// In Unit-Tests kann der Parameter weggelassen werden.
         /// </param>
         /// <param name="pageModeGuard">
-        /// Optionaler Page-Mode-Guard – prüft den Offline-Modus beim Betreten der Page.
+        /// Optionaler Page-Mode-Guard; prüft den Offline-Modus beim Betreten der Page.
         /// In Tests kann der Parameter weggelassen werden, dann wird der Check übersprungen.
         /// </param>
         /// <param name="backgroundCoverService">
@@ -148,7 +148,7 @@ namespace EchoPlay.App.ViewModels
         /// Navigationsparameter (<c>"onboarding"</c> oder ein Suchtext) und löst ggf. eine Suche aus.
         /// Bei aktivem Offline-Modus wird ein Hinweis gezeigt und zurück zur vorherigen Seite navigiert.
         /// </summary>
-        /// <param name="parameter">Navigationsparameter der Page – meist ein String oder <see langword="null"/>.</param>
+        /// <param name="parameter">Navigationsparameter der Page, meist ein String oder <see langword="null"/>.</param>
         public async Task InitializeAsync(object? parameter)
         {
             if (_pageModeGuard is not null && !await _pageModeGuard.EnsureOnlineAccessAsync())
@@ -186,7 +186,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Steuert den Onboarding-Hinweis, der beim allerersten Start erscheint.
         /// Wird auf <see langword="true"/> gesetzt, wenn die Seite mit dem Parameter "onboarding"
-        /// aufgerufen wird – also wenn noch keine Serien in der Datenbank vorhanden sind.
+        /// aufgerufen wird, also wenn noch keine Serien in der Datenbank vorhanden sind.
         /// Verschwindet automatisch, sobald eine Suche gestartet wird.
         /// </summary>
         public bool IsOnboardingHintVisible
@@ -255,7 +255,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Suchergebnisse der laufenden oder zuletzt beendeten Anfrage. Die Liste wächst
-        /// während der Suche — jede Karte erscheint, sobald ihr Treffer feststeht.
+        /// während der Suche, jede Karte erscheint, sobald ihr Treffer feststeht.
         /// </summary>
         public ObservableCollection<SearchResultViewModel> Results => _results;
 
@@ -269,7 +269,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <remarks>
         /// Gesucht wird die erste Stelle, an der die neue Karte vor der bereits stehenden
-        /// rangiert. Eine spät eintreffende, bessere Karte rückt damit nach oben — der Preis
+        /// rangiert. Eine spät eintreffende, bessere Karte rückt damit nach oben. Der Preis
         /// dafür, dass überhaupt schon etwas zu sehen ist, statt auf die vollständige Liste
         /// zu warten.
         /// </remarks>
@@ -305,7 +305,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Schreibt die Wartezeit bis zur ersten Kachel ins Protokoll — einmal je Suche.
+        /// Schreibt die Wartezeit bis zur ersten Kachel ins Protokoll, einmal je Suche.
         /// </summary>
         private void ReportFirstResult()
         {
@@ -338,7 +338,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Wartet auf den Abschluss aller aktuell laufenden Suchanfragen (für deterministische Tests).
         /// Snapshottet die Liste der laufenden Such-TCS, damit Back-to-Back-Suchen vollständig
-        /// abgewartet werden können – auch dann, wenn die ältere Suche aufgrund eines Token-Cancels
+        /// abgewartet werden können, auch dann, wenn die ältere Suche aufgrund eines Token-Cancels
         /// kurz vor dem Abschluss steht.
         /// </summary>
         internal Task WaitForSearchCompleteAsync()
@@ -431,7 +431,7 @@ namespace EchoPlay.App.ViewModels
         /// Reset-/Abbruch-Disziplin: Trefferliste und Status-Hinweise werden
         /// noch vor dem ersten <c>await</c> geleert, damit alte Karten verschwinden bevor
         /// der HTTP-Call startet. Der <see cref="StartNewCoverScope"/>-Token markiert
-        /// zugleich obsolete Suchen – nach jedem Await prüft der Code, ob inzwischen eine
+        /// zugleich obsolete Suchen. Nach jedem Await prüft der Code, ob inzwischen eine
         /// neue Suche begonnen hat und verwirft dann die eigenen Ergebnisse.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Such-Command der Suche-Seite: Provider-HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status gespiegelt, damit der Command nicht reißt.")]
@@ -458,7 +458,7 @@ namespace EchoPlay.App.ViewModels
             string searchText = _searchText;
             SearchSource scope = SelectedScope;
 
-            // Sofort-Reset der Trefferansicht VOR dem ersten Await – die UI zeigt sofort
+            // Sofort-Reset der Trefferansicht VOR dem ersten Await, damit die UI zeigt sofort
             // Loader plus leere Liste, alte Karten verschwinden noch im selben Frame.
             _hasSearched = false;
             ClearResults();
@@ -484,7 +484,7 @@ namespace EchoPlay.App.ViewModels
                     "Suche \"{Query}\" abgeschlossen: {ResultCount} Treffer nach {ElapsedMs} ms.",
                     searchText, _results.Count, _searchStopwatch.ElapsedMilliseconds);
 
-                // Online-Fehlerhinweis erst NACH den lokalen Treffern – die lokale Serie ist
+                // Online-Fehlerhinweis erst NACH den lokalen Treffern, denn die lokale Serie ist
                 // dann bereits sichtbar, unabhängig vom Ausgang des Online-Zweigs.
                 if (outcome.OnlineError is not null && !coverToken.IsCancellationRequested)
                 {
@@ -502,7 +502,7 @@ namespace EchoPlay.App.ViewModels
             }
             finally
             {
-                // Loader nur zurücksetzen, wenn diese Suche noch die aktuelle ist –
+                // Loader nur zurücksetzen, wenn diese Suche noch die aktuelle ist,
                 // sonst flackert der Spinner beim Back-to-Back-Wechsel zwischen den Suchen.
                 if (!coverToken.IsCancellationRequested)
                 {
@@ -574,7 +574,7 @@ namespace EchoPlay.App.ViewModels
             try { old.Cancel(); }
             catch (ObjectDisposedException)
             {
-                // CTS war bereits disposed – Cancel ist dann ein No-Op, der weiter unten folgende
+                // CTS war bereits disposed; Cancel ist dann ein No-Op, der weiter unten folgende
                 // Dispose-Aufruf ist idempotent. Bewusster Schluck ohne Logging.
             }
             old.Dispose();

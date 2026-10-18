@@ -25,7 +25,7 @@ namespace EchoPlay.App.Tests.Services
     /// Das ist der Alltagsfall eines Netzlaufwerks ohne Verbindung oder eines Ordners,
     /// den ein anderes Konto angelegt hat: <see cref="Directory.Exists(string)"/> sagt ja,
     /// das Auflisten scheitert trotzdem. Ein nicht vorhandener Ordner wird vorher
-    /// abgefangen und kommt hier gar nicht an — nur der lesbare-aber-nicht-lesbare Fall
+    /// abgefangen und kommt hier gar nicht an. Nur der lesbare-aber-nicht-lesbare Fall
     /// erreicht diese Zweige.
     ///
     /// Der Test entzieht sich dafür selbst die Leserechte auf einen eigenen Ordner im
@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.Services
                     fixture.SeriesId, folder, MissingEpisodesMode.OfflineOnly,
                     cancellationToken: TestContext.Current.CancellationToken);
 
-                // Der Anwender bekommt einen Satz, der ihm sagt, woran es liegt — statt
+                // Der Anwender bekommt einen Satz, der ihm sagt, woran es liegt, statt
                 // einer leeren Liste, die wie „keine Lücken" aussieht.
                 string line = Assert.Single(lines);
                 Assert.NotEmpty(line);
@@ -68,7 +68,7 @@ namespace EchoPlay.App.Tests.Services
                     MissingEpisodesMode.OfflineOnly,
                     cancellationToken: TestContext.Current.CancellationToken);
 
-                // Im Gesamtbericht fällt die Serie nicht heraus — sie steht ohne Angaben da.
+                // Im Gesamtbericht fällt die Serie nicht heraus, sie steht ohne Angaben da.
                 SeriesMissingEpisodesResult entry = Assert.Single(report.Results);
                 Assert.Empty(entry.LocalGaps);
                 Assert.Equal(0, entry.LocalHighestNumber);
@@ -117,7 +117,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Legt einen Ordner an und entzieht dem laufenden Konto das Auflisten seines
-        /// Inhalts. Der Ordner bleibt vorhanden — nur sein Inhalt ist nicht mehr zu sehen.
+        /// Inhalts. Der Ordner bleibt vorhanden, nur sein Inhalt ist nicht mehr zu sehen.
         /// </summary>
         private static string CreateUnreadableFolder()
         {
@@ -137,7 +137,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Nimmt die Sperre zurück und räumt den Ordner weg. Läuft auch dann, wenn der
-        /// Test scheitert — ein gesperrter Ordner darf nicht liegen bleiben.
+        /// Test scheitert, denn ein gesperrter Ordner darf nicht liegen bleiben.
         /// </summary>
         private static void RestoreAndDelete(string path)
         {

@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
     /// Das Ausschalten deckt <see cref="WatchToggleServiceTests"/> ab. Beim Einschalten
     /// kommt ein Schritt hinzu, den der Anwender sonst nicht bemerkt: Die Neuerscheinungen
     /// werden sofort geholt. Ohne ihn bliebe die Startseite bis zum nächsten Programmstart
-    /// leer — die Serie wäre überwacht, ohne dass es sich zeigt.
+    /// leer, und die Serie wäre überwacht, ohne dass es sich zeigt.
     /// </remarks>
     public sealed class WatchToggleEnableTests
     {

@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync(CancellationToken cancellationToken = default)
         {
-            // Live-Option zuerst – identisches Verhalten wie in der echten Implementierung
+            // Live-Option zuerst, identisches Verhalten wie in der echten Implementierung
             List<LogFileOption> result = [new LogFileOption("Aktuell (Live)", DateTime.MaxValue, null), .. FileOptions];
             return Task.FromResult<IReadOnlyList<LogFileOption>>(result);
         }

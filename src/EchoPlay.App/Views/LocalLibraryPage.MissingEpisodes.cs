@@ -141,7 +141,7 @@ namespace EchoPlay.App.Views
             EchoPlay.App.Services.IFilePickerService picker =
                 App.Services.GetRequiredService<EchoPlay.App.Services.IFilePickerService>();
 
-            // Lokalzeit für den Datei-Namen — der Anwender erkennt seinen heutigen Bericht.
+            // Lokalzeit für den Datei-Namen, damit der Anwender seinen heutigen Bericht erkennt.
             Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync(
                 suggestedFileName: $"Fehlende-Folgen-{DateTime.Now:yyyy-MM-dd}",
                 fileTypeDescription: resources.GetString("CommonTextFileFilter"),

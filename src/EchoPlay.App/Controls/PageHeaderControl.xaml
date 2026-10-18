@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Seitenkopf der Gestaltungslinie: Titel, darunter eine Zeile, die sagt, was man hier
-    tut, rechts die Primäraktion. Steht auf jeder Listen-Seite an derselben Stelle — wer
+    tut, rechts die Primäraktion. Steht auf jeder Listen-Seite an derselben Stelle. Wer
     die Anordnung umstellt, nimmt die Wiedererkennung weg, um die es hier geht.
 -->
 <UserControl

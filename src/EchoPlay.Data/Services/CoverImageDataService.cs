@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// EF-Core-basierte Implementierung für Cover-Binärdaten.
-    /// Alle Blob-Zugriffe laufen über diese Klasse – Metadaten-Services laden nie Bilddaten.
+    /// Alle Blob-Zugriffe laufen über diese Klasse, Metadaten-Services laden nie Bilddaten.
     /// </summary>
     public sealed class CoverImageDataService(
         EchoPlayDbContext context,
@@ -45,7 +45,7 @@ namespace EchoPlay.Data.Services
 
             if (entityIds.Count == 0) return new Dictionary<Guid, byte[]>(0);
 
-            // Ein einziger Query mit WHERE EntityId IN (...) – kein N+1
+            // Ein einziger Query mit WHERE EntityId IN (...), kein N+1
             List<CoverImage> covers = await _context.CoverImages
 
                 .Where(c => c.EntityType == entityType && entityIds.Contains(c.EntityId))
@@ -94,7 +94,7 @@ namespace EchoPlay.Data.Services
             }
             else
             {
-                // Neuen Eintrag anlegen – bei UNIQUE-Konflikt (paralleler Insert)
+                // Neuen Eintrag anlegen, bei UNIQUE-Konflikt (paralleler Insert)
                 // wird der Fehler abgefangen und als Update wiederholt.
                 try
                 {

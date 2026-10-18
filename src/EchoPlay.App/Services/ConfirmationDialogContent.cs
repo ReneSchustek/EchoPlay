@@ -4,7 +4,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Reine Datenstruktur für einen Bestätigungs-Dialog. Enthält die vier
-    /// Texte, die der WinUI-Renderer in den ContentDialog übernimmt — der
+    /// Texte, die der WinUI-Renderer in den ContentDialog übernimmt. Der
     /// Aufbau dieser Texte (inkl. lokalisierter Default-Buttons) bleibt
     /// dadurch ohne XamlRoot testbar.
     /// </summary>

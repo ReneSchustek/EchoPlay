@@ -9,7 +9,7 @@ namespace EchoPlay.LocalLibrary.Cover
     /// <summary>
     /// Fasst mehrere <see cref="ICoverSearchService"/>-Implementierungen zusammen
     /// und führt die Ergebnisse aller Anbieter in einer einzigen Liste zusammen.
-    /// Die Suchen laufen parallel – ein fehlgeschlagener Anbieter blockiert die anderen nicht.
+    /// Die Suchen laufen parallel, ein fehlgeschlagener Anbieter blockiert die anderen nicht.
     /// </summary>
     public sealed class CompositeCoverSearchService : ICoverSearchService
     {

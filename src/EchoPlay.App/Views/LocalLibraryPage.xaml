@@ -80,7 +80,7 @@
 
         <!-- Ein Buchstaben-Abschnitt: Überschrift und die Kacheln darunter.
              Die Vorlage steht hier und nicht in einem eigenen Control, weil das Kachel-Menü
-             oben an Handler dieser Seite gebunden ist – die greifen nur im selben Dokument. -->
+             oben an Handler dieser Seite gebunden ist, denn die greifen nur im selben Dokument. -->
         <DataTemplate x:Key="LokalLetterSectionTemplate" x:DataType="helpers:LetterSection">
             <StackPanel AutomationProperties.Name="{x:Bind AutomationName}">
                 <TextBlock
@@ -136,7 +136,7 @@
                                 Margin="0,8,16,0" Canvas.ZIndex="1"/>
 
         <!-- Scan-Hinweis: erscheint während ein Scan oder eine Neu-Initialisierung läuft.
-             Kurze, neutrale Meldung oben – Details stehen in der Statusleiste unten. -->
+             Kurze, neutrale Meldung oben; Details stehen in der Statusleiste unten. -->
         <InfoBar
             Grid.Row="0"
             x:Uid="LokalScanningHint"
@@ -240,14 +240,14 @@
             Margin="8,0,8,4"/>
 
         <!-- Buchstabenleiste: springt zum Abschnitt, filtert nicht. Sie steht über der
-             Liste und scrollt nicht mit – ein Anlaufpunkt, der wegscrollt, ist keiner. -->
+             Liste und scrollt nicht mit, denn ein Anlaufpunkt, der wegscrollt, ist keiner. -->
         <ctrl:AlphabetBarControl
             x:Name="SeriesAlphabetBar"
             Grid.Row="6"
             Margin="16,0,16,4"
             LetterSelected="OnLetterSelected"/>
 
-        <!-- Akkordeon-Inhalt – Serien-Abschnitte aufgeteilt um das Folgen-Panel -->
+        <!-- Akkordeon-Inhalt: Serien-Abschnitte aufgeteilt um das Folgen-Panel -->
         <!-- Episoden-Header: fixiert außerhalb des ScrollViewers, scrollt nicht mit -->
         <StackPanel Grid.Row="7" Padding="16,4,16,4"
                     Visibility="{x:Bind ViewModel.ArtistsVM.EpisodesAccordionVisibility, Mode=OneWay}">
@@ -353,7 +353,7 @@
                     Visibility="{x:Bind ViewModel.ArtistsVM.NoResultsVisibility, Mode=OneWay}"
                     Margin="16,32,16,0"/>
 
-                <!-- Serien – Abschnitte oberhalb der Aufklappstelle -->
+                <!-- Serien: Abschnitte oberhalb der Aufklappstelle -->
                 <ItemsControl
                     x:Name="TopSectionsHost"
                     ItemTemplate="{StaticResource LokalLetterSectionTemplate}"/>
@@ -367,7 +367,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Linke Spalte: Episoden-Kacheln ohne Header – Header ist fixiert in Row 4 -->
+                    <!-- Linke Spalte: Episoden-Kacheln ohne Header (Header ist fixiert in Row 4) -->
                     <ctrl:EpisodeAccordionControl
                         x:Name="EpisodeAccordion"
                         Grid.Column="0"
@@ -524,7 +524,7 @@
                     </Grid>
                 </Grid>
 
-                <!-- Serien – Fortsetzung unterhalb der Aufklappstelle. Gleiche Vorlage wie
+                <!-- Serien: Fortsetzung unterhalb der Aufklappstelle. Gleiche Vorlage wie
                      oben, damit Überschriften, Indikatoren und Kontextmenü übereinstimmen. -->
                 <ItemsControl
                     x:Name="BottomSectionsHost"

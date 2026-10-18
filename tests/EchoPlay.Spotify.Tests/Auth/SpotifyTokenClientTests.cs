@@ -78,7 +78,7 @@ namespace EchoPlay.Spotify.Tests.Auth
         public async Task GetAccessTokenAsync_Throws_WhenCredentialsMissing()
         {
             RecordingHandler handler = new();
-            // Test-Fixture – Ausnahme von der IHttpClientFactory-Pflicht: der RecordingHandler ist ein
+            // Test-Fixture als Ausnahme von der IHttpClientFactory-Pflicht: Der RecordingHandler ist ein
             // Test-Double, das genau diesem Client ungeteilt zugeordnet sein muss, damit CallCount stimmt.
             SpotifyTokenClient tokenClient = new(
                 new SingleHttpClientFactory(new HttpClient(handler) { BaseAddress = new Uri("https://accounts.spotify.test/") }),
@@ -92,7 +92,7 @@ namespace EchoPlay.Spotify.Tests.Auth
 
         private static SpotifyTokenClient CreateTokenClient(HttpMessageHandler handler)
         {
-            // Test-Fixture – Ausnahme von der IHttpClientFactory-Pflicht: jeder Test liefert seinen eigenen
+            // Test-Fixture als Ausnahme von der IHttpClientFactory-Pflicht: jeder Test liefert seinen eigenen
             // RecordingHandler als Test-Double; der muss ungeteilt in diesen Client gehängt werden.
             HttpClient httpClient = new(handler) { BaseAddress = new Uri("https://accounts.spotify.test/") };
             return new SpotifyTokenClient(

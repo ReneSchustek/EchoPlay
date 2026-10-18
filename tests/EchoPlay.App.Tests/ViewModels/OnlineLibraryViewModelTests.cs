@@ -272,7 +272,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Guid tkkg = seriesService.All.First(s => s.Title == "TKKG").Id;
             Guid globi = seriesService.All.First(s => s.Title == "Globi").Id;
 
-            // TKKG: 1 ungehörte Episode – Fake-Zähler vorkonfigurieren, da der Fake
+            // TKKG: 1 ungehörte Episode; Fake-Zähler vorkonfigurieren, da der Fake
             // keine Episode-zu-Serie-Zuordnung kennt und keine Eigenberechnung möglich ist.
             FakePlaybackStateDataService stateServiceWithCounts = new(
                 seriesCounts: new Dictionary<Guid, (int, int, int)>
@@ -343,7 +343,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Single(vm.Series);
             Assert.False(vm.Series[0].IsSubscribed);
 
-            // Toggle auslösen – FakeConfirmationDialogService bestätigt automatisch
+            // Toggle auslösen, FakeConfirmationDialogService bestätigt automatisch
             vm.Series[0].ToggleSubscriptionCommand.Execute(null);
 
             Assert.True(vm.Series[0].IsSubscribed);
@@ -400,7 +400,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.DeselectSeries();
 
             // Bleibt die Folgenliste stehen, gehört sie zu einer Serie, die nicht mehr
-            // ausgewählt ist — der nächste Klick trifft dann die falsche Folge.
+            // ausgewählt ist, denn der nächste Klick trifft dann die falsche Folge.
             Assert.Empty(vm.EpisodesVM.Episodes);
         }
 

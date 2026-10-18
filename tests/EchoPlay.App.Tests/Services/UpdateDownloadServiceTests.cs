@@ -54,7 +54,7 @@ namespace EchoPlay.App.Tests.Services
         [InlineData("1.2.3.4")]
         public async Task DownloadAndInstallAsync_ValidVersion_ProceedsToHttpRequest(string version)
         {
-            // ContentLength bewusst falsch, damit der Ablauf nach dem Download abbricht —
+            // ContentLength bewusst falsch, damit der Ablauf nach dem Download abbricht;
             // wir prüfen nur, dass die Whitelist passiert wurde.
             (UpdateDownloadService service, RecordingHandler handler, _) = BuildService(
                 payload: new byte[10],
@@ -139,7 +139,7 @@ namespace EchoPlay.App.Tests.Services
         [InlineData("   ")]
         public async Task DownloadAndInstallAsync_NoHashInReleaseBody_ReturnsFalseWithoutDownload(string missingHash)
         {
-            // Ohne Hash gibt es keine Integritätsprüfung — und ohne Integritätsprüfung
+            // Ohne Hash gibt es keine Integritätsprüfung, und ohne Integritätsprüfung
             // keine Installation. Sonst genügte es, die SHA-Zeile aus dem Release-Body
             // zu streichen, um den Schutz auszuhebeln.
             (UpdateDownloadService service, RecordingHandler handler, FakeInstallerLauncher launcher) = BuildService(
@@ -199,7 +199,7 @@ namespace EchoPlay.App.Tests.Services
             using CancellationTokenSource cts = new();
             await cts.CancelAsync();
 
-            // Cancellation wird intern als Exception abgefangen und auf false gemappt — der Nutzer
+            // Cancellation wird intern als Exception abgefangen und auf false gemappt, der Nutzer
             // kann es beim nächsten Start erneut versuchen.
             bool result = await service.DownloadAndInstallAsync(
                 downloadUrl: ValidUrl,
@@ -242,7 +242,7 @@ namespace EchoPlay.App.Tests.Services
                 payload: [9, 9, 9],
                 contentLength: 3);
 
-            // 64 Zeichen, aber 'z' ist kein Hex — Convert.FromHexString muss werfen.
+            // 64 Zeichen, aber 'z' ist kein Hex, also muss Convert.FromHexString werfen.
             string invalidHash = new('z', 64);
 
             bool result = await service.DownloadAndInstallAsync(
@@ -262,7 +262,7 @@ namespace EchoPlay.App.Tests.Services
                 payload: [42],
                 contentLength: 1);
 
-            // 32 Hex-Zeichen = 16 Bytes — gültiges Hex, aber falsche Länge für SHA-256 (32 Bytes).
+            // 32 Hex-Zeichen = 16 Bytes, gültiges Hex, aber falsche Länge für SHA-256 (32 Bytes).
             string shortHash = new('a', 32);
 
             bool result = await service.DownloadAndInstallAsync(
@@ -296,7 +296,7 @@ namespace EchoPlay.App.Tests.Services
                 Assert.True(result);
                 Assert.Equal(tempPath, Assert.Single(launcher.StartedPaths));
 
-                // Im Erfolgsfall bleibt die Datei liegen — der Installer braucht sie noch.
+                // Im Erfolgsfall bleibt die Datei liegen, denn der Installer braucht sie noch.
                 Assert.True(File.Exists(tempPath));
             }
             finally

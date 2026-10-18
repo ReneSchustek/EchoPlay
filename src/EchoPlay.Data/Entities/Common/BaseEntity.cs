@@ -7,7 +7,7 @@ namespace EchoPlay.Data.Entities.Common
     /// Basisklasse für alle persistierten Entitäten.
     /// Enthält ausschließlich technische Lebenszyklusinformationen wie Identität, Zeitstempel und Soft-Delete-Zustand.
     ///
-    /// Alle Properties haben <c>protected set</c> – sie können nur über die definierten Methoden
+    /// Alle Properties haben <c>protected set</c>; sie können nur über die definierten Methoden
     /// verändert werden. Das verhindert, dass z.B. <c>IsDeleted = true</c> direkt von außen gesetzt
     /// wird und dabei Zeitstempel oder Idempotenzlogik umgangen werden.
     /// </summary>
@@ -15,7 +15,7 @@ namespace EchoPlay.Data.Entities.Common
     {
         /// <summary>
         /// Eindeutige Identifikation der Entität.
-        /// EF Core setzt die Id beim ersten <c>SaveChangesAsync</c> – vorher ist sie <see cref="Guid.Empty"/>.
+        /// EF Core setzt die Id beim ersten <c>SaveChangesAsync</c>, vorher ist sie <see cref="Guid.Empty"/>.
         /// </summary>
         public Guid Id { get; protected set; }
 

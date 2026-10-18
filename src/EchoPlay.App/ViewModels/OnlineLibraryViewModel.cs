@@ -118,7 +118,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Wird ausgelöst, wenn der Empty-State-Button „Serie suchen" geklickt wurde.
-        /// Die Page setzt den Fokus auf die Suchbox – im VM existiert kein WinUI-Konzept.
+        /// Die Page setzt den Fokus auf die Suchbox, denn im VM existiert kein WinUI-Konzept.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Fokus-Signal ohne Nutzdaten: die Page setzt Focus auf die Suchbox, das VM kennt keinen FocusManager; Action ist semantisch klarer als leerer EventArgs.")]
         public event Action? FocusSearchRequested;
@@ -134,10 +134,10 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Prüft alle Online-Serien auf neue Folgen beim Provider.</summary>
         public ICommand RefreshCommand { get; }
 
-        /// <summary>Navigiert in die Einstellungen – aus dem Empty-State „Kein Anbieter".</summary>
+        /// <summary>Navigiert in die Einstellungen, aus dem Empty-State „Kein Anbieter".</summary>
         public ICommand GoToSettingsCommand { get; }
 
-        /// <summary>Setzt den Fokus auf die Suchleiste – aus dem Empty-State „Keine Serien".</summary>
+        /// <summary>Setzt den Fokus auf die Suchleiste, aus dem Empty-State „Keine Serien".</summary>
         public ICommand FocusSearchCommand { get; }
 
         // ── Top-Level-Zustand ───────────────────────────────────────────────────
@@ -155,7 +155,7 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        /// <summary>Statustext während des Ladevorgangs – z.B. bei der Episoden-Nachladung.</summary>
+        /// <summary>Statustext während des Ladevorgangs, z.B. bei der Episoden-Nachladung.</summary>
         public string LoadingStatusText
         {
             get => _loadingStatusText;
@@ -196,12 +196,12 @@ namespace EchoPlay.App.ViewModels
             !ProviderSearchVM.HasResults && !ProviderSearchVM.IsSearchingProvider
                 ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>Sichtbarkeit des Suchtyp-Filters – nur bei aktiven Suchergebnissen.</summary>
+        /// <summary>Sichtbarkeit des Suchtyp-Filters, nur bei aktiven Suchergebnissen.</summary>
         public Visibility SearchTypeFilterVisibility =>
             ProviderSearchVM.HasResults || ProviderSearchVM.IsSearchingProvider
                 ? Visibility.Visible : Visibility.Collapsed;
 
-        /// <summary>Sichtbarkeit des Statusfilters – nur in der Bibliothek (keine Suchergebnisse).</summary>
+        /// <summary>Sichtbarkeit des Statusfilters, nur in der Bibliothek (keine Suchergebnisse).</summary>
         public Visibility StatusFilterVisibility =>
             !ProviderSearchVM.HasResults && !ProviderSearchVM.IsSearchingProvider
                 ? Visibility.Visible : Visibility.Collapsed;
@@ -274,7 +274,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Schreibt den gewählten Folgen-Sortierindex in die AppSettings. Fehler werden bewusst
-        /// verschluckt – eine nicht gespeicherte Sortier-Vorliebe ist kein nutzerrelevanter Fehler.
+        /// verschluckt, denn eine nicht gespeicherte Sortier-Vorliebe ist kein nutzerrelevanter Fehler.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort-Persistenz einer UI-Vorliebe: DB-/SQLite-Fehler beim Speichern der Sortierung dürfen die bereits angewandte Sortierung und die UI nicht beeinträchtigen.")]
         private async Task PersistEpisodeSortIndexAsync(int sortIndex)

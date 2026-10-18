@@ -55,7 +55,7 @@ Start-Sleep -Milliseconds 600
 Start-Sleep -Seconds 2
 
 # Prüfen, dass EchoPlay wirklich vorn liegt. Schiebt sich ein anderes Fenster davor, zeigt die
-# Aufnahme dessen Inhalt — einmal passiert und nur aufgefallen, weil das Bild angesehen wurde.
+# Aufnahme dessen Inhalt. Einmal passiert und nur aufgefallen, weil das Bild angesehen wurde.
 [void][Native.Window]::SetForegroundWindow($handle)
 Start-Sleep -Seconds 2
 

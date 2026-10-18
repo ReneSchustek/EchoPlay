@@ -18,7 +18,7 @@ namespace EchoPlay.App.ViewModels
     /// Sub-ViewModel für den Verwaltung- und Protokolle-Tab der Einstellungsseite.
     /// Vereint Datenbankpflege (Cache leeren, Purge, VACUUM, Reset) und den Log-Viewer
     /// (Datei-Auswahl, Live-Puffer, Filter), weil beide Bereiche operativ zusammengehören
-    /// und keinen eigenen Settings-Zustand mehr tragen müssen – die Entität speichert nur
+    /// und keinen eigenen Settings-Zustand mehr tragen müssen. Die Entität speichert nur
     /// <see cref="DbPurgeDays"/> und <see cref="ClearCacheOnNextStart"/>.
     /// </summary>
     public sealed class MaintenanceSettingsViewModel : ObservableObject
@@ -27,7 +27,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ILogViewerCoordinator _logViewerCoordinator;
         private readonly Action _onUserEdit;
 
-        // DispatcherTimer für Live-View – aktualisiert den Log-Puffer alle 2 Sekunden
+        // DispatcherTimer für Live-View; aktualisiert den Log-Puffer alle 2 Sekunden
         private DispatcherTimer? _liveViewTimer;
 
         private bool _isBatchLoading;
@@ -141,7 +141,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Invertierter Wartungszustand für Button-IsEnabled-Bindings.
-        /// WinUI 3 hat keinen eingebauten BoolNegation-Converter – dieses Property ersetzt ihn.
+        /// WinUI 3 hat keinen eingebauten BoolNegation-Converter, dieses Property ersetzt ihn.
         /// </summary>
         public bool IsNotMaintaining => !_isMaintaining;
 
@@ -277,7 +277,7 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<LogFileOption> options = await _logViewerCoordinator.LoadLogFileOptionsAsync();
             AvailableLogFiles = options;
 
-            // Nur beim ersten Laden auf Live setzen – danach Auswahl des Nutzers beibehalten
+            // Nur beim ersten Laden auf Live setzen, danach Auswahl des Nutzers beibehalten
             if (_selectedLogFile is null && options.Count > 0)
             {
                 _selectedLogFile = options[0];
@@ -326,7 +326,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Erstellt beim ersten Aufruf den <see cref="DispatcherTimer"/> und startet ihn.
-        /// Der Timer muss im UI-Thread erstellt werden – das ViewModel wird immer dort instanziiert.
+        /// Der Timer muss im UI-Thread erstellt werden, und das ViewModel wird immer dort instanziiert.
         /// </summary>
         private void StartLiveViewTimer()
         {
@@ -343,12 +343,12 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Tick-Handler – lädt den MemorySink-Puffer neu.
-        /// Ist eine Datei gewählt, passiert nichts – historische Logs ändern sich nicht.
+        /// Tick-Handler: lädt den MemorySink-Puffer neu.
+        /// Ist eine Datei gewählt, passiert nichts, denn historische Logs ändern sich nicht.
         /// </summary>
         private void OnLiveViewTimerTick(object? sender, object e)
         {
-            // Nur im Live-Modus aktualisieren – Datei-Logs sind statisch
+            // Nur im Live-Modus aktualisieren, Datei-Logs sind statisch
             if (_selectedLogFile?.FilePath is null)
             {
                 RefreshLogs();
@@ -469,7 +469,7 @@ namespace EchoPlay.App.ViewModels
         public void WriteTo(AppSettings settings)
         {
             ArgumentNullException.ThrowIfNull(settings);
-            // 0 ist erlaubt – bedeutet sofortige Bereinigung aller soft-gelöschten Einträge
+            // 0 ist erlaubt und bedeutet sofortige Bereinigung aller soft-gelöschten Einträge
             settings.DbPurgeDays = Math.Max(0, DbPurgeDays);
             settings.ClearCacheOnNextStart = ClearCacheOnNextStart;
             settings.DbBackupEnabled = DbBackupEnabled;

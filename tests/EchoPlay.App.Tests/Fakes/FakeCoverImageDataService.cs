@@ -124,7 +124,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Meldet sich über <see cref="BatchesReached"/>, sobald so viele Sammelabfragen
-        /// eingegangen sind. Wartepunkt für Abläufe, die nebenher weiterarbeiten — ohne
+        /// eingegangen sind. Wartepunkt für Abläufe, die nebenher weiterarbeiten. Ohne
         /// ihn bliebe nur eine Wartezeit, und die macht den Test von der Laufgeschwindigkeit
         /// abhängig.
         /// </summary>

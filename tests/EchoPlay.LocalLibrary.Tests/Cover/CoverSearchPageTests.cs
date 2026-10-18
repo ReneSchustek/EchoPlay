@@ -69,7 +69,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public void SeitengroesseNull_WirdAbgewiesen()
         {
             // Ohne Guard wäre die Division im Discogs-URL-Aufbau ein Divide-by-zero und die
-            // Grenze 0 — eine Anfrage, die nie etwas liefert.
+            // Grenze 0: eine Anfrage, die nie etwas liefert.
             _ = Assert.Throws<ArgumentOutOfRangeException>(
                 () => CoverSearchPage.First.ToWindow(pageSize: 0, supportsOffset: true));
         }

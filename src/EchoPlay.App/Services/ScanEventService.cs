@@ -6,7 +6,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Implementierung des <see cref="IScanEventService"/>.
-    /// Als Singleton registriert – überlebt Navigation zwischen Seiten.
+    /// Als Singleton registriert, überlebt Navigation zwischen Seiten.
     /// <see cref="IsScanRunning"/> ist thread-sicher via <c>Interlocked</c>,
     /// da <see cref="SyncService"/> den Scan auf einem Hintergrundthread starten kann.
     /// </summary>

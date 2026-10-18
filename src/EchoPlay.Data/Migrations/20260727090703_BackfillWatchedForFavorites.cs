@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Migrations
             // Reine Datenmigration, kein Schema-Wechsel: Favorit impliziert seit dieser Version
             // Überwachung. Bestände, die vor der Regel entstanden sind (neu eingelesene Serien
             // starten mit IsWatched = 0), hätten sonst dauerhaft favorisierte, aber unbeobachtete
-            // Serien – und damit einen leeren Neuerscheinungen-Abschnitt ohne erkennbaren Grund.
+            // Serien und damit einen leeren Neuerscheinungen-Abschnitt ohne erkennbaren Grund.
             _ = migrationBuilder.Sql(
                 "UPDATE Series SET IsWatched = 1 WHERE IsFavorite = 1 AND IsWatched = 0;");
         }
@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Migrations
 
             // Nicht umkehrbar: welche Serien vor dem Backfill unbeobachtet waren, ist nachträglich
             // nicht mehr feststellbar. Ein pauschales Zurücksetzen würde bewusst gesetzte
-            // Überwachungen mit abräumen – deshalb bleibt der Rückweg absichtlich leer.
+            // Überwachungen mit abräumen, deshalb bleibt der Rückweg absichtlich leer.
         }
     }
 }

@@ -20,7 +20,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Baut den Neuerscheinungs-Abschnitt der Startseite: aus den zwischengespeicherten
     /// Einträgen des Anbieters werden Kacheln, die nach Monat gruppiert erscheinen.
-    /// „Angekündigt" — alles mit Datum in der Zukunft — steht als eigene Gruppe ganz oben,
+    /// „Angekündigt" (alles mit Datum in der Zukunft) steht als eigene Gruppe ganz oben,
     /// darunter die Monate mit dem neuesten zuerst. Bereits gehörte Folgen fallen heraus.
     /// </summary>
     internal sealed class NewReleaseGroupBuilder
@@ -55,7 +55,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Baut die Gruppen aus den zwischengespeicherten Einträgen. Schlägt der Zugriff
-        /// fehl, bleibt der Abschnitt leer und der Vorfall steht im Protokoll — die
+        /// fehl, bleibt der Abschnitt leer und der Vorfall steht im Protokoll. Die
         /// Startseite selbst darf daran nicht scheitern.
         /// </summary>
         /// <param name="subscribedSeries">Die abonnierten Serien; nur überwachte werden gezeigt.</param>
@@ -118,7 +118,7 @@ namespace EchoPlay.App.ViewModels
             {
                 Series? series = FindSeriesById(subscribedSeries, entry.SeriesId);
 
-                // Nur überwachte Serien anzeigen — nicht überwachte werden übergangen.
+                // Nur überwachte Serien anzeigen, nicht überwachte werden übergangen.
                 if (series is null || !series.IsWatched)
                 {
                     continue;
@@ -145,7 +145,7 @@ namespace EchoPlay.App.ViewModels
         {
             (BitmapImage? cover, bool hasEpisodeCover) = await ResolveCoverAsync(entry, series, match.EpisodeId);
 
-            // Ohne lokalen Treffer gibt es noch gar keine Folgen-Id — die Kachel bekommt eine
+            // Ohne lokalen Treffer gibt es noch gar keine Folgen-Id, die Kachel bekommt eine
             // eigene, damit die Liste eindeutig bleibt.
             Guid cardEpisodeId = match.EpisodeId != Guid.Empty ? match.EpisodeId : Guid.NewGuid();
 
@@ -168,13 +168,13 @@ namespace EchoPlay.App.ViewModels
                 localizationService: _cardServices.LocalizationService,
                 clock: _clock,
                 // Die Sammlungs-Kennung des Anbieters ist bei Apple Music die Album-Kennung.
-                // Sie liegt im Eintrag vor — anders als eine Folgen-Id, die es für eine reine
+                // Sie liegt im Eintrag vor, anders als eine Folgen-Id, die es für eine reine
                 // Neuerscheinung noch gar nicht gibt.
                 appleMusicAlbumId: entry.CollectionId > 0
                     ? entry.CollectionId.ToString(CultureInfo.InvariantCulture)
                     : null);
 
-            // Nur lokal bekannte Folgen kommen ins Nachtragen — ein reiner Eintrag ohne
+            // Nur lokal bekannte Folgen kommen ins Nachtragen. Ein reiner Eintrag ohne
             // lokalen Treffer hat keine durchsuchbare Cover-Quelle.
             if (!hasEpisodeCover && match.EpisodeId != Guid.Empty)
             {
@@ -215,7 +215,7 @@ namespace EchoPlay.App.ViewModels
         {
             // Die Monatsnamen kommen aus der Oberflächensprache, nicht aus der Systemkultur:
             // Letztere folgt dem Windows-Gebietsschema und lief bei abweichender App-Sprache
-            // auseinander — englische Oberfläche, deutsche Monatsnamen.
+            // auseinander: englische Oberfläche, deutsche Monatsnamen.
             string[] monthNames = ResolveUiCulture().DateTimeFormat.MonthNames;
             List<NewEpisodesGroupViewModel> groups = [];
 
@@ -223,7 +223,7 @@ namespace EchoPlay.App.ViewModels
             if (announced.Count > 0)
             {
                 // Die Überschrift kommt aus den Ressourcen: Das Kennzeichen auf derselben
-                // Kachel war bereits übersetzt, die Überschrift blieb deutsch — auf englischer
+                // Kachel war bereits übersetzt, die Überschrift blieb deutsch. Auf englischer
                 // Oberfläche standen beide Sprachen nebeneinander.
                 string announcedLabel = _cardServices.LocalizationService?.Get("DashboardGroupAnnounced") ?? "Angekündigt";
                 groups.Add(new NewEpisodesGroupViewModel(announcedLabel, 0, announced));

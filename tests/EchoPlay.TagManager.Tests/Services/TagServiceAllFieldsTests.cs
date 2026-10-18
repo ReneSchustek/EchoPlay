@@ -15,7 +15,7 @@ namespace EchoPlay.TagManager.Tests.Services
     /// </summary>
     /// <remarks>
     /// Der Kennzeichnungs-Verwalter arbeitet auf den Dateien des Anwenders. Ein
-    /// Fehlschlag muss beim Aufrufer ankommen — still zu scheitern hieße, dass der
+    /// Fehlschlag muss beim Aufrufer ankommen, denn still zu scheitern hieße, dass der
     /// Anwender seine Eingaben für gespeichert hält, während nichts auf der Platte steht.
     /// Beim Lesen eines ganzen Ordners gilt das Gegenteil: Eine kaputte Datei darf die
     /// übrigen nicht mitnehmen.

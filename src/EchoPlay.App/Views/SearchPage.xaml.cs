@@ -53,7 +53,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Navigiert zur Online-Mediathek – wird aus dem Erfolgshinweis aufgerufen.
+        /// Navigiert zur Online-Mediathek; wird aus dem Erfolgshinweis aufgerufen.
         /// </summary>
         private void OnGoToMediathekClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
@@ -81,7 +81,7 @@ namespace EchoPlay.App.Views
         /// <summary>Schlüssel des Suchbereichs im eigenen Bestand.</summary>
         private const string ScopeKeyLocal = "local";
 
-        /// <summary>Die Chips des Suchbereichs — genau einer ist immer aktiv.</summary>
+        /// <summary>Die Chips des Suchbereichs; genau einer ist immer aktiv.</summary>
         private Controls.FilterChip[] _scopeChips = [];
 
         /// <summary>

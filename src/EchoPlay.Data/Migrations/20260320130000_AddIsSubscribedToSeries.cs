@@ -20,7 +20,7 @@ namespace EchoPlay.Data.Migrations
                 nullable: false,
                 defaultValue: false);
 
-            // Alle bestehenden Serien direkt abonnieren – Import und Abonnement sind dasselbe Konzept.
+            // Alle bestehenden Serien direkt abonnieren, denn Import und Abonnement sind dasselbe Konzept.
             // Serien, die vor dieser Migration existierten, wurden bewusst importiert und gelten
             // daher als abonniert. Soft-gelöschte Serien bleiben unverändert.
             _ = migrationBuilder.Sql("UPDATE \"Series\" SET \"IsSubscribed\" = 1 WHERE \"IsDeleted\" = 0");

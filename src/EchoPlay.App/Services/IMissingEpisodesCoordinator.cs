@@ -10,7 +10,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Koordiniert die Fehlende-Folgen-Prüfung für eine einzelne Serie und für die
     /// gesamte Bibliothek. Kapselt die Datei-System-Analyse, den Live-Online-Abgleich
-    /// per iTunes und die Status-Bar-Aktualisierung – das ViewModel sieht nur zwei
+    /// per iTunes und die Status-Bar-Aktualisierung. Das ViewModel sieht nur zwei
     /// Eintrittspunkte und reicht den Modus aus dem UI-Dialog durch.
     /// </summary>
     public interface IMissingEpisodesCoordinator
@@ -21,7 +21,7 @@ namespace EchoPlay.App.Services
         /// wird eine erklärende Einzelmeldung zurückgegeben.
         /// </summary>
         /// <param name="seriesId">ID der Serie (für den iTunes-Abgleich).</param>
-        /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners – darf <see langword="null"/> sein.</param>
+        /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners, darf <see langword="null"/> sein.</param>
         /// <param name="mode">Vom Nutzer im Drei-Optionen-Dialog gewählter Prüfmodus.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task<IReadOnlyList<string>> CheckSingleSeriesAsync(

@@ -9,11 +9,11 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <remarks>
     /// Eine Folge besteht aus mehreren Dateien; die Wiedergabe kennt aber nur die Position
-    /// in der gerade laufenden. Wer nur diese speichert, verliert die Spur — im Wortsinn:
+    /// in der gerade laufenden. Wer nur diese speichert, verliert die Spur, im Wortsinn:
     /// Beim Fortsetzen landete man mit der Minutenzahl aus Spur 3 wieder in Spur 1. Die
     /// Zeitachse hält die Spurdauern und macht aus beidem eine Angabe, die für sich steht.
     ///
-    /// Ohne bekannte Spurdauern bleibt die Zeitachse leer und rechnet nicht um — dann gilt
+    /// Ohne bekannte Spurdauern bleibt die Zeitachse leer und rechnet nicht um. Dann gilt
     /// die Stelle in der ersten Spur. Hörstände, die ohne Spurdauern gespeichert wurden,
     /// bleiben damit gültig.
     /// </remarks>
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Gibt an, ob eine gespeicherte Stelle noch offen ist — ob es also etwas
+        /// Gibt an, ob eine gespeicherte Stelle noch offen ist, ob es also etwas
         /// weiterzuhören gibt.
         /// </summary>
         /// <remarks>
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Services
         /// Ansichten fragen, ob eine Folge unter „Angefangen" gehört, der Wiedergabestart
         /// fragt, ob er fortsetzt. Als der Wiedergabestart eine eigene Fassung hatte, fiel
         /// er auf den Hörstatus zurück und begann eine wieder aufgenommene Folge stets von
-        /// vorn — während die Liste sie korrekt als angefangen führte.
+        /// vorn, während die Liste sie korrekt als angefangen führte.
         ///
         /// Ohne bekannte Gesamtdauer entscheidet die Stelle allein: Es gibt dann nichts,
         /// wogegen sie sich prüfen ließe.
@@ -136,7 +136,7 @@ namespace EchoPlay.App.Services
             {
                 TimeSpan duration = _trackDurations[i];
 
-                // Eine Spur ohne bekannte Dauer lässt sich nicht überspringen — dort endet
+                // Eine Spur ohne bekannte Dauer lässt sich nicht überspringen. Dort endet
                 // die Rechnung, sonst liefe der Rest ins Leere.
                 if (duration <= TimeSpan.Zero)
                 {

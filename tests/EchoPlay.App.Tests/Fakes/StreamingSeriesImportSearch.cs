@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// <summary>
     /// Test-Fake für <see cref="ISeriesImportSearch"/>, der die Treffer einzeln und auf
     /// Zuruf herausgibt. Der Test bestimmt damit, wann welcher Treffer feststeht, und kann
-    /// prüfen, was die Seite in der Zwischenzeit anzeigt — ohne Wartezeiten.
+    /// prüfen, was die Seite in der Zwischenzeit anzeigt, ohne Wartezeiten.
     /// </summary>
     internal sealed class StreamingSeriesImportSearch : ISeriesImportSearch
     {
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Fakes
             _ = Gate(_published++).TrySetResult(series);
         }
 
-        /// <summary>Beendet den Strom — es folgen keine Treffer mehr.</summary>
+        /// <summary>Beendet den Strom; es folgen keine Treffer mehr.</summary>
         public void Complete()
         {
             _ = Gate(_published).TrySetResult(null);
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.Fakes
                 while (_gates.Count <= index)
                 {
                     // Ohne asynchrone Fortsetzung liefe die Fortsetzung des Ansichtsmodells
-                    // im Stack des Tests — der beobachtete dann seinen eigenen Fortschritt.
+                    // im Stack des Tests, und der beobachtete dann seinen eigenen Fortschritt.
                     _gates.Add(new TaskCompletionSource<ImportSeries?>(TaskCreationOptions.RunContinuationsAsynchronously));
                 }
 

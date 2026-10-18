@@ -37,7 +37,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit der Neuerscheinungs-Gruppen-Liste – sichtbar sobald mindestens
+        /// Sichtbarkeit der Neuerscheinungs-Gruppen-Liste, sichtbar, sobald mindestens
         /// eine Gruppe mit Episoden vorhanden ist.
         /// </summary>
         public Visibility NewEpisodeGroupsVisibility =>
@@ -62,7 +62,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Sichtbarkeit des Lade-Hinweises – sichtbar solange die Abfrage läuft und noch keine
+        /// Sichtbarkeit des Lade-Hinweises, sichtbar, solange die Abfrage läuft und noch keine
         /// Einträge vorliegen.
         /// </summary>
         public Visibility NewReleasesLoadingVisibility =>

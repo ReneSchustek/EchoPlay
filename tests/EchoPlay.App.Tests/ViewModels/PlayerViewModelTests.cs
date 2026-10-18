@@ -109,7 +109,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void CurrentTrackHighlight_FollowsThePath_NotTheDisplayedName()
         {
             // Der Anzeigename kommt aus der Kennzeichnung und passt dann nicht mehr zum
-            // Dateinamen – hervorgehoben wird trotzdem die richtige Zeile.
+            // Dateinamen. Hervorgehoben wird trotzdem die richtige Zeile.
             const string ersterTeil = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
             const string zweiterTeil = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
 
@@ -161,7 +161,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void RemoveItem_RemovesFromPlaylist()
         {
-            // ObservableCollection muss Einträge entfernbar sein – UI-Binding erfordert das
+            // ObservableCollection muss Einträge entfernbar sein, weil UI-Binding das erfordert
             FakePlayerService playerService = new();
             PlayerViewModel vm = BuildViewModel(playerService);
 
@@ -254,7 +254,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void PlayPause_SchaltetUmUndZeigtDasPassendeZeichen()
         {
             // Das Zeichen der Schaltfläche ist der einzige Hinweis darauf, was ein Klick
-            // auslöst — zeigt es das falsche, drückt der Anwender auf Pause und startet.
+            // auslöst. Zeigt es das falsche, drückt der Anwender auf Pause und startet.
             FakePlayerService playerService = new();
             PlayerViewModel viewModel = BuildViewModel(playerService);
 
@@ -283,7 +283,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task DateiAuswahl_BautDieWiedergabeliste()
         {
             // Der Weg über die Dateiauswahl legt dieselbe Liste an wie das Öffnen eines
-            // Ordners — nur ohne Zugriff auf das Dateisystem.
+            // Ordners, nur ohne Zugriff auf das Dateisystem.
             FakePlayerService playerService = new();
             PlayerViewModel viewModel = BuildViewModel(playerService);
 

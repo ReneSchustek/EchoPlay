@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Tests.Services
     /// stilles Weiterlaufen: Der Titel steht danach genau einmal in der Merkliste.
     ///
     /// Nachgestellt wird der Wettlauf über einen noch nicht gespeicherten Eintrag. Eine Abfrage
-    /// gegen die Datenbank sieht ihn nicht — genau wie ein Eintrag, den ein fremder Zugriff
+    /// gegen die Datenbank sieht ihn nicht, genau wie ein Eintrag, den ein fremder Zugriff
     /// erst nach der Prüfung schreibt. Beim Speichern kollidieren dann beide.
     /// </remarks>
     public sealed class WatchedTitleConflictTests : DbTestBase

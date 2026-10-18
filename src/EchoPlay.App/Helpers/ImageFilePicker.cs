@@ -19,7 +19,7 @@ namespace EchoPlay.App.Helpers
         /// Öffnet den Datei-Picker und liest die Bytes der gewählten Bilddatei.
         /// Gibt <see langword="null"/> zurück, wenn der Nutzer abbricht.
         /// </summary>
-        /// <param name="windowHandle">HWND des Hauptfensters – Pflicht für WinUI 3 Picker.</param>
+        /// <param name="windowHandle">HWND des Hauptfensters, Pflicht für WinUI 3 Picker.</param>
         public static async Task<byte[]?> PickAsync(nint windowHandle)
         {
             StorageFile? file = await ShowPickerAsync(windowHandle);

@@ -40,7 +40,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Prüft eine Kachel gegen Suchtext und alle aktiven Schalter.
         /// <para>
-        /// Mehrere Schalter wirken zusammen, nicht alternativ — wer „Favoriten" und
+        /// Mehrere Schalter wirken zusammen, nicht alternativ. Wer „Favoriten" und
         /// „Unvollständig" wählt, sucht die Schnittmenge.
         /// </para>
         /// </summary>

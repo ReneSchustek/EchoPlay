@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// <remarks>
     /// Der wichtigste Punkt ist das Abmelden: Der Einlesedienst lebt als Singleton weiter.
     /// Bleibt die Seite an seinem Ereignis hängen, tragen sich Kacheln in eine Ansicht ein,
-    /// die niemand mehr sieht — und die Seite bleibt im Speicher.
+    /// die niemand mehr sieht, und die Seite bleibt im Speicher.
     /// </remarks>
     public sealed class LocalLibraryViewModelLifecycleTests
     {
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.DeselectArtist();
 
-            // Der ganze Folgenbereich verschwindet — bliebe eine der drei Listen stehen,
+            // Der ganze Folgenbereich verschwindet. Bliebe eine der drei Listen stehen,
             // zeigte die Seite Folgen zu einer Serie, die gar nicht mehr gewählt ist.
             Assert.Null(sut.ArtistsVM.SelectedArtist);
             Assert.Empty(sut.EpisodesVM.Episodes);

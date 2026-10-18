@@ -62,15 +62,15 @@ namespace EchoPlay.Data.Entities.Settings
 
         /// <summary>
         /// Mindest-Log-Level: Einträge unterhalb dieses Levels werden nicht geschrieben.
-        /// Standard: <see cref="LogLevel.Information"/> – Debug- und Trace-Einträge bleiben stumm.
+        /// Standard: <see cref="LogLevel.Information"/>; Debug- und Trace-Einträge bleiben stumm.
         /// </summary>
         public LogLevel MinimumLogLevel { get; set; } = LogLevel.Information;
 
         /// <summary>
         /// Gibt an, ob erkannte Serien nach einem Scan automatisch in die lokale Bibliothek
-        /// importiert werden sollen. Nur Serien, die noch nicht existieren, werden angelegt –
+        /// importiert werden sollen. Nur Serien, die noch nicht existieren, werden angelegt,
         /// ohne Online-Suche oder Metadaten-Import aus externen Quellen.
-        /// Standard: <see langword="true"/> – alle gefundenen Serien werden automatisch angelegt.
+        /// Standard: <see langword="true"/>: Alle gefundenen Serien werden automatisch angelegt.
         /// </summary>
         public bool AutoImportAfterScan { get; set; } = true;
 
@@ -108,7 +108,7 @@ namespace EchoPlay.Data.Entities.Settings
 
         /// <summary>
         /// Nur-Online-Modus: wenn aktiv, wird die lokale Mediathek ausgeblendet.
-        /// Nur die Online-Mediathek ist verfügbar – für Nutzer ohne lokale Hörspielsammlung.
+        /// Nur die Online-Mediathek ist verfügbar, für Nutzer ohne lokale Hörspielsammlung.
         /// Standard: <see langword="false"/> (lokale Mediathek sichtbar).
         /// Konfigurierbar in Einstellungen → Allgemein.
         /// </summary>
@@ -155,7 +155,7 @@ namespace EchoPlay.Data.Entities.Settings
         /// </summary>
         /// <remarks>
         /// Sie überlebt den Neustart, weil eine leise eingestellte Anlage sonst bei jedem
-        /// Start wieder auf volle Lautstärke springt — beim abendlichen Hörspiel die
+        /// Start wieder auf volle Lautstärke springt. Beim abendlichen Hörspiel die
         /// unangenehmste Art von Überraschung.
         /// </remarks>
         public double Volume { get; set; } = 1.0;

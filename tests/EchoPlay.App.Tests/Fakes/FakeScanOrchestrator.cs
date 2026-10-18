@@ -35,7 +35,7 @@ namespace EchoPlay.App.Tests.Fakes
             IProgress<ScanProgress>? progress = null,
             CancellationToken cancellationToken = default)
         {
-            // Phasen-Meldungen werden nicht simuliert – für SyncService-Tests irrelevant
+            // Phasen-Meldungen werden nicht simuliert, für SyncService-Tests irrelevant
             return _scanner.ScanSeriesAsync(rootPath, episodeFolderPattern, progress, onSeriesScanned: null, cancellationToken);
         }
     }

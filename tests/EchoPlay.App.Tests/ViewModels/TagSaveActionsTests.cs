@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Zwei Zusagen tragen diese Klasse. Erstens: Was der Anwender nicht bestätigt hat,
-    /// wird nicht geschrieben — „alle speichern" und „alle Angaben entfernen" fragen vorher.
+    /// wird nicht geschrieben; „alle speichern" und „alle Angaben entfernen" fragen vorher.
     /// Zweitens: Bei Mehrfachauswahl werden nur die geänderten Felder auf die anderen
     /// Dateien geschrieben; sonst überschriebe ein Sammel-Speichern jeden Einzeltitel.
     /// </remarks>
@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task EinzelneDatei_MeldetEinenFehlgeschlagenenSchreibversuch()
         {
-            // Eine schreibgeschützte Datei darf nicht stillschweigend durchgehen — sonst
+            // Eine schreibgeschützte Datei darf nicht stillschweigend durchgehen, sonst
             // hält der Anwender die Kennzeichnung für gespeichert.
             Harness harness = Harness.Build(writeFailure: new IOException("Datei gesperrt"));
             harness.SelectSingle();
@@ -204,10 +204,10 @@ namespace EchoPlay.App.Tests.ViewModels
 
             public List<bool> UnsavedStates { get; } = [];
 
-            /// <summary>Wählt die erste Datei aus — der Einzel-Speicherweg.</summary>
+            /// <summary>Wählt die erste Datei aus (der Einzel-Speicherweg).</summary>
             public void SelectSingle() => FileList.SetSelectedFiles([FileList.Files[0]]);
 
-            /// <summary>Wählt beide Dateien aus — der Sammel-Speicherweg.</summary>
+            /// <summary>Wählt beide Dateien aus (der Sammel-Speicherweg).</summary>
             public void SelectBoth() => FileList.SetSelectedFiles([FileList.Files[0], FileList.Files[1]]);
 
             /// <summary>Markiert eine Datei als geändert, wie es der Editor tut.</summary>

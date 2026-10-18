@@ -95,7 +95,7 @@ namespace EchoPlay.LocalLibrary.Tests.Infrastructure
                 0x54, 0x69, 0x74, 0x6C, 0x65,
             ];
 
-            // MPEG1 Layer 3, 128 kbit/s, 44100 Hz, Stereo — 417 Bytes, komplett still.
+            // MPEG1 Layer 3, 128 kbit/s, 44100 Hz, Stereo, 417 Bytes, komplett still.
             byte[] frame = new byte[417];
             frame[0] = 0xFF;
             frame[1] = 0xFB;

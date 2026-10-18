@@ -13,7 +13,7 @@ namespace EchoPlay.Data.Services
     /// <remarks>
     /// Initialisiert eine neue Instanz des <see cref="WatchedTitleDataService"/>.
     /// <para>
-    /// <see cref="SyncFromWatchedSeriesAsync"/> liest die <c>Series</c>-Tabelle mit — lesend und
+    /// <see cref="SyncFromWatchedSeriesAsync"/> liest die <c>Series</c>-Tabelle mit, lesend und
     /// nur auf den Titel projiziert. Der Abgleich ist per Definition „leite die Merkliste aus den
     /// überwachten Serien ab"; ihn aufzuteilen würde die Regel über zwei Klassen verstreuen.
     /// </para>
@@ -93,7 +93,7 @@ namespace EchoPlay.Data.Services
 
             // Ohne diese Prüfung würde ein Titel, von dem die Normalisierung nichts übrig lässt
             // (etwa „???"), alle Einträge mit leerem Vergleichstitel auf einmal löschen.
-            // RememberAsync legt solche Zeilen zwar nie an — verlassen wollen wir uns darauf
+            // RememberAsync legt solche Zeilen zwar nie an, verlassen wollen wir uns darauf
             // beim Löschen aber nicht.
             if (string.IsNullOrWhiteSpace(normalized))
             {
@@ -131,7 +131,7 @@ namespace EchoPlay.Data.Services
             {
                 string normalized = HoerspielTextNormalizer.Normalize(title);
 
-                // known dient zugleich als Dedup innerhalb dieses Laufs – die Prod-DB
+                // known dient zugleich als Dedup innerhalb dieses Laufs; die Prod-DB
                 // enthält Serien-Duplikate mit identischem Titel.
                 if (string.IsNullOrWhiteSpace(normalized) || !known.Add(normalized))
                 {

@@ -9,12 +9,12 @@ namespace EchoPlay.App.Tests.Helpers
     /// <summary>
     /// Sichert die Buchstaben-Abschnitte der Mediathek ab.
     /// Der Kern: Genau der Abschnitt, in dem die gewählte Kachel steht, bekommt die
-    /// Aufklappstelle — alle übrigen bleiben ungeteilt. Ohne das klappte das Akkordeon an
+    /// Aufklappstelle, alle übrigen bleiben ungeteilt. Ohne das klappte das Akkordeon an
     /// einer anderen Stelle auf, als der Nutzer geklickt hat.
     /// </summary>
     public sealed class LetterGroupBuilderTests
     {
-        /// <summary>Kachel-Ersatz für die Tests — nur ein Titel, mehr braucht die Gruppierung nicht.</summary>
+        /// <summary>Kachel-Ersatz für die Tests: nur ein Titel, mehr braucht die Gruppierung nicht.</summary>
         private sealed class Tile
         {
             public Tile(string title) => Title = title;
@@ -46,7 +46,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Umlaute laufen auf ihren Grundbuchstaben — „Ärger" gehört in denselben Abschnitt
+        /// Umlaute laufen auf ihren Grundbuchstaben: „Ärger" gehört in denselben Abschnitt
         /// wie „Ahoi" und nicht in ein eigenes Fach.
         /// </summary>
         [Fact]
@@ -98,7 +98,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// Innerhalb der Gruppe klappt das Akkordeon unterhalb der Reihe auf, in der die
-        /// gewählte Kachel steht — gerechnet mit dem gruppenlokalen Index, nicht mit dem
+        /// gewählte Kachel steht, gerechnet mit dem gruppenlokalen Index, nicht mit dem
         /// Index über den Gesamtbestand.
         /// </summary>
         [Fact]
@@ -130,7 +130,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// Ein Titel, der später erneut mit demselben Buchstaben auftaucht, gehört bei
-        /// unsortierter Eingabe in einen zweiten Abschnitt — sonst risse die Anzeige aus der
+        /// unsortierter Eingabe in einen zweiten Abschnitt, sonst risse die Anzeige aus der
         /// Reihenfolge, in der die Liste tatsächlich steht.
         /// </summary>
         [Fact]

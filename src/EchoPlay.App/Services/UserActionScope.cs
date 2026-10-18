@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     /// <remarks>
     /// Format des emittierten Scopes: <c>UA:&lt;id&gt; &lt;name&gt;</c> (z. B. <c>UA:a3f21c12 ImportSeries</c>).
-    /// Die ID ist die ersten 8 Hex-Zeichen einer neuen Guid – kollisionsarm genug, um Support-Grep
+    /// Die ID ist die ersten 8 Hex-Zeichen einer neuen Guid, kollisionsarm genug, um Support-Grep
     /// über mehrere Tages-Logs eindeutig zu halten, ohne die Log-Zeilen zu überlasten.
     /// </remarks>
     public static class UserActionScope

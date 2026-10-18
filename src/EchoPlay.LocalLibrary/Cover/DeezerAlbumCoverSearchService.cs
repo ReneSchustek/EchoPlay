@@ -9,8 +9,8 @@ namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Sucht Album-Cover über die kostenlose Deezer-API.
-    /// Dritte Quelle für Folgen-Cover neben iTunes und Cover Art Archive –
-    /// nützlich wenn eine Hörspielfolge nur bei Deezer gelistet ist.
+    /// Dritte Quelle für Folgen-Cover neben iTunes und Cover Art Archive,
+    /// nützlich, wenn eine Hörspielfolge nur bei Deezer gelistet ist.
     /// </summary>
     /// <remarks>
     /// Endpunkt: <c>https://api.deezer.com/search/album?q={query}</c>
@@ -73,11 +73,11 @@ namespace EchoPlay.LocalLibrary.Cover
             [JsonPropertyName("title")]
             public string? Title { get; set; }
 
-            /// <summary>250×250 Pixel – Vorschau im Auswahldialog.</summary>
+            /// <summary>250×250 Pixel für die Vorschau im Auswahldialog.</summary>
             [JsonPropertyName("cover_medium")]
             public string? CoverMedium { get; set; }
 
-            /// <summary>1000×1000 Pixel – wird als Cover gespeichert.</summary>
+            /// <summary>1000×1000 Pixel; wird als Cover gespeichert.</summary>
             [JsonPropertyName("cover_xl")]
             public string? CoverXl { get; set; }
         }

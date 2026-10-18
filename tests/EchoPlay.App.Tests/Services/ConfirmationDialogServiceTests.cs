@@ -8,8 +8,8 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für den Defense-in-Depth-Pfad in <see cref="ConfirmationDialogService"/>:
-    /// bei Pre-MainWindow-Szenarien (XamlRoot null) darf der Service nicht crashen —
-    /// ein null-forgiving <c>App.MainWindow!</c> würfe dort.
+    /// bei Pre-MainWindow-Szenarien (XamlRoot null) darf der Service nicht crashen,
+    /// denn ein null-forgiving <c>App.MainWindow!</c> würfe dort.
     /// </summary>
     public sealed class ConfirmationDialogServiceTests
     {
@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Services
                 "Löschen?", "Wirklich löschen?", DialogKey.SeriesDeleteFromDisk, TestContext.Current.CancellationToken);
 
             // Eine Rückfrage, die niemand sehen konnte, ist keine Zustimmung. Alle Aufrufer
-            // brechen bei false ab — das ist die sichere Seite.
+            // brechen bei false ab, das ist die sichere Seite.
             Assert.False(confirmed);
         }
 
@@ -30,7 +30,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task ConfirmAsync_AusgeblendeteRueckfrage_LiefertJaOhneDialog()
         {
             // Gemerkt wird nur ein „Ja". Die ausgeblendete Rückfrage ist deshalb
-            // gleichbedeutend mit Zustimmung — und sie darf keinen Dialog mehr bauen.
+            // gleichbedeutend mit Zustimmung, und sie darf keinen Dialog mehr bauen.
             FakeDialogSuppressionService suppression = new();
             suppression.Preset(DialogKey.SeriesRemoveFromLibrary);
 

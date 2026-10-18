@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Migrations
 
             // Von Hand auf 1,0 gesetzt: Der Initialisierer der Entität gilt nur für neue
             // Objekte, nicht für die vorhandene Zeile. Mit dem erzeugten Vorgabewert 0,0
-            // wäre die Anwendung nach dem Update stumm gewesen — und niemand hätte den
+            // wäre die Anwendung nach dem Update stumm gewesen, und niemand hätte den
             // Regler gesucht, den es vorher nicht gab.
             _ = migrationBuilder.AddColumn<double>(
                 name: "Volume",

@@ -54,8 +54,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
         private void Track(DbCommand command)
         {
-            // SQLite-EF-Provider sendet die Anweisung exakt so, wie sie ausgeführt wird –
-            // führende Whitespaces sind nicht garantiert, deshalb TrimStart vor StartsWith.
+            // SQLite-EF-Provider sendet die Anweisung exakt so, wie sie ausgeführt wird.
+            // Führende Whitespaces sind nicht garantiert, deshalb TrimStart vor StartsWith.
             if (command.CommandText.TrimStart().StartsWith("SELECT", System.StringComparison.OrdinalIgnoreCase))
             {
                 SelectCount++;

@@ -29,7 +29,7 @@ namespace EchoPlay.App.Helpers
             AutomationName = automationName;
         }
 
-        /// <summary>Buchstabe des Abschnitts — zugleich seine Überschrift.</summary>
+        /// <summary>Buchstabe des Abschnitts, zugleich seine Überschrift.</summary>
         public string Header { get; }
 
         /// <summary>Kacheln des Abschnitts.</summary>
@@ -39,7 +39,7 @@ namespace EchoPlay.App.Helpers
         /// Ob die Überschrift gezeigt wird.
         /// <para>
         /// Sie fehlt genau einmal: unterhalb des aufgeklappten Folgenbereichs. Dort geht der
-        /// Abschnitt weiter, in dem die gewählte Serie steht — seine Überschrift stand schon
+        /// Abschnitt weiter, in dem die gewählte Serie steht; seine Überschrift stand schon
         /// oberhalb. Ein zweites Mal derselbe Buchstabe läse sich wie ein neuer Abschnitt.
         /// </para>
         /// </summary>
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Helpers
 
         /// <summary>
         /// Beschriftung für die Sprachausgabe. Ohne sie liest WinUI den Typnamen des
-        /// Anzeigemodells vor — für einen Abschnitt der Mediathek eine leere Auskunft.
+        /// Anzeigemodells vor, für einen Abschnitt der Mediathek eine leere Auskunft.
         /// </summary>
         public string AutomationName { get; }
     }

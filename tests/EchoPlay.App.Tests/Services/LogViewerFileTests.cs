@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Die Live-Ansicht zeigt nur, was seit dem Programmstart passiert ist. Wer einem
-    /// Fehler von gestern nachgeht, ist auf die Dateien angewiesen — steht die falsche
+    /// Fehler von gestern nachgeht, ist auf die Dateien angewiesen. Steht die falsche
     /// oben oder fehlt eine, sucht er im leeren Protokoll.
     ///
     /// Die Tests legen echte Dateien im Temp-Verzeichnis an und räumen sie wieder ab; der

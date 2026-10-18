@@ -34,7 +34,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <summary>
         /// Führt eine reale Künstler-Suche gegen die iTunes Search API aus.
         ///
-        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) – braucht Netz.
+        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) und braucht Netz.
         /// </summary>
 
         [Fact(Explicit = true)]
@@ -54,13 +54,13 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <summary>
         /// Prüft, ob Alben eines bekannten Künstlers geladen werden können.
         ///
-        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) – braucht Netz.
+        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) und braucht Netz.
         /// </summary>
 
         [Fact(Explicit = true)]
         public async Task ITunesApi_LookupAlbums_ReturnsAlbums()
         {
-            // ARRANGE – Künstler suchen, um eine gültige Artist-ID zu erhalten
+            // ARRANGE: Künstler suchen, um eine gültige Artist-ID zu erhalten
             ITunesResponseDto<ITunesArtistDto> artists =
                 await _searchClient.SearchArtistsAsync("Die drei ???", 1, ct: TestContext.Current.CancellationToken);
 
@@ -71,7 +71,7 @@ namespace EchoPlay.AppleMusic.Tests.Live
             ITunesResponseDto<ITunesCollectionDto> albums =
                 await _searchClient.LookupAlbumsAsync(artistId, ct: TestContext.Current.CancellationToken);
 
-            // ASSERT – Mindestens ein Album (neben dem Artist-Eintrag)
+            // ASSERT: Mindestens ein Album (neben dem Artist-Eintrag)
             List<ITunesCollectionDto> collections = albums.Results
                 .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -84,13 +84,13 @@ namespace EchoPlay.AppleMusic.Tests.Live
         /// <summary>
         /// Prüft, ob Tracks eines bekannten Albums geladen werden können.
         ///
-        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) – braucht Netz.
+        /// Läuft nur auf Anforderung (dotnet test -- --explicit on) und braucht Netz.
         /// </summary>
 
         [Fact(Explicit = true)]
         public async Task ITunesApi_LookupTracks_ReturnsTracks()
         {
-            // ARRANGE – Künstler und Album suchen
+            // ARRANGE: Künstler und Album suchen
             ITunesResponseDto<ITunesArtistDto> artists =
                 await _searchClient.SearchArtistsAsync("Die drei ???", 1, ct: TestContext.Current.CancellationToken);
 

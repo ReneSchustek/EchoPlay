@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Views
     /// Der Wert 4,5:1 stammt aus der Zugänglichkeitsvorgabe für Fließtext. Er ist hier keine
     /// Empfehlung, sondern eine Zusage: EchoPlay führt sechs Paletten, und eine zu blasse
     /// Kombination fällt nur dem auf, der genau dieses Theme gewählt hat. Von Hand nachmessen
-    /// müsste man sechs Paletten mal zwei Abschnitte mal jede Textrolle — das wird nach dem
+    /// müsste man sechs Paletten mal zwei Abschnitte mal jede Textrolle. Das wird nach dem
     /// zweiten Mal niemand tun.
     /// </para>
     /// </summary>
@@ -38,7 +38,7 @@ namespace EchoPlay.App.Tests.Views
 
         /// <summary>
         /// Die Paare aus Textfarbe und Fläche, auf der sie steht. Nur Kombinationen, die in der
-        /// Anwendung wirklich vorkommen — ein Test, der jede Farbe gegen jede prüft, meldet
+        /// Anwendung wirklich vorkommen. Ein Test, der jede Farbe gegen jede prüft, meldet
         /// Verstöße, die niemand zu sehen bekommt.
         /// </summary>
         private static readonly (string Foreground, string Background, string Usage)[] TextPairings =
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Tests.Views
         /// <summary>
         /// Bedienelemente, die sich abheben müssen, weil an ihnen ein Zustand hängt.
         /// <para>
-        /// Der Rahmen eines Eingabefelds steht hier in <em>allen drei</em> Zuständen — ruhend,
+        /// Der Rahmen eines Eingabefelds steht hier in <em>allen drei</em> Zuständen: ruhend,
         /// unter dem Zeiger und im Fokus. Der ruhende war lange ausgenommen, weil die
         /// Gestaltungslinie für Rahmen eine Haarlinie mit 8 bis 10 Prozent Deckkraft vorgibt.
         /// Die Vorgabe gilt für <em>Trennlinien</em>: Karten, Listen, Abschnitte. Ein
@@ -85,7 +85,7 @@ namespace EchoPlay.App.Tests.Views
             ("AccentPrimaryBrush", "AppBackgroundBrush", "Rand des angesprungenen Buchstabens"),
             ("SelectionBorderBrush", "CardBackgroundBrush", "Rand der gewählten Kachel"),
 
-            // Schaltflächen: Die Fläche einer stillen Schaltfläche darf ruhig bleiben — sie
+            // Schaltflächen: Die Fläche einer stillen Schaltfläche darf ruhig bleiben, sie
             // findet sich über ihren Rand. Der muss sich deshalb von beidem abheben: von der
             // eigenen Fläche und vom Grund, auf dem die Schaltfläche sitzt.
             ("ButtonBorderBrush", "ButtonBackground", "Rand der stillen Schaltfläche, gegen die eigene Fläche"),
@@ -94,7 +94,7 @@ namespace EchoPlay.App.Tests.Views
             ("ButtonBorderBrushPointerOver", "ButtonBackgroundPointerOver", "Rand unter dem Zeiger"),
             ("ButtonBorderBrushPressed", "ButtonBackgroundPressed", "Rand im gedrückten Zustand"),
 
-            // Die Primäraktion trägt ihre Farbe als Fläche — dort zählt die Fläche selbst.
+            // Die Primäraktion trägt ihre Farbe als Fläche, dort zählt die Fläche selbst.
             ("AccentButtonBackground", "AppBackgroundBrush", "Fläche der Primäraktion, gegen die Seite"),
             ("AccentButtonBackground", "CardBackgroundBrush", "Fläche der Primäraktion, gegen die Karte")
         ];
@@ -143,7 +143,7 @@ namespace EchoPlay.App.Tests.Views
                         if (!brushes.TryGetValue(foregroundKey, out string? foreground)
                             || !brushes.TryGetValue(backgroundKey, out string? background))
                         {
-                            // Fehlende Schlüssel meldet AllPalettes_ShareTheSameKeySet — hier
+                            // Fehlende Schlüssel meldet AllPalettes_ShareTheSameKeySet, hier
                             // wäre es nur dieselbe Meldung ein zweites Mal.
                             continue;
                         }

@@ -8,7 +8,7 @@ namespace EchoPlay.Core.Tests.Models
     /// <remarks>
     /// Größe und Prüfsumme entscheiden, ob die heruntergeladene Datei überhaupt
     /// ausgeführt wird. Ein leerer Prüfwert ist dabei erlaubt und bedeutet „ohne
-    /// Prüfung" — nicht „Prüfung fehlgeschlagen".
+    /// Prüfung", nicht „Prüfung fehlgeschlagen".
     /// </remarks>
     public sealed class UpdateInfoTests
     {

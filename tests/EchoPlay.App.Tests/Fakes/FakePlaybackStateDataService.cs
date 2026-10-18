@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Fakes
     {
         private readonly List<PlaybackState> _states;
 
-        // Vorkonfigurierte Counts für GetCountsBySeriesIdAsync – nötig weil das
+        // Vorkonfigurierte Counts für GetCountsBySeriesIdAsync, nötig, weil das
         // Fake keine Episode-zu-Serie-Zuordnung kennt und die Zählung nicht berechnen kann.
         private readonly IReadOnlyDictionary<Guid, (int Finished, int InProgress, int NotStarted)> _seriesCounts;
 
@@ -106,7 +106,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Der quellenübergreifende Abgleich braucht Episoden und Serien; dieser Fake kennt nur
-        /// Wiedergabestände. Er meldet deshalb „nichts korrigiert" — geprüft wird der Abgleich
+        /// Wiedergabestände. Er meldet deshalb „nichts korrigiert". Geprüft wird der Abgleich
         /// gegen eine echte SQLite-Datenbank in <c>EchoPlay.Data.Tests</c>.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

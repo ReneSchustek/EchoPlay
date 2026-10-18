@@ -41,14 +41,14 @@ namespace EchoPlay.App.Tests.Services
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
 
-            // Keyed-Registrierung – entspricht dem Produktionscode in App.xaml.cs
+            // Keyed-Registrierung, entspricht dem Produktionscode in App.xaml.cs
             _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => spotifySearch);
             _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
             _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
             _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
 
             // ImportService prüft vor dem Spotify-Suchlauf, ob Credentials hinterlegt sind.
-            // Default für bestehende Tests: Credentials vorhanden — bestehende Erwartungshaltung bleibt.
+            // Default für bestehende Tests: Credentials vorhanden, die bestehende Erwartungshaltung bleibt.
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
 
@@ -570,7 +570,7 @@ namespace EchoPlay.App.Tests.Services
 
             Series existingSeries = seriesService.All[0];
 
-            // Drei bestehende Episoden – Titel-Lookup wird sie ausfiltern.
+            // Drei bestehende Episoden; der Titel-Lookup wird sie ausfiltern.
             await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 3", EpisodeNumber = 3 }, cancellationToken: TestContext.Current.CancellationToken);
@@ -597,7 +597,7 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(5, episodeService.All.Count);
             // Nur ein einziger Batch-Insert für die zwei neuen Folgen.
             Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
-            // 3 vorhandene Episoden hatten kein Cover-Update – kein UpdateRangeAsync.
+            // 3 vorhandene Episoden hatten kein Cover-Update, also kein UpdateRangeAsync.
             Assert.Equal(0, episodeService.UpdateRangeAsyncCallCount);
         }
 
@@ -659,7 +659,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Serie mit Spotify- UND Apple-ID. Ohne hinterlegte Spotify-Credentials darf der
             // Delta-Import nicht stillschweigend über den unbrauchbaren Spotify-Provider laufen,
-            // sondern muss auf Apple Music ausweichen – sonst kämen neue Folgen nie an
+            // sondern muss auf Apple Music ausweichen, sonst kämen neue Folgen nie an
             // (real beobachtet: Fünf Freunde blieb bei Folge 169, obwohl Apple 170/171 führt).
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
@@ -701,7 +701,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task DeltaImportEpisodesAsync_UsesSpotify_WhenCredentialsPresent()
         {
             // Gegenprobe: Sind Spotify-Credentials vorhanden, bleibt Spotify der bevorzugte Provider
-            // für eine Serie mit beiden IDs – der Apple-Fallback darf dann NICHT greifen.
+            // für eine Serie mit beiden IDs; der Apple-Fallback darf dann NICHT greifen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
@@ -846,7 +846,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ReImportEpisodesAsync_SkipsEpisodesAlreadyInTheLibrary()
         {
-            // Der Re-Import läuft an, während der Erstimport seine Folgen schon geschrieben hat –
+            // Der Re-Import läuft an, während der Erstimport seine Folgen schon geschrieben hat,
             // genau die Verschränkung, die den Bestand einmal verdoppelt hat. Er darf nur die
             // fehlende Folge anlegen.
             FakeSeriesDataService seriesService = new();

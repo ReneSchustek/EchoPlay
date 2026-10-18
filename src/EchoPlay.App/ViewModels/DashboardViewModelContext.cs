@@ -19,7 +19,7 @@ namespace EchoPlay.App.ViewModels
     /// <param name="LoggerFactory">Fabrik für den Protokollkanal.</param>
     /// <param name="CoverService">Zentraler Cover-Dienst. Nullable für Tests.</param>
     /// <param name="LocalizationService">Liefert die Anzeigetexte. Nullable für Tests.</param>
-    /// <param name="Clock">Zeitquelle. Nullable — dann gilt die Systemzeit.</param>
+    /// <param name="Clock">Zeitquelle. Nullable; fehlt sie, gilt die Systemzeit.</param>
     /// <param name="BackgroundCoverService">Trägt fehlende Folgen-Cover nach. Nullable für Tests.</param>
     /// <param name="NewReleaseEventService">Meldet Änderungen am Neuerscheinungs-Zwischenspeicher. Nullable für Tests.</param>
     internal sealed record DashboardViewModelContext(

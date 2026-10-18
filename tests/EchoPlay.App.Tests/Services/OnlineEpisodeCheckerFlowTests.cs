@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Alle Tests arbeiten mit genau einer Serie. Der Checker pausiert zwischen zwei Serien
-    /// bewusst 1,5 Sekunden wegen des iTunes-Limits — mehrere Serien pro Test würden die
+    /// bewusst 1,5 Sekunden wegen des iTunes-Limits, mehrere Serien pro Test würden die
     /// Laufzeit unnötig aufblähen, ohne mehr Verhalten zu prüfen.
     /// </remarks>
     public sealed class OnlineEpisodeCheckerFlowTests
@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CheckAllAsync_WithKnownArtistId_SkipsSearch()
         {
-            // Die gespeicherte ID spart einen HTTP-Aufruf – genau dafür wird sie hinterlegt.
+            // Die gespeicherte ID spart einen HTTP-Aufruf, genau dafür wird sie hinterlegt.
             FakeAppleMusicSearchClient client = new(
                 albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
                 {
@@ -258,7 +258,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task Neuerscheinungen_NehmenNurAlbenImZeitfenster()
         {
             // Der Zeitraum ist die ganze Aussage der Prüfung: Was älter ist, hat der
-            // Anwender längst gesehen — es gehört nicht als Neuerscheinung auf das Brett.
+            // Anwender längst gesehen, es gehört nicht als Neuerscheinung auf das Brett.
             DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
             FakeAppleMusicSearchClient client = new(
                 albumsByArtist: new Dictionary<long, List<ITunesCollectionDto>>
@@ -339,7 +339,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task Neuerscheinungen_OhneTrefferMeldenDieSerieGarNicht()
         {
-            // Eine Serie ohne Fund gehört nicht ins Ergebnis — sonst stünde sie mit
+            // Eine Serie ohne Fund gehört nicht ins Ergebnis, sonst stünde sie mit
             // leerer Liste auf dem Brett und sähe aus wie ein Fehler.
             DateTime heute = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
             FakeAppleMusicSearchClient client = new(

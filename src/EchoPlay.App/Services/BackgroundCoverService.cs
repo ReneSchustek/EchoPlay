@@ -11,20 +11,20 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Lädt fehlende Cover automatisch nach: einmal beim App-Start, danach periodisch.
-    /// Der Nutzer merkt nichts davon – Cover erscheinen einfach irgendwann.
+    /// Der Nutzer merkt nichts davon. Cover erscheinen einfach irgendwann.
     /// </summary>
     /// <remarks>
     /// Diese Klasse entscheidet <b>wann</b> etwas passiert, nicht wie. Die Arbeit liegt in drei
     /// Mitspielern, die sie im Konstruktor aufbaut:
     /// <list type="bullet">
-    /// <item><see cref="LocalCoverPhases"/> — Dateisystem und SQL-Kopie, ohne Netz.</item>
-    /// <item><see cref="OnlineCoverPhases"/> — Anbieter-Adressen, Downloads, Online-Suche.</item>
-    /// <item><see cref="ForegroundCoverCoordinator"/> — alles, was am Hintergrundlauf vorbei darf,
+    /// <item><see cref="LocalCoverPhases"/>: Dateisystem und SQL-Kopie, ohne Netz.</item>
+    /// <item><see cref="OnlineCoverPhases"/>: Anbieter-Adressen, Downloads, Online-Suche.</item>
+    /// <item><see cref="ForegroundCoverCoordinator"/>: alles, was am Hintergrundlauf vorbei darf,
     /// weil der Nutzer davor sitzt.</item>
     /// </list>
     /// Die Mitspieler entstehen hier statt über die DI-Registrierung, weil sie keine eigene
-    /// Lebensdauer haben und niemand sie einzeln ersetzt — dasselbe Muster wie bei den
-    /// Actions-Klassen der ViewModels. Der Logger wird an alle drei weitergegeben, damit die
+    /// Lebensdauer haben und niemand sie einzeln ersetzt (dasselbe Muster wie bei den
+    /// Actions-Klassen der ViewModels). Der Logger wird an alle drei weitergegeben, damit die
     /// Meldungen eines Durchlaufs im Protokoll zusammenbleiben.
     /// </remarks>
     public class BackgroundCoverService : IDisposable
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Startet den Hintergrund-Task. Idempotent — mehrfacher Aufruf ist no-op.
+        /// Startet den Hintergrund-Task. Idempotent, mehrfacher Aufruf ist no-op.
         /// </summary>
         public void Start()
         {
@@ -106,14 +106,14 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Ein vollständiger Durchlauf mit einer Protokollzeile je Phase.
         /// Die Reihenfolge ist nach Kosten sortiert: Dateisystem, SQL-Kopie, Anbieter-Adressen,
-        /// Download über bekannte Adresse — und erst am Ende die Online-Suche, die als einzige
+        /// Download über bekannte Adresse und erst am Ende die Online-Suche, die als einzige
         /// Phase mehrere Anbieter abfragt.
         /// </summary>
         /// <returns>Anzahl der geladenen Cover.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public virtual async Task<int> RunOnceAsync(CancellationToken cancellationToken = default)
         {
-            // Eigene CTS, die mit dem externen Token verkettet ist — Aufrufer kann den Lauf
+            // Eigene CTS, die mit dem externen Token verkettet ist. Der Aufrufer kann den Lauf
             // abbrechen, ohne dass der interne Loop seinen eigenen Schutz verliert.
             using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             CancellationToken ct = cts.Token;
@@ -152,7 +152,7 @@ namespace EchoPlay.App.Services
             _logger.Info("RunOnce Phase 3 (Online-Suche): {Searched} Serien mit fehlenden Episoden-Covern angestoßen.", searched);
 
             // Phase 4: Dasselbe für die Serien selbst. Ohne diesen Schritt bleibt eine Serie
-            // ohne lokale cover.jpg und ohne Provider-URL dauerhaft leer — der URL-Nachtrag
+            // ohne lokale cover.jpg und ohne Provider-URL dauerhaft leer, denn der URL-Nachtrag
             // in Phase 2a füllt ausschließlich Episoden.
             int seriesFound = await _onlinePhases.SearchMissingSeriesCoversOnlineAsync(ct);
             loaded += seriesFound;
@@ -191,7 +191,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Hauptschleife: einmaliger Durchlauf beim Start, dann periodisch. Protokolliert je
-        /// Iteration nur eine Zusammenfassung und schweigt ganz, wenn nichts gefunden wurde —
+        /// Iteration nur eine Zusammenfassung und schweigt ganz, wenn nichts gefunden wurde;
         /// alle 30 Minuten eine Zeile je Phase wäre Protokoll-Müll.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Scan-Schleife: TagLib-, DB-, HTTP- oder IO-Fehler einer einzelnen Iteration dürfen die Cover-Schleife nicht beenden; Fehler werden als Warning geloggt und die nächste Iteration fährt fort.")]
@@ -256,7 +256,7 @@ namespace EchoPlay.App.Services
         /// Serien-Cover-Fallback das spezifische Folgen-Cover progressiv nachbekommen.
         /// Details siehe <see cref="ForegroundCoverCoordinator"/>.
         /// </summary>
-        /// <param name="episodeIds">Zu prüfende Episoden – Duplikate sind erlaubt, werden entfernt.</param>
+        /// <param name="episodeIds">Zu prüfende Episoden. Duplikate sind erlaubt, werden entfernt.</param>
         /// <param name="onCoverReady">Callback pro Episode, die ein Cover bekommen hat. Darf <see langword="null"/> sein.</param>
         /// <param name="priority">Priorität der Anfrage.</param>
         public void EnqueueForEpisodes(
@@ -276,7 +276,7 @@ namespace EchoPlay.App.Services
             => _foreground.RequestPriorityForSeriesAsync(seriesId, ct);
 
         /// <summary>
-        /// Lädt das Cover für ein Such-Treffer-Element. Persistiert es bewusst nicht — ein
+        /// Lädt das Cover für ein Such-Treffer-Element. Persistiert es bewusst nicht, denn ein
         /// Such-Treffer ist noch nicht importiert. Details siehe
         /// <see cref="ForegroundCoverCoordinator"/>.
         /// </summary>
@@ -341,16 +341,16 @@ namespace EchoPlay.App.Services
             try { _cts?.Cancel(); }
             catch (ObjectDisposedException)
             {
-                // Race im App-Exit: CTS wurde parallel bereits disposed – Cancel ist dann ein No-Op.
+                // Race im App-Exit: CTS wurde parallel bereits disposed; Cancel ist dann ein No-Op.
             }
 
             // 2 s sind ein Kompromiss: Task.Delay-Iterationen schlafen 30 min,
-            // ein laufendes RunOnceAsync braucht selten so lange — länger warten würde
+            // ein laufendes RunOnceAsync braucht selten so lange, länger warten würde
             // den App-Exit blockieren.
             try { _ = _backgroundTask?.Wait(TimeSpan.FromSeconds(2)); }
             catch (Exception)
             {
-                // AggregateException (Cancel) oder Timeout im Shutdown sind erwartet – Dispose darf hier nicht werfen.
+                // AggregateException (Cancel) oder Timeout im Shutdown sind erwartet. Dispose darf hier nicht werfen.
             }
 
             _cts?.Dispose();

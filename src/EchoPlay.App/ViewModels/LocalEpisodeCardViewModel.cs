@@ -11,7 +11,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Erweitert <see cref="CoverCardViewModelBase"/>, damit <see cref="CoverCardViewModelBase.CoverImage"/> nachträglich
-    /// gesetzt werden kann – zum Beispiel wenn der Nutzer über das Kontextmenü ein neues
+    /// gesetzt werden kann, zum Beispiel wenn der Nutzer über das Kontextmenü ein neues
     /// Cover auswählt oder eine Cover-Suche ausführt.
     /// </remarks>
     public sealed class LocalEpisodeCardViewModel : CoverCardViewModelBase
@@ -25,7 +25,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="episodeNumber">Episodennummer oder null wenn keine Nummer vorhanden.</param>
         /// <param name="title">Episodentitel.</param>
         /// <param name="localTrackCount">Anzahl der lokal zugeordneten Tracks.</param>
-        /// <param name="folderPath">Ordnerpfad der Episode – für den "Alle Tracks bearbeiten"-Button.</param>
+        /// <param name="folderPath">Ordnerpfad der Episode für den "Alle Tracks bearbeiten"-Button.</param>
         /// <param name="coverImage">
         /// Vorab geladenes Cover-Bild oder <see langword="null"/> wenn kein Cover vorhanden.
         /// </param>

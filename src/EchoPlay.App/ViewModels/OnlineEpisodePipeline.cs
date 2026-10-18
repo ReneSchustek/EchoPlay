@@ -98,7 +98,7 @@ namespace EchoPlay.App.ViewModels
             // an einer trägen Serienansicht nicht zu erkennen, welcher davon sie träge macht.
             System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            // Lokale Cover in CoverImages sicherstellen – liest cover.jpg / ID3-Tags aus dem Dateisystem
+            // Lokale Cover in CoverImages sicherstellen; liest cover.jpg / ID3-Tags aus dem Dateisystem
             if (_ctx.BackgroundCoverService is not null)
             {
                 _ = await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
@@ -116,7 +116,7 @@ namespace EchoPlay.App.ViewModels
             long copyMs = stopwatch.ElapsedMilliseconds;
             stopwatch.Restart();
 
-            // Episoden aus DB laden – Cover sind jetzt schon gesetzt
+            // Episoden aus DB laden, die Cover sind jetzt schon gesetzt
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(card.Id);
 
@@ -143,7 +143,7 @@ namespace EchoPlay.App.ViewModels
 
             // Nur die oberste Reihe bekommt ihr Bild sofort. Vorher alle zu holen hieße bei
             // „Bibi Blocksberg" (399 Folgen, rund 40 MB Bilddaten), dass die Liste erst nach
-            // knapp zwanzig Sekunden überhaupt erscheint — gemessen, nicht geschätzt.
+            // knapp zwanzig Sekunden überhaupt erscheint (gemessen, nicht geschätzt).
             stopwatch.Restart();
             await ApplyCoversAsync(episodeCards, episodes, 0, FirstVisibleCovers, ct);
             long firstCoversMs = stopwatch.ElapsedMilliseconds;
@@ -163,7 +163,7 @@ namespace EchoPlay.App.ViewModels
                 _ = ApplyRemainingCoversAsync(episodeCards, episodes, ct);
             }
 
-            // Fehlende Cover im Hintergrund nachladen – UI zeigt erst Platzhalter,
+            // Fehlende Cover im Hintergrund nachladen. Die UI zeigt erst Platzhalter,
             // Cover erscheinen progressiv sobald der Download fertig ist.
             bool hasMissingCovers = false;
             foreach (OnlineEpisodeCardViewModel ep in episodeCards)
@@ -189,7 +189,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Größe einer Nachlade-Charge. Zwischen zwei Chargen kommt die Oberfläche wieder zum
-        /// Zeichnen — ohne diese Pause bliebe sie bis zum letzten Bild stehen.
+        /// Zeichnen. Ohne diese Pause bliebe sie bis zum letzten Bild stehen.
         /// </summary>
         private const int CoverBatchSize = 40;
 
@@ -229,7 +229,7 @@ namespace EchoPlay.App.ViewModels
             int ende = Math.Min(start + count, cards.Count);
             if (ende <= start) return;
 
-            // Die Bilddaten dieser Spanne in einem Zug — ein Abruf je Charge statt einem für
+            // Die Bilddaten dieser Spanne in einem Zug: ein Abruf je Charge statt einem für
             // den ganzen Bestand.
             List<Guid> episodeIds = new(ende - start);
             for (int i = start; i < ende; i++)
@@ -289,7 +289,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (OperationCanceledException)
             {
-                // Serienwechsel — erwarteter Abbruch.
+                // Serienwechsel, also erwarteter Abbruch.
             }
             catch (Exception)
             {
@@ -332,11 +332,11 @@ namespace EchoPlay.App.ViewModels
             }
             catch (OperationCanceledException)
             {
-                // Serienwechsel – erwarteter Abbruch
+                // Serienwechsel, also erwarteter Abbruch
             }
             catch (Exception)
             {
-                // Cover-Nachladen ist optional – kein Fehler für den Nutzer
+                // Cover-Nachladen ist optional, kein Fehler für den Nutzer
             }
         }
 
@@ -415,7 +415,7 @@ namespace EchoPlay.App.ViewModels
         {
             ApplyEpisodeCoverCallCount++;
 
-            // Netzwerkfehler ergeben null — dann bleibt der Platzhalter stehen.
+            // Netzwerkfehler ergeben null, dann bleibt der Platzhalter stehen.
             byte[]? coverBytes = await _ctx.CoverDownloader.DownloadAsync(hit.FullUrl);
             if (coverBytes is null)
             {

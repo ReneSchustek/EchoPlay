@@ -106,7 +106,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task SearchAsync_NetworkError_ReturnsEmptyList()
         {
-            // Ein Netzwerkfehler darf nicht zu einer Exception führen – leere Liste als Fallback
+            // Ein Netzwerkfehler darf nicht zu einer Exception führen; leere Liste als Fallback
             FakeHttpMessageHandler handler = new(throwException: true);
             HttpClient client = new(handler);
             CoverArtArchiveSearchService service = new(client);

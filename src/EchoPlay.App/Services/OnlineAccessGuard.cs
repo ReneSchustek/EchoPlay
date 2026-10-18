@@ -95,7 +95,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// No-Op-Disposable für den Online-Modus – Dispose tut nichts.
+        /// No-Op-Disposable für den Online-Modus. Dispose tut nichts.
         /// Singleton, da zustandslos.
         /// </summary>
         private sealed class NoOpDisposable : IDisposable

@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await viewModel.LoadAsync();
 
-            // Der Fake liefert den Schlüssel unverändert zurück — geprüft wird also, dass
+            // Der Fake liefert den Schlüssel unverändert zurück; geprüft wird also, dass
             // der Name überhaupt über die Sprachdatei geht und nicht hart im Code steht.
             Assert.Equal("DialogName_LibraryReinit", viewModel.Items[0].DisplayName);
         }

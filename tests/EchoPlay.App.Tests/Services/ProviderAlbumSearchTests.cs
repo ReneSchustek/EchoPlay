@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für die Album-Suche beim Anbieter: Ein Treffer ist eine einzelne Folge,
-    /// keine Serie — die Abbildung auf <see cref="ImportSeries"/> entscheidet, was
+    /// keine Serie; die Abbildung auf <see cref="ImportSeries"/> entscheidet, was
     /// die Trefferkachel anzeigt und was beim Übernehmen in der Ablage landet.
     /// </summary>
     /// <remarks>
@@ -169,7 +169,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task OhneRegistriertenZugang_BleibtDieAlbenSucheLeer()
         {
             // Ohne registrierten Anbieter-Zugang darf die Suche nichts liefern und
-            // nicht reißen — die Trefferliste bleibt schlicht leer.
+            // nicht reißen, die Trefferliste bleibt schlicht leer.
             ImportService service = BuildService(ProviderType.Spotify);
 
             SearchOutcome outcome = await service.SearchAlbumsAsync("TKKG", TestContext.Current.CancellationToken);
@@ -181,7 +181,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task OhneZugangsdaten_SuchtSpotifyAnfrageUeberAppleMusic()
         {
             // Derselbe Rückfall wie bei der Serien-Suche: Spotify ist gewählt, aber ohne
-            // Zugangsdaten unbrauchbar — gefragt wird dann Apple Music.
+            // Zugangsdaten unbrauchbar, dann wird Apple Music gefragt.
             FakeSpotifyApiClient spotify = new();
             FakeAppleMusicSearchClient apple = new();
             apple.AlbumSearchResults.Add(new ITunesCollectionDto

@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Controls
 {
     /// <summary>
     /// Sichert ab, dass belegter und aktiver Zustand eines Fachs nicht allein an der Farbe
-    /// hängen — sie sind über Schriftschnitt und Rahmen erkennbar.
+    /// hängen, denn sie sind über Schriftschnitt und Rahmen erkennbar.
     /// </summary>
     public sealed class AlphabetBucketTests
     {

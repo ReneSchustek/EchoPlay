@@ -16,7 +16,7 @@ namespace EchoPlay.Data.Migrations
             // Cooldown-Zeitstempel für die automatische Serien-Cover-Suche, Gegenstück zu
             // Episodes.CoverLastChecked. Ohne die Spalte fragt der Hintergrunddienst bei jedem
             // Durchlauf dieselben coverlosen Serien erneut bei den Anbietern an.
-            // NULL für den Bestand ist genau richtig: „noch nie geprüft" – die erste Suche
+            // NULL für den Bestand ist genau richtig: „noch nie geprüft", die erste Suche
             // läuft also für alle bestehenden Serien.
             _ = migrationBuilder.AddColumn<DateTime>(
                 name: "CoverLastChecked",

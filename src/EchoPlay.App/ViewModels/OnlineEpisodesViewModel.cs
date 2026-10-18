@@ -66,7 +66,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Ersetzt die Episodenliste komplett und wendet die aktuelle Sortierung an.
-        /// Die gewählte Sortierung bleibt bewusst erhalten – sie darf beim Serienwechsel
+        /// Die gewählte Sortierung bleibt bewusst erhalten, denn sie darf beim Serienwechsel
         /// nicht auf den Standard zurückspringen (persistiert über <see cref="EpisodeSortIndex"/>).
         /// </summary>
         /// <param name="episodes">Die neuen Episoden-Kacheln.</param>
@@ -76,7 +76,7 @@ namespace EchoPlay.App.ViewModels
             ApplySort();
         }
 
-        /// <summary>Leert die Episodenliste – z.B. beim Deselect oder Serienwechsel.</summary>
+        /// <summary>Leert die Episodenliste, z.B. beim Deselect oder Serienwechsel.</summary>
         public void Clear()
         {
             _allEpisodes = [];
@@ -97,7 +97,7 @@ namespace EchoPlay.App.ViewModels
         {
             // Primär nach Folgennummer sortieren (Standard). Episoden ohne Nummer
             // (Sondereditionen, Lieder-Sammlungen) landen dank int.MaxValue am Ende statt
-            // – wie bei reiner Titel-Sortierung – vermischt zwischen den nummerierten Folgen.
+            // (wie bei reiner Titel-Sortierung) vermischt zwischen den nummerierten Folgen.
             // Sekundär nach Titel, damit unnummerierte Einträge untereinander stabil stehen.
             IEnumerable<OnlineEpisodeCardViewModel> sorted = _episodeSortIndex switch
             {

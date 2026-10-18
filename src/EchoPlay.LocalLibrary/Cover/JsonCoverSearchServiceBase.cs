@@ -34,7 +34,7 @@ namespace EchoPlay.LocalLibrary.Cover
 
         /// <summary>
         /// Kennt die API einen Versatz? MusicBrainz (<c>offset</c>) und Deezer (<c>index</c>)
-        /// tun es, die iTunes Search API nicht — dort wird mehr geholt und der bereits gezeigte
+        /// tun es, die iTunes Search API nicht. Dort wird mehr geholt und der bereits gezeigte
         /// Anfang verworfen. Ableitungen ohne Versatz überschreiben das mit <c>false</c>.
         /// </summary>
         protected virtual bool SupportsOffset => true;
@@ -106,7 +106,7 @@ namespace EchoPlay.LocalLibrary.Cover
 
             List<CoverSearchResult> results = [];
 
-            // Bei APIs ohne Versatz enthält die Antwort die schon gezeigten Treffer erneut —
+            // Bei APIs ohne Versatz enthält die Antwort die schon gezeigten Treffer erneut;
             // die fallen hier weg. Gezählt wird vor dem Abbilden, damit verworfene Treffer
             // (kein Bild hinterlegt) die Zählung nicht verschieben.
             int zuUeberspringen = page.ToWindow(MaxResults, SupportsOffset).SkipLocally;

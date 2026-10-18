@@ -18,7 +18,7 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.ToTable("Series");
 
-            // Primärschlüssel – EF Core würde "Id" auch ohne explizite Angabe erkennen,
+            // Primärschlüssel: EF Core würde "Id" auch ohne explizite Angabe erkennen,
             // aber die explizite Konfiguration macht die Absicht klar.
             _ = builder.HasKey(s => s.Id);
 
@@ -50,8 +50,8 @@ namespace EchoPlay.Data.Configurations
             // Index auf Title beschleunigt die häufige ORDER BY Title-Abfrage in GetAllAsync.
             _ = builder.HasIndex(s => s.Title);
 
-            // Abonnierte Serien werden auf dem Dashboard und in der StatusBar gezählt –
-            // Kombi-Index vermeidet Full-Table-Scan bei GetSubscribedAsync().
+            // Abonnierte Serien werden auf dem Dashboard und in der StatusBar gezählt;
+            // der Kombi-Index vermeidet Full-Table-Scan bei GetSubscribedAsync().
             _ = builder.HasIndex(s => new { s.IsSubscribed, s.Title })
                    .HasFilter("IsDeleted = 0");
 
@@ -72,7 +72,7 @@ namespace EchoPlay.Data.Configurations
                    .HasFilter("IsDeleted = 0");
 
             // Purge-Index: DatabaseMaintenanceService filtert auf IsDeleted + DeletedAt.
-            // Partial Index nur für gelöschte Einträge – spart Speicher im Normalfall.
+            // Partial Index nur für gelöschte Einträge, das spart Speicher im Normalfall.
             builder.HasPurgeIndex();
         }
     }

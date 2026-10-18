@@ -48,7 +48,7 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task SetFavorite_AlsoEnablesWatching()
         {
-            // Favorit impliziert Überwachung – sonst prüft der Start die Serie nie
+            // Favorit impliziert Überwachung, sonst prüft der Start die Serie nie
             // auf Neuerscheinungen und der Dashboard-Abschnitt bleibt leer.
             Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             Context.ChangeTracker.Clear();
@@ -124,10 +124,10 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task SetFavorite_UnknownId_DoesNotThrow()
         {
-            // Unbekannte ID wird stillschweigend ignoriert – kein Fehler, kein Crash
+            // Unbekannte ID wird stillschweigend ignoriert (kein Fehler, kein Crash)
             SeriesDataService service = CreateSeriesService();
 
-            // Kein Assert nötig – der Test schlägt fehl wenn eine Exception geworfen wird
+            // Kein Assert nötig, der Test schlägt fehl wenn eine Exception geworfen wird
             await service.SetFavoriteAsync(new Guid("99999999-9999-9999-9999-999999999995"), true, cancellationToken: TestContext.Current.CancellationToken);
         }
     }

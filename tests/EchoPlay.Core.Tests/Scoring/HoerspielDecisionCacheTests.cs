@@ -69,7 +69,7 @@ namespace EchoPlay.Core.Tests.Scoring
 
             _ = cache.TryGet("artist-1", out HoerspielScoreResult? result);
 
-            // Der erste Eintrag bleibt erhalten – TryAdd ignoriert Duplikate
+            // Der erste Eintrag bleibt erhalten, TryAdd ignoriert Duplikate
             Assert.True(result!.IsHoerspiel);
             Assert.Equal(80, result.Score);
         }

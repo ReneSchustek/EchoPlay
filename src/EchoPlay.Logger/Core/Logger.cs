@@ -9,7 +9,7 @@ namespace EchoPlay.Logger.Core
     /// <summary>
     /// Standard-Implementierung des Loggers.
     /// Verteilt Log-Einträge an alle registrierten Sinks.
-    /// Das Minimum-Level wird zur Laufzeit aus den <see cref="LoggerOptions"/> gelesen –
+    /// Das Minimum-Level wird zur Laufzeit aus den <see cref="LoggerOptions"/> gelesen;
     /// so wirkt eine Einstellungsänderung sofort, ohne dass die App neu gestartet werden muss.
     /// </summary>
     /// <remarks>
@@ -17,7 +17,7 @@ namespace EchoPlay.Logger.Core
     /// </remarks>
     /// <param name="category">Die Quelle der Logs (z.B. "ApiService", "Database").</param>
     /// <param name="sinks">Liste der Ausgabeziele für Log-Einträge.</param>
-    /// <param name="options">Logger-Konfiguration – <c>MinimumLevel</c> wird bei jedem Aufruf neu gelesen.</param>
+    /// <param name="options">Logger-Konfiguration; <c>MinimumLevel</c> wird bei jedem Aufruf neu gelesen.</param>
     [SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "Etablierter Framework-Name; Namespace und Typ sind bewusst identisch wie bei Microsoft.Extensions.Logging.")]
     public sealed class Logger(string category, IReadOnlyList<ILogSink> sinks, LoggerOptions options) : ILogger
     {
@@ -62,8 +62,8 @@ namespace EchoPlay.Logger.Core
         }
 
         /// <summary>
-        /// Lazy-Overload: Erzeugt die Nachricht nur, wenn Debug aktiv ist —
-        /// spart String-Interpolation in Hot-Pfaden.
+        /// Lazy-Overload: Erzeugt die Nachricht nur, wenn Debug aktiv ist, und
+        /// spart so String-Interpolation in Hot-Pfaden.
         /// </summary>
         /// <param name="messageFactory">Factory für die Log-Nachricht.</param>
         public void Debug(Func<string> messageFactory)
@@ -123,7 +123,7 @@ namespace EchoPlay.Logger.Core
         private async Task LogAsync(LogLevel level, string message, Exception? exception = null)
         {
             // Frühzeitig abbrechen wenn Level unter Minimum liegt.
-            // Direkter Zugriff auf _options statt gecachtem Wert – ermöglicht Live-Änderung des Levels.
+            // Direkter Zugriff auf _options statt gecachtem Wert, das ermöglicht Live-Änderung des Levels.
             if (level < _options.MinimumLevel)
             {
                 return;

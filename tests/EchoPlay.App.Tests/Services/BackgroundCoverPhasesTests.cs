@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.Services
     /// und den vollen Lauf danach.
     /// </summary>
     /// <remarks>
-    /// Der Lauf im Startbild darf im Offline-Betrieb nicht nach draußen telefonieren — er
+    /// Der Lauf im Startbild darf im Offline-Betrieb nicht nach draußen telefonieren, denn er
     /// hält sonst den Start auf, während der Anwender vor einem Ladebild sitzt. Und keiner
     /// der Läufe darf werfen: Er läuft ohne Aufrufer, der einen Fehler behandeln könnte.
     /// </remarks>
@@ -115,7 +115,7 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await sut.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // Ohne hinterlegte Adresse bleibt nur die Suche — sonst träge die Serie
+            // Ohne hinterlegte Adresse bleibt nur die Suche, sonst träge die Serie
             // dauerhaft einen Platzhalter.
             Assert.Equal("TKKG", search.LastSearchTitle);
             Assert.Equal(["https://i.example.invalid/tkkg.jpg"], downloader.RequestedUrls);
@@ -143,7 +143,7 @@ namespace EchoPlay.App.Tests.Services
 
             _ = await sut.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            // Der Hintergrundlauf muss sich hinten anstellen — sonst nimmt er der
+            // Der Hintergrundlauf muss sich hinten anstellen, sonst nimmt er der
             // sichtbaren Oberfläche die Quote der fremden Gegenstelle weg.
             Assert.NotEmpty(rateLimiter.Waits);
         }

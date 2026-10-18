@@ -13,7 +13,7 @@ namespace EchoPlay.App.Services
     public static class NavigationRouteResolver
     {
         // Mapping logischer Ziele auf Page-Typen. Single Source of Truth für
-        // die Routing-Tabelle der App — neue Seiten werden hier registriert.
+        // die Routing-Tabelle der App; neue Seiten werden hier registriert.
         private static readonly Dictionary<NavigationTarget, Type> TargetMap =
             new()
             {

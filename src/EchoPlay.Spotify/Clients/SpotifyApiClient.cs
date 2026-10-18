@@ -201,7 +201,7 @@ namespace EchoPlay.Spotify.Clients
 
             _logger.Debug(() => $"Spotify-Alben laden für Künstler '{artistId}' (max. {limit}).");
 
-            // Spotify liefert maximal 50 Alben pro Seite – bei Serien mit >50 Folgen
+            // Spotify liefert maximal 50 Alben pro Seite; bei Serien mit >50 Folgen
             // (z.B. Die drei ??? mit 230+) muss über mehrere Seiten iteriert werden.
             int pageSize = Math.Min(limit, 50);
             string? requestUri = $"artists/{artistId}/albums?limit={pageSize}&include_groups=album";
@@ -211,7 +211,7 @@ namespace EchoPlay.Spotify.Clients
             {
                 while (requestUri is not null && albums.Count < limit)
                 {
-                    // Die Pagination-URL aus "next" ist absolut, der Startwert ist relativ –
+                    // Die Pagination-URL aus "next" ist absolut, der Startwert ist relativ;
                     // UriKind.RelativeOrAbsolute deckt beide Fälle im Loop ab.
                     using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.RelativeOrAbsolute, cancellationToken).ConfigureAwait(false);
 
@@ -366,7 +366,7 @@ namespace EchoPlay.Spotify.Clients
             _ = response.EnsureSuccessStatusCode();
 
             // JsonDocument.ParseAsync puffert den gesamten Stream, daher darf der Stream
-            // nach dem Parsen entsorgt werden – das Dokument bleibt gültig.
+            // nach dem Parsen entsorgt werden, das Dokument bleibt gültig.
             using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
         }

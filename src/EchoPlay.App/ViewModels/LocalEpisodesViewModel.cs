@@ -34,7 +34,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ILogger? _logger;
 
         /// <summary>
-        /// DispatcherQueue des UI-Threads – wird im Konstruktor auf dem UI-Thread erfasst und
+        /// DispatcherQueue des UI-Threads; wird im Konstruktor auf dem UI-Thread erfasst und
         /// später genutzt, um Hintergrund-Cover-Ladevorgänge auf den UI-Thread zu marshallen.
         /// In Unit-Tests ohne WinUI-3-Dispatcher bleibt das Feld <see langword="null"/>.
         /// </summary>
@@ -74,7 +74,7 @@ namespace EchoPlay.App.ViewModels
             _coverService = coverService;
             _logger = logger;
 
-            // DispatcherQueue auf dem UI-Thread erfassen – notwendig für das Marshalling der
+            // DispatcherQueue auf dem UI-Thread erfassen, notwendig für das Marshalling der
             // BitmapImage-Erzeugung. In Tests existiert kein WinUI-3-Dispatcher, dann bleibt das Feld null.
             try
             {
@@ -159,7 +159,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// True wenn die aktuelle Serie Sonderfolgen hat – nur dann wird der Tab sichtbar.
+        /// True wenn die aktuelle Serie Sonderfolgen hat. Nur dann wird der Tab sichtbar.
         /// </summary>
         public bool HasSpecialEpisodes => _allEpisodes.Any(e => e.IsSpecialEpisode);
 
@@ -190,7 +190,7 @@ namespace EchoPlay.App.ViewModels
         /// Die Wiedergabestatus-IDs werden vom Aufrufer übergeben, weil sie aus der DB kommen
         /// und im Aufrufer bereits per Batch-Query geladen werden.
         /// </summary>
-        /// <param name="artist">Die ausgewählte Serie – wird nur für das Kürzen des Serien-Präfixes verwendet.</param>
+        /// <param name="artist">Die ausgewählte Serie; wird nur für das Kürzen des Serien-Präfixes verwendet.</param>
         /// <param name="episodes">Alle Episoden der Serie aus der Datenbank.</param>
         /// <param name="completedIds">IDs aller vollständig gehörten Episoden.</param>
         /// <param name="inProgressIds">IDs aller begonnenen, aber nicht abgeschlossenen Episoden.</param>
@@ -201,7 +201,7 @@ namespace EchoPlay.App.ViewModels
             HashSet<Guid> inProgressIds)
         {
             ArgumentNullException.ThrowIfNull(artist);
-            // Laufende Cover-Tasks der vorherigen Serie abbrechen – verhindert,
+            // Laufende Cover-Tasks der vorherigen Serie abbrechen. Das verhindert,
             // dass alte Hintergrund-Tasks Cover auf bereits ersetzte Karten setzen.
             if (_coverCts is not null)
             {
@@ -211,15 +211,15 @@ namespace EchoPlay.App.ViewModels
             _coverCts = new CancellationTokenSource();
             CancellationToken coverToken = _coverCts.Token;
 
-            // Schritt 1: Karten OHNE Cover erstellen – GridView rendert sofort
+            // Schritt 1: Karten OHNE Cover erstellen, GridView rendert sofort
             List<LocalEpisodeCardViewModel> episodeCards = [];
             List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue = [];
 
             foreach (Episode episode in episodes.Where(e => e.LocalFolderPath is not null).OrderBy(e => e.EpisodeNumber))
             {
                 // Serien-Präfix aus dem Episodentitel entfernen, falls vorhanden.
-                // Viele Hörspiel-Ordner heißen z.B. "Abenteurer unserer Zeit - Der Pirat" –
-                // der Serienname am Anfang ist redundant und verschwendet Platz in der Kachel.
+                // Viele Hörspiel-Ordner heißen z.B. "Abenteurer unserer Zeit - Der Pirat",
+                // und der Serienname am Anfang ist redundant und verschwendet Platz in der Kachel.
                 string displayTitle = StripSeriesPrefix(episode.Title, artist.Title);
 
                 // Sonderfolge: Nummer 0 oder null (kein erkennbares Nummernmuster)
@@ -267,7 +267,7 @@ namespace EchoPlay.App.ViewModels
                 await _coverLoaderRunner.LoadSingleAsync(coverQueue[i].Card, coverQueue[i].Episode);
             }
 
-            // Rest im Hintergrund – ab Position 60, in 60er-Chargen nachladend.
+            // Rest im Hintergrund: ab Position 60, in 60er-Chargen nachladend.
             if (coverQueue.Count > firstBatchSize)
             {
                 List<(LocalEpisodeCardViewModel Card, Episode Episode)> remaining =
@@ -298,11 +298,11 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Filtert und sortiert die Episodenliste basierend auf dem gewählten Filter und Sortierkriterium.
-        /// Arbeitet rein im Speicher auf <see cref="_allEpisodes"/> – kein DB-Zugriff nötig.
+        /// Arbeitet rein im Speicher auf <see cref="_allEpisodes"/>, kein DB-Zugriff nötig.
         /// </summary>
         public void ApplyFilterAndSort()
         {
-            // Schritt 0: Tab-Filter – reguläre Folgen vs. Sonderfolgen
+            // Schritt 0: Tab-Filter (reguläre Folgen vs. Sonderfolgen)
             IEnumerable<LocalEpisodeCardViewModel> tabFiltered = _episodeTabIndex == 1
                 ? _allEpisodes.Where(e => e.IsSpecialEpisode)
                 : _allEpisodes.Where(e => !e.IsSpecialEpisode);
@@ -347,7 +347,7 @@ namespace EchoPlay.App.ViewModels
 
             await stateService.MarkCompletedAsync(episodeId, _clock.UtcNow);
 
-            // Kachel sofort aktualisieren – ohne Serienwechsel und Rückkehr.
+            // Kachel sofort aktualisieren, ohne Serienwechsel und Rückkehr.
             // Haken erscheint per PropertyChanged auf IsCompleted → CompletedCheckVisibility.
             _ = _completedEpisodeIds.Add(episodeId);
             _ = _inProgressEpisodeIds.Remove(episodeId);
@@ -371,7 +371,7 @@ namespace EchoPlay.App.ViewModels
 
             await stateService.MarkNotStartedAsync(episodeId);
 
-            // Kachel sofort aktualisieren – Haken verschwindet per PropertyChanged.
+            // Kachel sofort aktualisieren; der Haken verschwindet per PropertyChanged.
             _ = _completedEpisodeIds.Remove(episodeId);
             _ = _inProgressEpisodeIds.Remove(episodeId);
             LocalEpisodeCardViewModel? card = _allEpisodes.FirstOrDefault(c => c.EpisodeId == episodeId);
@@ -393,7 +393,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="seriesTitle">Name der übergeordneten Serie.</param>
         /// <returns>
         /// Bereinigter Titel ohne Serien-Präfix. Wenn der Titel nach dem Entfernen leer wäre,
-        /// wird der Originaltitel zurückgegeben – ein leerer Anzeigename ist nie sinnvoll.
+        /// wird der Originaltitel zurückgegeben, denn ein leerer Anzeigename ist nie sinnvoll.
         /// </returns>
         private static string StripSeriesPrefix(string episodeTitle, string seriesTitle)
         {
@@ -417,7 +417,7 @@ namespace EchoPlay.App.ViewModels
             remaining = remaining.TrimStart();
 
             // Sicherheitsprüfung: wenn nach dem Bereinigen nichts übrig bleibt,
-            // den Originaltitel behalten – ein leerer Titel ist nie hilfreich
+            // den Originaltitel behalten, denn ein leerer Titel ist nie hilfreich
             return remaining.Length > 0 ? remaining : episodeTitle;
         }
 

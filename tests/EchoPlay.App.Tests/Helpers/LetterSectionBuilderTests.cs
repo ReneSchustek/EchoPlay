@@ -9,12 +9,12 @@ namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
     /// Sichert die Aufteilung der Buchstaben-Abschnitte um den aufgeklappten Folgenbereich ab.
-    /// Der Punkt: Was oberhalb steht, was unterhalb weitergeht — und dass der Buchstabe dabei
+    /// Der Punkt: Was oberhalb steht, was unterhalb weitergeht, und dass der Buchstabe dabei
     /// nur einmal als Überschrift erscheint.
     /// </summary>
     public sealed class LetterSectionBuilderTests
     {
-        /// <summary>Kachel-Ersatz für die Tests — mehr als einen Titel braucht die Aufteilung nicht.</summary>
+        /// <summary>Kachel-Ersatz für die Tests; mehr als einen Titel braucht die Aufteilung nicht.</summary>
         private sealed class Tile
         {
             public Tile(string title) => Title = title;
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Ohne Auswahl klappt nichts auf — dann gibt es auch keine Trennstelle, an der die
+        /// Ohne Auswahl klappt nichts auf, dann gibt es auch keine Trennstelle, an der die
         /// Liste zerfallen müsste.
         /// </summary>
         [Fact]
@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// Abschnitte vor der Auswahl bleiben oben, Abschnitte danach wandern unter den
-        /// Folgenbereich — sonst stünde die Hälfte des Bestands hinter dem aufgeklappten Teil.
+        /// Folgenbereich, sonst stünde die Hälfte des Bestands hinter dem aufgeklappten Teil.
         /// </summary>
         [Fact]
         public void Build_SectionsBeforeAndAfterTheSelectionGoToTheirOwnSide()
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.Helpers
 
         /// <summary>
         /// Reicht der Abschnitt genau bis zur Aufklappstelle, entsteht unten kein leerer
-        /// Abschnitt — der zöge sonst einen Abstand ohne Inhalt nach sich.
+        /// Abschnitt; der zöge sonst einen Abstand ohne Inhalt nach sich.
         /// </summary>
         [Fact]
         public void Build_SelectionInLastRow_LeavesNoEmptyContinuation()
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Umlaute laufen auf ihren Grundbuchstaben — „Ärger" steht unter A und bekommt keinen
+        /// Umlaute laufen auf ihren Grundbuchstaben: „Ärger" steht unter A und bekommt keinen
         /// eigenen Abschnitt.
         /// </summary>
         [Fact]
@@ -185,8 +185,8 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Die Fortsetzung unterhalb des Folgenbereichs behält den Namen ihres Abschnitts —
-        /// sie gehört zu ihm, auch ohne sichtbare Überschrift.
+        /// Die Fortsetzung unterhalb des Folgenbereichs behält den Namen ihres Abschnitts,
+        /// denn sie gehört zu ihm, auch ohne sichtbare Überschrift.
         /// </summary>
         [Fact]
         public void Build_ContinuationKeepsTheAutomationNameOfItsSection()
@@ -239,7 +239,7 @@ namespace EchoPlay.App.Tests.Helpers
         }
 
         /// <summary>
-        /// Ohne Namen liest die Sprachausgabe den Typnamen des Anzeigemodells vor — genau der
+        /// Ohne Namen liest die Sprachausgabe den Typnamen des Anzeigemodells vor, genau der
         /// Befund, der die Beschriftungspflicht ausgelöst hat.
         /// </summary>
         [Fact]

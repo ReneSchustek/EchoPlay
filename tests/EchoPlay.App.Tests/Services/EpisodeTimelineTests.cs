@@ -6,13 +6,13 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="EpisodeTimeline"/> — die Umrechnung zwischen der Stelle in
+    /// Tests für <see cref="EpisodeTimeline"/>, die Umrechnung zwischen der Stelle in
     /// einer Spur und der Stelle in der ganzen Folge.
     /// </summary>
     /// <remarks>
     /// Der Fehler, den sie verhindern: Gespeichert wurde die Position in der laufenden
     /// Datei, fortgesetzt wurde sie auf Spur 1. Wer bei Spur 3, Minute 10 aufhörte, landete
-    /// bei Spur 1, Minute 10 — bei einer vierstündigen Folge über zwei Stunden zu früh.
+    /// bei Spur 1, Minute 10, bei einer vierstündigen Folge über zwei Stunden zu früh.
     /// </remarks>
     public sealed class EpisodeTimelineTests
     {
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void UnknownTrackDuration_StopsTheCalculation()
         {
-            // Eine Spur ohne Dauer lässt sich nicht überspringen — dort endet die Rechnung,
+            // Eine Spur ohne Dauer lässt sich nicht überspringen, dort endet die Rechnung,
             // statt den Rest ins Leere laufen zu lassen.
             EpisodeTimeline timeline = new([TimeSpan.FromMinutes(30), TimeSpan.Zero, TimeSpan.FromMinutes(20)]);
 

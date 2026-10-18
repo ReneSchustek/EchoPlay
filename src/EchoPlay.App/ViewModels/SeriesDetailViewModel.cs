@@ -106,7 +106,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Lädt alle Episoden der angegebenen Serie samt Wiedergabestatus.
-        /// Startet zusätzlich – sofern ein <see cref="BackgroundCoverService"/> injiziert ist –
+        /// Startet zusätzlich (sofern ein <see cref="BackgroundCoverService"/> injiziert ist)
         /// die Priorisierung der fehlenden Folgen-Cover dieser Serie und pausiert damit
         /// den Hintergrund-Scan, bis die sichtbare Liste versorgt ist.
         /// </summary>
@@ -136,7 +136,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             // Nach dem UI-Refresh: Priorität für die sichtbaren Folgen anstoßen.
-            // Fire-and-forget — der Background-Service pausiert seinen Loop selbst,
+            // Fire-and-forget: Der Background-Service pausiert seinen Loop selbst,
             // damit die sichtbare Serie das HTTP-/Dateisystem-Kontingent zuerst bekommt.
             StartPriorityLoad(seriesId);
         }
@@ -226,7 +226,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (ObjectDisposedException)
             {
-                // CTS wurde bereits abgeräumt – defensiv schlucken.
+                // CTS wurde bereits abgeräumt, also defensiv schlucken.
             }
 
             _priorityCts.Dispose();
@@ -247,7 +247,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (ObjectDisposedException)
             {
-                // Bereits entsorgt — defensiv schlucken.
+                // Bereits entsorgt, also defensiv schlucken.
             }
         }
 

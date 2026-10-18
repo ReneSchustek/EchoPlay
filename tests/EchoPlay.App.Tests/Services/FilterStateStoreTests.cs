@@ -38,7 +38,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>
-        /// Zwei Seiten dürfen denselben Namen tragen und verschiedene Kriterien führen — sonst
+        /// Zwei Seiten dürfen denselben Namen tragen und verschiedene Kriterien führen, sonst
         /// bekäme eine von beiden ein Objekt des falschen Typs.
         /// </summary>
         [Fact]

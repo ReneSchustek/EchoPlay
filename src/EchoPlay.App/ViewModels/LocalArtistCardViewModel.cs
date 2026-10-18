@@ -16,7 +16,7 @@ namespace EchoPlay.App.ViewModels
     /// <remarks>
     /// Erweitert <see cref="SeriesTileViewModelBase"/>, damit <see cref="CoverCardViewModelBase.CoverImage"/> und <see cref="SeriesTileViewModelBase.IsFavorite"/>
     /// nachträglich geändert werden können, ohne die Liste neu aufzubauen. Das ViewModel der lokalen Mediathek
-    /// zeigt die Serien-Kacheln sofort an – Cover laden progressiv im Hintergrund nach.
+    /// zeigt die Serien-Kacheln sofort an, Cover laden progressiv im Hintergrund nach.
     /// </remarks>
     public sealed class LocalArtistCardViewModel : SeriesTileViewModelBase
     {
@@ -28,7 +28,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="seriesId">Datenbank-ID der Serie.</param>
         /// <param name="title">Titel der Serie.</param>
         /// <param name="coverImage">Vorschaubild oder null wenn kein Cover vorhanden ist.</param>
-        /// <param name="localFolderPath">Lokaler Serienordner – für den "Alle Tracks"-Button.</param>
+        /// <param name="localFolderPath">Lokaler Serienordner für den "Alle Tracks"-Button.</param>
         /// <param name="localEpisodeCount">Episoden mit mindestens einem lokal gefundenen Track.</param>
         /// <param name="totalEpisodeCount">Gesamtanzahl aller Episoden dieser Serie.</param>
         /// <param name="isFavorite">Ob die Serie aktuell als Favorit markiert ist.</param>
@@ -95,12 +95,12 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Ob der Serie lokal Folgen fehlen. Eine Serie ohne bekannte Folgen zählt nicht als
-        /// unvollständig — dort fehlt die Auskunft, nicht der Bestand.
+        /// unvollständig: Dort fehlt die Auskunft, nicht der Bestand.
         /// </summary>
         public bool IsIncomplete => TotalEpisodeCount > 0 && LocalEpisodeCount < TotalEpisodeCount;
 
         /// <summary>
-        /// Aktualisiert die Episodenzähler nachträglich – z.B. wenn der Scan die Episoden einer
+        /// Aktualisiert die Episodenzähler nachträglich, z.B. wenn der Scan die Episoden einer
         /// Serie erst nach dem Anlegen der Kachel persistiert. Meldet zusätzlich <see cref="CountText"/>
         /// als geändert, damit die gebundene Anzeige live nachzieht statt auf "0 / 0" zu verharren.
         /// </summary>
@@ -129,8 +129,8 @@ namespace EchoPlay.App.ViewModels
             await SeriesFavoriteToggle.SetFavoriteAsync(_scopeFactory, SeriesId, newValue);
             IsFavorite = newValue;
 
-            // Favorisieren aktiviert in der Datenschicht zugleich die Überwachung –
-            // ohne diese Zeile bliebe das Auge auf der Kachel bis zum nächsten Laden aus.
+            // Favorisieren aktiviert in der Datenschicht zugleich die Überwachung.
+            // Ohne diese Zeile bliebe das Auge auf der Kachel bis zum nächsten Laden aus.
             if (newValue)
             {
                 IsWatched = true;

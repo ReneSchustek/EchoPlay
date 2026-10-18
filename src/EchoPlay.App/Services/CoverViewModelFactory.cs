@@ -46,11 +46,11 @@ namespace EchoPlay.App.Services
         private readonly EchoPlay.App.Services.ICoverService? _coverService;
 
         /// <summary>
-        /// Initialisiert die Factory. <paramref name="coverService"/> ist optional —
+        /// Initialisiert die Factory. <paramref name="coverService"/> ist optional:
         /// in Test-Konstellationen ohne Cover-Service liefert die Factory `null` für
         /// alle DB-Cover-Pfade und fällt sofort auf den Datei-/URL-Pfad zurück.
         /// </summary>
-        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes — jeder Datenbankzugriff läuft in einem eigenen.</param>
+        /// <param name="scopeFactory">Fabrik für kurzlebige DI-Scopes; jeder Datenbankzugriff läuft in einem eigenen.</param>
         /// <param name="coverService">Optionaler Cover-Dienst; fehlt er, wird der Datenbank-Pfad übersprungen.</param>
         public CoverViewModelFactory(IServiceScopeFactory scopeFactory, ICoverService? coverService = null)
         {
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Services
                     }
                     catch
                     {
-                        // Datei-Zugriffsfehler still ignorieren — Fallback auf URL/null.
+                        // Datei-Zugriffsfehler still ignorieren, Fallback auf URL/null.
                     }
                 }
             }
@@ -126,7 +126,7 @@ namespace EchoPlay.App.Services
                     using IServiceScope scope = _scopeFactory.CreateScope();
                     ILocalCoverLoader coverLoader = scope.ServiceProvider.GetRequiredService<ILocalCoverLoader>();
 
-                    // ID3-Fallback nur, wenn kein cover.jpg vorhanden — spart DB-Abfrage.
+                    // ID3-Fallback nur, wenn kein cover.jpg vorhanden ist (spart DB-Abfrage).
                     string? firstTrackPath = null;
                     if (!File.Exists(Path.Combine(episode.LocalFolderPath, CoverConstants.CoverFileName)))
                     {

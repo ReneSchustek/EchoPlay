@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Der Unterschied zwischen Abbruch und Fehler ist der Kern: Ein Fehler bei einer
-    /// einzelnen Serie darf den Durchlauf nicht beenden, ein Abbruch dagegen schon —
+    /// einzelnen Serie darf den Durchlauf nicht beenden, ein Abbruch dagegen schon,
     /// sonst läuft die Prüfung nach dem Schließen des Fensters weiter.
     /// </remarks>
     public sealed class OnlineEpisodeCheckerErrorPathsTests
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Ein Künstler, der gefunden wird, aber kein einziges Album führt, liefert kein
-        /// Ergebnis — und keinen leeren Eintrag, der in der Oberfläche als Serie ohne
+        /// Ergebnis und keinen leeren Eintrag, der in der Oberfläche als Serie ohne
         /// Neuerscheinungen erschiene.
         /// </summary>
         [Fact]
@@ -119,7 +119,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>
-        /// Der Ordner ist da, lässt sich aber nicht auflisten — der Alltagsfall eines
+        /// Der Ordner ist da, lässt sich aber nicht auflisten, der Alltagsfall eines
         /// Netzlaufwerks ohne Verbindung. Erwartet wird 0 und keine Ausnahme: Die
         /// Onlineprüfung läuft dann ohne lokalen Abgleich weiter.
         /// </summary>
@@ -139,7 +139,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Legt einen eigenen Ordner im Temp-Verzeichnis an und entzieht sich selbst das
-        /// Leserecht. Nur so entsteht der Zustand „da, aber nicht lesbar" — ein fehlender
+        /// Leserecht. Nur so entsteht der Zustand „da, aber nicht lesbar"; ein fehlender
         /// Ordner wird vorher abgefangen und erreicht den Zweig gar nicht.
         /// </summary>
         private static string CreateUnreadableFolder()
@@ -160,7 +160,7 @@ namespace EchoPlay.App.Tests.Services
 
         /// <summary>
         /// Nimmt die Sperre zurück und räumt den Ordner weg. Läuft auch dann, wenn der Test
-        /// scheitert — ein gesperrter Ordner darf nicht liegen bleiben.
+        /// scheitert, denn ein gesperrter Ordner darf nicht liegen bleiben.
         /// </summary>
         private static void RestoreAndDelete(string path)
         {

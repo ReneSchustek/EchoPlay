@@ -23,7 +23,7 @@ Add-Type -AssemblyName System.Drawing
 
 if (-not (Test-Path $Target)) { New-Item -ItemType Directory $Target -Force | Out-Null }
 
-# Gedeckte Farben in der Tonart der Anwendung — kein Regenbogen, keine Verläufe.
+# Gedeckte Farben in der Tonart der Anwendung, kein Regenbogen, keine Verläufe.
 $titles = @(
     @{ Title = 'Sherlock Holmes';            Author = 'Arthur Conan Doyle'; Back = '#2F4858'; Fore = '#F5F5F5' },
     @{ Title = 'Die Schatzinsel';            Author = 'R. L. Stevenson';    Back = '#1F4A3C'; Fore = '#F0F5F2' },

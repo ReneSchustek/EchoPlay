@@ -161,7 +161,7 @@ namespace EchoPlay.App.ViewModels
                     }
                     catch (Exception)
                     {
-                        // Einzelne Serien-Fehler nicht abbrechen – nächste Serie prüfen
+                        // Einzelne Serien-Fehler nicht abbrechen, nächste Serie prüfen
                     }
 
                     // Rate-Limiting: drosselt aufeinanderfolgende Provider-Aufrufe
@@ -173,7 +173,7 @@ namespace EchoPlay.App.ViewModels
 
                 _setLoadingStatusText(string.Empty);
 
-                // Ansicht aktualisieren – neue Folgen sichtbar machen
+                // Ansicht aktualisieren, damit neue Folgen sichtbar werden
                 await _reloadAfterRefreshAsync();
             }
             catch (Exception ex)

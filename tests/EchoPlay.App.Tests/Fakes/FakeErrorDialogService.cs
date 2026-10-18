@@ -27,7 +27,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// <remarks>
         /// Wartepunkt für Abläufe, die aus einem Befehl heraus starten und deshalb keinen
         /// Rückgabewert haben, auf den ein Test warten könnte. Ohne ihn bliebe nur eine
-        /// Wartezeit — und die macht den Test von der Laufgeschwindigkeit abhängig.
+        /// Wartezeit, und die macht den Test von der Laufgeschwindigkeit abhängig.
         /// </remarks>
         public Task<(string Title, string Message)> FirstDialogShown => _firstDialog.Task;
 

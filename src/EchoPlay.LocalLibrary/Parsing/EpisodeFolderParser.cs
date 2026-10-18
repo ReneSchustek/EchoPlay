@@ -5,7 +5,7 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// <summary>
     /// Parst Episodenordnernamen anhand eines konfigurierbaren Musters.
     /// Unterstützte Platzhalter: <c>{number}</c>, <c>{number:000}</c>, <c>{title}</c>, <c>{*}</c>.
-    /// <c>{*}</c> steht für einen beliebigen nicht-leeren Text, der im Ergebnis nicht erfasst wird –
+    /// <c>{*}</c> steht für einen beliebigen nicht-leeren Text, der im Ergebnis nicht erfasst wird,
     /// nützlich für Muster wie <c>"{*} - {number:000} - {title}"</c> bei Serien mit Präfix.
     /// </summary>
     public sealed class EpisodeFolderParser
@@ -76,7 +76,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             }
             catch (RegexMatchTimeoutException)
             {
-                // Pathologische Eingabe – Parser liefert „kein Treffer" statt die App zu blockieren.
+                // Pathologische Eingabe: Der Parser liefert „kein Treffer" statt die App zu blockieren.
                 return false;
             }
 
@@ -153,7 +153,7 @@ namespace EchoPlay.LocalLibrary.Parsing
                 hasTitle = true;
             }
 
-            // Platzhalter der Reihe nach ersetzen – {*} muss vor {number} stehen, damit keine
+            // Platzhalter der Reihe nach ersetzen, denn {*} muss vor {number} stehen, damit keine
             // Teilmuster-Kollisionen auftreten. Regex.Escape stellt sicher, dass Sonderzeichen im
             // literalen Mustertext (z.B. " - ") korrekt als solche behandelt werden.
             string escaped = Regex.Escape(working)

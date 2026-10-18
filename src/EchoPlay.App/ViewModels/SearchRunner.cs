@@ -41,7 +41,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="errorDialogService">Wird an die Trefferkarten weitergereicht.</param>
         /// <param name="localizationService">Wird an die Trefferkarten weitergereicht.</param>
         /// <param name="scopeFactory">
-        /// Für die Suche im eigenen Bestand. Ohne sie bleibt der lokale Zweig leer — so
+        /// Für die Suche im eigenen Bestand. Ohne sie bleibt der lokale Zweig leer. So
         /// laufen Tests ohne Datenbank.
         /// </param>
         /// <param name="backgroundCoverService">Lädt die Cover der Trefferkarten nach.</param>
@@ -87,7 +87,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="scope">Online, lokal oder beides.</param>
         /// <param name="coverToken">Bricht ab, sobald eine neue Suche begonnen hat.</param>
         /// <returns>
-        /// Das Ergebnis, oder <see langword="null"/> bei Abbruch — dann gehören die Treffer
+        /// Das Ergebnis, oder <see langword="null"/> bei Abbruch; dann gehören die Treffer
         /// zu einer überholten Suche und dürfen die Anzeige nicht mehr anfassen.
         /// </returns>
         public async Task<SearchRunResult?> RunAsync(
@@ -128,7 +128,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <remarks>
         /// Die Reihenfolge ist Absicht. Die Albensuche ist eine einzige Anfrage und bringt
-        /// Treffer samt Cover zurück — damit steht die erste Kachel nach gut einer Sekunde.
+        /// Treffer samt Cover zurück. Damit steht die erste Kachel nach gut einer Sekunde.
         /// Die Seriensuche bewertet Künstler einzeln und braucht länger; ihre Treffer wandern
         /// beim Einfügen an die richtige Stelle.
         /// </remarks>
@@ -142,8 +142,8 @@ namespace EchoPlay.App.ViewModels
             try
             {
                 // Das Abbruchzeichen geht mit: Eine überholte Suche soll nicht noch zu Ende
-                // laufen und Kontingent beim Anbieter verbrauchen. Das Ergebnis ist dasselbe —
-                // ihre Treffer wurden ohnehin verworfen.
+                // laufen und Kontingent beim Anbieter verbrauchen. Das Ergebnis ist dasselbe,
+                // denn ihre Treffer wurden ohnehin verworfen.
                 SearchOutcome albumsOutcome = await _importService.SearchAlbumsAsync(searchText, coverToken);
                 if (coverToken.IsCancellationRequested) return null;
 
@@ -161,7 +161,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex) when (!coverToken.IsCancellationRequested)
             {
-                // Fehler merken, aber die bisher gemeldeten Karten stehen lassen — der
+                // Fehler merken, aber die bisher gemeldeten Karten stehen lassen, der
                 // Lokal-Zweig läuft danach trotzdem.
                 return new OnlineOutcome(spotifyFallback, ex);
             }
@@ -208,7 +208,7 @@ namespace EchoPlay.App.ViewModels
 
             foreach (ImportSeries series in localResults)
             {
-                // Lokale Einträge stehen bereits in der Datenbank — eine Import-Schaltfläche
+                // Lokale Einträge stehen bereits in der Datenbank, eine Import-Schaltfläche
                 // wäre hier ohne Sinn.
                 _parent.PublishLocalResult(new SearchResultViewModel(
                     series, true, _importService, _errorDialogService,
@@ -221,7 +221,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Durchsucht den eigenen Bestand nach Serien, deren Titel den Suchbegriff enthält.
-        /// Ohne Bereichsfabrik bleibt das Ergebnis leer — so laufen Tests ohne Datenbank.
+        /// Ohne Bereichsfabrik bleibt das Ergebnis leer, so laufen Tests ohne Datenbank.
         /// </summary>
         /// <param name="query">Der Suchbegriff; Groß- und Kleinschreibung wird ignoriert.</param>
         /// <returns>Die gefundenen Serien mit <c>Source = "Lokal"</c>.</returns>
@@ -250,7 +250,7 @@ namespace EchoPlay.App.ViewModels
             {
                 if (series.Title.Contains(trimmedQuery, StringComparison.OrdinalIgnoreCase))
                 {
-                    // SourceSeriesId ist die Kennung der Serie in der Datenbank — damit findet
+                    // SourceSeriesId ist die Kennung der Serie in der Datenbank, damit findet
                     // die Trefferkarte das Cover in CoverImages, ganz ohne Netz.
                     localResults.Add(new ImportSeries
                     {

@@ -11,7 +11,7 @@ namespace EchoPlay.App.Views
     /// <remarks>
     /// Den Takt der Live-Ansicht führt allein das
     /// <see cref="ViewModels.MaintenanceSettingsViewModel"/>. Die Seite zeichnet, sobald
-    /// sich die Einträge ändern — ein zweiter Zeitgeber hier läse dieselben Daten im
+    /// sich die Einträge ändern. Ein zweiter Zeitgeber hier läse dieselben Daten im
     /// selben Zwei-Sekunden-Takt noch einmal.
     /// </remarks>
     public sealed partial class SettingsPage : Page
@@ -42,7 +42,7 @@ namespace EchoPlay.App.Views
         /// <remarks>
         /// Getrennt von <see cref="RefreshLogView"/>, weil es zwei verschiedene Anlässe gibt:
         /// Der Filter lässt das ViewModel schon selbst neu filtern (Setter von
-        /// <c>LogSearchText</c>) und braucht danach nur noch das Zeichnen — sonst würde jeder
+        /// <c>LogSearchText</c>) und braucht danach nur noch das Zeichnen, sonst würde jeder
         /// Tastendruck den Puffer zweimal durchlaufen. Ohne diese Trennung blieb der Filter
         /// wirkungslos, bis jemand „Aktualisieren" drückte: Die Anzeige hängt nicht am
         /// ViewModel, sie wird hier von Hand gefüllt.
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Views
 
             LogRichTextBlock.Blocks.Add(paragraph);
 
-            // Ans Ende scrollen – neueste Einträge sind unten
+            // Ans Ende scrollen, denn neueste Einträge sind unten
             LogScrollViewer.UpdateLayout();
             LogScrollViewer.ScrollToVerticalOffset(LogScrollViewer.ScrollableHeight);
         }
@@ -77,7 +77,7 @@ namespace EchoPlay.App.Views
         /// Hier steht bewusst <see cref="RefreshLogView"/> und nicht das reine
         /// <see cref="RenderLogView"/>, obwohl der Setter im ViewModel selbst schon neu filtert:
         /// <c>SetProperty</c> meldet die Änderung, <b>bevor</b> es <c>RefreshLogs()</c> aufruft.
-        /// Wer hier nur zeichnet, malt den vorherigen Filterstand — die Anzeige hängt dann
+        /// Wer hier nur zeichnet, malt den vorherigen Filterstand. Die Anzeige hängt dann
         /// dauerhaft eine Eingabe zurück. Der zweite Filterlauf über maximal 100 gepufferte
         /// Zeilen ist der Preis dafür, nicht von dieser Reihenfolge abzuhängen.
         /// </remarks>
@@ -93,11 +93,11 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Überträgt den neuen Zahlenwert der NumberBox in die ViewModel-Property.
-        /// NumberBox.Value ist <see langword="double"/> – explizite Konvertierung in <see langword="int"/> nötig.
+        /// NumberBox.Value ist <see langword="double"/>, daher ist eine explizite Konvertierung in <see langword="int"/> nötig.
         /// </summary>
         private void OnLogRetentionDaysChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
         {
-            // NaN tritt auf, wenn der Nutzer ein ungültiges Zeichen eingibt – ignorieren
+            // NaN tritt auf, wenn der Nutzer ein ungültiges Zeichen eingibt; ignorieren
             if (!double.IsNaN(args.NewValue))
             {
                 ViewModel.GeneralVM.LogRetentionDays = (int)args.NewValue;
@@ -106,7 +106,7 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Zeichnet den Protokollblock neu, sobald das Ansichtsmodell neue Einträge
-        /// eingelesen hat — im Live-Betrieb alle zwei Sekunden, sonst auf Anforderung.
+        /// eingelesen hat: im Live-Betrieb alle zwei Sekunden, sonst auf Anforderung.
         /// </summary>
         /// <remarks>
         /// Zeichnet nur und lädt nicht: <see cref="RefreshLogView"/> würde den Puffer neu

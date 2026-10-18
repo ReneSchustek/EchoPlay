@@ -36,7 +36,7 @@ namespace EchoPlay.App.Tests.Services
         public void Tick_BeiAblauf_MeldetEinmalUndSchaltetAb()
         {
             // Die Meldung darf genau einmal kommen: Der Aufrufer hält daraufhin die Wiedergabe
-            // an — ein zweites Mal würde er sie erneut anhalten, obwohl der Nutzer sie
+            // an. Ein zweites Mal würde er sie erneut anhalten, obwohl der Nutzer sie
             // inzwischen vielleicht wieder gestartet hat.
             SleepTimer timer = new();
             timer.Set(TimeSpan.FromSeconds(1));
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void Tick_UeberschreitetDieDauer_MeldetTrotzdem()
         {
-            // Der Takt kann gröber sein als die Restzeit — dann liegt der Wert unter null und
+            // Der Takt kann gröber sein als die Restzeit, dann liegt der Wert unter null und
             // muss trotzdem als abgelaufen gelten.
             SleepTimer timer = new();
             timer.Set(TimeSpan.FromMilliseconds(200));

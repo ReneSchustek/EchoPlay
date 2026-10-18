@@ -92,7 +92,7 @@ namespace EchoPlay.App.Services
                 if (!series.IsOnlineImported) continue;
 
                 // Provider-Key und Quell-ID ermitteln.
-                // Spotify nur nutzen wenn Credentials vorhanden sind – ohne gültige
+                // Spotify nur nutzen, wenn Credentials vorhanden sind. Ohne gültige
                 // Client-ID/Secret schlägt der Token-Request fehl.
                 string? providerKey = series.SpotifyArtistId is not null && _credentialStore.HasCredentials
                     ? ProviderKeys.Spotify
@@ -178,7 +178,7 @@ namespace EchoPlay.App.Services
         }
         /// <summary>
         /// Lädt fehlende Serien-Cover über Provider-URLs (<see cref="Series.CoverImageUrl"/>)
-        /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
+        /// herunter. Kein Online-Suchkette, nur direkte URL-Downloads.
         /// </summary>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         internal async Task<int> DownloadMissingSeriesProviderCoversAsync(CancellationToken ct)
@@ -240,7 +240,7 @@ namespace EchoPlay.App.Services
         }
         /// <summary>
         /// Lädt fehlende Episoden-Cover über Provider-URLs (<see cref="Episode.CoverImageUrl"/>)
-        /// herunter. Kein Online-Suchkette – nur direkte URL-Downloads.
+        /// herunter. Kein Online-Suchkette, nur direkte URL-Downloads.
         /// </summary>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         internal async Task<int> DownloadMissingEpisodeProviderCoversAsync(CancellationToken ct)
@@ -313,11 +313,11 @@ namespace EchoPlay.App.Services
         /// <remarks>
         /// Die Kette selbst liegt im <see cref="EpisodeCoverCacheService"/> und läuft sonst nur
         /// beim Import. Scheitert die Suche dort, oder stammt die Serie aus einem Bestand ohne
-        /// Folgen-Cover, käme nie ein Cover nach — genau das schließt dieser Schritt.
+        /// Folgen-Cover, käme nie ein Cover nach. Genau das schließt dieser Schritt.
         /// <para>
         /// Der Dienst filtert selbst auf Episoden ohne Cover und respektiert dabei seinen
         /// Cooldown, damit erfolglose Suchen nicht bei jedem Durchlauf wiederholt werden. Hier
-        /// wird deshalb nur vorselektiert, welche Serien überhaupt in Frage kommen — das spart
+        /// wird deshalb nur vorselektiert, welche Serien überhaupt in Frage kommen; das spart
         /// die Scope-Erzeugung für Serien, die vollständig versorgt sind.
         /// </para>
         /// </remarks>
@@ -388,7 +388,7 @@ namespace EchoPlay.App.Services
         /// Für Episoden übernimmt der <see cref="EpisodeCoverCacheService"/> den Cooldown; für
         /// Serien gibt es keinen solchen Dienst, deshalb prüft dieser Schritt
         /// <see cref="Series.CoverLastChecked"/> selbst und setzt den Zeitstempel nach jedem
-        /// Versuch — auch ohne Treffer. Ohne das würde jeder Durchlauf dieselben coverlosen
+        /// Versuch, auch ohne Treffer. Ohne das würde jeder Durchlauf dieselben coverlosen
         /// Serien erneut bei den Anbietern anfragen.
         /// </remarks>
         internal async Task<int> SearchMissingSeriesCoversOnlineAsync(CancellationToken ct)
@@ -450,7 +450,7 @@ namespace EchoPlay.App.Services
                     _logger.Debug(() => $"Serien-Cover über Online-Suche gefunden: \"{series.Title}\" ({coverBytes.Length} Bytes)");
                 }
 
-                // Zeitstempel immer setzen – auch ohne Treffer, sonst greift der Cooldown nicht.
+                // Zeitstempel immer setzen, auch ohne Treffer, sonst greift der Cooldown nicht.
                 using IServiceScope writeScope = _scopeFactory.CreateScope();
                 ISeriesDataService writeService = writeScope.ServiceProvider
                     .GetRequiredService<ISeriesDataService>();
@@ -487,7 +487,7 @@ namespace EchoPlay.App.Services
                 {
                     // Weder Folgennummer noch Folgentitel: Für ein Serien-Cover zählt allein,
                     // ob der Treffer zur Serie gehört. Genau dafür vergibt der Scorer 50 Punkte
-                    // und trifft damit die Mindestschwelle — jede Folge der Serie taugt als
+                    // und trifft damit die Mindestschwelle. Jede Folge der Serie taugt als
                     // Serienbild, eine bestimmte muss es nicht sein.
                     int score = CoverRelevanceScorer.CalculateScore(result.ReleaseTitle, seriesTitle, null, null);
 
@@ -517,7 +517,7 @@ namespace EchoPlay.App.Services
         }
         /// <summary>
         /// Lädt ein Cover über den <see cref="ICoverDownloader"/>, wartet davor aber auf den
-        /// <see cref="IHostRateLimiter"/> — mit <see cref="CoverFetchPriority.Background"/>,
+        /// <see cref="IHostRateLimiter"/>, mit <see cref="CoverFetchPriority.Background"/>,
         /// damit sichtbare UI-Anfragen Vorrang behalten.
         /// </summary>
         /// <param name="url">Absolute Cover-URL aus dem Suchtreffer.</param>

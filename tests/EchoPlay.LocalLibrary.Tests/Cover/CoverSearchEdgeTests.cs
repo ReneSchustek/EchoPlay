@@ -16,7 +16,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     /// <remarks>
     /// Die Suche läuft über vier fremde Gegenstellen mit vier verschiedenen Vorstellungen
     /// davon, wie eine Antwort aussieht. Der gemeinsame Unterbau muss deshalb jeden
-    /// Sonderfall zu einer leeren Liste machen — der Dialog soll offen bleiben, damit der
+    /// Sonderfall zu einer leeren Liste machen, der Dialog soll offen bleiben, damit der
     /// Anwender einen anderen Begriff versuchen kann.
     ///
     /// Alle Antworten stehen als Zeichenkette im Test; kein Test geht ins Netz.

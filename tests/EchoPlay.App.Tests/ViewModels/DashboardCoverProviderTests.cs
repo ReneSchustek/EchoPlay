@@ -34,7 +34,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await fixture.Provider.BeginSessionAsync(
                 [TestIds.EpisodeA, TestIds.EpisodeB], TestContext.Current.CancellationToken);
 
-            // Eine Abfrage für alle Kacheln statt einer je Kachel — das ist der Grund,
+            // Eine Abfrage für alle Kacheln statt einer je Kachel; das ist der Grund,
             // warum es diesen Durchgang überhaupt gibt.
             System.Collections.Generic.IReadOnlyList<Guid> batch =
                 Assert.Single(fixture.CoverImages.BatchRequests);
@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.ViewModels
             (BitmapImage? Cover, bool HasEpisodeCover) result =
                 await fixture.Provider.ResolveCardCoverAsync(new Series { Title = "TKKG" }, Guid.Empty);
 
-            // Ohne eigenes Folgen-Cover trägt die Kachel das Serien-Cover — und gehört
+            // Ohne eigenes Folgen-Cover trägt die Kachel das Serien-Cover und gehört
             // damit ins Nachreichen.
             Assert.False(result.HasEpisodeCover);
         }
@@ -154,7 +154,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 await fixture.Provider.ResolveCardCoverAsync(
                     new Series { Title = "TKKG" }, TestIds.EpisodeA);
 
-            // Das eigene Folgen-Cover schlägt das Serien-Cover — sonst zeigen alle Kacheln
+            // Das eigene Folgen-Cover schlägt das Serien-Cover, sonst zeigen alle Kacheln
             // einer Serie dasselbe Bild.
             Assert.False(result.HasEpisodeCover);
         }

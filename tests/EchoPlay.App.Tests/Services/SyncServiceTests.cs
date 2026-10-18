@@ -148,7 +148,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task SyncAsync_SkipsUnmatchedSeries_CountsAsUnmatched()
         {
-            // Lokale Ordner ohne passende DB-Serie werden als "unmatched" gezählt –
+            // Lokale Ordner ohne passende DB-Serie werden als "unmatched" gezählt;
             // AutoImportAfterScan muss deaktiviert sein, damit kein Eintrag angelegt wird.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
@@ -291,7 +291,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task SyncAsync_CountsCorrectly_AllCounters()
         {
-            // Alle Zähler müssen nach einem erfolgreichen Sync korrekt befüllt sein –
+            // Alle Zähler müssen nach einem erfolgreichen Sync korrekt befüllt sein;
             // AutoImportAfterScan deaktiviert, damit die unbekannte Serie als "unmatched" gezählt wird.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
@@ -414,7 +414,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Regression: Die Kachel einer neu gescannten Serie blieb auf "0 / 0" stehen, weil
             // SeriesSynced nur in Phase 3 (vor der Episoden-Persistenz) gemeldet wurde. Es muss
-            // (auch) nach Phase 4 gemeldet werden – dann sieht der Kachel-Handler die echten Zähler.
+            // (auch) nach Phase 4 gemeldet werden, dann sieht der Kachel-Handler die echten Zähler.
             FakeAppSettingsDataService settings = new(new AppSettings
             {
                 LocalLibraryEnabled = true,
@@ -455,7 +455,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 emitCount++;
 
-                // Der Event ist synchron – kein sync-over-async hier. Der Fake hält die
+                // Der Event ist synchron, kein sync-over-async hier. Der Fake hält die
                 // Folgen im Speicher, die direkte Sicht darauf reicht für die Messung.
                 int seen = episodeService.All.Count(e => e.SeriesId == s.Id);
                 maxEpisodesSeenAtEmit = Math.Max(maxEpisodesSeenAtEmit, seen);
@@ -474,7 +474,7 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.True(emitCount >= 1, "Serie wurde nie über SeriesSynced gemeldet.");
             // Kern der Regression: Zum Zeitpunkt (mindestens) eines Emits müssen alle Episoden
-            // bereits persistiert sein – sonst zeigt die Kachel dauerhaft 0.
+            // bereits persistiert sein, sonst zeigt die Kachel dauerhaft 0.
             Assert.Equal(episodeCount, maxEpisodesSeenAtEmit);
         }
 
@@ -556,7 +556,7 @@ namespace EchoPlay.App.Tests.Services
             _ = await service.SyncAsync(onSeriesSynced: progress, cancellationToken: TestContext.Current.CancellationToken);
 
             // Bekannte Serie wird in der Detection-Phase und (mit aktualisiertem Pfad) erneut
-            // in der Materialize-Phase gemeldet — d.h. mindestens 1 Aufruf erwartet.
+            // in der Materialize-Phase gemeldet, d.h. mindestens 1 Aufruf erwartet.
             Assert.True(progress.Count >= 1, $"onSeriesSynced wurde {progress.Count}-mal aufgerufen, erwartet >= 1");
         }
 
@@ -597,7 +597,7 @@ namespace EchoPlay.App.Tests.Services
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, result.SeriesMatched);
-            // Keine neue Serie angelegt — Count unverändert.
+            // Keine neue Serie angelegt, der Count unverändert.
             Assert.Equal(seriesCountBefore, seriesService.All.Count);
             // Die bestehende Serie behält ihre Id.
             Assert.Equal(existingId, seriesService.All[0].Id);
@@ -644,7 +644,7 @@ namespace EchoPlay.App.Tests.Services
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(3, result.EpisodesUpdated);
-            // Genau 1 AddRangeAsync, KEIN einzelner AddAsync — N+1-Vermeidung beim Auto-Import.
+            // Genau 1 AddRangeAsync, KEIN einzelner AddAsync (N+1-Vermeidung beim Auto-Import).
             Assert.Equal(1, episodeService.AddRangeAsyncCallCount);
             Assert.Equal(0, episodeService.AddAsyncCallCount);
         }

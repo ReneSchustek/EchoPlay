@@ -27,7 +27,7 @@ namespace EchoPlay.App.ViewModels
 
             // „Als gehört markieren" setzt nur IsCompleted und schreibt nie eine Position.
             // Würde die Position zuerst geprüft, zeigte die Detailseite solche Folgen
-            // weiterhin als nicht begonnen — während die Statusleiste sie mitzählt,
+            // weiterhin als nicht begonnen, während die Statusleiste sie mitzählt,
             // weil sie direkt auf IsCompleted schaut.
             if (state.IsCompleted)
             {
@@ -40,18 +40,18 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Gibt an, ob die Folge an einer offenen Stelle steht — ob es also etwas
+        /// Gibt an, ob die Folge an einer offenen Stelle steht, ob es also etwas
         /// weiterzuhören gibt.
         /// </summary>
         /// <remarks>
         /// Das ist bewusst eine eigene Aussage neben <see cref="Resolve"/>: Ein Hörspiel
         /// hört man nicht einmal im Leben. Wer eine bereits gehörte Folge erneut startet
-        /// und in der Mitte aufhört, hat sie weiterhin gehört — und trotzdem eine Stelle,
+        /// und in der Mitte aufhört, hat sie weiterhin gehört und trotzdem eine Stelle,
         /// an der er fortsetzen möchte. Beides in einen Wert zu pressen hieße, dass
         /// „gehört" gewinnt und die Folge nirgends mehr auftaucht, wo man sie wiederfindet.
         ///
         /// Die Gesamtdauer gehört zum Vergleich, weil eine durchgehörte Folge ihre Position
-        /// am Ende stehen hat — ohne sie zählte jede fertige Folge als angefangen. Rund die
+        /// am Ende stehen hat. Ohne sie zählte jede fertige Folge als angefangen. Rund die
         /// Hälfte des Bestands führt allerdings gar keine Dauer; dort entscheidet die
         /// Position allein. Das ist gemessen unbedenklich: Im gesamten Bestand tragen nur
         /// drei gehörte Folgen überhaupt eine stehengebliebene Position.

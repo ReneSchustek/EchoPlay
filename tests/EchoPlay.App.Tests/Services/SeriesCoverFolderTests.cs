@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Ohne diese Übernahme läse die Anwendung bei jedem Öffnen der Mediathek erneut von
-    /// der Platte — bei achtzig Serien achtzigmal.
+    /// der Platte, bei achtzig Serien achtzigmal.
     ///
     /// Das fertige Bildobjekt entsteht am Fenster und bleibt im Testlauf leer; geprüft ist
     /// deshalb, was in der Ablage ankommt. Die Tests legen echte Dateien im

@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     /// <remarks>
     /// Zwei Zusagen tragen diese Klasse. Erstens: Ohne Netzfreigabe geht keine Anfrage
-    /// hinaus — „nur offline" ist eine Nutzerentscheidung, keine Voreinstellung, die eine
+    /// hinaus, denn „nur offline" ist eine Nutzerentscheidung, keine Voreinstellung, die eine
     /// Hintergrundabfrage übergehen darf. Zweitens: Ein Treffer wird nur dann ungefragt
     /// übernommen, wenn seine Titelzahl zum Ordner passt; sonst entscheidet der Anwender.
     /// </remarks>
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.LookupOnlineAsync();
 
             // Bei Mehrfachauswahl steht „(verschieden)" im Feld. Damit zu suchen fände
-            // nichts — der Dateiname ist der brauchbare Rest.
+            // nichts. Der Dateiname ist der brauchbare Rest.
             Assert.Equal("track1", harness.LookupService.LastQuery);
         }
 
@@ -131,8 +131,8 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await harness.Actions.AutoLookupAsync();
 
-            // Der übergeordnete Ordner ist die Serie, der aktuelle die Folge — ohne die
-            // führende Laufnummer, die kein Anbieter kennt.
+            // Der übergeordnete Ordner ist die Serie, der aktuelle die Folge (ohne die
+            // führende Laufnummer, die kein Anbieter kennt).
             Assert.Equal("Die drei Fragezeichen Der Super-Papagei", harness.LookupService.LastQuery);
         }
 
@@ -200,7 +200,7 @@ namespace EchoPlay.App.Tests.ViewModels
             harness.Actions.LookupResultsReady += (_, candidates) => offered = candidates;
 
             // Zwei Dateien liegen im Ordner, aber der beste Treffer steht nicht an erster
-            // Stelle. Trifft die Vorauswahl, wird direkt übernommen — deshalb prüft dieser
+            // Stelle. Trifft die Vorauswahl, wird direkt übernommen. Deshalb prüft dieser
             // Test die Reihenfolge über einen Ordner mit drei Dateien.
             harness.OpenFolderWithThreeFiles();
 
@@ -278,7 +278,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Album und Künstler sind für den ganzen Ordner gleich, Titel und Titelnummer
             // gehören zur einzelnen Datei. Würden sie mitüberschrieben, hießen alle Dateien
-            // gleich — und die Reihenfolge wäre verloren.
+            // gleich, und die Reihenfolge wäre verloren.
             AudioTag? written = harness.TagService.GetWrittenTag($@"{FolderPath}\track1.mp3");
             Assert.Equal("Folge 1", written?.Album);
             Assert.Equal("Kapitel 1", written?.Title);
@@ -328,7 +328,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.ApplyToAllAsync();
 
             // Ein Muster steht ab Werk im Feld; leer ist es nur, wenn der Anwender es
-            // gelöscht hat. Dann will er nicht umbenennen — und bekommt auch keine
+            // gelöscht hat. Dann will er nicht umbenennen und bekommt auch keine
             // Vorschau untergeschoben.
             Assert.False(harness.PreviewRefreshed);
         }
@@ -379,7 +379,7 @@ namespace EchoPlay.App.Tests.ViewModels
             /// <summary>Öffnet einen Ordner mit zwei Dateien.</summary>
             public void OpenFolder() => SetFiles(2);
 
-            /// <summary>Öffnet einen Ordner mit drei Dateien — für den Fall ohne Volltreffer.</summary>
+            /// <summary>Öffnet einen Ordner mit drei Dateien, für den Fall ohne Volltreffer.</summary>
             public void OpenFolderWithThreeFiles() => SetFiles(3);
 
             /// <summary>Wählt die erste Datei aus, wie es ein Klick in der Liste tut.</summary>

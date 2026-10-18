@@ -202,7 +202,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void OnlineEpisodesViewModel_SetEpisodes_KeepsChosenSortOrder()
         {
             // Die gewählte Sortierung darf beim Serienwechsel (SetEpisodes) nicht auf den Standard
-            // zurückspringen – die Auswahl soll erhalten bleiben (User-Wunsch: „nicht zurückspringen").
+            // zurückspringen, die Auswahl soll erhalten bleiben (User-Wunsch: „nicht zurückspringen").
             OnlineEpisodesViewModel vm = new();
 
             vm.EpisodeSortIndex = 1; // Nummer absteigend
@@ -305,7 +305,7 @@ namespace EchoPlay.App.Tests.ViewModels
             OnlineEpisodesViewModel episodesVM = new();
             OnlineProviderSearchViewModel searchVM = new()
             {
-                SearchTypeIndex = 1 // nur Serien – Album-Suche wird so umgangen
+                SearchTypeIndex = 1 // nur Serien, die Album-Suche wird so umgangen
             };
 
             OnlineProviderSearchActions sut = new(ctx, seriesVM, episodesVM, searchVM,
@@ -421,7 +421,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await sut.RemoveSeriesAsync(series.Id);
 
-            // Aus der Ablage und aus der Anzeige — bliebe die Kachel stehen, führte der
+            // Aus der Ablage und aus der Anzeige. Bliebe die Kachel stehen, führte der
             // nächste Klick auf eine Serie, die es nicht mehr gibt.
             Assert.Empty(seriesService.All);
             Assert.Empty(seriesVM.AllSeries);
@@ -454,7 +454,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         /// <summary>
-        /// Baut die Kachel zu einer Serie. Die Zählwerte spielen für diese Tests keine Rolle —
+        /// Baut die Kachel zu einer Serie. Die Zählwerte spielen für diese Tests keine Rolle;
         /// geprüft wird, ob die Kachel verschwindet beziehungsweise ihren Überwachungsstand
         /// übernimmt.
         /// </summary>

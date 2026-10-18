@@ -43,7 +43,7 @@ namespace EchoPlay.TagManager.Tests.Services
             {
                 TagService service = CreateService();
 
-                // FLAC-Testdatei enthält keinen vorgesetzten Titel –
+                // FLAC-Testdatei enthält keinen vorgesetzten Titel;
                 // nach dem Anlegen der Datei wird der Titel erst geschrieben
                 await service.WriteAsync(path, new AudioTag { Title = "FlacTitel" });
                 AudioTag tag = await service.ReadAsync(path);
@@ -78,7 +78,7 @@ namespace EchoPlay.TagManager.Tests.Services
         [Fact]
         public async Task WriteAsync_NullFieldIsIgnored()
         {
-            // Ein null-Feld in AudioTag bedeutet "nicht ändern" – der bestehende Wert bleibt.
+            // Ein null-Feld in AudioTag bedeutet "nicht ändern", der bestehende Wert bleibt.
             string path = AudioTestFileFactory.CreateTempMp3();
             try
             {
@@ -103,7 +103,7 @@ namespace EchoPlay.TagManager.Tests.Services
         [Fact]
         public async Task WriteAsync_EmptyStringClearsField()
         {
-            // Ein leerer String ist kein null – er wird geschrieben und beim Lesen als null zurückgegeben.
+            // Ein leerer String ist kein null, er wird geschrieben und beim Lesen als null zurückgegeben.
             // Damit lässt sich ein bestehendes Tag-Feld effektiv löschen.
             string path = AudioTestFileFactory.CreateTempMp3();
             try

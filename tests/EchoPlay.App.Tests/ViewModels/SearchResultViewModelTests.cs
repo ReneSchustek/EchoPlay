@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Tests für <see cref="SearchResultViewModel"/>: prüfen den Cover-Lade-Pfad
     /// über die zentrale Cover-Pipeline (<see cref="BackgroundCoverService"/>).
     /// Der Brightness-Analyzer und die <see cref="Microsoft.UI.Xaml.Media.Imaging.BitmapImage"/>-
-    /// Erzeugung können in Unit-Tests nicht laufen – die Verifikation beschränkt sich
+    /// Erzeugung können in Unit-Tests nicht laufen. Die Verifikation beschränkt sich
     /// auf die Argumente, mit denen die Pipeline aufgerufen wird.
     /// </summary>
     public sealed class SearchResultViewModelTests
@@ -29,7 +29,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task CoverLoad_UsesDbFirst_WhenCached()
         {
             // Trefferkachel ruft die zentrale Cover-Pipeline mit Source/SourceSeriesId/Url
-            // auf. Der DB-First-Lookup selbst ist Sache des Service – der VM-Test verifiziert
+            // auf. Der DB-First-Lookup selbst ist Sache des Service; der VM-Test verifiziert
             // den Vertrag (richtige Argumente, Ergebnis wird konsumiert).
             FakeBackgroundCoverService coverService = BuildFakeBackgroundCoverService();
             coverService.SearchCoverResponse = [0xAA, 0xBB];
@@ -102,7 +102,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task CoverLoad_CancelsWhenTokenRequested()
         {
             // Wird das Eltern-VM-Token vor dem Start abgebrochen, muss die Trefferkachel
-            // den Cancel transparent durchreichen – damit alte Suchläufe bei einer neuen
+            // den Cancel transparent durchreichen, damit alte Suchläufe bei einer neuen
             // Sucheingabe wirklich keine HTTP-Requests mehr starten.
             FakeBackgroundCoverService coverService = BuildFakeBackgroundCoverService();
 
@@ -227,7 +227,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task Hinzufügen_ZeigtDenFehlerUndLässtDenKnopfStehen()
         {
             // Scheitert der Abruf beim Anbieter, darf die Kachel nicht als erledigt
-            // erscheinen — sonst hält der Nutzer die Serie für vorhanden.
+            // erscheinen, sonst hält der Nutzer die Serie für vorhanden.
             FakeErrorDialogService errorDialog = new();
             SearchResultViewModel sut = BuildViewModel(
                 errorDialogService: errorDialog,

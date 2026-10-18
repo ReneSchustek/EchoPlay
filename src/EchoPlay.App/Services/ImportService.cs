@@ -28,7 +28,7 @@ namespace EchoPlay.App.Services
         private readonly EpisodeCoverCacheService _coverCacheService;
         private readonly ILogger _logger;
 
-        // Die Suche beim Anbieter — sie schreibt nichts und gehört deshalb nicht
+        // Die Suche beim Anbieter schreibt nichts und gehört deshalb nicht
         // in denselben Typ wie der Import.
         private readonly ProviderSearch _providerSearch;
 
@@ -69,7 +69,7 @@ namespace EchoPlay.App.Services
             => _providerSearch.SearchStreamAsync(query, cancellationToken);
 
         /// <summary>
-        /// Sucht Alben beim Anbieter — einzelne Veröffentlichungen statt ganzer Serien.
+        /// Sucht Alben beim Anbieter: einzelne Veröffentlichungen statt ganzer Serien.
         /// </summary>
         /// <param name="query">Der Suchbegriff.</param>
         /// <param name="cancellationToken">Abbruchzeichen der umgebenden Operation.</param>
@@ -126,13 +126,13 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Import gestartet: \"{Title}\" ({Source})", importSeries.Title, importSeries.Source);
 
-            // Serie anlegen und persistieren – Id wird von EF nach SaveChanges gesetzt.
+            // Serie anlegen und persistieren. Die Id wird von EF nach SaveChanges gesetzt.
             // Früher überwachte Titel bekommen ihre Überwachung zurück (überlebt „Mediathek leeren").
             IReadOnlySet<string> watchedTitles = await watchedTitleService.GetAllAsync(cancellationToken);
             Series series = MapToSeries(importSeries, watchedTitles);
             await seriesService.AddAsync(series, cancellationToken);
 
-            // Episoden laden – bei großen Serien (>100 Episoden) kann dieser HTTP-Aufruf mehrere Sekunden dauern
+            // Episoden laden. Bei großen Serien (>100 Episoden) kann dieser HTTP-Aufruf mehrere Sekunden dauern
             progress?.Report($"Lade Episoden für \"{importSeries.Title}\" \u2026");
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(importSeries.Source);
             IReadOnlyList<ImportEpisode> episodes = await episodeSource.GetEpisodesAsync(importSeries.SourceSeriesId, cancellationToken: cancellationToken);
@@ -157,7 +157,7 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Import abgeschlossen: \"{Title}\", {EpisodeCount} Episoden", importSeries.Title, uniqueEpisodes.Count);
 
-            // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar.
+            // Cover im Hintergrund laden, Provider-URLs sind nur hier verfügbar.
             // Beobachtet statt verworfen: Beim Beenden bricht der Token diese Aufgabe ab,
             // und eine unbeobachtete Abbruch-Ausnahme schlägt sonst erst später auf.
             DetachedTask.Observe(
@@ -169,7 +169,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Importiert Episoden für eine bestehende Online-Serie neu vom Provider.
-        /// Wird nach einer Migration aufgerufen, die alte Episoden bereinigt hat –
+        /// Wird nach einer Migration aufgerufen, die alte Episoden bereinigt hat;
         /// der Nutzer muss nicht manuell neu importieren.
         /// Existierende Episoden der Serie werden nicht gelöscht; nur fehlende werden nachgeladen.
         /// Der Aufruf ist damit wiederholbar, ohne den Bestand zu verdoppeln.
@@ -218,7 +218,7 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Re-Import abgeschlossen: \"{Title}\", {EpisodeCount} Episoden nachgeladen", series.Title, count);
 
-            // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
+            // Cover im Hintergrund laden, Provider-URLs sind nur hier verfügbar
             if (count > 0)
             {
                 DetachedTask.Observe(
@@ -232,7 +232,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Prüft eine Online-Serie auf neue Folgen beim Provider und importiert nur die Differenz.
         /// Bereits vorhandene Episoden (Titelvergleich) werden übersprungen.
-        /// Geeignet für regelmäßige Aktualisierung – deutlich schneller als ein Voll-Import.
+        /// Geeignet für regelmäßige Aktualisierung, deutlich schneller als ein Voll-Import.
         /// </summary>
         /// <param name="series">Die bestehende Serie mit gesetzter Provider-ID.</param>
         /// <returns>Anzahl der neu importierten Episoden. 0 wenn keine neuen gefunden.</returns>
@@ -250,13 +250,13 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IEpisodeImportSource episodeSource = scope.ServiceProvider.GetRequiredKeyedService<IEpisodeImportSource>(providerKey);
 
-            // Bestehende Episoden in einen Index ziehen – ein einmaliger DB-Roundtrip,
+            // Bestehende Episoden in einen Index ziehen: ein einmaliger DB-Roundtrip,
             // statt der Schleife pro Treffer ein neues FirstOrDefault auf die Liste loszuwerfen.
             ExistingEpisodeIndex bestand = new(await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken));
 
             // Delta: bekannte Titel als Hinweis mitgeben. Die Quelle spart dadurch den teuren
             // Track-Lookup für bestehende Folgen (nur die Dauer bräuchte ihn), liefert deren
-            // Metadaten inkl. Cover aber weiterhin – so kostet der Abgleich nur so viele Track-
+            // Metadaten inkl. Cover aber weiterhin. So kostet der Abgleich nur so viele Track-
             // Lookups wie es neue Folgen gibt, und fehlende Cover lassen sich trotzdem nachtragen.
             IReadOnlyList<ImportEpisode> providerEpisodes = await episodeSource.GetEpisodesAsync(
                 sourceSeriesId,
@@ -269,7 +269,7 @@ namespace EchoPlay.App.Services
 
             foreach (ImportEpisode importEpisode in providerEpisodes)
             {
-                // Anbieter-Kennung zuerst, Titel als Rückfall – ein umbenanntes Album bliebe
+                // Anbieter-Kennung zuerst, Titel als Rückfall, denn ein umbenanntes Album bliebe
                 // beim reinen Titelvergleich unerkannt und käme als zweite Zeile in den Bestand.
                 if (bestand.TryFind(importEpisode, out Episode? existing))
                 {
@@ -305,7 +305,7 @@ namespace EchoPlay.App.Services
             {
                 _logger.Info("Delta-Import: {NewCount} neue Episoden für \"{Title}\"", newCount, series.Title);
 
-                // Cover im Hintergrund laden – Provider-URLs sind nur hier verfügbar
+                // Cover im Hintergrund laden, Provider-URLs sind nur hier verfügbar
                 DetachedTask.Observe(
                     _coverCacheService.CacheCoversAsync(series.Id, providerEpisodes, ct: cancellationToken),
                     _logger);
@@ -357,7 +357,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Filtert Episoden mit doppelter <see cref="ImportEpisode.SourceEpisodeId"/> heraus
         /// und behält nur das erste Vorkommen. Nötig, weil iTunes-Lookups bei Compilation-/
-        /// Various-Artists-Alben dasselbe Album mehrfach liefern können – ohne diese Stufe
+        /// Various-Artists-Alben dasselbe Album mehrfach liefern können. Ohne diese Stufe
         /// entstünden mehrere Episode-Zeilen mit identischer Provider-ID.
         /// Loggt eine Warnung, wenn Duplikate verworfen wurden, damit Provider-Anomalien
         /// im Triage-Log sichtbar bleiben.
@@ -395,7 +395,7 @@ namespace EchoPlay.App.Services
         /// <remarks>
         /// Bewusst nur online importierte Serien: Eine lokal eingelesene Serie trägt dieselbe
         /// Künstlerkennung, sobald die Neuerscheinungs-Prüfung sie ermittelt und gespeichert hat.
-        /// Zählte sie hier mit, gälte der Künstler als „bereits vorhanden" — die Suche blendete
+        /// Zählte sie hier mit, gälte der Künstler als „bereits vorhanden". Die Suche blendete
         /// den Hinzufügen-Knopf aus und die Serie ließe sich nie in die Online-Mediathek holen.
         /// </remarks>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
@@ -414,7 +414,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Erstellt eine <see cref="Series"/>-Entität aus einem <see cref="ImportSeries"/>-Modell.
         /// Setzt die provider-spezifische Artist-ID anhand der Source-Bezeichnung.
-        /// Import und Abonnement sind dasselbe Konzept – jede importierte Serie ist direkt abonniert
+        /// Import und Abonnement sind dasselbe Konzept: Jede importierte Serie ist direkt abonniert
         /// und erscheint sofort im Dashboard und in der Mediathek.
         /// </summary>
         /// <param name="importSeries">Das Anbieter-Modell, aus dem die Entität entsteht.</param>
@@ -460,11 +460,11 @@ namespace EchoPlay.App.Services
         // Spotify hat Vorrang vor Apple Music, weil Spotify-IDs reicher sind (Album-IDs).
         /// <summary>
         /// Wählt für eine bestehende Serie den Provider, über den Delta-/Reimport laufen sollen.
-        /// Spotify wird bevorzugt – aber nur, wenn es auch nutzbar ist: Ohne hinterlegte Credentials
+        /// Spotify wird bevorzugt, aber nur, wenn es auch nutzbar ist: Ohne hinterlegte Credentials
         /// liefert Spotify keinen Token. In dem Fall wird auf Apple Music ausgewichen (öffentliche
         /// iTunes-API, ohne Credentials), sofern die Serie eine Apple-Music-ID hat. Ohne diesen
         /// Fallback lieferten Serien mit SpotifyArtistId ohne Credentials stillschweigend 0 neue
-        /// Folgen – neue Folgen kamen nie an, obwohl Apple sie führt.
+        /// Folgen; neue Folgen kamen nie an, obwohl Apple sie führt.
         /// </summary>
         /// <param name="scope">DI-Scope für den Credential-Store-Lookup.</param>
         /// <param name="series">Die bestehende Serie mit Provider-ID(s).</param>

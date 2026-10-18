@@ -163,7 +163,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         public async Task InitializeAsync_With_Existing_Fixtures_Stays_Stable()
         {
             // Migration darf eine DB mit bestehenden Daten (Episode + PlaybackState + CoverImage)
-            // nicht zerlegen. EnsureCreated würde nur das aktuelle Modell anlegen – wir nutzen
+            // nicht zerlegen. EnsureCreated würde nur das aktuelle Modell anlegen. Wir nutzen
             // bewusst den produktiven Initializer-Pfad, der die volle Migrationskette abspielt.
             DatabaseInitializer initializer = new(_context!);
             await initializer.InitializeAsync(TestContext.Current.CancellationToken);

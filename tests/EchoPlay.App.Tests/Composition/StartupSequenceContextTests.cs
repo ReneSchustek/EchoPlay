@@ -20,7 +20,7 @@ namespace EchoPlay.App.Tests.Composition
     /// Container bekommt.
     /// </summary>
     /// <remarks>
-    /// Der Startlauf holt sich nichts selbst — er bekommt alles aufgelöst gereicht. Fehlt
+    /// Der Startlauf holt sich nichts selbst, er bekommt alles aufgelöst gereicht. Fehlt
     /// eine Registrierung, fällt das ohne diesen Test erst beim Programmstart auf, und
     /// zwar mit einem Fenster, das gar nicht erst erscheint.
     /// </remarks>
@@ -59,7 +59,7 @@ namespace EchoPlay.App.Tests.Composition
             StartupSequenceContext second = StartupSequenceContext.From(provider);
 
             // Der Startlauf und die laufende Anwendung müssen auf denselben Diensten
-            // arbeiten — ein zweites Farbschema oder ein zweites Abspielgerät wären
+            // arbeiten; ein zweites Farbschema oder ein zweites Abspielgerät wären
             // stille Fehlerquellen.
             Assert.Same(first.ThemeService, second.ThemeService);
             Assert.Same(first.PlayerService, second.PlayerService);

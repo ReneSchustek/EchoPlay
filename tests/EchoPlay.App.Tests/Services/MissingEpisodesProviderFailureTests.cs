@@ -21,7 +21,7 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Der Bericht läuft über den ganzen Bestand. Reißt er beim ersten Anbieter-Fehler ab,
-    /// bekommt der Anwender für keine einzige Serie ein Ergebnis — obwohl der lokale Teil
+    /// bekommt der Anwender für keine einzige Serie ein Ergebnis, obwohl der lokale Teil
     /// ohne Netz auskommt und für sich schon nützlich ist.
     ///
     /// Die Tests arbeiten auf echten Ordnern im Temp-Verzeichnis.
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Tests.Services
                     MissingEpisodesMode.WithOnline,
                     cancellationToken: TestContext.Current.CancellationToken);
 
-                // Die Serie fällt nicht aus dem Bericht heraus — sie trägt den Grund,
+                // Die Serie fällt nicht aus dem Bericht heraus; sie trägt den Grund,
                 // warum für sie nichts ermittelt werden konnte.
                 SeriesMissingEpisodesResult entry = Assert.Single(report.Results);
                 Assert.Equal("TKKG", entry.SeriesTitle);

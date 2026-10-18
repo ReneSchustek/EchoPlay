@@ -10,7 +10,7 @@ namespace EchoPlay.Logger.Sinks
     ///
     /// Der Puffer arbeitet als Ringpuffer: Sobald die Kapazität erreicht ist,
     /// fällt der älteste Eintrag heraus.
-    /// Der Zugriff ist thread-sicher – FileSink und UI-Thread schreiben und lesen gleichzeitig.
+    /// Der Zugriff ist thread-sicher, denn FileSink und UI-Thread schreiben und lesen gleichzeitig.
     /// Das Event wird bewusst außerhalb des Locks gefeuert, um Deadlocks auszuschließen.
     /// </summary>
     public sealed class MemorySink : ILogSink, ILiveLogSink
@@ -51,7 +51,7 @@ namespace EchoPlay.Logger.Sinks
         /// geraten können, falls sie ihrerseits auf den Puffer zugreifen.
         /// </summary>
         /// <param name="entry">Der zu puffernde Log-Eintrag.</param>
-        /// <returns>Sofort abgeschlossener Task – der Puffer arbeitet synchron.</returns>
+        /// <returns>Sofort abgeschlossener Task, denn der Puffer arbeitet synchron.</returns>
         public Task WriteAsync(LogEntry entry)
         {
             lock (_lock)
@@ -64,14 +64,14 @@ namespace EchoPlay.Logger.Sinks
                 _entries.Enqueue(entry);
             }
 
-            // Außerhalb des Locks feuern – Subscriber dürfen GetEntries() aufrufen
+            // Außerhalb des Locks feuern, denn Subscriber dürfen GetEntries() aufrufen
             LogEntryAdded?.Invoke(entry);
 
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Gibt eine Momentaufnahme aller gepufferten Einträge zurück – älteste zuerst.
+        /// Gibt eine Momentaufnahme aller gepufferten Einträge zurück, älteste zuerst.
         /// </summary>
         /// <returns>
         /// Unveränderliche Liste der aktuell gepufferten Einträge.

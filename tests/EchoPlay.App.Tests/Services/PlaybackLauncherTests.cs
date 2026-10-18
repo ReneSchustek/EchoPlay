@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.Services
             FakePlayerService player = new();
             ControllablePlaybackStateDataService states = new();
 
-            // Zwei Spuren zu je 30 Minuten — die gespeicherte Stelle liegt am Ende.
+            // Zwei Spuren zu je 30 Minuten, die gespeicherte Stelle liegt am Ende.
             states.Seed(new PlaybackState
             {
                 EpisodeId = EpisodeId,
@@ -163,7 +163,7 @@ namespace EchoPlay.App.Tests.Services
                 null, "Die drei Fragezeichen", "Folge 001",
                 out string? appUri, out string? webUrl);
 
-            // Ohne Kennung bleibt die Suche — besser als gar kein Ziel, denn der Anwender
+            // Ohne Kennung bleibt die Suche, besser als gar kein Ziel, denn der Anwender
             // landet immerhin bei seiner Serie.
             Assert.True(found);
             Assert.NotNull(appUri);

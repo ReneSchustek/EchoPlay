@@ -22,7 +22,7 @@ namespace EchoPlay.Data.Services.Interfaces
 
         /// <summary>
         /// Speichert die Sortierreihenfolge für einen Dashboard-Bereich.
-        /// Bestehende Positionen des Bereichs werden vollständig ersetzt –
+        /// Bestehende Positionen des Bereichs werden vollständig ersetzt,
         /// damit ist die Reihenfolge nach jedem Speichern konsistent.
         /// </summary>
         /// <param name="section">Der Dashboard-Bereich.</param>

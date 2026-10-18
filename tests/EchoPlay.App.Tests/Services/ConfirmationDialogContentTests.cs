@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Tests für den Build-Helfer von <see cref="ConfirmationDialogContent"/>.
     /// SafeResourceLoader liefert in Test-Hosts den Fallback "(missing: key)" oder
-    /// den Schlüssel selbst, was hier ausreicht — geprüft wird die Strukturierung,
+    /// den Schlüssel selbst, was hier ausreicht, denn geprüft wird die Strukturierung,
     /// nicht der konkrete Lokalisierungs-Wert.
     /// </summary>
     public sealed class ConfirmationDialogContentTests

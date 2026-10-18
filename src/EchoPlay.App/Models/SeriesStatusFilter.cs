@@ -5,7 +5,7 @@ namespace EchoPlay.App.Models
     /// </summary>
     public enum SeriesStatusFilter
     {
-        /// <summary>Alle Serien anzeigen – kein Fortschrittsfilter.</summary>
+        /// <summary>Alle Serien anzeigen, kein Fortschrittsfilter.</summary>
         Alle,
 
         /// <summary>Nur Serien, bei denen mindestens eine Episode noch nicht angehört wurde.</summary>

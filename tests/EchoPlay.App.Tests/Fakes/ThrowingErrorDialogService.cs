@@ -8,7 +8,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fehlerdialog, der selbst scheitert. Bildet den Fall ab, dass die Meldung nicht mehr
-    /// angezeigt werden kann — etwa weil das Fenster gerade schließt.
+    /// angezeigt werden kann, etwa weil das Fenster gerade schließt.
     /// </summary>
     internal sealed class ThrowingErrorDialogService : IErrorDialogService
     {

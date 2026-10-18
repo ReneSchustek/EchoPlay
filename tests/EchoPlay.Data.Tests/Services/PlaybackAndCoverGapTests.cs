@@ -17,7 +17,7 @@ namespace EchoPlay.Data.Tests.Services
     /// </summary>
     /// <remarks>
     /// Der Hörstand ist der einzige Wert, den der Anwender nicht wiederherstellen kann,
-    /// wenn er verloren geht. Zwei Bereiche der Anwendung schreiben ihn parallel — der
+    /// wenn er verloren geht. Zwei Bereiche der Anwendung schreiben ihn parallel: der
     /// Startlauf und die Wiedergabe. Der eindeutige Index fängt das ab; für den Aufrufer
     /// muss das lautlos gutgehen und darf nicht als Fehler ankommen.
     /// </remarks>

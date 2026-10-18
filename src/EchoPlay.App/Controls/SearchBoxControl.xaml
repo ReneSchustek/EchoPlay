@@ -3,7 +3,7 @@
     Suchfeld der Gestaltungslinie: Lupe links, Platzhalter, der sagt was durchsucht wird,
     rechts ein Löschen-Zeichen, das nur bei gefülltem Feld erscheint.
 
-    Die Suche filtert beim Tippen — ohne Schaltfläche daneben. Eine Suche, die erst auf
+    Die Suche filtert beim Tippen, ohne Schaltfläche daneben. Eine Suche, die erst auf
     einen Klick reagiert, fühlt sich langsam an, auch wenn sie schnell ist.
 -->
 <UserControl
@@ -72,7 +72,7 @@
 
             <!-- Der Name für die Sprachausgabe kommt aus der Ressourcendatei und nicht aus
                  einer Eigenschaft des Bausteins: Eine Eigenschaft, die jede Seite selbst
-                 setzen müsste, bleibt irgendwo leer — und dort liest die Sprachausgabe dann
+                 setzen müsste, bleibt irgendwo leer, und dort liest die Sprachausgabe dann
                  nichts vor. -->
             <Button
                 x:Name="ClearButton"

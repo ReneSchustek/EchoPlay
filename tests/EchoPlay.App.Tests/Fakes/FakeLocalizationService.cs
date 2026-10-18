@@ -5,7 +5,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="ILocalizationService"/>.
-    /// Gibt standardmäßig den Schlüssel selbst zurück – in Tests reicht das,
+    /// Gibt standardmäßig den Schlüssel selbst zurück; in Tests reicht das,
     /// um zu prüfen, ob der richtige Schlüssel angefragt wird.
     /// </summary>
     /// <remarks>

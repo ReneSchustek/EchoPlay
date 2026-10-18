@@ -95,7 +95,7 @@ namespace EchoPlay.LocalLibrary.Analysis
                 }
             }
 
-            // Schritt 3: Flache Serien separat analysieren – Dateinamen statt Ordnernamen
+            // Schritt 3: Flache Serien separat analysieren (Dateinamen statt Ordnernamen)
             if (hasFlatSeries)
             {
                 List<string> flatFileNames = CollectFlatSeriesFileNames(libraryRootPath);
@@ -111,7 +111,7 @@ namespace EchoPlay.LocalLibrary.Analysis
                         if (matchPercentage >= MinMatchPercentage)
                         {
                             // Nur als separaten Vorschlag hinzufügen, wenn das Muster nicht bereits durch
-                            // die Ordner-Analyse abgedeckt wurde – doppelte Einträge verwirren nur
+                            // die Ordner-Analyse abgedeckt wurde, denn doppelte Einträge verwirren nur
                             if (!suggestions.Any(s => s.Pattern == pattern))
                             {
                                 suggestions.Add(new PatternSuggestion(pattern, matchCount, matchPercentage, IsFlatStructure: true));
@@ -121,7 +121,7 @@ namespace EchoPlay.LocalLibrary.Analysis
                 }
             }
 
-            // Bester Treffer zuerst; bei gleichem Score die Reihenfolge aus CandidatePatterns beibehalten –
+            // Bester Treffer zuerst; bei gleichem Score die Reihenfolge aus CandidatePatterns beibehalten.
             // "{number:000}" steht bewusst vor "{number}", weil es das spezifischere Muster ist
             IReadOnlyList<PatternSuggestion> result = suggestions
                 .OrderByDescending(s => s.MatchPercentage)
@@ -148,7 +148,7 @@ namespace EchoPlay.LocalLibrary.Analysis
 
             string[] seriesFolders = SafeFileSystem.EnumerateDirectories(libraryRootPath);
 
-            // Stichprobe begrenzen – bei >20 Serien wird das Ergebnis nicht genauer, aber langsamer
+            // Stichprobe begrenzen, denn bei >20 Serien wird das Ergebnis nicht genauer, aber langsamer
             foreach (string seriesFolder in seriesFolders.Take(MaxSeriesSampleCount))
             {
                 string[] episodeFolders;
@@ -168,7 +168,7 @@ namespace EchoPlay.LocalLibrary.Analysis
 
                 if (episodeFolders.Length == 0)
                 {
-                    // Keine Unterordner – prüfen ob direkt Audiodateien vorhanden sind
+                    // Keine Unterordner: prüfen, ob direkt Audiodateien vorhanden sind
                     if (HasAudioFiles(seriesFolder))
                     {
                         hasFlatSeries = true;
@@ -193,7 +193,7 @@ namespace EchoPlay.LocalLibrary.Analysis
 
         /// <summary>
         /// Sammelt Dateinamen (ohne Extension) der Audiodateien aus flachen Serien-Ordnern.
-        /// Flache Serien haben keine Episodenunterordner – die Episoden liegen direkt als Audiodateien vor.
+        /// Flache Serien haben keine Episodenunterordner, die Episoden liegen direkt als Audiodateien vor.
         /// </summary>
         private static List<string> CollectFlatSeriesFileNames(string libraryRootPath)
         {

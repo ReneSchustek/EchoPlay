@@ -1,4 +1,4 @@
-# Lokale Workflow- und Projekt-Metadaten – nur lokal, niemals committen
+# Lokale Workflow- und Projekt-Metadaten: nur lokal, niemals committen
 CHANGELOG.md
 SECURITY.md
 INSTALLER.md
@@ -50,7 +50,7 @@ PublishProfiles/
 *.mdf
 *.ldf
 
-# Secrets / Konfiguration – appsettings.json darf in Git (enthält nur Base-URLs, keine Secrets)
+# Secrets / Konfiguration (appsettings.json darf in Git und enthält nur Base-URLs, keine Secrets)
 appsettings.Development.json
 appsettings.Local.json
 appsettings.Secrets.json

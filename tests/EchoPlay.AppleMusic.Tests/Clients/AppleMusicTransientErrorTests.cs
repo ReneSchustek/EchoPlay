@@ -22,7 +22,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
     /// <remarks>
     /// Der Import läuft über viele Alben. Ein einzelner Netzfehler ist dabei die Regel,
     /// nicht die Ausnahme. Bricht der ganze Durchlauf deswegen ab, bekommt der Anwender
-    /// nach einer Minute Wartezeit gar nichts — obwohl die anderen hundert Alben sauber
+    /// nach einer Minute Wartezeit gar nichts, obwohl die anderen hundert Alben sauber
     /// geladen wurden.
     /// </remarks>
     public sealed class AppleMusicTransientErrorTests
@@ -49,7 +49,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 "Eine neue Hörspielserie",
                 TestContext.Current.CancellationToken);
 
-            // Das Album zählt weiterhin als vorhanden — nur seine Struktur bleibt
+            // Das Album zählt weiterhin als vorhanden, nur seine Struktur bleibt
             // unbeurteilt. Ein Netzfehler darf die Bewertung nicht kippen.
             Assert.True(analysis.HasAlbums);
             Assert.False(analysis.HasHoerspielAlbumStructure);
@@ -133,7 +133,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 "TKKG", TestContext.Current.CancellationToken);
 
             // Die Bewertung ist eine Heuristik über mehrere Quellen. Scheitert sie für einen
-            // Treffer, fällt dieser aus der Liste — die übrigen bleiben.
+            // Treffer, fällt dieser aus der Liste; die übrigen bleiben.
             Assert.Empty(results);
         }
 

@@ -17,7 +17,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Derselbe Bereich wie das <see cref="LocalTracksViewModel"/> der Mediathek, nur ohne
-    /// Sprung in den Tag-Manager — die Serienansicht bietet ihn dort nicht an. Die drei
+    /// Sprung in den Tag-Manager, denn die Serienansicht bietet ihn dort nicht an. Die drei
     /// Hinweise („Folge wählen", „keine Dateien", Aktionsleiste) hängen alle an derselben
     /// Auswahl und stehen deshalb hier statt verteilt im Ansichtsmodell der Seite.
     /// </remarks>
@@ -81,7 +81,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Wählt eine Folge und lädt ihre lokalen Spuren. Die Titel aus der Kennzeichnung
-        /// werden danach im Hintergrund nachgetragen — die Liste steht sofort.
+        /// werden danach im Hintergrund nachgetragen, die Liste steht sofort.
         /// </summary>
         /// <param name="episode">Die gewählte Folge.</param>
         /// <param name="cancellationToken">Bricht das Laden ab.</param>
@@ -104,7 +104,7 @@ namespace EchoPlay.App.ViewModels
             await TrackTitleFiller.FillAsync(_scopeFactory, rows, cancellationToken);
         }
 
-        /// <summary>Leert die Spalte — beim Wechsel der Serie.</summary>
+        /// <summary>Leert die Spalte beim Wechsel der Serie.</summary>
         public void Clear()
         {
             SelectedEpisode = null;

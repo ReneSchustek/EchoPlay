@@ -19,7 +19,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Standard-Implementierung von <see cref="IEpisodeCoverCoordinator"/>.
     /// Singleton: eigene DI-Scopes, und der Download läuft über den
-    /// <see cref="ICoverDownloader"/> mit gepooltem HTTP-Client — die wiederholte
+    /// <see cref="ICoverDownloader"/> mit gepooltem HTTP-Client. Die wiederholte
     /// Instanziierung des Transient-ViewModels erschöpft so keine Sockets.
     /// </summary>
     public sealed class EpisodeCoverCoordinator : IEpisodeCoverCoordinator
@@ -156,7 +156,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Schreibt das Cover als <c>cover.jpg</c> in den Ordner, wenn die AppSettings-Option
-        /// <c>SaveCoverToDirectory</c> aktiv ist. Datei-Speicherung ist optional – das Cover
+        /// <c>SaveCoverToDirectory</c> aktiv ist. Datei-Speicherung ist optional, das Cover
         /// wurde bereits in der DB persistiert.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
@@ -194,11 +194,11 @@ namespace EchoPlay.App.Services
             }
             catch (IOException)
             {
-                // Datei-Speicherung ist optional – DB hat das Cover bereits
+                // Datei-Speicherung ist optional, die DB hat das Cover bereits
             }
             catch (UnauthorizedAccessException)
             {
-                // Schreibrechte fehlen – kein kritisches Problem
+                // Schreibrechte fehlen: kein kritisches Problem
             }
         }
     }

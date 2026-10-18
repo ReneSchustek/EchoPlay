@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// Neustart hinaus.
     /// </summary>
     /// <remarks>
-    /// Die Klasse hält keinen eigenen Zustand — sie bedient den Wiedergabedienst. Geprüft
+    /// Die Klasse hält keinen eigenen Zustand, sie bedient den Wiedergabedienst. Geprüft
     /// wird deshalb, was beim Dienst ankommt und was die Oberfläche als geändert gemeldet
     /// bekommt. Der zweite Teil ist nicht nebensächlich: Ohne Meldung bleibt das Zeichen des
     /// Lautsprechers auf dem alten Stand, obwohl der Ton längst anders ist.
@@ -102,7 +102,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Absichtlich ohne feste Zeichen: Welches Symbol die Schrift liefert, ist eine
             // Gestaltungsfrage und darf sich ändern. Die Zusage ist, dass Stummschaltung
-            // aussieht wie Stille — auch bei aufgedrehtem Regler.
+            // aussieht wie Stille, auch bei aufgedrehtem Regler.
             string silent = BuildControl(new FakePlayerService { Volume = 0, IsMuted = false }).VolumeGlyph;
             string mutedButLoud = BuildControl(new FakePlayerService { Volume = 0.9, IsMuted = true }).VolumeGlyph;
 
@@ -149,7 +149,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await WaitForSaveAsync(settingsService);
 
             // Stummschaltung aufheben bei ganz heruntergedrehtem Regler ergäbe wieder
-            // Stille — der Anwender hielte die Schaltfläche für kaputt.
+            // Stille. Der Anwender hielte die Schaltfläche für kaputt.
             Assert.False(player.IsMuted);
             Assert.True(player.Volume > 0);
         }
@@ -176,7 +176,7 @@ namespace EchoPlay.App.Tests.ViewModels
             VolumeControl control = BuildControl(player);
             List<string> reported = RecordPropertyChanges(control);
 
-            // Wird die Lautstärke von außen gesetzt — beim Start aus den Einstellungen —,
+            // Wird die Lautstärke von außen gesetzt (beim Start aus den Einstellungen),
             // erfährt die Oberfläche davon nur über diesen Weg.
             control.Refresh();
 

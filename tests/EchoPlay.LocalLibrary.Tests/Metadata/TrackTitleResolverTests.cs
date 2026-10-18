@@ -8,7 +8,7 @@ namespace EchoPlay.LocalLibrary.Tests.Metadata
 {
     /// <summary>
     /// Prüft, dass die Trackliste den Titel aus der Kennzeichnung bekommt und in jedem
-    /// Störfall auf den Dateinamen zurückfällt — nie auf eine leere Zeile.
+    /// Störfall auf den Dateinamen zurückfällt, nie auf eine leere Zeile.
     /// </summary>
     public sealed class TrackTitleResolverTests
     {

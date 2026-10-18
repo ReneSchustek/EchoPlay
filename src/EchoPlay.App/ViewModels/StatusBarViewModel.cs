@@ -409,7 +409,7 @@ namespace EchoPlay.App.ViewModels
                 .ToHashSet();
 
             // Alle Episoden der abonnierten Serien in einem einzigen Query laden –
-            // vorher war das ein N+1-Problem (ein Query pro Serie).
+            // ein Query pro Serie wäre ein N+1-Problem.
             List<Guid> seriesIds = subscribedSeries.Select(s => s.Id).ToList();
             IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(seriesIds);
 
@@ -458,8 +458,8 @@ namespace EchoPlay.App.ViewModels
             switch (provider)
             {
                 case ProviderType.Spotify:
-                    // GetService (nicht GetRequiredService): fehlt der Provider (z.B. in Alt-Tests
-                    // ohne Spotify-Registrierung), bleibt es beim bisherigen "Spotify"-Verhalten.
+                    // GetService (nicht GetRequiredService): fehlt der Provider (z.B. in Tests
+                    // ohne Spotify-Registrierung), bleibt es beim schlichten "Spotify"-Hinweis.
                     ISpotifyClientCredentialsProvider? credentialsProvider =
                         scope.ServiceProvider.GetService<ISpotifyClientCredentialsProvider>();
                     if (credentialsProvider is not null && await credentialsProvider.GetAsync() is null)

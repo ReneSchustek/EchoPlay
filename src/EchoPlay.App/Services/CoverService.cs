@@ -180,7 +180,7 @@ namespace EchoPlay.App.Services
                 }
                 catch (DbUpdateException ex)
                 {
-                    // Endgültiger Fehlschlag nach 3 Versuchen: nicht mehr still verschlucken.
+                    // Endgültiger Fehlschlag nach 3 Versuchen: nicht still verschlucken.
                     // Die DB-first-Anzeige bleibt ohne diesen Write dauerhaft leer – der finale WARN
                     // macht den Cover-Ausfall sichtbar (Zero-Warning-Regel: echtes Signal, kein Rauschen)
                     // und verhindert zugleich, dass die Exception aus einem Fire-and-forget-Cover-Task

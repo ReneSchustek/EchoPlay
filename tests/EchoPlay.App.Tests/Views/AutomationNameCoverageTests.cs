@@ -10,7 +10,7 @@ namespace EchoPlay.App.Tests.Views
 {
     /// <summary>
     /// Hält die Bedienelemente für Screenreader und UI-Automation ansprechbar.
-    /// Anlass: Beim Klick-Smoke am 2026-07-27 meldeten alle Kacheln ihren ViewModel-Typnamen
+    /// Ohne Namen melden Kacheln ihren ViewModel-Typnamen
     /// („EchoPlay.App.ViewModels.LocalArtistCardViewModel") und Icon-Buttons gar nichts —
     /// WinUI fällt ohne <c>AutomationProperties.Name</c> auf <c>ToString()</c> zurück.
     /// Prüft die XAML-Dateien als XML, damit kein WinUI-Host nötig ist.

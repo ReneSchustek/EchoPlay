@@ -11,7 +11,7 @@ namespace EchoPlay.App.Views
     /// <summary>
     /// Über-Seite der Anwendung.
     /// Zeigt App-Logo, Version, Beschreibung und Autorenangabe.
-    /// Ersetzt den früheren ContentDialog – die Seite ist eine normale NavigationView-Seite
+    /// Kein ContentDialog – die Seite ist eine normale NavigationView-Seite
     /// ohne eigenen Schließen-Button. Navigieren geht über den Zurück-Pfeil des NavigationView.
     /// </summary>
     public sealed partial class AboutPage : Page

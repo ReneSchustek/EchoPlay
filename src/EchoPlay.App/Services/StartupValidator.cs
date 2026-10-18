@@ -396,8 +396,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Aktualisiert den Neuerscheinungen-Cache gegen die iTunes-API.
-        /// Identische Logik wie bisher in DashboardViewModel.RefreshNewReleaseCacheAsync,
-        /// aber hier zentral im Startup ausgeführt.
+        /// Läuft zentral im Startup, damit das Dashboard beim Öffnen einen fertigen Cache vorfindet.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuerscheinungen-Cache-Refresh pro Serie: HTTP-Fehler (Spotify/AppleMusic) oder DB-Fehler einer einzelnen Serie dürfen den Cache-Rebuild für die restlichen Serien nicht abbrechen.")]
         private async Task RefreshNewReleaseCacheAsync(

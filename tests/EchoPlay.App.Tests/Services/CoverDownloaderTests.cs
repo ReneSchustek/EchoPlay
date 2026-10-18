@@ -11,9 +11,8 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Tests für <see cref="CoverDownloader"/>. Der Dienst hat die vier vorher getrennt
-    /// implementierten Download-Wrapper ersetzt (Arbeitspaket 451); geprüft wird deshalb die
-    /// Normalisierung, auf die sich alle Aufrufer verlassen.
+    /// Tests für <see cref="CoverDownloader"/>. Der Dienst ist der einzige Download-Weg für
+    /// vier Aufrufer; geprüft wird deshalb die Normalisierung, auf die sich alle verlassen.
     /// </summary>
     public sealed class CoverDownloaderTests
     {

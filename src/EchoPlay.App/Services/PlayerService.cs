@@ -242,8 +242,8 @@ namespace EchoPlay.App.Services
                 : new EpisodeTimeline(trackDurations);
 
             // Mit bekannten Spurdauern gilt die Fortsetzstelle für die ganze Folge und
-            // bestimmt damit auch die Spur. Ohne sie bleibt es beim bisherigen Verhalten:
-            // die Stelle gilt für die übergebene Spur.
+            // bestimmt damit auch die Spur. Ohne sie gilt die Stelle
+            // für die übergebene Spur.
             TimeSpan positionInTrack = resumePosition;
             if (timeline.IsKnown && resumePosition > TimeSpan.Zero)
             {

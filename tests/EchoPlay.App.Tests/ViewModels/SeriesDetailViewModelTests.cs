@@ -382,8 +382,8 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task PlayEpisodeAsync_ResumesAtOpenPosition_EvenWhenAlreadyHeard()
         {
             // Ein Hörspiel hört man nicht einmal im Leben: Eine gehörte Folge mit offener
-            // Stelle wird dort fortgesetzt, nicht von vorn begonnen. Früher entschied hier
-            // allein der Hörstatus — und die Stelle war verloren.
+            // Stelle wird dort fortgesetzt, nicht von vorn begonnen. Entschiede hier
+            // allein der Hörstatus, wäre die Stelle verloren.
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
             Series series = seriesService.All[0];

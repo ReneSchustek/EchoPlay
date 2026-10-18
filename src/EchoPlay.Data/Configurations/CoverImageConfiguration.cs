@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Configurations
             _ = builder.Property(c => c.EntityId)
                    .IsRequired();
 
-            // Cover maximal 5 MB – gleicher Schutz wie bisher
+            // Cover maximal 5 MB – schützt die Datenbank vor übergroßen Bildern
             _ = builder.Property(c => c.ImageData)
                    .IsRequired()
                    .HasMaxLength(5_242_880);

@@ -38,7 +38,7 @@ namespace EchoPlay.Data.Configurations
                 .HasForeignKey(t => t.EpisodeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Kombi-Index ersetzt den bisherigen einfachen EpisodeId-Index:
+            // Kombi-Index statt eines einfachen EpisodeId-Index:
             // GetByEpisodeIdAsync() sortiert immer nach TrackNumber – der Index deckt beides ab.
             _ = builder.HasIndex(t => new { t.EpisodeId, t.TrackNumber });
 

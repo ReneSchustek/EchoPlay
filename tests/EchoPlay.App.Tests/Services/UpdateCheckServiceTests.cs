@@ -177,7 +177,7 @@ namespace EchoPlay.App.Tests.Services
         {
             // Ein Release ohne brauchbaren Hash ist nicht installierbar — der Downloader lehnt
             // es ohnehin ab. Es anzubieten hieße, zu einem Update einzuladen, das systematisch
-            // scheitert; genau das ist am 30.07.2026 an der laufenden App aufgefallen.
+            // scheitert.
             FakeAppSettingsDataService settings = new(new AppSettings());
             UpdateCheckService service = BuildServiceWithHandler(
                 settings, new ReleaseJsonHandler(ReleaseJson("v99.0.0", body: "Kein Hash hier drin.")));

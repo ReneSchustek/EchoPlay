@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 namespace EchoPlay.Data.Tests.Services
 {
     /// <summary>
-    /// Prüft die Abfrage- und Schreibwege der Datendienste, die bisher nur von der
-    /// Oberfläche aus benutzt wurden.
+    /// Prüft die Abfrage- und Schreibwege der Datendienste, die sonst nur die
+    /// Oberfläche benutzt.
     /// </summary>
     /// <remarks>
     /// Die Suche über die Anbieter-Kennung ist der Weg, auf dem ein Import eine bereits

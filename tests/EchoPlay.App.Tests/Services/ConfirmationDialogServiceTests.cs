@@ -9,7 +9,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Tests für den Defense-in-Depth-Pfad in <see cref="ConfirmationDialogService"/>:
     /// bei Pre-MainWindow-Szenarien (XamlRoot null) darf der Service nicht crashen —
-    /// vorher stand dort ein null-forgiving <c>App.MainWindow!</c>.
+    /// ein null-forgiving <c>App.MainWindow!</c> würfe dort.
     /// </summary>
     public sealed class ConfirmationDialogServiceTests
     {

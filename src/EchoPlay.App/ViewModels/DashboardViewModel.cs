@@ -177,8 +177,8 @@ namespace EchoPlay.App.ViewModels
                 _logger.Debug(() => $"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
             }
 
-            // Kacheln, die nur das Serien-Cover zeigen, bekommen ihr Folgen-Cover jetzt
-            // nachgetragen — nach dem Zeichnen, nicht davor.
+            // Kacheln, die nur das Serien-Cover zeigen, bekommen ihr Folgen-Cover an dieser
+            // Stelle nachgetragen — nach dem Zeichnen, nicht davor.
             _coverProvider.FlushPendingRefresh();
 
             _logger.Info("DashboardLoad total={ElapsedMs} ms", totalStopwatch.ElapsedMilliseconds);

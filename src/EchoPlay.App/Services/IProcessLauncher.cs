@@ -5,8 +5,8 @@ namespace EchoPlay.App.Services
     /// in Tests nicht wirklich einen Prozess erzeugt.
     /// </summary>
     /// <remarks>
-    /// Hintergrund: Ein Test, der den Neustart-Pfad direkt aufrief, startete den Testhost
-    /// statt der App und vervielfältigte sich damit selbst (2026-07-27, 82 Prozesse).
+    /// Hintergrund: Ein Test, der den Neustart-Pfad direkt aufruft, startet den Testhost
+    /// statt der App und vervielfältigt sich damit selbst.
     /// Über diese Schnittstelle bekommen Tests ein Fake und lösen nie einen echten Start aus.
     /// </remarks>
     public interface IProcessLauncher

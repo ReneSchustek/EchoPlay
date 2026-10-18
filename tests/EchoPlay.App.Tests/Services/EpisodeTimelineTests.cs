@@ -98,8 +98,8 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void WithoutDurations_BehavesLikeBefore()
         {
-            // Ohne bekannte Spurdauern bleibt es beim bisherigen Verhalten: Die Stelle gilt
-            // für die laufende Spur, es wird nicht umgerechnet.
+            // Ohne bekannte Spurdauern gilt die Stelle für die laufende Spur, es wird
+            // nicht umgerechnet.
             EpisodeTimeline timeline = EpisodeTimeline.Empty;
 
             Assert.False(timeline.IsKnown);

@@ -12,8 +12,8 @@ using System.Threading.Tasks;
 namespace EchoPlay.Data.Tests.Services
 {
     /// <summary>
-    /// Prüft die Wege rund um Hörstände und Cover, die bisher nur von der Oberfläche
-    /// aus benutzt wurden.
+    /// Prüft die Wege rund um Hörstände und Cover, die sonst nur die Oberfläche
+    /// benutzt.
     /// </summary>
     /// <remarks>
     /// Der Hörstand ist der einzige Wert, den der Anwender nicht wiederherstellen kann,

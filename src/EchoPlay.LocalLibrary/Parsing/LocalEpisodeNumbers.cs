@@ -5,19 +5,19 @@ namespace EchoPlay.LocalLibrary.Parsing
 {
     /// <summary>
     /// Ermittelt aus Ordnernamen einer Serie die vorhandenen Folgennummern und die Lücken dazwischen.
-    /// Gemeinsame Grundlage für die Fehlende-Folgen-Analyse und den Online-Abgleich – vorher lag
-    /// dieselbe Logik doppelt vor und lief auseinander.
+    /// Gemeinsame Grundlage für die Fehlende-Folgen-Analyse und den Online-Abgleich – läge
+    /// dieselbe Logik doppelt vor, liefe sie auseinander.
     /// </summary>
     /// <remarks>
-    /// Gegenüber dem früheren Vorgehen (ein Muster gewinnt für die ganze Serie) sind drei Dinge anders,
+    /// Ein Muster, das für die ganze Serie gewinnt, reicht nicht. Drei Regeln kommen hinzu,
     /// jeweils aus gemessenen Fehlbefunden an einer 92-Serien-Sammlung abgeleitet:
     /// <list type="bullet">
-    /// <item>Jeder Ordner wird gegen <b>alle</b> Muster geprüft. Vorher zählten Ordner, die zufällig
-    /// anders benannt sind, als fehlend — bei „Sherlock Holmes – Die geheimen Fälle" waren das 38 von 67.</item>
-    /// <item>Ordner, die nur aus einer Zahl bestehen („001"), werden erkannt. Alle bisherigen Muster
-    /// verlangten einen Titelteil.</item>
+    /// <item>Jeder Ordner wird gegen <b>alle</b> Muster geprüft. Sonst zählen Ordner, die zufällig
+    /// anders benannt sind, als fehlend — bei „Sherlock Holmes – Die geheimen Fälle" 38 von 67.</item>
+    /// <item>Ordner, die nur aus einer Zahl bestehen („001"), werden erkannt. Alle übrigen Muster
+    /// verlangen einen Titelteil.</item>
     /// <item>Nur Zahlen von 1 bis 999 gelten als Folgennummer — dieselbe Regel wie in
-    /// <see cref="EpisodeNumberParser"/>. „Stenkelfeld 2008" wurde sonst als Folge 2008 gelesen und
+    /// <see cref="EpisodeNumberParser"/>. „Stenkelfeld 2008" würde sonst als Folge 2008 gelesen und
     /// erzeugte 1999 erfundene Lücken.</item>
     /// </list>
     /// </remarks>
@@ -35,7 +35,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             "{number:000}_{title}",
             "{number:000} {title}",
             "{title} - {number:000}",
-            // Ordner ohne Titelteil, z.B. „001" — kein bisheriges Muster deckte das ab.
+            // Ordner ohne Titelteil, z.B. „001" — kein anderes Muster deckt das ab.
             "{number:000}"
         ];
 

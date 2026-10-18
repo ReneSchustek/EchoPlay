@@ -16,7 +16,7 @@ namespace EchoPlay.App.ViewModels
     /// und reicht jede fertige Trefferkarte an die Seite weiter.
     /// </summary>
     /// <remarks>
-    /// Der Ablauf stand vorher im Ansichtsmodell und machte gut ein Drittel davon aus. Die
+    /// Im Ansichtsmodell machte der Ablauf gut ein Drittel davon aus. Die
     /// Trennung ist die zwischen „was gesucht wird" und „was die Seite anzeigt": Das
     /// Ansichtsmodell hält Eingabe, Zustand und Liste, dieser Typ die Durchführung.
     /// <para>

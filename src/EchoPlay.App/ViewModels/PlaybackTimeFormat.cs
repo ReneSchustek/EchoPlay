@@ -9,8 +9,8 @@ namespace EchoPlay.App.ViewModels
     /// <remarks>
     /// Beide Wiedergabe-Ansichten zeigen dieselben Zahlen, sehen aber verschieden aus: Der
     /// Mini-Player hat keinen Suchlauf und keine Umschaltung zwischen Rest- und Gesamtzeit.
-    /// Was sie teilen, ist die Rechnung — und die stand vorher zweimal im Quelltext, mit je
-    /// eigener Formatierung.
+    /// Was sie teilen, ist die Rechnung — stünde sie in jeder Ansicht selbst, liefen die
+    /// Formatierungen auseinander.
     /// </remarks>
     internal static class PlaybackTimeFormat
     {

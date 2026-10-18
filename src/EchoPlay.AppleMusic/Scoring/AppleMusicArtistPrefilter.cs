@@ -35,7 +35,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// <remarks>
     /// Die Künstlersuche liefert bis zu 25 Namen, von denen die meisten nichts mit dem
     /// Suchbegriff zu tun haben — bei „Bibi" etwa Musikkünstler aus aller Welt. Jeder von
-    /// ihnen kostete bisher mehrere Anfragen an der Ratenbremse. Genre und Name stehen
+    /// ihnen kostete ungefiltert mehrere Anfragen an der Ratenbremse. Genre und Name stehen
     /// bereits in der Antwort; wer nach beiden Merkmalen nichts hergibt, kann auch durch
     /// eine Albenprüfung nicht mehr zum Hörspiel werden.
     /// </remarks>

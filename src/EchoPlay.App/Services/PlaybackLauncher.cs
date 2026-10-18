@@ -115,8 +115,8 @@ namespace EchoPlay.App.Services
 
             // Die Kennungen kommen vom Aufrufer, nicht aus der Datenbank: Eine Neuerscheinung
             // stammt vom Anbieter und ist noch keine gespeicherte Folge — ihre Id steht in
-            // keiner Tabelle (gemessen am 12.08.2026 über alle Id-Spalten). Ein Nachladen fand
-            // deshalb nie etwas, und jeder Klick fiel auf die Suche zurück.
+            // keiner Tabelle. Ein Nachladen fände
+            // deshalb nie etwas, und jeder Klick fiele auf die Suche zurück.
             // Wo eine echte Folge vorliegt, füllt der Aufrufer die Kennungen aus ihrem Datensatz.
 
             // Ohne diese Spur ist von außen nicht zu sehen, welcher Zweig gegriffen hat: Der

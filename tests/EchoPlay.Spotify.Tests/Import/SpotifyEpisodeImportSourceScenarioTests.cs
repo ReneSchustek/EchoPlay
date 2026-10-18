@@ -45,7 +45,7 @@ namespace EchoPlay.Spotify.Tests.Import
             Assert.Equal(2, episodes.Count);
 
             // Die Episode aus dem späteren Album muss zuerst erscheinen (Sortierung nach ReleaseDate absteigend).
-            // Der Titel ist jetzt der Albumname, nicht mehr der Trackname.
+            // Der Titel ist der Albumname, nicht der Trackname.
             Assert.Equal("Späteres Album", episodes[0].Title);
             Assert.Equal("Früheres Album", episodes[1].Title);
         }

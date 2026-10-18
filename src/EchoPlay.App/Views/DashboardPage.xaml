@@ -340,8 +340,8 @@
                     ItemsSource="{x:Bind ViewModel.ZuletztGehoertVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource RecentSeriesTileTemplate}"/>
 
-                <!-- Ankündigungs-Sektion entfernt: Ankündigungen sind jetzt als "Angekündigt"-Gruppe
-                     in den Neuerscheinungen integriert (monatliche Gruppierung, ganz oben). -->
+                <!-- Keine eigene Ankündigungs-Sektion: Ankündigungen stehen als "Angekündigt"-Gruppe
+                     in den Neuerscheinungen (monatliche Gruppierung, ganz oben). -->
 
             </StackPanel>
         </ScrollViewer>

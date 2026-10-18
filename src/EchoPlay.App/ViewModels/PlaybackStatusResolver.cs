@@ -47,7 +47,7 @@ namespace EchoPlay.App.ViewModels
         /// Das ist bewusst eine eigene Aussage neben <see cref="Resolve"/>: Ein Hörspiel
         /// hört man nicht einmal im Leben. Wer eine bereits gehörte Folge erneut startet
         /// und in der Mitte aufhört, hat sie weiterhin gehört — und trotzdem eine Stelle,
-        /// an der er fortsetzen möchte. Beides in einen Wert zu pressen hieß bisher, dass
+        /// an der er fortsetzen möchte. Beides in einen Wert zu pressen hieße, dass
         /// „gehört" gewinnt und die Folge nirgends mehr auftaucht, wo man sie wiederfindet.
         ///
         /// Die Gesamtdauer gehört zum Vergleich, weil eine durchgehörte Folge ihre Position

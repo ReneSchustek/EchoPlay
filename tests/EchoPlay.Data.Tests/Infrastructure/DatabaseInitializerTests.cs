@@ -11,8 +11,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// Tests für <see cref="DatabaseInitializer"/>. Verifiziert, dass die Migrations-Kette
     /// auf einer leeren SQLite-Datenbank vollständig durchläuft und alle neueren Migrationen
     /// (inklusive der konsolidierten <c>AddSourceHashSecureSettingsProviderIds</c>-Migration)
-    /// angewandt werden. Deckt damit genau den Silent-Failure-Fall ab, der am 2026-04-13
-    /// in Produktion auftrat (fehlende Designer.cs-Dateien → Migrationen von EF Core nicht erkannt).
+    /// angewandt werden. Deckt damit den Silent-Failure-Fall ab, in dem EF Core Migrationen
+    /// ohne Designer.cs-Datei nicht erkennt und stillschweigend überspringt.
     /// </summary>
     public sealed class DatabaseInitializerTests : IAsyncLifetime, IDisposable
     {
@@ -112,7 +112,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         [Fact]
         public async Task InitializeAsync_Registers_Consolidated_Migration()
         {
-            // Regressions-Schutz: die am 2026-04-13 konsolidierte Migration muss als angewandt gelten.
+            // Regressions-Schutz: die konsolidierte Migration muss als angewandt gelten.
             DatabaseInitializer initializer = new(_context!);
 
             await initializer.InitializeAsync(TestContext.Current.CancellationToken);

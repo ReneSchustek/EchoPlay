@@ -8,8 +8,8 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Bündelt die per DI aufgelösten Dienste für <see cref="SettingsViewModel"/>.
     /// Dieselbe Form wie <see cref="LocalLibraryViewModelContext"/>: Vierzehn einzelne
-    /// Konstruktor-Parameter waren an der Aufrufstelle nicht mehr auseinanderzuhalten —
-    /// zwei vertauschte Dienste gleichen Typs hätte kein Übersetzer bemerkt.
+    /// Konstruktor-Parameter wären an der Aufrufstelle nicht auseinanderzuhalten —
+    /// zwei vertauschte Dienste gleichen Typs bemerkte kein Übersetzer.
     /// Die Reiter-Ansichtsmodelle entstehen intern und gehören nicht hierher.
     /// </summary>
     /// <param name="ScopeFactory">Für datenbanknahe Zugriffe beim Laden und Speichern.</param>

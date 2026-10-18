@@ -23,11 +23,11 @@ namespace EchoPlay.App.ViewModels
     /// Serienauswahl über alle drei Listen hinweg und den Sprung in den Tag-Manager.
     ///
     /// Bindungen und Seitenlogik sprechen die Bereiche direkt an
-    /// (<c>ViewModel.ScanVM.IsScanning</c>). Der frühere Weg — jede Eigenschaft hier noch
-    /// einmal führen und das Änderungsereignis weiterreichen — hat die Klasse auf über
-    /// 700 Zeilen gebracht und dabei eine eigene Fehlerquelle geschaffen: Wo der
-    /// weitergereichte Name vom Namen im Bereich abwich, wartete die Bindung auf eine
-    /// Meldung, die nie kam, und die Anzeige blieb stumm leer.
+    /// (<c>ViewModel.ScanVM.IsScanning</c>). Jede Eigenschaft hier noch einmal zu
+    /// führen und das Änderungsereignis weiterzureichen, brächte die Klasse auf über
+    /// 700 Zeilen und schüfe eine eigene Fehlerquelle: Wo der weitergereichte Name vom
+    /// Namen im Bereich abweicht, wartet die Bindung auf eine Meldung, die nie kommt, und
+    /// die Anzeige bleibt stumm leer.
     /// </remarks>
     public sealed class LocalLibraryViewModel : ObservableObject, IDisposable
     {

@@ -431,9 +431,8 @@ namespace EchoPlay.App.Tests.Services
         public async Task RequestCoverForSearchResult_ForALocalHit_UsesTheCoverFromTheDatabase()
         {
             // Ein Treffer aus dem eigenen Bestand trägt keine Anbieter-Adresse — sein Bild
-            // liegt längst in der Datenbank. Vorher startete der Weg dorthin gar nicht erst,
-            // und die Kachel blieb leer, obwohl dieselbe Serie auf jeder anderen Seite ihr
-            // Cover zeigte.
+            // liegt längst in der Datenbank. Startet der Weg dorthin nicht, bleibt die Kachel
+            // leer, obwohl dieselbe Serie auf jeder anderen Seite ihr Cover zeigt.
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "Bibi Blocksberg" };
             await seriesService.AddAsync(series, TestContext.Current.CancellationToken);

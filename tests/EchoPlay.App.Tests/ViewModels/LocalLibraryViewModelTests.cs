@@ -630,7 +630,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task SetCoverAsync_PersistsCoverBytesInCoverImagesTable()
         {
             // Cover-Persistenz läuft ausschließlich über die CoverImages-Tabelle;
-            // Series.LocalCoverData existiert nicht mehr, der CoverImageDataService ist Single-Source-of-Truth.
+            // der CoverImageDataService ist Single-Source-of-Truth.
             FakeSeriesDataService seriesService = new();
             FakeCoverImageDataService coverService = new();
 

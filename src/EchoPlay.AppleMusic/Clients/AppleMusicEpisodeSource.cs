@@ -160,7 +160,7 @@ namespace EchoPlay.AppleMusic.Clients
 
             foreach (ITunesCollectionDto album in albums)
             {
-                // Bekannte Folgen wurden nicht gebatcht → leere Trackliste, Dauer bleibt wie bisher 0.
+                // Bekannte Folgen wurden nicht gebatcht → leere Trackliste, Dauer bleibt 0.
                 IReadOnlyList<ITunesTrackDto> tracks =
                     tracksByCollection.TryGetValue(album.CollectionId, out List<ITunesTrackDto>? found) ? found : [];
 

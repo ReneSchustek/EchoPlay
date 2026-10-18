@@ -15,8 +15,8 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Standardimplementierung von <see cref="ITagLookupCoordinator"/>.
     /// Delegiert den eigentlichen Online-Lookup an <see cref="ITagLookupService"/>
-    /// (MusicBrainz) und hält zusätzlich die reine Query-/Match-Logik, die früher
-    /// als statische Methoden auf dem <c>TagManagerViewModel</c> lag.
+    /// (MusicBrainz) und hält zusätzlich die reine Query-/Match-Logik außerhalb des
+    /// <c>TagManagerViewModel</c>.
     /// Der Coordinator ist Singleton; die <see cref="ITagLookupService"/>-Instanz wird pro
     /// Aufruf aus einem frischen DI-Scope aufgelöst, damit die HttpClient-Lifetime des
     /// <c>HttpMessageHandler</c>s nicht in der Singleton-Referenz einfriert.

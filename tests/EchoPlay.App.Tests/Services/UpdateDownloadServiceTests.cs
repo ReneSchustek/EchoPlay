@@ -199,8 +199,8 @@ namespace EchoPlay.App.Tests.Services
             using CancellationTokenSource cts = new();
             await cts.CancelAsync();
 
-            // Cancellation wird intern als Exception abgefangen und auf false gemappt — das ist
-            // dokumentiertes Verhalten (Arbeitspaket: "Nutzer kann es beim nächsten Start erneut versuchen").
+            // Cancellation wird intern als Exception abgefangen und auf false gemappt — der Nutzer
+            // kann es beim nächsten Start erneut versuchen.
             bool result = await service.DownloadAndInstallAsync(
                 downloadUrl: ValidUrl,
                 version: "1.0.0",

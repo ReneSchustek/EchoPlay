@@ -83,7 +83,7 @@ namespace EchoPlay.App.Views
                 }
             }
 
-            // Die Indizes entsprechen der früheren Aufklappliste: 1 = ungehört,
+            // Die Indizes folgen EpisodeFilterIndex: 1 = ungehört,
             // 2 = gehört, 3 = angefangen.
             ViewModel.EpisodeList.EpisodeFilterIndex = e.Chip.IsActive
                 ? e.Chip.Key switch

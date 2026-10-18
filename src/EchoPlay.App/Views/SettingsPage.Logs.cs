@@ -11,8 +11,8 @@ namespace EchoPlay.App.Views
     /// <remarks>
     /// Den Takt der Live-Ansicht führt allein das
     /// <see cref="ViewModels.MaintenanceSettingsViewModel"/>. Die Seite zeichnet, sobald
-    /// sich die Einträge ändern — vorher lief hier ein zweiter Zeitgeber im selben
-    /// Zwei-Sekunden-Takt, der dieselben Daten noch einmal las.
+    /// sich die Einträge ändern — ein zweiter Zeitgeber hier läse dieselben Daten im
+    /// selben Zwei-Sekunden-Takt noch einmal.
     /// </remarks>
     public sealed partial class SettingsPage : Page
     {

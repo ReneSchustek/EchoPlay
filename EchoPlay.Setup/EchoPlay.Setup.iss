@@ -20,7 +20,7 @@
 
 [Setup]
 ; Stabile AppId (nicht ändern — identifiziert die Installation für Upgrade/Deinstallation).
-; Entspricht der bisherigen MSIX-Identity, damit die Zuordnung erhalten bleibt.
+; Entspricht der MSIX-Identity aus Package.appxmanifest, damit beide Installationswege dieselbe Anwendung meinen.
 AppId={{4507e02b-3490-46e6-9510-6f111d5926de}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}

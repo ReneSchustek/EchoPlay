@@ -109,9 +109,8 @@ namespace EchoPlay.AppleMusic.Tests.Search
         [Fact]
         public async Task Search_WhenTheUserKeepsTyping_StopsWithoutAWarning()
         {
-            // Vorher lief die Schleife nach dem Abbruch weiter und schrieb für jeden
-            // verbliebenen Künstler eine Warnung — 14 Stück innerhalb von 32 Millisekunden,
-            // die keinen einzigen Fehler beschrieben.
+            // Liefe die Schleife nach dem Abbruch weiter, schriebe sie für jeden
+            // verbliebenen Künstler eine Warnung, die keinen einzigen Fehler beschreibt.
             ConfigurableAppleMusicSearchClient client = new ConfigurableAppleMusicSearchClient()
                 .WithArtists(
                 [

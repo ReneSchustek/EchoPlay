@@ -257,7 +257,7 @@ namespace EchoPlay.App.ViewModels
             ApplyFilterAndSort();
 
             // Erste Charge: max. 60 Kacheln (reguläre + Sonderfolgen gemischt) MIT Cover laden,
-            // damit der aktive Tab sofort Cover zeigt. Sonderfolgen werden nicht mehr verzögert,
+            // damit der aktive Tab sofort Cover zeigt. Sonderfolgen werden nicht verzögert,
             // weil die Cover-Dateien auf lokaler SSD schnell genug laden.
             int firstBatchSize = Math.Min(60, coverQueue.Count);
 

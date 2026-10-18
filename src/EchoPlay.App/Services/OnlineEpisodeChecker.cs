@@ -434,8 +434,8 @@ namespace EchoPlay.App.Services
             }
 
             // Gemeinsame Erkennung mit der Fehlende-Folgen-Analyse: jeder Ordner wird gegen alle
-            // Muster geprüft, Jahreszahlen fallen raus. Vorher galt hier ein einziges Gewinner-Muster,
-            // wodurch abweichend benannte Ordner die höchste Nummer verfälschten.
+            // Muster geprüft, Jahreszahlen fallen raus. Ein einziges Gewinner-Muster
+            // ließe abweichend benannte Ordner die höchste Nummer verfälschen.
             return LocalEpisodeNumbers.Highest(folderNames);
         }
 

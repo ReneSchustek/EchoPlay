@@ -16,8 +16,8 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Tests für <see cref="AppCoverService"/> – Schwerpunkt auf dem Diagnose-Schutzgitter:
-    /// Ein endgültig fehlgeschlagener Cover-DB-Write darf nicht mehr still
-    /// verschluckt werden, sondern wird als WARN sichtbar und wirft nicht mehr nach außen.
+    /// Ein endgültig fehlgeschlagener Cover-DB-Write darf nicht still
+    /// verschluckt werden, sondern wird als WARN sichtbar und wirft nicht nach außen.
     /// </summary>
     public sealed class CoverServiceTests
     {

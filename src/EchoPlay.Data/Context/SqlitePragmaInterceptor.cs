@@ -61,7 +61,7 @@ namespace EchoPlay.Data.Context
         {
             using DbCommand command = connection.CreateCommand();
 
-            // WAL (Write-Ahead-Log): Leser blockieren Schreiber nicht mehr.
+            // WAL (Write-Ahead-Log): Leser blockieren Schreiber nicht.
             // Deutlich bessere Performance bei gleichzeitigem Lesen und Schreiben,
             // z.B. wenn das Dashboard lädt während ein Scan im Hintergrund importiert.
             // Einmal gesetzt bleibt WAL dauerhaft aktiv (persistiert in der DB-Datei).

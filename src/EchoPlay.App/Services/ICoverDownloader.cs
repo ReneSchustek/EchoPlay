@@ -6,8 +6,8 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Lädt Cover-Bilddaten von einer Provider-URL. Einzige Stelle in der App-Schicht, die
-    /// den HTTP-Abruf eines Covers ausführt — vier Aufrufer hatten das vorher je selbst
-    /// implementiert, mit drei unterschiedlichen Fehlerverhalten.
+    /// den HTTP-Abruf eines Covers ausführt — implementiert jeder der vier Aufrufer ihn selbst,
+    /// entstehen mehrere Fehlerverhalten für denselben Abruf.
     /// </summary>
     public interface ICoverDownloader
     {

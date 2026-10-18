@@ -5,8 +5,8 @@ namespace EchoPlay.App.Controls
 {
     /// <summary>
     /// Wiederverwendbarer Hilfe-Button mit gekoppeltem TeachingTip.
-    /// Ersetzt das frühere Muster aus inline-Button + inline-TeachingTip + OnHelpClick-Handler,
-    /// das in sieben Hauptseiten dupliziert war. Der Aufrufer setzt lediglich
+    /// Ohne das Control stünden inline-Button, inline-TeachingTip und OnHelpClick-Handler
+    /// in sieben Hauptseiten je einmal. Der Aufrufer setzt lediglich
     /// <see cref="TipUid"/>; der lokalisierte Untertitel wird daraus über die Ressourcen
     /// (Schlüssel <c>{TipUid}.Subtitle</c>) automatisch geladen.
     /// </summary>

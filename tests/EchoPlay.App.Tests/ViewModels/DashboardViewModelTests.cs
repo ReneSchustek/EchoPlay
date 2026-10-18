@@ -177,7 +177,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.LoadAsync();
 
             // Kacheln werden synchron aus dem Cache gebaut – kein Delay nötig.
-            // Die Gruppierung ist jetzt nach Monat, nicht nach Serie.
+            // Gruppiert wird nach Monat, nicht nach Serie.
             _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups);
             _ = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups[0].Episodes);
             Assert.Equal("TKKG", vm.NeuerscheinungenVM.NewEpisodeGroups[0].Episodes[0].SeriesName);

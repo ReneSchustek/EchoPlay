@@ -21,8 +21,8 @@ namespace EchoPlay.App.Tests.ViewModels
     /// feststeht, und rückt dabei an ihre Stelle in der Reihenfolge.
     /// </summary>
     /// <remarks>
-    /// Vorher wurde die Liste erst geschrieben, wenn der letzte Künstler bewertet war. Bei
-    /// zweieinhalb Minuten Laufzeit war das kein Ladezustand mehr, sondern eine tote Seite.
+    /// Würde die Liste erst geschrieben, wenn der letzte Künstler bewertet ist, wäre das bei
+    /// zweieinhalb Minuten Laufzeit kein Ladezustand mehr, sondern eine tote Seite.
     /// </remarks>
     public sealed class SearchViewModelStreamingTests
     {

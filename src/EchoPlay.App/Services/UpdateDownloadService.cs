@@ -226,10 +226,9 @@ namespace EchoPlay.App.Services
         /// <param name="expectedHashBytes">Die 32 Hash-Bytes, wenn die Angabe taugt.</param>
         /// <returns>True, wenn ein verwertbarer Hash vorliegt.</returns>
         /// <remarks>
-        /// Früher lief die Installation weiter, wenn im Release-Body kein Hash stand
-        /// ("Backwards-Compat"). Das hebelte den Schutz aber genau dort aus, wo er zählt:
-        /// Wer den Body manipulieren kann, streicht einfach die SHA-Zeile und die Prüfung
-        /// entfällt. Ohne Hash wird deshalb nicht mehr installiert.
+        /// Liefe die Installation ohne Hash weiter, hebelte das den Schutz genau dort aus,
+        /// wo er zählt: Wer den Body manipulieren kann, streicht einfach die SHA-Zeile und die
+        /// Prüfung entfällt. Ohne Hash wird deshalb nicht installiert.
         /// </remarks>
         private bool TryParseExpectedHash(string expectedSha256, [NotNullWhen(true)] out byte[]? expectedHashBytes)
         {

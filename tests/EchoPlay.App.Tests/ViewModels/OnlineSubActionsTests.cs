@@ -16,8 +16,8 @@ namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
     /// Tests für die Sub-Actions der Online-Mediathek. Pro Sub-Action mindestens zwei
-    /// Tests inklusive Call-Counter-Assertion, um die Zerschneidung des früheren
-    /// 741-Zeilen-Monolithen gegen Regressionen abzusichern.
+    /// Tests inklusive Call-Counter-Assertion, um die Aufteilung der
+    /// Online-Mediathek in Sub-Actions gegen Regressionen abzusichern.
     /// </summary>
     public sealed class OnlineSubActionsTests
     {

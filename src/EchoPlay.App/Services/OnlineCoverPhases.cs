@@ -311,9 +311,9 @@ namespace EchoPlay.App.Services
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Anzahl der Serien, für die eine Suche angestoßen wurde.</returns>
         /// <remarks>
-        /// Die Kette selbst liegt im <see cref="EpisodeCoverCacheService"/> und lief bisher nur
-        /// beim Import. Wer eine Serie vor dessen Einführung importiert hat oder wessen Suche
-        /// damals scheiterte, bekam nie ein Cover nachgereicht — genau das schließt dieser Schritt.
+        /// Die Kette selbst liegt im <see cref="EpisodeCoverCacheService"/> und läuft sonst nur
+        /// beim Import. Scheitert die Suche dort, oder stammt die Serie aus einem Bestand ohne
+        /// Folgen-Cover, käme nie ein Cover nach — genau das schließt dieser Schritt.
         /// <para>
         /// Der Dienst filtert selbst auf Episoden ohne Cover und respektiert dabei seinen
         /// Cooldown, damit erfolglose Suchen nicht bei jedem Durchlauf wiederholt werden. Hier

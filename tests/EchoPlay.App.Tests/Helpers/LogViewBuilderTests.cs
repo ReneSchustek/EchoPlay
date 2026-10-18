@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace EchoPlay.App.Tests.Helpers
 {
     /// <summary>
-    /// Tests für den Aufbau der Protokollanzeige. Der Fehler „Protokollseite bleibt beim
-    /// Öffnen leer" fiel nur am laufenden Programm auf, weil das Befüllen im Code-Behind
-    /// lag; diese Entscheidung ist jetzt ohne Oberfläche prüfbar.
+    /// Tests für den Aufbau der Protokollanzeige. Ein Fehler wie „Protokollseite bleibt beim
+    /// Öffnen leer" fiele im Code-Behind nur am laufenden Programm auf; hier ist die
+    /// Entscheidung ohne Oberfläche prüfbar.
     /// </summary>
     public sealed class LogViewBuilderTests
     {

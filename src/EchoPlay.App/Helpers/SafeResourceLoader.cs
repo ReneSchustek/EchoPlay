@@ -54,8 +54,8 @@ namespace EchoPlay.App.Helpers
     }
 
     /// <summary>
-    /// Instanz-Fassade mit <c>GetString(key)</c> für Aufrufstellen, die bisher einen
-    /// <c>ResourceLoader</c> in einem Feld/Local hielten. Delegiert an
+    /// Instanz-Fassade mit <c>GetString(key)</c> für Aufrufstellen, die einen
+    /// <c>ResourceLoader</c> in einem Feld/Local halten wollen. Delegiert an
     /// <see cref="SafeResourceLoader.Get(string, string)"/> und ist damit ebenfalls
     /// unpackaged-tauglich.
     /// </summary>

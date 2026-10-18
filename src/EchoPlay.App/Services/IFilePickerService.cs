@@ -7,9 +7,9 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Zentralisiert das WinUI3-spezifische Picker-Setup (Window-Handle, InitializeWithWindow)
-    /// und entlässt die Pages aus Boilerplate-Code. Vor Arbeitspaket 293 hatten <c>PlayerPage</c>,
-    /// <c>TagManagerPage</c> und <c>LocalLibraryPage</c> jeweils eigene Picker-Konstruktion
-    /// mit identischer <c>WindowNative.GetWindowHandle</c> + <c>InitializeWithWindow.Initialize</c>-Sequenz.
+    /// und entlässt die Pages aus Boilerplate-Code. Ohne ihn trüge jede Page mit Picker
+    /// (<c>PlayerPage</c>, <c>TagManagerPage</c>, <c>LocalLibraryPage</c>) dieselbe
+    /// <c>WindowNative.GetWindowHandle</c> + <c>InitializeWithWindow.Initialize</c>-Sequenz.
     /// </summary>
     /// <remarks>
     /// Kein <c>CancellationToken</c> in den Signaturen: die WinRT-Picker nehmen keinen

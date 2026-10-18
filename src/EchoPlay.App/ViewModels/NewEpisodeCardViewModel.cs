@@ -393,8 +393,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Der frühere Text sagte bei jeder Folge ohne Datei „noch nicht verfügbar" — das
-            // trifft nur den angekündigten Fall oben. Hier gibt es die Folge; sie ist nur
+            // „Noch nicht verfügbar" trifft nur den angekündigten Fall oben. Hier gibt es die Folge; sie ist nur
             // nirgends erreichbar.
             await _errorDialogService.ShowAsync(
                 _localizationService?.Get("EpisodeNotPlayableTitle") ?? "Nicht abspielbar",

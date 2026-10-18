@@ -186,7 +186,7 @@ namespace EchoPlay.App.Services
         /// Extrahiert den SHA-256-Hash der Setup-Datei aus dem Release-Body.
         /// Erwartete Konvention: eine Zeile <c>SHA256: &lt;64-hex&gt;</c> oder <c>SHA-256 = &lt;64-hex&gt;</c>.
         /// Liefert leeren String, wenn kein Hash gefunden wurde. Ein solches Release wird
-        /// seit 1.2.0 nicht installiert und seit Arbeitspaket 454 gar nicht mehr angeboten.
+        /// weder angeboten noch installiert.
         /// </summary>
         /// <param name="releaseBody">Markdown-Body des GitHub-Releases.</param>
         /// <returns>Hex-String (64 Zeichen, beliebige Groß-/Kleinschreibung) oder leer. Der Vergleich im Updater nutzt <c>Convert.FromHexString</c> und ist daher case-insensitive — eine Normalisierung an dieser Stelle wäre Overhead und würde CA1308 auslösen.</returns>

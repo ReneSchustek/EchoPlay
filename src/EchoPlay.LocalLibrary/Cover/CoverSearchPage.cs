@@ -15,7 +15,7 @@ namespace EchoPlay.LocalLibrary.Cover
     /// <param name="Index">Nullbasierte Seitennummer.</param>
     public readonly record struct CoverSearchPage(int Index)
     {
-        /// <summary>Die erste Seite — das Verhalten aller Aufrufer vor Arbeitspaket 455.</summary>
+        /// <summary>Die erste Seite — das Verhalten aller Aufrufer, die nicht nachladen.</summary>
         public static CoverSearchPage First => new(0);
 
         /// <summary>Die nächste Seite nach dieser.</summary>

@@ -10,8 +10,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// <summary>
     /// Führt die Migrationskette echt aus – im Gegensatz zum restlichen Test-Bestand, der Schemas
     /// per <c>EnsureCreated</c> aus dem Modell erzeugt und Migrationen damit nie anfasst.
-    /// Deckt genau die Lücke ab, durch die eine fehlerhafte Migration bisher erst zur Laufzeit
-    /// aufgefallen wäre (fehlende Designer-Datei, ungültiges SQL, kaputte Reihenfolge).
+    /// Deckt genau die Lücke ab, durch die eine fehlerhafte Migration sonst erst zur Laufzeit
+    /// auffiele (fehlende Designer-Datei, ungültiges SQL, kaputte Reihenfolge).
     /// </summary>
     public sealed class MigrationPipelineTests
     {

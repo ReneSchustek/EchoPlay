@@ -27,8 +27,8 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         [Fact]
         public void Scan_BareNumberFolders_AreRecognised()
         {
-            // Ordner ohne Titelteil: alle bisherigen Muster verlangten einen Titel,
-            // deshalb galten 38 von 67 vorhandenen Folgen als fehlend.
+            // Ordner ohne Titelteil: verlangte jedes Muster einen Titel, gälten in der
+            // gemessenen Sammlung 38 von 67 vorhandenen Folgen einer Serie als fehlend.
             string[] folders = ["001", "002", "003"];
 
             Assert.Equal([1, 2, 3], LocalEpisodeNumbers.Scan(folders));
@@ -52,8 +52,8 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         [Fact]
         public void Scan_MixedNamingWithinOneSeries_FindsAllNumbers()
         {
-            // Vorher gewann ein einziges Muster für die ganze Serie; abweichend
-            // benannte Ordner zählten als fehlend.
+            // Gewänne ein einziges Muster für die ganze Serie, zählten abweichend
+            // benannte Ordner als fehlend.
             string[] folders =
             [
                 "001 - Der erste Fall",

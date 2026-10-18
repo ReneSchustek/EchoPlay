@@ -27,7 +27,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// </summary>
         /// <remarks>
         /// Die Anbieter begrenzen ihre Antwort (neun Treffer, bei Deezer-Künstlern sechs). Wer
-        /// darunter nichts Passendes findet, konnte bisher nur den Suchbegriff ändern. Nachladen
+        /// darunter nichts Passendes findet, könnte ohne Nachladen nur den Suchbegriff ändern. Nachladen
         /// heißt deshalb: **erneut abfragen** mit Versatz, nicht nachfiltern, was schon da ist.
         /// </remarks>
         /// <param name="title">Suchbegriff – typischerweise Serien- oder Folgentitel.</param>

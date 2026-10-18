@@ -8,8 +8,8 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Bündelt die per DI aufgelösten Dienste für <see cref="DashboardViewModel"/>.
     /// Dieselbe Form wie <see cref="LocalLibraryViewModelContext"/>: Zehn einzelne
-    /// Konstruktor-Parameter waren an der Aufrufstelle nicht mehr auseinanderzuhalten,
-    /// und jeder neue Dienst hätte die Reihenfolge erneut verschoben.
+    /// Konstruktor-Parameter wären an der Aufrufstelle nicht auseinanderzuhalten,
+    /// und jeder neue Dienst verschöbe die Reihenfolge erneut.
     /// Die Abschnitts-Ansichtsmodelle entstehen intern und gehören nicht hierher.
     /// </summary>
     /// <param name="ScopeFactory">Für datenbanknahe Zugriffe beim Laden und in den Kachel-Befehlen.</param>

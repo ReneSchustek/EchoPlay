@@ -14,8 +14,8 @@ namespace EchoPlay.App.Services
     /// Zeitachse hält die Spurdauern und macht aus beidem eine Angabe, die für sich steht.
     ///
     /// Ohne bekannte Spurdauern bleibt die Zeitachse leer und rechnet nicht um — dann gilt
-    /// wieder die Stelle in der ersten Spur. Das ist genau das bisherige Verhalten und
-    /// damit für den Bestand unauffällig.
+    /// die Stelle in der ersten Spur. Hörstände, die ohne Spurdauern gespeichert wurden,
+    /// bleiben damit gültig.
     /// </remarks>
     internal sealed class EpisodeTimeline
     {

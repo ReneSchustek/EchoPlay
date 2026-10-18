@@ -33,7 +33,7 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.False(result.Success);
             // FakeLocalizationService liefert den Schlüssel selbst zurück — genau das ist hier
-            // der Beweis: der Text kommt aus den Ressourcen, nicht mehr hartkodiert aus dem Code.
+            // der Beweis: der Text kommt aus den Ressourcen, nicht hartkodiert aus dem Code.
             Assert.Equal("ConnectionTestNoProvider", result.ErrorDetail);
         }
 

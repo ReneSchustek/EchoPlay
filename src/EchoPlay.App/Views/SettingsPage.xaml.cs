@@ -88,7 +88,7 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Räumt Event-Abonnements und das ViewModel beim Verlassen der Seite auf.
-        /// Die „ungespeicherte Änderungen"-Frage liegt jetzt im <see cref="SettingsViewModel"/>
+        /// Die „ungespeicherte Änderungen"-Frage liegt im <see cref="SettingsViewModel"/>
         /// und wird vom <see cref="MainWindow"/>-Navigation-Guard (<c>INavigationGuard</c>)
         /// vor der Navigation abgefragt.
         /// </summary>

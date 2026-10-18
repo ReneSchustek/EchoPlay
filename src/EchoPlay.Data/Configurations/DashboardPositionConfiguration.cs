@@ -33,7 +33,7 @@ namespace EchoPlay.Data.Configurations
             _ = builder.HasIndex(dp => new { dp.Section, dp.Position })
                 .HasFilter("IsDeleted = 0");
 
-            // Fremdschlüssel-Beziehung zur Serie – bisher fehlte die explizite FK-Konfiguration.
+            // Explizite Fremdschlüssel-Beziehung zur Serie.
             // Restrict: Eine Serie darf nicht physisch gelöscht werden, solange Positionen existieren.
             _ = builder.HasOne(dp => dp.Series)
                 .WithMany()

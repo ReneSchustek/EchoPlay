@@ -48,9 +48,8 @@ dotnet_diagnostic.CS4014.severity = error
 dotnet_diagnostic.CA2000.severity = error
 dotnet_diagnostic.CA2213.severity = error
 
-# Explizite Typen statt var — Projektregel, ab jetzt vom Build erzwungen.
-# Der Bestand war bereits sauber (0 Treffer in src/ und tests/); die Regel lebte aber nur
-# in der Gewohnheit. IDE0007/IDE0008 melden jede var-Deklaration, die drei csharp_style-
+# Explizite Typen statt var — Projektregel, vom Build erzwungen.
+# Eine Regel, die nur in der Gewohnheit lebt, bricht beim ersten eiligen Commit. IDE0007/IDE0008 melden jede var-Deklaration, die drei csharp_style-
 # Einstellungen legen die Richtung fest.
 csharp_style_var_for_built_in_types = false:error
 csharp_style_var_when_type_is_apparent = false:error

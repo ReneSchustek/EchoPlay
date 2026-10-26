@@ -184,7 +184,7 @@ Alle Tests laufen ohne externe Abhängigkeiten. Smoke-Tests gegen echte APIs wer
 
 ## Lizenz
 
-Privates Projekt, keine öffentliche Lizenz.
+MIT, siehe [LICENSE](LICENSE).
 
 ---
 

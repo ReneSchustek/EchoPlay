@@ -219,6 +219,30 @@ Vielfaches langsamer wird.
 
 ---
 
+## Weiterarbeiten
+
+Das Projekt ist seit dem 22.11.2026 abgeschlossen; der Stand trägt das Tag
+`abgeschlossen-2026-11-22`. Abgeschlossen heißt: Es gibt keine offenen Aufgaben, das Programm
+ist installiert und aktualisiert sich über GitHub Releases. Für Änderungen wird es wieder
+geöffnet:
+
+1. Das Repository klonen und `dotnet build EchoPlay.slnx` ausführen.
+2. Tests: die gebauten Testprogramme direkt starten, etwa
+   `tests/EchoPlay.Core.Tests/bin/Debug/net10.0/EchoPlay.Core.Tests.exe`; die Testprojekte der
+   Oberfläche liegen unter `bin/Debug/<tfm>/win-x64/`.
+3. Starten: `dotnet build src/EchoPlay.App/EchoPlay.App.csproj -c Debug -p:Platform=x64
+   -p:WindowsPackageType=None`, dann die `EchoPlay.App.exe` aus
+   `src/EchoPlay.App/bin/x64/Debug/net10.0-windows10.0.19041.0/win-x64/`. Die App arbeitet mit
+   der echten Datenbank unter `%LOCALAPPDATA%\EchoPlay`; vor Migrationen legt sie selbst eine
+   Sicherung an.
+4. Ein neues Setup baut [tools/publish-setup.ps1](tools/publish-setup.ps1); veröffentlicht wird es
+   als GitHub Release mit SHA-256 und Signatur (`.sig`).
+
+Das fertige Programm liegt unter `C:\Program Files\EchoPlay`; was sich je Fassung geändert hat,
+steht in [CHANGELOG.md](CHANGELOG.md).
+
+---
+
 ## Lizenz
 
 MIT, siehe [LICENSE](LICENSE).

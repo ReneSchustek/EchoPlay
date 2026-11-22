@@ -15,13 +15,15 @@ namespace EchoPlay.App.Tests.Services
     /// laufenden Folge, Einschlaf-Timer, Springen und den Fehlerweg beim Start.
     /// </summary>
     /// <remarks>
-    /// <c>MediaPlayer</c> ist ein Betriebssystem-Typ und läuft im Testhost. Die Dateien sind leer;
-    /// geprüft wird der Zustand des Dienstes, nicht das Abspielen.
+    /// Die Wiedergabe-Engine ist ein Nachbau: Ob das Betriebssystem abspielen kann, hängt vom
+    /// Rechner ab, und ein Windows Server ohne Medienwiedergabe weist den Start ab. Die
+    /// Abspielliste ist echt; die Dateien sind leer, geprüft wird der Zustand des Dienstes.
     /// </remarks>
     public sealed class PlayerServiceControlTests : IDisposable
     {
         private readonly string _directory;
         private readonly ServiceProvider _services;
+        private readonly FakeMediaEngine _engine = new();
 
         /// <summary>
         /// Legt je Test ein eigenes Verzeichnis und einen Container mit gefälschter Datenhaltung an.
@@ -39,6 +41,7 @@ namespace EchoPlay.App.Tests.Services
         /// <inheritdoc/>
         public void Dispose()
         {
+            _engine.Dispose();
             _services.Dispose();
             if (Directory.Exists(_directory))
             {
@@ -115,7 +118,101 @@ namespace EchoPlay.App.Tests.Services
             return new PlayerService(
                 _services.GetRequiredService<IServiceScopeFactory>(),
                 new FakeLoggerFactory(),
-                new FakeClock());
+                new FakeClock(),
+                _ => _engine);
+        }
+
+        [Fact]
+        public async Task Play_WhenTheEngineRefusesToStart_ReportsAndForgetsTheEpisode()
+        {
+            await using PlayerService player = CreatePlayer();
+            string? error = null;
+            player.ErrorOccurred += (_, message) => error = message;
+            _engine.PlayFailure = new InvalidOperationException("Klasse nicht registriert");
+
+            player.Play(Guid.NewGuid(), CreateTracks("a1.mp3"), trackDurations: [TimeSpan.FromMinutes(3)]);
+
+            // Halb begonnen darf nichts stehen bleiben: Die Oberfläche zeigte sonst eine Folge an,
+            // die nie läuft.
+            Assert.NotNull(error);
+            Assert.Empty(player.CurrentTrackPaths);
+            Assert.Equal(TimeSpan.Zero, player.OverallDuration);
+        }
+
+        [Fact]
+        public async Task EngineFailure_ReachesTheUserWithTheSystemMessage()
+        {
+            await using PlayerService player = CreatePlayer();
+            string? error = null;
+            player.ErrorOccurred += (_, message) => error = message;
+
+            _engine.RaiseFailure("Datei beschädigt");
+
+            Assert.NotNull(error);
+            Assert.Contains("Datei beschädigt", error, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task EngineFailure_WithoutMessage_StillReportsAnError()
+        {
+            await using PlayerService player = CreatePlayer();
+            string? error = null;
+            player.ErrorOccurred += (_, message) => error = message;
+
+            _engine.RaiseFailure(null);
+
+            Assert.False(string.IsNullOrEmpty(error));
+        }
+
+        [Fact]
+        public async Task Play_ReportsPlayingOnceTheEngineDoes()
+        {
+            await using PlayerService player = CreatePlayer();
+            int changes = 0;
+            player.StateChanged += (_, _) => changes++;
+
+            player.Play(Guid.NewGuid(), CreateTracks("a1.mp3"));
+
+            Assert.True(player.IsPlaying);
+            Assert.Equal(1, _engine.PlayCount);
+            Assert.True(changes > 0);
+        }
+
+        [Fact]
+        public async Task Resume_WhenTheEngineRefuses_ReportsTheError()
+        {
+            await using PlayerService player = CreatePlayer();
+            string? error = null;
+            player.ErrorOccurred += (_, message) => error = message;
+            _engine.PlayFailure = new InvalidOperationException("Pipeline weg");
+
+            player.Resume();
+
+            Assert.NotNull(error);
+        }
+
+        [Fact]
+        public async Task SeekAndRate_GoToTheEngine()
+        {
+            await using PlayerService player = CreatePlayer();
+
+            player.SeekTo(TimeSpan.FromSeconds(42));
+            player.PlaybackRate = 1.5;
+            _engine.NaturalDuration = TimeSpan.FromMinutes(9);
+
+            Assert.Equal(TimeSpan.FromSeconds(42), player.Position);
+            Assert.Equal(1.5, player.PlaybackRate);
+            Assert.Equal(TimeSpan.FromMinutes(9), player.Duration);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_ReleasesTheEngine()
+        {
+            PlayerService player = CreatePlayer();
+
+            await player.DisposeAsync();
+
+            Assert.True(_engine.IsDisposed);
         }
 
         private List<string> CreateTracks(params string[] fileNames)

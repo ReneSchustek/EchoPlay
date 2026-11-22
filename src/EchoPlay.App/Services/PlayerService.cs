@@ -22,7 +22,7 @@ namespace EchoPlay.App.Services
     /// </summary>
     public sealed class PlayerService : IPlayerService, IAsyncDisposable, IDisposable
     {
-        private readonly MediaPlayer _player;
+        private readonly IMediaEngine _player;
         private readonly PlaybackQueue _queue = new();
         private readonly PlaybackTicker _ticker = new();
         private readonly PlayingEpisode _episode = new();
@@ -37,20 +37,39 @@ namespace EchoPlay.App.Services
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         /// <param name="clock">Zeitquelle für Zeitstempel.</param>
         public PlayerService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory, IClock clock)
+            : this(scopeFactory, loggerFactory, clock, playlist => new MediaPlayerEngine(playlist))
+        {
+        }
+
+        /// <summary>
+        /// Wie der öffentliche Konstruktor, aber mit vorgegebener Wiedergabe-Engine. Tests setzen
+        /// hier einen Nachbau ein, damit sie nicht davon abhängen, ob das Betriebssystem abspielen
+        /// kann.
+        /// </summary>
+        /// <param name="scopeFactory">Fabrik für DI-Scopes (für PlaybackState-Persistenz).</param>
+        /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
+        /// <param name="clock">Zeitquelle für Zeitstempel.</param>
+        /// <param name="engineFactory">Erzeugt die Engine für die Abspielliste des Dienstes.</param>
+        internal PlayerService(
+            IServiceScopeFactory scopeFactory,
+            ILoggerFactory loggerFactory,
+            IClock clock,
+            Func<MediaPlaybackList, IMediaEngine> engineFactory)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
+            ArgumentNullException.ThrowIfNull(engineFactory);
             _logger = loggerFactory.CreateLogger("PlayerService");
             _stateWriter = new PlaybackStateWriter(scopeFactory, _logger, clock);
 
-            _player = new() { Source = _queue.List };
+            _player = engineFactory(_queue.List);
 
             _ticker.SaveDue += (_, _) => _ = SavePlaybackStateSnapshotAsync();
             _ticker.SleepTimerElapsed += (_, _) => Pause();
             _ticker.Ticked += (_, _) => StateChanged?.Invoke(this, EventArgs.Empty);
 
-            _player.PlaybackSession.PlaybackStateChanged += OnPlaybackStateChanged;
+            _player.PlaybackStateChanged += OnPlaybackStateChanged;
             _queue.List.CurrentItemChanged += OnCurrentItemChanged;
-            _player.MediaFailed += OnMediaFailed;
+            _player.Failed += OnMediaFailed;
         }
 
         /// <inheritdoc/>
@@ -60,7 +79,7 @@ namespace EchoPlay.App.Services
         public event EventHandler<string>? ErrorOccurred;
 
         /// <inheritdoc/>
-        public bool IsPlaying => _player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing;
+        public bool IsPlaying => _player.PlaybackState == MediaPlaybackState.Playing;
 
         /// <inheritdoc/>
         public string? CurrentTrackTitle { get; private set; }
@@ -89,13 +108,13 @@ namespace EchoPlay.App.Services
         internal int PlaylistItemCount => _queue.Count;
 
         /// <inheritdoc/>
-        public TimeSpan Position => _player.PlaybackSession.Position;
+        public TimeSpan Position => _player.Position;
 
         /// <inheritdoc/>
-        public TimeSpan Duration => _player.PlaybackSession.NaturalDuration;
+        public TimeSpan Duration => _player.NaturalDuration;
 
         /// <inheritdoc/>
-        public TimeSpan OverallPosition => _episode.ToOverall(_queue.CurrentIndex, _player.PlaybackSession.Position);
+        public TimeSpan OverallPosition => _episode.ToOverall(_queue.CurrentIndex, _player.Position);
 
         /// <inheritdoc/>
         public TimeSpan OverallDuration => _episode.TotalDuration;
@@ -103,8 +122,8 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         public double PlaybackRate
         {
-            get => _player.PlaybackSession.PlaybackRate;
-            set => _player.PlaybackSession.PlaybackRate = value;
+            get => _player.PlaybackRate;
+            set => _player.PlaybackRate = value;
         }
 
         /// <inheritdoc/>
@@ -204,12 +223,15 @@ namespace EchoPlay.App.Services
             _episode.Start(episodeId, trackPaths, timeline);
             _ticker.RestartAutoSave();
             _queue.Load(trackPaths);
-            _queue.MoveTo(startIndex);
+            if (!_queue.StartAt(startIndex))
+            {
+                _logger.Debug(() => $"Abspielliste noch nicht geöffnet; die Wiedergabe beginnt mit Spur {startIndex}.");
+            }
             _player.Play();
 
             if (positionInTrack > TimeSpan.Zero)
             {
-                _player.PlaybackSession.Position = positionInTrack;
+                _player.Position = positionInTrack;
             }
 
             _ticker.Start();
@@ -266,7 +288,7 @@ namespace EchoPlay.App.Services
         public void SkipToPrevious() => MoveWithinPlaylist(_queue.MovePrevious);
 
         /// <inheritdoc/>
-        public void SeekTo(TimeSpan position) => _player.PlaybackSession.Position = position;
+        public void SeekTo(TimeSpan position) => _player.Position = position;
 
         /// <inheritdoc/>
         public void SetSleepTimer(TimeSpan? duration)
@@ -357,9 +379,9 @@ namespace EchoPlay.App.Services
 
         /// <summary>Kennung der laufenden Folge und Stelle darin, in einem Zug gelesen.</summary>
         private (Guid Id, TimeSpan Position) TakeSnapshot() =>
-            _episode.Snapshot(_queue.CurrentIndex, _player.PlaybackSession.Position);
+            _episode.Snapshot(_queue.CurrentIndex, _player.Position);
 
-        private void OnPlaybackStateChanged(MediaPlaybackSession session, object args)
+        private void OnPlaybackStateChanged(object? sender, EventArgs e)
         {
             if (IsPlaying)
             {
@@ -387,12 +409,12 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Behandelt Codec-Fehler, korrupte Dateien und I/O-Probleme der Media-Pipeline.
         /// </summary>
-        /// <param name="sender">Der auslösende <see cref="MediaPlayer"/>.</param>
-        /// <param name="args">Fehlerdetails der Media-Pipeline, u. a. die Fehlermeldung.</param>
-        private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
+        /// <param name="sender">Die auslösende Wiedergabe-Engine.</param>
+        /// <param name="failure">Meldung und Fehlerart der Media-Pipeline.</param>
+        private void OnMediaFailed(object? sender, MediaEngineFailure failure)
         {
-            string message = args.ErrorMessage ?? SafeResourceLoader.Get("PlayerErrorUnknown", "Unbekannter Wiedergabefehler");
-            _logger.Error("MediaPlayer-Fehler: {Message} (Error: {Error})", null, message, args.Error);
+            string message = failure.Message ?? SafeResourceLoader.Get("PlayerErrorUnknown", "Unbekannter Wiedergabefehler");
+            _logger.Error("MediaPlayer-Fehler: {Message} (Error: {Error})", null, message, failure.Error);
             ErrorOccurred?.Invoke(this, FormatError("PlayerErrorMediaFailed", "Wiedergabefehler: {0}", message));
         }
 

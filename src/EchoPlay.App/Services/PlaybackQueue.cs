@@ -18,6 +18,9 @@ namespace EchoPlay.App.Services
     /// </remarks>
     internal sealed class PlaybackQueue : IDisposable
     {
+        /// <summary>Fehlercode von Media Foundation für eine Anforderung im falschen Zustand.</summary>
+        private const int InvalidRequestHResult = unchecked((int)0xC00D36B2);
+
         // Hält Prüfung und Leeren im Hintergrund-Stopp mit dem Befüllen zusammen. Ohne die Sperre
         // könnte eine neue Folge genau zwischen Prüfung und Leeren eingelegt werden, und der Stopp
         // leerte sie wieder. Die Handler der Liste reichen nur per TryEnqueue an die Oberfläche
@@ -77,9 +80,35 @@ namespace EchoPlay.App.Services
             }
         }
 
-        /// <summary>Springt auf die angegebene Spur; negative Werte gelten als erste Spur.</summary>
+        /// <summary>
+        /// Legt die Spur fest, mit der die Wiedergabe beginnt; negative Werte gelten als erste Spur.
+        /// </summary>
+        /// <remarks>
+        /// Die Startspur steht immer fest, der Sprung dorthin gelingt nur bei geöffneter Liste.
+        /// Direkt nach dem Befüllen ist sie oft noch nicht offen, auf einem schnellen Rechner fast
+        /// immer; Media Foundation weist den Sprung dann zurück, und ohne Startspur scheiterte der
+        /// ganze Start.
+        /// </remarks>
         /// <param name="index">Die Spur, nullbasiert.</param>
-        public void MoveTo(int index) => _ = List.MoveTo((uint)Math.Max(0, index));
+        /// <returns><see langword="false"/>, wenn die Liste noch nicht offen war und die Startspur gilt.</returns>
+        public bool StartAt(int index)
+        {
+            uint target = (uint)Math.Max(0, index);
+            if (target < List.Items.Count)
+            {
+                List.StartingItem = List.Items[(int)target];
+            }
+
+            try
+            {
+                _ = List.MoveTo(target);
+                return true;
+            }
+            catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == InvalidRequestHResult)
+            {
+                return false;
+            }
+        }
 
         /// <summary>Springt zur nächsten Spur.</summary>
         public void MoveNext() => _ = List.MoveNext();

@@ -10,7 +10,7 @@ namespace EchoPlay.App.Helpers
     /// (<c>Microsoft.Windows.ApplicationModel.Resources.ResourceLoader</c>), der ohne
     /// MSIX-Package-Identity funktioniert. Der WinRT-ResourceLoader
     /// (<c>Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse()</c>)
-    /// braucht Package-Identity und crasht im unpackaged-Betrieb in KERNELBASE.dll — deshalb
+    /// braucht Package-Identity und crasht im unpackaged-Betrieb in KERNELBASE.dll, deshalb
     /// läuft der gesamte lokalisierte String-Zugriff der App über diesen Helper.
     /// In Unit-Tests (keine WinUI-Runtime / kein <c>resources.pri</c>) fällt jeder Aufruf auf
     /// den Fallback-Wert zurück.

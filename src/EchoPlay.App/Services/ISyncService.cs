@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Definiert den Vertrag für den lokalen Bibliothek-Sync.
-    /// Ermöglicht die Entkopplung von ViewModels und Tests von der konkreten <see cref="SyncService"/>-Implementierung.
+    /// Abgleich der lokalen Bibliothek mit der Datenbank. ViewModels und Tests hängen an dieser
+    /// Schnittstelle statt an <see cref="SyncService"/>.
     /// </summary>
     public interface ISyncService
     {
@@ -26,7 +26,7 @@ namespace EchoPlay.App.Services
         /// </param>
         /// <param name="onSeriesSynced">
         /// Optionaler Callback, der nach jeder DB-synchronisierten <see cref="Series"/> aufgerufen wird.
-        /// Ermöglicht dem ViewModel, Serien sofort in der Liste anzuzeigen ohne auf das Gesamtergebnis
+        /// Damit zeigt das ViewModel Serien sofort in der Liste an, ohne auf das Gesamtergebnis
         /// zu warten. Wird auf dem SynchronizationContext des Aufrufers ausgeführt (UI-Thread).
         /// </param>
         /// <param name="cancellationToken">

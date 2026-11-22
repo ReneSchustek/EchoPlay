@@ -8,7 +8,6 @@ namespace EchoPlay.Data.Services
     /// <summary>
     /// EF-Core-basierte Implementierung des Datenservices für lokale Tracks einer Episode.
     /// </summary>
-    /// <remarks>Initialisiert eine neue Instanz des <see cref="LocalTrackDataService"/>.</remarks>
     /// <param name="context">Der zu verwendende EF-Core-Datenbankkontext.</param>
     /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
     public sealed class LocalTrackDataService(
@@ -30,7 +29,6 @@ namespace EchoPlay.Data.Services
             _logger.Debug(() => $"Lade lokale Tracks für Episode '{episodeId}'.");
 
             List<LocalTrack> result = await _context.LocalTracks
-
                 .Where(track => track.EpisodeId == episodeId)
                 .OrderBy(track => track.TrackNumber)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);

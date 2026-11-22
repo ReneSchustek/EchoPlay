@@ -17,7 +17,8 @@ namespace EchoPlay.App.Composition
 
         /// <summary>
         /// Registriert den EchoPlay-Logger mit Dateiablage, Aufbewahrung und Speicher-Senke.
-        /// Die Aufbewahrung wird beim Start aus den Einstellungen nachgezogen.
+        /// Aufbewahrung und Mindeststufe sind Startwerte; der Startlauf setzt beide danach aus
+        /// den Einstellungen.
         /// </summary>
         /// <param name="services">Die zu befüllende Dienstsammlung.</param>
         /// <returns>Dieselbe Dienstsammlung, damit Aufrufe verkettet werden können.</returns>
@@ -28,6 +29,9 @@ namespace EchoPlay.App.Composition
                 options.LogDirectory = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "EchoPlay", LogFolderName);
+                // Zehn Megabyte öffnet jeder Texteditor noch ohne Wartezeit; dreißig Tage decken
+                // einen Monat Nachfrage ab, hundert Megabyte deckeln den Platz, falls ein Fehler
+                // in Schleife schreibt.
                 options.MaxFileSizeMb = 10;
                 options.RetentionDays = 30;
                 options.MaxTotalSizeMb = 100;
@@ -35,6 +39,7 @@ namespace EchoPlay.App.Composition
                 options.EnableDebugConsole = true;
                 options.EnableFileLogging = true;
                 options.EnableAutoCleanup = true;
+                // Die Protokollansicht der Einstellungen zeigt die letzten hundert Zeilen live.
                 options.EnableMemorySink = true;
                 options.MemorySinkCapacity = 100;
             });

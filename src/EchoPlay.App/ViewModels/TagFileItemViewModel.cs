@@ -59,13 +59,15 @@ namespace EchoPlay.App.ViewModels
             get => _isModified;
             set
             {
-                _ = SetProperty(ref _isModified, value);
-                OnPropertyChanged(nameof(IsModifiedVisibility));
+                if (SetProperty(ref _isModified, value))
+                {
+                    OnPropertyChanged(nameof(IsModifiedVisibility));
+                }
             }
         }
 
         /// <summary>
-        /// Sichtbarkeit des Änderungshinweises, sichtbar, wenn <see cref="IsModified"/> <c>true</c> ist.
+        /// Sichtbarkeit des Änderungshinweises, sichtbar, wenn <see cref="IsModified"/> <see langword="true"/> ist.
         /// </summary>
         public Visibility IsModifiedVisibility => IsModified ? Visibility.Visible : Visibility.Collapsed;
     }

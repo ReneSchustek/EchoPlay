@@ -9,8 +9,6 @@ namespace EchoPlay.Logger.Tests
     /// </summary>
     public sealed class LoggerTests
     {
-        // ===== Level-Filterung =====
-
         /// <summary>
         /// Eine Debug-Nachricht wird bei Minimum-Level Trace weitergeleitet.
         /// </summary>
@@ -29,7 +27,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Trace-Nachricht wird bei Minimum-Level Debug gefiltert.
         /// </summary>
         [Fact]
-        public void Trace_BeiMinimumDebug_WirdGefiltert()
+        public void Trace_AtMinimumDebug_IsFiltered()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -43,7 +41,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Debug-Nachricht wird bei Minimum-Level Information gefiltert.
         /// </summary>
         [Fact]
-        public void Debug_BeiMinimumInformation_WirdGefiltert()
+        public void Debug_AtMinimumInformation_IsFiltered()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Information });
@@ -52,8 +50,6 @@ namespace EchoPlay.Logger.Tests
 
             Assert.Empty(sink.Entries);
         }
-
-        // ===== Lazy-Overload: Func<string>-Variante allokiert Message nur, wenn Level aktiv =====
 
         [Fact]
         public void Debug_WithFactory_DoesNotInvokeWhenDisabled()
@@ -106,7 +102,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Info-Nachricht wird bei Minimum-Level Warning gefiltert.
         /// </summary>
         [Fact]
-        public void Information_BeiMinimumWarning_WirdGefiltert()
+        public void Information_AtMinimumWarning_IsFiltered()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Warning });
@@ -120,7 +116,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Warning-Nachricht wird bei Minimum-Level Error gefiltert.
         /// </summary>
         [Fact]
-        public void Warning_BeiMinimumError_WirdGefiltert()
+        public void Warning_AtMinimumError_IsFiltered()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Error });
@@ -134,7 +130,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Error-Nachricht wird bei Minimum-Level Fatal gefiltert.
         /// </summary>
         [Fact]
-        public void Error_BeiMinimumFatal_WirdGefiltert()
+        public void Error_AtMinimumFatal_IsFiltered()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Fatal });
@@ -148,7 +144,7 @@ namespace EchoPlay.Logger.Tests
         /// Eine Fatal-Nachricht wird bei Minimum-Level Fatal weitergeleitet.
         /// </summary>
         [Fact]
-        public void Fatal_BeiMinimumFatal_WirdWeitergeleitet()
+        public void Fatal_AtMinimumFatal_IsForwarded()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Fatal });
@@ -163,7 +159,7 @@ namespace EchoPlay.Logger.Tests
         /// und die Einträge besitzen die korrekten Log-Level.
         /// </summary>
         [Fact]
-        public void AlleLevel_AbMinimumTrace_WerdenWeitergeleitet()
+        public void AllLevels_FromMinimumTrace_AreForwarded()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Trace });
@@ -184,13 +180,11 @@ namespace EchoPlay.Logger.Tests
             Assert.Equal(LogLevel.Fatal, sink.Entries[5].Level);
         }
 
-        // ===== Sink-Weiterleitung =====
-
         /// <summary>
         /// Ein Logger ohne registrierte Senken wirft keine Exception.
         /// </summary>
         [Fact]
-        public void OhneSinks_WirftKeineException()
+        public void WithoutSinks_DoesNotThrow()
         {
             EchoPlay.Logger.Core.Logger logger = new("Kat", [], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
 
@@ -202,7 +196,7 @@ namespace EchoPlay.Logger.Tests
         /// Mehrere Senken erhalten denselben Eintrag.
         /// </summary>
         [Fact]
-        public void MehrereSinks_AlleErhaltenDenselbenEintrag()
+        public void SeveralSinks_AllReceiveTheSameEntry()
         {
             CapturingSink sink1 = new();
             CapturingSink sink2 = new();
@@ -224,20 +218,18 @@ namespace EchoPlay.Logger.Tests
         /// und propagiert die Exception nicht an den Aufrufer.
         /// </summary>
         [Fact]
-        public void SinkMitException_WirdAbgefangen_NachfolgendeSinksErhaltenEintrag()
+        public void SinkWithException_IsCaught_FollowingSinksReceiveEntry()
         {
             ThrowingSink throwingSink = new();
             CapturingSink capturingSink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [throwingSink, capturingSink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
 
-            // Keine Exception erwartet – Logger fängt Senken-Fehler intern ab
+            // Keine Exception erwartet, der Logger fängt Senken-Fehler intern ab
             logger.Info("Meldung mit fehlerhafter Senke");
 
             // Die funktionierende Senke hat den Eintrag dennoch erhalten
             _ = Assert.Single(capturingSink.Entries);
         }
-
-        // ===== Eintrag-Inhalt =====
 
         /// <summary>
         /// Der Log-Eintrag enthält die korrekte Kategorie des Loggers.
@@ -257,7 +249,7 @@ namespace EchoPlay.Logger.Tests
         /// Der Log-Eintrag enthält die ursprüngliche Nachricht unverändert.
         /// </summary>
         [Fact]
-        public void Info_EnthältNachrichtUnverändert()
+        public void Info_ContainsMessageUnchanged()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -285,7 +277,7 @@ namespace EchoPlay.Logger.Tests
         /// Ein Error-Eintrag mit Exception enthält die übergebene Exception-Instanz.
         /// </summary>
         [Fact]
-        public void Error_MitException_ExceptionImEintrag()
+        public void Error_WithException_ExceptionInEntry()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -300,7 +292,7 @@ namespace EchoPlay.Logger.Tests
         /// Ein Error-Eintrag ohne Exception hat null als Exception-Eigenschaft.
         /// </summary>
         [Fact]
-        public void Error_OhneException_ExceptionIstNull()
+        public void Error_WithoutException_ExceptionIsNull()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -314,7 +306,7 @@ namespace EchoPlay.Logger.Tests
         /// Ein Fatal-Eintrag mit Exception enthält Level Fatal und die übergebene Exception.
         /// </summary>
         [Fact]
-        public void Fatal_MitException_LevelUndExceptionKorrekt()
+        public void Fatal_WithException_LevelAndExceptionCorrect()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -326,13 +318,11 @@ namespace EchoPlay.Logger.Tests
             Assert.Same(exception, sink.Entries[0].Exception);
         }
 
-        // ===== Scopes =====
-
         /// <summary>
         /// Ohne aktiven Scope ist die Scope-Liste im Log-Eintrag leer.
         /// </summary>
         [Fact]
-        public void Debug_OhneScope_ScopelisteIstLeer()
+        public void Debug_WithoutScope_ScopeListIsEmpty()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -346,7 +336,7 @@ namespace EchoPlay.Logger.Tests
         /// Ein aktiver Scope erscheint in der Scope-Liste des Log-Eintrags.
         /// </summary>
         [Fact]
-        public void Debug_MitAktivenScope_ScopeImEintrag()
+        public void Debug_WithActiveScope_ScopeInEntry()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -383,7 +373,7 @@ namespace EchoPlay.Logger.Tests
         /// Zwei geschachtelte Scopes erscheinen beide in der Scope-Liste des Log-Eintrags.
         /// </summary>
         [Fact]
-        public void Debug_MitGeschachteltenScopes_BeideScopes()
+        public void Debug_WithNestedScopes_BothScopes()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });

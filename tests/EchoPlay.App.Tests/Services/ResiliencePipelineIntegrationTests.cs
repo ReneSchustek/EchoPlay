@@ -13,6 +13,21 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class ResiliencePipelineIntegrationTests
     {
+        /// <summary>
+        /// Testfreundliche Werte ohne Backoff, damit der Test nicht sekundenlang läuft: zwei
+        /// Wiederholungen ohne Wartezeit.
+        /// </summary>
+        private static void UseTwoImmediateRetries(Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions options)
+        {
+            options.Retry.MaxRetryAttempts = 2;
+            options.Retry.Delay = TimeSpan.Zero;
+            options.Retry.BackoffType = Polly.DelayBackoffType.Constant;
+            options.Retry.UseJitter = false;
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(15);
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+        }
+
         [Fact]
         public async Task Pipeline_RetriesOn503_AndCallsRateLimiterForEachAttempt()
         {
@@ -27,17 +42,7 @@ namespace EchoPlay.App.Tests.Services
                 new HttpResponseMessage(HttpStatusCode.OK));
 
             IHttpClientBuilder clientBuilder = services.AddHttpClient("Test");
-            _ = clientBuilder.AddStandardResilienceHandler(options =>
-            {
-                // Testfreundliche Werte ohne Backoff, damit der Test nicht sekundenlang läuft.
-                options.Retry.MaxRetryAttempts = 2;
-                options.Retry.Delay = TimeSpan.Zero;
-                options.Retry.BackoffType = Polly.DelayBackoffType.Constant;
-                options.Retry.UseJitter = false;
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
-                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(15);
-                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
-            });
+            _ = clientBuilder.AddStandardResilienceHandler(UseTwoImmediateRetries);
             _ = clientBuilder.AddHttpMessageHandler<RateLimitMessageHandler>()
                 .ConfigurePrimaryHttpMessageHandler(() => primary);
 
@@ -54,6 +59,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.All(limiter.Hosts, host => Assert.Equal("musicbrainz.org", host));
         }
 
+        /// <summary>
+        /// Zählt Wartebitten und Hosts threadsicher.
+        /// </summary>
         private sealed class CountingRateLimiter : IHostRateLimiter
         {
             private int _waitCount;
@@ -72,6 +80,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Gibt die vorgegebenen Antworten der Reihe nach aus und zählt die Aufrufe.
+        /// </summary>
         private sealed class QueuedPrimaryHandler : HttpMessageHandler
         {
             private readonly Queue<HttpResponseMessage> _responses;

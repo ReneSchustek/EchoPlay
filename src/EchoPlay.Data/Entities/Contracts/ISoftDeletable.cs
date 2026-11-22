@@ -1,8 +1,8 @@
 namespace EchoPlay.Data.Entities.Contracts
 {
     /// <summary>
-    /// Definiert den Vertrag für Entitäten, die eine logische Löschung unterstützen.
-    /// Dies ermöglicht das Beibehalten von Datensätzen für Auditing-Zwecke, während sie für die UI unsichtbar werden.
+    /// Entität mit logischer Löschung: Ein gelöschter Datensatz ist ausgeblendet, bleibt aber stehen,
+    /// bis die Datenbankpflege ihn nach der eingestellten Frist endgültig entfernt.
     /// </summary>
     public interface ISoftDeletable
     {

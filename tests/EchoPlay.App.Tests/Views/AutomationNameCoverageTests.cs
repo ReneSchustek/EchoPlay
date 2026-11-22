@@ -82,6 +82,35 @@ namespace EchoPlay.App.Tests.Views
                 + Environment.NewLine + string.Join(Environment.NewLine, offenders));
         }
 
+        [Fact]
+        public void PanelContentButtons_HaveAccessibleName()
+        {
+            // Ein Knopf mit Symbol und Text in einem Panel bekommt von WinUI keinen Namen aus dem
+            // Inhalt; ein Bildschirmleser sagt nur „Schaltfläche“. Gefunden am 20.11.2026 an acht
+            // Knöpfen der Einstellungen, darunter Export, Einspielen und Abgleich.
+            List<string> offenders = [];
+
+            foreach (string file in EnumerateXamlFiles())
+            {
+                XDocument doc = XDocument.Load(file, LoadOptions.SetLineInfo);
+
+                foreach (XElement button in doc.Descendants(Xaml + "Button"))
+                {
+                    List<XElement> children = [.. button.Elements().Where(e => !e.Name.LocalName.Contains('.', StringComparison.Ordinal))];
+                    if (children.Count != 1 || children[0].Name.LocalName is not ("StackPanel" or "Grid")) continue;
+                    if (HasAutomationName(button)) continue;
+
+                    string? uid = button.Attribute(X + "Uid")?.Value;
+                    if (uid is not null && LocalizedNameKeys.Contains(uid)) continue;
+
+                    offenders.Add($"{Path.GetFileName(file)}:{LineOf(button)} – Button mit Panel-Inhalt{(uid is null ? string.Empty : $", x:Uid=\"{uid}\"")}");
+                }
+            }
+
+            Assert.True(offenders.Count == 0,
+                "Buttons mit Panel-Inhalt ohne zugänglichen Namen:" + Environment.NewLine + string.Join(Environment.NewLine, offenders));
+        }
+
         // Attached Properties stehen im XAML ohne Namensraum-Präfix; XLinq liefert sie
         // als Attributnamen "AutomationProperties.Name".
         private static bool HasAutomationName(XElement element) =>

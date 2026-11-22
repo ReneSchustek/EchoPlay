@@ -21,7 +21,7 @@ namespace EchoPlay.Data.Configurations
             ArgumentNullException.ThrowIfNull(builder);
 
             _ = builder.HasIndex("IsDeleted", "DeletedAt")
-                   .HasFilter("IsDeleted = 1");
+                   .HasFilter(SoftDeleteIndexFilter.DeletedRows);
         }
     }
 }

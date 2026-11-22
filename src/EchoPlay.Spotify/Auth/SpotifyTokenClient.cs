@@ -1,5 +1,4 @@
 using EchoPlay.Core.Abstractions.Time;
-using EchoPlay.Spotify.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,11 +7,12 @@ namespace EchoPlay.Spotify.Auth
 {
     /// <summary>
     /// Kapselt den Client-Credentials-Flow zur Authentifizierung gegen die Spotify-Web-API.
-    ///
+    /// <para>
     /// Ist als Singleton ausgelegt: Der Token-Cache wird prozessweit gehalten, damit
     /// mehrere DI-Scopes denselben Access-Token nutzen können. Parallele Token-Requests
     /// werden durch einen Semaphor serialisiert, sodass bei gleichzeitiger Anforderung
     /// nur ein einziger HTTP-Roundtrip zu <c>accounts.spotify.com</c> entsteht.
+    /// </para>
     /// </summary>
     public sealed class SpotifyTokenClient : IDisposable
     {
@@ -63,7 +63,7 @@ namespace EchoPlay.Spotify.Auth
             try
             {
                 // Zweite Prüfung nach Lock-Erwerb: ein anderer Task hat evtl. inzwischen
-                // einen Token geholt, während wir am Semaphor warteten.
+                // einen Token geholt, während dieser Aufruf am Semaphor wartete.
                 if (_currentToken != null && !_currentToken.IsExpired(_clock.UtcNow))
                 {
                     _logger.Debug("Gültiges Token aus Cache verwendet (post-lock).");
@@ -103,52 +103,24 @@ namespace EchoPlay.Spotify.Auth
         {
             using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("API:Spotify:GetAccessToken");
 
-            SpotifyClientCredentials credentials = await _credentialsProvider
-                .GetAsync(cancellationToken)
-                .ConfigureAwait(false)
-                ?? throw new InvalidOperationException(
-                    "Spotify-Credentials sind nicht konfiguriert. Nutzer muss ClientId und Secret in den Einstellungen hinterlegen.");
+            SpotifyClientCredentials credentials = await RequireCredentialsAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.Debug("Kein gültiges Token vorhanden – neues Token wird angefordert.");
-
-            // Spotify erwartet ClientId und Secret Base64-kodiert im Authorization-Header.
-            string basicAuth = Convert.ToBase64String(
-                Encoding.UTF8.GetBytes($"{credentials.ClientId}:{credentials.ClientSecret}"));
 
             HttpClient tokenHttpClient = _httpClientFactory.CreateClient("SpotifyToken");
 
             try
             {
-                // Pro Retry-Versuch muss ein neues HttpRequestMessage erzeugt werden,
-                // da es nach dem Senden nicht wiederverwendet werden kann.
-                using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(async () =>
-                {
-                    using HttpRequestMessage req = new(HttpMethod.Post, "api/token");
-                    req.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicAuth);
-                    req.Content = new FormUrlEncodedContent(
-                    [
-                        new KeyValuePair<string, string>("grant_type", "client_credentials")
-                    ]);
-                    return await tokenHttpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
-                }, cancellationToken).ConfigureAwait(false);
+                // Wiederholungen bei 429, 5xx und Verbindungsfehlern übernimmt die Regel, die
+                // die Anwendung an den benannten Client hängt; eine zweite Schicht hier
+                // vervielfachte die Anfragen gerade dann, wenn Spotify bremst.
+                using HttpRequestMessage req = CreateTokenRequest(credentials);
+                using HttpResponseMessage response = await tokenHttpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
                 _ = response.EnsureSuccessStatusCode();
 
-                using Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(contentStream, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                // GetString()! ist Null-Forgiving: Spotify garantiert "access_token" im Response,
-                // wenn EnsureSuccessStatusCode() nicht geworfen hat.
-                string accessToken = document.RootElement.GetProperty("access_token").GetString()!;
-                int expiresInSeconds = document.RootElement.GetProperty("expires_in").GetInt32();
-
+                SpotifyAccessToken token = await ReadTokenAsync(response, cancellationToken).ConfigureAwait(false);
                 _logger.Info("Spotify-Token erfolgreich erneuert.");
-
-                // Sicherheitsmarge: Token läuft bewusst etwas früher ab, um Grenzfälle während Requests zu vermeiden.
-                return new SpotifyAccessToken
-                {
-                    AccessToken = accessToken,
-                    ExpiresAtUtc = _clock.UtcNow.AddSeconds(expiresInSeconds - 60)
-                };
+                return token;
             }
             catch (HttpRequestException ex)
             {
@@ -164,6 +136,46 @@ namespace EchoPlay.Spotify.Auth
                     ex);
                 throw;
             }
+        }
+
+        private async Task<SpotifyClientCredentials> RequireCredentialsAsync(CancellationToken cancellationToken) =>
+            await _credentialsProvider.GetAsync(cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException(
+                "Spotify-Credentials sind nicht konfiguriert. Nutzer muss ClientId und Secret in den Einstellungen hinterlegen.");
+
+        /// <summary>Baut die Anfrage nach einem Token im Client-Credentials-Ablauf.</summary>
+        private static HttpRequestMessage CreateTokenRequest(SpotifyClientCredentials credentials)
+        {
+            // Spotify erwartet ClientId und Secret Base64-kodiert im Authorization-Header.
+            string basicAuth = Convert.ToBase64String(
+                Encoding.UTF8.GetBytes($"{credentials.ClientId}:{credentials.ClientSecret}"));
+
+            HttpRequestMessage req = new(HttpMethod.Post, "api/token");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicAuth);
+            req.Content = new FormUrlEncodedContent(
+            [
+                new KeyValuePair<string, string>("grant_type", "client_credentials")
+            ]);
+            return req;
+        }
+
+        /// <summary>Liest Token und Laufzeit aus einer erfolgreichen Antwort.</summary>
+        private async Task<SpotifyAccessToken> ReadTokenAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
+            using Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            using JsonDocument document = await JsonDocument.ParseAsync(contentStream, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            // GetString()! ist Null-Forgiving: Spotify garantiert "access_token" im Response,
+            // wenn EnsureSuccessStatusCode() nicht geworfen hat.
+            string accessToken = document.RootElement.GetProperty("access_token").GetString()!;
+            int expiresInSeconds = document.RootElement.GetProperty("expires_in").GetInt32();
+
+            // Sicherheitsmarge: Token läuft etwas früher ab, um Grenzfälle während Requests zu vermeiden.
+            return new SpotifyAccessToken
+            {
+                AccessToken = accessToken,
+                ExpiresAtUtc = _clock.UtcNow.AddSeconds(expiresInSeconds - 60)
+            };
         }
 
         /// <inheritdoc/>

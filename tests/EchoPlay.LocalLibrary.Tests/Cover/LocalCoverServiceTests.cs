@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using System;
 using System.IO;
@@ -32,8 +33,6 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             Directory.Delete(_root, recursive: true);
         }
-
-        // ── Lokale Cover-Dateien im Serienordner ─────────────────────────────────
 
         [Fact]
         public async Task ResolveAsync_ReturnsCoverBytes_WhenCoverJpgExists()
@@ -79,8 +78,6 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
 
             Assert.Equal(JpegC, result);
         }
-
-        // ── Cover-Unterordner ─────────────────────────────────────────────────────
 
         [Fact]
         public async Task ResolveAsync_ReturnsFrontCover_WhenCoverSubfolderContainsFrontJpg()
@@ -133,8 +130,6 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             Assert.Equal(JpegA, result);
         }
 
-        // ── Kein Cover vorhanden ─────────────────────────────────────────────────
-
         [Fact]
         public async Task ResolveAsync_ReturnsNull_WhenNoSourceAvailable()
         {
@@ -162,7 +157,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             // Test-Fixture, Ausnahme von der IHttpClientFactory-Pflicht: da kein Test eine coverImageUrl
             // übergibt, bleibt der HttpClient ungenutzt und kann kein Socket-Leak verursachen.
-            return new LocalCoverService(new CoverService(new HttpClient()));
+            return new LocalCoverService(new CoverService(new HttpClient()), new FakeLoggerFactory());
         }
     }
 }

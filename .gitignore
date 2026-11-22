@@ -83,5 +83,7 @@ solution_dump.txt
 # Build-Output
 AppPackages/
 BundleArtifacts/
+# Berichte des Messprojekts; die Werte gehören in die Ablage der Messreihe, nicht ins Repository.
+BenchmarkDotNet.Artifacts/
 # Setup-Publish-Artefakte (self-contained Publish + kompilierte Setup.exe, ~300 MB)
 dist/

@@ -157,6 +157,39 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
         }
 
         /// <summary>
+        /// Eine Sammlung eines anderen Künstlers in der Lookup-Antwort liefert nicht das Cover der Serie.
+        /// </summary>
+        [Fact]
+        public async Task AnalyzeAsync_ForeignCompilationFirst_TakesTheCoverFromTheOwnAlbum()
+        {
+            ITunesCollectionDto foreign = new()
+            {
+                WrapperType = "collection",
+                CollectionId = 900,
+                ArtistId = 99,
+                CollectionName = "Kinder-Sammlung",
+                ArtworkUrl100 = "https://is1-ssl.mzstatic.com/image/thumb/fremd/100x100bb.jpg"
+            };
+            ITunesCollectionDto own = new()
+            {
+                WrapperType = "collection",
+                CollectionId = 100,
+                CollectionName = "Folge 1",
+                ArtworkUrl100 = "https://is1-ssl.mzstatic.com/image/thumb/eigen/100x100bb.jpg"
+            };
+            ConfigurableAppleMusicSearchClient searchClient = new ConfigurableAppleMusicSearchClient()
+                .WithAlbums(7, [foreign, own])
+                .WithTracks(100, [CreateHoerspielTrack(1001)]);
+
+            ITunesArtistDto artist = new() { ArtistId = 7, ArtistName = "Hörspielserie XY" };
+
+            AppleMusicHoerspielAnalysis result = await CreateAnalyzer(searchClient)
+                .AnalyzeAsync(artist, "Hörspielserie XY", TestContext.Current.CancellationToken);
+
+            Assert.Equal("https://is1-ssl.mzstatic.com/image/thumb/eigen/300x300bb.jpg", result.ArtworkUrl?.ToString());
+        }
+
+        /// <summary>
         /// Ein Künstler ohne Alben wird korrekt erkannt.
         /// </summary>
         [Fact]
@@ -197,9 +230,7 @@ namespace EchoPlay.AppleMusic.Tests.Scoring
             Assert.True(result.HasHoerspielGenre);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Hilfsmethoden
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Erstellt einen Analyzer mit Standardeinstellungen.

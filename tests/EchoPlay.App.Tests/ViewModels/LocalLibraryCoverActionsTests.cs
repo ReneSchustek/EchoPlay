@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
@@ -28,7 +29,7 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class LocalLibraryCoverActionsTests
     {
         private static readonly CoverSearchHit Hit = new(
-            "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+            new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
             "TKKG Folge 1", "Cover Art Archive");
 
         [Fact]
@@ -132,8 +133,6 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.Actions.AnalyzeRestructureAsync(TestIds.SeriesA);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static LocalEpisodeCardViewModel BuildEpisodeCard()
             => new(
                 TestIds.EpisodeA,
@@ -188,9 +187,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 statusBar,
                 new FakeLocalCoverLoader(),
                 new FakeScanEventService(),
-                new FakeCoverSearchService(),
                 new FakeOnlineAccessGuard(),
-                new FakeOnlineEpisodeChecker(),
                 clock,
                 CoverCoordinator: coverCoordinator);
 

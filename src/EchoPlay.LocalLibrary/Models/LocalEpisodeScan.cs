@@ -23,7 +23,8 @@ namespace EchoPlay.LocalLibrary.Models
         public string? ParsedTitle { get; init; }
 
         /// <summary>
-        /// Absoluter Pfade aller gefundenen Audiodateien, sortiert nach Dateiname.
+        /// Absolute Pfade aller Audiodateien der Folge in Wiedergabereihenfolge, siehe
+        /// <see cref="Scanning.EpisodeAudioFiles.Collect"/>.
         /// </summary>
         public IReadOnlyList<string> TrackPaths { get; init; } = [];
 

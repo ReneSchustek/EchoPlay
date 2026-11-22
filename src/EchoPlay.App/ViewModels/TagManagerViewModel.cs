@@ -19,14 +19,14 @@ namespace EchoPlay.App.ViewModels
     /// Koordiniert vier Sub-VMs (Dateiliste, Editor-Felder, Cover, Rename) und einen internen
     /// <see cref="TagManagerActions"/>-Orchestrator, der die gesamte Async-Aktions-Schicht
     /// (Laden, Speichern, MusicBrainz-Lookup, Umbenennen, Batch-Apply) kapselt.
-    /// Das Top-VM hält nur noch Commands, Zustands-Properties (IsLoading, HasUnsavedChanges …)
-    /// und die Pass-Through-Schicht für die unveränderte Page-XAML.
+    /// Das Top-VM hält Commands, Zustands-Properties (IsLoading, HasUnsavedChanges …) und die
+    /// Pass-Through-Schicht für die Page-XAML.
     /// </summary>
     public sealed class TagManagerViewModel : ObservableObject
     {
         private readonly TagManagerActions _actions;
 
-        // Typed references sind nötig, um SetEnabled() aufrufen zu können
+        // Als RelayCommand gehalten, weil nur dieser Typ SetEnabled kennt.
         private readonly RelayCommand _saveCommand;
         private readonly RelayCommand _saveAllCommand;
         private readonly RelayCommand _removeAllTagsCommand;
@@ -68,34 +68,11 @@ namespace EchoPlay.App.ViewModels
             CoverVM = new TagCoverViewModel(() => HasUnsavedChanges = true);
             RenameVM = new TagRenameViewModel();
 
-            TagManagerActionsContext actionsContext = new(
+            _actions = CreateActions(new TagManagerActionsContext(
                 tagService, lookupCoordinator, fileRenameService,
-                errorDialogService, confirmationDialogService, onlineAccessGuard);
+                errorDialogService, confirmationDialogService, onlineAccessGuard));
 
-            _actions = new TagManagerActions(
-                actionsContext,
-                FileListVM, EditorVM, CoverVM, RenameVM,
-                setIsLoading: v => IsLoading = v,
-                setIsLookingUp: v => IsLookingUp = v,
-                setAutoLookupStatus: v => AutoLookupStatusText = v,
-                setBatchProgress: v => BatchProgressText = v,
-                setHasUnsavedChanges: v => HasUnsavedChanges = v,
-                refreshCommandStates: RefreshCommandStates);
-
-            // Sub-VM-Events an die Page weiterreichen
-            _actions.LookupResultsReady += (s, e) => LookupResultsReady?.Invoke(this, e);
-            _actions.AutoLookupApplied += (s, e) => AutoLookupApplied?.Invoke(this, e);
-            _actions.RenamePreviewReady += (s, e) => RenamePreviewReady?.Invoke(this, e);
-
-            // PropertyChanged durchreichen, damit die XAML-Bindings auf den Top-VM-Pass-Through-Properties
-            // weiterhin aktualisiert werden, obwohl der Wert in einem Sub-VM liegt.
-            FileListVM.PropertyChanged += OnSubVmPropertyChanged;
-            EditorVM.PropertyChanged += OnSubVmPropertyChanged;
-            CoverVM.PropertyChanged += OnSubVmPropertyChanged;
-            RenameVM.PropertyChanged += OnSubVmPropertyChanged;
-
-            // Auswahländerung in der Dateiliste → Tag-Felder neu laden
-            FileListVM.SelectionChanged += OnFileSelectionChanged;
+            WireEvents();
 
             ResetFiltersCommand = new RelayCommand(FileListVM.ResetFilters);
             _saveCommand = new RelayCommand(() => _ = _actions.SaveAsync());
@@ -110,22 +87,42 @@ namespace EchoPlay.App.ViewModels
             _previewRenameCommand = new RelayCommand(() => _ = _actions.PreviewRenameAsync());
             _executeRenameCommand = new RelayCommand(() => _ = _actions.ExecuteRenameAsync());
 
-            SaveCommand = _saveCommand;
-            SaveAllCommand = _saveAllCommand;
-            RemoveAllTagsCommand = _removeAllTagsCommand;
-            LookupOnlineCommand = _lookupOnlineCommand;
-            AutoLookupCommand = _autoLookupCommand;
-            ApplyToAllCommand = _applyToAllCommand;
-            RemoveCoverCommand = _removeCoverCommand;
-            LoadCoverCommand = _loadCoverCommand;
-            ApplyCoverToAllCommand = _applyCoverToAllCommand;
-            PreviewRenameCommand = _previewRenameCommand;
-            ExecuteRenameCommand = _executeRenameCommand;
 
             RefreshCommandStates();
         }
 
-        // ── Sub-VMs ─────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Baut die Aktionen; sie schreiben Lade-, Such- und Änderungszustand über Rückrufe zurück.
+        /// </summary>
+        private TagManagerActions CreateActions(TagManagerActionsContext actionsContext) =>
+            new(
+                actionsContext,
+                FileListVM, EditorVM, CoverVM, RenameVM,
+                setIsLoading: v => IsLoading = v,
+                setIsLookingUp: v => IsLookingUp = v,
+                setAutoLookupStatus: v => AutoLookupStatusText = v,
+                setBatchProgress: v => BatchProgressText = v,
+                setHasUnsavedChanges: v => HasUnsavedChanges = v,
+                refreshCommandStates: RefreshCommandStates);
+
+        /// <summary>Verbindet die Ereignisse der Teil-ViewModels mit diesem ViewModel.</summary>
+        private void WireEvents()
+        {
+            // Sub-VM-Events an die Page weiterreichen
+            _actions.LookupResultsReady += (s, e) => LookupResultsReady?.Invoke(this, e);
+            _actions.AutoLookupApplied += (s, e) => AutoLookupApplied?.Invoke(this, e);
+            _actions.RenamePreviewReady += (s, e) => RenamePreviewReady?.Invoke(this, e);
+
+            // PropertyChanged durchreichen, damit die XAML-Bindings auf den Top-VM-Pass-Through-Properties
+            // weiterhin aktualisiert werden, obwohl der Wert in einem Sub-VM liegt.
+            FileListVM.PropertyChanged += OnSubVmPropertyChanged;
+            EditorVM.PropertyChanged += OnSubVmPropertyChanged;
+            CoverVM.PropertyChanged += OnSubVmPropertyChanged;
+            RenameVM.PropertyChanged += OnSubVmPropertyChanged;
+
+            // Auswahländerung in der Dateiliste → Tag-Felder neu laden
+            FileListVM.SelectionChanged += OnFileSelectionChanged;
+        }
 
         /// <summary>Sub-VM für die Dateiliste und Ordnerauswahl.</summary>
         public TagFileListViewModel FileListVM { get; }
@@ -139,19 +136,17 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sub-VM für Umbenennungs-Muster und -Vorschau.</summary>
         public TagRenameViewModel RenameVM { get; }
 
-        // ── Events (Top-VM → Page) ──────────────────────────────────────────────
-
         /// <summary>
         /// Wird ausgelöst, wenn der Online-Lookup fertig ist. Die Page zeigt einen ContentDialog.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<IReadOnlyList<TagLookupCandidate>> liefert die Trefferliste direkt an die Page, die sie in einem ContentDialog anzeigt; ein zusätzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event EventHandler<IReadOnlyList<TagLookupCandidate>>? LookupResultsReady;
 
         /// <summary>
         /// Wird ausgelöst, wenn der Auto-Lookup einen eindeutigen Treffer gefunden hat.
         /// Die Page zeigt eine Bestätigungs-InfoBar.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<TagLookupCandidate> liefert den eindeutigen Auto-Lookup-Treffer direkt an die Page für die InfoBar; ein zusätzlicher EventArgs-Wrapper brachte keinen Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event EventHandler<TagLookupCandidate>? AutoLookupApplied;
 
         /// <summary>Wird ausgelöst, wenn der Nutzer ein Cover per Datei-Picker laden möchte.</summary>
@@ -159,8 +154,6 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Wird ausgelöst, wenn die Rename-Vorschau nach „Alle taggen" bereit ist.</summary>
         public event EventHandler? RenamePreviewReady;
-
-        // ── Pass-Through-Eigenschaften: Dateiliste ──────────────────────────────
 
         /// <inheritdoc cref="TagFileListViewModel.Files"/>
         public ObservableCollection<TagFileItemViewModel> Files => FileListVM.Files;
@@ -199,8 +192,6 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="TagFileListViewModel.HasSelectedFile"/>
         public bool HasSelectedFile => FileListVM.HasSelectedFile;
 
-        // ── Pass-Through-Eigenschaften: Editor-Felder ───────────────────────────
-
         /// <inheritdoc cref="TagEditorFieldsViewModel.Title"/>
         public string? Title { get => EditorVM.Title; set => EditorVM.Title = value; }
 
@@ -228,15 +219,11 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="TagEditorFieldsViewModel.HasPendingBatchTag"/>
         public bool HasPendingBatchTag => EditorVM.HasPendingBatchTag;
 
-        // ── Pass-Through-Eigenschaften: Cover ───────────────────────────────────
-
         /// <inheritdoc cref="TagCoverViewModel.CoverImage"/>
         public BitmapImage? CoverImage => CoverVM.CoverImage;
 
         /// <inheritdoc cref="TagCoverViewModel.CoverVisibility"/>
         public Visibility CoverVisibility => CoverVM.CoverVisibility;
-
-        // ── Pass-Through-Eigenschaften: Rename ──────────────────────────────────
 
         /// <inheritdoc cref="TagRenameViewModel.RenamePattern"/>
         public string RenamePattern { get => RenameVM.RenamePattern; set => RenameVM.RenamePattern = value; }
@@ -246,8 +233,6 @@ namespace EchoPlay.App.ViewModels
 
         /// <inheritdoc cref="TagRenameViewModel.RenamePreviewVisibility"/>
         public Visibility RenamePreviewVisibility => RenameVM.RenamePreviewVisibility;
-
-        // ── Zustand am Top-VM ───────────────────────────────────────────────────
 
         /// <summary>Gibt an, ob gerade Tags geladen, gespeichert oder eine Batch-Operation läuft.</summary>
         public bool IsLoading
@@ -335,42 +320,38 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Commands ────────────────────────────────────────────────────────────
-
         /// <summary>Speichert die aktuell angezeigten Tags in die ausgewählte Datei.</summary>
-        public ICommand SaveCommand { get; }
+        public ICommand SaveCommand => _saveCommand;
 
         /// <summary>Speichert alle modifizierten Dateien auf einmal.</summary>
-        public ICommand SaveAllCommand { get; }
+        public ICommand SaveAllCommand => _saveAllCommand;
 
         /// <summary>Entfernt alle Tags der ausgewählten Datei nach Bestätigung.</summary>
-        public ICommand RemoveAllTagsCommand { get; }
+        public ICommand RemoveAllTagsCommand => _removeAllTagsCommand;
 
         /// <summary>Sucht online nach Tags bei MusicBrainz.</summary>
-        public ICommand LookupOnlineCommand { get; }
+        public ICommand LookupOnlineCommand => _lookupOnlineCommand;
 
         /// <summary>Baut die Suchanfrage automatisch aus dem Ordnerkontext.</summary>
-        public ICommand AutoLookupCommand { get; }
+        public ICommand AutoLookupCommand => _autoLookupCommand;
 
         /// <summary>Wendet die gemeinsamen Tags aus dem letzten Lookup auf alle Dateien an.</summary>
-        public ICommand ApplyToAllCommand { get; }
+        public ICommand ApplyToAllCommand => _applyToAllCommand;
 
         /// <summary>Entfernt das Cover-Bild aus der ausgewählten Datei.</summary>
-        public ICommand RemoveCoverCommand { get; }
+        public ICommand RemoveCoverCommand => _removeCoverCommand;
 
         /// <summary>Öffnet einen Datei-Picker zum Laden eines Cover-Bilds.</summary>
-        public ICommand LoadCoverCommand { get; }
+        public ICommand LoadCoverCommand => _loadCoverCommand;
 
         /// <summary>Schreibt das aktuelle Cover-Bild auf alle Dateien im Ordner.</summary>
-        public ICommand ApplyCoverToAllCommand { get; }
+        public ICommand ApplyCoverToAllCommand => _applyCoverToAllCommand;
 
         /// <summary>Berechnet die Umbenennungs-Vorschau.</summary>
-        public ICommand PreviewRenameCommand { get; }
+        public ICommand PreviewRenameCommand => _previewRenameCommand;
 
         /// <summary>Führt die Umbenennung nach Bestätigung durch.</summary>
-        public ICommand ExecuteRenameCommand { get; }
-
-        // ── Öffentliche Methoden (Delegation an den Orchestrator) ──────────────
+        public ICommand ExecuteRenameCommand => _executeRenameCommand;
 
         /// <inheritdoc cref="TagManagerActions.LoadFolderAsync"/>
         public Task LoadFolderAsync(string folderPath) => _actions.LoadFolderAsync(folderPath);
@@ -397,24 +378,6 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Setzt das Cover aus einem vom Nutzer geladenen Bild.</summary>
         public void SetCoverFromFile(byte[] imageData, string mimeType)
             => CoverVM.SetFromFile(imageData, mimeType);
-
-        // ── Statische Helfer (für Tests beibehalten) ────────────────────────────
-
-        /// <summary>
-        /// Baut die Suchanfrage aus dem Ordnerkontext und delegiert an den statischen Core-Helper.
-        /// Bleibt als Shim, damit bestehende Unit-Tests weiter kompilieren.
-        /// </summary>
-        internal static string BuildAutoLookupQuery(string? folderPath)
-            => TagLookupCoordinator.BuildAutoLookupQueryCore(folderPath);
-
-        /// <summary>
-        /// Wählt den besten Treffer aus den Lookup-Ergebnissen und delegiert an den statischen Core-Helper.
-        /// Bleibt als Shim, damit bestehende Unit-Tests weiter kompilieren.
-        /// </summary>
-        internal static TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
-            => TagLookupCoordinator.SelectBestMatchCore(results, loadedTrackCount);
-
-        // ── Sub-VM-Verdrahtung ─────────────────────────────────────────────────
 
         private void OnSubVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {

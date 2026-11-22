@@ -14,7 +14,7 @@ namespace EchoPlay.Data.Tests.Services
         private DialogSuppressionDataService CreateService() => new(Context, NullLoggerFactory);
 
         [Fact]
-        public async Task SuppressAsync_LegtZeileAn()
+        public async Task SuppressAsync_CreatesRow()
         {
             DialogSuppressionDataService service = CreateService();
 
@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task SuppressAsync_ZweimalGleicherSchluessel_BleibtEineZeile()
+        public async Task SuppressAsync_SameKeyTwice_StaysOneRow()
         {
             DialogSuppressionDataService service = CreateService();
 
@@ -43,7 +43,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task SuppressAsync_LeererSchluessel_LegtNichtsAn()
+        public async Task SuppressAsync_EmptyKey_CreatesNothing()
         {
             DialogSuppressionDataService service = CreateService();
 
@@ -53,7 +53,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task RestoreAsync_NimmtZeileAusDerListe()
+        public async Task RestoreAsync_RemovesRowFromTheList()
         {
             DialogSuppressionDataService service = CreateService();
             await service.SuppressAsync("OnlineSearchFailed", TestContext.Current.CancellationToken);
@@ -65,7 +65,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task RestoreAsync_UnbekannterSchluessel_TutNichts()
+        public async Task RestoreAsync_UnknownKey_DoesNothing()
         {
             DialogSuppressionDataService service = CreateService();
             await service.SuppressAsync("ImportFailed", TestContext.Current.CancellationToken);
@@ -77,7 +77,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task ErneutesAusblendenNachDemZurueckholen_Gelingt()
+        public async Task SuppressAgainAfterRestore_Succeeds()
         {
             // Genau dafür ist der UNIQUE-Index auf aktive Zeilen gefiltert. Ohne den Filter
             // liefe dieser zweite Versuch in einen Konflikt mit der soft-gelöschten Zeile.
@@ -96,7 +96,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task RestoreAllAsync_LeertDieListeUndMeldetDieAnzahl()
+        public async Task RestoreAllAsync_ClearsTheListAndReportsTheCount()
         {
             DialogSuppressionDataService service = CreateService();
             await service.SuppressAsync("ImportFailed", TestContext.Current.CancellationToken);
@@ -111,7 +111,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task RestoreAllAsync_OhneEintraege_MeldetNull()
+        public async Task RestoreAllAsync_WithoutEntries_ReportsZero()
         {
             DialogSuppressionDataService service = CreateService();
 

@@ -34,6 +34,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="isFavorite">Ob die Serie aktuell als Favorit markiert ist.</param>
         /// <param name="isWatched">Ob die Serie auf Neuerscheinungen überwacht wird.</param>
         /// <param name="scopeFactory">Für scoped DB-Zugriffe beim Favoriten-Toggle.</param>
+        /// <param name="isIncomplete">Ob der Serie Folgen fehlen, berechnet von <see cref="Services.IncompleteSeries"/>.</param>
         public LocalArtistCardViewModel(
             Guid seriesId,
             string title,
@@ -43,7 +44,8 @@ namespace EchoPlay.App.ViewModels
             int totalEpisodeCount,
             bool isFavorite,
             bool isWatched,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            bool isIncomplete = false)
         {
             SeriesId = seriesId;
             Title = title;
@@ -53,6 +55,7 @@ namespace EchoPlay.App.ViewModels
             TotalEpisodeCount = totalEpisodeCount;
             IsFavorite = isFavorite;
             IsWatched = isWatched;
+            IsIncomplete = isIncomplete;
             _scopeFactory = scopeFactory;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());
@@ -94,10 +97,11 @@ namespace EchoPlay.App.ViewModels
         public string CountText => $"{LocalEpisodeCount} / {TotalEpisodeCount}";
 
         /// <summary>
-        /// Ob der Serie lokal Folgen fehlen. Eine Serie ohne bekannte Folgen zählt nicht als
-        /// unvollständig: Dort fehlt die Auskunft, nicht der Bestand.
+        /// Ob der Serie Folgen fehlen: eine Lücke in der Nummernfolge oder eine Folge, die der
+        /// Anbieter nach der letzten lokalen schon geliefert hat. Die Folgenzähler taugen dafür
+        /// nicht, denn eine lokale Serie kennt nur die Folgen ihrer eigenen Ordner.
         /// </summary>
-        public bool IsIncomplete => TotalEpisodeCount > 0 && LocalEpisodeCount < TotalEpisodeCount;
+        public bool IsIncomplete { get; }
 
         /// <summary>
         /// Aktualisiert die Episodenzähler nachträglich, z.B. wenn der Scan die Episoden einer

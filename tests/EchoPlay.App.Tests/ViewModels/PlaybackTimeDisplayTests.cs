@@ -17,7 +17,7 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class PlaybackTimeDisplayTests
     {
         [Fact]
-        public void Zeitanzeige_ZeigtVerstricheneUndVerbleibendeZeit()
+        public void TimeDisplay_ShowsElapsedAndRemainingTime()
         {
             FakePlayerService player = new();
             PlaybackTimeDisplay display = new(player);
@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Umschalten_ZeigtStattDerRestzeitDieGesamtdauer()
+        public void Toggle_ShowsTheTotalDurationInsteadOfTheRemainingTime()
         {
             // Beide Angaben teilen sich denselben Platz. Der Wechsel ist die einzige
             // Möglichkeit, die Gesamtlänge einer Folge überhaupt zu sehen.
@@ -51,7 +51,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Suchlauf_HaeltDenReglerBeimAnwender()
+        public void Seek_KeepsTheSliderWithTheUser()
         {
             FakePlayerService player = new();
             PlaybackTimeDisplay display = new(player);
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OhneSuchlauf_WirdDerReglerNichtVerstellt()
+        public void WithoutSeek_TheSliderIsNotMoved()
         {
             // Der Setter gehört dem Suchlauf. Ohne ihn kommt die Position nur vom Dienst.
             FakePlayerService player = new();
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Folgenfortschritt_ErscheintNurBeiMehrerenDateien()
+        public void EpisodeProgress_AppearsOnlyWithSeveralFiles()
         {
             FakePlayerService player = new();
             PlaybackTimeDisplay display = new(player);
@@ -104,7 +104,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Zurücksetzen_LeertReglerUndTexte()
+        public void Reset_ClearsSliderAndTexts()
         {
             FakePlayerService player = new();
             PlaybackTimeDisplay display = new(player);

@@ -26,15 +26,15 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class OnlineProviderSearchTests
     {
         [Fact]
-        public async Task Suche_StelltTrefferMitDemSuchbegriffNachVorn()
+        public async Task Search_PutsHitsWithTheQueryFirst()
         {
-            List<ImportSeries> treffer =
+            List<ImportSeries> hit =
             [
                 new() { Title = "Hörspiel-Sammlung", Source = "Spotify", SourceSeriesId = "s1", Score = 90 },
                 new() { Title = "TKKG", Source = "Spotify", SourceSeriesId = "s2", Score = 10 }
             ];
 
-            OnlineLibraryViewModel viewModel = Build(treffer);
+            OnlineLibraryViewModel viewModel = Build(hit);
             viewModel.SearchText = "TKKG";
 
             viewModel.ProviderSearchCommand.Execute(null);
@@ -47,15 +47,15 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Suche_SortiertBeiGleichemBezugNachBewertung()
+        public async Task Search_SortsByScoreWhenEquallyRelevant()
         {
-            List<ImportSeries> treffer =
+            List<ImportSeries> hit =
             [
                 new() { Title = "TKKG Junior", Source = "Spotify", SourceSeriesId = "s1", Score = 30 },
                 new() { Title = "TKKG", Source = "Spotify", SourceSeriesId = "s2", Score = 80 }
             ];
 
-            OnlineLibraryViewModel viewModel = Build(treffer);
+            OnlineLibraryViewModel viewModel = Build(hit);
             viewModel.SearchText = "TKKG";
 
             viewModel.ProviderSearchCommand.Execute(null);
@@ -68,7 +68,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Suche_KennzeichnetBereitsVorhandeneSerien()
+        public async Task Search_MarksExistingSeries()
         {
             // Ohne die Kennzeichnung böte die Kachel ein zweites Mal „hinzufügen" an,
             // und der Anwender fragte sich, warum nichts passiert.
@@ -77,12 +77,12 @@ namespace EchoPlay.App.Tests.ViewModels
                 new Series { Title = "TKKG", SpotifyArtistId = "s2", IsOnlineImported = true },
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            List<ImportSeries> treffer =
+            List<ImportSeries> hit =
             [
                 new() { Title = "TKKG", Source = "Spotify", SourceSeriesId = "s2", Score = 80 }
             ];
 
-            OnlineLibraryViewModel viewModel = Build(treffer, seriesService);
+            OnlineLibraryViewModel viewModel = Build(hit, seriesService);
             viewModel.SearchText = "TKKG";
 
             viewModel.ProviderSearchCommand.Execute(null);
@@ -95,7 +95,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Suche_LaesstDenLadezustandNichtStehen()
+        public async Task Search_DoesNotLeaveTheLoadingState()
         {
             OnlineLibraryViewModel viewModel = Build(
             [
@@ -133,8 +133,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 () => viewModel.ProviderSearchResults.Count == 1,
                 "Trefferliste der Anbieter-Suche steht");
 
-            SearchResultViewModel treffer = viewModel.ProviderSearchResults[0];
-            treffer.IsSelected = true;
+            SearchResultViewModel hit = viewModel.ProviderSearchResults[0];
+            hit.IsSelected = true;
 
             viewModel.AddSelectedCommand.Execute(null);
 
@@ -154,31 +154,15 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddScoped<IAppSettingsDataService>(
                 _ => new FakeAppSettingsDataService(new AppSettings { ActiveProvider = ProviderType.Spotify }));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch(searchResults, "Spotify"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddSingleton<EchoPlay.Spotify.Auth.ISpotifyClientCredentialsProvider>(
                 FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services, spotifyResults: searchResults);
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new OnlineLibraryViewModel(
                 scopeFactory,

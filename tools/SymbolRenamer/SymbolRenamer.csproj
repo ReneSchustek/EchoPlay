@@ -8,19 +8,17 @@
     <RollForward>LatestMajor</RollForward>
     <!-- Werkzeug, kein Produktivcode: Analyzer-Strenge des Zielrepos gilt hier nicht. -->
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <!--
-      NU1903 betrifft die MSBuild-Pakete, die Microsoft.CodeAnalysis.Workspaces.MSBuild
-      transitiv mitbringt. Sie werden hier nur zum Kompilieren gebraucht: Zur Laufzeit lädt
-      MSBuildLocator die installierte SDK-Instanz, nicht diese Assemblies. Das Werkzeug läuft
-      lokal auf eigenem Quellcode und verarbeitet keine fremden Eingaben.
-    -->
-    <NoWarn>$(NoWarn);CA1305;CA1861;CS1591;NU1903</NoWarn>
+    <NoWarn>$(NoWarn);CA1305;CA1861;CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Locator" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <!-- Hebt das transitive Paket aus Workspaces.MSBuild auf einen Stand ohne bekannte Lücke. -->
+    <PackageReference Include="Microsoft.Build.Tasks.Core" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
 </Project>

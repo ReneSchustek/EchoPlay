@@ -10,7 +10,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Views
 {
     /// <summary>
-    /// Stellt sicher, dass jedes Wörterbuch, das <c>App.xaml</c> lädt, auch tatsächlich
+    /// Prüft, dass jedes Wörterbuch, das <c>App.xaml</c> lädt, auch tatsächlich
     /// ausgeliefert wird.
     /// <para>
     /// Anlass: Die Wörterbücher unter <c>Themes/</c> sind von der XAML-Übersetzung

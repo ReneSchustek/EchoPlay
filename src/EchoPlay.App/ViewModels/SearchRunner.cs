@@ -16,8 +16,7 @@ namespace EchoPlay.App.ViewModels
     /// und reicht jede fertige Trefferkarte an die Seite weiter.
     /// </summary>
     /// <remarks>
-    /// Im Ansichtsmodell machte der Ablauf gut ein Drittel davon aus. Die
-    /// Trennung ist die zwischen „was gesucht wird" und „was die Seite anzeigt": Das
+    /// Die Trennung ist die zwischen „was gesucht wird" und „was die Seite anzeigt": Das
     /// Ansichtsmodell hält Eingabe, Zustand und Liste, dieser Typ die Durchführung.
     /// <para>
     /// Die Karten werden einzeln gemeldet, statt am Ende als Liste. Eine Anbieter-Suche über
@@ -133,7 +132,6 @@ namespace EchoPlay.App.ViewModels
         /// beim Einfügen an die richtige Stelle.
         /// </remarks>
         /// <returns>Das Zwischenergebnis, oder <see langword="null"/> bei Abbruch.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Online-Zweig der Suche: Provider-HTTP-/Parser-/Timeout-Fehler werden gemerkt und nach den lokalen Treffern gezeigt, damit ein Ausfall der Gegenstelle die lokalen Treffer nicht verschluckt.")]
         private async Task<OnlineOutcome?> CollectOnlineResultsAsync(
             string searchText, CancellationToken coverToken)
         {
@@ -224,7 +222,7 @@ namespace EchoPlay.App.ViewModels
         /// Ohne Bereichsfabrik bleibt das Ergebnis leer, so laufen Tests ohne Datenbank.
         /// </summary>
         /// <param name="query">Der Suchbegriff; Groß- und Kleinschreibung wird ignoriert.</param>
-        /// <returns>Die gefundenen Serien mit <c>Source = "Lokal"</c>.</returns>
+        /// <returns>Die gefundenen Serien mit <see cref="ProviderKeys.Local"/> als Quelle.</returns>
         private async Task<IReadOnlyList<ImportSeries>> SearchLocalAsync(string query)
         {
             if (_scopeFactory is null)

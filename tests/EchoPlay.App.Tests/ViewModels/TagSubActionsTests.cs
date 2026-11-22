@@ -1,6 +1,7 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
+using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,8 +19,6 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class TagSubActionsTests
     {
-        // ── Gemeinsames Setup ────────────────────────────────────────────────────
-
         private static TagManagerActionsContext BuildContext(FakeTagService tagService)
         {
             ServiceCollection services = new();
@@ -47,8 +46,6 @@ namespace EchoPlay.App.Tests.ViewModels
             TagRenameViewModel rename = new();
             return (fileList, editor, cover, rename);
         }
-
-        // ── TagLoadActions ───────────────────────────────────────────────────────
 
         [Fact]
         public async Task TagLoadActions_LoadFolderAsync_IncrementsCallCount()
@@ -91,8 +88,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("Kapitel 1", editor.Title);
             Assert.Equal("Album", editor.Album);
         }
-
-        // ── TagSaveActions ───────────────────────────────────────────────────────
 
         [Fact]
         public async Task TagSaveActions_SaveAsync_NoSelection_DoesNotWrite()
@@ -141,7 +136,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Theory]
         [InlineData(1, "1 geänderte Datei wird gespeichert.")]
         [InlineData(2, "2 geänderte Dateien werden gespeichert.")]
-        public async Task TagSaveActions_SaveAllAsync_AsksWithMatchingPluralForm(int fileCount, string erwartet)
+        public async Task TagSaveActions_SaveAllAsync_AsksWithMatchingPluralForm(int fileCount, string expected)
         {
             // Die Rückfrage nennt eine Anzahl. Bei genau einer Datei muss die
             // Einzahlform stehen, sonst liest sich der Dialog falsch.
@@ -169,7 +164,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await sut.SaveAllAsync();
 
-            Assert.Equal(erwartet, confirmation.LastMessage);
+            Assert.Equal(expected, confirmation.LastMessage);
         }
 
         [Fact]
@@ -251,8 +246,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(string.IsNullOrEmpty(editor.Title));
         }
 
-        // ── TagLookupActions ─────────────────────────────────────────────────────
-
         [Fact]
         public void TagLookupActions_ApplyLookupResult_IncrementsHasUnsavedChangesCallback()
         {
@@ -315,8 +308,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(string.IsNullOrEmpty(editor.Title));
         }
 
-        // ── TagCoverActions ──────────────────────────────────────────────────────
-
         [Fact]
         public async Task TagCoverActions_RemoveCoverAsync_NoSelection_SkipsWrite()
         {
@@ -348,8 +339,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(1, sut.ApplyCoverToAllCallCount);
             Assert.Equal(0, tagService.WriteCoverCallCount);
         }
-
-        // ── TagRenameActions ─────────────────────────────────────────────────────
 
         [Fact]
         public async Task TagRenameActions_PreviewRenameAsync_EmptyFolder_SkipsPreview()
@@ -386,8 +375,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.False(reloadCalled);
         }
 
-        // ── TagBatchRunner (Merge-Logik) ─────────────────────────────────────────
-
         [Fact]
         public void TagBatchRunner_MergeEditedIntoExisting_PrefersEdited_OverExisting()
         {
@@ -411,6 +398,43 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("Original", merged.Title);
             Assert.Equal<uint?>(3, merged.TrackNumber);
             Assert.Equal("Neues Album", merged.Album);
+        }
+
+        [Fact]
+        public async Task TagBatchRunner_WhenOneFileFails_KeepsGoingAndReportsOnce()
+        {
+            List<TagFileItemViewModel> files =
+            [
+                new(@"C:\Audio\001\track01.mp3"),
+                new(@"C:\Audio\001\track02.mp3"),
+                new(@"C:\Audio\001\track03.mp3"),
+            ];
+            List<string> written = [];
+            FakeErrorDialogService errors = new();
+
+            int failed = await TagBatchRunner.RunBatchAsync(
+                files,
+                file =>
+                {
+                    if (file.FileName == "track02.mp3")
+                    {
+                        throw new System.IO.IOException("Datei gesperrt");
+                    }
+
+                    written.Add(file.FileName);
+                    return Task.CompletedTask;
+                },
+                "Speichern fehlgeschlagen",
+                DialogKey.TagManagerSaveError,
+                errors,
+                setIsLoading: _ => { },
+                setBatchProgress: _ => { });
+
+            // Die gesperrte Datei hält die übrigen nicht auf, und der Dialog nennt sie einmal.
+            Assert.Equal(1, failed);
+            Assert.Equal(["track01.mp3", "track03.mp3"], written);
+            (string _, string message) = Assert.Single(errors.ShownDialogs);
+            Assert.Contains("track02.mp3", message, StringComparison.Ordinal);
         }
     }
 }

@@ -13,8 +13,8 @@ using Xunit;
 namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
-    /// Prüft die beiden Serien-Abschnitte der Startseite: „Weiterhören" und die Favoriten
-    /// samt der vom Anwender gespeicherten Reihenfolge.
+    /// Prüft die beiden Serien-Abschnitte der Startseite: „Weiterhören" und die Favoriten.
+    /// Die gespeicherte Reihenfolge prüft <see cref="DashboardSnapshotTests"/>.
     /// </summary>
     /// <remarks>
     /// „Weiterhören" ist der Abschnitt, der am meisten falsch machen kann: Eine Serie ohne
@@ -87,56 +87,15 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task BuildFavoriteCards_WithoutSavedOrder_SortsByTitle()
+        public async Task BuildFavoriteCards_KeepsTheGivenOrder()
         {
             DashboardSeriesSectionBuilder sut = Build();
 
             IReadOnlyList<FavoriteSeriesCardViewModel> cards = await sut.BuildFavoriteCardsAsync(
-                [new Series { Title = "TKKG" }, new Series { Title = "Bibi Blocksberg" }],
-                new FakeDashboardPositionDataService());
+                [new Series { Title = "TKKG" }, new Series { Title = "Bibi Blocksberg" }]);
 
-            Assert.Equal(["Bibi Blocksberg", "TKKG"], [.. Titles(cards)]);
-        }
-
-        [Fact]
-        public async Task BuildFavoriteCards_WithSavedOrder_FollowsIt()
-        {
-            FakeSeriesDataService store = new();
-            Series first = await AddSeriesAsync(store, "Bibi Blocksberg");
-            Series second = await AddSeriesAsync(store, "TKKG");
-
-            FakeDashboardPositionDataService positions = new();
-            await positions.SaveOrderAsync(
-                "Favoriten", [second.Id, first.Id], TestContext.Current.CancellationToken);
-
-            DashboardSeriesSectionBuilder sut = Build();
-
-            IReadOnlyList<FavoriteSeriesCardViewModel> cards = await sut.BuildFavoriteCardsAsync(
-                [first, second], positions);
-
-            // Die selbst gelegte Reihenfolge schlägt die alphabetische, sonst wäre das
-            // Sortieren per Ziehen und Ablegen beim nächsten Öffnen vergessen.
-            Assert.Equal(["TKKG", "Bibi Blocksberg"], [.. Titles(cards)]);
-        }
-
-        [Fact]
-        public async Task BuildFavoriteCards_WithPartialOrder_PutsPlacedSeriesFirst()
-        {
-            FakeSeriesDataService store = new();
-            Series placed = await AddSeriesAsync(store, "TKKG");
-            Series unplaced = await AddSeriesAsync(store, "Bibi Blocksberg");
-
-            FakeDashboardPositionDataService positions = new();
-            await positions.SaveOrderAsync(
-                "Favoriten", [placed.Id], TestContext.Current.CancellationToken);
-
-            DashboardSeriesSectionBuilder sut = Build();
-
-            IReadOnlyList<FavoriteSeriesCardViewModel> cards = await sut.BuildFavoriteCardsAsync(
-                [unplaced, placed], positions);
-
-            // Eine neu hinzugekommene Serie hängt hinten an, statt die gelegte Reihenfolge
-            // durcheinanderzubringen.
+            // Die Reihenfolge legt DashboardSnapshot fest; ein zweites Sortieren hier liefe
+            // auseinander, sobald sich eine der beiden Regeln ändert.
             Assert.Equal(["TKKG", "Bibi Blocksberg"], [.. Titles(cards)]);
         }
 
@@ -145,13 +104,10 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             DashboardSeriesSectionBuilder sut = Build();
 
-            IReadOnlyList<FavoriteSeriesCardViewModel> cards = await sut.BuildFavoriteCardsAsync(
-                [], new FakeDashboardPositionDataService());
+            IReadOnlyList<FavoriteSeriesCardViewModel> cards = await sut.BuildFavoriteCardsAsync([]);
 
             Assert.Empty(cards);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static IEnumerable<string> Titles(IReadOnlyList<FavoriteSeriesCardViewModel> cards)
         {
@@ -163,13 +119,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
         private static Dictionary<Guid, PlaybackState> Completed(Guid episodeId)
             => new() { [episodeId] = new PlaybackState { EpisodeId = episodeId, IsCompleted = true } };
-
-        private static async Task<Series> AddSeriesAsync(FakeSeriesDataService store, string title)
-        {
-            Series series = new() { Title = title };
-            await store.AddAsync(series, TestContext.Current.CancellationToken);
-            return series;
-        }
 
         private static async Task<Episode> AddEpisodeAsync(
             FakeEpisodeDataService episodes, Guid seriesId, string title)

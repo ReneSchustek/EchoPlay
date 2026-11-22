@@ -1,18 +1,12 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
-using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Models;
 using EchoPlay.Core.Search;
-using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -28,16 +22,12 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class SearchViewModel : ObservableObject, IDisposable
     {
-        private readonly ImportService _importService;
         private readonly IErrorDialogService _errorDialogService;
         private readonly ILocalizationService _localizationService;
 
         // Die Durchführung einer Suche: Anbieter fragen, Bestand durchsuchen, Treffer bauen.
-        // Das Ansichtsmodell hält davon nur noch Eingabe, Zustand und Liste.
+        // Das Ansichtsmodell hält Eingabe, Zustand und Liste.
         private readonly SearchRunner _searchRunner;
-
-        // Wird nur für lokale Suche benötigt; in Tests ohne lokale Serien kann null übergeben werden
-        private readonly IServiceScopeFactory? _scopeFactory;
 
         // Zentraler Navigationsdienst, in Unit-Tests optional, damit der Ctor testbar bleibt
         private readonly INavigationService? _navigationService;
@@ -45,17 +35,9 @@ namespace EchoPlay.App.ViewModels
         // Page-Mode-Guard prüft den Offline-Modus beim Betreten der Page; null in Tests
         private readonly IPageModeGuard? _pageModeGuard;
 
-        // Zentrale Cover-Pipeline: ersetzt den direkten Provider-URL-Download in den
-        // Trefferkarten und sorgt für DB-First-Lookup, Foreground-Priorität und Rate-Limiter.
-        private readonly BackgroundCoverService? _backgroundCoverService;
-
-        // Protokolliert Start, ersten Treffer und Gesamtdauer einer Suche. Ohne diese drei
-        // Marken lässt sich am Protokoll nicht nachrechnen, wie lange der Nutzer auf die
-        // erste Kachel gewartet hat, und genau das ist die Zahl, auf die es hier ankommt.
-        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
-
-        private readonly Stopwatch _searchStopwatch = new();
-        private bool _firstResultReported;
+        private readonly SearchTimingLog _timing;
+        private readonly SearchResultList _results = new();
+        private readonly SearchRunTracker _runs = new();
 
         private string _searchText = string.Empty;
         private bool _isLoading;
@@ -64,28 +46,6 @@ namespace EchoPlay.App.ViewModels
         private bool _showSuccessHint;
         private bool _isSpotifyFallbackHintVisible;
         private int _selectedScopeIndex;
-
-        // Eine feste Instanz, die nur geleert und befüllt wird: Die Treffer erscheinen
-        // einzeln, während die Suche noch läuft. Ein Austausch der ganzen Liste würde die
-        // Bindung bei jedem Treffer neu aufziehen.
-        private readonly ObservableCollection<SearchResultViewModel> _results = [];
-
-        // Der Rang jeder Anbieter-Karte, in derselben Reihenfolge wie die Karten selbst.
-        // Er sagt beim Einfügen, wo die nächste Karte hingehört. Karten aus dem eigenen
-        // Bestand stehen dahinter und brauchen keinen Rang.
-        private readonly List<SearchResultRank> _onlineRanks = [];
-
-        // Liste statt Single-TCS: bei Back-to-Back-Suchen laufen mehrere Aufrufe parallel,
-        // die alle abgewartet werden müssen: Der älteste verwirft seine Ergebnisse, der
-        // neueste schreibt sie. Tests warten über WaitForSearchCompleteAsync auf alle.
-        private readonly object _inflightSearchesLock = new();
-        private readonly List<TaskCompletionSource<bool>> _inflightSearches = [];
-
-        // Pro Suche neu erzeugt; canceln und disposen am Anfang der nächsten Suche oder
-        // beim Reset/CancelPendingSearchCovers, damit alte Cover-Loads keine HTTP-Requests
-        // für vergessene Treffer mehr starten und damit Treffer obsolet gewordener Suchen
-        // nicht mehr in die UI geschrieben werden.
-        private CancellationTokenSource? _searchCoversCts;
 
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Services.
@@ -124,16 +84,13 @@ namespace EchoPlay.App.ViewModels
             BackgroundCoverService? backgroundCoverService = null,
             EchoPlay.Logger.Abstractions.ILogger? logger = null)
         {
-            _importService = importService;
             _errorDialogService = errorDialogService;
             _localizationService = localizationService;
-            _scopeFactory = scopeFactory;
             _navigationService = navigationService;
             _pageModeGuard = pageModeGuard;
-            _backgroundCoverService = backgroundCoverService;
-            _logger = logger;
+            _timing = new SearchTimingLog(logger);
 
-            _results.CollectionChanged += OnResultsChanged;
+            _results.Items.CollectionChanged += OnResultsChanged;
 
             _searchRunner = new SearchRunner(
                 importService, errorDialogService, localizationService,
@@ -257,67 +214,28 @@ namespace EchoPlay.App.ViewModels
         /// Suchergebnisse der laufenden oder zuletzt beendeten Anfrage. Die Liste wächst
         /// während der Suche, jede Karte erscheint, sobald ihr Treffer feststeht.
         /// </summary>
-        public ObservableCollection<SearchResultViewModel> Results => _results;
+        public ObservableCollection<SearchResultViewModel> Results => _results.Items;
 
         private void OnResultsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(EmptyStateVisibility));
         }
 
-        /// <summary>
-        /// Reiht eine Anbieter-Karte an ihrem Rang ein.
-        /// </summary>
-        /// <remarks>
-        /// Gesucht wird die erste Stelle, an der die neue Karte vor der bereits stehenden
-        /// rangiert. Eine spät eintreffende, bessere Karte rückt damit nach oben. Der Preis
-        /// dafür, dass überhaupt schon etwas zu sehen ist, statt auf die vollständige Liste
-        /// zu warten.
-        /// </remarks>
+        /// <summary>Reiht eine Anbieter-Karte an ihrem Rang ein (siehe <see cref="SearchResultList.InsertOnline"/>).</summary>
         /// <param name="card">Die fertige Trefferkarte.</param>
         /// <param name="rank">Ihr Rang zum Suchbegriff.</param>
         internal void PublishOnlineResult(SearchResultViewModel card, SearchResultRank rank)
         {
-            ArgumentNullException.ThrowIfNull(card);
-
-            int index = 0;
-            while (index < _onlineRanks.Count && !rank.RanksBefore(_onlineRanks[index]))
-            {
-                index++;
-            }
-
-            _onlineRanks.Insert(index, rank);
-            _results.Insert(index, card);
-
-            ReportFirstResult();
+            _results.InsertOnline(card, rank);
+            _timing.ResultShown();
         }
 
-        /// <summary>
-        /// Hängt eine Karte aus dem eigenen Bestand hinten an.
-        /// </summary>
+        /// <summary>Hängt eine Karte aus dem eigenen Bestand hinten an.</summary>
         /// <param name="card">Die fertige Trefferkarte.</param>
         internal void PublishLocalResult(SearchResultViewModel card)
         {
-            ArgumentNullException.ThrowIfNull(card);
-
-            _results.Add(card);
-
-            ReportFirstResult();
-        }
-
-        /// <summary>
-        /// Schreibt die Wartezeit bis zur ersten Kachel ins Protokoll, einmal je Suche.
-        /// </summary>
-        private void ReportFirstResult()
-        {
-            if (_firstResultReported)
-            {
-                return;
-            }
-
-            _firstResultReported = true;
-            _logger?.Info(
-                "Suche \"{Query}\": erster Treffer nach {ElapsedMs} ms.",
-                _searchText, _searchStopwatch.ElapsedMilliseconds);
+            _results.AddLocal(card);
+            _timing.ResultShown();
         }
 
         /// <summary>
@@ -331,31 +249,12 @@ namespace EchoPlay.App.ViewModels
         /// Verhindert, dass der leere Zustand beim ersten Aufruf der Seite angezeigt wird.
         /// </summary>
         public Visibility EmptyStateVisibility =>
-            _hasSearched && !_isLoading && _results.Count == 0
+            _hasSearched && !_isLoading && _results.Items.Count == 0
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-        /// <summary>
-        /// Wartet auf den Abschluss aller aktuell laufenden Suchanfragen (für deterministische Tests).
-        /// Snapshottet die Liste der laufenden Such-TCS, damit Back-to-Back-Suchen vollständig
-        /// abgewartet werden können, auch dann, wenn die ältere Suche aufgrund eines Token-Cancels
-        /// kurz vor dem Abschluss steht.
-        /// </summary>
-        internal Task WaitForSearchCompleteAsync()
-        {
-            Task[] tasks;
-            lock (_inflightSearchesLock)
-            {
-                if (_inflightSearches.Count == 0)
-                {
-                    return Task.CompletedTask;
-                }
-
-                tasks = _inflightSearches.Select(tcs => tcs.Task).ToArray();
-            }
-
-            return Task.WhenAll(tasks);
-        }
+        /// <summary>Wartet auf alle gerade laufenden Suchen (für deterministische Tests).</summary>
+        internal Task WaitForSearchCompleteAsync() => _runs.WaitForAllAsync();
 
         /// <summary>Startet eine neue Suchanfrage mit dem aktuellen Suchtext.</summary>
         public ICommand SearchCommand { get; }
@@ -430,7 +329,7 @@ namespace EchoPlay.App.ViewModels
         ///
         /// Reset-/Abbruch-Disziplin: Trefferliste und Status-Hinweise werden
         /// noch vor dem ersten <c>await</c> geleert, damit alte Karten verschwinden bevor
-        /// der HTTP-Call startet. Der <see cref="StartNewCoverScope"/>-Token markiert
+        /// der HTTP-Call startet. Das Token aus <see cref="SearchRunTracker.Begin"/> markiert
         /// zugleich obsolete Suchen. Nach jedem Await prüft der Code, ob inzwischen eine
         /// neue Suche begonnen hat und verwirft dann die eigenen Ergebnisse.
         /// </summary>
@@ -442,63 +341,28 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            TaskCompletionSource<bool> completedSource = new(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-            lock (_inflightSearchesLock)
-            {
-                _inflightSearches.Add(completedSource);
-            }
-
-            // Cancel + neuer CTS: aktuelle Suche wird zum Inhaber des Tokens, alle älteren
-            // Suchen sehen ab hier IsCancellationRequested == true und verwerfen ihre Treffer.
-            CancellationToken coverToken = StartNewCoverScope();
+            // Die aktuelle Suche wird Inhaber des Tokens, alle älteren sehen ab hier
+            // IsCancellationRequested == true und verwerfen ihre Treffer.
+            (CancellationToken coverToken, TaskCompletionSource<bool> completedSource) = _runs.Begin();
 
             // Sucheingabe einfrieren, damit nachträgliche Änderungen am Feld während
             // der laufenden Anfrage den Treffer-Build nicht verfälschen.
             string searchText = _searchText;
             SearchSource scope = SelectedScope;
 
-            // Sofort-Reset der Trefferansicht VOR dem ersten Await, damit die UI zeigt sofort
-            // Loader plus leere Liste, alte Karten verschwinden noch im selben Frame.
-            _hasSearched = false;
-            ClearResults();
-            ShowSuccessHint = false;
-            IsOnboardingHintVisible = false;
-            IsSpotifyFallbackHintVisible = false;
-            IsLoading = true;
-
-            _firstResultReported = false;
-            _searchStopwatch.Restart();
-            _logger?.Info("Suche \"{Query}\" gestartet.", searchText);
+            ResetResultsForNewSearch();
+            _timing.Started(searchText);
 
             try
             {
                 SearchRunner.SearchRunResult? outcome = await _searchRunner.RunAsync(searchText, scope, coverToken);
                 if (outcome is null) return;
 
-                IsSpotifyFallbackHintVisible = outcome.SpotifyFallbackApplied;
-                _hasSearched = true;
-                OnPropertyChanged(nameof(EmptyStateVisibility));
-
-                _logger?.Info(
-                    "Suche \"{Query}\" abgeschlossen: {ResultCount} Treffer nach {ElapsedMs} ms.",
-                    searchText, _results.Count, _searchStopwatch.ElapsedMilliseconds);
-
-                // Online-Fehlerhinweis erst NACH den lokalen Treffern, denn die lokale Serie ist
-                // dann bereits sichtbar, unabhängig vom Ausgang des Online-Zweigs.
-                if (outcome.OnlineError is not null && !coverToken.IsCancellationRequested)
-                {
-                    await _errorDialogService.ShowAsync(
-                        _localizationService.Get("OnlineSearchFailedTitle"), outcome.OnlineError.Message, DialogKey.OnlineSearchFailed);
-                }
+                await ShowOutcomeAsync(outcome, coverToken);
             }
             catch (Exception ex)
             {
-                // Restfehler (z.B. lokale DB): obsolete Suche zeigt keinen Fehler mehr.
-                if (coverToken.IsCancellationRequested) return;
-
-                await _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message, DialogKey.OnlineSearchFailed);
+                await ShowFailureUnlessObsoleteAsync(ex, isObsolete: coverToken.IsCancellationRequested);
             }
             finally
             {
@@ -509,11 +373,51 @@ namespace EchoPlay.App.ViewModels
                     IsLoading = false;
                 }
 
-                lock (_inflightSearchesLock)
-                {
-                    _ = _inflightSearches.Remove(completedSource);
-                }
-                _ = completedSource.TrySetResult(true);
+                _runs.End(completedSource);
+            }
+        }
+
+        /// <summary>
+        /// Zeigt einen Restfehler (z.B. lokale DB); eine überholte Suche zeigt keinen mehr.
+        /// </summary>
+        private Task ShowFailureUnlessObsoleteAsync(Exception ex, bool isObsolete) =>
+            isObsolete
+                ? Task.CompletedTask
+                : _errorDialogService.ShowAsync(
+                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message, DialogKey.OnlineSearchFailed);
+
+        /// <summary>
+        /// Leert die Trefferansicht VOR dem ersten Await: Die UI zeigt sofort Loader und leere
+        /// Liste, alte Karten verschwinden noch im selben Frame.
+        /// </summary>
+        private void ResetResultsForNewSearch()
+        {
+            _hasSearched = false;
+            _results.Clear();
+            ShowSuccessHint = false;
+            IsOnboardingHintVisible = false;
+            IsSpotifyFallbackHintVisible = false;
+            IsLoading = true;
+        }
+
+        /// <summary>
+        /// Zeigt das Ergebnis einer Suche. Der Online-Fehlerhinweis kommt erst NACH den lokalen
+        /// Treffern, denn die lokale Serie ist dann bereits sichtbar, unabhängig vom Ausgang des
+        /// Online-Zweigs.
+        /// </summary>
+        private async Task ShowOutcomeAsync(SearchRunner.SearchRunResult outcome, CancellationToken coverToken)
+        {
+            IsSpotifyFallbackHintVisible = outcome.SpotifyFallbackApplied;
+            _hasSearched = true;
+            OnPropertyChanged(nameof(EmptyStateVisibility));
+
+            _timing.Completed(_results.Items.Count);
+
+            // Das Token sagt nur, ob die Suche noch aktuell ist; den offenen Dialog bricht es nicht ab.
+            if (outcome.OnlineError is not null && !coverToken.IsCancellationRequested)
+            {
+                await _errorDialogService.ShowAsync(
+                    _localizationService.Get("OnlineSearchFailedTitle"), outcome.OnlineError.Message, DialogKey.OnlineSearchFailed, CancellationToken.None);
             }
         }
 
@@ -536,66 +440,24 @@ namespace EchoPlay.App.ViewModels
                 OnPropertyChanged(nameof(SearchText));
             }
 
-            ClearResults();
+            _results.Clear();
             _hasSearched = false;
             ShowSuccessHint = false;
             IsSpotifyFallbackHintVisible = false;
             OnPropertyChanged(nameof(EmptyStateVisibility));
         }
 
-        // Pro Treffer ein BitmapImage; ohne Freigabe steigen die Heap-Bytes nach jeder
-        // Suche an, weil die Bindings die alten Karten noch kurz halten.
-        private void ReleaseCurrentResults()
-        {
-            foreach (SearchResultViewModel result in _results)
-            {
-                result.ClearCoverImage();
-            }
-        }
-
-        /// <summary>Gibt die Cover frei und leert Trefferliste samt Rangfolge.</summary>
-        private void ClearResults()
-        {
-            ReleaseCurrentResults();
-            _onlineRanks.Clear();
-            _results.Clear();
-        }
-
         /// <summary>
         /// Bricht alle laufenden Cover-Lade-Operationen der aktuellen Trefferliste ab.
-        /// Wird beim Verlassen der Page oder vor dem Start einer neuen Suche aufgerufen.
+        /// Wird beim Verlassen der Page aufgerufen.
         /// </summary>
-        public void CancelPendingSearchCovers()
-        {
-            CancellationTokenSource? old = _searchCoversCts;
-            _searchCoversCts = null;
-            if (old is null) return;
-
-            try { old.Cancel(); }
-            catch (ObjectDisposedException)
-            {
-                // CTS war bereits disposed; Cancel ist dann ein No-Op, der weiter unten folgende
-                // Dispose-Aufruf ist idempotent. Bewusster Schluck ohne Logging.
-            }
-            old.Dispose();
-        }
-
-        /// <summary>
-        /// Beendet den vorherigen Cover-Scope (Cancel + Dispose) und liefert das Token
-        /// einer frischen <see cref="CancellationTokenSource"/> für die neue Suche.
-        /// </summary>
-        private CancellationToken StartNewCoverScope()
-        {
-            CancelPendingSearchCovers();
-            _searchCoversCts = new CancellationTokenSource();
-            return _searchCoversCts.Token;
-        }
+        public void CancelPendingSearchCovers() => _runs.CancelCurrent();
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            CancelPendingSearchCovers();
-            ReleaseCurrentResults();
+            _runs.Dispose();
+            _results.ReleaseCovers();
         }
     }
 }

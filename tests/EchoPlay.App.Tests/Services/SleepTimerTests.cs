@@ -13,7 +13,7 @@ namespace EchoPlay.App.Tests.Services
     public sealed class SleepTimerTests
     {
         [Fact]
-        public void Tick_OhneEingestellteDauer_MeldetNichts()
+        public void Tick_WithoutDuration_ReportsNothing()
         {
             SleepTimer timer = new();
 
@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Tick_ZiehtDieVerstricheneZeitAb()
+        public void Tick_SubtractsTheElapsedTime()
         {
             SleepTimer timer = new();
             timer.Set(TimeSpan.FromSeconds(10));
@@ -33,7 +33,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Tick_BeiAblauf_MeldetEinmalUndSchaltetAb()
+        public void Tick_OnExpiry_ReportsOnceAndSwitchesOff()
         {
             // Die Meldung darf genau einmal kommen: Der Aufrufer hält daraufhin die Wiedergabe
             // an. Ein zweites Mal würde er sie erneut anhalten, obwohl der Nutzer sie
@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Tick_UeberschreitetDieDauer_MeldetTrotzdem()
+        public void Tick_ExceedsTheDuration_StillReports()
         {
             // Der Takt kann gröber sein als die Restzeit, dann liegt der Wert unter null und
             // muss trotzdem als abgelaufen gelten.
@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Set_MitNull_SchaltetAb()
+        public void Set_WithNull_SwitchesOff()
         {
             SleepTimer timer = new();
             timer.Set(TimeSpan.FromMinutes(30));
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Set_WaehrendDesLaufens_BeginntVonVorn()
+        public void Set_WhileRunning_StartsOver()
         {
             SleepTimer timer = new();
             timer.Set(TimeSpan.FromSeconds(10));

@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.AppleMusic.Scoring;
 using EchoPlay.Core.Scoring;
@@ -21,7 +22,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
         /// <summary>
         /// Führt eine fachliche Hörspiel-Bewertung durch.
-        /// Die übergebenen Daten werden bewusst ignoriert, da dieser Fake ausschließlich für kontrollierte Tests gedacht ist.
+        /// Die übergebenen Daten werden ignoriert, da dieser Fake ausschließlich für kontrollierte Tests gedacht ist.
         /// </summary>
         /// <param name="source">Der iTunes-Künstler.</param>
         /// <param name="searchQuery">Der ursprüngliche Suchbegriff.</param>
@@ -45,7 +46,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
             CancellationToken cancellationToken = default)
         {
             HoerspielScoreResult score = await ScoreAsync(artist, searchQuery, cancellationToken);
-            return new AppleMusicArtistScore(score, _artworkUrl);
+            return new AppleMusicArtistScore(score, _artworkUrl is null ? null : new Uri(_artworkUrl));
         }
     }
 }

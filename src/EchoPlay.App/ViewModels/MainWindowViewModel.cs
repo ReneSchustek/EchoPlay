@@ -18,6 +18,7 @@ namespace EchoPlay.App.ViewModels
     public sealed class MainWindowViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
         private readonly INavigationService _navigationService;
 
         private bool _isMediathekOnlineVisible;
@@ -34,6 +35,7 @@ namespace EchoPlay.App.ViewModels
             INavigationService navigationService)
         {
             _scopeFactory = scopeFactory;
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(scopeFactory, nameof(MainWindowViewModel));
             _navigationService = navigationService;
         }
 
@@ -87,10 +89,10 @@ namespace EchoPlay.App.ViewModels
                 IsMediathekLokalVisible = !hideLocal;
                 IsTagManagerVisible = !hideLocal;
             }
-            catch
+            catch (Exception ex)
             {
-                // Bei Fehler: Online-Eintrag sicherheitshalber verstecken,
-                // lokale Einträge bleiben sichtbar (konservativer Fallback).
+                // Online-Eintrag sicherheitshalber verstecken, lokale Einträge bleiben sichtbar.
+                _logger?.Error("Einstellungen für die Navigation nicht lesbar: {Reason}", ex, ex.Message);
                 IsMediathekOnlineVisible = false;
             }
         }
@@ -114,6 +116,7 @@ namespace EchoPlay.App.ViewModels
             NavigationTarget? target = menuTag switch
             {
                 "Dashboard" => NavigationTarget.Dashboard,
+                "Announced" => NavigationTarget.Announced,
                 "OnlineLibrary" => NavigationTarget.OnlineLibrary,
                 "LocalLibrary" => NavigationTarget.LocalLibrary,
                 "TagManager" => NavigationTarget.TagManager,

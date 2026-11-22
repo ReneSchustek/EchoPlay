@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Parsing
@@ -10,9 +11,9 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// </summary>
     public sealed class EpisodeFolderParser
     {
-        // Defensiver Timeout gegen pathologische Eingaben; der Standardausdruck hat keine
-        // nested Quantoren, aber benutzerdefinierte Muster (z.B. über Settings) könnten
-        // Catastrophic Backtracking provozieren. 500 ms ist für einen Ordnernamen großzügig.
+        // Ein Muster aus den Einstellungen mit mehreren {*} und {title} hintereinander kann bei
+        // einem langen Namen sehr oft zurückverfolgen. Ein Ordnername ist in Mikrosekunden
+        // geprüft; 500 ms sind die Grenze, ab der es kein Treffer mehr ist.
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
 
         private readonly Regex _pattern;
@@ -69,26 +70,41 @@ namespace EchoPlay.LocalLibrary.Parsing
             number = null;
             title = null;
 
-            Match match;
+            Match? match = TryMatch(folderName);
+            if (match is null || !match.Success)
+            {
+                return false;
+            }
+
+            ReadGroups(match, out number, out title);
+            return true;
+        }
+
+        private Match? TryMatch(string folderName)
+        {
             try
             {
-                match = _pattern.Match(folderName);
+                return _pattern.Match(folderName);
             }
             catch (RegexMatchTimeoutException)
             {
                 // Pathologische Eingabe: Der Parser liefert „kein Treffer" statt die App zu blockieren.
-                return false;
+                return null;
             }
+        }
 
-            if (!match.Success)
-            {
-                return false;
-            }
+        /// <summary>
+        /// Liest Nummer und Titel aus dem Treffer, soweit das Muster sie enthält.
+        /// </summary>
+        private void ReadGroups(Match match, out int? number, out string? title)
+        {
+            number = null;
+            title = null;
 
             if (_hasNumber)
             {
                 Group numberGroup = match.Groups["number"];
-                if (numberGroup.Success && int.TryParse(numberGroup.Value, out int parsed))
+                if (numberGroup.Success && int.TryParse(numberGroup.Value, NumberStyles.None, CultureInfo.InvariantCulture, out int parsed))
                 {
                     number = parsed;
                 }
@@ -102,14 +118,12 @@ namespace EchoPlay.LocalLibrary.Parsing
                     title = titleGroup.Value.Trim();
                 }
             }
-
-            return true;
         }
 
         /// <summary>
         /// Entfernt eine führende laufende Nummer aus einem Ordner- oder Dateinamen.
         /// Nützlich für Bibliotheken, in denen Ordner ein lokales Zählpräfix tragen,
-        /// das nicht Teil des Hörspiel-Titels ist (z.B. "001 - 116 Klassenfahrt" → "116 Klassenfahrt").
+        /// das nicht Teil des Hörspiel-Titels ist (etwa "001 - 116 Klassenfahrt" → "116 Klassenfahrt").
         /// Muster: 1–4 Stellen, gefolgt von mindestens einem Leerzeichen, Bindestrich oder Punkt.
         /// </summary>
         /// <param name="name">Der zu bereinigende Ordner- oder Dateiname.</param>
@@ -132,31 +146,18 @@ namespace EchoPlay.LocalLibrary.Parsing
 
         /// <summary>
         /// Wandelt das Ordnermuster in einen regulären Ausdruck um.
-        /// Alle Zeichen außerhalb der Platzhalter werden escaped.
+        /// Alle Zeichen außerhalb der Platzhalter gelten wörtlich.
         /// <c>{*}</c> wird als nicht-erfassende Gruppe <c>(?:.+?)</c> übersetzt.
         /// </summary>
         private static string BuildRegex(string folderPattern, out bool hasNumber, out bool hasTitle)
         {
-            hasNumber = false;
-            hasTitle = false;
+            hasNumber = folderPattern.Contains("{number:000}", StringComparison.Ordinal)
+                || folderPattern.Contains("{number}", StringComparison.Ordinal);
+            hasTitle = folderPattern.Contains("{title}", StringComparison.Ordinal);
 
-            // Platzhalter in geordneter Reihenfolge ersetzen, damit die Flags korrekt gesetzt werden
-            string working = folderPattern;
-
-            if (working.Contains("{number:000}", StringComparison.Ordinal) || working.Contains("{number}", StringComparison.Ordinal))
-            {
-                hasNumber = true;
-            }
-
-            if (working.Contains("{title}", StringComparison.Ordinal))
-            {
-                hasTitle = true;
-            }
-
-            // Platzhalter der Reihe nach ersetzen, denn {*} muss vor {number} stehen, damit keine
-            // Teilmuster-Kollisionen auftreten. Regex.Escape stellt sicher, dass Sonderzeichen im
-            // literalen Mustertext (z.B. " - ") korrekt als solche behandelt werden.
-            string escaped = Regex.Escape(working)
+            // Regex.Escape maskiert den ganzen Text, auch die Platzhalter („{" wird zu „\{").
+            // Ersetzt wird deshalb deren maskierte Form, sonst fände keiner einen Treffer.
+            string escaped = Regex.Escape(folderPattern)
                 .Replace(Regex.Escape("{*}"), "(?:.+?)", StringComparison.Ordinal)
                 .Replace(Regex.Escape("{number:000}"), "(?<number>\\d+)", StringComparison.Ordinal)
                 .Replace(Regex.Escape("{number}"), "(?<number>\\d+)", StringComparison.Ordinal)

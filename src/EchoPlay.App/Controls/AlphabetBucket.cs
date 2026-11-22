@@ -7,7 +7,7 @@ namespace EchoPlay.App.Controls
     /// <summary>
     /// Ein Buchstabe der Sprungleiste samt seiner Darstellung.
     /// <para>
-    /// Trägt bewusst keine Farbe: Ob ein Buchstabe belegt und ob er der aktive ist, zeigt
+    /// Trägt keine Farbe: Ob ein Buchstabe belegt und ob er der aktive ist, zeigt
     /// die Leiste über Schriftschnitt und Rahmen. Ein Zustand, der allein an der Farbe
     /// hängt, ist für einen Teil der Nutzer gar kein Zustand. Eine Farbe im Quelltext
     /// wäre zugleich an der Palette vorbei.

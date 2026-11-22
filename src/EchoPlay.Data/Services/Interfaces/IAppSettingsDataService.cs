@@ -3,7 +3,7 @@ using EchoPlay.Data.Entities.Settings;
 namespace EchoPlay.Data.Services.Interfaces
 {
     /// <summary>
-    /// Definiert den Vertrag für den Zugriff auf die anwendungsweiten Einstellungen.
+    /// Zugriff auf die anwendungsweiten Einstellungen.
     /// Die Einstellungen werden als einzelne Zeile in der Datenbank gespeichert.
     /// Falls noch keine Zeile existiert, wird beim ersten Zugriff automatisch eine Standardinstanz angelegt.
     /// </summary>

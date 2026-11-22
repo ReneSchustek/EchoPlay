@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -15,7 +16,7 @@ namespace EchoPlay.App.ViewModels
     /// Beschafft die Cover für die Kacheln der Startseite.
     /// </summary>
     /// <remarks>
-    /// Der Startpfad ist bewusst eng: Er liest ausschließlich aus der Datenbank, und zwar
+    /// Der Startpfad ist eng: Er liest ausschließlich aus der Datenbank, und zwar
     /// alle Folgen-Cover eines Durchgangs in einer einzigen Abfrage. Was dort fehlt, zeigt
     /// zunächst das Serien-Cover; die betroffenen Kacheln werden vorgemerkt und bekommen ihr
     /// eigenes Bild nachgereicht, sobald der Hintergrunddienst es aus Dateisystem, Kennzeichnung
@@ -28,6 +29,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ICoverService? _coverService;
         private readonly BackgroundCoverService? _backgroundCoverService;
         private readonly MicrosoftDispatcherQueue? _dispatcherQueue;
+        private readonly ILogger? _logger;
 
         // Zuordnung Folgen-Id → offene Kacheln, damit der Hintergrund-Rückruf den passenden
         // Kachelsatz mit dem nachgeladenen Cover versorgen kann.
@@ -46,16 +48,19 @@ namespace EchoPlay.App.ViewModels
         /// <param name="coverService">Zentraler Cover-Dienst. Ohne ihn bleibt der Zwischenspeicher leer.</param>
         /// <param name="backgroundCoverService">Trägt fehlende Folgen-Cover nach. Ohne ihn entfällt das Nachtragen.</param>
         /// <param name="dispatcherQueue">Oberflächen-Warteschlange für die Bilderzeugung. Ohne sie läuft die Umwandlung auf einem Hintergrund-Task.</param>
+        /// <param name="logger">Protokolliert übersprungene Cover-Quellen. Nullable für Tests.</param>
         public DashboardCoverProvider(
             IServiceScopeFactory scopeFactory,
             ICoverService? coverService,
             BackgroundCoverService? backgroundCoverService,
-            MicrosoftDispatcherQueue? dispatcherQueue)
+            MicrosoftDispatcherQueue? dispatcherQueue,
+            ILogger? logger = null)
         {
             _scopeFactory = scopeFactory;
             _coverService = coverService;
             _backgroundCoverService = backgroundCoverService;
             _dispatcherQueue = dispatcherQueue;
+            _logger = logger;
         }
 
         /// <summary>
@@ -178,7 +183,7 @@ namespace EchoPlay.App.ViewModels
 
         // Wird beim ersten Cover-Aufruf erzeugt und danach weiterverwendet.
         private ICoverViewModelFactory CoverFactory =>
-            _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService);
+            _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService, _logger);
 
         /// <summary>
         /// Holt das Folgen-Cover: erst aus dem Zwischenspeicher des Durchgangs, sonst mit

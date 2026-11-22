@@ -9,10 +9,10 @@ namespace EchoPlay.App.Views
     /// Aufbewahrungszeit.
     /// </summary>
     /// <remarks>
-    /// Den Takt der Live-Ansicht führt allein das
-    /// <see cref="ViewModels.MaintenanceSettingsViewModel"/>. Die Seite zeichnet, sobald
-    /// sich die Einträge ändern. Ein zweiter Zeitgeber hier läse dieselben Daten im
-    /// selben Zwei-Sekunden-Takt noch einmal.
+    /// Wann die Live-Ansicht neu liest, entscheidet allein das
+    /// <see cref="ViewModels.LogViewerViewModel"/>: sobald ein neuer Eintrag
+    /// geschrieben wird. Die Seite zeichnet nur, wenn sich die Einträge geändert haben; ein
+    /// eigener Zeitgeber hier läse dieselben Daten ein zweites Mal.
     /// </remarks>
     public sealed partial class SettingsPage : Page
     {
@@ -26,12 +26,12 @@ namespace EchoPlay.App.Views
 
 
         /// <summary>
-        /// Holt die Einträge neu aus dem Puffer und zeichnet sie. Für manuellen Refresh,
-        /// Live-Timer und den ersten Aufbau der Seite.
+        /// Holt die Einträge neu aus dem Puffer und zeichnet sie. Für den Knopf
+        /// „Aktualisieren", die Filter und den ersten Aufbau der Seite.
         /// </summary>
         private void RefreshLogView()
         {
-            ViewModel.MaintenanceVM.RefreshLogs();
+            ViewModel.LogViewerVM.RefreshLogs();
             RenderLogView();
         }
 
@@ -55,7 +55,7 @@ namespace EchoPlay.App.Views
             Microsoft.UI.Xaml.Documents.Paragraph paragraph = new();
 
             foreach (string entry in EchoPlay.App.Helpers.LogViewBuilder.BuildLines(
-                ViewModel.MaintenanceVM.LogEntries, ViewModel.MaintenanceVM.IsLogViewerAvailable))
+                ViewModel.LogViewerVM.LogEntries, ViewModel.LogViewerVM.IsLogViewerAvailable))
             {
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = entry });
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());
@@ -74,7 +74,7 @@ namespace EchoPlay.App.Views
         /// Anzeige nicht am ViewModel hängt, sondern von Hand gefüllt wird.
         /// </summary>
         /// <remarks>
-        /// Hier steht bewusst <see cref="RefreshLogView"/> und nicht das reine
+        /// Hier steht <see cref="RefreshLogView"/> und nicht das reine
         /// <see cref="RenderLogView"/>, obwohl der Setter im ViewModel selbst schon neu filtert:
         /// <c>SetProperty</c> meldet die Änderung, <b>bevor</b> es <c>RefreshLogs()</c> aufruft.
         /// Wer hier nur zeichnet, malt den vorherigen Filterstand. Die Anzeige hängt dann
@@ -83,9 +83,9 @@ namespace EchoPlay.App.Views
         /// </remarks>
         /// <param name="sender">Das ViewModel.</param>
         /// <param name="e">Enthält den Namen der geänderten Eigenschaft.</param>
-        private void OnMaintenancePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void OnLogViewerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is nameof(ViewModel.MaintenanceVM.LogSearchText) or nameof(ViewModel.MaintenanceVM.LogMinimumLevel))
+            if (e.PropertyName is nameof(ViewModel.LogViewerVM.LogSearchText) or nameof(ViewModel.LogViewerVM.LogMinimumLevel))
             {
                 RefreshLogView();
             }
@@ -106,13 +106,12 @@ namespace EchoPlay.App.Views
 
         /// <summary>
         /// Zeichnet den Protokollblock neu, sobald das Ansichtsmodell neue Einträge
-        /// eingelesen hat: im Live-Betrieb alle zwei Sekunden, sonst auf Anforderung.
+        /// eingelesen hat, im Live-Betrieb mit jedem neuen Eintrag, sonst auf Anforderung.
         /// </summary>
         /// <remarks>
         /// Zeichnet nur und lädt nicht: <see cref="RefreshLogView"/> würde den Puffer neu
-        /// einlesen, damit erneut die Sammlung ändern und sich selbst aufrufen. Genau diese
-        /// Schleife hat die Anwendung beim ersten Versuch ohne eine einzige Protokollzeile
-        /// beendet.
+        /// einlesen, damit erneut die Sammlung ändern und sich selbst aufrufen: eine Schleife,
+        /// die die Anwendung ohne eine einzige Protokollzeile beendet.
         /// </remarks>
         private void OnLogEntriesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {

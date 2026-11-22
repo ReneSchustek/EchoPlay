@@ -21,10 +21,11 @@ namespace EchoPlay.AppleMusic.Tests.Clients
     /// </summary>
     public sealed class AppleMusicLookupCapTests
     {
+        // Die Obergrenze, die iTunes je Lookup-Antwort einhält.
         private const int Cap = 200;
 
         [Fact]
-        public async Task LookupAlbumsAsync_UnterDemDeckel_FragtNurEinmal()
+        public async Task LookupAlbumsAsync_BelowTheCap_QueriesOnlyOnce()
         {
             SequenceHandler handler = new([BuildResponse(1, 10)]);
             AppleMusicSearchClient client = BuildClient(handler);
@@ -37,7 +38,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
         }
 
         [Fact]
-        public async Task LookupAlbumsAsync_DeckelAusgeschoepft_FragtNeuesteNach()
+        public async Task LookupAlbumsAsync_CapReached_QueriesNewestToo()
         {
             SequenceHandler handler = new([BuildResponse(1, Cap), BuildResponse(Cap + 1, 5)]);
             AppleMusicSearchClient client = BuildClient(handler);
@@ -50,9 +51,9 @@ namespace EchoPlay.AppleMusic.Tests.Clients
         }
 
         [Fact]
-        public async Task LookupAlbumsAsync_DeckelAusgeschoepft_LegtBeideAntwortenZusammen()
+        public async Task LookupAlbumsAsync_CapReached_MergesBothResponses()
         {
-            // Die zweite Antwort überschneidet sich bewusst mit der ersten: iTunes liefert in
+            // Die zweite Antwort überschneidet sich mit der ersten: iTunes liefert in
             // beiden Reihenfolgen dieselben Alben, nur unterschiedlich beschnitten.
             SequenceHandler handler = new([BuildResponse(1, Cap), BuildResponse(Cap - 4, 10)]);
             AppleMusicSearchClient client = BuildClient(handler);
@@ -67,7 +68,7 @@ namespace EchoPlay.AppleMusic.Tests.Clients
         }
 
         [Fact]
-        public async Task LookupAlbumsAsync_DeckelAusgeschoepft_BehaeltDenKuenstlerEintragEinmal()
+        public async Task LookupAlbumsAsync_CapReached_KeepsTheArtistEntryOnce()
         {
             SequenceHandler handler = new([BuildResponse(1, Cap), BuildResponse(Cap + 1, 3)]);
             AppleMusicSearchClient client = BuildClient(handler);
@@ -79,8 +80,6 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 r => string.Equals(r.WrapperType, "artist", StringComparison.OrdinalIgnoreCase));
             Assert.Equal(1, artistEntries);
         }
-
-        // ── Test-Helfer ──────────────────────────────────────────────────────────
 
         /// <summary>Baut eine Lookup-Antwort mit Künstler-Eintrag und fortlaufenden Alben.</summary>
         /// <param name="firstId">Collection-ID des ersten Albums.</param>

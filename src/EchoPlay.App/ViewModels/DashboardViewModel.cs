@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,8 +19,9 @@ namespace EchoPlay.App.ViewModels
     /// ViewModel für die Startseite.
     /// </summary>
     /// <remarks>
-    /// Die Seite besteht aus fünf Abschnitten (Neuerscheinungen, Favoriten, Weiterhören,
-    /// „läuft gerade" und „zuletzt gehört"), und jeder hat sein eigenes Ansichtsmodell.
+    /// Die Seite besteht aus sechs Abschnitten (Neuerscheinungen, Veröffentlichungen des
+    /// Monats, Favoriten, Weiterhören, „läuft gerade" und „zuletzt gehört"), und jeder hat
+    /// sein eigenes Ansichtsmodell.
     /// Dieses hier liest die gemeinsame Datengrundlage einmal
     /// (<see cref="DashboardSnapshot"/>), lässt die Abschnitte daraus bauen und verteilt die
     /// Ergebnisse. Bindungen sprechen die Abschnitte direkt an, etwa
@@ -34,6 +36,7 @@ namespace EchoPlay.App.ViewModels
         private readonly DashboardSeriesSectionBuilder _sectionBuilder;
         private readonly NewReleaseGroupBuilder _newReleaseBuilder;
         private readonly INewReleaseEventService? _newReleaseEventService;
+        private readonly ReleaseCalendarRefreshService? _releaseCalendarService;
         private readonly DispatcherQueue? _uiDispatcherQueue;
 
         private bool _isLoading;
@@ -52,13 +55,13 @@ namespace EchoPlay.App.ViewModels
             ArgumentNullException.ThrowIfNull(context.LoggerFactory);
 
             _scopeFactory = context.ScopeFactory;
-            _logger = context.LoggerFactory.CreateLogger("DashboardViewModel");
+            _logger = context.LoggerFactory.CreateLogger(nameof(DashboardViewModel));
 
             IClock resolvedClock = context.Clock ?? new SystemClock();
-            _uiDispatcherQueue = TryGetDispatcherQueue();
+            _uiDispatcherQueue = UiDispatcher.TryGetForCurrentThread();
 
             _coverProvider = new DashboardCoverProvider(
-                context.ScopeFactory, context.CoverService, context.BackgroundCoverService, _uiDispatcherQueue);
+                context.ScopeFactory, context.CoverService, context.BackgroundCoverService, _uiDispatcherQueue, _logger);
 
             NewEpisodeCardServices cardServices = new(
                 context.ErrorDialogService,
@@ -73,25 +76,64 @@ namespace EchoPlay.App.ViewModels
                 context.ScopeFactory, _coverProvider, cardServices, resolvedClock, _logger);
 
             NeuerscheinungenVM = new DashboardNeuerscheinungenViewModel();
+
+            ReleaseCalendarVM = CreateReleaseCalendar(context, resolvedClock, _logger);
             FavoritenVM = new DashboardFavoritenViewModel(context.ScopeFactory, _logger);
             WeiterhoerenVM = new DashboardWeiterhoerenViewModel();
             InProgressVM = new DashboardInProgressViewModel();
             ZuletztGehoertVM = new DashboardRecentlyPlayedViewModel();
 
+            _newReleaseEventService = context.NewReleaseEventService;
+            _releaseCalendarService = context.ReleaseCalendarService;
+            SubscribeToChanges();
+        }
+
+        /// <summary>
+        /// Baut das Kalender-Sub-VM samt seiner Datenquelle.
+        /// </summary>
+        private static DashboardReleaseCalendarViewModel CreateReleaseCalendar(
+            DashboardViewModelContext context,
+            IClock clock,
+            ILogger logger)
+        {
+            // Monatsgrenzen in der Zeitzone des Rechners, Monatsnamen in der Sprache der Oberfläche.
+            CultureInfo uiCulture = NewReleaseGroupBuilder.ResolveUiCulture();
+            return new DashboardReleaseCalendarViewModel(
+                new ReleaseCalendarSource(context.ScopeFactory, clock, TimeZoneInfo.Local, uiCulture, context.LocalizationService),
+                clock,
+                TimeZoneInfo.Local,
+                uiCulture,
+                logger);
+        }
+
+        /// <summary>
+        /// Meldet das ViewModel bei den Diensten an, deren Änderungen einzelne Abschnitte neu laden.
+        /// </summary>
+        private void SubscribeToChanges()
+        {
             // Entfernt oder sortiert der Nutzer Favoriten, ändert sich der Hinweis darüber.
             FavoritenVM.FavoritesChanged += OnFavoritesChanged;
 
             // Die Prüfung auf Neuerscheinungen läuft nach dem Favorisieren im Hintergrund
             // weiter. Ohne dieses Abo bliebe die schon gezeichnete Seite auf altem Stand.
-            _newReleaseEventService = context.NewReleaseEventService;
             if (_newReleaseEventService is not null)
             {
                 _newReleaseEventService.CacheChanged += OnNewReleaseCacheChanged;
+            }
+
+            // Der Kalender füllt sich nach dem Start stapelweise. Jeder Stapel lädt nur diesen
+            // Abschnitt nach, nicht die ganze Seite.
+            if (_releaseCalendarService is not null)
+            {
+                _releaseCalendarService.CalendarChanged += OnReleaseCalendarChanged;
             }
         }
 
         /// <summary>Sub-VM für den Neuerscheinungen-Abschnitt.</summary>
         public DashboardNeuerscheinungenViewModel NeuerscheinungenVM { get; }
+
+        /// <summary>Sub-VM für die Veröffentlichungen des Monats.</summary>
+        public DashboardReleaseCalendarViewModel ReleaseCalendarVM { get; }
 
         /// <summary>Sub-VM für den Favoriten-Abschnitt.</summary>
         public DashboardFavoritenViewModel FavoritenVM { get; }
@@ -141,33 +183,53 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                using IServiceScope scope = _scopeFactory.CreateScope();
-                IServiceProvider services = scope.ServiceProvider;
-
-                IEpisodeDataService episodeService = services.GetRequiredService<IEpisodeDataService>();
-                IDashboardPositionDataService positionService = services.GetRequiredService<IDashboardPositionDataService>();
-
-                snapshot = await DashboardSnapshot.LoadAsync(
-                    services.GetRequiredService<ISeriesDataService>(),
-                    services.GetRequiredService<IPlaybackStateDataService>(),
-                    services.GetRequiredService<IAppSettingsDataService>(),
-                    positionService,
-                    ReadStartupResult(),
-                    _logger);
-
-                Hints.Apply(snapshot);
-
-                // Alle sichtbar werdenden Folgen-Cover in einer Abfrage, bevor die Abschnitte
-                // bauen, sonst löst jede Kachel ihre eigene aus.
-                await _coverProvider.BeginSessionAsync(snapshot.RelevantEpisodeIds, ct);
-
-                await LoadSectionsAsync(episodeService, positionService, snapshot, ct);
+                snapshot = await LoadLocalSectionsAsync(ct);
             }
             finally
             {
                 IsLoading = false;
             }
 
+            await LoadOnlineSectionsAsync(snapshot, ct);
+
+            // Kacheln, die nur das Serien-Cover zeigen, bekommen ihr Folgen-Cover an dieser
+            // Stelle nachgetragen, nach dem Zeichnen, nicht davor.
+            _coverProvider.FlushPendingRefresh();
+
+            _logger.Info("DashboardLoad total={ElapsedMs} ms", totalStopwatch.ElapsedMilliseconds);
+        }
+
+        /// <summary>
+        /// Liest den Stand der Bibliothek und füllt die Abschnitte, die ohne Anbieter auskommen.
+        /// </summary>
+        private async Task<DashboardSnapshot> LoadLocalSectionsAsync(CancellationToken ct)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IServiceProvider services = scope.ServiceProvider;
+
+            DashboardSnapshot snapshot = await DashboardSnapshot.LoadAsync(
+                services.GetRequiredService<ISeriesDataService>(),
+                services.GetRequiredService<IPlaybackStateDataService>(),
+                services.GetRequiredService<IAppSettingsDataService>(),
+                services.GetRequiredService<IDashboardPositionDataService>(),
+                ReadStartupResult(),
+                _logger);
+
+            Hints.Apply(snapshot);
+
+            // Alle sichtbar werdenden Folgen-Cover in einer Abfrage, bevor die Abschnitte
+            // bauen, sonst löst jede Kachel ihre eigene aus.
+            await _coverProvider.BeginSessionAsync(snapshot.RelevantEpisodeIds, ct);
+
+            await LoadSectionsAsync(services.GetRequiredService<IEpisodeDataService>(), snapshot, ct);
+            return snapshot;
+        }
+
+        /// <summary>
+        /// Füllt Neuerscheinungen und Kalender; beide entfallen im Offline-Modus.
+        /// </summary>
+        private async Task LoadOnlineSectionsAsync(DashboardSnapshot snapshot, CancellationToken ct)
+        {
             // Neuerscheinungen entfallen im Offline-Modus vollständig. Die zwischengespeicherten
             // Daten bleiben erhalten, sie werden nur nicht gezeigt.
             if (!snapshot.OfflineMode)
@@ -177,11 +239,12 @@ namespace EchoPlay.App.ViewModels
                 _logger.Debug(() => $"BuildNewReleases dauer={newReleaseStopwatch.ElapsedMilliseconds} ms");
             }
 
-            // Kacheln, die nur das Serien-Cover zeigen, bekommen ihr Folgen-Cover an dieser
-            // Stelle nachgetragen, nach dem Zeichnen, nicht davor.
-            _coverProvider.FlushPendingRefresh();
-
-            _logger.Info("DashboardLoad total={ElapsedMs} ms", totalStopwatch.ElapsedMilliseconds);
+            // Auch der Kalender entfällt im Offline-Modus: Ohne Abfrage bliebe er auf altem Stand.
+            ReleaseCalendarVM.IsAvailable = !snapshot.OfflineMode;
+            if (ReleaseCalendarVM.IsAvailable)
+            {
+                await LoadReleaseCalendarAsync(ct);
+            }
         }
 
         /// <summary>
@@ -200,6 +263,12 @@ namespace EchoPlay.App.ViewModels
                 _newReleaseEventService.CacheChanged -= OnNewReleaseCacheChanged;
             }
 
+            if (_releaseCalendarService is not null)
+            {
+                _releaseCalendarService.CalendarChanged -= OnReleaseCalendarChanged;
+            }
+
+            ReleaseCalendarVM.Dispose();
             FavoritenVM.Dispose();
         }
 
@@ -231,7 +300,6 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task LoadSectionsAsync(
             IEpisodeDataService episodeService,
-            IDashboardPositionDataService positionService,
             DashboardSnapshot snapshot,
             CancellationToken ct)
         {
@@ -242,7 +310,7 @@ namespace EchoPlay.App.ViewModels
             _logger.Debug(() => $"BuildUnheard dauer={stopwatch.ElapsedMilliseconds} ms");
             stopwatch.Restart();
 
-            FavoritenVM.SetItems(await _sectionBuilder.BuildFavoriteCardsAsync(snapshot.FavoriteSeries, positionService));
+            FavoritenVM.SetItems(await _sectionBuilder.BuildFavoriteCardsAsync(snapshot.FavoriteSeries));
             _logger.Debug(() => $"BuildFavorites dauer={stopwatch.ElapsedMilliseconds} ms");
             stopwatch.Restart();
 
@@ -269,23 +337,8 @@ namespace EchoPlay.App.ViewModels
             }
             catch (InvalidOperationException)
             {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Fängt die Warteschlange der Oberfläche ein, damit der Hintergrund-Rückruf für
-        /// Cover Bilder auf dem richtigen Thread erzeugen kann. In Tests ohne laufende
-        /// Oberfläche bleibt sie leer.
-        /// </summary>
-        private static DispatcherQueue? TryGetDispatcherQueue()
-        {
-            try
-            {
-                return DispatcherQueue.GetForCurrentThread();
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
+                // Ohne laufende App (Testprozess) gibt es kein Startergebnis; die Startseite
+                // zeigt dann keinen Hinweis aus dem Startlauf.
                 return null;
             }
         }
@@ -310,6 +363,69 @@ namespace EchoPlay.App.ViewModels
             }
 
             _ = _uiDispatcherQueue.TryEnqueue(() => _ = ReloadSafelyAsync());
+        }
+
+        /// <summary>
+        /// Lädt den Kalenderabschnitt. Scheitert der Zugriff, bleibt der Abschnitt auf dem alten
+        /// Stand und der Vorfall steht im Protokoll; die Startseite selbst darf daran nicht scheitern.
+        /// </summary>
+        private async Task LoadReleaseCalendarAsync(CancellationToken ct)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            ReleaseCalendarVM.IsRefreshing = _releaseCalendarService?.IsRefreshing ?? false;
+
+            try
+            {
+                await ReleaseCalendarVM.LoadAsync(ct);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.Warning("Veröffentlichungskalender konnte nicht geladen werden: {Reason}", ex.Message);
+            }
+            catch (System.IO.IOException ex)
+            {
+                _logger.Warning("Veröffentlichungskalender konnte nicht geladen werden: {Reason}", ex.Message);
+            }
+
+            _logger.Debug(() => $"BuildReleaseCalendar dauer={stopwatch.ElapsedMilliseconds} ms");
+        }
+
+        /// <summary>
+        /// Lädt den Kalenderabschnitt nach, wenn der Hintergrunddienst neue Einträge meldet.
+        /// Der Auslöser läuft im Hintergrund, deshalb der Wechsel auf den Oberflächen-Thread.
+        /// </summary>
+        private void OnReleaseCalendarChanged()
+        {
+            if (_uiDispatcherQueue is null)
+            {
+                _ = ReloadReleaseCalendarSafelyAsync();
+                return;
+            }
+
+            _ = _uiDispatcherQueue.TryEnqueue(() => _ = ReloadReleaseCalendarSafelyAsync());
+        }
+
+        /// <summary>Nachladen des Kalenders ohne Aufrufer; Fehler landen im Protokoll.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Nachladen eines Abschnitts: Datenbankfehler dürfen die gezeichnete Seite nicht beenden; der nächste Stapel oder Besuch lädt erneut.")]
+        private async Task ReloadReleaseCalendarSafelyAsync()
+        {
+            if (!ReleaseCalendarVM.IsAvailable)
+            {
+                return;
+            }
+
+            try
+            {
+                await LoadReleaseCalendarAsync(CancellationToken.None);
+            }
+            catch (OperationCanceledException)
+            {
+                // Ein neuerer Ladelauf hat diesen abgelöst.
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning("Nachladen des Veröffentlichungskalenders fehlgeschlagen: {Reason}", ex.Message);
+            }
         }
 
         /// <summary>

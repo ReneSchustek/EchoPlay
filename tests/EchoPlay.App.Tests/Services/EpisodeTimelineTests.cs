@@ -16,7 +16,7 @@ namespace EchoPlay.App.Tests.Services
     /// </remarks>
     public sealed class EpisodeTimelineTests
     {
-        private static readonly IReadOnlyList<TimeSpan> DreiSpuren =
+        private static readonly IReadOnlyList<TimeSpan> ThreeTracks =
         [
             TimeSpan.FromMinutes(60),
             TimeSpan.FromMinutes(30),
@@ -26,7 +26,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void TotalDuration_IsSumOfTracks()
         {
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             Assert.Equal(TimeSpan.FromMinutes(135), timeline.TotalDuration);
         }
@@ -34,7 +34,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ToOverall_ThirdTrack_AddsPrecedingTracks()
         {
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             TimeSpan overall = timeline.ToOverall(2, TimeSpan.FromMinutes(10));
 
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ToOverall_FirstTrack_IsUnchanged()
         {
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             Assert.Equal(TimeSpan.FromMinutes(10), timeline.ToOverall(0, TimeSpan.FromMinutes(10)));
         }
@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ToTrack_FindsTrackAndOffset()
         {
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             (int index, TimeSpan position) = timeline.ToTrack(TimeSpan.FromMinutes(100));
 
@@ -64,7 +64,7 @@ namespace EchoPlay.App.Tests.Services
         public void ToTrack_And_ToOverall_AreInverse()
         {
             // Der eigentliche Vertrag: Was gespeichert wird, muss dort wieder ankommen.
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             TimeSpan overall = timeline.ToOverall(1, TimeSpan.FromMinutes(7));
             (int index, TimeSpan position) = timeline.ToTrack(overall);
@@ -76,7 +76,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ToTrack_ExactTrackBoundary_StartsNextTrack()
         {
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             (int index, TimeSpan position) = timeline.ToTrack(TimeSpan.FromMinutes(60));
 
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void ToTrack_BeyondEnd_StaysInsideTheList()
         {
-            EpisodeTimeline timeline = new(DreiSpuren);
+            EpisodeTimeline timeline = new(ThreeTracks);
 
             (int index, TimeSpan position) = timeline.ToTrack(TimeSpan.FromHours(10));
 

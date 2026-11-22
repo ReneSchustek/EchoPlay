@@ -15,7 +15,6 @@ namespace EchoPlay.App.ViewModels
     /// Sub-Actions: MusicBrainz-Lookup (manuell und automatisch) sowie das Anwenden
     /// eines Lookup-Ergebnisses auf alle Dateien im Ordner.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt.")]
     internal sealed class TagLookupActions
     {
         private readonly TagManagerActionsContext _ctx;
@@ -51,6 +50,18 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="LookupResultsReady"/>
         public event EventHandler? RenamePreviewReady;
 
+        /// <summary>Richtet die Abfrage bei MusicBrainz ein.</summary>
+        /// <param name="context">Die Dienste des Tag-Managers.</param>
+        /// <param name="fileListVM">Die Dateiliste mit Auswahl und Ordner.</param>
+        /// <param name="editorVM">Die Eingabefelder.</param>
+        /// <param name="renameVM">Das Umbenennungsmuster für die anschließende Vorschau.</param>
+        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
+        /// <param name="setIsLookingUp">Schaltet die Anzeige der laufenden Abfrage.</param>
+        /// <param name="setAutoLookupStatus">Setzt den Statustext der automatischen Abfrage.</param>
+        /// <param name="setBatchProgress">Setzt den Fortschrittstext.</param>
+        /// <param name="setHasUnsavedChanges">Setzt die Markierung ungespeicherter Änderungen.</param>
+        /// <param name="refreshCommandStates">Aktualisiert die Befehle.</param>
+        /// <param name="previewRenameAsync">Baut die Vorschau des Umbenennens neu.</param>
         public TagLookupActions(
             TagManagerActionsContext context,
             TagFileListViewModel fileListVM,
@@ -121,11 +132,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            TagFileItemViewModel firstSelected = _fileListVM.SelectedFile ?? _fileListVM.SelectedFiles[0];
-            string query = !string.IsNullOrWhiteSpace(_editorVM.Title) && _editorVM.Title != "(verschieden)"
-                ? _editorVM.Title
-                : Path.GetFileNameWithoutExtension(firstSelected.FilePath);
-
+            string query = BuildManualLookupQuery();
             _setIsLookingUp(true);
             try
             {
@@ -144,10 +151,20 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Der Suchbegriff: der Titel aus dem Editor, wenn er eindeutig ist, sonst der Dateiname.
+        /// </summary>
+        private string BuildManualLookupQuery()
+        {
+            TagFileItemViewModel firstSelected = _fileListVM.SelectedFile ?? _fileListVM.SelectedFiles[0];
+            return !string.IsNullOrWhiteSpace(_editorVM.Title) && !TagEditorFieldsViewModel.IsMixedValue(_editorVM.Title)
+                ? _editorVM.Title
+                : Path.GetFileNameWithoutExtension(firstSelected.FilePath);
+        }
+
+        /// <summary>
         /// Führt einen automatischen Lookup aus dem Ordnerkontext aus. Bei eindeutigem Treffer
         /// werden die Tags direkt übernommen; ansonsten wird ein Auswahl-Dialog angefordert.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Auto-Lookup (MusicBrainz + Cover Art Archive): HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status angezeigt und der Command kehrt zurück.")]
         public async Task AutoLookupAsync()
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagAutoLookup");
@@ -156,51 +173,37 @@ namespace EchoPlay.App.ViewModels
             _autoLookupCompletedSource = new TaskCompletionSource<bool>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
 
-            string query = _ctx.LookupCoordinator.BuildAutoLookupQuery(_fileListVM.CurrentFolderPath);
-            if (string.IsNullOrWhiteSpace(query))
+            try
             {
-                _ = _autoLookupCompletedSource.TrySetResult(true);
-                return;
+                await RunAutoLookupAsync();
             }
+            finally
+            {
+                _ = _autoLookupCompletedSource?.TrySetResult(true);
+            }
+        }
 
-            using IDisposable? onlineScope = await _ctx.OnlineAccessGuard.RequestOnlineAccessAsync();
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Auto-Lookup (MusicBrainz + Cover Art Archive): HTTP-/Parser-/Timeout-Fehler werden als Nutzer-Status angezeigt und der Command kehrt zurück.")]
+        private async Task RunAutoLookupAsync()
+        {
+            string query = _ctx.LookupCoordinator.BuildAutoLookupQuery(_fileListVM.CurrentFolderPath);
+            using IDisposable? onlineScope = string.IsNullOrWhiteSpace(query)
+                ? null
+                : await _ctx.OnlineAccessGuard.RequestOnlineAccessAsync();
             if (onlineScope is null)
             {
-                _ = _autoLookupCompletedSource.TrySetResult(true);
                 return;
             }
 
-            _setAutoLookupStatus(string.Format(
-                CultureInfo.CurrentCulture,
-                SafeResourceLoader.Get("TagManagerAutoLookupSearchingText"),
-                query));
+            string searchingPattern = SafeResourceLoader.Get("TagManagerAutoLookupSearchingText");
+            _setAutoLookupStatus(string.Format(CultureInfo.CurrentCulture, searchingPattern, query));
             _setIsLookingUp(true);
 
             try
             {
                 IReadOnlyList<TagLookupResult> results = await _ctx.LookupCoordinator.SearchAsync(query);
-
-                int loadedTrackCount = _fileListVM.Files.Count;
-                TagLookupResult? match = _ctx.LookupCoordinator.SelectBestMatch(results, loadedTrackCount);
-
-                if (match is not null && match.TrackCount.HasValue
-                    && match.TrackCount.Value == (uint)loadedTrackCount)
-                {
-                    ApplyLookupResult(match);
-                    _setAutoLookupStatus(string.Empty);
-                    AutoLookupApplied?.Invoke(this, ToCandidate(match, 0));
-                }
-                else
-                {
-                    _setAutoLookupStatus(string.Empty);
-
-                    List<TagLookupResult> sorted = [.. results
-                        .OrderByDescending(r => r.TrackCount.HasValue && r.TrackCount.Value == (uint)loadedTrackCount)
-                        .ThenByDescending(r => r.TrackCount.HasValue)];
-
-                    _lastLookupResults = sorted;
-                    LookupResultsReady?.Invoke(this, ToCandidates(sorted));
-                }
+                _setAutoLookupStatus(string.Empty);
+                ApplyOrOfferResults(results);
             }
             catch (Exception ex)
             {
@@ -210,8 +213,30 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 _setIsLookingUp(false);
-                _ = _autoLookupCompletedSource?.TrySetResult(true);
             }
+        }
+
+        /// <summary>
+        /// Übernimmt einen eindeutigen Treffer direkt, wenn seine Spurzahl zum Ordner passt;
+        /// sonst gehen alle Treffer zur Auswahl, passende Spurzahl zuerst.
+        /// </summary>
+        private void ApplyOrOfferResults(IReadOnlyList<TagLookupResult> results)
+        {
+            int loadedTrackCount = _fileListVM.Files.Count;
+            TagLookupResult? match = _ctx.LookupCoordinator.SelectBestMatch(results, loadedTrackCount);
+            if (match is { TrackCount: uint trackCount } && trackCount == (uint)loadedTrackCount)
+            {
+                ApplyLookupResult(match);
+                AutoLookupApplied?.Invoke(this, ToCandidate(match, 0));
+                return;
+            }
+
+            List<TagLookupResult> sorted = [.. results
+                .OrderByDescending(r => r.TrackCount.HasValue && r.TrackCount.Value == (uint)loadedTrackCount)
+                .ThenByDescending(r => r.TrackCount.HasValue)];
+
+            _lastLookupResults = sorted;
+            LookupResultsReady?.Invoke(this, ToCandidates(sorted));
         }
 
         /// <summary>Wendet die zwischengespeicherten Lookup-Tags auf alle Dateien im Ordner an.</summary>
@@ -226,39 +251,20 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
-                SafeResourceLoader.Get("TagManagerApplyToAllConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        _fileListVM.Files.Count,
-                        "TagManagerApplyToAllConfirmMessageSingular",
-                        "TagManagerApplyToAllConfirmMessagePlural",
-                        "Album, Künstler, Jahr, Genre und TrackCount werden für {0} Datei überschrieben. Title und Tracknummer bleiben erhalten.",
-                        "Album, Künstler, Jahr, Genre und TrackCount werden für {0} Dateien überschrieben. Title und Tracknummer bleiben erhalten."),
-                    _fileListVM.Files.Count),
-                DialogKey.TagManagerApplyToAll);
-
-            if (!confirmed)
+            if (!await ConfirmApplyToAllAsync(_fileListVM.Files.Count))
             {
                 return;
             }
 
-            await TagBatchRunner.RunBatchAsync(
+            int failed = await TagBatchRunner.RunBatchAsync(
                 _fileListVM.Files,
-                async file =>
-                {
-                    AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag = TagBatchRunner.MergeSharedIntoExisting(pendingTag, existingTag);
-                    await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
-                    file.IsModified = false;
-                },
+                file => ApplySharedTagAsync(pendingTag, file),
                 SafeResourceLoader.Get("TagManagerApplyToAllErrorTitle"),
                 DialogKey.TagManagerApplyToAllError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
 
             _editorVM.ClearPendingBatchTag();
-            _setHasUnsavedChanges(false);
+            _setHasUnsavedChanges(failed > 0);
             _refreshCommandStates();
 
             // Workflow-Verkettung: nach „Alle taggen" automatisch Rename-Vorschau aktualisieren
@@ -267,6 +273,29 @@ namespace EchoPlay.App.ViewModels
                 await _previewRenameAsync();
                 RenamePreviewReady?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        /// <summary>Fragt nach, bevor die gemeinsamen Felder in allen Dateien überschrieben werden.</summary>
+        private Task<bool> ConfirmApplyToAllAsync(int fileCount) => _ctx.ConfirmationDialogService.ConfirmAsync(
+            SafeResourceLoader.Get("TagManagerApplyToAllConfirmTitle"),
+            string.Format(
+                CultureInfo.CurrentCulture,
+                PluralText.Pattern(
+                    fileCount,
+                    "TagManagerApplyToAllConfirmMessageSingular",
+                    "TagManagerApplyToAllConfirmMessagePlural",
+                    "Album, Künstler, Jahr, Genre und Spurenzahl werden für {0} Datei überschrieben. Titel und Tracknummer bleiben erhalten.",
+                    "Album, Künstler, Jahr, Genre und Spurenzahl werden für {0} Dateien überschrieben. Titel und Tracknummer bleiben erhalten."),
+                fileCount),
+            DialogKey.TagManagerApplyToAll);
+
+        /// <summary>Schreibt die gemeinsamen Felder in eine Datei; Titel und Tracknummer bleiben.</summary>
+        private async Task ApplySharedTagAsync(AudioTag sharedTag, TagFileItemViewModel file)
+        {
+            AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
+            AudioTag mergedTag = TagBatchRunner.MergeSharedIntoExisting(sharedTag, existingTag);
+            await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
+            file.IsModified = false;
         }
 
         private static TagLookupCandidate ToCandidate(TagLookupResult result, int index) =>

@@ -21,19 +21,19 @@ namespace EchoPlay.TagManager.Tests.Services
         [Fact]
         public async Task Rename_WhenTheTargetNameIsTaken_SkipsThatFile()
         {
-            string ordner = CreateTempFolder();
+            string folder = CreateTempFolder();
             try
             {
-                string quelle = Path.Combine(ordner, "01 - Alt.mp3");
-                string belegt = Path.Combine(ordner, "Neuer Name.mp3");
-                await File.WriteAllTextAsync(quelle, "ton", TestContext.Current.CancellationToken);
-                await File.WriteAllTextAsync(belegt, "anderer ton", TestContext.Current.CancellationToken);
+                string source = Path.Combine(folder, "01 - Alt.mp3");
+                string occupied = Path.Combine(folder, "Neuer Name.mp3");
+                await File.WriteAllTextAsync(source, "ton", TestContext.Current.CancellationToken);
+                await File.WriteAllTextAsync(occupied, "anderer ton", TestContext.Current.CancellationToken);
 
                 FileRenameService sut = new(new FakeLoggerFactory());
 
                 List<(string FilePath, AudioTag Tag)> dateien =
                 [
-                    (quelle, new AudioTag { Title = "Neuer Name" }),
+                    (source, new AudioTag { Title = "Neuer Name" }),
                 ];
 
                 int erfolge = await sut.RenameAsync(dateien, "{title}");
@@ -41,18 +41,16 @@ namespace EchoPlay.TagManager.Tests.Services
                 // Überschreiben wäre Datenverlust: Die belegte Datei ist eine andere
                 // Aufnahme, nicht dieselbe unter anderem Namen.
                 Assert.Equal(0, erfolge);
-                Assert.True(File.Exists(quelle));
+                Assert.True(File.Exists(source));
                 Assert.Equal(
                     "anderer ton",
-                    await File.ReadAllTextAsync(belegt, TestContext.Current.CancellationToken));
+                    await File.ReadAllTextAsync(occupied, TestContext.Current.CancellationToken));
             }
             finally
             {
-                Directory.Delete(ordner, recursive: true);
+                Directory.Delete(folder, recursive: true);
             }
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static string CreateTempFolder()
         {

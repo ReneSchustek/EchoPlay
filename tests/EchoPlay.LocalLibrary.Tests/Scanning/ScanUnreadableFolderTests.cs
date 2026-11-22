@@ -26,86 +26,81 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public sealed class ScanUnreadableFolderTests : IDisposable
     {
-        private readonly string _wurzel;
+        private readonly string _root;
 
         public ScanUnreadableFolderTests()
         {
-            _wurzel = Directory.CreateTempSubdirectory("echoplay_scan_").FullName;
+            _root = Directory.CreateTempSubdirectory("echoplay_scan_").FullName;
         }
 
         public void Dispose()
         {
-            if (Directory.Exists(_wurzel))
+            if (Directory.Exists(_root))
             {
-                Directory.Delete(_wurzel, recursive: true);
+                Directory.Delete(_root, recursive: true);
             }
         }
 
         [Fact]
         public void SeriesFolders_OfAnUnreadableRoot_AreEmpty()
         {
-            using LockedFolder gesperrt = LockedFolder.Create(_wurzel);
-            LocalLibraryScanner sut = new(new FakeLoggerFactory(), new FakeTagTitleReader());
+            using LockedFolder locked = LockedFolder.Create(_root);
+            LocalLibraryScanner sut = new(new FakeLoggerFactory());
 
-            IReadOnlyList<string> ordner = sut.GetSeriesFolders(gesperrt.Path);
+            IReadOnlyList<string> folder = sut.GetSeriesFolders(locked.Path);
 
-            Assert.Empty(ordner);
+            Assert.Empty(folder);
         }
 
         [Fact]
         public async Task Scan_WithAnUnreadableSeriesFolder_ReturnsWithoutThrowing()
         {
-            using LockedFolder gesperrt = LockedFolder.Create(_wurzel, "TKKG");
-            LocalLibraryScanner sut = new(new FakeLoggerFactory(), new FakeTagTitleReader());
+            using LockedFolder locked = LockedFolder.Create(_root, "TKKG");
+            LocalLibraryScanner sut = new(new FakeLoggerFactory());
 
-            IReadOnlyList<LocalScanResult> ergebnisse = await sut.ScanSeriesAsync(
-                _wurzel, "{number}", ct: TestContext.Current.CancellationToken);
+            IReadOnlyList<LocalScanResult> results = await sut.ScanSeriesAsync(
+                _root, "{number}", ct: TestContext.Current.CancellationToken);
 
             // Die Serie liefert keine Folgen, aber der Lauf endet ordentlich.
-            Assert.NotNull(ergebnisse);
+            Assert.NotNull(results);
         }
 
         [Fact]
         public async Task Scan_WithAnUnreadableEpisodeFolder_KeepsTheOtherEpisodes()
         {
-            string serie = Directory.CreateDirectory(Path.Combine(_wurzel, "TKKG")).FullName;
-            string gut = Directory.CreateDirectory(Path.Combine(serie, "001 - Der Fall")).FullName;
-            _ = AudioTestFiles.CreateMp3(gut);
+            string series = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
+            string good = Directory.CreateDirectory(Path.Combine(series, "001 - Der Fall")).FullName;
+            _ = AudioTestFiles.CreateMp3(good);
 
-            using LockedFolder gesperrt = LockedFolder.Create(serie, "002 - Nicht lesbar");
+            using LockedFolder locked = LockedFolder.Create(series, "002 - Nicht lesbar");
 
-            LocalLibraryScanner sut = new(new FakeLoggerFactory(), new FakeTagTitleReader());
+            LocalLibraryScanner sut = new(new FakeLoggerFactory());
 
-            IReadOnlyList<LocalScanResult> ergebnisse = await sut.ScanSeriesAsync(
-                _wurzel, "{number} - {title}", ct: TestContext.Current.CancellationToken);
+            IReadOnlyList<LocalScanResult> results = await sut.ScanSeriesAsync(
+                _root, "{number} - {title}", ct: TestContext.Current.CancellationToken);
 
             // Genau darum geht es: Eine unlesbare Folge kostet ihre eigene Zeile, nicht
             // den ganzen Bestand.
-            LocalScanResult serienErgebnis = Assert.Single(ergebnisse);
-            Assert.NotEmpty(serienErgebnis.Episodes);
+            LocalScanResult seriesResult = Assert.Single(results);
+            Assert.NotEmpty(seriesResult.Episodes);
         }
 
         [Fact]
         public async Task Scan_ForAFlatSeries_StillFindsTheTrack()
         {
-            string serie = Directory.CreateDirectory(Path.Combine(_wurzel, "TKKG")).FullName;
-            string spur = AudioTestFiles.CreateMp3(serie);
+            string series = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
+            _ = AudioTestFiles.CreateMp3(series);
 
-            LocalLibraryScanner sut = new(
-                new FakeLoggerFactory(),
-                new FakeTagTitleReader(new Dictionary<string, (string, string)>
-                {
-                    [spur] = ("Kapitel 1", "Folge 001 - Der Fall"),
-                }));
+            LocalLibraryScanner sut = new(new FakeLoggerFactory());
 
-            IReadOnlyList<LocalScanResult> ergebnisse = await sut.ScanSeriesAsync(
-                _wurzel, "{number} - {title}", ct: TestContext.Current.CancellationToken);
+            IReadOnlyList<LocalScanResult> results = await sut.ScanSeriesAsync(
+                _root, "{number} - {title}", ct: TestContext.Current.CancellationToken);
 
             // Liegen die Dateien ohne Folgenordner direkt in der Serie, darf der
             // Einlesevorgang sie nicht übergehen, sonst fällt eine ganze Serie durch.
-            LocalScanResult serienErgebnis = Assert.Single(ergebnisse);
-            LocalEpisodeScan folge = Assert.Single(serienErgebnis.Episodes);
-            Assert.Equal(1, folge.TrackCount);
+            LocalScanResult seriesResult = Assert.Single(results);
+            LocalEpisodeScan episode = Assert.Single(seriesResult.Episodes);
+            Assert.Equal(1, episode.TrackCount);
         }
 
         [Fact]
@@ -114,48 +109,46 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             ReportingScanner scanner = new();
             ScanOrchestrator sut = new(scanner);
 
-            List<ScanProgress> gemeldet = [];
-            TaskCompletionSource beideDa = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            List<ScanProgress> reported = [];
+            TaskCompletionSource bothPresent = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            SynchronousProgress fortschritt = new(p =>
+            SynchronousProgress progress = new(p =>
             {
-                lock (gemeldet)
+                lock (reported)
                 {
-                    gemeldet.Add(p);
-                    if (gemeldet.Exists(x => x.Phase == 3) && gemeldet.Exists(x => x.Phase == 4))
+                    reported.Add(p);
+                    if (reported.Exists(x => x.Phase == 3) && reported.Exists(x => x.Phase == 4))
                     {
-                        _ = beideDa.TrySetResult();
+                        _ = bothPresent.TrySetResult();
                     }
                 }
             });
 
-            _ = await sut.ScanAsync(_wurzel, "{number}", fortschritt, TestContext.Current.CancellationToken);
-            await beideDa.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+            _ = await sut.ScanAsync(_root, "{number}", progress, TestContext.Current.CancellationToken);
+            await bothPresent.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
             // Der Anwender sieht „Phase 3 von 4". Ohne die Zuordnung stünde dort immer
             // dieselbe Zahl, während der Balken minutenlang läuft.
-            lock (gemeldet)
+            lock (reported)
             {
-                Assert.Contains(gemeldet, p => p.Phase == 3 && p.PhaseLabel.Length > 0);
-                Assert.Contains(gemeldet, p => p.Phase == 4 && p.PhaseLabel.Length > 0);
+                Assert.Contains(reported, p => p.Phase == 3 && p.PhaseLabel.Length > 0);
+                Assert.Contains(reported, p => p.Phase == 4 && p.PhaseLabel.Length > 0);
             }
         }
 
         [Fact]
         public async Task Orchestrator_WithAnUnreadableRoot_StillRunsTheScan()
         {
-            using LockedFolder gesperrt = LockedFolder.Create(_wurzel);
+            using LockedFolder locked = LockedFolder.Create(_root);
             FakeLocalLibraryScanner scanner = new();
             ScanOrchestrator sut = new(scanner);
 
-            _ = await sut.ScanAsync(gesperrt.Path, "{number}", cancellationToken: TestContext.Current.CancellationToken);
+            _ = await sut.ScanAsync(locked.Path, "{number}", cancellationToken: TestContext.Current.CancellationToken);
 
-            // Die Vorab-Zählung ist nur für den Fortschrittsbalken da. Scheitert sie,
-            // läuft der Einlesevorgang trotzdem, eben ohne Prozentangabe.
+            // Ein unlesbarer Wurzelordner hält den Orchestrator nicht auf; den Fehler meldet
+            // der Scanner selbst, und der Balken bleibt ohne Prozentangabe.
             Assert.Equal(1, scanner.ScanCallCount);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         /// <summary>Fortschrittsempfänger ohne eigenen Faden; meldet sofort im Aufrufer.</summary>
         private sealed class SynchronousProgress : IProgress<ScanProgress>

@@ -20,13 +20,11 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 
         /// <summary>
         /// Erstellt ein temporäres Wurzelverzeichnis und den Scanner für jeden Test.
-        /// Der <see cref="FakeTagTitleReader"/> gibt standardmäßig leere Strings zurück,
-        /// sodass der Ordnername als Titelquelle greift.
         /// </summary>
         public LocalLibraryScannerTests()
         {
             _root = Directory.CreateTempSubdirectory("echoplay_scanner_").FullName;
-            _scanner = new LocalLibraryScanner(new FakeLoggerFactory(), new FakeTagTitleReader());
+            _scanner = new LocalLibraryScanner(new FakeLoggerFactory());
         }
 
         /// <summary>
@@ -84,6 +82,54 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
                 await _scanner.ScanSeriesAsync(_root, "{number:000}", ct: TestContext.Current.CancellationToken);
 
             Assert.Equal(42, results[0].Episodes[0].ParsedNumber);
+        }
+
+        [Fact]
+        public async Task ScanSeriesAsync_FolderNotMatchingConfiguredPattern_StillGetsItsNumber()
+        {
+            // „Serie - 082 - Titel" passt nicht auf das eingestellte Muster. Ohne die
+            // allgemeinen Muster blieb die Nummer leer, und die Datenbank zählte durch.
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Die drei Ausrufezeichen")).FullName;
+            string[] folders =
+            [
+                "Die drei Ausrufezeichen - 082 - Das Konfetti-Komplott",
+                "Die drei Ausrufezeichen - 084 - Luftballonküsse",
+                "Die drei Ausrufezeichen - XXX - Das Original Hörspiel zum Kinofilm"
+            ];
+            foreach (string folder in folders)
+            {
+                string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, folder)).FullName;
+                await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
+            }
+
+            IReadOnlyList<LocalScanResult> results =
+                await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}", ct: TestContext.Current.CancellationToken);
+
+            Dictionary<string, int?> numbers = results[0].Episodes.ToDictionary(
+                episode => Path.GetFileName(episode.FolderPath),
+                episode => episode.ParsedNumber);
+            Assert.Equal(82, numbers[folders[0]]);
+            Assert.Equal(84, numbers[folders[1]]);
+            Assert.Null(numbers[folders[2]]);
+        }
+
+        [Fact]
+        public async Task ScanSeriesAsync_EpisodeOnSeveralCds_IsRead()
+        {
+            // Ohne Blick in die Unterordner fehlte die Folge in der Mediathek ganz.
+            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
+            foreach (string cd in new[] { "CD 1", "CD 2" })
+            {
+                string cdPath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - Folge", cd)).FullName;
+                await File.WriteAllTextAsync(Path.Combine(cdPath, "01.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
+            }
+
+            IReadOnlyList<LocalScanResult> results =
+                await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}", ct: TestContext.Current.CancellationToken);
+
+            LocalEpisodeScan episode = Assert.Single(results[0].Episodes);
+            Assert.Equal(1, episode.ParsedNumber);
+            Assert.Equal(2, episode.TrackCount);
         }
 
         [Fact]
@@ -195,39 +241,12 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         }
 
         [Fact]
-        public async Task ScanSeriesAsync_UsesFolderName_OverTagTitle()
+        public async Task ScanSeriesAsync_TakesTitleFromFolderName()
         {
-            // Tag.Title enthält bei Hörspielen den Kapitel-Titel ("Inhaltsangabe", "Teil 1" o.Ä.),
-            // nicht den Episodentitel. Der Ordnername ist daher die verlässlichere Quelle.
-            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
-            string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Titelaus Ordner")).FullName;
-            string trackPath = Path.Combine(episodePath, "track.mp3");
-            await File.WriteAllTextAsync(trackPath, string.Empty, cancellationToken: TestContext.Current.CancellationToken);
-
-            FakeTagTitleReader tagReader = new(
-                tagsByPath: new Dictionary<string, (string, string)>
-                {
-                    // Tag.Title = Kapitel-Titel → wird ignoriert; Ordnername "42 Titelaus Ordner" → "Titelaus Ordner"
-                    [trackPath] = ("Kapitel 1 – Der Einbruch", "TKKG")
-                });
-
-            LocalLibraryScanner scanner = new(new FakeLoggerFactory(), tagReader);
-
-            IReadOnlyList<LocalScanResult> results =
-                await scanner.ScanSeriesAsync(_root, "{number:000} - {title}", ct: TestContext.Current.CancellationToken);
-
-            Assert.Equal("Titelaus Ordner", results[0].Episodes[0].ParsedTitle);
-        }
-
-        [Fact]
-        public async Task ScanSeriesAsync_FallsBackToFolderName_WhenTagTitleIsEmpty()
-        {
-            // Kein Tag-Titel verfügbar → Ordnername wird verwendet
             string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "007 - Sherlock Holmes")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
-            // FakeTagTitleReader ohne Konfiguration liefert leere Strings → Fallback
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}", ct: TestContext.Current.CancellationToken);
 
@@ -244,7 +263,6 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Der Schatz")).FullName;
             await File.WriteAllTextAsync(Path.Combine(episodePath, "track.mp3"), string.Empty, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Kein Tag-Titel → Ordnername mit Strip
             IReadOnlyList<LocalScanResult> results =
                 await _scanner.ScanSeriesAsync(_root, "{number:000} - {title}", ct: TestContext.Current.CancellationToken);
 
@@ -252,30 +270,6 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             Assert.Equal("Der Schatz", results[0].Episodes[0].ParsedTitle);
         }
 
-        [Fact]
-        public async Task ScanSeriesAsync_FolderName_AlwaysPreferred_OverTagTitle()
-        {
-            // Auch wenn Tag.Title gesetzt ist, gewinnt der Ordnername:
-            // "Der Schatz" aus dem Ordner ist der Episodentitel, "Teil 1" der Kapitel-Titel.
-            string seriesPath = Directory.CreateDirectory(Path.Combine(_root, "Serie")).FullName;
-            string episodePath = Directory.CreateDirectory(Path.Combine(seriesPath, "001 - 42 Der Schatz")).FullName;
-            string trackPath = Path.Combine(episodePath, "track.mp3");
-            await File.WriteAllTextAsync(trackPath, string.Empty, cancellationToken: TestContext.Current.CancellationToken);
-
-            FakeTagTitleReader tagReader = new(
-                tagsByPath: new Dictionary<string, (string, string)>
-                {
-                    // Tag.Title = Kapitel → ignoriert; Ordner "42 Der Schatz" → Strip → "Der Schatz"
-                    [trackPath] = ("Teil 1", string.Empty)
-                });
-
-            LocalLibraryScanner scanner = new(new FakeLoggerFactory(), tagReader);
-
-            IReadOnlyList<LocalScanResult> results =
-                await scanner.ScanSeriesAsync(_root, "{number:000} - {title}", ct: TestContext.Current.CancellationToken);
-
-            Assert.Equal("Der Schatz", results[0].Episodes[0].ParsedTitle);
-        }
         [Fact]
         public void GetSeriesFolders_ReturnsEmpty_WhenRootDoesNotExist()
         {
@@ -334,8 +328,6 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             Assert.Contains("TKKG", reported);
             Assert.Contains("Fünf Freunde", reported);
         }
-
-        // ── Flache Dateistrukturen (Typ B) ─────────────────────────────────────
 
         [Fact]
         public async Task ScanSeriesAsync_FlatFiles_RecognizesSeriesNameNumberTitle()
@@ -439,8 +431,6 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
             _ = Assert.Single(results[0].Episodes);
             Assert.Equal(1, results[0].Episodes[0].ParsedNumber);
         }
-
-        // ── Kassetten-Rips (Typ C) ─────────────────────────────────────────────
 
         [Fact]
         public async Task ScanSeriesAsync_CassetteRip_NumberSideTitle()

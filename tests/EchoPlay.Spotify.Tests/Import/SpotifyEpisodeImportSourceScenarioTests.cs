@@ -10,13 +10,13 @@ namespace EchoPlay.Spotify.Tests.Import
 {
     /// <summary>
     /// Fachlicher Haupttest für den Spotify-Episodenimport.
-    /// Der Test stellt sicher, dass aus der internen Spotify-Struktur
+    /// Der Test prüft, dass aus der internen Spotify-Struktur
     /// eine flache und korrekt sortierte Episodenliste entsteht.
     /// </summary>
     public sealed class SpotifyEpisodeImportSourceScenarioTests
     {
         /// <summary>
-        /// Stellt sicher, dass Episoden albumübergreifend nach ReleaseDate sortiert werden,
+        /// Prüft, dass Episoden albumübergreifend nach ReleaseDate sortiert werden,
         /// neueste zuerst, damit bei einem abgebrochenen Import die aktuellsten Folgen zuerst vorliegen.
         /// </summary>
         [Fact]

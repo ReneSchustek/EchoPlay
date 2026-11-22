@@ -76,8 +76,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(0, fixture.Checker.CheckCallCount);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Dienst und Doubles eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required WatchToggleService Service { get; init; }
@@ -87,14 +88,12 @@ namespace EchoPlay.App.Tests.Services
             public required Guid SeriesId { get; init; }
         }
 
-        private static async Task<Fixture> BuildFixtureAsync(
-            bool watchedBefore, string? releaseTitle, bool offline = false)
-        {
-            FakeSeriesDataService seriesService = new();
-            Series series = new() { Title = "TKKG", IsWatched = watchedBefore };
-            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
-
-            FakeOnlineEpisodeChecker checker = releaseTitle is null
+        /// <summary>
+        /// Online-Prüfung, die für die Serie genau eine Neuerscheinung meldet, oder ohne Titel
+        /// gar keine.
+        /// </summary>
+        private static FakeOnlineEpisodeChecker CheckerFor(Series series, string? releaseTitle)
+            => releaseTitle is null
                 ? new FakeOnlineEpisodeChecker()
                 : new FakeOnlineEpisodeChecker(
                 [
@@ -114,6 +113,15 @@ namespace EchoPlay.App.Tests.Services
                         ],
                     },
                 ]);
+
+        private static async Task<Fixture> BuildFixtureAsync(
+            bool watchedBefore, string? releaseTitle, bool offline = false)
+        {
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "TKKG", IsWatched = watchedBefore };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            FakeOnlineEpisodeChecker checker = CheckerFor(series, releaseTitle);
 
             FakeCachedNewReleaseDataService cache = new();
 

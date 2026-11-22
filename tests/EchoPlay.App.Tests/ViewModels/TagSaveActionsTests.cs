@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -28,7 +29,7 @@ namespace EchoPlay.App.Tests.ViewModels
         private const string SecondFile = @"D:\Media\TKKG\002.mp3";
 
         [Fact]
-        public async Task EinzelneDatei_SchreibtAlleFelder()
+        public async Task SingleFile_WritesAllFields()
         {
             Harness harness = Harness.Build();
             harness.SelectSingle();
@@ -37,16 +38,16 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await harness.Actions.SaveAsync();
 
-            AudioTag? geschrieben = harness.TagService.GetWrittenTag(FirstFile);
-            Assert.NotNull(geschrieben);
-            Assert.Equal("Der Superhund", geschrieben!.Title);
-            Assert.Equal("TKKG", geschrieben.Artist);
+            AudioTag? written = harness.TagService.GetWrittenTag(FirstFile);
+            Assert.NotNull(written);
+            Assert.Equal("Der Superhund", written!.Title);
+            Assert.Equal("TKKG", written.Artist);
             Assert.False(harness.FileList.Files[0].IsModified);
             Assert.Equal([false], harness.UnsavedStates);
         }
 
         [Fact]
-        public async Task EinzelneDatei_MeldetEinenFehlgeschlagenenSchreibversuch()
+        public async Task SingleFile_ReportsAFailedWrite()
         {
             // Eine schreibgeschützte Datei darf nicht stillschweigend durchgehen, sonst
             // hält der Anwender die Kennzeichnung für gespeichert.
@@ -62,7 +63,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Mehrfachauswahl_SchreibtNurDieGeaendertenFelder()
+        public async Task MultiSelection_WritesOnlyTheChangedFields()
         {
             // Die zweite Datei behält ihren eigenen Titel; übernommen wird nur, was der
             // Anwender im Formular angefasst hat.
@@ -83,7 +84,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Mehrfachauswahl_OhneAenderungSchreibtNichts()
+        public async Task MultiSelection_WithoutChange_WritesNothing()
         {
             Harness harness = Harness.Build();
             harness.SelectBoth();
@@ -94,7 +95,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlleSpeichern_FragtVorherUndSchreibtDieGeaendertenDateien()
+        public async Task SaveAll_AsksFirstAndWritesTheChangedFiles()
         {
             Harness harness = Harness.Build();
             harness.MarkModified(0);
@@ -109,7 +110,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlleSpeichern_BleibtNachAblehnungAus()
+        public async Task SaveAll_AfterDecline_DoesNothing()
         {
             Harness harness = Harness.Build(confirmResult: false);
             harness.MarkModified(0);
@@ -122,7 +123,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlleSpeichern_OhneGeaenderteDateienFragtGarNicht()
+        public async Task SaveAll_WithoutChangedFiles_DoesNotAsk()
         {
             Harness harness = Harness.Build();
 
@@ -133,7 +134,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AngabenEntfernen_RaeumtFelderUndCoverNachBestaetigung()
+        public async Task RemoveTags_ClearsFieldsAndCoverAfterConfirmation()
         {
             Harness harness = Harness.Build();
             harness.SelectSingle();
@@ -148,7 +149,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AngabenEntfernen_BleibtNachAblehnungAus()
+        public async Task RemoveTags_AfterDecline_DoesNothing()
         {
             Harness harness = Harness.Build(confirmResult: false);
             harness.SelectSingle();
@@ -161,7 +162,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AngabenEntfernen_OhneAuswahlTutNichts()
+        public async Task RemoveTags_WithoutSelection_DoesNothing()
         {
             Harness harness = Harness.Build();
 
@@ -172,7 +173,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AngabenEntfernen_MeldetEinenFehlschlag()
+        public async Task RemoveTags_ReportsAFailure()
         {
             Harness harness = Harness.Build(removeAllFailure: new IOException("Kein Zugriff"));
             harness.SelectSingle();
@@ -213,17 +214,21 @@ namespace EchoPlay.App.Tests.ViewModels
             /// <summary>Markiert eine Datei als geändert, wie es der Editor tut.</summary>
             public void MarkModified(int index) => FileList.Files[index].IsModified = true;
 
+            /// <summary>Die beiden Dateien des Ordners mit je eigenem Titel.</summary>
+            private static IReadOnlyList<(string, AudioTag)> TwoTaggedFiles()
+                =>
+                [
+                    (FirstFile, new AudioTag { Title = "Erste" }),
+                    (SecondFile, new AudioTag { Title = "Zweite" })
+                ];
+
             public static Harness Build(
                 IReadOnlyList<(string, AudioTag)>? folderFiles = null,
                 bool confirmResult = true,
                 Exception? writeFailure = null,
                 Exception? removeAllFailure = null)
             {
-                FakeTagService tagService = new(folderFiles ??
-                [
-                    (FirstFile, new AudioTag { Title = "Erste" }),
-                    (SecondFile, new AudioTag { Title = "Zweite" })
-                ])
+                FakeTagService tagService = new(folderFiles ?? TwoTaggedFiles())
                 {
                     WriteFailure = writeFailure,
                     RemoveAllFailure = removeAllFailure
@@ -232,26 +237,9 @@ namespace EchoPlay.App.Tests.ViewModels
                 FakeErrorDialogService errorDialog = new();
                 FakeConfirmationDialogService confirmation = new(confirmResult);
 
-                ServiceCollection services = new();
-                _ = services.AddScoped<ITagLookupService>(_ => new FakeTagLookupService());
-                ServiceProvider provider = services.BuildServiceProvider();
+                TagManagerActionsContext context = TagActionsTestContext.Create(tagService, errorDialog, confirmation);
 
-                TagManagerActionsContext context = new(
-                    TagService: tagService,
-                    LookupCoordinator: new TagLookupCoordinator(
-                        provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory()),
-                    FileRenameService: new FakeFileRenameService(),
-                    ErrorDialogService: errorDialog,
-                    ConfirmationDialogService: confirmation,
-                    OnlineAccessGuard: new FakeOnlineAccessGuard());
-
-                TagFileListViewModel fileList = new();
-                fileList.SetFiles(
-                    [
-                        new TagFileItemViewModel(FirstFile, FolderPath),
-                        new TagFileItemViewModel(SecondFile, FolderPath)
-                    ],
-                    FolderPath);
+                TagFileListViewModel fileList = TagActionsTestContext.FileList(FolderPath, FirstFile, SecondFile);
 
                 TagEditorFieldsViewModel editor = new(() => { });
                 TagCoverViewModel cover = new(() => { });
@@ -267,10 +255,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 };
 
                 harness.Actions = new TagSaveActions(
-                    context,
-                    fileList,
-                    editor,
-                    cover,
+                    context, fileList, editor, cover,
                     setIsLoading: _ => { },
                     setBatchProgress: _ => { },
                     setHasUnsavedChanges: state => harness.UnsavedStates.Add(state));

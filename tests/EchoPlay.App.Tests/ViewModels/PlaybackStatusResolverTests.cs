@@ -154,6 +154,40 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public void ProgressPercent_WithoutStateOrDuration_IsZero()
+        {
+            PlaybackState state = new() { EpisodeId = Helpers.TestIds.EpisodeA, LastPosition = TimeSpan.FromMinutes(5) };
+
+            Assert.Equal(0, PlaybackStatusResolver.ProgressPercent(null, TimeSpan.FromMinutes(10)));
+            Assert.Equal(0, PlaybackStatusResolver.ProgressPercent(state, TimeSpan.Zero));
+        }
+
+        [Fact]
+        public void ProgressPercent_ForAHeardEpisode_IsFull()
+        {
+            PlaybackState state = new() { EpisodeId = Helpers.TestIds.EpisodeA, IsCompleted = true };
+
+            Assert.Equal(100, PlaybackStatusResolver.ProgressPercent(state, TimeSpan.FromMinutes(10)));
+        }
+
+        [Fact]
+        public void ProgressPercent_MidEpisode_IsTheShareOfThePosition()
+        {
+            PlaybackState state = new() { EpisodeId = Helpers.TestIds.EpisodeA, LastPosition = TimeSpan.FromMinutes(15) };
+
+            Assert.Equal(25, PlaybackStatusResolver.ProgressPercent(state, TimeSpan.FromMinutes(60)), 6);
+        }
+
+        [Fact]
+        public void ProgressPercent_PastTheEnd_StaysAtFull()
+        {
+            // Die gespeicherte Dauer kann kürzer sein als die Dateien; der Balken läuft nicht über.
+            PlaybackState state = new() { EpisodeId = Helpers.TestIds.EpisodeA, LastPosition = TimeSpan.FromMinutes(70) };
+
+            Assert.Equal(100, PlaybackStatusResolver.ProgressPercent(state, TimeSpan.FromMinutes(60)));
+        }
+
+        [Fact]
         public void Resolve_AfterReset_IsNotStarted()
         {
             PlaybackState state = new()

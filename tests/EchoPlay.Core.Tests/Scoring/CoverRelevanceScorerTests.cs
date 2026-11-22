@@ -4,7 +4,7 @@ namespace EchoPlay.Core.Tests.Scoring
 {
     /// <summary>
     /// Tests für <see cref="CoverRelevanceScorer"/>.
-    /// Stellt sicher, dass nur relevante Cover-Ergebnisse den Mindest-Score erreichen
+    /// Prüft, dass nur relevante Cover-Ergebnisse den Mindest-Score erreichen
     /// und irrelevante Treffer (anderer Künstler, andere Serie) zuverlässig gefiltert werden.
     /// </summary>
     public sealed class CoverRelevanceScorerTests

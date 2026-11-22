@@ -5,7 +5,6 @@ namespace EchoPlay.Logger.Tests.Fakes
 {
     /// <summary>
     /// Test-Senke, die alle empfangenen Log-Einträge in einer Liste speichert.
-    /// Ermöglicht die Überprüfung von Logging-Aufrufen in Unit-Tests.
     /// </summary>
     internal sealed class CapturingSink : ILogSink
     {

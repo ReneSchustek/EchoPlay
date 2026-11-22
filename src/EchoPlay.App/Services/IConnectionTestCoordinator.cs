@@ -16,8 +16,8 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// App-Service, der eine Minimal-Abfrage gegen den aktiven Metadaten-Provider
     /// (Spotify oder Apple Music) absetzt, um Token-Fluss und Netzwerk zu prüfen.
-    /// Lokalisierung der Erfolgs-/Fehlermeldung bleibt bewusst außerhalb, damit der Coordinator
-    /// frei von WinUI-Resource-Abhängigkeiten testbar ist.
+    /// Die Erfolgs- und Fehlermeldung rahmt der Aufrufer; der Coordinator liefert nur die rohe
+    /// Fehlermeldung und, für den Fall ohne Anbieter, einen fertig übersetzten Hinweis.
     /// </summary>
     public interface IConnectionTestCoordinator
     {

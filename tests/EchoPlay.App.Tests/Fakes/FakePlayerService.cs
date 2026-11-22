@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Fake für <see cref="IPlayerService"/>.
-    /// Zeichnet Methodenaufrufe auf und ermöglicht das manuelle Auslösen von <see cref="StateChanged"/>.
+    /// Zeichnet Methodenaufrufe auf; <see cref="StateChanged"/> lässt sich von Hand auslösen.
     /// </summary>
     internal sealed class FakePlayerService : IPlayerService
     {
@@ -85,7 +85,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Setzt den internen Zustand und feuert <see cref="StateChanged"/>.
-        /// Ermöglicht Tests, auf Zustandsänderungen des ViewModel zu reagieren.
+        /// Damit sehen Tests, wie das ViewModel auf eine Zustandsänderung reagiert.
         /// </summary>
         public void SetState(string? trackTitle, bool isPlaying, double positionSeconds, double durationSeconds)
         {

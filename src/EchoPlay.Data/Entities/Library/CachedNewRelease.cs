@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Contracts;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Entities.Library
@@ -15,12 +16,13 @@ namespace EchoPlay.Data.Entities.Library
     /// eindeutige Schlüssel aus der iTunes-API. Damit werden Duplikate beim erneuten
     /// Abruf verhindert.
     /// </remarks>
-    public class CachedNewRelease : BaseEntity
+    public sealed class CachedNewRelease : BaseEntity, IProviderRelease
     {
         /// <summary>
         /// ID der Serie, zu der diese Neuerscheinung gehört.
         /// Fremdschlüssel auf <see cref="Series"/>.
         /// </summary>
+        [DataScope(DataScope.LocalIdentity)]
         public Guid SeriesId { get; set; }
 
         /// <summary>
@@ -33,6 +35,7 @@ namespace EchoPlay.Data.Entities.Library
         /// Albumname aus iTunes (z.B. "Die drei ??? - Folge 238 - Der dunkle Taipan").
         /// Wird als Episodentitel auf der Kachel angezeigt.
         /// </summary>
+        [DataScope(DataScope.Cache)]
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
@@ -40,12 +43,14 @@ namespace EchoPlay.Data.Entities.Library
         /// Null wenn keine Nummer erkannt wurde (Sonderfolgen, Compilations).
         /// Wird für den Abgleich mit lokalen Episoden verwendet.
         /// </summary>
+        [DataScope(DataScope.Cache)]
         public int? EpisodeNumber { get; set; }
 
         /// <summary>
         /// Veröffentlichungsdatum aus iTunes (UTC).
         /// Liegt das Datum in der Zukunft, handelt es sich um eine Ankündigung.
         /// </summary>
+        [DataScope(DataScope.Cache)]
         public DateTime ReleaseDate { get; set; }
 
         /// <summary>
@@ -54,7 +59,8 @@ namespace EchoPlay.Data.Entities.Library
         /// (z.B. /100x100bb → /600x600bb).
         /// </summary>
         [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "Entity spiegelt DB-Spalte CoverUrl (iTunes-Artwork-URL als TEXT); Uri-Umwandlung würde EF-Core-Mapping und iTunes-URL-Pattern-Manipulation (100x100bb → 600x600bb) komplizieren.")]
+            Justification = "TEXT-Spalte mit gewachsenem Bestand. Als Uri ließe eine einzige unlesbare Zeile beim Materialisieren die ganze Abfrage scheitern; wer die Adresse braucht, liest sie über WebAddress.")]
+        [DataScope(DataScope.Cache)]
         public string? CoverUrl { get; set; }
 
         /// <summary>
@@ -62,6 +68,7 @@ namespace EchoPlay.Data.Entities.Library
         /// Wird als fachlicher Unique-Key verwendet, damit ein Album nicht mehrfach
         /// im Cache landet.
         /// </summary>
+        [DataScope(DataScope.Cache)]
         public long CollectionId { get; set; }
 
         /// <summary>
@@ -69,6 +76,14 @@ namespace EchoPlay.Data.Entities.Library
         /// Anhand dieses Werts entscheidet der Hintergrund-Updater, ob die Serie
         /// erneut bei iTunes abgefragt werden muss.
         /// </summary>
+        [DataScope(DataScope.Cache)]
         public DateTime CheckedAtUtc { get; set; }
+
+        /// <inheritdoc/>
+        string? IProviderRelease.CoverAddress
+        {
+            get => CoverUrl;
+            set => CoverUrl = value;
+        }
     }
 }

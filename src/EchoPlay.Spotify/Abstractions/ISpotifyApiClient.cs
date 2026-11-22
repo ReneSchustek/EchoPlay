@@ -4,8 +4,8 @@ namespace EchoPlay.Spotify.Abstractions
 {
     /// <summary>
     /// Abstraktion für den technischen Zugriff auf die Spotify-Web-API.
-    /// Das Interface definiert ausschließlich rohe Leseoperationen und stellt sicher, dass fachliche Logik und Tests nicht vom
-    /// konkreten HTTP-Zugriff abhängig sind.
+    /// Nur rohe Leseoperationen; fachliche Logik und Tests hängen damit nicht am konkreten
+    /// HTTP-Zugriff.
     /// </summary>
     public interface ISpotifyApiClient
     {
@@ -20,7 +20,7 @@ namespace EchoPlay.Spotify.Abstractions
 
         /// <summary>
         /// Sucht Alben (Folgen) anhand eines Suchbegriffs.
-        /// Ermöglicht die Suche nach einzelnen Hörspielepisoden statt nur nach Serien.
+        /// Damit lassen sich einzelne Hörspielfolgen finden, nicht nur Serien.
         /// </summary>
         /// <param name="query">Der Suchtext (z.B. "Kapatenhund").</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>

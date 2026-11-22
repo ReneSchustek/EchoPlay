@@ -46,15 +46,15 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task TrackTitle_TrackIsTagged_ShowsTitleFromTheFile()
         {
             // Unten muss dasselbe stehen wie in der Wiedergabeliste der Player-Seite.
-            const string spur = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+            const string track = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
 
             FakeTrackTitleResolver titleResolver = new();
-            titleResolver.TitlesByPath[spur] = "Das leere Haus (Teil 1)";
+            titleResolver.TitlesByPath[track] = "Das leere Haus (Teil 1)";
 
             FakePlayerService playerService = new();
             MiniPlayerViewModel vm = BuildViewModel(playerService, titleResolver);
 
-            playerService.SimulateExternalPlayback([spur], currentPath: spur);
+            playerService.SimulateExternalPlayback([track], currentPath: track);
             await vm.PendingTitleLoad;
 
             Assert.Equal("Das leere Haus (Teil 1)", vm.TrackTitle);
@@ -64,12 +64,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task TrackTitle_TrackHasNoTag_KeepsTheNumberInTheFileName()
         {
             // Der Mini-Player hat keine Nummernspalte, die Nummer muss also stehen bleiben.
-            const string spur = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+            const string track = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
 
             FakePlayerService playerService = new();
             MiniPlayerViewModel vm = BuildViewModel(playerService, new FakeTrackTitleResolver());
 
-            playerService.SimulateExternalPlayback([spur], currentPath: spur);
+            playerService.SimulateExternalPlayback([track], currentPath: track);
             await vm.PendingTitleLoad;
 
             Assert.Equal("01 - Das leere Haus (Teil 1)", vm.TrackTitle);
@@ -211,8 +211,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(string.Empty, vm.SleepTimerText);
         }
 
-        // ── MiniPlayer-Sichtbarkeit bei lokaler Wiedergabe ────────────────────────
-
         [Fact]
         public void MiniPlayerVisibility_IsCollapsed_Initially()
         {
@@ -252,8 +250,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Equal(Visibility.Collapsed, vm.MiniPlayerVisibility);
         }
-
-        // ── Error Handling ──────────────────────────────────────────────────────
 
         [Fact]
         public void ErrorMessage_IsEmpty_Initially()

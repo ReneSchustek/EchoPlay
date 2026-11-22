@@ -19,8 +19,6 @@ namespace EchoPlay.TagManager.Tests.Services
     {
         private static FileRenameService CreateService() => new(new FakeLoggerFactory());
 
-        // ── BuildPreview ─────────────────────────────────────────────────────────
-
         [Fact]
         public void BuildPreview_ResolvesTitle()
         {
@@ -228,8 +226,6 @@ namespace EchoPlay.TagManager.Tests.Services
             Assert.Equal(@"C:\audio\alt.mp3", preview[0].FilePath);
             Assert.Equal(@"C:\audio\Neuer Titel.mp3", preview[0].NewFilePath);
         }
-
-        // ── RenameAsync ──────────────────────────────────────────────────────────
 
         [Fact]
         public async Task RenameAsync_RenamesFileAndReturnsCount()

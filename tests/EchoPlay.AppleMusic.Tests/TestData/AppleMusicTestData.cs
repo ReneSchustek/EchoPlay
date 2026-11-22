@@ -10,7 +10,7 @@ namespace EchoPlay.AppleMusic.Tests.TestData
     {
         /// <summary>
         /// Ein typischer Hörspiel-Künstler mit Hörspiel-Genre.
-        /// Wird bewusst eindeutig gewählt, um Suchtests reproduzierbar zu halten.
+        /// Wird eindeutig gewählt, um Suchtests reproduzierbar zu halten.
         /// </summary>
         public static ITunesArtistDto DieDreiFragezeichen => new()
         {
@@ -23,7 +23,7 @@ namespace EchoPlay.AppleMusic.Tests.TestData
 
         /// <summary>
         /// Repräsentiert einen fachlich ungeeigneten Künstler.
-        /// Dieser Datensatz wird bewusst generisch gehalten, da es nicht um iTunes-spezifische Details geht,
+        /// Dieser Datensatz wird generisch gehalten, da es nicht um iTunes-spezifische Details geht,
         /// sondern um die Ablehnung durch die Seriensuche.
         /// </summary>
         public static ITunesArtistDto UnsuitableArtist => new()
@@ -55,7 +55,7 @@ namespace EchoPlay.AppleMusic.Tests.TestData
         /// <summary>
         /// Ein einzelner Hörspiel-Track (45 Minuten).
         /// </summary>
-        public static ITunesTrackDto Folge1Track => new()
+        public static ITunesTrackDto Episode1Track => new()
         {
             WrapperType = "track",
             TrackId = 100001,

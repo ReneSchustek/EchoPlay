@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Erfasst alle BeginScope-Aufrufe in der Reihenfolge ihrer Eröffnung.
-        /// Ermöglicht Tests gegen JobScopes-Konstanten, ohne die Scope-Mechanik selbst zu testen.
+        /// Damit prüfen Tests gegen die JobScopes-Konstanten, ohne die Scope-Mechanik selbst zu testen.
         /// </summary>
         public List<string> ScopeNames { get; } = [];
 

@@ -25,7 +25,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         }
 
         /// <summary>
-        /// Liefert zwei Alben in bewusst unsortierter Reihenfolge,
+        /// Liefert zwei Alben in unsortierter Reihenfolge,
         /// um die fachliche Sortierung nach ReleaseDate zu erzwingen.
         /// </summary>
         public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
 
         /// <summary>
         /// Liefert genau einen Track pro Album.
-        /// Die TrackNumber ist bewusst identisch,
+        /// Die TrackNumber ist identisch,
         /// damit nur die Albumreihenfolge relevant ist.
         /// </summary>
         public Task<IReadOnlyList<SpotifyTrackDto>> GetAlbumTracksAsync(string albumId, CancellationToken cancellationToken = default)

@@ -1,7 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
-using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -14,14 +13,11 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Baut die beiden Serien-Abschnitte der Startseite: „Weiterhören" und die Favoriten.
-    /// Beide zeigen Serien statt Folgen, beide brauchen dafür nur das Serien-Cover und die
-    /// vom Nutzer gespeicherte Reihenfolge.
+    /// Beide zeigen Serien statt Folgen und übernehmen die Reihenfolge, in der
+    /// <see cref="DashboardSnapshot"/> die Favoriten liefert.
     /// </summary>
     internal sealed class DashboardSeriesSectionBuilder
     {
-        /// <summary>Abschnittsname, unter dem die Reihenfolge der Favoriten liegt.</summary>
-        private const string SectionFavorites = "Favoriten";
-
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly DashboardCoverProvider _coverProvider;
         private readonly IConfirmationDialogService _confirmationDialogService;
@@ -90,16 +86,12 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Baut die Favoriten-Kacheln samt Cover und bringt sie in die gespeicherte
-        /// Reihenfolge. Sie ist unabhängig von der der Neuerscheinungen — der Nutzer sortiert
-        /// beide Abschnitte getrennt. Serien ohne gespeicherte Position hängen alphabetisch an.
+        /// Baut die Favoriten-Kacheln samt Cover in der übergebenen Reihenfolge.
         /// </summary>
-        /// <param name="favoriteSeries">Die favorisierten Serien.</param>
-        /// <param name="positionService">Zugriff auf die gespeicherten Reihenfolgen.</param>
-        /// <returns>Die Kacheln in Anzeigereihenfolge.</returns>
+        /// <param name="favoriteSeries">Die favorisierten Serien, schon in Anzeigereihenfolge.</param>
+        /// <returns>Die Kacheln in derselben Reihenfolge.</returns>
         public async Task<IReadOnlyList<FavoriteSeriesCardViewModel>> BuildFavoriteCardsAsync(
-            IReadOnlyList<Series> favoriteSeries,
-            IDashboardPositionDataService positionService)
+            IReadOnlyList<Series> favoriteSeries)
         {
             List<FavoriteSeriesCardViewModel> favoriteCards = [];
 
@@ -110,14 +102,6 @@ namespace EchoPlay.App.ViewModels
                     series.Id, series.Title, cover, _scopeFactory, _confirmationDialogService, _localizationService));
             }
 
-            IReadOnlyList<DashboardPosition> favoritePositions = await positionService.GetBySectionAsync(SectionFavorites);
-            Dictionary<Guid, int> positionBySeriesId = new(favoritePositions.Count);
-            foreach (DashboardPosition dp in favoritePositions)
-            {
-                positionBySeriesId[dp.SeriesId] = dp.Position;
-            }
-
-            favoriteCards.Sort((a, b) => CompareByPosition(a, b, positionBySeriesId));
             return favoriteCards;
         }
 
@@ -154,36 +138,6 @@ namespace EchoPlay.App.ViewModels
             }
 
             return completed;
-        }
-
-        /// <summary>
-        /// Vergleicht zwei Kacheln: gespeicherte Position schlägt Titel, und eine Serie mit
-        /// Position steht vor jeder ohne.
-        /// </summary>
-        private static int CompareByPosition(
-            FavoriteSeriesCardViewModel a,
-            FavoriteSeriesCardViewModel b,
-            Dictionary<Guid, int> positionBySeriesId)
-        {
-            bool aHasPos = positionBySeriesId.TryGetValue(a.SeriesId, out int posA);
-            bool bHasPos = positionBySeriesId.TryGetValue(b.SeriesId, out int posB);
-
-            if (aHasPos && bHasPos)
-            {
-                return posA.CompareTo(posB);
-            }
-
-            if (aHasPos)
-            {
-                return -1;
-            }
-
-            if (bHasPos)
-            {
-                return 1;
-            }
-
-            return string.Compare(a.SeriesName, b.SeriesName, StringComparison.Ordinal);
         }
     }
 }

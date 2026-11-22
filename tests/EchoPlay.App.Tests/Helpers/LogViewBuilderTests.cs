@@ -25,8 +25,8 @@ namespace EchoPlay.App.Tests.Helpers
         {
             IReadOnlyList<string> lines = LogViewBuilder.BuildLines([], isViewerAvailable: true);
 
-            string einzige = Assert.Single(lines);
-            Assert.Equal("Keine Protokolleinträge vorhanden.", einzige);
+            string single = Assert.Single(lines);
+            Assert.Equal("Keine Protokolleinträge vorhanden.", single);
         }
 
         [Fact]
@@ -45,8 +45,8 @@ namespace EchoPlay.App.Tests.Helpers
             IReadOnlyList<string> lines = LogViewBuilder.BuildLines(
                 ["10:00 INFO Start"], isViewerAvailable: false);
 
-            string einzige = Assert.Single(lines);
-            Assert.Contains("nicht verfügbar", einzige, System.StringComparison.Ordinal);
+            string single = Assert.Single(lines);
+            Assert.Contains("nicht verfügbar", single, System.StringComparison.Ordinal);
         }
     }
 }

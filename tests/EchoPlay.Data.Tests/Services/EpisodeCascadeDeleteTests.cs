@@ -13,12 +13,11 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class EpisodeCascadeDeleteTests : DbTestBase
     {
         /// <summary>
-        /// Stellt sicher, dass das Löschen einer Episode alle zugehörigen PlaybackStates logisch löscht, während die zugehörige Serie
+        /// Prüft, dass das Löschen einer Episode alle zugehörigen PlaybackStates logisch löscht, während die zugehörige Serie
         /// unverändert bestehen bleibt.
-        /// Dieser Test bildet eine zentrale fachliche Regel ab: Episoden dürfen nicht ohne Wiedergabestatus verschwinden, gleichzeitig
+        /// Die fachliche Regel dahinter: Episoden dürfen nicht ohne Wiedergabestatus verschwinden, gleichzeitig
         /// darf eine Serie nicht implizit gelöscht werden.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
         public async Task DeletingEpisode_SoftDeletesPlaybackState_ButNotSeries()
         {
@@ -33,7 +32,7 @@ namespace EchoPlay.Data.Tests.Services
 
             EpisodeDataService service = new(Context, NullLoggerFactory);
 
-            // Das Löschen der Episode löst bewusst die Kaskade auf die untergeordneten PlaybackStates aus.
+            // Das Löschen der Episode löst die Kaskade auf die untergeordneten PlaybackStates aus.
             await service.DeleteAsync(episode.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             // Der IgnoreQueryFilters-Aufruf ist notwendig, um den tatsächlichen Persistenzzustand unabhängig vom globalen Soft-Delete-Filter

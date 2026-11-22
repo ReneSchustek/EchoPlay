@@ -17,8 +17,8 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class MaintenanceSettingsViewModelTests
     {
-        private static (MaintenanceSettingsViewModel ViewModel, FakeDatabaseMaintenanceService Maintenance, FakeLogViewerCoordinator Logs)
-            Build(bool logViewerAvailable = true, System.Action? onUserEdit = null)
+        private static (MaintenanceSettingsViewModel ViewModel, FakeDatabaseMaintenanceService Maintenance)
+            Build(System.Action? onUserEdit = null)
         {
             FakeDatabaseMaintenanceService maintenance = new();
 
@@ -29,20 +29,17 @@ namespace EchoPlay.App.Tests.ViewModels
 
             ServiceProvider provider = services.BuildServiceProvider();
 
-            FakeLogViewerCoordinator logs = new() { IsLiveViewAvailable = logViewerAvailable };
-
             MaintenanceSettingsViewModel viewModel = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                logs,
                 onUserEdit: onUserEdit ?? (() => { }));
 
-            return (viewModel, maintenance, logs);
+            return (viewModel, maintenance);
         }
 
         [Fact]
         public async Task RunMaintenanceAsync_ResetsRunningFlagAfterwards()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             await viewModel.RunMaintenanceAsync();
 
@@ -55,7 +52,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Der Lauf-Zustand muss nach dem ersten Durchgang wieder freigegeben sein,
             // sonst bliebe die Schaltfläche dauerhaft gesperrt.
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             await viewModel.RunMaintenanceAsync();
             await viewModel.RunMaintenanceAsync();
@@ -66,7 +63,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ResetLibraryAsync_OnlineScope_ClearsOnlineOnly()
         {
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
 
             await viewModel.ResetLibraryAsync(0);
 
@@ -78,7 +75,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ResetLibraryAsync_LocalScope_ClearsLocalOnly()
         {
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
 
             await viewModel.ResetLibraryAsync(1);
 
@@ -89,7 +86,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ResetLibraryAsync_AllScope_ClearsEverything()
         {
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
 
             await viewModel.ResetLibraryAsync(2);
 
@@ -99,7 +96,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task ResetLibraryAsync_ResetsRunningFlagAfterwards()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             await viewModel.ResetLibraryAsync(2);
 
@@ -107,31 +104,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void IsLogViewerAvailable_FollowsTheCoordinator()
-        {
-            // Ohne Speicher-Senke gibt es nichts anzuzeigen, der Bereich blendet sich aus.
-            (MaintenanceSettingsViewModel withViewer, _, _) = Build(logViewerAvailable: true);
-            (MaintenanceSettingsViewModel withoutViewer, _, _) = Build(logViewerAvailable: false);
-
-            Assert.True(withViewer.IsLogViewerAvailable);
-            Assert.False(withoutViewer.IsLogViewerAvailable);
-        }
-
-        [Fact]
-        public async Task LoadLogFilesAsync_FillsFileList()
-        {
-            (MaintenanceSettingsViewModel viewModel, _, FakeLogViewerCoordinator logs) = Build();
-            logs.FileOptions.Add(new EchoPlay.App.Models.LogFileOption("2026-07-27.log", Helpers.TestIds.ReferenceDate, @"C:\Logs\2026-07-27.log"));
-
-            await viewModel.LoadLogFilesAsync();
-
-            Assert.NotEmpty(viewModel.AvailableLogFiles);
-        }
-
-        [Fact]
         public void ClearCacheOnNextStart_Change_NotifiesTheView()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             List<string> changed = [];
             viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
@@ -144,7 +119,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void IsMaintaining_Change_UpdatesDependentFlag()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             Assert.True(viewModel.IsNotMaintaining);
             Assert.False(viewModel.IsMaintaining);
@@ -153,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void LoadFrom_TakesAllMaintenanceValues()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             viewModel.LoadFrom(new AppSettings
             {
@@ -173,7 +148,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void LoadFrom_IsNotReportedAsUserEdit()
         {
             int edits = 0;
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build(onUserEdit: () => edits++);
+            (MaintenanceSettingsViewModel viewModel, _) = Build(onUserEdit: () => edits++);
 
             viewModel.LoadFrom(new AppSettings { DbPurgeDays = 45, DbBackupRetentionCount = 7 });
 
@@ -185,7 +160,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void WriteTo_NegativePurgeDays_AreClampedToZero()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
             viewModel.DbPurgeDays = -5;
 
             AppSettings settings = new();
@@ -202,7 +177,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [InlineData(7, 7)]
         public void WriteTo_BackupCount_StaysWithinTheAllowedRange(int configured, int expected)
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
             viewModel.DbBackupRetentionCount = configured;
 
             AppSettings settings = new();
@@ -216,16 +191,16 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void WriteTo_WithoutSettings_Throws()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             _ = Assert.Throws<ArgumentNullException>(() => viewModel.WriteTo(null!));
         }
         [Fact]
-        public async Task RunMaintenanceAsync_BereinigtMitDenEingestelltenTagenUndKompaktiert()
+        public async Task RunMaintenanceAsync_PurgesWithTheConfiguredDaysAndCompacts()
         {
             // Der eingestellte Aufbewahrungszeitraum muss beim Dienst ankommen, sonst
             // löscht die Wartung mehr oder weniger, als der Nutzer gewählt hat.
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
             viewModel.DbPurgeDays = 14;
 
             await viewModel.RunMaintenanceAsync();
@@ -236,9 +211,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task RunMaintenanceAsync_ReichtKeineNegativenTageWeiter()
+        public async Task RunMaintenanceAsync_PassesNoNegativeDays()
         {
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
             viewModel.DbPurgeDays = -5;
 
             await viewModel.RunMaintenanceAsync();
@@ -247,10 +222,10 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task RunMaintenanceAsync_ZeigtDenFehlerUndGibtDieSchaltflaecheFrei()
+        public async Task RunMaintenanceAsync_ShowsTheErrorAndReleasesTheButton()
         {
             // Ein gesperrtes SQLite-File darf die Wartungsschaltfläche nicht dauerhaft blockieren.
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
             maintenance.FailureMessage = "Datenbank ist gesperrt";
 
             await viewModel.RunMaintenanceAsync();
@@ -261,30 +236,50 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task ResetLibraryAsync_ZeigtDenFehlerUndGibtDieSchaltflaecheFrei()
+        public async Task ResetLibraryAsync_ShowsTheErrorAndReleasesTheButton()
         {
-            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
             maintenance.FailureMessage = "Datei in Benutzung";
 
             await viewModel.ResetLibraryAsync(2);
 
             Assert.False(viewModel.IsMaintaining);
             Assert.Contains("Datei in Benutzung", viewModel.MaintenanceStatusText, StringComparison.Ordinal);
+
+            // Die Meldung nennt das Zurücksetzen, nicht einen Abgleich, den es hier nicht gab.
+            Assert.StartsWith("Zurücksetzen", viewModel.MaintenanceStatusText, StringComparison.Ordinal);
         }
 
         [Fact]
-        public void Statustext_BleibtOhneInhaltUnsichtbar()
+        public async Task ResetLibraryAsync_WhileAnotherRunIsOpen_DoesNotStartASecond()
         {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
+            (MaintenanceSettingsViewModel viewModel, FakeDatabaseMaintenanceService maintenance) = Build();
+            TaskCompletionSource hold = new();
+            maintenance.ClearLibraryHold = hold.Task;
+
+            Task first = viewModel.ResetLibraryAsync(2);
+            await viewModel.ResetLibraryAsync(2);
+            hold.SetResult();
+            await first;
+
+            // Ein zweiter Lauf neben dem ersten griffe auf dieselben Tabellen zu.
+            Assert.Equal(1, maintenance.ClearAllCount);
+            Assert.False(viewModel.IsMaintaining);
+        }
+
+        [Fact]
+        public void StatusText_WithoutContent_StaysHidden()
+        {
+            (MaintenanceSettingsViewModel viewModel, _) = Build();
 
             Assert.Equal(Microsoft.UI.Xaml.Visibility.Collapsed, viewModel.MaintenanceStatusVisibility);
         }
 
         [Fact]
-        public void Sicherungseinstellungen_GeltenAlsNutzeraenderung()
+        public void BackupSettings_CountAsUserEdit()
         {
             int edits = 0;
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build(onUserEdit: () => edits++);
+            (MaintenanceSettingsViewModel viewModel, _) = Build(onUserEdit: () => edits++);
 
             viewModel.DbBackupEnabled = !viewModel.DbBackupEnabled;
             viewModel.DbBackupRetentionCount = 7;
@@ -292,66 +287,5 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(2, edits);
         }
 
-        [Fact]
-        public async Task LoadLogFilesAsync_BehaeltDieWahlDesNutzers()
-        {
-            // Nach jedem Neuladen wieder auf "Live" zu springen würde die gerade
-            // geöffnete Datei unter dem Nutzer wegziehen.
-            (MaintenanceSettingsViewModel viewModel, _, FakeLogViewerCoordinator logs) = Build();
-            logs.FileOptions.Add(new EchoPlay.App.Models.LogFileOption("gestern.log", DateTime.UnixEpoch, "C:/logs/gestern.log"));
-            logs.FileContents["C:/logs/gestern.log"] = ["erste Zeile", "zweite Zeile"];
-
-            await viewModel.LoadLogFilesAsync();
-            viewModel.SelectedLogFile = viewModel.AvailableLogFiles[1];
-            await viewModel.LoadLogFilesAsync();
-
-            Assert.Equal("gestern.log", viewModel.SelectedLogFile?.FileName);
-        }
-
-        [Fact]
-        public async Task DateiWahl_ZeigtDenInhaltDerDatei()
-        {
-            (MaintenanceSettingsViewModel viewModel, _, FakeLogViewerCoordinator logs) = Build();
-            logs.FileOptions.Add(new EchoPlay.App.Models.LogFileOption("gestern.log", DateTime.UnixEpoch, "C:/logs/gestern.log"));
-            logs.FileContents["C:/logs/gestern.log"] = ["erste Zeile", "zweite Zeile"];
-            await viewModel.LoadLogFilesAsync();
-
-            viewModel.SelectedLogFile = viewModel.AvailableLogFiles[1];
-            await Task.Yield();
-
-            Assert.Equal(["erste Zeile", "zweite Zeile"], viewModel.LogEntries);
-        }
-
-        [Fact]
-        public async Task RueckkehrZurLiveAnsicht_ZeigtWiederDenPuffer()
-        {
-            (MaintenanceSettingsViewModel viewModel, _, FakeLogViewerCoordinator logs) = Build();
-            logs.AddLiveEntry(new EchoPlay.Logger.Models.LogEntry(
-                new DateTime(2026, 8, 18, 10, 0, 0, DateTimeKind.Utc),
-                EchoPlay.Logger.Models.LogLevel.Information,
-                "Live-Eintrag",
-                "Test",
-                []));
-            logs.FileOptions.Add(new EchoPlay.App.Models.LogFileOption("gestern.log", DateTime.UnixEpoch, "C:/logs/gestern.log"));
-            logs.FileContents["C:/logs/gestern.log"] = ["Datei-Zeile"];
-            await viewModel.LoadLogFilesAsync();
-
-            viewModel.SelectedLogFile = viewModel.AvailableLogFiles[1];
-            await Task.Yield();
-            viewModel.SelectedLogFile = viewModel.AvailableLogFiles[0];
-            await Task.Yield();
-
-            Assert.Contains(viewModel.LogEntries, line => line.Contains("Live-Eintrag", StringComparison.Ordinal));
-        }
-
-        [Fact]
-        public void Dispose_LaeuftAuchOhneLaufendenZeitgeber()
-        {
-            (MaintenanceSettingsViewModel viewModel, _, _) = Build();
-
-            viewModel.Dispose();
-
-            Assert.False(viewModel.IsLiveViewActive);
-        }
     }
 }

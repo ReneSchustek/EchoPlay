@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using EchoPlay.App.Startup;
 using EchoPlay.Core.Abstractions.Time;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -14,20 +15,25 @@ namespace EchoPlay.App.Composition
     internal static class AppServiceRegistration
     {
         /// <summary>Mindestabstand zwischen zwei Anfragen je Gegenstelle.</summary>
+        /// <remarks>
+        /// MusicBrainz und das Cover Art Archive verlangen höchstens eine Anfrage je Sekunde und
+        /// sperren sonst die Adresse (Beleg: MusicBrainz, „API Rate Limiting"). Apple nennt für
+        /// die Search API ohne feste Zusage rund 20 Anfragen je Minute; 1,5 Sekunden erlauben bis
+        /// zu 40, ein 429 fängt die Wiederholungsregel mit <c>Retry-After</c> ab.
+        /// </remarks>
         private static readonly Dictionary<string, TimeSpan> HostRateLimits = new()
         {
             ["musicbrainz.org"] = TimeSpan.FromSeconds(1),
             ["coverartarchive.org"] = TimeSpan.FromSeconds(1),
             ["itunes.apple.com"] = TimeSpan.FromMilliseconds(1500),
-            ["api.discogs.com"] = TimeSpan.FromSeconds(1),
         };
 
         /// <summary>Mindestabstand für Gegenstellen, die nur Bilder ausliefern.</summary>
         /// <remarks>
         /// Ein Bildabruf an einem Auslieferungsnetz ist kein API-Aufruf: Es gibt dort kein
         /// Kontingent zu schonen, und die Cover einer Trefferseite sollen nebeneinander laden
-        /// statt hintereinander. Mit dem Standardabstand von einer Sekunde erschien das
-        /// fünfzehnte Cover erst nach fünfzehn Sekunden. Die Rechnernamen wechseln
+        /// statt hintereinander. Mit einer Sekunde Abstand erschiene das fünfzehnte Cover erst
+        /// nach fünfzehn Sekunden. Die Rechnernamen wechseln
         /// (<c>is1-ssl</c> bis <c>is5-ssl</c>), deshalb die Endung statt des vollen Namens.
         /// </remarks>
         private static readonly Dictionary<string, TimeSpan> ImageHostRateLimits = new()
@@ -53,11 +59,11 @@ namespace EchoPlay.App.Composition
 
         /// <summary>
         /// Registriert den <see cref="CoverService"/> als Singleton und bildet
-        /// <see cref="ICoverService"/> auf DIESELBE konkrete Instanz ab.
+        /// <see cref="ICoverService"/> auf dieselbe konkrete Instanz ab.
         /// </summary>
         /// <remarks>
-        /// Die Fabrik löst bewusst den KONKRETEN <see cref="CoverService"/> auf, nicht
-        /// <see cref="ICoverService"/> selbst — eine Selbst-Auflösung würde endlos
+        /// Die Fabrik löst den konkreten <see cref="CoverService"/> auf, nicht
+        /// <see cref="ICoverService"/> selbst; eine Selbst-Auflösung würde endlos
         /// rekursieren (der Container erkennt nur Zyklen über Konstruktoren, nicht über
         /// Fabriken) und den Start einfrieren. Bewusst als eigene Methode, damit ein Test
         /// genau diese Verdrahtung auflösen und gegen den Rückfall absichern kann.
@@ -113,6 +119,16 @@ namespace EchoPlay.App.Composition
             // Die Ressourcen-Instanz ist threadsicher und teuer zu erzeugen.
             _ = services.AddSingleton<ILocalizationService, LocalizationService>();
 
+            AddDialogServices(services);
+            AddDesktopServices(services);
+        }
+
+        /// <summary>
+        /// Hinweise, Rückfragen und die Prüfungen, die vor einem Online-Zugriff oder beim
+        /// Betreten einer Seite fragen.
+        /// </summary>
+        private static void AddDialogServices(IServiceCollection services)
+        {
             // Kennt die dauerhaft ausgeblendeten Dialoge und hält sie im Speicher. Muss vor
             // den beiden Dialogdiensten stehen, die ihn bei jedem Hinweis befragen.
             _ = services.AddSingleton<IDialogSuppressionService, DialogSuppressionService>();
@@ -128,7 +144,14 @@ namespace EchoPlay.App.Composition
             // Kapselt die Offline-/Nur-Online-Prüfung beim Betreten einer Seite, damit die
             // Ansichtsmodelle sie nicht jeweils selbst mitführen.
             _ = services.AddSingleton<IPageModeGuard, PageModeGuard>();
+        }
 
+        /// <summary>
+        /// Anbindung an Windows: Taskleiste, Dateiauswahl, Prozesse, Sprache, Übertragung und
+        /// die Prüfungen im Startbild.
+        /// </summary>
+        private static void AddDesktopServices(IServiceCollection services)
+        {
             // Steuert den Fortschrittsbalken im Symbol der Taskleiste.
             _ = services.AddSingleton<TaskbarProgressService>();
 
@@ -139,7 +162,10 @@ namespace EchoPlay.App.Composition
             // Sprachwechsel an einer Stelle: Ablage, Sprachvorgabe und Neustart. Wird schon
             // im Startpfad gebraucht, deshalb Singleton.
             _ = services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+            _ = services.AddSingleton<IAppInstanceRegistration, AppInstanceRegistration>();
             _ = services.AddSingleton<ILanguageSwitchService, LanguageSwitchService>();
+            _ = services.AddSingleton<IDataTransferService, DataTransferService>();
+            _ = services.AddSingleton<ILibraryTransferService, LibraryTransferService>();
 
             // Such- und Filterkriterien der Seiten. Die Seiten-Ansichtsmodelle sind
             // kurzlebig; ohne diese Ablage stünde jede Liste nach einem Ausflug in eine
@@ -186,6 +212,8 @@ namespace EchoPlay.App.Composition
             _ = services.AddSingleton(new BackgroundCoverServiceOptions());
             _ = services.AddSingleton<BackgroundCoverService>();
             _ = services.AddSingleton<BackgroundProviderIdService>();
+            _ = services.AddSingleton<ReleaseCalendarRefreshService>();
+            _ = services.AddSingleton<DeviceReplicationService>();
         }
 
         /// <summary>
@@ -197,10 +225,16 @@ namespace EchoPlay.App.Composition
             // Kapselt Einstellungs-Abfrage, den Umbau-Dienst der lokalen Mediathek und die
             // Abbildung auf die Anzeige.
             _ = services.AddSingleton<IFolderRestructureCoordinator, FolderRestructureCoordinator>();
+            _ = services.AddSingleton<IEpisodeFolderRenameCoordinator, EpisodeFolderRenameCoordinator>();
+            _ = services.AddSingleton<ILocalMetadataEditor, LocalMetadataEditor>();
 
             // Kapselt Dateisystem-Analyse, den Abgleich gegen iTunes und die Statusleiste
             // für die Prüfung auf fehlende Folgen.
             _ = services.AddSingleton<IMissingEpisodesCoordinator, MissingEpisodesCoordinator>();
+
+            // Scoped wie die Datendienste, die sie liest; der Koordinator holt sie je Prüfung
+            // aus seinem eigenen Scope.
+            _ = services.AddScoped<KnownNewEpisodeLookup>();
 
             // Kapselt Cover-Suche, Rückfrage beim Überschreiben, Download, Ablage in der
             // Cover-Tabelle, optionales Speichern als Datei und die Auffrischung der Kachel.
@@ -227,6 +261,10 @@ namespace EchoPlay.App.Composition
         {
             _ = services.AddSingleton<UpdateCheckService>();
             _ = services.AddSingleton<IInstallerLauncher, InstallerLauncher>();
+
+            // Ausdrücklich über die Fabrik: Der Prüfer hat einen zweiten Konstruktor mit frei
+            // wählbarem Schlüssel für Tests, und im Betrieb gilt allein der eingebettete.
+            _ = services.AddSingleton(_ => new EchoPlay.Core.Security.ReleaseSignatureVerifier());
             _ = services.AddSingleton<UpdateDownloadService>();
             _ = services.AddSingleton<UpdateInteractionService>();
         }

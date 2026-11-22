@@ -66,7 +66,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Ersetzt die Episodenliste komplett und wendet die aktuelle Sortierung an.
-        /// Die gewählte Sortierung bleibt bewusst erhalten, denn sie darf beim Serienwechsel
+        /// Die gewählte Sortierung bleibt erhalten, denn sie darf beim Serienwechsel
         /// nicht auf den Standard zurückspringen (persistiert über <see cref="EpisodeSortIndex"/>).
         /// </summary>
         /// <param name="episodes">Die neuen Episoden-Kacheln.</param>

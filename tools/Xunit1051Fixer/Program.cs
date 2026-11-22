@@ -8,6 +8,9 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Xunit1051Fixer;
 
+/// <summary>
+/// Schreibt Meldungen auf die Standardausgabe und die Fehlerausgabe.
+/// </summary>
 internal static class Out
 {
     private static readonly TextWriter StdOut = System.Console.Out;
@@ -16,11 +19,21 @@ internal static class Out
     public static void Err(string s) => StdErr.WriteLine(s);
 }
 
+/// <summary>
+/// Behebt die Meldung xUnit1051 in den Testprojekten: Wo ein Aufruf ohne CancellationToken läuft,
+/// obwohl die Methode einen annimmt, wird TestContext.Current.CancellationToken übergeben.
+/// <para>
+/// Geändert wird jede Stelle, die dieses Muster trifft. Die gespeicherte Build-Ausgabe mit den
+/// Meldungen wird nur geladen und gezählt. Die Projekte werden einzeln geladen, weil
+/// MSBuildWorkspace keine .slnx-Dateien liest.
+/// </para>
+/// </summary>
 internal static class Program
 {
     private const string CtFqn = "System.Threading.CancellationToken";
     private const string Replacement = "TestContext.Current.CancellationToken";
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ein Projekt, das MSBuildWorkspace nicht laden kann, wird gemeldet und übersprungen; die übrigen Projekte laufen weiter.")]
     public static async Task<int> Main(string[] args)
     {
         if (!MSBuildLocator.IsRegistered)
@@ -28,22 +41,25 @@ internal static class Program
             MSBuildLocator.RegisterDefaults();
         }
 
-        // Liste der Test-Projekte (relativ zum Repo-Root, der erste Arg). MSBuildWorkspace
-        // versteht .slnx nicht, deshalb laden wir die csproj-Dateien einzeln.
+        // Die Testprojekte, relativ zum Ordner aus dem ersten Argument. MSBuildWorkspace
+        // liest keine .slnx, deshalb werden die csproj-Dateien einzeln geladen.
         string repoRoot = args.Length > 0 ? args[0] : ".";
         repoRoot = Path.GetFullPath(repoRoot);
-        string diagFile = Path.Combine(repoRoot, ".ai", "temp", "xunit1051-build.txt");
+        // Die gespeicherte Build-Ausgabe kommt aus dem zweiten Argument, sonst liegt sie im Ordner selbst.
+        string diagFile = args.Length > 1
+            ? Path.GetFullPath(args[1])
+            : Path.Combine(repoRoot, "xunit1051-build.txt");
         Out.Line($"Repo: {repoRoot}");
         Out.Line($"Diagnose-Liste: {diagFile}");
 
-        // Lese die xUnit1051-Diagnose-Stellen aus dem dotnet-build-Output. Format:
+        // Die xUnit1051-Fundstellen aus der gespeicherten Build-Ausgabe. Format:
         //   <Pfad>.cs(<Line>,<Col>): error xUnit1051: ...
         HashSet<(string File, int Line, int Col)> diagLocations = new();
         if (File.Exists(diagFile))
         {
             foreach (string line in await File.ReadAllLinesAsync(diagFile))
             {
-                int parenOpen = line.IndexOf('(');
+                int parenOpen = line.IndexOf('(', StringComparison.Ordinal);
                 int parenClose = line.IndexOf(')', parenOpen + 1);
                 if (parenOpen <= 0 || parenClose < 0) continue;
                 string path = line.Substring(0, parenOpen);
@@ -80,9 +96,9 @@ internal static class Program
                 continue;
             }
             Out.Line($"\n=== {Path.GetFileNameWithoutExtension(csproj)} ===");
-            // Properties bewusst gesetzt, damit App.Tests (SelfContained=true,
-            // RuntimeIdentifier=win-x64) auch die Referenz auf EchoPlay.App im selben
-            // Modus lädt und der MSBuild NETSDK1150-Check nicht zuschlägt.
+            // Die Eigenschaften sorgen dafür, dass App.Tests (SelfContained=true,
+            // RuntimeIdentifier=win-x64) die Referenz auf EchoPlay.App im selben Modus lädt;
+            // sonst bricht MSBuild mit NETSDK1150 ab.
             Dictionary<string, string> wsProps = new(StringComparer.OrdinalIgnoreCase)
             {
                 ["Configuration"] = "Release",
@@ -143,10 +159,10 @@ internal static class Program
             SyntaxNode root = await tree.GetRootAsync();
             SourceText text = await tree.GetTextAsync();
 
-            // Patches an allen Stellen mit CT-Param ohne CT-Argument. Filter via Diagnose-
-            // Liste ist zu streng, weil der Analyzer auf Member-Identifier statt
-            // InvocationExpression-Start zeigen kann.
-            _ = text; // Diagnose-Liste haben wir geladen, nutzen sie aber zur Sanity-Validierung.
+            // Geändert wird jeder Aufruf, dessen Methode ein CancellationToken annimmt und keines
+            // bekommt. Ein Abgleich mit der Fundstellenliste wäre zu streng: Der Analyzer zeigt
+            // teils auf den Membernamen statt auf den Anfang des Aufrufs.
+            _ = text; // Der Text wird nicht gebraucht, die Diagnose-Liste ebenso wenig.
             List<(InvocationExpressionSyntax Inv, IMethodSymbol Method, IParameterSymbol CtParam)> targets = new();
             foreach (InvocationExpressionSyntax inv in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
             {
@@ -158,9 +174,8 @@ internal static class Program
                 IParameterSymbol? ctParam = method.Parameters.FirstOrDefault(p =>
                     p.Type.ToDisplayString() == CtFqn);
 
-                // Wenn die genutzte Überladung selbst keinen CT-Param hat: prüfen, ob
-                // EINE andere Überladung mit CT existiert. Der xunit-Analyzer fordert
-                // dann den Wechsel auf diese Überladung.
+                // Hat die gewählte Überladung kein CancellationToken, wird geprüft, ob es genau
+                // eine andere mit Token gibt. Der Analyzer verlangt dann den Wechsel auf sie.
                 if (ctParam is null)
                 {
                     IMethodSymbol? overload = FindCtOverload(method);
@@ -223,9 +238,9 @@ internal static class Program
 
     private static bool HasCtArgument(InvocationExpressionSyntax inv, IParameterSymbol ctParam, SemanticModel model)
     {
-        // Schnell-Vorab: irgendein Argument ist vom Typ CancellationToken oder trägt
-        // den ctParam-Namen als NameColon. Konservativ: lieber nicht patchen, wenn
-        // schon ein CT durchgereicht wird.
+        // Vorprüfung: Ist ein Argument schon ein CancellationToken oder als benanntes Argument
+        // an den Token-Parameter gebunden, bleibt der Aufruf unverändert. Im Zweifel lieber
+        // nichts ändern.
         foreach (ArgumentSyntax arg in inv.ArgumentList.Arguments)
         {
             if (arg.NameColon is { Name.Identifier.ValueText: string nm } && nm == ctParam.Name)
@@ -237,9 +252,9 @@ internal static class Program
             {
                 return true;
             }
-            // Text-Fallback für den Fall, dass die Compilation unvollständig geladen
-            // wurde (z. B. EchoPlay.App.Tests mit WorkspaceFailure NETSDK1150 referenziert
-            // EchoPlay.App self-contained, Symbol-Resolution liefert dann kein Type).
+            // Rückfall auf den Text, falls die Compilation unvollständig geladen ist: Scheitert
+            // die Referenz von EchoPlay.App.Tests auf EchoPlay.App an NETSDK1150, liefert die
+            // Symbolauflösung keinen Typ.
             string exprText = arg.Expression.ToString();
             if (exprText == "CancellationToken.None"
                 || exprText.EndsWith(".CancellationToken", StringComparison.Ordinal)
@@ -252,7 +267,7 @@ internal static class Program
             }
         }
 
-        // Tieferer Check via IInvocationOperation als Sicherheits-Netz.
+        // Zur Sicherheit zusätzlich über IInvocationOperation prüfen.
         IOperation? op = model.GetOperation(inv);
         if (op is IInvocationOperation invOp)
         {
@@ -282,9 +297,10 @@ internal static class Program
     }
 }
 
-// DocumentEditor wird hier neu eingeführt, weil wir den public-Reference-Pfad
-// vermeiden wollen. Sein Pendant aus Microsoft.CodeAnalysis.Editing benutzt
-// Workspaces.Common; bei uns reicht ein simpler ReplaceNode-Wrapper.
+/// <summary>
+/// Sammelt Knotenersetzungen eines Dokuments und wendet sie in einem Schritt an. Ein schlanker
+/// Ersatz für DocumentEditor aus Microsoft.CodeAnalysis.Editing, der nur ReplaceNode kennt.
+/// </summary>
 internal sealed class DocumentEditor
 {
     private readonly Document _document;

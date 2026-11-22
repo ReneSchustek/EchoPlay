@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -29,8 +30,6 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class TagRenameActionsTests
     {
         private const string FolderPath = @"D:\Media\Die drei Fragezeichen\001 Der Super-Papagei";
-
-        // ── Vorschau ─────────────────────────────────────────────────────────────
 
         [Fact]
         public async Task PreviewRename_WithFolder_FillsThePreview()
@@ -99,8 +98,6 @@ namespace EchoPlay.App.Tests.ViewModels
             // Lesefehler dauerhaft gesperrt, ohne dass ein Neustart naheläge.
             Assert.Equal([true, false], harness.LoadingStates);
         }
-
-        // ── Ausführung ───────────────────────────────────────────────────────────
 
         [Fact]
         public async Task ExecuteRename_WhenUserDeclines_RenamesNothing()
@@ -246,8 +243,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(harness.LoadingStates);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static IReadOnlyList<(string, AudioTag)> TwoFiles() =>
         [
             ($@"{FolderPath}\alt1.mp3", new AudioTag { Title = "Kapitel 1" }),
@@ -301,18 +296,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 FakeErrorDialogService errorDialog = new();
                 FakeConfirmationDialogService confirmation = new(confirmResult);
 
-                ServiceCollection services = new();
-                _ = services.AddScoped<ITagLookupService>(_ => new FakeTagLookupService());
-                ServiceProvider provider = services.BuildServiceProvider();
-
-                TagManagerActionsContext context = new(
-                    TagService: new FakeTagService(folderFiles, readFolderFailure),
-                    LookupCoordinator: new TagLookupCoordinator(
-                        provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory()),
-                    FileRenameService: renameService,
-                    ErrorDialogService: errorDialog,
-                    ConfirmationDialogService: confirmation,
-                    OnlineAccessGuard: new FakeOnlineAccessGuard());
+                TagManagerActionsContext context = TagActionsTestContext.Create(
+                    new FakeTagService(folderFiles, readFolderFailure), errorDialog, confirmation, renameService: renameService);
 
                 TagFileListViewModel fileList = new();
                 TagRenameViewModel rename = new();

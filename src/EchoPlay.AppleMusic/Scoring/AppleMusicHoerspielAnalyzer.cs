@@ -10,7 +10,6 @@ namespace EchoPlay.AppleMusic.Scoring
     /// <summary>
     /// Führt die Apple-Music-spezifische Hörspiel-Analyse durch.
     /// Kombiniert Name-Matching, Genre-Prüfung und Album-Struktur-Analyse zu einem reinen Analyse-Ergebnis.
-    /// Seit dem Wechsel auf die iTunes Search API steht auch das primäre Genre zur Verfügung.
     /// </summary>
     internal sealed class AppleMusicHoerspielAnalyzer
     {
@@ -40,8 +39,8 @@ namespace EchoPlay.AppleMusic.Scoring
         /// <remarks>
         /// Steht der Name bereits für eine bekannte Hörspielserie, endet die Analyse dort:
         /// Die Bewertung nimmt solche Künstler ohnehin hart an
-        /// (<see cref="HoerspielScoreCalculator.Evaluate"/>), jede Albenprüfung wäre für die
-        /// Tonne und kostet vier Anfragen an der Ratenbremse.
+        /// (<see cref="HoerspielScoreCalculator.Evaluate"/>), jede Albenprüfung wäre überflüssig
+        /// und kostet zwei Anfragen an der Ratenbremse, bei mehr als 200 Alben drei.
         /// </remarks>
         /// <param name="source">Der iTunes-Künstler.</param>
         /// <param name="searchQuery">Ursprünglicher Suchbegriff.</param>
@@ -57,44 +56,52 @@ namespace EchoPlay.AppleMusic.Scoring
             string artistName = source.ArtistName;
             bool isKnownSeries = HoerspielNameMatcher.IsKnownSeries(artistName, _settings.DefaultKnownSeries);
 
-            string normalizedName = HoerspielTextNormalizer.Normalize(artistName);
-            string normalizedQuery = HoerspielTextNormalizer.Normalize(searchQuery);
-
-            bool nameContainsQuery = normalizedName.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase);
-            bool hasNumberVariantMatch = HoerspielNameMatcher.HasNumberVariantMatch(normalizedName, normalizedQuery, _settings.NumberWordMapping);
-            bool hasExactWordMatch = HoerspielNameMatcher.IsExactWordMatch(normalizedName, normalizedQuery);
+            HoerspielNameMatch names = HoerspielNameMatcher.Compare(artistName, searchQuery, _settings.NumberWordMapping);
             bool hasHoerspielGenre = AppleMusicGenreMatcher.IsHoerspielGenre(source.PrimaryGenreName, _settings.HoerspielGenres);
 
             AlbumAnalysis albums = isKnownSeries
                 ? AlbumAnalysis.Skipped
                 : await AnalyzeAlbumsAsync(source.ArtistId, cancellationToken).ConfigureAwait(false);
 
-            DebugInfoBuilder debug = new();
-            debug.Add(isKnownSeries, $"Bekannte Serie: '{artistName}'");
-            debug.Add(nameContainsQuery, "Name-Contains-Match");
-            debug.Add(hasNumberVariantMatch, "Zahlwort-Variante");
-            debug.Add(hasExactWordMatch, "Exaktes Wort-Match");
-            debug.Add(hasHoerspielGenre, $"Hörspiel-Genre: '{source.PrimaryGenreName}'");
-            debug.Add(albums.HasHoerspielStructure, "Hörspiel-Albumstruktur");
-            debug.Add(!isKnownSeries && !albums.HasAlbums, "Keine Alben");
-            debug.Add(isKnownSeries, "Albenprüfung übersprungen");
-
-            string debugInfo = debug.Build("Keine Indikatoren gefunden");
+            string debugInfo = DescribeIndicators(source, isKnownSeries, names, hasHoerspielGenre, albums);
 
             _logger.Debug(() => $"Hörspiel-Analyse für '{artistName}' abgeschlossen: {debugInfo}");
 
             return new AppleMusicHoerspielAnalysis
             {
                 IsKnownSeries = isKnownSeries,
-                NameContainsQuery = nameContainsQuery,
-                HasNumberVariantMatch = hasNumberVariantMatch,
-                HasExactWordMatch = hasExactWordMatch,
+                NameContainsQuery = names.ContainsQuery,
+                HasNumberVariantMatch = names.NumberVariantMatch,
+                HasExactWordMatch = names.ExactWordMatch,
                 HasHoerspielGenre = hasHoerspielGenre,
                 HasHoerspielAlbumStructure = albums.HasHoerspielStructure,
                 HasAlbums = albums.HasAlbums,
                 ArtworkUrl = albums.ArtworkUrl,
                 DebugInfo = debugInfo
             };
+        }
+
+        /// <summary>
+        /// Fasst die getroffenen Merkmale zu einer Zeile für die Diagnose zusammen.
+        /// </summary>
+        private static string DescribeIndicators(
+            ITunesArtistDto source,
+            bool isKnownSeries,
+            HoerspielNameMatch names,
+            bool hasHoerspielGenre,
+            AlbumAnalysis albums)
+        {
+            DebugInfoBuilder debug = new();
+            debug.Add(isKnownSeries, $"Bekannte Serie: '{source.ArtistName}'");
+            debug.Add(names.ContainsQuery, "Name-Contains-Match");
+            debug.Add(names.NumberVariantMatch, "Zahlwort-Variante");
+            debug.Add(names.ExactWordMatch, "Exaktes Wort-Match");
+            debug.Add(hasHoerspielGenre, $"Hörspiel-Genre: '{source.PrimaryGenreName}'");
+            debug.Add(albums.HasHoerspielStructure, "Hörspiel-Albumstruktur");
+            debug.Add(!isKnownSeries && !albums.HasAlbums, "Keine Alben");
+            debug.Add(isKnownSeries, "Albenprüfung übersprungen");
+
+            return debug.Build("Keine Indikatoren gefunden");
         }
 
         /// <summary>
@@ -106,7 +113,7 @@ namespace EchoPlay.AppleMusic.Scoring
         /// Die Cover-Adresse des ersten Albums. Sie ist das Cover der Serie, denn auf Künstlerebene
         /// liefert der Anbieter keines, auf Albenebene schon, und die Liste liegt hier ohnehin vor.
         /// </param>
-        private readonly record struct AlbumAnalysis(bool HasAlbums, bool HasHoerspielStructure, string? ArtworkUrl)
+        private readonly record struct AlbumAnalysis(bool HasAlbums, bool HasHoerspielStructure, Uri? ArtworkUrl)
         {
             /// <summary>Das Ergebnis, wenn die Prüfung übersprungen wurde.</summary>
             public static AlbumAnalysis Skipped => new(HasAlbums: false, HasHoerspielStructure: false, ArtworkUrl: null);
@@ -130,9 +137,11 @@ namespace EchoPlay.AppleMusic.Scoring
             ITunesResponseDto<ITunesCollectionDto> albumsResponse =
                 await _searchClient.LookupAlbumsAsync(artistId, cancellationToken).ConfigureAwait(false);
 
-            // Lookup-Antworten enthalten den Künstler als erstes Element
+            // Lookup-Antworten enthalten den Künstler als erstes Element und gelegentlich
+            // Sammlungen anderer Künstler; deren Cover wäre nicht das Cover dieser Serie.
             List<ITunesCollectionDto> albums = albumsResponse.Results
-                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
+                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase)
+                            && r.ArtistId == artistId)
                 .ToList();
 
             if (albums.Count == 0)
@@ -140,7 +149,7 @@ namespace EchoPlay.AppleMusic.Scoring
                 return new AlbumAnalysis(HasAlbums: false, HasHoerspielStructure: false, ArtworkUrl: null);
             }
 
-            string? artworkUrl = AppleMusicArtworkUrl.WithSize(albums[0].ArtworkUrl100);
+            Uri? artworkUrl = AppleMusicArtworkUrl.WithSize(WebAddress.TryParse(albums[0].ArtworkUrl100));
 
             // Maximal AlbumsToCheck Alben prüfen
             int albumsToCheck = Math.Min(albums.Count, _settings.AlbumsToCheck);
@@ -149,22 +158,13 @@ namespace EchoPlay.AppleMusic.Scoring
             IReadOnlyDictionary<long, List<TimeSpan>>? durationsByAlbum =
                 await LoadTrackDurationsAsync(collectionIds, cancellationToken).ConfigureAwait(false);
 
-            if (durationsByAlbum is null)
-            {
-                return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: false, artworkUrl);
-            }
-
-            foreach (long collectionId in collectionIds)
-            {
-                if (durationsByAlbum.TryGetValue(collectionId, out List<TimeSpan>? durations)
+            bool hasStructure = durationsByAlbum is not null
+                && collectionIds.Any(collectionId =>
+                    durationsByAlbum.TryGetValue(collectionId, out List<TimeSpan>? durations)
                     && durations.Count > 0
-                    && HoerspielAlbumHeuristic.LooksLikeHoerspiel(durations))
-                {
-                    return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: true, artworkUrl);
-                }
-            }
+                    && HoerspielAlbumHeuristic.LooksLikeHoerspiel(durations));
 
-            return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: false, artworkUrl);
+            return new AlbumAnalysis(HasAlbums: true, HasHoerspielStructure: hasStructure, artworkUrl);
         }
 
         /// <summary>
@@ -192,8 +192,8 @@ namespace EchoPlay.AppleMusic.Scoring
                 // Schlägt das Laden der Titel fehl, entfällt die Strukturanalyse; die Bewertung
                 // läuft mit den übrigen Merkmalen weiter, statt den Künstler ganz zu verlieren.
                 _logger.Warning(
-                    $"Titel der Alben [{string.Join(", ", collectionIds)}] konnten nicht geladen werden. Die Albenstruktur bleibt bei der Hörspielanalyse unberücksichtigt.");
-                _logger.Error("Fehlerdetails:", ex);
+                    "Titel der Alben [{CollectionIds}] nicht geladen, Albenstruktur bleibt unberücksichtigt: {Reason}",
+                    string.Join(", ", collectionIds), ex.Message);
                 return null;
             }
 

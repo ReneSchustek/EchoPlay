@@ -1,3 +1,5 @@
+using EchoPlay.Logger.Abstractions;
+using EchoPlay.Core.Http;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -24,7 +26,8 @@ namespace EchoPlay.LocalLibrary.Cover
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public ITunesCoverSearchService(HttpClient httpClient) : base(httpClient)
+        /// <param name="loggerFactory">Für das Protokoll übersprungener Anfragen.</param>
+        public ITunesCoverSearchService(HttpClient httpClient, ILoggerFactory loggerFactory) : base(httpClient, loggerFactory)
         {
         }
 
@@ -49,26 +52,26 @@ namespace EchoPlay.LocalLibrary.Cover
 
         private static CoverSearchResult? MapAlbum(ITunesAlbumResult album, string fallbackTitle)
         {
-            if (string.IsNullOrWhiteSpace(album.ArtworkUrl100))
+            // iTunes liefert 100×100 als Standard; die Größe steht im Pfad und wird dort getauscht.
+            Uri? thumbnail = WebAddress.TryParse(album.ArtworkUrl100?.Replace("100x100bb", "250x250bb", StringComparison.Ordinal));
+            Uri? full = WebAddress.TryParse(album.ArtworkUrl100?.Replace("100x100bb", "600x600bb", StringComparison.Ordinal));
+            if (thumbnail is null || full is null)
             {
                 return null;
             }
 
-            // iTunes liefert 100×100 als Standard, daher die Größe im URL-String austauschen
-            string thumbnailUrl = album.ArtworkUrl100.Replace("100x100bb", "250x250bb", StringComparison.Ordinal);
-            string fullUrl = album.ArtworkUrl100.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
-
             string albumTitle = album.CollectionName ?? fallbackTitle;
 
             return new CoverSearchResult(
-                ThumbnailUrl: thumbnailUrl,
-                FullUrl: fullUrl,
+                ThumbnailUrl: thumbnail,
+                FullUrl: full,
                 ReleaseTitle: albumTitle,
                 Source: "iTunes");
         }
 
-        // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────
-
+        /// <summary>
+        /// Antwort der iTunes-Suche; gelesen wird nur die Trefferliste.
+        /// </summary>
         [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class ITunesSearchResponse
         {
@@ -76,6 +79,10 @@ namespace EchoPlay.LocalLibrary.Cover
             public List<ITunesAlbumResult>? Results { get; set; }
         }
 
+        /// <summary>
+        /// Ein Albumtreffer. iTunes nennt nur die Adresse in 100 × 100 Pixeln; Vorschau und
+        /// Vollbild entstehen durch Umschreiben der Größe in dieser Adresse.
+        /// </summary>
         [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class ITunesAlbumResult
         {

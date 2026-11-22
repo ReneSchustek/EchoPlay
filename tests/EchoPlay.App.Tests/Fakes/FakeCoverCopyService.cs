@@ -20,10 +20,18 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Wie viele Cover der Nachbau als kopiert meldet.</summary>
         public int CopiedCount { get; set; }
 
+        /// <summary>Ist gesetzt, scheitert das Kopieren damit.</summary>
+        public Exception? Failure { get; set; }
+
         /// <inheritdoc/>
         public Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId, CancellationToken cancellationToken = default)
         {
             CallCount++;
+            if (Failure is not null)
+            {
+                return Task.FromException<int>(Failure);
+            }
+
             LastTargetSeriesId = targetSeriesId;
             return Task.FromResult(CopiedCount);
         }

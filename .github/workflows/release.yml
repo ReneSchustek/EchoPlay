@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
 
-# Zum Anlegen des Releases und Hochladen der Setup.exe.
+# Zum Anlegen des Releases und Hochladen von Setup.exe und Signatur.
 permissions:
   contents: write
 
@@ -76,11 +76,38 @@ jobs:
           "setup=$setup" >> $env:GITHUB_OUTPUT
           Write-Host "SHA256: $hash"
 
+      # Der Auto-Updater installiert nur eine Setup.exe, deren Signatur zum eingebetteten
+      # öffentlichen Schlüssel passt (fail-closed). Ein Release ohne .sig würde von keiner
+      # installierten Fassung angenommen. Deshalb bricht ein Tag-Build ohne Schlüssel ab,
+      # statt still ein Release zu veröffentlichen, das niemand aktualisieren kann. Ein
+      # Handlauf (workflow_dispatch) baut nur das Artefakt und darf unsigniert bleiben.
+      # Ohne Secret geht es auch lokal: tools/sign-release.ps1 und die .sig von Hand anhängen.
+      - name: Setup.exe signieren
+        shell: pwsh
+        env:
+          SIGNING_KEY: ${{ secrets.ECHOPLAY_SIGNING_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_KEY)) {
+            if ('${{ github.ref }}' -like 'refs/tags/v*') {
+              throw 'Secret ECHOPLAY_SIGNING_KEY fehlt: Ohne Signatur nimmt der Auto-Updater das Release nicht an.'
+            }
+            Write-Host 'Kein Signaturschlüssel hinterlegt — Artefakt bleibt unsigniert.'
+            exit 0
+          }
+          $keyPath = Join-Path $env:RUNNER_TEMP 'echoplay-signing-key.pem'
+          Set-Content -LiteralPath $keyPath -Value $env:SIGNING_KEY -NoNewline
+          try {
+            ./tools/sign-release.ps1 -PackagePath '${{ steps.hash.outputs.setup }}' -KeyPath $keyPath
+          }
+          finally {
+            Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
+          }
+
       - name: Setup.exe als Workflow-Artefakt sichern
         uses: actions/upload-artifact@v6
         with:
           name: EchoPlay-Setup-v${{ steps.version.outputs.version }}
-          path: ${{ steps.hash.outputs.setup }}
+          path: ${{ steps.hash.outputs.setup }}*
 
       - name: GitHub-Release veröffentlichen
         if: startsWith(github.ref, 'refs/tags/v')
@@ -92,7 +119,8 @@ jobs:
 
             Keine vorinstallierte Runtime nötig: .NET und Windows App SDK sind im Setup gebündelt.
 
-            **Integritätsprüfung** — SHA-256 der Setup.exe (der eingebaute Update-Prüfer verifiziert die heruntergeladene Datei gegen diesen Wert):
+            **Echtheit und Integrität** — Die Setup.exe ist signiert; die Signatur liegt als `.sig` daneben. Der eingebaute Updater installiert nur, wenn Signatur und SHA-256 stimmen. Wer von Hand lädt, vergleicht den Hash:
 
             SHA256: ${{ steps.hash.outputs.hash }}
-          files: ${{ steps.hash.outputs.setup }}
+          # Setup.exe und ihre Signatur (.sig); der Updater ordnet die Signatur über den Namen zu.
+          files: ${{ steps.hash.outputs.setup }}*

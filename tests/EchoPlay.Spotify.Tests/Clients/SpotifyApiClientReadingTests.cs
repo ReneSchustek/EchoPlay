@@ -30,7 +30,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task SearchAlbums_ReadsTitleArtistCoverAndTrackCount()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "albums": {
                 "items": [
@@ -46,7 +46,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(antwort)
+            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(apiResponse)
                 .SearchAlbumsAsync("TKKG", limit: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             SpotifyAlbumDto album = Assert.Single(alben);
@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task SearchAlbums_ForAnEntryWithoutIdOrName_LeavesItOut()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "albums": {
                 "items": [
@@ -72,7 +72,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(antwort)
+            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(apiResponse)
                 .SearchAlbumsAsync("TKKG", limit: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // Ein Eintrag ohne Kennung lässt sich später nicht mehr abrufen. Er hilft
@@ -102,7 +102,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task GetArtistAlbums_ReadsReleaseDateAndTrackCount()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "items": [
                 {
@@ -117,7 +117,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(antwort)
+            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(apiResponse)
                 .GetArtistAlbumsAsync("art1", limit: 50, cancellationToken: TestContext.Current.CancellationToken);
 
             SpotifyAlbumDto album = Assert.Single(alben);
@@ -128,7 +128,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task GetArtistAlbums_WithAnUnreadableReleaseDate_KeepsTheAlbum()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "items": [
                 { "id": "alb1", "name": "Folge 1", "release_date": "irgendwann", "total_tracks": 9, "images": [] }
@@ -137,7 +137,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(antwort)
+            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(apiResponse)
                 .GetArtistAlbumsAsync("art1", limit: 50, cancellationToken: TestContext.Current.CancellationToken);
 
             // Spotify gibt das Datum mal als Jahr, mal als Monat, mal als Tag an. Ein
@@ -146,10 +146,48 @@ namespace EchoPlay.Spotify.Tests.Clients
             Assert.Null(album.ReleaseDate);
         }
 
+        [Theory]
+        [InlineData("1981", 1981, 1, 1)]
+        [InlineData("1981-05", 1981, 5, 1)]
+        [InlineData("1981-05-17", 1981, 5, 17)]
+        public void ParseReleaseDate_ReadsEveryPrecision(string value, int year, int month, int day)
+        {
+            // Ginge ein bloßes Jahr verloren, stünden ältere Folgen ohne Datum da und rutschten
+            // beim Sortieren nach dem Erscheinen ans Ende.
+            Assert.Equal(new DateTime(year, month, day), SpotifyApiClient.ParseReleaseDate(value)?.Date);
+        }
+
+        [Fact]
+        public async Task GetAlbumTracks_WithSeveralPages_FollowsThemAll()
+        {
+            SequenceHandler handler = new(
+            [
+                """
+                {
+                  "items": [ { "id": "t1", "name": "Teil 1", "duration_ms": 1000, "track_number": 1 } ],
+                  "next": "https://api.spotify.invalid/v1/albums/alb1/tracks?offset=50&limit=50"
+                }
+                """,
+                """
+                {
+                  "items": [ { "id": "t2", "name": "Teil 2", "duration_ms": 1000, "track_number": 2 } ],
+                  "next": null
+                }
+                """,
+            ]);
+
+            IReadOnlyList<SpotifyTrackDto> trackItems = await BuildClient(handler)
+                .GetAlbumTracksAsync("alb1", TestContext.Current.CancellationToken);
+
+            // Ohne Weiterblättern fehlte jeder Spur nach der ersten Seite ihre Dauer in der Folge.
+            Assert.Equal(2, trackItems.Count);
+            Assert.Equal(2, handler.CallCount);
+        }
+
         [Fact]
         public async Task GetArtistAlbums_ForAnEntryWithoutIdOrName_LeavesItOut()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "items": [
                 { "name": "ohne Kennung", "release_date": "2026-01-01", "total_tracks": 1, "images": [] },
@@ -159,7 +197,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(antwort)
+            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(apiResponse)
                 .GetArtistAlbumsAsync("art1", limit: 50, cancellationToken: TestContext.Current.CancellationToken);
 
             SpotifyAlbumDto album = Assert.Single(alben);
@@ -197,7 +235,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task GetArtistAlbums_WithALimit_StopsAtIt()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "items": [
                 { "id": "a1", "name": "Folge 1", "release_date": "2026-01-01", "total_tracks": 1, "images": [] },
@@ -208,7 +246,7 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(antwort)
+            IReadOnlyList<SpotifyAlbumDto> alben = await BuildClient(apiResponse)
                 .GetArtistAlbumsAsync("art1", limit: 2, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, alben.Count);
@@ -244,7 +282,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task GetAlbumTracks_ReadsTitleNumberAndDuration()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "items": [
                 { "id": "t1", "name": "Teil 1", "duration_ms": 125000, "track_number": 1 },
@@ -253,19 +291,19 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyTrackDto> spuren = await BuildClient(antwort)
+            IReadOnlyList<SpotifyTrackDto> trackItems = await BuildClient(apiResponse)
                 .GetAlbumTracksAsync("alb1", TestContext.Current.CancellationToken);
 
-            Assert.Equal(2, spuren.Count);
-            Assert.Equal("Teil 1", spuren[0].Title);
-            Assert.Equal(TimeSpan.FromSeconds(125), spuren[0].Duration);
-            Assert.Equal(2, spuren[1].TrackNumber);
+            Assert.Equal(2, trackItems.Count);
+            Assert.Equal("Teil 1", trackItems[0].Title);
+            Assert.Equal(TimeSpan.FromSeconds(125), trackItems[0].Duration);
+            Assert.Equal(2, trackItems[1].TrackNumber);
         }
 
         [Fact]
         public async Task GetAlbumTracks_ForATrackWithoutIdOrName_LeavesItOut()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "items": [
                 { "name": "ohne Kennung", "duration_ms": 1000, "track_number": 1 },
@@ -274,12 +312,12 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyTrackDto> spuren = await BuildClient(antwort)
+            IReadOnlyList<SpotifyTrackDto> trackItems = await BuildClient(apiResponse)
                 .GetAlbumTracksAsync("alb1", TestContext.Current.CancellationToken);
 
             // Ohne Kennung lässt sich die Spur später nicht abspielen.
-            SpotifyTrackDto spur = Assert.Single(spuren);
-            Assert.Equal("t2", spur.SpotifyTrackId);
+            SpotifyTrackDto track = Assert.Single(trackItems);
+            Assert.Equal("t2", track.SpotifyTrackId);
         }
 
         [Fact]
@@ -312,7 +350,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task SearchArtists_ForAnEntryWithoutIdOrName_LeavesItOut()
         {
-            const string antwort = """
+            const string apiResponse = """
             {
               "artists": {
                 "items": [
@@ -323,17 +361,15 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
             """;
 
-            IReadOnlyList<SpotifyArtistDto> artists = await BuildClient(antwort)
+            IReadOnlyList<SpotifyArtistDto> artists = await BuildClient(apiResponse)
                 .SearchArtistsAsync("TKKG", limit: 10, cancellationToken: TestContext.Current.CancellationToken);
 
             SpotifyArtistDto einzig = Assert.Single(artists);
             Assert.Equal("art2", einzig.SpotifyArtistId);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
-        private static SpotifyApiClient BuildClient(string antwort, HttpStatusCode status = HttpStatusCode.OK)
-            => BuildClient(new SequenceHandler([antwort], status));
+        private static SpotifyApiClient BuildClient(string apiResponse, HttpStatusCode status = HttpStatusCode.OK)
+            => BuildClient(new SequenceHandler([apiResponse], status));
 
         private static SpotifyApiClient BuildClient(SequenceHandler handler)
         {
@@ -344,12 +380,12 @@ namespace EchoPlay.Spotify.Tests.Clients
         /// <summary>Antwortgeber, der die hinterlegten Antworten der Reihe nach ausgibt.</summary>
         private sealed class SequenceHandler : HttpMessageHandler
         {
-            private readonly IReadOnlyList<string> _antworten;
+            private readonly IReadOnlyList<string> _responses;
             private readonly HttpStatusCode _status;
 
-            public SequenceHandler(IReadOnlyList<string> antworten, HttpStatusCode status = HttpStatusCode.OK)
+            public SequenceHandler(IReadOnlyList<string> responses, HttpStatusCode status = HttpStatusCode.OK)
             {
-                _antworten = antworten;
+                _responses = responses;
                 _status = status;
             }
 
@@ -360,13 +396,13 @@ namespace EchoPlay.Spotify.Tests.Clients
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                string antwort = _antworten[Math.Min(CallCount, _antworten.Count - 1)];
+                string apiResponse = _responses[Math.Min(CallCount, _responses.Count - 1)];
                 CallCount++;
 
                 HttpResponseMessage response = new(_status);
-                if (!string.IsNullOrEmpty(antwort))
+                if (!string.IsNullOrEmpty(apiResponse))
                 {
-                    response.Content = new StringContent(antwort, Encoding.UTF8, "application/json");
+                    response.Content = new StringContent(apiResponse, Encoding.UTF8, "application/json");
                 }
 
                 return Task.FromResult(response);

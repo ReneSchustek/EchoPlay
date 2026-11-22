@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// Implementierung des <see cref="IDatabaseMaintenanceService"/>.
-    /// Nutzt EF8-Bulk-Delete (<c>ExecuteDeleteAsync</c>) für effiziente Massenbereinigungen:
+    /// Nutzt die Massenlöschung von EF Core (<c>ExecuteDeleteAsync</c>) für effiziente Massenbereinigungen:
     /// kein Laden in den Change-Tracker, direkte DELETE-Statements gegen SQLite.
     /// </summary>
     /// <param name="context">Der EF-Core-Kontext für direkte DB-Operationen.</param>
@@ -25,13 +25,21 @@ namespace EchoPlay.Data.Services
         public async Task PurgeAsync(int retentionDays)
         {
             DateTime cutoff = EntityClock.Current.UtcNow.AddDays(-retentionDays);
-            int purged = 0;
 
-            // Phase 1: Kinder gelöschter Episoden bereinigen.
             // Reihenfolge wichtig, denn FK-Einschränkungen verbieten Löschen mit aktiven Referenzen.
+            int purged = await PurgeDeletedEpisodesAsync(cutoff).ConfigureAwait(false)
+                + await PurgeDeletedSeriesAsync(cutoff).ConfigureAwait(false);
 
-            // LocalTracks und PlaybackStates für einzeln gelöschte Episoden entfernen
-            purged += await _context.LocalTracks
+            _logger.Info("DB-Purge abgeschlossen: {PurgedRows} verwaiste Zeilen älter als {RetentionDays} Tage entfernt.", purged, retentionDays);
+        }
+
+        /// <summary>
+        /// Phase 1: einzeln gelöschte Folgen samt Spuren und Wiedergabeständen entfernen.
+        /// </summary>
+        /// <returns>Die Zahl der entfernten Zeilen.</returns>
+        private async Task<int> PurgeDeletedEpisodesAsync(DateTime cutoff)
+        {
+            int purged = await _context.LocalTracks
                 .IgnoreQueryFilters()
                 .Where(t => t.Episode.IsDeleted && t.Episode.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
@@ -47,10 +55,18 @@ namespace EchoPlay.Data.Services
                 .Where(e => e.IsDeleted && e.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            // Phase 2: Kinder gelöschter Serien bereinigen.
+            return purged;
+        }
+
+        /// <summary>
+        /// Phase 2: gelöschte Serien mit allem, was an ihren Folgen hängt, entfernen.
+        /// </summary>
+        /// <returns>Die Zahl der entfernten Zeilen.</returns>
+        private async Task<int> PurgeDeletedSeriesAsync(DateTime cutoff)
+        {
             // Nicht alle Episoden einer gelöschten Serie müssen selbst IsDeleted=true haben,
             // daher explizit über die Series-Navigation navigieren.
-            purged += await _context.LocalTracks
+            int purged = await _context.LocalTracks
                 .IgnoreQueryFilters()
                 .Where(t => t.Episode.Series.IsDeleted && t.Episode.Series.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
@@ -71,7 +87,7 @@ namespace EchoPlay.Data.Services
                 .Where(s => s.IsDeleted && s.DeletedAt < cutoff)
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            _logger.Info("DB-Purge abgeschlossen: {PurgedRows} verwaiste Zeilen älter als {RetentionDays} Tage entfernt.", purged, retentionDays);
+            return purged;
         }
 
         /// <inheritdoc/>
@@ -196,15 +212,7 @@ namespace EchoPlay.Data.Services
 
             if (episodeIds.Count > 0)
             {
-                _ = await _context.LocalTracks
-                    .IgnoreQueryFilters()
-                    .Where(t => episodeIds.Contains(t.EpisodeId))
-                    .ExecuteDeleteAsync().ConfigureAwait(false);
-
-                _ = await _context.PlaybackStates
-                    .IgnoreQueryFilters()
-                    .Where(ps => episodeIds.Contains(ps.EpisodeId))
-                    .ExecuteDeleteAsync().ConfigureAwait(false);
+                await DeleteEpisodeChildrenAsync(episodeIds).ConfigureAwait(false);
             }
 
             _ = await _context.Episodes
@@ -217,7 +225,26 @@ namespace EchoPlay.Data.Services
                 .Where(s => seriesIds.Contains(s.Id))
                 .ExecuteDeleteAsync().ConfigureAwait(false);
 
-            // Cover der gelöschten Episoden und Serien entfernen
+            await DeleteCoversAsync(seriesIds, episodeIds).ConfigureAwait(false);
+        }
+
+        /// <summary>Löscht Spuren und Wiedergabestände der Folgen; sie verweisen auf die Folge.</summary>
+        private async Task DeleteEpisodeChildrenAsync(List<Guid> episodeIds)
+        {
+            _ = await _context.LocalTracks
+                .IgnoreQueryFilters()
+                .Where(t => episodeIds.Contains(t.EpisodeId))
+                .ExecuteDeleteAsync().ConfigureAwait(false);
+
+            _ = await _context.PlaybackStates
+                .IgnoreQueryFilters()
+                .Where(ps => episodeIds.Contains(ps.EpisodeId))
+                .ExecuteDeleteAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>Entfernt die Cover der gelöschten Folgen und Serien.</summary>
+        private async Task DeleteCoversAsync(IReadOnlyList<Guid> seriesIds, List<Guid> episodeIds)
+        {
             if (episodeIds.Count > 0)
             {
                 _ = await _context.CoverImages

@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Contracts;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Internal;
 
@@ -15,6 +16,7 @@ namespace EchoPlay.Data.Entities.Playback
         /// Fremdschlüssel zur zugehörigen Episode.
         /// Die Episode stellt den fachlichen Bezugspunkt für den Wiedergabestatus dar und definiert dessen Lebenszyklus.
         /// </summary>
+        [DataScope(DataScope.LocalIdentity)]
         public Guid EpisodeId { get; set; }
 
         /// <summary>
@@ -24,32 +26,35 @@ namespace EchoPlay.Data.Entities.Playback
         public Episode Episode { get; set; } = null!;
 
         /// <summary>
-        /// Letzte bekannte Abspielposition innerhalb der Episode.
-        /// Dieser Wert ermöglicht das Fortsetzen der Wiedergabe an der zuletzt gehörten Stelle.
+        /// Letzte bekannte Abspielposition innerhalb der Episode; dort setzt die Wiedergabe wieder ein.
         /// </summary>
+        [DataScope(DataScope.Shared)]
         public TimeSpan LastPosition { get; set; }
 
         /// <summary>
         /// Gibt an, ob die Episode vollständig gehört wurde.
         /// Dieses Flag dient als fachliche Abkürzung, um den Abschlusszustand ohne zusätzliche Berechnungen abfragen zu können.
         /// </summary>
+        [DataScope(DataScope.Shared)]
         public bool IsCompleted { get; set; }
 
         /// <summary>
         /// Zeitpunkt, zu dem die Episode vollständig abgeschlossen wurde.
         /// Der Wert ist nur gesetzt, wenn <see cref="IsCompleted"/> wahr ist und dient unter anderem zur Sortierung und Statistikbildung.
         /// </summary>
+        [DataScope(DataScope.Shared)]
         public DateTime? CompletedAt { get; set; }
 
         /// <summary>
         /// Zeitpunkt der letzten Wiedergabeaktivität.
-        /// Dieser Wert wird bei jeder Positionsänderung aktualisiert und erlaubt Aussagen darüber, wann eine Episode zuletzt  aktiv gehört wurde.
+        /// Dieser Wert wird bei jeder Positionsänderung aktualisiert und erlaubt Aussagen darüber, wann eine Episode zuletzt aktiv gehört wurde.
         /// </summary>
+        [DataScope(DataScope.Shared)]
         public DateTime? LastPlayedAt { get; set; }
 
         /// <summary>
         /// Aktualisiert die Abspielposition und leitet daraus gegebenenfalls den Abschluss der Episode ab.
-        /// Die Methode kapselt bewusst die fachliche Regel, ab wann eine Episode als vollständig gehört gilt,
+        /// Die Methode kapselt die fachliche Regel, ab wann eine Episode als vollständig gehört gilt,
         /// um diese Logik zentral und konsistent zu halten.
         /// </summary>
         /// <param name="position">Die neue Abspielposition innerhalb der Episode.</param>
@@ -97,7 +102,7 @@ namespace EchoPlay.Data.Entities.Playback
 
         /// <summary>
         /// Setzt den Wiedergabestatus in den Ausgangszustand zurück.
-        /// Diese Methode wird verwendet, wenn eine Episode bewusst erneut begonnen oder der Fortschritt verworfen werden soll.
+        /// Für eine Episode, die erneut begonnen wird, oder einen Fortschritt, der verworfen werden soll.
         /// </summary>
         public void Reset()
         {

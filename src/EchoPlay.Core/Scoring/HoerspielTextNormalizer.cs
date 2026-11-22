@@ -8,7 +8,7 @@ namespace EchoPlay.Core.Scoring
     /// Die Normalisierung vereinheitlicht Umlaute, Sonderzeichen und Groß-/Kleinschreibung,
     /// um robuste Vergleiche unabhängig von Schreibvarianten zu ermöglichen.
     /// </summary>
-    public static class HoerspielTextNormalizer
+    public static partial class HoerspielTextNormalizer
     {
         /// <summary>
         /// Normalisiert einen Text für den fachlichen Vergleich.
@@ -31,7 +31,10 @@ namespace EchoPlay.Core.Scoring
                 .Replace("ß", "ss", StringComparison.Ordinal);
 
             // Alles außer Buchstaben, Ziffern und Leerzeichen entfernen
-            return Regex.Replace(replaced, @"[^a-z0-9\s]", "");
+            return NonWordCharacters().Replace(replaced, string.Empty);
         }
+
+        [GeneratedRegex(@"[^a-z0-9\s]", RegexOptions.None, matchTimeoutMilliseconds: 500)]
+        private static partial Regex NonWordCharacters();
     }
 }

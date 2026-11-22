@@ -12,7 +12,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Beides gehört zusammen: Jede Stelle, die den Text setzt, muss auch die Taskleiste
-    /// nachziehen. Solange das im Ansichtsmodell der Leiste stand, war das eine Absprache;
+    /// nachziehen. Stünde das im Ansichtsmodell der Leiste, wäre es nur eine Absprache;
     /// als eigener Typ ist es eine Zusage.
     /// </remarks>
     public sealed class ScanProgressIndicator : ObservableObject

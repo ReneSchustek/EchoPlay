@@ -79,8 +79,6 @@ namespace EchoPlay.App.Tests.ViewModels
             sut.Dispose();
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static IServiceScopeFactory BuildScopeFactory(FakeSeriesDataService seriesService)
         {
             ServiceCollection services = new();

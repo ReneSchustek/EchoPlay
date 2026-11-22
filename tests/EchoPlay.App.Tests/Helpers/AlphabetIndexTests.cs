@@ -98,11 +98,28 @@ namespace EchoPlay.App.Tests.Helpers
         [Fact]
         public void OccupiedBuckets_ReportsOnlyLettersThatOccur()
         {
-            List<string?> bestand = ["Bibi Blocksberg", "Benjamin Blümchen", "5 Freunde", "Ärger"];
+            List<string?> collection = ["Bibi Blocksberg", "Benjamin Blümchen", "5 Freunde", "Ärger"];
 
-            IReadOnlySet<char> belegt = AlphabetIndex.OccupiedBuckets(bestand);
+            IReadOnlySet<char> occupied = AlphabetIndex.OccupiedBuckets(collection);
 
-            Assert.Equal(['#', 'A', 'B'], belegt.OrderBy(c => c));
+            Assert.Equal(['#', 'A', 'B'], occupied.OrderBy(c => c));
+        }
+
+        [Fact]
+        public void TitleOrder_PutsEveryTitleIntoTheSectionItsLetterPromises()
+        {
+            List<string> titles = ["Zorro", "5 Freunde", "Ärger im Paradies", "hui buh", "Ahoi", "Benjamin Blümchen", "Öl für die Lampen"];
+
+            List<string> sorted = [.. titles.OrderBy(t => t, AlphabetIndex.TitleOrder)];
+
+            Assert.Equal(
+                ["Ahoi", "Ärger im Paradies", "Benjamin Blümchen", "hui buh", "Öl für die Lampen", "Zorro", "5 Freunde"],
+                sorted);
+
+            // Jeder Buchstabe bildet genau einen zusammenhängenden Abschnitt, in der Reihenfolge der Leiste.
+            List<char> sections = [.. sorted.Select(AlphabetIndex.BucketOf).Distinct()];
+            Assert.Equal(['A', 'B', 'H', 'O', 'Z', '#'], sections);
+            Assert.Equal(sections.Count, sorted.Select(AlphabetIndex.BucketOf).Where((b, i) => i == 0 || b != AlphabetIndex.BucketOf(sorted[i - 1])).Count());
         }
 
         [Fact]

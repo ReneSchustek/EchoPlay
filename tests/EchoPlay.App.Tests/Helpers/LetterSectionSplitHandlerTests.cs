@@ -46,6 +46,7 @@ namespace EchoPlay.App.Tests.Helpers
             }
         }
 
+        // Genau die Breite, in der vier Kacheln nebeneinander passen.
         private const double FourPerRow = 4 * AccordionSplitHelper.SeriesTileSlotWidth;
 
         private static IReadOnlyList<Tile> Tiles(params string[] titles) =>

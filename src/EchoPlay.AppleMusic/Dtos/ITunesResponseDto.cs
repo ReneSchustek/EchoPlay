@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace EchoPlay.AppleMusic.Dtos
@@ -21,8 +20,6 @@ namespace EchoPlay.AppleMusic.Dtos
         /// Bei Lookup-Aufrufen kann das erste Element einen anderen Typ haben als die folgenden.
         /// </summary>
         [JsonPropertyName("results")]
-        [SuppressMessage("Design", "CA1002:Do not expose generic lists",
-            Justification = "DTO spiegelt iTunes-JSON; System.Text.Json deserialisiert direkt in List<T>.")]
-        public List<T> Results { get; init; } = [];
+        public IReadOnlyList<T> Results { get; init; } = [];
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.App.Services;
 using System.Collections.Generic;
 using System.Threading;
@@ -34,12 +35,17 @@ namespace EchoPlay.App.Tests.Fakes
         public void SetResponse(string url, byte[]? bytes) => _responses[url] = bytes;
 
         /// <inheritdoc/>
-        public Task<byte[]?> DownloadAsync(string url, CancellationToken cancellationToken = default)
+        public Task<byte[]?> DownloadAsync(Uri url, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(url);
             cancellationToken.ThrowIfCancellationRequested();
-            RequestedUrls.Add(url);
 
-            return Task.FromResult(_responses.TryGetValue(url, out byte[]? bytes) ? bytes : null);
+            // Die Tests führen die Adressen als Text; verglichen wird mit dem Text, den der
+            // Aufrufer geprüft übergeben hat.
+            string key = url.OriginalString;
+            RequestedUrls.Add(key);
+
+            return Task.FromResult(_responses.TryGetValue(key, out byte[]? bytes) ? bytes : null);
         }
     }
 }

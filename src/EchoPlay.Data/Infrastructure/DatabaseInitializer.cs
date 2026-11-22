@@ -9,29 +9,47 @@ using Microsoft.EntityFrameworkCore;
 namespace EchoPlay.Data.Infrastructure
 {
     /// <summary>
-    /// Stellt sicher, dass alle ausstehenden EF-Core-Migrationen beim App-Start eingespielt werden.
-    /// Vor einer Migration mit offenen Änderungen wird die bestehende SQLite-Datei per
-    /// <c>VACUUM INTO</c> snapshot-artig dupliziert. SQLite konsolidiert dabei WAL-Journal und
-    /// Hauptdatei in eine konsistente Kopie, sodass der Nutzer bei einem Schema-Bruch zurückrollen kann.
+    /// Spielt beim App-Start alle ausstehenden EF-Core-Migrationen ein.
+    /// Vor einer Migration mit offenen Änderungen legt er per <see cref="SqliteSnapshot"/> eine
+    /// Sicherung der Datenbankdatei an, sodass der Nutzer bei einem Schema-Bruch zurückrollen kann.
     /// Muss einmalig aufgerufen werden, bevor andere Datenbankzugriffe stattfinden.
     /// </summary>
     public sealed class DatabaseInitializer
     {
+        // Gilt, solange sich keine Einstellungen lesen lassen; derselbe Wert wie der Standard in
+        // AppSettings.DbBackupRetentionCount.
         private const int DefaultBackupRetentionCount = 5;
+
+        // Jede Sicherung ist so groß wie die Datenbank. Die Obergrenze fängt einen von Hand
+        // gesetzten Wert ab, bevor die Sicherungen das Laufwerk füllen.
         private const int MaxBackupRetentionCount = 20;
+
+        // Eine Sicherung braucht so viel Platz wie die Datenbank. Gefordert wird das Doppelte,
+        // damit die Kopie das Laufwerk nicht bis zum letzten Byte füllt und die Migration danach
+        // noch schreiben kann.
         private const long DiskSpaceSafetyFactor = 2;
+        private const string BackupInfix = ".backup-";
 
         private readonly EchoPlayDbContext _context;
+        private readonly DatabaseFileLocation _databaseFile;
         private readonly ILogger? _logger;
 
         /// <summary>
         /// Initialisiert den <see cref="DatabaseInitializer"/> mit dem Datenbankkontext.
         /// </summary>
         /// <param name="context">Der EF-Core-Kontext, dessen Datenbank migriert werden soll.</param>
+        /// <param name="databaseFile">Die Datei, die der Kontext öffnet; Ziel der Sicherung.</param>
         /// <param name="loggerFactory">Optionale Logger-Fabrik für Backup-/Migration-Ausgaben.</param>
-        public DatabaseInitializer(EchoPlayDbContext context, ILoggerFactory? loggerFactory = null)
+        public DatabaseInitializer(
+            EchoPlayDbContext context,
+            DatabaseFileLocation databaseFile,
+            ILoggerFactory? loggerFactory = null)
         {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(databaseFile);
+
             _context = context;
+            _databaseFile = databaseFile;
             _logger = loggerFactory?.CreateLogger(nameof(DatabaseInitializer));
         }
 
@@ -79,8 +97,12 @@ namespace EchoPlay.Data.Infrastructure
         {
             try
             {
-                AppSettings? settings = await _context.AppSettings
+                // Nur die beiden Spalten, nicht die ganze Zeile: Gelesen wird vor der Migration, und
+                // eine Spalte, die erst die ausstehende Migration anlegt, ließe die Abfrage scheitern.
+                // Dann griffe die Vorgabe, und wer die Sicherung abgeschaltet hat, bekäme trotzdem eine.
+                BackupSettingsRow? settings = await _context.AppSettings
                     .AsNoTracking()
+                    .Select(s => new BackupSettingsRow(s.DbBackupEnabled, s.DbBackupRetentionCount))
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
 
@@ -89,85 +111,38 @@ namespace EchoPlay.Data.Infrastructure
                     return (true, DefaultBackupRetentionCount);
                 }
 
-                int retention = Math.Clamp(settings.DbBackupRetentionCount, 0, MaxBackupRetentionCount);
-                return (settings.DbBackupEnabled, retention);
+                int retention = Math.Clamp(settings.RetentionCount, 0, MaxBackupRetentionCount);
+                return (settings.Enabled, retention);
             }
-            catch (SqliteException)
+            catch (SqliteException ex)
             {
+                // Erwartet vor der ersten Migration; die Vorgabe sichert lieber einmal zu viel.
+                _logger?.Debug(() => $"Backup-Einstellungen noch nicht lesbar, nehme Vorgabe: {ex.Message}");
                 return (true, DefaultBackupRetentionCount);
             }
         }
 
         /// <summary>
-        /// Erstellt per <c>VACUUM INTO</c> einen konsistenten Snapshot der Datenbankdatei und
-        /// räumt alte Backups auf, sodass maximal <paramref name="retentionCount"/> Kopien bestehen bleiben.
-        /// Fehler werden geloggt, brechen die Migration aber nicht ab, denn ein
+        /// Legt eine Sicherung der Datenbankdatei an und räumt alte Sicherungen auf, sodass
+        /// höchstens <paramref name="retentionCount"/> Kopien bestehen bleiben.
+        /// Fehler werden geloggt, brechen die Migration aber nicht ab; ein
         /// fehlender Backup-Schritt ist besser als ein verweigerter App-Start.
         /// </summary>
         /// <param name="retentionCount">Anzahl der zu behaltenden Backups.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
-            Justification = "VACUUM INTO akzeptiert keine Parameter-Bindings; der Zielpfad wird explizit durch Verdoppeln der Single Quotes escaped und stammt aus der Connection-String-DataSource-Route (programmatisch ermittelt).")]
         private async Task TryCreateBackupAsync(int retentionCount, CancellationToken cancellationToken)
         {
-            string? connectionString = _context.Database.GetConnectionString();
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                _logger?.Warning("DB-Backup übersprungen: kein Connection-String am DbContext.");
-                return;
-            }
+            string dbPath = _databaseFile.FilePath;
 
-            SqliteConnectionStringBuilder connectionBuilder = new(connectionString);
-            string dbPath = connectionBuilder.DataSource;
-
-            // In-Memory-DBs (`:memory:`) und leere Pfade haben keinen physischen Snapshot
-            // und werden schlicht übersprungen (relevant für Tests und unkonfigurierte Umgebungen).
-            if (string.IsNullOrEmpty(dbPath)
-                || string.Equals(dbPath, ":memory:", StringComparison.OrdinalIgnoreCase)
-                || !File.Exists(dbPath))
+            // Eine Erstinstallation hat noch keine Datei; dann gibt es nichts zu sichern.
+            if (!File.Exists(dbPath))
             {
                 return;
             }
 
             try
             {
-                // Grund: dbPath stammt aus IConfiguration (ConnectionStrings:Default),
-                // nicht aus User-Input, das Path-Traversal-Risiko greift hier nicht.
-#pragma warning disable SCS0018
-                long dbSize = new FileInfo(dbPath).Length;
-#pragma warning restore SCS0018
-                if (!HasEnoughDiskSpace(dbPath, dbSize))
-                {
-                    long requiredMb = (dbSize * DiskSpaceSafetyFactor) / (1024 * 1024);
-                    _logger?.Warning("DB-Backup übersprungen: zu wenig freier Speicher (benötigt ~{RequiredMb} MB).", requiredMb);
-                    return;
-                }
-
-                string timestamp = EntityClock.Current.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-                string backupPath = $"{dbPath}.backup-{timestamp}";
-
-                // VACUUM INTO akzeptiert keine Parameter-Bindings, daher Single Quotes verdoppeln,
-                // damit auch Pfade mit Hochkomma sicher eingebettet werden.
-                string escapedPath = backupPath.Replace("'", "''", StringComparison.Ordinal);
-
-                SqliteConnection connection = new(connectionString);
-                await using (connection.ConfigureAwait(false))
-                {
-                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
-                    using SqliteCommand command = connection.CreateCommand();
-                    // Grund: VACUUM INTO erlaubt keine Parameter-Bindings; escapedPath
-                    // ist intern aus dbPath (Config) und UTC-Timestamp gebildet, das
-                    // Single-Quote-Escaping schließt die einzige verbleibende Injection-Quelle.
-#pragma warning disable SCS0002
-                    command.CommandText = $"VACUUM INTO '{escapedPath}'";
-#pragma warning restore SCS0002
-                    _ = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-
-                    _logger?.Info("DB-Backup vor Migration erstellt: {BackupFileName}", Path.GetFileName(backupPath));
-                }
-
-                CleanupOldBackups(dbPath, retentionCount);
+                await CreateBackupAsync(dbPath, retentionCount, cancellationToken).ConfigureAwait(false);
             }
             catch (SqliteException ex)
             {
@@ -181,6 +156,28 @@ namespace EchoPlay.Data.Infrastructure
             {
                 _logger?.Warning("Backup vor Migration fehlgeschlagen (Zugriff verweigert): {Reason}", ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Schreibt die Sicherung mit Zeitstempel im Namen, wenn der Platz reicht, und räumt danach auf.
+        /// </summary>
+        private async Task CreateBackupAsync(string dbPath, int retentionCount, CancellationToken cancellationToken)
+        {
+            long dbSize = new FileInfo(dbPath).Length;
+            if (!HasEnoughDiskSpace(dbPath, dbSize))
+            {
+                long requiredMb = (dbSize * DiskSpaceSafetyFactor) / (1024 * 1024);
+                _logger?.Warning("DB-Backup übersprungen: zu wenig freier Speicher (benötigt ~{RequiredMb} MB).", requiredMb);
+                return;
+            }
+
+            string timestamp = EntityClock.Current.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+            string backupFileName = Path.GetFileName(dbPath) + BackupInfix + timestamp;
+
+            _ = await SqliteSnapshot.CreateAsync(dbPath, backupFileName, cancellationToken).ConfigureAwait(false);
+            _logger?.Info("DB-Backup vor Migration erstellt: {BackupFileName}", backupFileName);
+
+            CleanupOldBackups(retentionCount);
         }
 
         /// <summary>
@@ -203,53 +200,71 @@ namespace EchoPlay.Data.Infrastructure
                 long required = dbSize * DiskSpaceSafetyFactor;
                 return drive.AvailableFreeSpace >= required;
             }
-            catch (ArgumentException)
+            catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
             {
-                return true;
-            }
-            catch (IOException)
-            {
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
+                // Lässt sich der freie Platz nicht ermitteln, wird trotzdem gesichert; scheitert
+                // die Sicherung dann am Platz, meldet sie das selbst mit Grund.
                 return true;
             }
         }
 
         /// <summary>
-        /// Behält maximal <paramref name="retentionCount"/> Backup-Dateien und löscht die
-        /// ältesten. Name-Sortierung genügt, weil der Zeitstempel ISO-sortierbar ist.
-        /// Intern zum Testen, das Retention-Verhalten ist unabhängig vom DbContext.
+        /// Behält höchstens <paramref name="retentionCount"/> Sicherungen neben der Datenbankdatei
+        /// und löscht die ältesten. Die Sortierung nach Namen genügt, weil der Zeitstempel im
+        /// Namen lexikografisch sortierbar ist.
+        /// Gezählt werden nur die eigenen Sicherungen, deren Name auf genau einen Zeitstempel
+        /// endet. Von Hand benannte Kopien wie „…backup-vor-umbau-…" samt ihren -wal- und
+        /// -shm-Dateien sortierten sonst vor jeden Zeitstempel, belegten die Plätze, und die
+        /// gerade angelegte Sicherung wurde sofort wieder gelöscht.
+        /// Intern zum Testen; das Aufräumen hängt nicht an einer Migration.
         /// </summary>
-        internal void CleanupOldBackups(string dbPath, int retentionCount)
+        /// <param name="retentionCount">Anzahl der zu behaltenden Sicherungen.</param>
+        internal void CleanupOldBackups(int retentionCount)
         {
+            string dbPath = _databaseFile.FilePath;
             string directory = Path.GetDirectoryName(dbPath) ?? string.Empty;
-            string fileName = Path.GetFileName(dbPath);
-            string pattern = $"{fileName}.backup-*";
+            string pattern = Path.GetFileName(dbPath) + BackupInfix + "*";
 
-            // Grund: dbPath stammt aus der gebundenen IConfiguration
-            // (DataServiceCollectionExtensions), nicht aus User-Input.
-#pragma warning disable SCS0018
-            string[] backups = Directory.GetFiles(directory, pattern);
-#pragma warning restore SCS0018
+            string prefix = Path.GetFileName(dbPath) + BackupInfix;
+            string[] backups = [.. Directory.GetFiles(directory, pattern)
+                .Where(file => IsTimestampedBackup(Path.GetFileName(file), prefix))];
             Array.Sort(backups, (a, b) => string.CompareOrdinal(b, a));
 
             for (int i = retentionCount; i < backups.Length; i++)
             {
                 try
                 {
-                    // Grund: backups[i] kommt direkt aus Directory.GetFiles oben,
-                    // ist daher per Konstruktion innerhalb von 'directory'.
-#pragma warning disable SCS0018
                     File.Delete(backups[i]);
-#pragma warning restore SCS0018
                 }
-                catch (IOException ex)
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
+                    // Eine schreibgeschützte oder geöffnete Sicherung bleibt liegen; die übrigen
+                    // werden trotzdem aufgeräumt.
                     _logger?.Warning("Altes DB-Backup konnte nicht gelöscht werden ({BackupFileName}): {Reason}", Path.GetFileName(backups[i]), ex.Message);
                 }
             }
         }
+
+        /// <summary>
+        /// Ob ein Dateiname eine eigene Sicherung ist: Präfix, dann genau der Zeitstempel im
+        /// Format <c>yyyyMMdd-HHmmss</c> und nichts weiter.
+        /// </summary>
+        /// <param name="fileName">Der Dateiname ohne Verzeichnis.</param>
+        /// <param name="prefix">Datenbankname samt <c>.backup-</c>.</param>
+        internal static bool IsTimestampedBackup(string fileName, string prefix)
+        {
+            if (!fileName.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return DateTime.TryParseExact(
+                fileName[prefix.Length..], "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
+        }
+
+        /// <summary>Die Sicherungseinstellungen, ohne den Rest der Einstellungszeile.</summary>
+        /// <param name="Enabled">Ob vor einer Migration gesichert wird.</param>
+        /// <param name="RetentionCount">Wie viele Sicherungen bleiben.</param>
+        private sealed record BackupSettingsRow(bool Enabled, int RetentionCount);
     }
 }

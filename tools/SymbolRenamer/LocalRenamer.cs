@@ -2,17 +2,21 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-// Benennt lokale Bezeichner um - lokale Variablen, foreach- und catch-Variablen,
-// Pattern-Designations und Query-Variablen.
-//
-// Warum eigener Weg statt Renamer.RenameSymbolAsync: Ein lokales Symbol wirkt nie über die
-// Dokumentgrenze hinaus. Deshalb kann ein Dokument in einem Zug umgeschrieben werden, statt für
-// jeden einzelnen Namen die gesamte Lösung neu zu kompilieren. Bei zehntausenden Vorkommen ist
-// das der Unterschied zwischen Minuten und Tagen.
-//
-// Parameter und Felder bleiben bewusst außen vor: Ein Parametername steht auch im benannten
-// Argument des Aufrufers und in <param name="...">, beides in anderen Dokumenten. Dafür ist
-// Renamer.RenameSymbolAsync zuständig.
+/// <summary>
+/// Benennt lokale Bezeichner um - lokale Variablen, foreach- und catch-Variablen,
+/// Pattern-Designations und Query-Variablen.
+/// <para>
+/// Warum eigener Weg statt Renamer.RenameSymbolAsync: Ein lokales Symbol wirkt nie über die
+/// Dokumentgrenze hinaus. Deshalb kann ein Dokument in einem Zug umgeschrieben werden, statt für
+/// jeden einzelnen Namen die gesamte Lösung neu zu kompilieren. Bei vielen tausend Vorkommen ist das
+/// der Unterschied zwischen Minuten und Tagen.
+/// </para>
+/// <para>
+/// Parameter und Felder bleiben außen vor: Ein Parametername steht auch im benannten
+/// Argument des Aufrufers und in &lt;param name="..."&gt;, beides in anderen Dokumenten. Dafür ist
+/// Renamer.RenameSymbolAsync zuständig.
+/// </para>
+/// </summary>
 internal static class LocalRenamer
 {
     public static async Task<(Solution Lösung, int Umbenannt)> RenameAsync(
@@ -117,11 +121,11 @@ internal static class LocalRenamer
             return (null, 0);
         }
 
-        SyntaxNode neueWurzel = root.ReplaceTokens(
+        SyntaxNode updatedRoot = root.ReplaceTokens(
             replacements.Keys,
             (alt, _) => SyntaxFactory.Identifier(alt.LeadingTrivia, replacements[alt], alt.TrailingTrivia));
 
-        return (neueWurzel, newNames.Count);
+        return (updatedRoot, newNames.Count);
     }
 
     private static Dictionary<ISymbol, string> CollectSymbolsToRename(
@@ -156,10 +160,10 @@ internal static class LocalRenamer
                 continue;
             }
 
-            string neu = Translator.Translate(symbol.Name, dictionary);
-            if (!string.Equals(neu, symbol.Name, StringComparison.Ordinal))
+            string updated = Translator.Translate(symbol.Name, dictionary);
+            if (!string.Equals(updated, symbol.Name, StringComparison.Ordinal))
             {
-                matches[symbol] = neu;
+                matches[symbol] = updated;
             }
         }
 
@@ -227,10 +231,10 @@ internal static class LocalRenamer
     {
         Dictionary<SyntaxToken, string> ersetzungen = new();
 
-        foreach (SyntaxNode knoten in root.DescendantNodes())
+        foreach (SyntaxNode node in root.DescendantNodes())
         {
             // Verwendungsstellen
-            if (knoten is IdentifierNameSyntax usage)
+            if (node is IdentifierNameSyntax usage)
             {
                 ISymbol? gebunden = model.GetSymbolInfo(usage).Symbol;
                 if (gebunden is not null && newNames.TryGetValue(gebunden, out string? ziel))
@@ -242,7 +246,7 @@ internal static class LocalRenamer
             }
 
             // Deklarationsstellen
-            (SyntaxToken token, ISymbol? symbol) = knoten switch
+            (SyntaxToken token, ISymbol? symbol) = node switch
             {
                 VariableDeclaratorSyntax v => (v.Identifier, model.GetDeclaredSymbol(v)),
                 ForEachStatementSyntax f => (f.Identifier, model.GetDeclaredSymbol(f)),
@@ -254,9 +258,9 @@ internal static class LocalRenamer
                 _ => (default, null),
             };
 
-            if (symbol is not null && newNames.TryGetValue(symbol, out string? neu))
+            if (symbol is not null && newNames.TryGetValue(symbol, out string? updated))
             {
-                ersetzungen[token] = neu;
+                ersetzungen[token] = updated;
             }
         }
 

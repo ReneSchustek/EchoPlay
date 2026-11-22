@@ -46,6 +46,21 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task LiveEntriesChanged_FiresForEveryEntryTheSinkBuffers()
+        {
+            using LoggerManager manager = BuildLoggerManager();
+            MemorySink sink = new(capacity: 100);
+            LogViewerCoordinator coordinator = new(manager, sink);
+            int notifications = 0;
+            coordinator.LiveEntriesChanged += (_, _) => notifications++;
+
+            await sink.WriteAsync(new LogEntry(DateTime.UtcNow, LogLevel.Information, "A", "X", []));
+            await sink.WriteAsync(new LogEntry(DateTime.UtcNow, LogLevel.Information, "B", "X", []));
+
+            Assert.Equal(2, notifications);
+        }
+
+        [Fact]
         public void IsLiveViewAvailable_WithoutMemorySink_IsFalse()
         {
             using LoggerManager manager = BuildLoggerManager();
@@ -126,8 +141,6 @@ namespace EchoPlay.App.Tests.Services
             Assert.Contains("fehlgeschlagen", only, StringComparison.Ordinal);
         }
 
-        // ── Aufbereitung der Zeile ───────────────────────────────────────────────
-
         [Theory]
         [InlineData(LogLevel.Trace, "TRACE")]
         [InlineData(LogLevel.Debug, "DEBUG")]
@@ -197,8 +210,6 @@ namespace EchoPlay.App.Tests.Services
             // Text der Meldung, den er ja gerade sucht.
             _ = Assert.Single(coordinator.BuildFilteredLiveEntries("ImportService", LogLevel.Trace));
         }
-
-        // ── Wenn nichts da ist ───────────────────────────────────────────────────
 
         [Fact]
         public async Task LoadLogFileOptions_WithoutAnyLogDirectory_OffersOnlyTheLiveView()

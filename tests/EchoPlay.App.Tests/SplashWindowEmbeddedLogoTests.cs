@@ -8,8 +8,8 @@ namespace EchoPlay.App.Tests
     /// <summary>
     /// Prüft, dass das Splash-Logo als Embedded-Resource in <c>EchoPlay.App</c> verfügbar ist.
     /// Hintergrund: Die <c>SplashWindow</c>-Implementierung lädt das Logo per
-    /// <see cref="Assembly.GetManifestResourceStream(string)"/>; fehlt der Eintrag, greift
-    /// in Produktion der Fallback nicht, und der Splash bliebe ohne Logo.
+    /// <see cref="Assembly.GetManifestResourceStream(string)"/>; fehlt der Eintrag, bliebe der
+    /// Startbildschirm ohne Logo.
     /// </summary>
     public sealed class SplashWindowEmbeddedLogoTests
     {

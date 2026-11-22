@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
 {
     /// <summary>
     /// Zählt ausgeführte SELECT-Kommandos pro Test.
-    /// Ermöglicht Akzeptanztests, die belegen, dass eine Aggregation tatsächlich
+    /// Damit belegen Akzeptanztests, dass eine Aggregation tatsächlich
     /// in einem einzigen Roundtrip beantwortet wird (kein N+1, keine Client-Evaluation
     /// mit nachgelagertem Materialisierungs-Query).
     /// </summary>

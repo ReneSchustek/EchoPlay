@@ -13,28 +13,28 @@ namespace EchoPlay.App.Tests.Services
     public sealed class DialogSuppressionDecisionTests
     {
         [Fact]
-        public void Haekchen_MitZustimmung_WirdGemerkt()
+        public void Checkbox_WithConsent_IsRemembered()
         {
             Assert.True(DialogSuppressionDecision.ShouldRemember(
                 DialogKey.SeriesRemoveFromLibrary, isCheckBoxChecked: true, isAffirmative: true));
         }
 
         [Fact]
-        public void Haekchen_MitAblehnung_WirdNichtGemerkt()
+        public void Checkbox_WithDecline_IsNotRemembered()
         {
             Assert.False(DialogSuppressionDecision.ShouldRemember(
                 DialogKey.SeriesRemoveFromLibrary, isCheckBoxChecked: true, isAffirmative: false));
         }
 
         [Fact]
-        public void OhneHaekchen_WirdNichtsGemerkt()
+        public void WithoutCheckbox_NothingIsRemembered()
         {
             Assert.False(DialogSuppressionDecision.ShouldRemember(
                 DialogKey.SeriesRemoveFromLibrary, isCheckBoxChecked: false, isAffirmative: true));
         }
 
         [Fact]
-        public void OhneKennung_WirdNichtsGemerkt()
+        public void WithoutKey_NothingIsRemembered()
         {
             // DialogKey.None steht für die Dialoge, die sich nicht ausblenden lassen.
             Assert.False(DialogSuppressionDecision.ShouldRemember(

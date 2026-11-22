@@ -164,8 +164,6 @@ namespace EchoPlay.Logger.Tests
             }
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static string CreateTempFolder()
         {
             string path = Path.Combine(Path.GetTempPath(), $"echoplay-log-{Path.GetRandomFileName()}");

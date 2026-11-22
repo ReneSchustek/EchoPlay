@@ -39,13 +39,13 @@ namespace EchoPlay.Core.Tests.Scoring
         public void Normalize_ReplacesUmlautUe()
         {
             // ü → ue
-            // Der erwartete Wert steht bewusst in ASCII-Schreibung, denn er ist das
+            // Der erwartete Wert steht in ASCII-Schreibung, denn er ist das
             // Ergebnis der Umwandlung und damit der Prüfgegenstand des Tests.
-            const string Erwartet = "ueber";
+            const string Expected = "ueber";
 
             string result = HoerspielTextNormalizer.Normalize("Über");
 
-            Assert.Equal(Erwartet, result);
+            Assert.Equal(Expected, result);
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace EchoPlay.Core.Tests.Scoring
         [Fact]
         public void Normalize_EnablesCaseInsensitiveComparison()
         {
-            // Normalisierung ermöglicht Vergleich unabhängig von Schreibweise
+            // Nach der Normalisierung spielt die Schreibweise keine Rolle mehr.
             string a = HoerspielTextNormalizer.Normalize("Die Drei ???");
             string b = HoerspielTextNormalizer.Normalize("die drei ???");
 

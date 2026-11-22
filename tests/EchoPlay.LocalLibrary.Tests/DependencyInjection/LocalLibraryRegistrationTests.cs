@@ -27,72 +27,70 @@ namespace EchoPlay.LocalLibrary.Tests.DependencyInjection
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public sealed class LocalLibraryRegistrationTests : IDisposable
     {
-        private readonly string _wurzel;
+        private readonly string _root;
 
         public LocalLibraryRegistrationTests()
         {
-            _wurzel = Directory.CreateTempSubdirectory("echoplay_di_").FullName;
+            _root = Directory.CreateTempSubdirectory("echoplay_di_").FullName;
         }
 
         public void Dispose()
         {
-            if (Directory.Exists(_wurzel))
+            if (Directory.Exists(_root))
             {
-                Directory.Delete(_wurzel, recursive: true);
+                Directory.Delete(_root, recursive: true);
             }
         }
 
         [Fact]
         public void AddLocalLibrary_MakesTheCoverSearchResolvable()
         {
-            ServiceProvider anbieter = BuildProvider();
+            ServiceProvider provider = BuildProvider();
 
-            ICoverSearchService suche = anbieter.GetRequiredService<ICoverSearchService>();
+            ICoverSearchService search = provider.GetRequiredService<ICoverSearchService>();
 
             // Der zusammengesetzte Dienst holt sich alle fünf Anbieter beim Auflösen.
             // Fehlt einer, wirft schon diese Zeile.
-            Assert.NotNull(suche);
+            Assert.NotNull(search);
         }
 
         [Fact]
         public void AddLocalLibrary_MakesScannerAndReadersResolvable()
         {
-            ServiceProvider anbieter = BuildProvider();
+            ServiceProvider provider = BuildProvider();
 
-            Assert.NotNull(anbieter.GetRequiredService<ILocalLibraryScanner>());
-            Assert.NotNull(anbieter.GetRequiredService<IScanOrchestrator>());
-            Assert.NotNull(anbieter.GetRequiredService<ILocalCoverLoader>());
-            Assert.NotNull(anbieter.GetRequiredService<ITagTitleReader>());
-            Assert.NotNull(anbieter.GetRequiredService<IAudioMetadataReader>());
-            Assert.NotNull(anbieter.GetRequiredService<CoverService>());
+            Assert.NotNull(provider.GetRequiredService<ILocalLibraryScanner>());
+            Assert.NotNull(provider.GetRequiredService<IScanOrchestrator>());
+            Assert.NotNull(provider.GetRequiredService<ILocalCoverLoader>());
+            Assert.NotNull(provider.GetRequiredService<ITagTitleReader>());
+            Assert.NotNull(provider.GetRequiredService<IAudioMetadataReader>());
+            Assert.NotNull(provider.GetRequiredService<CoverService>());
         }
 
         [Fact]
         public async Task PatternAnalysis_WithAnUnreadableSeriesFolder_KeepsGoing()
         {
-            using LockedFolder gesperrt = LockedFolder.Create(_wurzel, "Gesperrte Serie");
+            using LockedFolder locked = LockedFolder.Create(_root, "Gesperrte Serie");
 
-            string lesbar = Directory.CreateDirectory(Path.Combine(_wurzel, "TKKG")).FullName;
+            string lesbar = Directory.CreateDirectory(Path.Combine(_root, "TKKG")).FullName;
             _ = Directory.CreateDirectory(Path.Combine(lesbar, "001 - Der Fall"));
             _ = AudioTestFiles.CreateMp3(Path.Combine(lesbar, "001 - Der Fall"));
 
             EpisodePatternAnalyzer sut = new();
 
-            IReadOnlyList<PatternSuggestion> suggestions = await sut.AnalyzeAsync(_wurzel);
+            IReadOnlyList<PatternSuggestion> suggestions = await sut.AnalyzeAsync(_root);
 
             // Der Vorschlag für das Ordnermuster entsteht aus einer Stichprobe. Eine
             // gesperrte Serie darf die Stichprobe nicht beenden.
             Assert.NotNull(suggestions);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static ServiceProvider BuildProvider()
         {
-            ServiceCollection dienste = new();
-            _ = dienste.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = dienste.AddLocalLibrary();
-            return dienste.BuildServiceProvider();
+            ServiceCollection services = new();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddLocalLibrary();
+            return services.BuildServiceProvider();
         }
     }
 }

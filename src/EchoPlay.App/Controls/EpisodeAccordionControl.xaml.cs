@@ -16,7 +16,7 @@ namespace EchoPlay.App.Controls
         /// <summary>Breite eines Kachel-Slots (140px Kachel + 8px Margin).</summary>
         private const double TileSlotWidth = 148.0;
 
-        /// <summary>Debounce für SizeChanged, greift nur bei Änderung der Kachelanzahl pro Reihe.</summary>
+        // Zuletzt berechnete Kacheln je Reihe; neu gesetzt wird die Breite nur, wenn sie wechseln.
         private int _lastTilesPerRow;
 
         /// <summary>
@@ -29,22 +29,23 @@ namespace EchoPlay.App.Controls
         }
 
         /// <summary>
-        /// Passt die Border-Breite dynamisch an die Kachelanzahl pro Reihe an.
-        /// Debounce: nur bei Änderung der Kachelanzahl.
+        /// Passt die Breite des Rahmens an die Zahl der Kacheln je Reihe an, damit er bündig
+        /// mit der letzten Kachel abschließt. Gesetzt wird nur, wenn sich diese Zahl ändert.
         /// </summary>
         private void OnControlSizeChanged(object sender, SizeChangedEventArgs e)
         {
+            // Vor dem ersten Layout ist die Breite 0; 800 ergibt eine brauchbare erste Zeilenbreite.
             double available = ActualWidth > 0 ? ActualWidth : 800;
             int tilesPerRow = Math.Max(1, (int)(available / TileSlotWidth));
 
             if (tilesPerRow != _lastTilesPerRow)
             {
                 _lastTilesPerRow = tilesPerRow;
+                // Vier Pixel über der reinen Kachelbreite fassen den Rahmen (zweimal ein Pixel)
+                // samt Rundungsreserve.
                 OuterBorder.Width = tilesPerRow * TileSlotWidth + 4;
             }
         }
-
-        // ── Episoden ────────────────────────────────────────────────────────────
 
         /// <summary>ItemsSource für das Episoden-GridView.</summary>
         public static readonly DependencyProperty EpisodesSourceProperty =
@@ -70,10 +71,9 @@ namespace EchoPlay.App.Controls
             set => SetValue(EpisodeTemplateProperty, value);
         }
 
-        // ── GridView-Zugriff ────────────────────────────────────────────────────
-
         /// <summary>
-        /// SelectionMode des internen GridViews. Lokal braucht Single-Selection für Track-Anzeige.
+        /// SelectionMode des internen GridViews. Die lokale Mediathek braucht Einzelauswahl, um die
+        /// Spuren der gewählten Folge anzuzeigen.
         /// </summary>
         public static readonly DependencyProperty SelectionModeProperty =
             DependencyProperty.Register(nameof(SelectionMode), typeof(ListViewSelectionMode), typeof(EpisodeAccordionControl),

@@ -216,9 +216,7 @@ namespace EchoPlay.App.Tests.Services
                 new FakeCoverService(),
                 new FakeCoverDownloader(),
                 credentialStore,
-                new FakeClock(),
-                rateLimiter: null,
-                new FakeLogger());
+                                new FakeLogger());
         }
 
         private static ImportEpisode EpisodeFromProvider(string coverUrl)
@@ -227,7 +225,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 SourceEpisodeId = "provider-folge-001",
                 Title = EpisodeTitle,
-                CoverImageUrl = coverUrl,
+                CoverImageUrl = new Uri(coverUrl),
             };
         }
     }

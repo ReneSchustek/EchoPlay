@@ -9,9 +9,6 @@ namespace EchoPlay.Data.Tests.Helpers
     /// Stellt explizite Hilfsmethoden zum Erzeugen und Persistieren konsistenter Testdaten für EF-Core-Integrationstests bereit.
     /// Der Fokus liegt auf Korrektheit, Lesbarkeit und realistischem Datenbankverhalten statt auf maximaler Bequemlichkeit.
     /// </summary>
-    /// <remarks>
-    /// Initialisiert eine neue Instanz des <see cref="TestDataBuilder"/>.
-    /// </remarks>
     /// <param name="context">Der zu verwendende Datenbankkontext, der bereits mit einem relationalen Provider wie SQLite konfiguriert sein muss.</param>
     [SuppressMessage("Design", "CA1515:Consider making public types internal",
         Justification = "Wird in public xUnit-Test-Klassen (DbTestBase-Ableitungen) als protected Property exponiert und muss daher public sein.")]
@@ -20,7 +17,7 @@ namespace EchoPlay.Data.Tests.Helpers
         private readonly EchoPlayDbContext _context = context;
 
         /// <summary>
-        /// Erstellt und persistiert eine neue Serie. Diese Methode stellt den Einstiegspunkt in den Aggregatbaum dar und muss immer vor abhängigen
+        /// Erstellt und persistiert eine neue Serie. Sie ist der Einstiegspunkt in den Aggregatbaum und muss immer vor abhängigen
         /// Entitäten wie Episoden aufgerufen werden, um Foreign-Key-Constraints korrekt einzuhalten.
         /// </summary>
         /// <param name="title">Der Anzeigename der Serie.</param>

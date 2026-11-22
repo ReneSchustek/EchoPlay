@@ -4,9 +4,10 @@ namespace EchoPlay.TagManager.Abstractions
 {
     /// <summary>
     /// Liest und schreibt Audio-Metadaten (ID3, Vorbis Comment, etc.) für lokale Audiodateien.
-    /// Unterstützt MP3, FLAC, OGG, AAC, WMA und WAV über TagLib#.
+    /// Gelesen und geschrieben wird über TagLib#; die Endungen, die <see cref="ReadFolderAsync"/>
+    /// berücksichtigt, stehen in <c>TagService</c>.
     /// Felder mit dem Wert <see langword="null"/> in <see cref="AudioTag"/> werden beim Schreiben
-    /// übersprungen – der bestehende Wert in der Datei bleibt unverändert.
+    /// übersprungen; der bestehende Wert in der Datei bleibt unverändert.
     /// </summary>
     public interface ITagService
     {
@@ -21,14 +22,14 @@ namespace EchoPlay.TagManager.Abstractions
         /// <exception cref="System.IO.FileNotFoundException">
         /// Wird geworfen, wenn die Datei unter <paramref name="filePath"/> nicht existiert.
         /// </exception>
-        /// <exception cref="TagLib.UnsupportedFormatException">
+        /// <exception cref="System.InvalidOperationException">
         /// Wird geworfen, wenn das Dateiformat nicht von TagLib# unterstützt wird.
         /// </exception>
         Task<AudioTag> ReadAsync(string filePath);
 
         /// <summary>
         /// Schreibt die gesetzten Felder aus <paramref name="tag"/> in die Datei.
-        /// Felder mit dem Wert <see langword="null"/> werden ignoriert –
+        /// Felder mit dem Wert <see langword="null"/> werden ignoriert;
         /// der bestehende Wert in der Datei bleibt erhalten.
         /// </summary>
         /// <param name="filePath">Absoluter Pfad zur Audiodatei.</param>
@@ -71,9 +72,9 @@ namespace EchoPlay.TagManager.Abstractions
         Task RemoveAllTagsAsync(string filePath);
 
         /// <summary>
-        /// Liest die Metadaten aller unterstützten Audiodateien in einem Ordner.
-        /// Unterordner werden nicht einbezogen.
-        /// Dateien, die nicht von TagLib# unterstützt werden, werden übersprungen.
+        /// Liest die Metadaten aller unterstützten Audiodateien in einem Ordner und seinen
+        /// Unterordnern, damit Folgen auf mehreren CDs vollständig erscheinen.
+        /// Dateien, deren Tags sich nicht lesen lassen, werden protokolliert und übersprungen.
         /// </summary>
         /// <param name="folderPath">Absoluter Pfad zum Ordner.</param>
         /// <returns>

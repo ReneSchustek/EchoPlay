@@ -60,8 +60,8 @@ namespace EchoPlay.App.Services
         public TagLookupResult? SelectBestMatch(IReadOnlyList<TagLookupResult> results, int loadedTrackCount)
             => SelectBestMatchCore(results, loadedTrackCount);
 
-        // Die beiden Helfer sind pure Funktionen und werden auch vom TagManagerViewModel
-        // als statische Shims für bestehende Unit-Tests verwendet (kein HttpClient nötig).
+        // Die beiden Helfer sind reine Funktionen; das TagManagerViewModel und die Tests rufen
+        // sie direkt auf, ohne HttpClient.
         internal static string BuildAutoLookupQueryCore(string? folderPath)
         {
             if (string.IsNullOrWhiteSpace(folderPath))

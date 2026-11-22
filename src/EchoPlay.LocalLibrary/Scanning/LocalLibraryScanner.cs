@@ -1,11 +1,9 @@
 using EchoPlay.Core.Logging;
 using EchoPlay.LocalLibrary.Abstractions;
-using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
-using System.Security;
 
 namespace EchoPlay.LocalLibrary.Scanning
 {
@@ -13,33 +11,27 @@ namespace EchoPlay.LocalLibrary.Scanning
     /// Durchsucht eine lokale Verzeichnisstruktur nach Hörspielserien und Episoden.
     /// Unterstützt drei Hierarchieebenen: Root → Serienordner → Episodenordner → Audiodateien.
     /// Alternativ auch flache Struktur: Root → Serienordner → direkte Audiodateien.
-    /// IO-Fehler auf Ordnerebene werden geloggt und übersprungen, kein Absturz.
+    /// IO-Fehler auf Ordnerebene werden geloggt und übersprungen, kein Absturz
+    /// (<see cref="SafeDirectoryReader"/>).
     /// </summary>
     public sealed class LocalLibraryScanner : ILocalLibraryScanner
     {
         private readonly ILogger _logger;
-        private readonly ITagTitleReader _tagTitleReader;
+        private readonly SafeDirectoryReader _directories;
 
         /// <summary>
-        /// Initialisiert den Scanner mit Logger-Fabrik und Tag-Leser.
+        /// Initialisiert den Scanner.
         /// </summary>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
-        /// <param name="tagTitleReader">Liest ID3-Tags aus Audiodateien für bessere Titelqualität.</param>
-        public LocalLibraryScanner(ILoggerFactory loggerFactory, ITagTitleReader tagTitleReader)
+        public LocalLibraryScanner(ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
 
             _logger = loggerFactory.CreateLogger(nameof(LocalLibraryScanner));
-            _tagTitleReader = tagTitleReader;
+            _directories = new SafeDirectoryReader(_logger);
         }
 
-        /// <summary>
-        /// Gibt alle direkten Unterordner des Wurzelverzeichnisses zurück, ohne Episodenscan.
-        /// Extrem schnell: nur ein <c>Directory.GetDirectories</c>-Aufruf, kein IO auf Dateiebene.
-        /// Gibt eine leere Liste zurück wenn das Verzeichnis nicht existiert oder ein IO-Fehler auftritt.
-        /// </summary>
-        /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis der Bibliothek.</param>
-        /// <returns>Sortierte Liste der Unterordnerpfade.</returns>
+        /// <inheritdoc/>
         public IReadOnlyList<string> GetSeriesFolders(string rootPath)
         {
             if (!Directory.Exists(rootPath))
@@ -47,38 +39,15 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return [];
             }
 
-            return GetSubdirectories(rootPath);
+            return _directories.GetSubdirectories(rootPath);
         }
 
-        /// <summary>
-        /// Durchsucht das angegebene Wurzelverzeichnis nach Hörspielserien und Episoden.
-        /// Läuft auf einem Hintergrundthread (Task.Run), damit der UI-Thread nicht blockiert wird.
-        /// Ermittelt vor der Scan-Schleife die Gesamtanzahl aller Audiodateien, um einen
-        /// deterministischen Fortschrittsbalken zu ermöglichen.
-        /// Episodenordner werden unabhängig vom konfigurierten Muster importiert:
-        /// Stimmt der Ordnername nicht mit dem Muster überein, wird der Ordnername als Titel verwendet.
-        /// </summary>
-        /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis der Bibliothek.</param>
-        /// <param name="folderPattern">
-        /// Muster für Episodenordner, z.B. <c>"{number:000} - {title}"</c>.
-        /// Unterstützte Platzhalter: <c>{number}</c>, <c>{number:000}</c>, <c>{title}</c>.
-        /// Passt der Ordnername nicht, wird er trotzdem importiert, nur <see cref="LocalEpisodeScan.ParsedNumber"/>
-        /// bleibt dann <see langword="null"/>.
-        /// </param>
-        /// <param name="progress">
-        /// Optionaler Fortschritts-Callback; erhält <see cref="ScanProgress"/> nach jeder
-        /// verarbeiteten Episode. Null wenn kein Fortschritt gemeldet werden soll.
-        /// </param>
-        /// <param name="onSeriesScanned">
-        /// Optionaler Callback, der nach jeder vollständig gescannten Serie aufgerufen wird.
-        /// Ermöglicht es dem Aufrufer, Serien sofort zu verarbeiten, ohne auf das Gesamtergebnis
-        /// zu warten, als Grundlage für die progressive Anzeige in der UI.
-        /// </param>
-        /// <param name="ct">Abbruchtoken; ermöglicht sauberes Beenden bei App-Schließen.</param>
-        /// <returns>
-        /// Liste aller gefundenen Serien mit ihren Episoden.
-        /// Gibt eine leere Liste zurück, wenn das Verzeichnis nicht existiert oder leer ist.
-        /// </returns>
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Vor der Schleife zählt der Scanner alle Audiodateien, damit der Fortschritt eine
+        /// Prozentangabe hat. Ordner, deren Name nicht zum Muster passt, werden trotzdem
+        /// eingelesen; die Nummer kommt dann aus den allgemeinen Mustern oder fehlt.
+        /// </remarks>
         public Task<IReadOnlyList<LocalScanResult>> ScanSeriesAsync(
             string rootPath,
             string folderPattern,
@@ -86,11 +55,9 @@ namespace EchoPlay.LocalLibrary.Scanning
             IProgress<LocalScanResult>? onSeriesScanned = null,
             CancellationToken ct = default)
         {
-            // Task.Run lagert den synchronen Dateisystem-Zugriff auf den Threadpool aus,
-            // damit der UI-Thread während des Scans vollständig reaktionsfähig bleibt.
-            // Progress<T> leitet die Callbacks sicher auf den UI-Thread zurück.
-            // CancellationToken wird an Task.Run übergeben, damit der Task vor dem Start
-            // abbrechbar ist, und an ExecuteScan, damit auch die Schleife darin abbricht.
+            // Der Dateizugriff ist synchron und liefe sonst auf dem UI-Thread. Das Token geht an
+            // Task.Run, damit ein früher Abbruch den Lauf gar nicht erst startet, und in die
+            // Schleife, damit ein laufender je Serie endet.
             return Task.Run<IReadOnlyList<LocalScanResult>>(
                 () => ExecuteScan(rootPath, folderPattern, progress, onSeriesScanned, ct), ct);
         }
@@ -104,7 +71,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             string folderPattern,
             IProgress<ScanProgress>? progress,
             IProgress<LocalScanResult>? onSeriesScanned,
-            CancellationToken ct = default)
+            CancellationToken ct)
         {
             using LogScope scope = _logger.BeginScope(nameof(ScanSeriesAsync));
 
@@ -114,32 +81,19 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return [];
             }
 
-            // Gesamtzahl aller Audiodateien vor der Scan-Schleife ermitteln,
-            // denn nur so ist ein deterministischer Fortschrittsbalken möglich.
-            int totalFiles = CountSupportedFiles(rootPath);
-            int processedFiles = 0;
-
+            ScanProgressCounter counter = new(progress, _directories.CountAudioFiles(rootPath));
             EpisodeFolderParser parser = new(folderPattern);
             List<LocalScanResult> results = [];
 
-            string[] seriesFolders = GetSubdirectories(rootPath);
-
-            foreach (string seriesFolder in seriesFolders)
+            foreach (string seriesFolder in _directories.GetSubdirectories(rootPath))
             {
-                // Abbruchprüfung pro Serie, ermöglicht sauberes Beenden bei App-Schließen
+                // Je Serie prüfen, damit der Scan beim Schließen der Anwendung zügig endet.
                 ct.ThrowIfCancellationRequested();
-                LocalScanResult? scanResult = ScanSeries(
-                    seriesFolder,
-                    parser,
-                    progress,
-                    totalFiles,
-                    ref processedFiles);
+                LocalScanResult? scanResult = ScanSeries(seriesFolder, parser, counter);
 
                 if (scanResult is not null)
                 {
                     results.Add(scanResult);
-                    // Sofort melden, damit der Aufrufer die Serie ohne Wartezeit verarbeiten kann.
-                    // Progress<T> überträgt den Aufruf sicher auf den SynchronizationContext des Aufrufers.
                     onSeriesScanned?.Report(scanResult);
                 }
             }
@@ -152,61 +106,12 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <summary>
         /// Scannt einen einzelnen Serienordner und gibt das Ergebnis zurück.
         /// Meldet nach jeder Episode den aktuellen Fortschritt.
-        /// Episodenordner ohne Mustert-Treffer werden trotzdem importiert;
-        /// der Ordnername wird dann als Episodentitel verwendet.
         /// </summary>
-        private LocalScanResult? ScanSeries(
-            string seriesFolderPath,
-            EpisodeFolderParser parser,
-            IProgress<ScanProgress>? progress,
-            int totalFiles,
-            ref int processedFiles)
+        private LocalScanResult? ScanSeries(string seriesFolderPath, EpisodeFolderParser parser, ScanProgressCounter counter)
         {
             string seriesName = Path.GetFileName(seriesFolderPath);
-            string[] episodeFolders = GetSubdirectories(seriesFolderPath);
-            List<LocalEpisodeScan> episodes = [];
-
-            foreach (string episodeFolder in episodeFolders)
-            {
-                string folderName = Path.GetFileName(episodeFolder);
-
-                // Versuche, Nummer und Titel aus dem Ordnernamen zu parsen.
-                // Kein Treffer ist kein Fehler, der Ordnername dient dann als Titel.
-                bool matched = parser.TryParse(folderName, out int? number, out string? parsedTitle);
-                _logger.Debug(matched
-                    ? $"Muster erkannt: '{folderName}' → Nummer {number}, Titel '{parsedTitle}'"
-                    : $"Kein Muster-Treffer: '{folderName}' – Ordnername als Titel");
-
-                List<string> trackPaths = CollectTrackPaths(episodeFolder);
-
-                // Ordner ohne Audiodateien überspringen, denn leer bedeutet keine Folge
-                if (trackPaths.Count == 0)
-                {
-                    _logger.Debug(() => $"Episodenordner ohne Audiodateien übersprungen: {folderName}");
-                    continue;
-                }
-
-                // Verwende den geparsten Titel oder den Ordnernamen als Fallback
-                string titleSource = parsedTitle ?? folderName;
-                string? episodeTitle = ResolveEpisodeTitle(trackPaths, titleSource);
-
-                episodes.Add(new LocalEpisodeScan
-                {
-                    FolderPath = episodeFolder,
-                    ParsedNumber = number,
-                    ParsedTitle = episodeTitle,
-                    TrackPaths = trackPaths
-                });
-
-                // Fortschritt nach jeder Episode melden, die Tracks dieser Episode zählen hoch
-                processedFiles += trackPaths.Count;
-                progress?.Report(new ScanProgress
-                {
-                    ProcessedFiles = processedFiles,
-                    TotalFiles = totalFiles,
-                    StatusText = $"Scanne {seriesName} …"
-                });
-            }
+            List<LocalEpisodeScan> episodes = AssignFolderNumbers(
+                ScanEpisodeFolders(seriesFolderPath, seriesName, parser, counter), parser);
 
             // Flache Serie: Audiodateien direkt im Serienordner.
             // Greift, wenn keine Episoden aus Unterordnern gefunden wurden,
@@ -214,42 +119,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             // ohne Audio, aber 86 MP3-Dateien direkt im Serienordner).
             if (episodes.Count == 0)
             {
-                List<string> flatTracks = CollectTrackPaths(seriesFolderPath);
-
-                if (flatTracks.Count > 0)
-                {
-                    _logger.Debug(() => $"Flache Serie erkannt: {seriesName} – {flatTracks.Count} Audiodateien direkt im Ordner");
-
-                    // Mehrere Parser-Muster probieren, denn Dateinamen folgen anderen Konventionen
-                    // als Ordnernamen (z.B. "Karl May - 001 - Durch die Wüste")
-                    EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(parser);
-
-                    foreach (string trackPath in flatTracks)
-                    {
-                        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(trackPath);
-
-                        // Parse-Kaskade (Kassette → Parser-Kette → Fallback) zentral in FileNameEpisodeParser.
-                        (int? number, string title) = FileNameEpisodeParser.Parse(fileNameWithoutExt, fileParsers);
-
-                        string? episodeTitle = ResolveEpisodeTitle([trackPath], title);
-
-                        episodes.Add(new LocalEpisodeScan
-                        {
-                            FolderPath = seriesFolderPath,
-                            ParsedNumber = number,
-                            ParsedTitle = episodeTitle,
-                            TrackPaths = [trackPath]
-                        });
-
-                        processedFiles++;
-                        progress?.Report(new ScanProgress
-                        {
-                            ProcessedFiles = processedFiles,
-                            TotalFiles = totalFiles,
-                            StatusText = $"Scanne {seriesName} …"
-                        });
-                    }
-                }
+                episodes = ScanFlatSeries(seriesFolderPath, seriesName, parser, counter);
             }
 
             if (episodes.Count == 0)
@@ -267,147 +137,130 @@ namespace EchoPlay.LocalLibrary.Scanning
         }
 
         /// <summary>
-        /// Ermittelt den Episodentitel mit der bestmöglichen Qualität.
-        /// Priorität: bereinigter Ordnername > ID3-Album-Tag > roher Ordnername.
-        /// <para>
-        /// <c>Tag.Title</c> wird bewusst ignoriert: Bei mehrteiligen Hörspielen enthält er
-        /// den Kapitel- oder Tracktitel (z.B. „Inhaltsangabe", „Teil 1", „09.04.2021"),
-        /// nicht den Episodentitel. Der Ordnername ist die verlässlichste Quelle.
-        /// </para>
+        /// Liest die Folgenordner einer Serie. Ordner ohne Treffer des Musters werden trotzdem
+        /// eingelesen; der Ordnername dient dann als Titel. Ordner ohne Audiodateien entfallen.
         /// </summary>
-        /// <param name="trackPaths">Audiodateien der Episode; der erste Track wird für Album-Tag genutzt.</param>
-        /// <param name="folderDerivedTitle">Aus dem Ordnernamen ermittelter Titel (kann Laufnummern enthalten).</param>
-        /// <returns>Bester verfügbarer Episodentitel oder null, wenn keiner ermittelt werden konnte.</returns>
-        private string? ResolveEpisodeTitle(List<string> trackPaths, string? folderDerivedTitle)
+        private List<LocalEpisodeScan> ScanEpisodeFolders(
+            string seriesFolderPath, string seriesName, EpisodeFolderParser parser, ScanProgressCounter counter)
         {
-            // Ordnername hat Vorrang, denn der Nutzer hat die Episoden nach diesem Schema abgelegt
-            if (folderDerivedTitle is not null)
-            {
-                return EpisodeFolderParser.StripLeadingSequenceNumber(folderDerivedTitle);
-            }
+            List<LocalEpisodeScan> episodes = [];
 
-            // Selten: kein Ordnername verfügbar (z.B. flache Serie direkt im Serienordner).
-            // Tag.Album enthält bei korrekt getaggten Hörspielen den Episoden- oder Serientitel.
-            if (trackPaths.Count > 0)
+            foreach (string episodeFolder in _directories.GetSubdirectories(seriesFolderPath))
             {
-                string? albumTitle = TryReadAlbumTitle(trackPaths[0]);
+                string folderName = Path.GetFileName(episodeFolder);
 
-                if (albumTitle is not null)
+                // Kein Treffer ist kein Fehler, der Ordnername dient dann als Titel.
+                bool matched = parser.TryParse(folderName, out int? number, out string? parsedTitle);
+                _logger.Debug(matched
+                    ? $"Muster erkannt: '{folderName}' → Nummer {number}, Titel '{parsedTitle}'"
+                    : $"Kein Muster-Treffer: '{folderName}' – Ordnername als Titel");
+
+                List<string> trackPaths = _directories.CollectTrackPaths(episodeFolder);
+
+                if (trackPaths.Count == 0)
                 {
-                    return albumTitle;
+                    _logger.Debug(() => $"Episodenordner ohne Audiodateien übersprungen: {folderName}");
+                    continue;
                 }
+
+                // Die Nummer vergibt AssignFolderNumbers erst, wenn alle Ordner der Serie
+                // bekannt sind: Ob ein Ordner ohne Nummer eine Sonderfolge ist oder die Serie
+                // gar nicht nummeriert, entscheidet sich erst im Vergleich.
+                episodes.Add(new LocalEpisodeScan
+                {
+                    FolderPath = episodeFolder,
+                    ParsedTitle = ResolveEpisodeTitle(parsedTitle ?? folderName),
+                    TrackPaths = trackPaths
+                });
+
+                counter.Advance(trackPaths.Count, seriesName);
             }
 
-            return null;
+            return episodes;
         }
 
         /// <summary>
-        /// Liest den ID3-Album-Tag der angegebenen Audiodatei.
-        /// <c>Tag.Title</c> wird nicht verwendet, denn er enthält den Kapitel-Titel, nicht den Episodentitel.
-        /// Fehlerhafte oder nicht unterstützte Dateien geben null zurück.
+        /// Liest eine flache Serie: jede Audiodatei direkt im Serienordner ist eine Folge.
         /// </summary>
-        /// <param name="filePath">Absoluter Pfad zur Audiodatei.</param>
-        /// <returns>Album-Tag oder null, wenn nicht lesbar oder leer.</returns>
-        private string? TryReadAlbumTitle(string filePath)
+        private List<LocalEpisodeScan> ScanFlatSeries(
+            string seriesFolderPath, string seriesName, EpisodeFolderParser parser, ScanProgressCounter counter)
         {
-            try
+            List<string> flatTracks = _directories.CollectTrackPaths(seriesFolderPath);
+            if (flatTracks.Count == 0)
             {
-                (string _, string album) = _tagTitleReader.Read(filePath);
+                return [];
+            }
 
-                return string.IsNullOrWhiteSpace(album) ? null : album;
-            }
-            catch (Exception ex) when (ex is IOException
-                                       or UnauthorizedAccessException
-                                       or SecurityException
-                                       or PathTooLongException
-                                       or DirectoryNotFoundException
-                                       or NotSupportedException
-                                       or TagLib.CorruptFileException
-                                       or TagLib.UnsupportedFormatException)
+            _logger.Debug(() => $"Flache Serie erkannt: {seriesName} – {flatTracks.Count} Audiodateien direkt im Ordner");
+
+            // Mehrere Parser-Muster probieren, denn Dateinamen folgen anderen Konventionen
+            // als Ordnernamen (z.B. "Karl May - 001 - Durch die Wüste")
+            EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(parser);
+            List<LocalEpisodeScan> episodes = [];
+
+            foreach (string trackPath in flatTracks)
             {
-                _logger.Warning("ID3-Tags nicht lesbar, Ordnername wird verwendet: {Path} – {Reason}", PathRedactor.Redact(filePath), ex.Message);
-                return null;
+                (int? number, string title) = FileNameEpisodeParser.Parse(Path.GetFileNameWithoutExtension(trackPath), fileParsers);
+
+                episodes.Add(new LocalEpisodeScan
+                {
+                    FolderPath = seriesFolderPath,
+                    ParsedNumber = number,
+                    ParsedTitle = ResolveEpisodeTitle(title),
+                    TrackPaths = [trackPath]
+                });
+
+                counter.Advance(1, seriesName);
             }
+
+            return episodes;
         }
 
         /// <summary>
-        /// Zählt alle unterstützten Audiodateien im angegebenen Verzeichnis rekursiv.
-        /// Gibt 0 zurück bei IO-Fehlern; der Aufrufer soll dann indeterministischen Fortschritt zeigen.
+        /// Vergibt die Folgennummern aller Ordner einer Serie nach derselben Regel, die auch der
+        /// Bericht „Fehlende Folgen" benutzt (<see cref="LocalEpisodeNumbers.Assign"/>). Das
+        /// eingestellte Muster hat Vorrang, passt es nicht, greifen die allgemeinen Muster.
         /// </summary>
-        /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis.</param>
-        /// <returns>Anzahl der Audiodateien oder 0 bei Fehler.</returns>
-        private int CountSupportedFiles(string rootPath)
+        /// <remarks>
+        /// Das eingestellte Muster allein reicht nicht: „Die drei Ausrufezeichen - 082 - …" passt
+        /// nicht auf <c>{number:000} - {title}</c> und bliebe ohne Nummer.
+        /// </remarks>
+        private static List<LocalEpisodeScan> AssignFolderNumbers(List<LocalEpisodeScan> episodes, EpisodeFolderParser parser)
         {
-            try
+            if (episodes.Count == 0)
             {
-                return Directory.GetFiles(rootPath, "*", SearchOption.AllDirectories)
-                    .Count(EchoPlay.Core.AudioExtensions.IsAudioFile);
+                return episodes;
             }
-            catch (Exception ex) when (ex is IOException
-                                       or UnauthorizedAccessException
-                                       or SecurityException
-                                       or PathTooLongException
-                                       or DirectoryNotFoundException
-                                       or ArgumentException)
+
+            string[] folderNames = [.. episodes.Select(episode => Path.GetFileName(episode.FolderPath))];
+            IReadOnlyList<int?> numbers = LocalEpisodeNumbers.Assign(
+                folderNames,
+                name => parser.TryParse(name, out int? number, out _) ? number : null);
+
+            List<LocalEpisodeScan> numbered = new(episodes.Count);
+            for (int i = 0; i < episodes.Count; i++)
             {
-                _logger.Warning("Vorab-Zählung fehlgeschlagen, Fortschritt wird indeterministisch: {Reason}", ex.Message);
-                return 0;
+                numbered.Add(new LocalEpisodeScan
+                {
+                    FolderPath = episodes[i].FolderPath,
+                    ParsedNumber = numbers[i],
+                    ParsedTitle = episodes[i].ParsedTitle,
+                    TrackPaths = episodes[i].TrackPaths
+                });
             }
+
+            return numbered;
         }
 
         /// <summary>
-        /// Sammelt alle unterstützten Audiodateien im angegebenen Ordner, sortiert nach Dateiname.
-        /// Nur direkte Dateien des Ordners werden berücksichtigt, keine Unterordner.
+        /// Der Episodentitel aus dem Ordner- oder Dateinamen, ohne vorangestellte laufende Nummer.
         /// </summary>
-        /// <param name="folderPath">Absoluter Pfad zum Episodenordner.</param>
-        /// <returns>Sortierte Liste der absoluten Dateipfade.</returns>
-        private List<string> CollectTrackPaths(string folderPath)
-        {
-            try
-            {
-                string[] files = Directory.GetFiles(folderPath);
-
-                List<string> tracks = files
-                    .Where(EchoPlay.Core.AudioExtensions.IsAudioFile)
-                    .Order()
-                    .ToList();
-
-                return tracks;
-            }
-            catch (IOException ex)
-            {
-                _logger.Warning("Audiodateien konnten nicht gelesen werden in: {Path} – {Reason}", PathRedactor.Redact(folderPath), ex.Message);
-                return [];
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.Warning("Zugriff verweigert für: {Path} – {Reason}", PathRedactor.Redact(folderPath), ex.Message);
-                return [];
-            }
-        }
-
-        /// <summary>
-        /// Liest alle direkten Unterordner des angegebenen Verzeichnisses.
-        /// Bei IO-Fehlern wird ein leeres Array zurückgegeben und der Fehler geloggt.
-        /// </summary>
-        /// <param name="path">Absoluter Pfad zum Verzeichnis.</param>
-        /// <returns>Array der Unterordnerpfade oder leeres Array bei Fehler.</returns>
-        private string[] GetSubdirectories(string path)
-        {
-            try
-            {
-                return Directory.GetDirectories(path);
-            }
-            catch (IOException ex)
-            {
-                _logger.Warning("Unterordner konnten nicht gelesen werden: {Path} – {Reason}", PathRedactor.Redact(path), ex.Message);
-                return [];
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.Warning("Zugriff verweigert für: {Path} – {Reason}", PathRedactor.Redact(path), ex.Message);
-                return [];
-            }
-        }
+        /// <remarks>
+        /// Die ID3-Tags bleiben hier außen vor. <c>Tag.Title</c> nennt bei mehrteiligen
+        /// Hörspielen das Kapitel („Inhaltsangabe", „Teil 1"), nicht die Folge; den Namen hat
+        /// dagegen jemand nach seinem Schema vergeben.
+        /// </remarks>
+        private static string ResolveEpisodeTitle(string nameDerivedTitle)
+            => EpisodeFolderParser.StripLeadingSequenceNumber(nameDerivedTitle);
     }
 }

@@ -32,7 +32,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task<int> ExecuteAsync(RestructurePreviewDisplay preview, CancellationToken cancellationToken = default)
+        public Task<int> ExecuteAsync(Guid seriesId, RestructurePreviewDisplay preview, CancellationToken cancellationToken = default)
         {
             ExecuteCallCount++;
             return Task.FromResult(MovedFileCount);

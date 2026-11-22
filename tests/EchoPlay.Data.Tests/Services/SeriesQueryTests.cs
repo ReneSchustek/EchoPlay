@@ -11,11 +11,10 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class SeriesQueryTests : DbTestBase
     {
         /// <summary>
-        /// Stellt sicher, dass logisch gelöschte Serien nicht mehr über reguläre
+        /// Prüft, dass logisch gelöschte Serien nicht mehr über reguläre
         /// Abfragen zurückgegeben werden, während physisch vorhandene Datensätze
         /// weiterhin in der Datenbank verbleiben.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
         public async Task GetAllAsync_ReturnsOnlyNotDeletedSeries()
         {
@@ -25,7 +24,7 @@ namespace EchoPlay.Data.Tests.Services
             // Diese Serie wird explizit logisch gelöscht und darf nicht mehr erscheinen.
             Series deletedSeries = await DataBuilder.PersistSeriesAsync("Gelöscht");
 
-            // Das Soft-Delete erfolgt bewusst nach dem Persistieren, da der QueryFilter
+            // Das Soft-Delete erfolgt nach dem Persistieren, da der QueryFilter
             // ausschließlich auf gespeicherte Zustände wirkt.
             deletedSeries.MarkAsDeleted(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc));
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -100,9 +99,8 @@ namespace EchoPlay.Data.Tests.Services
         /// Neuerscheinungs-Prüfung sie ermittelt hat. Für die Frage „steckt der Künstler schon
         /// in der Online-Mediathek?" zählt sie nicht mit.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
-        public async Task GetOnlineImportedByAppleMusicArtistIdAsync_IgnoriertLokaleSerie()
+        public async Task GetOnlineImportedByAppleMusicArtistIdAsync_IgnoresLocalSeries()
         {
             _ = Context.Series.Add(new Series
             {
@@ -123,9 +121,8 @@ namespace EchoPlay.Data.Tests.Services
         /// Liegt neben der lokalen auch die online importierte Serie vor, muss genau diese
         /// gefunden werden.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
-        public async Task GetOnlineImportedByAppleMusicArtistIdAsync_FindetDieOnlineSerie()
+        public async Task GetOnlineImportedByAppleMusicArtistIdAsync_FindsTheOnlineSeries()
         {
             _ = Context.Series.Add(new Series
             {
@@ -152,9 +149,8 @@ namespace EchoPlay.Data.Tests.Services
         /// <summary>
         /// Gegenstück für Spotify: Auch dort blockiert eine rein lokale Serie den Online-Import nicht.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
-        public async Task GetOnlineImportedBySpotifyArtistIdAsync_IgnoriertLokaleSerie()
+        public async Task GetOnlineImportedBySpotifyArtistIdAsync_IgnoresLocalSeries()
         {
             _ = Context.Series.Add(new Series
             {

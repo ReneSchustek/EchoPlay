@@ -84,14 +84,14 @@ namespace EchoPlay.App.ViewModels
             {
                 ProviderType.Spotify => ProviderKeys.Spotify,
                 ProviderType.AppleMusic => ProviderKeys.AppleMusic,
-                ProviderType.Both => "Both",
+                ProviderType.Both => ProviderKeys.Both,
                 _ => string.Empty
             };
             set => ActiveProvider = value switch
             {
                 ProviderKeys.Spotify => ProviderType.Spotify,
                 ProviderKeys.AppleMusic => ProviderType.AppleMusic,
-                "Both" => ProviderType.Both,
+                ProviderKeys.Both => ProviderType.Both,
                 _ => ProviderType.None
             };
         }
@@ -151,29 +151,23 @@ namespace EchoPlay.App.ViewModels
         public ICommand TestConnectionCommand => _testConnectionCommand;
 
         /// <summary>Eingegebene Spotify-Client-ID.</summary>
+        /// <remarks>
+        /// Die Zugangsdaten speichert ihr eigener Knopf in den verschlüsselten Speicher, nicht
+        /// der Speichern-Knopf der Seite. Sie zählen deshalb nicht als ungespeicherte Änderung:
+        /// Die Rückfrage beim Verlassen böte sonst ein Speichern an, das sie gar nicht sichert.
+        /// </remarks>
         public string SpotifyClientId
         {
             get => _spotifyClientId;
-            set
-            {
-                if (SetProperty(ref _spotifyClientId, value))
-                {
-                    _onUserEdit?.Invoke();
-                }
-            }
+            set => SetProperty(ref _spotifyClientId, value);
         }
 
         /// <summary>Eingegebenes Spotify-Client-Secret.</summary>
+        /// <remarks>Gespeichert wie <see cref="SpotifyClientId"/> über den eigenen Knopf.</remarks>
         public string SpotifyClientSecret
         {
             get => _spotifyClientSecret;
-            set
-            {
-                if (SetProperty(ref _spotifyClientSecret, value))
-                {
-                    _onUserEdit?.Invoke();
-                }
-            }
+            set => SetProperty(ref _spotifyClientSecret, value);
         }
 
         /// <summary>Statustext der Spotify-Verknüpfung.</summary>
@@ -264,7 +258,7 @@ namespace EchoPlay.App.ViewModels
             }
 
             IsTestingCredentials = true;
-            SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusTesting", "Teste Verbindung …");
+            SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusTesting", "Speichere Zugangsdaten …");
 
             try
             {
@@ -288,13 +282,22 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Entfernen der Spotify-Zugangsdaten: Datei- oder Verschlüsselungsfehler des Speichers erscheinen in 'SpotifyStatus'; der Befehl läuft losgelöst, ein Fehler bliebe sonst unbeobachtet.")]
         private async Task RemoveSpotifyAsync()
         {
-            await _credentialStore.ClearAsync();
-            IsSpotifyLinked = false;
-            SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusNotLinked", "Nicht verknüpft");
-            SpotifyClientId = string.Empty;
-            SpotifyClientSecret = string.Empty;
+            try
+            {
+                await _credentialStore.ClearAsync();
+                IsSpotifyLinked = false;
+                SpotifyStatus = SafeResourceLoader.Get("SpotifyStatusNotLinked", "Nicht verknüpft");
+                SpotifyClientId = string.Empty;
+                SpotifyClientSecret = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                string errorPattern = SafeResourceLoader.Get("SpotifyStatusError", "Fehler: {0}");
+                SpotifyStatus = string.Format(System.Globalization.CultureInfo.CurrentCulture, errorPattern, ex.Message);
+            }
         }
 
         /// <summary>Übernimmt den Provider aus der Entität ohne Change-Callback.</summary>

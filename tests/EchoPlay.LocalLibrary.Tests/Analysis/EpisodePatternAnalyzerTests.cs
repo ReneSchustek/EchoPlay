@@ -15,8 +15,6 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
     {
         private readonly EpisodePatternAnalyzer _analyzer = new();
 
-        // ── Hilfsmethoden ──────────────────────────────────────────────────────────
-
         /// <summary>
         /// Erzeugt eine Bibliotheks-Struktur mit einer Dummy-Serie und den angegebenen Episodenordnern.
         /// Root → "TestSerie" → [episodeFolderNames].
@@ -54,8 +52,6 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
 
             return root;
         }
-
-        // ── Tests: klassische Zwei-Ebenen-Struktur ────────────────────────────────
 
         /// <summary>
         /// Muster "{number:000} - {title}", der häufigste Standard in deutschen Hörspielen.
@@ -229,8 +225,6 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
             }
         }
 
-        // ── Tests: flache Serien ──────────────────────────────────────────────────
-
         /// <summary>
         /// Flache Serie: MP3-Dateien direkt im Serienordner, kein Episodenordner.
         /// Beispiel: "Die Dr3i - 001 - Das Seeungeheuer.mp3".
@@ -297,8 +291,6 @@ namespace EchoPlay.LocalLibrary.Tests.Analysis
                 Directory.Delete(root, recursive: true);
             }
         }
-
-        // ── Tests: Grenzfälle ─────────────────────────────────────────────────────
 
         /// <summary>
         /// Kein passendes Muster, alle Ordner haben ein unbekanntes Format.

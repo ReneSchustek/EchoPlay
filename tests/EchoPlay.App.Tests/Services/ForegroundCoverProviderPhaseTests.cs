@@ -48,6 +48,27 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task RequestPriorityForSeries_AsksTheRateLimiterWithForegroundPriority()
+        {
+            FakeEpisodeDataService episodes = new();
+            await episodes.AddAsync(
+                new Episode { SeriesId = SeriesId, Title = "Folge 1", CoverImageUrl = CoverUrl },
+                TestContext.Current.CancellationToken);
+
+            FakeCoverDownloader downloader = new();
+            downloader.SetResponse(CoverUrl, DownloadedBytes);
+            RecordingHostRateLimiter rateLimiter = new();
+            ForegroundCoverCoordinator sut = BuildCoordinator(
+                episodes, downloader: downloader, rateLimiter: rateLimiter);
+
+            await sut.RequestPriorityForSeriesAsync(SeriesId, TestContext.Current.CancellationToken);
+
+            // Ohne Anmeldung liefen Hunderte Abrufe einer großen Serie ohne Mindestabstand
+            // gegen den Bild-Server des Anbieters.
+            Assert.Equal([("i.example.invalid", CoverFetchPriority.Foreground)], rateLimiter.Waits);
+        }
+
+        [Fact]
         public async Task RequestPriorityForSeries_WithoutProviderUrl_DownloadsNothing()
         {
             FakeEpisodeDataService episodes = new();
@@ -142,7 +163,8 @@ namespace EchoPlay.App.Tests.Services
             FakeEpisodeDataService episodeService,
             FakeCoverImageDataService? coverImages = null,
             FakeCoverService? coverService = null,
-            FakeCoverDownloader? downloader = null)
+            FakeCoverDownloader? downloader = null,
+            RecordingHostRateLimiter? rateLimiter = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
@@ -157,7 +179,7 @@ namespace EchoPlay.App.Tests.Services
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 coverService ?? new FakeCoverService(),
                 downloader ?? new FakeCoverDownloader(),
-                rateLimiter: null,
+                rateLimiter,
                 new FakeLogger());
         }
     }

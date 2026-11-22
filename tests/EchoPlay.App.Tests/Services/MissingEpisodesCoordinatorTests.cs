@@ -31,6 +31,8 @@ namespace EchoPlay.App.Tests.Services
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => series);
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<KnownNewEpisodeLookup>();
             _ = services.AddScoped<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(
                 _ => checker ?? new FakeOnlineEpisodeChecker());
             ServiceProvider provider = services.BuildServiceProvider();
@@ -190,7 +192,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task CheckSingleSeriesAsync_SammlungBeginntSpaet_MeldetKeineLuecken()
+        public async Task CheckSingleSeriesAsync_CollectionStartsLate_ReportsNoGaps()
         {
             // Kernpunkt der Lückensuche: Wer erst ab Folge 50 sammelt, hat keine 49 Lücken.
             MissingEpisodesCoordinator coordinator = BuildCoordinator();
@@ -339,6 +341,28 @@ namespace EchoPlay.App.Tests.Services
             return root;
         }
 
+        /// <summary>
+        /// Online-Prüfung, nach der beim Anbieter die Folgen 3 und 4 vorliegen, lokal aber nur
+        /// 1 und 2.
+        /// </summary>
+        private static FakeOnlineEpisodeChecker CheckerReportingEpisodes3And4(Series series)
+            => new(
+            [
+                new OnlineEpisodeCheckResult
+                {
+                    SeriesId = series.Id,
+                    SeriesTitle = series.Title,
+                    OnlineHighestNumber = 4,
+                    LocalHighestNumber = 2,
+                    NewEpisodesCount = 2,
+                    MissingOnlineEpisodes =
+                    [
+                        new MissingOnlineEpisode { EpisodeNumber = 3, AlbumTitle = "Folge 3 - Der dritte Fall" },
+                        new MissingOnlineEpisode { EpisodeNumber = 4, AlbumTitle = "Folge 4 - Der vierte Fall" },
+                    ],
+                },
+            ]);
+
         [Fact]
         public async Task CheckAllSeriesAsync_WithOnline_PutsProviderEpisodesIntoTheReport()
         {
@@ -356,22 +380,7 @@ namespace EchoPlay.App.Tests.Services
                 };
                 await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
 
-                FakeOnlineEpisodeChecker checker = new(
-                [
-                    new OnlineEpisodeCheckResult
-                    {
-                        SeriesId = series.Id,
-                        SeriesTitle = series.Title,
-                        OnlineHighestNumber = 4,
-                        LocalHighestNumber = 2,
-                        NewEpisodesCount = 2,
-                        MissingOnlineEpisodes =
-                        [
-                            new MissingOnlineEpisode { EpisodeNumber = 3, AlbumTitle = "Folge 3 - Der dritte Fall" },
-                            new MissingOnlineEpisode { EpisodeNumber = 4, AlbumTitle = "Folge 4 - Der vierte Fall" },
-                        ],
-                    },
-                ]);
+                FakeOnlineEpisodeChecker checker = CheckerReportingEpisodes3And4(series);
 
                 MissingEpisodesCoordinator coordinator = BuildCoordinator(seriesService, checker);
 

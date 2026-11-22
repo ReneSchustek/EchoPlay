@@ -13,11 +13,10 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class SeriesCascadeDeleteTests : DbTestBase
     {
         /// <summary>
-        /// Stellt sicher, dass das Löschen einer Serie alle untergeordneten Episoden sowie deren PlaybackStates logisch löscht.
-        /// Dieser Test bildet die wichtigste fachliche Invariante des Datenmodells ab:
+        /// Prüft, dass das Löschen einer Serie alle untergeordneten Episoden sowie deren PlaybackStates logisch löscht.
+        /// Die wichtigste fachliche Invariante des Datenmodells:
         /// Eine gelöschte Serie darf keine sichtbaren oder aktiven Kindelemente behalten.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
         public async Task DeletingSeries_SoftDeletesEpisodesAndPlaybackStates()
         {
@@ -32,7 +31,7 @@ namespace EchoPlay.Data.Tests.Services
 
             SeriesDataService service = CreateSeriesService();
 
-            // Das Löschen der Serie löst bewusst die vollständige Cascade über Episoden bis hin zu PlaybackStates aus.
+            // Das Löschen der Serie löst die vollständige Cascade über Episoden bis hin zu PlaybackStates aus.
             await service.DeleteAsync(series.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             // IgnoreQueryFilters ist erforderlich, um den tatsächlichen Persistenzzustand unabhängig vom Soft-Delete-Filter zu prüfen.

@@ -12,7 +12,7 @@ namespace EchoPlay.Logger.Tests
         /// Ohne aktiven Scope ist CurrentScopes leer.
         /// </summary>
         [Fact]
-        public void CurrentScopes_OhneAktivenScope_IstLeer()
+        public void CurrentScopes_WithoutActiveScope_IsEmpty()
         {
             Assert.Empty(LogScopeManager.CurrentScopes);
         }
@@ -21,7 +21,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach Erstellen eines Scopes ist er in CurrentScopes sichtbar.
         /// </summary>
         [Fact]
-        public void BeginScope_ActiviertScope_SichtbarInCurrentScopes()
+        public void BeginScope_ActivatesScope_VisibleInCurrentScopes()
         {
             using (LogScope scope = new("Testscope"))
             {
@@ -33,7 +33,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach dem using-Block ist der Scope nicht mehr in CurrentScopes.
         /// </summary>
         [Fact]
-        public void Dispose_EntferntScope_NichtMehrSichtbar()
+        public void Dispose_RemovesScope_NoLongerVisible()
         {
             using (LogScope scope = new("Scope-A"))
             {
@@ -47,7 +47,7 @@ namespace EchoPlay.Logger.Tests
         /// Zwei geschachtelte Scopes sind beide gleichzeitig sichtbar.
         /// </summary>
         [Fact]
-        public void GeschachtelteScopes_BeideSichtbar()
+        public void NestedScopes_BothVisible()
         {
             using (LogScope outer = new("Äußerer"))
             {
@@ -81,7 +81,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach Beenden beider Scopes ist CurrentScopes wieder leer.
         /// </summary>
         [Fact]
-        public void BeideScopesDispose_CurrentScopesIstLeer()
+        public void BothScopesDisposed_CurrentScopesIsEmpty()
         {
             using (LogScope outer = new("Äußerer"))
             {
@@ -117,7 +117,7 @@ namespace EchoPlay.Logger.Tests
         /// Drei geschachtelte Scopes sind alle in korrekter Öffnungsreihenfolge sichtbar.
         /// </summary>
         [Fact]
-        public void DreiGeschachtelteScopes_AlleInKorrekterReihenfolge()
+        public void ThreeNestedScopes_AllInCorrectOrder()
         {
             using (LogScope s1 = new("Ebene1"))
             {
@@ -161,12 +161,12 @@ namespace EchoPlay.Logger.Tests
 
         /// <summary>
         /// Das Dispose eines äußeren Scopes vor dem inneren verletzt die LIFO-Reihenfolge.
-        /// <see cref="LogScope.Dispose"/> wirft in diesem Fall keine Exception – Exceptions aus
+        /// <see cref="LogScope.Dispose"/> wirft in diesem Fall keine Exception; Exceptions aus
         /// Dispose() würden eine bereits aktive Exception überdecken und die Fehlerdiagnose erschweren.
         /// Der Stack-Fehler wird stattdessen über <see cref="System.Diagnostics.Trace.WriteLine"/> gemeldet.
         /// </summary>
         [Fact]
-        public void ScopeDisposeInVerkehrterReihenfolge_WirftKeine_Exception()
+        public void ScopeDisposeInReverseOrder_DoesNotThrow()
         {
             LogScope outer = new("Äußerer");
             LogScope inner = new("Innerer");

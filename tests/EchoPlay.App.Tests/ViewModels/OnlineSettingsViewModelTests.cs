@@ -2,6 +2,7 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Settings;
+using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -177,6 +178,39 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Equal(1, credentials.ClearCallCount);
             Assert.False(viewModel.IsSpotifyLinked);
+        }
+
+        [Fact]
+        public async Task SpotifyCredentials_AreNotReportedAsPageEdit()
+        {
+            int edits = 0;
+            FakeSpotifyCredentialStore credentials = new();
+            OnlineSettingsViewModel viewModel = BuildViewModel(credentialStore: credentials, onUserEdit: () => edits++);
+
+            viewModel.SpotifyClientId = ClientId;
+            viewModel.SpotifyClientSecret = ClientSecret;
+            viewModel.TestAndSaveSpotifyCommand.Execute(null);
+            await WaitUntilIdleAsync(viewModel);
+
+            // Die Zugangsdaten sichert ihr eigener Knopf. Zählten sie als Änderung der Seite,
+            // fragte das Verlassen nach einem Speichern, das sie gar nicht betrifft.
+            Assert.True(viewModel.IsSpotifyLinked);
+            Assert.Equal(0, edits);
+        }
+
+        [Fact]
+        public async Task RemoveSpotify_WhenTheStoreFails_ShowsTheErrorInsteadOfThrowing()
+        {
+            FakeSpotifyCredentialStore credentials = new() { FailClearWith = "Datei gesperrt" };
+            await credentials.SaveAsync(ClientId, ClientSecret, TestContext.Current.CancellationToken);
+            OnlineSettingsViewModel viewModel = BuildViewModel(credentialStore: credentials);
+            viewModel.LoadSpotifyStatus();
+
+            viewModel.RemoveSpotifyCommand.Execute(null);
+            await WaitUntilIdleAsync(viewModel);
+
+            Assert.True(viewModel.IsSpotifyLinked);
+            Assert.Contains("Datei gesperrt", viewModel.SpotifyStatus, StringComparison.Ordinal);
         }
 
         [Fact]

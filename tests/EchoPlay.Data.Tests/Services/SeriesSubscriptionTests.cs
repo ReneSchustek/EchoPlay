@@ -67,11 +67,11 @@ namespace EchoPlay.Data.Tests.Services
             // Drei abonnierte Serien werden unabhängig von der Einfügereihenfolge alphabetisch sortiert
             Series bibi = await DataBuilder.PersistSeriesAsync("Bibi Blocksberg");
             Series tkkg = await DataBuilder.PersistSeriesAsync("TKKG");
-            Series drei = await DataBuilder.PersistSeriesAsync("Die drei ???");
+            Series three = await DataBuilder.PersistSeriesAsync("Die drei ???");
 
             bibi.IsSubscribed = true;
             tkkg.IsSubscribed = true;
-            drei.IsSubscribed = true;
+            three.IsSubscribed = true;
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 

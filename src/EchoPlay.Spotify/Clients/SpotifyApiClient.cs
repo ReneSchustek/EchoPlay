@@ -1,25 +1,22 @@
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
-using EchoPlay.Spotify.Http;
 using System.Text.Json;
 
 namespace EchoPlay.Spotify.Clients
 {
     /// <summary>
     /// Technische Implementierung des Spotify-Web-API-Clients.
-    ///
-    /// Diese Klasse bildet ausschließlich die HTTP-Endpunkte von Spotify ab
+    /// <para>
+    /// Bildet ausschließlich die HTTP-Endpunkte von Spotify ab
     /// und übersetzt die JSON-Antworten in interne DTOs.
-    ///
-    /// Sie enthält bewusst keinerlei fachliche Logik, Bewertung oder Filterung.
+    /// Er enthält keinerlei fachliche Logik, Bewertung oder Filterung.
     /// Dadurch bleibt die Trennung zwischen Technik (API-Zugriff)
     /// und Fachlichkeit (Import, Scoring, Mapping) klar gewahrt.
+    /// </para>
     /// </summary>
     /// <remarks>
-    /// Erstellt eine neue Instanz des SpotifyApiClients.
-    ///
-    /// Der HttpClient wird von außen injiziert, um Konfiguration,
-    /// Authentifizierung und Lebenszyklus zentral steuern zu können.
+    /// Der HttpClient wird von außen injiziert, um Konfiguration, Authentifizierung,
+    /// Wiederholungsregel und Lebenszyklus zentral steuern zu können.
     /// </remarks>
     /// <param name="httpClient">
     /// Vorkonfigurierter HttpClient mit BaseAddress und Authorization-Header.
@@ -34,10 +31,9 @@ namespace EchoPlay.Spotify.Clients
 
         /// <summary>
         /// Sucht Künstler über die Spotify-Such-API.
-        ///
         /// Die Methode bildet den technischen Endpunkt direkt ab.
         /// Eine fachliche Bewertung oder Filterung der Ergebnisse
-        /// erfolgt bewusst nicht an dieser Stelle.
+        /// erfolgt nicht an dieser Stelle.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
@@ -59,45 +55,7 @@ namespace EchoPlay.Spotify.Clients
             try
             {
                 using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.Relative, cancellationToken).ConfigureAwait(false);
-
-                JsonElement items =
-                    document.RootElement.GetProperty("artists").GetProperty("items");
-
-                List<SpotifyArtistDto> artists = [];
-
-                foreach (JsonElement item in items.EnumerateArray())
-                {
-                    // Künstler ohne ID oder Name sind für den Import nicht verwertbar
-                    // und werden übersprungen statt eine Exception zu werfen.
-                    string? artistId = item.TryGetProperty("id", out JsonElement idEl)
-                        ? idEl.GetString()
-                        : null;
-
-                    string? name = item.TryGetProperty("name", out JsonElement nameEl)
-                        ? nameEl.GetString()
-                        : null;
-
-                    if (artistId is null || name is null)
-                    {
-                        _logger.Warning("Spotify-Künstler ohne ID oder Name übersprungen.");
-                        continue;
-                    }
-
-                    // Es werden nur die Felder gelesen, die für die spätere
-                    // Hörspiel-Erkennung relevant sind.
-                    artists.Add(new SpotifyArtistDto
-                    {
-                        SpotifyArtistId = artistId,
-                        Name = name,
-                        Genres = [.. item.GetProperty("genres").EnumerateArray()
-                            .Select(g => g.GetString())
-                            .Where(g => g is not null)
-                            .Select(g => g!)],
-
-                        // Für EchoPlay genügt ein einzelnes Bild.
-                        ImageUrl = TryGetFirstImageUrl(item)
-                    });
-                }
+                List<SpotifyArtistDto> artists = ReadArtists(document);
 
                 _logger.Info("Spotify-Künstlersuche erfolgreich: {ArtistCount} Ergebnisse.", artists.Count);
 
@@ -113,6 +71,30 @@ namespace EchoPlay.Spotify.Clients
                 _logger.Error("Spotify-Antwort der Künstlersuche konnte nicht geparst werden: {RequestUri}", ex, requestUri);
                 throw;
             }
+        }
+
+        /// <summary>Liest die verwertbaren Künstler aus der Suchantwort.</summary>
+        private List<SpotifyArtistDto> ReadArtists(JsonDocument document)
+        {
+            JsonElement items =
+                document.RootElement.GetProperty("artists").GetProperty("items");
+
+            List<SpotifyArtistDto> artists = [];
+            foreach (JsonElement item in items.EnumerateArray())
+            {
+                // Künstler ohne ID oder Name sind für den Import nicht verwertbar
+                // und werden übersprungen statt eine Exception zu werfen.
+                if (ReadArtist(item) is { } artist)
+                {
+                    artists.Add(artist);
+                }
+                else
+                {
+                    _logger.Warning("Spotify-Künstler ohne ID oder Name übersprungen.");
+                }
+            }
+
+            return artists;
         }
 
         /// <inheritdoc/>
@@ -133,40 +115,10 @@ namespace EchoPlay.Spotify.Clients
                 JsonElement items =
                     document.RootElement.GetProperty("albums").GetProperty("items");
 
-                List<SpotifyAlbumDto> albums = [];
-
-                foreach (JsonElement item in items.EnumerateArray())
-                {
-                    string? albumId = item.TryGetProperty("id", out JsonElement idEl)
-                        ? idEl.GetString()
-                        : null;
-
-                    string? name = item.TryGetProperty("name", out JsonElement nameEl)
-                        ? nameEl.GetString()
-                        : null;
-
-                    if (albumId is null || name is null) continue;
-
-                    // Erster Künstler als Serienname
-                    string? artistName = null;
-                    if (item.TryGetProperty("artists", out JsonElement artists) && artists.GetArrayLength() > 0)
-                    {
-                        artistName = artists[0].TryGetProperty("name", out JsonElement an) ? an.GetString() : null;
-                    }
-
-                    string? imageUrl = TryGetFirstImageUrl(item);
-
-                    int totalTracks = item.TryGetProperty("total_tracks", out JsonElement tt) ? tt.GetInt32() : 0;
-
-                    albums.Add(new SpotifyAlbumDto
-                    {
-                        SpotifyAlbumId = albumId,
-                        Title = name,
-                        TotalTracks = totalTracks,
-                        ImageUrl = imageUrl,
-                        ArtistName = artistName
-                    });
-                }
+                List<SpotifyAlbumDto> albums = [.. items.EnumerateArray()
+                    .Select(ReadSearchAlbum)
+                    .Where(album => album is not null)
+                    .Select(album => album!)];
 
                 _logger.Info("Spotify-Albumsuche erfolgreich: {AlbumCount} Ergebnisse.", albums.Count);
                 return albums;
@@ -185,8 +137,7 @@ namespace EchoPlay.Spotify.Clients
 
         /// <summary>
         /// Lädt die Alben eines Künstlers.
-        ///
-        /// Singles und Compilations werden bewusst ausgeschlossen,
+        /// Singles und Compilations werden ausgeschlossen,
         /// da sie für Hörspiel-Serien in der Regel keine Rolle spielen.
         /// </summary>
         /// <param name="artistId">Die Spotify-ID des Künstlers.</param>
@@ -197,7 +148,7 @@ namespace EchoPlay.Spotify.Clients
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(artistId);
 
-            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetArtistAlbums");
+            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("API:Spotify:GetArtistAlbums");
 
             _logger.Debug(() => $"Spotify-Alben laden für Künstler '{artistId}' (max. {limit}).");
 
@@ -214,52 +165,8 @@ namespace EchoPlay.Spotify.Clients
                     // Die Pagination-URL aus "next" ist absolut, der Startwert ist relativ;
                     // UriKind.RelativeOrAbsolute deckt beide Fälle im Loop ab.
                     using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.RelativeOrAbsolute, cancellationToken).ConfigureAwait(false);
-
-                    JsonElement items = document.RootElement.GetProperty("items");
-
-                    foreach (JsonElement item in items.EnumerateArray())
-                    {
-                        if (albums.Count >= limit) break;
-
-                        string? albumId = item.TryGetProperty("id", out JsonElement idEl)
-                            ? idEl.GetString()
-                            : null;
-
-                        string? title = item.TryGetProperty("name", out JsonElement nameEl)
-                            ? nameEl.GetString()
-                            : null;
-
-                        if (albumId is null || title is null)
-                        {
-                            _logger.Warning("Spotify-Album ohne ID oder Name übersprungen.");
-                            continue;
-                        }
-
-                        // Das Veröffentlichungsdatum kann unterschiedlich genau sein
-                        // (Jahr, Monat oder Tag) und wird daher defensiv geparst.
-                        // Cover-URL: erstes Bild im "images"-Array (höchste Auflösung)
-                        string? imageUrl = TryGetFirstImageUrl(item);
-
-                        albums.Add(new SpotifyAlbumDto
-                        {
-                            SpotifyAlbumId = albumId,
-                            Title = title,
-                            ReleaseDate =
-                                DateTime.TryParse(item.GetProperty("release_date").GetString(),
-                                    System.Globalization.CultureInfo.InvariantCulture,
-                                    System.Globalization.DateTimeStyles.RoundtripKind, out DateTime date)
-                                    ? date
-                                    : null,
-                            TotalTracks = item.GetProperty("total_tracks").GetInt32(),
-                            ImageUrl = imageUrl
-                        });
-                    }
-
-                    // "next" enthält die vollständige URL zur nächsten Seite oder null bei der letzten
-                    requestUri = document.RootElement.TryGetProperty("next", out JsonElement nextEl)
-                                 && nextEl.ValueKind == JsonValueKind.String
-                        ? nextEl.GetString()
-                        : null;
+                    AddAlbumsFromPage(document, albums, limit);
+                    requestUri = NextPage(document);
                 }
 
                 _logger.Info("Spotify-Alben für Künstler '{ArtistId}' geladen: {AlbumCount} Alben.", artistId, albums.Count);
@@ -278,9 +185,108 @@ namespace EchoPlay.Spotify.Clients
             }
         }
 
+        /// <summary>Übernimmt die verwertbaren Alben einer Seite, bis die Obergrenze erreicht ist.</summary>
+        private void AddAlbumsFromPage(JsonDocument document, List<SpotifyAlbumDto> albums, int limit)
+        {
+            JsonElement items = document.RootElement.GetProperty("items");
+
+            foreach (JsonElement item in items.EnumerateArray().TakeWhile(_ => albums.Count < limit))
+            {
+                if (ReadArtistAlbum(item) is { } album)
+                {
+                    albums.Add(album);
+                }
+                else
+                {
+                    _logger.Warning("Spotify-Album ohne ID oder Name übersprungen.");
+                }
+            }
+        }
+
+        /// <summary>Liest Kennung und Namen eines Eintrags; fehlt eines, ist der Eintrag nicht verwertbar.</summary>
+        private static bool TryReadIdAndName(
+            JsonElement item,
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? id,
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out string? name)
+        {
+            id = item.TryGetProperty("id", out JsonElement idEl) ? idEl.GetString() : null;
+            name = item.TryGetProperty("name", out JsonElement nameEl) ? nameEl.GetString() : null;
+            return id is not null && name is not null;
+        }
+
         /// <summary>
-        /// Lädt alle Tracks eines Albums.
-        ///
+        /// Ein Künstler aus der Suche. Es werden nur die Felder gelesen, die für die spätere
+        /// Hörspiel-Erkennung relevant sind.
+        /// </summary>
+        private static SpotifyArtistDto? ReadArtist(JsonElement item)
+        {
+            if (!TryReadIdAndName(item, out string? artistId, out string? name))
+            {
+                return null;
+            }
+
+            return new SpotifyArtistDto
+            {
+                SpotifyArtistId = artistId,
+                Name = name,
+                // Neuere Spotify-Antworten lassen „genres" teils weg; ohne Feld gilt die
+                // Liste als leer, statt die ganze Suche scheitern zu lassen.
+                Genres = item.TryGetProperty("genres", out JsonElement genres) && genres.ValueKind == JsonValueKind.Array
+                    ? [.. genres.EnumerateArray()
+                        .Select(g => g.GetString())
+                        .Where(g => g is not null)
+                        .Select(g => g!)]
+                    : [],
+
+                // Für EchoPlay genügt ein einzelnes Bild.
+                ImageUrl = TryGetFirstImageUrl(item)
+            };
+        }
+
+        /// <summary>Ein Album aus der Albumsuche; der erste Künstler gilt als Serienname.</summary>
+        private static SpotifyAlbumDto? ReadSearchAlbum(JsonElement item)
+        {
+            if (!TryReadIdAndName(item, out string? albumId, out string? name))
+            {
+                return null;
+            }
+
+            string? artistName = item.TryGetProperty("artists", out JsonElement artists) && artists.GetArrayLength() > 0
+                && artists[0].TryGetProperty("name", out JsonElement an)
+                ? an.GetString()
+                : null;
+
+            return new SpotifyAlbumDto
+            {
+                SpotifyAlbumId = albumId,
+                Title = name,
+                TotalTracks = item.TryGetProperty("total_tracks", out JsonElement tt) ? tt.GetInt32() : 0,
+                ImageUrl = TryGetFirstImageUrl(item),
+                ArtistName = artistName
+            };
+        }
+
+        /// <summary>Ein Album eines Künstlers; das Cover ist das erste Bild im "images"-Array (höchste Auflösung).</summary>
+        private static SpotifyAlbumDto? ReadArtistAlbum(JsonElement item)
+        {
+            if (!TryReadIdAndName(item, out string? albumId, out string? title))
+            {
+                return null;
+            }
+
+            return new SpotifyAlbumDto
+            {
+                SpotifyAlbumId = albumId,
+                Title = title,
+                ReleaseDate = ParseReleaseDate(
+                    item.TryGetProperty("release_date", out JsonElement dateEl) ? dateEl.GetString() : null),
+                TotalTracks = item.GetProperty("total_tracks").GetInt32(),
+                ImageUrl = TryGetFirstImageUrl(item)
+            };
+        }
+
+        /// <summary>
+        /// Lädt alle Tracks eines Albums, auch über mehrere Seiten.
         /// Die Reihenfolge entspricht der von Spotify gelieferten Track-Reihenfolge.
         /// </summary>
         /// <param name="albumId">Die Spotify-ID des Albums.</param>
@@ -290,45 +296,22 @@ namespace EchoPlay.Spotify.Clients
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(albumId);
 
-            string requestUri = $"albums/{albumId}/tracks";
+            // Ohne Angabe liefert Spotify zwanzig Spuren je Seite; Folgen mit vielen kurzen
+            // Spuren hätten sonst eine viel zu kurze Dauer. Fünfzig ist die Obergrenze je Seite.
+            string? requestUri = $"albums/{albumId}/tracks?limit=50";
 
-            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:Spotify:GetAlbumTracks");
+            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("API:Spotify:GetAlbumTracks");
 
             _logger.Debug(() => $"Spotify-Tracks laden für Album '{albumId}'.");
 
             try
             {
-                using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.Relative, cancellationToken).ConfigureAwait(false);
-
-                JsonElement items = document.RootElement.GetProperty("items");
-
                 List<SpotifyTrackDto> tracks = [];
-
-                foreach (JsonElement item in items.EnumerateArray())
+                while (requestUri is not null)
                 {
-                    string? trackId = item.TryGetProperty("id", out JsonElement idEl)
-                        ? idEl.GetString()
-                        : null;
-
-                    string? title = item.TryGetProperty("name", out JsonElement nameEl)
-                        ? nameEl.GetString()
-                        : null;
-
-                    if (trackId is null || title is null)
-                    {
-                        _logger.Warning("Spotify-Track ohne ID oder Name übersprungen.");
-                        continue;
-                    }
-
-                    // Die Umrechnung in TimeSpan erfolgt hier,
-                    // damit nachfolgende Schichten Spotify-unabhängig arbeiten können.
-                    tracks.Add(new SpotifyTrackDto
-                    {
-                        SpotifyTrackId = trackId,
-                        Title = title,
-                        Duration = TimeSpan.FromMilliseconds(item.GetProperty("duration_ms").GetInt32()),
-                        TrackNumber = item.GetProperty("track_number").GetInt32()
-                    });
+                    using JsonDocument document = await SendAndParseAsync(requestUri, UriKind.RelativeOrAbsolute, cancellationToken).ConfigureAwait(false);
+                    ReadTracks(document.RootElement.GetProperty("items"), tracks);
+                    requestUri = NextPage(document);
                 }
 
                 _logger.Info("Spotify-Tracks für Album '{AlbumId}' geladen: {TrackCount} Tracks.", albumId, tracks.Count);
@@ -347,9 +330,70 @@ namespace EchoPlay.Spotify.Clients
             }
         }
 
+        private void ReadTracks(JsonElement items, List<SpotifyTrackDto> tracks)
+        {
+            foreach (JsonElement item in items.EnumerateArray())
+            {
+                string? trackId = item.TryGetProperty("id", out JsonElement idEl)
+                    ? idEl.GetString()
+                    : null;
+
+                string? title = item.TryGetProperty("name", out JsonElement nameEl)
+                    ? nameEl.GetString()
+                    : null;
+
+                if (trackId is null || title is null)
+                {
+                    _logger.Warning("Spotify-Track ohne ID oder Name übersprungen.");
+                    continue;
+                }
+
+                // Die Umrechnung in TimeSpan erfolgt hier,
+                // damit nachfolgende Schichten Spotify-unabhängig arbeiten können.
+                tracks.Add(new SpotifyTrackDto
+                {
+                    SpotifyTrackId = trackId,
+                    Title = title,
+                    Duration = TimeSpan.FromMilliseconds(item.GetProperty("duration_ms").GetInt32()),
+                    TrackNumber = item.GetProperty("track_number").GetInt32()
+                });
+            }
+        }
+
         /// <summary>
-        /// Führt einen GET-Request mit Retry aus, stellt den Erfolg sicher und parst die
-        /// Antwort in ein <see cref="JsonDocument"/>. Der Aufrufer ist für die Entsorgung
+        /// Liest das Erscheinungsdatum. Spotify gibt es je nach Album als Jahr („1981"), als
+        /// Monat („1981-05") oder als Tag an; ein bloßes Jahr steht für den 1. Januar.
+        /// </summary>
+        /// <param name="value">Der Wert aus <c>release_date</c>.</param>
+        /// <returns>Das Datum, oder <see langword="null"/>, wenn der Wert fehlt oder unlesbar ist.</returns>
+        internal static DateTime? ParseReleaseDate(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            if (value.Length == 4 && int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int year) && year >= 1)
+            {
+                return new DateTime(year, 1, 1);
+            }
+
+            return DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind, out DateTime date)
+                ? date
+                : null;
+        }
+
+        // "next" enthält die vollständige URL zur nächsten Seite oder null bei der letzten.
+        private static string? NextPage(JsonDocument document)
+            => document.RootElement.TryGetProperty("next", out JsonElement nextEl) && nextEl.ValueKind == JsonValueKind.String
+                ? nextEl.GetString()
+                : null;
+
+        /// <summary>
+        /// Führt einen GET-Request aus, stellt den Erfolg sicher und parst die Antwort in ein
+        /// <see cref="JsonDocument"/>. Wiederholungen bei 429, 5xx und Verbindungsfehlern
+        /// übernimmt die Regel, die die Anwendung an den Client hängt. Der Aufrufer ist für die Entsorgung
         /// des zurückgegebenen Dokuments verantwortlich (<c>using</c>).
         /// </summary>
         /// <param name="requestUri">Die relative oder absolute Anfrage-URL.</param>
@@ -358,8 +402,7 @@ namespace EchoPlay.Spotify.Clients
         /// <returns>Das geparste JSON-Dokument der Antwort.</returns>
         private async Task<JsonDocument> SendAndParseAsync(string requestUri, UriKind uriKind, CancellationToken cancellationToken)
         {
-            using HttpResponseMessage response = await SpotifyHttpRetry.SendWithRetryAsync(
-                () => _httpClient.GetAsync(new Uri(requestUri, uriKind), cancellationToken), cancellationToken).ConfigureAwait(false);
+            using HttpResponseMessage response = await _httpClient.GetAsync(new Uri(requestUri, uriKind), cancellationToken).ConfigureAwait(false);
 
             // Transport- und Authentifizierungsfehler können hier nicht fachlich sinnvoll
             // behandelt werden und werden daher direkt weitergegeben.

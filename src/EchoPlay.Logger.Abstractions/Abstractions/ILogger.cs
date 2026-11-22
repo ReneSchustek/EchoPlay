@@ -7,7 +7,7 @@ namespace EchoPlay.Logger.Abstractions
     /// Definiert die Schnittstelle für alle Logger-Implementierungen.
     /// </summary>
     [SuppressMessage("Naming", "CA1716:Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen",
-        Justification = "Error/Warning/Info sind etablierte Namen in allen gängigen Logging-APIs (Serilog, NLog, Microsoft.Extensions.Logging). Umbenennung würde die Erwartung jedes .NET-Entwicklers verletzen.")]
+        Justification = "Die Regel schützt Aufrufer in Visual Basic vor Schlüsselwörtern; EchoPlay wird nur aus C# aufgerufen. Error, Warning und Info sind die Namen jeder gängigen Logging-Schnittstelle.")]
     public interface ILogger
     {
         /// <summary>
@@ -19,7 +19,7 @@ namespace EchoPlay.Logger.Abstractions
         /// <summary>
         /// Gibt an, ob mindestens ein Sink Debug-Nachrichten verarbeitet.
         /// Aufrufer mit teurer Message-Komposition prüfen das Flag, um Allokationen
-        /// zu sparen — alternativ die <see cref="Debug(Func{string})"/>-Overload nutzen.
+        /// zu sparen, alternativ die <see cref="Debug(Func{string})"/>-Overload nutzen.
         /// </summary>
         bool IsDebugEnabled { get; }
 
@@ -77,11 +77,9 @@ namespace EchoPlay.Logger.Abstractions
         /// <returns>Ein Scope-Objekt für die Verwendung mit using.</returns>
         LogScope BeginScope(string name);
 
-        // ── Message-Template-Overloads (strukturiertes Logging) ────────────────
-        // Default-Implementierung rendert per string.Format und delegiert an die
-        // bestehende Plain-Message-Version. Strukturierte Sinks können die
-        // Methoden überschreiben und Template + Args als Properties exponieren,
-        // damit Filter wie {UserId} oder {SeriesId} möglich werden.
+        // Die Standardfassungen setzen die Werte der Reihe nach in die Platzhalter ein und
+        // geben den fertigen Text an die einfache Fassung weiter. Eine Umsetzung, die Vorlage
+        // und Werte getrennt speichern will, etwa für Filter auf {SeriesId}, überschreibt sie.
 
         /// <summary>
         /// Schreibt eine Info-Nachricht mit Message-Template.

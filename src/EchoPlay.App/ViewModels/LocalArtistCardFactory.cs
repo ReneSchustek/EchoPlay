@@ -49,6 +49,10 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyDictionary<Guid, (int Total, int Local)> episodeCounts =
                 await episodeService.GetEpisodeCountsForSeriesAsync([.. localSeries.Select(series => series.Id)]);
 
+            // Ebenso die Folgen für „Unvollständig", samt der Online-Gegenstücke
+            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdsAsync(IncompleteSeries.SeriesToLoad(allSeries));
+            IReadOnlySet<Guid> incomplete = IncompleteSeries.Find(allSeries, episodes);
+
             List<LocalArtistCardViewModel> cards = new(localSeries.Count);
 
             foreach (Series series in localSeries)
@@ -57,7 +61,7 @@ namespace EchoPlay.App.ViewModels
                     ? (counts.Total, counts.Local)
                     : (0, 0);
 
-                cards.Add(BuildCard(series, local, total, cover: null));
+                cards.Add(BuildCard(series, local, total, cover: null, incomplete.Contains(series.Id)));
             }
 
             // Cover nachladen, während die Kacheln schon stehen
@@ -71,7 +75,9 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Baut eine einzelne Kachel samt Zählern und Cover, für Serien, die während eines
-        /// Einlesevorgangs gemeldet werden.
+        /// Einlesevorgangs gemeldet werden. „Unvollständig" bleibt dabei offen: Mitten im
+        /// Einlesen stehen die Folgen noch nicht fest, und nach dem Einlesen baut
+        /// <see cref="CreateAllAsync"/> alle Kacheln neu.
         /// </summary>
         /// <param name="series">Die gemeldete Serie.</param>
         /// <returns>Die fertige Kachel.</returns>
@@ -82,7 +88,7 @@ namespace EchoPlay.App.ViewModels
             (int local, int total) = await CountEpisodesAsync(series.Id);
             BitmapImage? cover = _coverBuilder is null ? null : await _coverBuilder.BuildAsync(series);
 
-            return BuildCard(series, local, total, cover);
+            return BuildCard(series, local, total, cover, isIncomplete: false);
         }
 
         /// <summary>
@@ -134,7 +140,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>Erzeugt die Kachel aus Serie, Zählern und Cover.</summary>
-        private LocalArtistCardViewModel BuildCard(Series series, int localCount, int totalCount, BitmapImage? cover)
+        private LocalArtistCardViewModel BuildCard(Series series, int localCount, int totalCount, BitmapImage? cover, bool isIncomplete)
         {
             return new LocalArtistCardViewModel(
                 seriesId: series.Id,
@@ -145,7 +151,8 @@ namespace EchoPlay.App.ViewModels
                 totalEpisodeCount: totalCount,
                 isFavorite: series.IsFavorite,
                 isWatched: series.IsWatched,
-                scopeFactory: _scopeFactory);
+                scopeFactory: _scopeFactory,
+                isIncomplete: isIncomplete);
         }
     }
 }

@@ -35,6 +35,13 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
         /// </summary>
+        /// <param name="scopeFactory">Öffnet je Schreibvorgang einen Bereich für die Einstellungen.</param>
+        /// <param name="coverSearchService">Die Online-Suche über alle Cover-Anbieter.</param>
+        /// <param name="coverService">Speichert die Cover in der Datenbank.</param>
+        /// <param name="confirmationDialogService">Fragt vor dem Überschreiben eines Covers nach.</param>
+        /// <param name="errorDialogService">Meldet einen gescheiterten Download.</param>
+        /// <param name="coverDownloader">Lädt das Bild eines gewählten Treffers.</param>
+        /// <param name="localizationService">Liefert die Texte der Hinweise.</param>
         public EpisodeCoverCoordinator(
             IServiceScopeFactory scopeFactory,
             ICoverSearchService coverSearchService,

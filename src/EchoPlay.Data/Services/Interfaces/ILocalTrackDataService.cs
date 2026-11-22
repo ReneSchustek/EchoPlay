@@ -3,7 +3,7 @@ using EchoPlay.Data.Entities.Library;
 namespace EchoPlay.Data.Services.Interfaces
 {
     /// <summary>
-    /// Definiert den Vertrag für den Zugriff auf lokale Audiodateien einer Episode.
+    /// Zugriff auf die lokalen Audiodateien einer Episode.
     /// </summary>
     public interface ILocalTrackDataService
     {
@@ -31,7 +31,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <summary>
         /// Ersetzt alle lokalen Tracks einer Episode durch die übergebene Liste.
         /// Bestehende Einträge werden entfernt, die neuen werden hinzugefügt.
-        /// Diese Methode ist idempotent: Ein erneuter Scan überschreibt den vorherigen.
+        /// Idempotent: Ein erneuter Scan überschreibt den vorherigen.
         /// </summary>
         /// <param name="episodeId">ID der Episode.</param>
         /// <param name="tracks">Die neuen Tracks. Die <see cref="LocalTrack.EpisodeId"/> muss bereits gesetzt sein.</param>

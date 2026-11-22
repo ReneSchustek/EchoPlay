@@ -17,8 +17,6 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class OnlineAccessGuardTests
     {
-        // ── IsTemporarilyOnline in StatusBarViewModel ────────────────────────────
-
         [Fact]
         public async Task IsTemporarilyOnline_DefaultIsFalse()
         {
@@ -86,8 +84,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains(nameof(StatusBarViewModel.OfflineSymbolVisibility), changedProperties);
         }
 
-        // ── FakeOnlineAccessGuard: Verhalten in ViewModels ─────────────────────
-
         [Fact]
         public async Task ImportSearch_Aborted_WhenGuardReturnsNull()
         {
@@ -115,8 +111,6 @@ namespace EchoPlay.App.Tests.ViewModels
             // Suche wurde ausgeführt (auch wenn 0 Ergebnisse, weil Provider=None)
             Assert.Equal(1, guard.CallCount);
         }
-
-        // ── Hilfsmethoden ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Baut eine <see cref="StatusBarViewModel"/>-Instanz mit optionalem Offline-Modus.

@@ -1,4 +1,5 @@
 using EchoPlay.LocalLibrary.Cover;
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,13 +16,13 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public async Task SearchAsync_OneProviderHasResults_AggregatesResults()
         {
             CoverSearchResult expected = new(
-                ThumbnailUrl: "https://thumb.example/1.jpg",
-                FullUrl: "https://full.example/1.jpg",
+                ThumbnailUrl: new Uri("https://thumb.example/1.jpg"),
+                FullUrl: new Uri("https://full.example/1.jpg"),
                 ReleaseTitle: "TKKG",
                 Source: "Stub-A");
             StubCoverSearchService providerA = new([expected]);
             StubCoverSearchService providerB = new([]);
-            CompositeCoverSearchService composite = new([providerA, providerB]);
+            CompositeCoverSearchService composite = new([providerA, providerB], new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
@@ -34,7 +35,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             StubCoverSearchService providerA = new([]);
             StubCoverSearchService providerB = new([]);
-            CompositeCoverSearchService composite = new([providerA, providerB]);
+            CompositeCoverSearchService composite = new([providerA, providerB], new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("Unbekannt", ct: TestContext.Current.CancellationToken);
 
@@ -45,25 +46,29 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         public async Task SearchAsync_OneProviderThrows_OtherResultsStillReturned()
         {
             CoverSearchResult fromA = new(
-                ThumbnailUrl: "https://thumb.example/a.jpg",
-                FullUrl: "https://full.example/a.jpg",
+                ThumbnailUrl: new Uri("https://thumb.example/a.jpg"),
+                FullUrl: new Uri("https://full.example/a.jpg"),
                 ReleaseTitle: "Treffer A",
                 Source: "Stub-A");
             StubCoverSearchService providerA = new([fromA]);
             ThrowingCoverSearchService providerB = new();
-            CompositeCoverSearchService composite = new([providerA, providerB]);
+            CapturingLoggerFactory protocol = new();
+            CompositeCoverSearchService composite = new([providerA, providerB], protocol);
 
             IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal(fromA, only);
+
+            // Netzfehler fangen die Anbieter selbst; was bis hierher durchschlägt, darf nicht stumm bleiben.
+            Assert.Contains(protocol.Entries, entry => entry.Level == "Error");
         }
 
         [Fact]
         public async Task SearchAsync_EmptyTitle_ReturnsEmptyListWithoutCallingProviders()
         {
             CountingCoverSearchService provider = new();
-            CompositeCoverSearchService composite = new([provider]);
+            CompositeCoverSearchService composite = new([provider], new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await composite.SearchAsync(string.Empty, ct: TestContext.Current.CancellationToken);
 
@@ -72,36 +77,49 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         }
 
         [Fact]
-        public async Task SearchAsync_ReichtDieSeiteAnAlleAnbieterDurch()
+        public async Task SearchAsync_PassesThePageToEveryProvider()
         {
             // Ohne das würden alle Anbieter beim Nachladen wieder die erste Seite liefern und
             // der Dialog bekäme nur Dubletten zu sehen.
-            StubCoverSearchService ersterAnbieter = new([Treffer("A")]);
-            StubCoverSearchService zweiterAnbieter = new([Treffer("B")]);
-            CompositeCoverSearchService composite = new([ersterAnbieter, zweiterAnbieter]);
+            StubCoverSearchService firstProvider = new([Hit("A")]);
+            StubCoverSearchService secondProvider = new([Hit("B")]);
+            CompositeCoverSearchService composite = new([firstProvider, secondProvider], new FakeLoggerFactory());
 
             _ = await composite.SearchAsync("TKKG", new CoverSearchPage(2), TestContext.Current.CancellationToken);
 
-            Assert.Equal(2, ersterAnbieter.LastPage.Index);
-            Assert.Equal(2, zweiterAnbieter.LastPage.Index);
+            Assert.Equal(2, firstProvider.LastPage.Index);
+            Assert.Equal(2, secondProvider.LastPage.Index);
         }
 
         [Fact]
-        public async Task SearchAsync_OhneSeite_FragtDieErsteSeite()
+        public async Task SearchAsync_WithoutPage_QueriesTheFirstPage()
         {
-            StubCoverSearchService anbieter = new([Treffer("A")]);
-            CompositeCoverSearchService composite = new([anbieter]);
+            StubCoverSearchService onlyProvider = new([Hit("A")]);
+            CompositeCoverSearchService composite = new([onlyProvider], new FakeLoggerFactory());
 
             _ = await composite.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, anbieter.LastPage.Index);
+            Assert.Equal(0, onlyProvider.LastPage.Index);
         }
 
-        private static CoverSearchResult Treffer(string name) =>
-            new($"https://example.invalid/{name}-thumb.jpg", $"https://example.invalid/{name}.jpg", name, "Test");
+        [Fact]
+        public async Task SearchAsync_CancelledByTheCaller_PassesTheCancellationOn()
+        {
+            using CancellationTokenSource cts = new();
+            await cts.CancelAsync();
+            CompositeCoverSearchService composite = new([new CancellingCoverSearchService()], new FakeLoggerFactory());
 
-        // ── Test-Doubles ────────────────────────────────────────────────────────
+            // Ein Abbruch ist kein Ausfall eines Anbieters; er darf nicht als leere Trefferliste enden.
+            _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => composite.SearchAsync("TKKG", ct: cts.Token));
+        }
 
+        private static CoverSearchResult Hit(string name) =>
+            new(new Uri($"https://example.invalid/{name}-thumb.jpg"), new Uri($"https://example.invalid/{name}.jpg"), name, "Test");
+
+        /// <summary>
+        /// Liefert die vorgegebenen Treffer und merkt sich die zuletzt angefragte Seite.
+        /// </summary>
         private sealed class StubCoverSearchService : ICoverSearchService
         {
             private readonly IReadOnlyList<CoverSearchResult> _results;
@@ -123,6 +141,25 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             public CoverSearchPage LastPage { get; private set; }
         }
 
+        /// <summary>
+        /// Reicht einen ausgelösten Abbruch als OperationCanceledException weiter, sonst keine
+        /// Treffer.
+        /// </summary>
+        private sealed class CancellingCoverSearchService : ICoverSearchService
+        {
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
+                => SearchAsync(title, CoverSearchPage.First, ct);
+
+            public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CoverSearchPage page, CancellationToken ct = default)
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult<IReadOnlyList<CoverSearchResult>>([]);
+            }
+        }
+
+        /// <summary>
+        /// Scheitert wie ein ausgefallener Anbieter.
+        /// </summary>
         private sealed class ThrowingCoverSearchService : ICoverSearchService
         {
             public Task<IReadOnlyList<CoverSearchResult>> SearchAsync(string title, CancellationToken ct = default)
@@ -134,6 +171,9 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             }
         }
 
+        /// <summary>
+        /// Zählt die Anfragen, damit ein Test sieht, ob ein Anbieter übersprungen wurde.
+        /// </summary>
         private sealed class CountingCoverSearchService : ICoverSearchService
         {
             public int CallCount { get; private set; }

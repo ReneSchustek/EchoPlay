@@ -2,6 +2,7 @@ using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
@@ -42,10 +43,6 @@ namespace EchoPlay.App.Tests.Services
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
 
@@ -59,24 +56,16 @@ namespace EchoPlay.App.Tests.Services
                 _ = services.AddScoped<IAppleMusicSearchClient>(_ => appleClient);
             }
 
-            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services);
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
 
-            return new ImportService(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<ILoggerFactory>());
+            return ImportTestServices.CreateImportService(provider);
         }
 
         [Fact]
-        public async Task Spotify_LiefertAlbenAlsEinzelneFolgen()
+        public async Task Spotify_ReturnsAlbumsAsSingleEpisodes()
         {
             FakeSpotifyApiClient spotify = new();
             spotify.Albums.Add(new SpotifyAlbumDto
@@ -91,18 +80,18 @@ namespace EchoPlay.App.Tests.Services
 
             SearchOutcome outcome = await service.SearchAlbumsAsync("TKKG", TestContext.Current.CancellationToken);
 
-            ImportSeries treffer = Assert.Single(outcome.Results);
-            Assert.Equal("album-1", treffer.SourceSeriesId);
-            Assert.Equal(ProviderKeys.Spotify, treffer.Source);
-            Assert.Equal("Der Superhund", treffer.Title);
-            Assert.Equal("TKKG", treffer.ArtistName);
-            Assert.Equal("https://example.com/cover.jpg", treffer.CoverImageUrl);
-            Assert.True(treffer.IsAlbumResult);
+            ImportSeries hit = Assert.Single(outcome.Results);
+            Assert.Equal("album-1", hit.SourceSeriesId);
+            Assert.Equal(ProviderKeys.Spotify, hit.Source);
+            Assert.Equal("Der Superhund", hit.Title);
+            Assert.Equal("TKKG", hit.ArtistName);
+            Assert.Equal(new Uri("https://example.com/cover.jpg"), hit.CoverImageUrl);
+            Assert.True(hit.IsAlbumResult);
             Assert.Equal(("TKKG", 15), Assert.Single(spotify.AlbumSearches));
         }
 
         [Fact]
-        public async Task AppleMusic_LiefertAlbenAlsEinzelneFolgen()
+        public async Task AppleMusic_ReturnsAlbumsAsSingleEpisodes()
         {
             FakeAppleMusicSearchClient apple = new();
             apple.AlbumSearchResults.Add(new ITunesCollectionDto
@@ -117,17 +106,17 @@ namespace EchoPlay.App.Tests.Services
 
             SearchOutcome outcome = await service.SearchAlbumsAsync("TKKG", TestContext.Current.CancellationToken);
 
-            ImportSeries treffer = Assert.Single(outcome.Results);
-            Assert.Equal("4711", treffer.SourceSeriesId);
-            Assert.Equal(ProviderKeys.AppleMusic, treffer.Source);
-            Assert.Equal("Der Superhund", treffer.Title);
-            Assert.Equal("TKKG", treffer.ArtistName);
-            Assert.True(treffer.IsAlbumResult);
+            ImportSeries hit = Assert.Single(outcome.Results);
+            Assert.Equal("4711", hit.SourceSeriesId);
+            Assert.Equal(ProviderKeys.AppleMusic, hit.Source);
+            Assert.Equal("Der Superhund", hit.Title);
+            Assert.Equal("TKKG", hit.ArtistName);
+            Assert.True(hit.IsAlbumResult);
             Assert.Equal("TKKG", Assert.Single(apple.AlbumSearchQueries));
         }
 
         [Fact]
-        public async Task AppleMusic_UebergehtEintraegeDieKeinAlbumSind()
+        public async Task AppleMusic_SkipsEntriesThatAreNoAlbum()
         {
             // Die Antwort mischt Künstler und Alben. Ein Künstlereintrag als Folge
             // ausgegeben führte beim Übernehmen zu einer Serie ohne Inhalt.
@@ -155,7 +144,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task OhneAnbieter_BleibtDieAlbenSucheLeer()
+        public async Task WithoutProvider_TheAlbumSearchStaysEmpty()
         {
             ImportService service = BuildService(ProviderType.None, spotifyClient: new FakeSpotifyApiClient());
 
@@ -166,7 +155,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task OhneRegistriertenZugang_BleibtDieAlbenSucheLeer()
+        public async Task WithoutRegisteredAccess_TheAlbumSearchStaysEmpty()
         {
             // Ohne registrierten Anbieter-Zugang darf die Suche nichts liefern und
             // nicht reißen, die Trefferliste bleibt schlicht leer.
@@ -178,7 +167,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task OhneZugangsdaten_SuchtSpotifyAnfrageUeberAppleMusic()
+        public async Task WithoutCredentials_SpotifyQueryGoesThroughAppleMusic()
         {
             // Derselbe Rückfall wie bei der Serien-Suche: Spotify ist gewählt, aber ohne
             // Zugangsdaten unbrauchbar, dann wird Apple Music gefragt.
@@ -206,7 +195,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task BeideAnbieter_FragenAppleMusic()
+        public async Task BothProviders_QueryAppleMusic()
         {
             // "Beide" heißt nicht "beide gleichzeitig": Die Suche entscheidet sich für
             // Apple Music, weil dort keine Zugangsdaten nötig sind.

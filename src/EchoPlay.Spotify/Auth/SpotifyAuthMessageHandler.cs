@@ -10,11 +10,12 @@ namespace EchoPlay.Spotify.Auth
     /// <summary>
     /// HTTP-Message-Handler zur automatischen Anreicherung von Spotify-API-Requests mit einem gültigen Authorization-Header.
     /// Die Klasse entkoppelt Token-Handling vollständig vom eigentlichen API-Client.
-    ///
+    /// <para>
     /// Bei einer 401-Antwort wird der gecachte Token einmalig invalidiert und der Request
     /// mit einem frisch geholten Token wiederholt. Ein Infinite-Loop-Schutz verhindert,
     /// dass ein dauerhaft ungültiger Token (z.B. bei revoked credentials) endlose Retries
-    /// auslöst — nach dem zweiten 401 wird die Original-Response propagiert.
+    /// auslöst; nach dem zweiten 401 wird die Original-Response propagiert.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// Initialisiert den Handler mit dem Token-Client.

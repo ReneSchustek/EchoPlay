@@ -48,22 +48,13 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="playerService">Der zentrale Wiedergabe-Service.</param>
         /// <param name="scopeFactory">Fabrik für den Scope, aus dem der Titel der Spur gelesen wird.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch außerhalb von WinUI zu konstruieren.")]
         public MiniPlayerViewModel(IPlayerService playerService, IServiceScopeFactory scopeFactory)
         {
             _playerService = playerService;
             _scopeFactory = scopeFactory;
             Volume = new VolumeControl(playerService, scopeFactory);
 
-            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests), daher try-catch.
-            try
-            {
-                _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-            }
-            catch (Exception)
-            {
-                _dispatcherQueue = null;
-            }
+            _dispatcherQueue = UiDispatcher.TryGetForCurrentThread();
 
             PlayCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerPlay", () => _playerService.Resume()));
             PauseCommand = new RelayCommand(() => InvokeWithScope("MiniPlayerPause", () => _playerService.Pause()));

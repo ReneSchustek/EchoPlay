@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Services
     public sealed class CoverBrightnessAnalyzerTests
     {
         [Fact]
-        public async Task AnalyzeBrightnessFromBytesAsync_Null_WirftArgumentNullException()
+        public async Task AnalyzeBrightnessFromBytesAsync_Null_ThrowsArgumentNullException()
         {
             // Abgrenzung zu den drei Tests darunter: kaputte Bilddaten sind ein Betriebsfall
             // und ergeben null. Kein Array ist ein Programmierfehler und muss auffallen,
@@ -56,7 +56,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task AnalyzeBrightnessFromBytesAsync_HellesCover_MeldetHell()
+        public async Task AnalyzeBrightnessFromBytesAsync_BrightCover_ReportsBright()
         {
             // Die Ecke oben links trägt den Rahmen des Auswahlkästchens. Auf einem hellen
             // Cover braucht er einen dunklen Rand, sonst verschwindet er im Bild.
@@ -66,14 +66,12 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task AnalyzeBrightnessFromBytesAsync_DunklesCover_MeldetDunkel()
+        public async Task AnalyzeBrightnessFromBytesAsync_DarkCover_ReportsDark()
         {
             bool? result = await CoverBrightnessAnalyzer.AnalyzeBrightnessFromBytesAsync(DunklesBild);
 
             Assert.False(result);
         }
-
-        // ── Testbilder ───────────────────────────────────────────────
 
         /// <summary>Ein 4×4 großes Bild in fast weiß, als Bytefolge (keine Datei im Test).</summary>
         private static readonly byte[] HellesBild =

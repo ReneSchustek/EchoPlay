@@ -21,6 +21,12 @@ namespace EchoPlay.App.Services
         bool IsLiveViewAvailable { get; }
 
         /// <summary>
+        /// Wird ausgelöst, sobald ein neuer Eintrag im Live-Puffer steht, und zwar auf dem Thread, der
+        /// protokolliert hat, in der Regel also nicht auf dem Oberflächen-Thread.
+        /// </summary>
+        event EventHandler? LiveEntriesChanged;
+
+        /// <summary>
         /// Liest alle <c>.log</c>-Dateien aus dem konfigurierten Log-Verzeichnis und gibt sie als
         /// Auswahl-Optionen zurück, absteigend nach Datum sortiert. An erster Stelle steht immer
         /// die Live-Option (<see cref="LogFileOption.FilePath"/> ist <see langword="null"/>).

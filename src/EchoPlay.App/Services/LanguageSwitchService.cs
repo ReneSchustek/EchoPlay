@@ -12,17 +12,18 @@ namespace EchoPlay.App.Services
     /// Standard-Implementierung von <see cref="ILanguageSwitchService"/>.
     /// </summary>
     /// <remarks>
-    /// Beide WinRT-Wege der MSIX-Zeit funktionieren unpackaged nicht:
+    /// Die naheliegenden WinRT-Wege funktionieren unpackaged nicht:
     /// <c>Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c> und
     /// <c>Microsoft.Windows.AppLifecycle.AppInstance.Restart</c> setzen eine Paket-Identität
-    /// voraus und werfen sonst <see cref="InvalidOperationException"/>. Ersetzt durch die
-    /// App-SDK-Variante <c>Microsoft.Windows.Globalization.ApplicationLanguages</c> (ausdrücklich
-    /// für Apps ohne Paket-Identität) und einen Neustart über den eigenen Prozess.
+    /// voraus und werfen sonst <see cref="InvalidOperationException"/>. Der Dienst nutzt deshalb
+    /// die App-SDK-Variante <c>Microsoft.Windows.Globalization.ApplicationLanguages</c>
+    /// (ausdrücklich für Apps ohne Paket-Identität) und startet über den eigenen Prozess neu.
     /// </remarks>
     public sealed class LanguageSwitchService : ILanguageSwitchService
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IProcessLauncher _processLauncher;
+        private readonly IAppInstanceRegistration _instanceRegistration;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -30,15 +31,18 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Für den scoped Zugriff auf die Einstellungen.</param>
         /// <param name="processLauncher">Startet den Neustart-Prozess; in Tests ein Fake.</param>
+        /// <param name="instanceRegistration">Gibt den Einzelinstanz-Anspruch an den Nachfolger ab; in Tests ein Fake.</param>
         /// <param name="loggerFactory">Fabrik zur Erzeugung des Loggers.</param>
         public LanguageSwitchService(
             IServiceScopeFactory scopeFactory,
             IProcessLauncher processLauncher,
+            IAppInstanceRegistration instanceRegistration,
             ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _scopeFactory = scopeFactory;
             _processLauncher = processLauncher;
+            _instanceRegistration = instanceRegistration;
             _logger = loggerFactory.CreateLogger("LanguageSwitchService");
         }
 
@@ -65,7 +69,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Der Neustart darf die App nicht abstürzen lassen: scheitert er (fehlende Prozesspfad-Info, blockierender Shutdown), bleibt die App offen und der Nutzer startet manuell neu – die Sprache ist bereits persistiert.")]
         public async Task<bool> ChangeLanguageAsync(string languageCode, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(languageCode))
@@ -85,34 +88,7 @@ namespace EchoPlay.App.Services
             // ActiveLanguage und setzt die Präferenz erneut).
             _ = ApplyOverride(languageCode);
 
-            string? executable = _processLauncher.CurrentExecutablePath;
-            if (string.IsNullOrWhiteSpace(executable))
-            {
-                _logger.Warning("Neustart nicht möglich – Prozesspfad unbekannt. Sprache greift beim nächsten manuellen Start.");
-                return false;
-            }
-
-            // Eigener Prozess statt AppInstance.Restart: letzteres braucht Paket-Identität
-            // und wirft im unpackaged-Betrieb, bevor der Neustart überhaupt beginnt.
-            // Der Launcher verweigert den Start, wenn der Prozess nicht die App ist.
-            if (!_processLauncher.Start(executable))
-            {
-                return false;
-            }
-
-            _logger.Info("Neustart für Sprachwechsel angestoßen: {LanguageCode}.", languageCode);
-
-            try
-            {
-                Microsoft.UI.Xaml.Application.Current.Exit();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                // Der neue Prozess läuft bereits, das Beenden des alten darf nicht hart scheitern.
-                _logger.Warning("Beenden nach Sprachwechsel fehlgeschlagen: {Reason}", ex.Message);
-                return true;
-            }
+            return AppRestart.TryRestart(_processLauncher, _instanceRegistration, _logger, $"Sprachwechsel auf {languageCode}");
         }
     }
 }

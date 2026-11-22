@@ -1,12 +1,12 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Ein einzelnes Ergebnis einer Online-Cover-Suche.
-    /// Enthält eine kleinere Vorschau-URL für den Auswahldialog und die Originaldaten-URL
-    /// für das tatsächlich zu speichernde Bild.
+    /// Enthält eine kleinere Vorschau-Adresse für den Auswahldialog und die Adresse des
+    /// Originalbilds, das tatsächlich gespeichert wird. Beide sind beim Erzeugen bereits als
+    /// Web-Adresse geprüft.
     /// </summary>
     public sealed class CoverSearchResult : IEquatable<CoverSearchResult>
     {
@@ -14,12 +14,8 @@ namespace EchoPlay.LocalLibrary.Cover
         /// Erstellt ein neues Cover-Suchergebnis.
         /// </summary>
         public CoverSearchResult(
-            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-                Justification = "Folgt dem Property-Typ (externe Such-API-Antwort als String).")]
-            string ThumbnailUrl,
-            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-                Justification = "Folgt dem Property-Typ (externe Such-API-Antwort als String).")]
-            string FullUrl,
+            Uri ThumbnailUrl,
+            Uri FullUrl,
             string ReleaseTitle,
             string Source)
         {
@@ -34,18 +30,14 @@ namespace EchoPlay.LocalLibrary.Cover
         }
 
         /// <summary>
-        /// URL eines verkleinerten Vorschaubilds (~250 px). Wird in der Kachelansicht des Auswahldialogs verwendet.
+        /// URL eines verkleinerten Vorschaubilds, meist 250 Pixel breit, für die Kacheln des Auswahldialogs.
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "Spiegelt Such-API-Antwort (Cover Art Archive, iTunes, Discogs, Deezer); Uri-Umwandlung würde die Serialisierung und Bindung an die Kachelansicht komplizieren.")]
-        public string ThumbnailUrl { get; }
+        public Uri ThumbnailUrl { get; }
 
         /// <summary>
-        /// URL des Originalbilds in voller Auflösung. Wird heruntergeladen und gespeichert nachdem der Nutzer die Kachel bestätigt hat.
+        /// URL des Originalbilds in voller Auflösung. Heruntergeladen wird es erst, wenn der Nutzer die Kachel bestätigt.
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "Spiegelt Such-API-Antwort (Cover Art Archive, iTunes, Discogs, Deezer); Uri-Umwandlung würde die Serialisierung und Bindung an die Kachelansicht komplizieren.")]
-        public string FullUrl { get; }
+        public Uri FullUrl { get; }
 
         /// <summary>
         /// Titel des Releases oder Albums. Erscheint als Beschriftung unterhalb der Kachel.
@@ -53,14 +45,18 @@ namespace EchoPlay.LocalLibrary.Cover
         public string ReleaseTitle { get; }
 
         /// <summary>
-        /// Herkunft des Treffers, z.B. "Cover Art Archive". Dient der Transparenz gegenüber dem Nutzer.
+        /// Herkunft des Treffers, etwa "Cover Art Archive".
         /// </summary>
         public string Source { get; }
 
         /// <inheritdoc />
         public bool Equals(CoverSearchResult? other)
         {
-            if (other is null) return false;
+            if (other is null)
+            {
+                return false;
+            }
+
             return ThumbnailUrl == other.ThumbnailUrl
                 && FullUrl == other.FullUrl
                 && ReleaseTitle == other.ReleaseTitle

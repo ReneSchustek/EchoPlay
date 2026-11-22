@@ -2,12 +2,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.CSharp;
 
-// Übersetzt einen Bezeichner segmentweise. "eigeneVerweisQuellen" zerfällt in
-// eigene|Verweis|Quellen und wird zu ownReferenceSources - die Schreibweise des ersten Segments
-// bleibt erhalten, damit aus einer lokalen Variable keine Eigenschaft wird.
-//
-// Segmente ohne Eintrag im Wörterbuch bleiben stehen. Ein Bezeichner, der kein einziges
-// deutsches Segment trägt, kommt unverändert zurück.
+/// <summary>
+/// Übersetzt einen Bezeichner segmentweise. "eigeneVerweisQuellen" zerfällt in
+/// eigene|Verweis|Quellen und wird zu ownReferenceSources - die Schreibweise des ersten Segments
+/// bleibt erhalten, damit aus einer lokalen Variable keine Eigenschaft wird.
+/// <para>
+/// Segmente ohne Eintrag im Wörterbuch bleiben stehen. Ein Bezeichner, der kein einziges deutsches
+/// Segment trägt, kommt unverändert zurück.
+/// </para>
+/// </summary>
 internal static class Translator
 {
     // Umlaute gehören in Bezeichnern nicht vor - im Bestand stehen sie trotzdem

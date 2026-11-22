@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using Microsoft.UI.Xaml;
@@ -19,7 +20,7 @@ namespace EchoPlay.App.ViewModels
         private List<SeriesCardViewModel> _allSeries = [];
         private IReadOnlyList<SeriesCardViewModel> _series = [];
         private string _searchText = string.Empty;
-        private SeriesStatusFilter _statusFilter = SeriesStatusFilter.Alle;
+        private SeriesStatusFilter _statusFilter = SeriesStatusFilter.All;
         private int _seriesSortIndex;
         private int _selectedSeriesIndex = -1;
 
@@ -208,8 +209,8 @@ namespace EchoPlay.App.ViewModels
             IEnumerable<SeriesCardViewModel> sorted = _seriesSortIndex switch
             {
                 1 => filtered.OrderByDescending(c => c.TotalEpisodeCount),
-                2 => filtered.OrderBy(c => c.FinishedCount).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase),
-                _ => filtered.OrderBy(c => c.Title, StringComparer.OrdinalIgnoreCase)
+                2 => filtered.OrderBy(c => c.FinishedCount).ThenBy(c => c.Title, AlphabetIndex.TitleOrder),
+                _ => filtered.OrderBy(c => c.Title, AlphabetIndex.TitleOrder)
             };
 
             Series = [.. sorted];
@@ -225,9 +226,9 @@ namespace EchoPlay.App.ViewModels
         {
             return _statusFilter switch
             {
-                SeriesStatusFilter.Neu => card.HasNewEpisodes,
-                SeriesStatusFilter.AmHoeren => card.HasInProgressEpisodes,
-                SeriesStatusFilter.Gehört => card.AllEpisodesFinished,
+                SeriesStatusFilter.New => card.HasNewEpisodes,
+                SeriesStatusFilter.InProgress => card.HasInProgressEpisodes,
+                SeriesStatusFilter.Finished => card.AllEpisodesFinished,
                 _ => true
             };
         }

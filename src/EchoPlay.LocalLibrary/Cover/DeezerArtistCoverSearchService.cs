@@ -1,3 +1,5 @@
+using EchoPlay.Logger.Abstractions;
+using EchoPlay.Core.Http;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
@@ -24,7 +26,8 @@ namespace EchoPlay.LocalLibrary.Cover
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public DeezerArtistCoverSearchService(HttpClient httpClient) : base(httpClient)
+        /// <param name="loggerFactory">Für das Protokoll übersprungener Anfragen.</param>
+        public DeezerArtistCoverSearchService(HttpClient httpClient, ILoggerFactory loggerFactory) : base(httpClient, loggerFactory)
         {
         }
 
@@ -44,12 +47,17 @@ namespace EchoPlay.LocalLibrary.Cover
                 MapArtist,
                 ct);
 
+        private static bool IsPlaceholder(Uri picture)
+            => picture.OriginalString.Contains("/artist//", StringComparison.Ordinal);
+
         private static CoverSearchResult? MapArtist(DeezerArtist artist, string fallbackTitle)
         {
-            // Deezer liefert einen Platzhalter-URL wenn kein Bild vorhanden ist;
-            // diese enthalten "/artist//", ohne ID dazwischen
-            if (string.IsNullOrWhiteSpace(artist.PictureMedium)
-                || string.IsNullOrWhiteSpace(artist.PictureXl))
+            Uri? thumbnail = WebAddress.TryParse(artist.PictureMedium);
+            Uri? full = WebAddress.TryParse(artist.PictureXl);
+
+            // Ohne eigenes Bild liefert Deezer die Adresse eines grauen Platzhalters; ihr fehlt
+            // die Bildkennung, erkennbar am leeren Abschnitt „/artist//".
+            if (thumbnail is null || full is null || IsPlaceholder(full))
             {
                 return null;
             }
@@ -57,14 +65,15 @@ namespace EchoPlay.LocalLibrary.Cover
             string artistName = artist.Name ?? fallbackTitle;
 
             return new CoverSearchResult(
-                ThumbnailUrl: artist.PictureMedium,
-                FullUrl: artist.PictureXl,
+                ThumbnailUrl: thumbnail,
+                FullUrl: full,
                 ReleaseTitle: artistName,
                 Source: "Deezer (Künstler)");
         }
 
-        // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────
-
+        /// <summary>
+        /// Antwort der Deezer-Künstlersuche; gelesen wird nur die Trefferliste.
+        /// </summary>
         [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class DeezerSearchResponse
         {
@@ -72,6 +81,9 @@ namespace EchoPlay.LocalLibrary.Cover
             public List<DeezerArtist>? Data { get; set; }
         }
 
+        /// <summary>
+        /// Ein Künstlertreffer mit Name und Bild in zwei Größen.
+        /// </summary>
         [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class DeezerArtist
         {

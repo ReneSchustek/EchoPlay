@@ -12,23 +12,23 @@ namespace EchoPlay.App.Tests.Services
     public sealed class ExistingEpisodeIndexTests
     {
         [Fact]
-        public void TryFind_ErkenntFolgeAnDerAlbumKennung_TrotzGeaendertemTitel()
+        public void TryFind_RecognizesEpisodeByAlbumId_DespiteChangedTitle()
         {
             ExistingEpisodeIndex index = new(
             [
                 new Episode { SeriesId = Guid.NewGuid(), Title = "Folge 240", AppleMusicAlbumId = "am240" }
             ]);
 
-            bool gefunden = index.TryFind(
+            bool found = index.TryFind(
                 new ImportEpisode { SourceEpisodeId = "am240", Title = "Folge 240: Das verschollene Zepter" },
-                out Episode? vorhanden);
+                out Episode? existing);
 
-            Assert.True(gefunden);
-            Assert.Equal("Folge 240", vorhanden!.Title);
+            Assert.True(found);
+            Assert.Equal("Folge 240", existing!.Title);
         }
 
         [Fact]
-        public void TryFind_ErkenntFolgeAmTitel_WennKeineKennungGespeichertIst()
+        public void TryFind_RecognizesEpisodeByTitle_WhenNoIdIsStored()
         {
             // Lokal eingelesene Folgen haben keine Album-Kennung, für sie bleibt der Titel
             // der einzige Anker.
@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Contains_MeldetUnbekannteFolgeAlsNeu()
+        public void Contains_ReportsUnknownEpisodeAsNew()
         {
             ExistingEpisodeIndex index = new(
             [
@@ -52,20 +52,20 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Add_SchuetztVorDoppelnInnerhalbDerselbenAnbieterAntwort()
+        public void Add_GuardsAgainstDuplicatesWithinOneProviderResponse()
         {
             ExistingEpisodeIndex index = new([]);
-            ImportEpisode treffer = new() { SourceEpisodeId = "am7", Title = "Folge 7" };
+            ImportEpisode hit = new() { SourceEpisodeId = "am7", Title = "Folge 7" };
 
-            Assert.False(index.Contains(treffer));
+            Assert.False(index.Contains(hit));
 
             index.Add(new Episode { SeriesId = Guid.NewGuid(), Title = "Folge 7", AppleMusicAlbumId = "am7" });
 
-            Assert.True(index.Contains(treffer));
+            Assert.True(index.Contains(hit));
         }
 
         [Fact]
-        public void Titles_LiefertDieBekanntenTitelFuerDenAnbieterHinweis()
+        public void Titles_ReturnsTheKnownTitlesForTheProviderHint()
         {
             ExistingEpisodeIndex index = new(
             [

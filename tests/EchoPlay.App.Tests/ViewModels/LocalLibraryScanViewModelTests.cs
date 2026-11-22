@@ -27,15 +27,13 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </remarks>
     public sealed class LocalLibraryScanViewModelTests
     {
-        // ── Ereignisstrom ────────────────────────────────────────────────────────
-
         [Fact]
         public async Task Activate_LetsSeriesAppearWhileTheScanRuns()
         {
             Harness harness = await Harness.BuildAsync();
             harness.ViewModel.Activate();
 
-            harness.ScanEvents.RaiseSeriesSynced(new Series { Title = "Die drei Fragezeichen" });
+            harness.ScanEvents.NotifySeriesSynced(new Series { Title = "Die drei Fragezeichen" });
 
             // Bei zweitausend Ordnern dauert ein Lauf Minuten. Erschienen die Kacheln erst
             // am Ende, sähe die Mediathek die ganze Zeit leer aus.
@@ -49,7 +47,7 @@ namespace EchoPlay.App.Tests.ViewModels
             harness.ViewModel.Activate();
             harness.ViewModel.Deactivate();
 
-            harness.ScanEvents.RaiseSeriesSynced(new Series { Title = "Kommt nicht an" });
+            harness.ScanEvents.NotifySeriesSynced(new Series { Title = "Kommt nicht an" });
 
             Assert.Empty(harness.SyncedTitles);
         }
@@ -61,14 +59,12 @@ namespace EchoPlay.App.Tests.ViewModels
             harness.ViewModel.Activate();
 
             harness.ViewModel.Dispose();
-            harness.ScanEvents.RaiseSeriesSynced(new Series { Title = "Kommt nicht an" });
+            harness.ScanEvents.NotifySeriesSynced(new Series { Title = "Kommt nicht an" });
 
             // Der Ereignisdienst lebt so lange wie die Anwendung. Bliebe ein Rückruf einer
             // verlassenen Ansicht hängen, hielte er sie samt Kacheln im Speicher.
             Assert.Empty(harness.SyncedTitles);
         }
-
-        // ── Anzeigezustand ───────────────────────────────────────────────────────
 
         [Fact]
         public async Task BeforeAnyScan_TheOverlayIsHidden()
@@ -79,8 +75,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(Visibility.Collapsed, harness.ViewModel.IsScanningVisibility);
             Assert.Equal(Visibility.Collapsed, harness.ViewModel.ScanDetailVisibility);
         }
-
-        // ── Scan ─────────────────────────────────────────────────────────────────
 
         [Fact]
         public async Task Scan_WithEmptyDatabase_ReadsEverything()
@@ -156,8 +150,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(harness.ViewModel.IsNotScanning);
         }
 
-        // ── Neuaufbau ────────────────────────────────────────────────────────────
-
         [Fact]
         public async Task ReInitialize_WhenUserDeclines_TouchesNothing()
         {
@@ -207,8 +199,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(harness.ViewModel.IsNotScanning);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         /// <summary>
         /// Baut das Ansichtsmodell samt Umfeld und stellt einen Wartepunkt für den Lauf
         /// bereit, denn die Befehle selbst liefern keinen, an dem ein Test hängen könnte.
@@ -243,18 +233,11 @@ namespace EchoPlay.App.Tests.ViewModels
                 await reloaded.Task;
             }
 
-            public static async Task<Harness> BuildAsync(
-                IReadOnlyList<Series>? existingSeries = null,
-                bool confirmResult = true,
-                Exception? syncFailure = null)
+            /// <summary>Daten-Nachbauten, in denen die angegebenen Serien schon stehen.</summary>
+            private static async Task<IServiceScopeFactory> CreateScopeFactoryAsync(IReadOnlyList<Series> existingSeries)
             {
-                FakeSyncService syncService = new(
-                    new SyncResult { TracksCreated = 12, EpisodesUpdated = 3 }, syncFailure);
-                FakeScanEventService scanEvents = new();
-                FakeErrorDialogService errorDialog = new();
-
                 FakeSeriesDataService seriesService = new();
-                foreach (Series entry in existingSeries ?? [])
+                foreach (Series entry in existingSeries)
                 {
                     await seriesService.AddAsync(entry, TestContext.Current.CancellationToken);
                 }
@@ -266,9 +249,20 @@ namespace EchoPlay.App.Tests.ViewModels
                 _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
                 _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
                 _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+                return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
+            }
 
-                ServiceProvider provider = services.BuildServiceProvider();
-                IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            public static async Task<Harness> BuildAsync(
+                IReadOnlyList<Series>? existingSeries = null,
+                bool confirmResult = true,
+                Exception? syncFailure = null)
+            {
+                FakeSyncService syncService = new(
+                    new SyncResult { TracksCreated = 12, EpisodesUpdated = 3 }, syncFailure);
+                FakeScanEventService scanEvents = new();
+                FakeErrorDialogService errorDialog = new();
+
+                IServiceScopeFactory scopeFactory = await CreateScopeFactoryAsync(existingSeries ?? []);
 
                 StatusBarViewModel statusBar = new(
                     scopeFactory, new FakeThemeService(), new TaskbarProgressService(), new FakeClock());

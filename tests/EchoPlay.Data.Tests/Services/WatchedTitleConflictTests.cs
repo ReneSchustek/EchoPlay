@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Tests.Services
     /// „gibt es den Titel schon?" und dem Speichern kann der jeweils andere ihn angelegt haben.
     /// </summary>
     /// <remarks>
-    /// Der eindeutige Index fängt das ab. Erwartet wird deshalb **kein** Fehler, sondern ein
+    /// Der eindeutige Index fängt das ab. Erwartet wird deshalb <b>kein</b> Fehler, sondern ein
     /// stilles Weiterlaufen: Der Titel steht danach genau einmal in der Merkliste.
     ///
     /// Nachgestellt wird der Wettlauf über einen noch nicht gespeicherten Eintrag. Eine Abfrage

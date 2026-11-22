@@ -21,7 +21,7 @@ namespace EchoPlay.Core.Scoring
         public HoerspielDecisionReason Reason { get; init; }
 
         /// <summary>
-        /// Spotify-Artist-ID des bewerteten Künstlers.
+        /// Kennung des bewerteten Künstlers beim Anbieter (Spotify oder Apple Music).
         /// </summary>
         public string ArtistId { get; init; } = string.Empty;
 

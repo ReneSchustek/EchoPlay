@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.Services
 
             ServiceProvider provider = services.BuildServiceProvider();
 
-            // BackgroundCoverService braucht echte DI-Infrastruktur, wir nutzen einen minimalen Stub.
+            // BackgroundCoverService braucht echte DI-Infrastruktur, deshalb steht hier ein minimaler Stub.
             // Im Default-Fall zählt FakeBackgroundCoverService nur die Aufrufe der Splash-/Hintergrund-Phasen
             // (keine DB-/Dateisystem-Arbeit). Tests, die den echten Pfad prüfen wollen, übergeben coverServiceOverride.
             BackgroundCoverService coverService = coverServiceOverride ?? new FakeBackgroundCoverService(
@@ -72,7 +72,7 @@ namespace EchoPlay.App.Tests.Services
         /// den HTTP-Konnektivitätscheck und gilt trotzdem als online. Damit lassen sich die
         /// Folgeschritte prüfen, ohne dass ein Test ins Netz geht.
         /// </summary>
-        private static AppSettings OnlineOhneAnbieter() => new()
+        private static AppSettings OnlineWithoutProvider() => new()
         {
             OfflineMode = false,
             ActiveProvider = ProviderType.None
@@ -87,7 +87,6 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.NotNull(result);
             Assert.NotNull(result.Settings);
-            Assert.NotNull(result.SubscribedSeries);
         }
 
         [Fact]
@@ -132,10 +131,10 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService,
                 cacheService: cacheService);
 
-            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Cache muss nach Clear leer sein
-            Assert.Empty(result.CachedReleases);
+            Assert.Empty(await cacheService.GetAllAsync(TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -184,10 +183,10 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService,
                 cacheService: cacheService);
 
-            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Cache-Einträge für nicht-überwachte Serien müssen entfernt sein
-            Assert.Empty(result.CachedReleases);
+            Assert.Empty(await cacheService.GetAllAsync(TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -257,6 +256,39 @@ namespace EchoPlay.App.Tests.Services
             Assert.False(fakeCover.LastIsOnlineAvailable);
         }
 
+        /// <summary>
+        /// Der echte Hintergrund-Coverdienst über Daten-Nachbauten; der Cover-Lader zählt mit,
+        /// welche Ordner er öffnen soll.
+        /// </summary>
+        private static BackgroundCoverService CreateBackgroundCoverService(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            CallCountingLocalCoverLoader coverLoader)
+        {
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddScoped<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(_ => coverLoader);
+            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
+            _ = services.AddHttpClient();
+            ServiceProvider provider = services.BuildServiceProvider();
+
+            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            FakeLoggerFactory loggerFactory = new();
+
+            return new BackgroundCoverService(
+                scopeFactory,
+                new CoverService(scopeFactory, loggerFactory),
+                new CoverDownloader(provider.GetRequiredService<IHttpClientFactory>(), loggerFactory),
+                new FakeSpotifyCredentialStore(),
+                new BackgroundCoverServiceOptions(),
+                loggerFactory,
+                new FakeClock());
+        }
+
         [Fact]
         public async Task RunSeriesCoversOnceAsync_DoesNotLoadEpisodeCovers()
         {
@@ -278,29 +310,7 @@ namespace EchoPlay.App.Tests.Services
             }, cancellationToken: TestContext.Current.CancellationToken);
 
             CallCountingLocalCoverLoader coverLoader = new();
-
-            ServiceCollection services = new();
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddScoped<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(_ => coverLoader);
-            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
-            _ = services.AddHttpClient();
-            ServiceProvider provider = services.BuildServiceProvider();
-
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-            FakeLoggerFactory loggerFactory = new();
-
-            BackgroundCoverService realService = new(
-                scopeFactory,
-                new CoverService(scopeFactory, loggerFactory),
-                new CoverDownloader(provider.GetRequiredService<IHttpClientFactory>(), loggerFactory),
-                new FakeSpotifyCredentialStore(),
-                new BackgroundCoverServiceOptions(),
-                loggerFactory,
-                new FakeClock());
+            BackgroundCoverService realService = CreateBackgroundCoverService(seriesService, episodeService, coverLoader);
 
             // Act: Splash-Phase aufrufen; isOnlineAvailable=false verhindert Provider-Calls.
             _ = await realService.RunSeriesCoversOnceAsync(isOnlineAvailable: false, CancellationToken.None);
@@ -311,8 +321,6 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(@"C:\Serien\Testserie", onlyCall.FolderPath);
             Assert.DoesNotContain(coverLoader.LoadCalls, call => call.FolderPath == @"C:\Serien\Testserie\01");
         }
-
-        // ── Lokales Verzeichnis ──────────────────────────────────────────────────
 
         [Fact]
         public async Task ValidateAsync_LocalFolderMissing_ReportsUnavailableWithHint()
@@ -337,7 +345,7 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task ValidateAsync_LocalFolderReadable_ReportsAvailableWithoutHint()
         {
-            string ordner = Directory.CreateTempSubdirectory("echoplay-start").FullName;
+            string folder = Directory.CreateTempSubdirectory("echoplay-start").FullName;
 
             try
             {
@@ -345,7 +353,7 @@ namespace EchoPlay.App.Tests.Services
                 {
                     OfflineMode = true,
                     LocalLibraryEnabled = true,
-                    LocalLibraryRootPath = ordner
+                    LocalLibraryRootPath = folder
                 });
 
                 StartupValidator validator = BuildValidator(settingsService: settings);
@@ -357,7 +365,7 @@ namespace EchoPlay.App.Tests.Services
             }
             finally
             {
-                Directory.Delete(ordner, recursive: true);
+                Directory.Delete(folder, recursive: true);
             }
         }
 
@@ -380,21 +388,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.Null(result.LocalLibraryHintText);
         }
 
-        // ── Neuerscheinungen-Cache ───────────────────────────────────────────────
-
-        [Fact]
-        public async Task ValidateAsync_WatchedSeries_FillsCacheFromChecker()
-        {
-            FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series
-            {
-                Title = "Überwacht",
-                IsSubscribed = true,
-                IsWatched = true
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            Series series = seriesService.All[0];
-
-            FakeOnlineEpisodeChecker checker = new(
+        /// <summary>Online-Prüfung mit einer Folge der Serie, die gestern erschienen ist.</summary>
+        private static FakeOnlineEpisodeChecker CheckerWithYesterdaysRelease(Series series)
+            => new(
             [
                 new OnlineEpisodeCheckResult
                 {
@@ -413,20 +409,34 @@ namespace EchoPlay.App.Tests.Services
                 }
             ]);
 
+        [Fact]
+        public async Task ValidateAsync_WatchedSeries_FillsCacheFromChecker()
+        {
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series
+            {
+                Title = "Überwacht",
+                IsSubscribed = true,
+                IsWatched = true
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            Series series = seriesService.All[0];
+
+            FakeOnlineEpisodeChecker checker = CheckerWithYesterdaysRelease(series);
+
             FakeCachedNewReleaseDataService cacheService = new();
 
             StartupValidator validator = BuildValidator(
-                settingsService: new FakeAppSettingsDataService(OnlineOhneAnbieter()),
+                settingsService: new FakeAppSettingsDataService(OnlineWithoutProvider()),
                 seriesService: seriesService,
                 cacheService: cacheService,
                 onlineChecker: checker);
 
-            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(1, checker.CheckCallCount);
-            CachedNewRelease eintrag = Assert.Single(result.CachedReleases);
-            Assert.Equal("Neue Folge", eintrag.Title);
-            Assert.Equal(series.Id, eintrag.SeriesId);
+            CachedNewRelease entry = Assert.Single(await cacheService.GetAllAsync(TestContext.Current.CancellationToken));
+            Assert.Equal("Neue Folge", entry.Title);
+            Assert.Equal(series.Id, entry.SeriesId);
         }
 
         [Fact]
@@ -445,7 +455,7 @@ namespace EchoPlay.App.Tests.Services
             FakeOnlineEpisodeChecker checker = new();
 
             StartupValidator validator = BuildValidator(
-                settingsService: new FakeAppSettingsDataService(OnlineOhneAnbieter()),
+                settingsService: new FakeAppSettingsDataService(OnlineWithoutProvider()),
                 seriesService: seriesService,
                 onlineChecker: checker);
 
@@ -484,7 +494,7 @@ namespace EchoPlay.App.Tests.Services
             FakeOnlineEpisodeChecker checker = new();
 
             StartupValidator validator = BuildValidator(
-                settingsService: new FakeAppSettingsDataService(OnlineOhneAnbieter()),
+                settingsService: new FakeAppSettingsDataService(OnlineWithoutProvider()),
                 seriesService: seriesService,
                 cacheService: cacheService,
                 onlineChecker: checker);
@@ -525,9 +535,9 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService,
                 cacheService: cacheService);
 
-            StartupResult result = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
+            _ = await validator.ValidateAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.Empty(result.CachedReleases);
+            Assert.Empty(await cacheService.GetAllAsync(TestContext.Current.CancellationToken));
         }
 
         /// <summary>

@@ -1,17 +1,23 @@
 using System.Text.RegularExpressions;
 
-// Zieht Umbenennungen in den XAML-Dateien nach.
-//
-// XAML bindet über Zeichenketten, nicht über Symbole - Roslyn sieht davon nichts. Bleibt eine
-// Bindung stehen, ist der Build grün und die Oberfläche leer. Das ist die teuerste Fehlerart
-// dieses Umbaus, weil sie erst beim Benutzen auffällt.
-//
-// Drei Stellen tragen Namen:
-//   {x:Bind Pfad.Teil}, {Binding Pfad}, {TemplateBinding Pfad}   Eigenschaften und Methoden
-//   local:TypName, converters:TypName, x:Class="Raum.TypName"    Typen
-//   {x:Bind BearbeitenCommand}                                    von [RelayCommand] erzeugt:
-//                                                                 Methode "Bearbeiten" wird zu
-//                                                                 "BearbeitenCommand"
+/// <summary>
+/// Zieht Umbenennungen in den XAML-Dateien nach.
+/// <para>
+/// XAML bindet über Zeichenketten, nicht über Symbole - Roslyn sieht davon nichts. Bleibt eine
+/// Bindung stehen, ist der Build grün und die Oberfläche leer. Das ist die teuerste Fehlerart
+/// dieses Umbaus, weil sie erst beim Benutzen auffällt.
+/// </para>
+/// <para>
+/// Drei Stellen tragen Namen:
+/// </para>
+/// <code>
+///   {x:Bind Pfad.Teil}, {Binding Pfad}, {TemplateBinding Pfad}   Eigenschaften und Methoden
+///   local:TypName, converters:TypName, x:Class="Raum.TypName"    Typen
+///   {x:Bind BearbeitenCommand}                                    von [RelayCommand] erzeugt:
+///                                                                 Methode "Bearbeiten" wird zu
+///                                                                 "BearbeitenCommand"
+/// </code>
+/// </summary>
 internal static class XamlUpdater
 {
     public static int Update(string root, IReadOnlyDictionary<string, string> names, bool onlyShow)
@@ -33,14 +39,14 @@ internal static class XamlUpdater
         foreach (string file in Files(root))
         {
             string alt = File.ReadAllText(file);
-            string neu = ErsetzeIn(alt, withCommands);
+            string updated = ErsetzeIn(alt, withCommands);
 
-            if (!string.Equals(alt, neu, StringComparison.Ordinal))
+            if (!string.Equals(alt, updated, StringComparison.Ordinal))
             {
                 changed++;
                 if (!onlyShow)
                 {
-                    File.WriteAllText(file, neu);
+                    File.WriteAllText(file, updated);
                 }
             }
         }
@@ -70,15 +76,15 @@ internal static class XamlUpdater
         content = Regex.Replace(
             content,
             @"(\b\w+:)([A-Z]\w*)",
-            matches => names.TryGetValue(matches.Groups[2].Value, out string? neu)
-                ? matches.Groups[1].Value + neu
+            matches => names.TryGetValue(matches.Groups[2].Value, out string? updated)
+                ? matches.Groups[1].Value + updated
                 : matches.Value);
 
         content = Regex.Replace(
             content,
             @"(x:Class="")([\w.]*\.)?(\w+)("")",
-            matches => names.TryGetValue(matches.Groups[3].Value, out string? neu)
-                ? matches.Groups[1].Value + matches.Groups[2].Value + neu + matches.Groups[4].Value
+            matches => names.TryGetValue(matches.Groups[3].Value, out string? updated)
+                ? matches.Groups[1].Value + matches.Groups[2].Value + updated + matches.Groups[4].Value
                 : matches.Value);
 
         // x:Name erzeugt ein Feld im Code-behind. Wandert das Feld, muss der Name mitwandern -
@@ -87,15 +93,15 @@ internal static class XamlUpdater
         content = Regex.Replace(
             content,
             @"(x:Name="")(\w+)("")",
-            matches => names.TryGetValue(matches.Groups[2].Value, out string? neu)
-                ? matches.Groups[1].Value + neu + matches.Groups[3].Value
+            matches => names.TryGetValue(matches.Groups[2].Value, out string? updated)
+                ? matches.Groups[1].Value + updated + matches.Groups[3].Value
                 : matches.Value);
 
         content = Regex.Replace(
             content,
             @"(ElementName=)(\w+)",
-            matches => names.TryGetValue(matches.Groups[2].Value, out string? neu)
-                ? matches.Groups[1].Value + neu
+            matches => names.TryGetValue(matches.Groups[2].Value, out string? updated)
+                ? matches.Groups[1].Value + updated
                 : matches.Value);
 
         return content;
@@ -109,6 +115,6 @@ internal static class XamlUpdater
             string name = bracket < 0 ? glied : glied[..bracket];
             string rest = bracket < 0 ? string.Empty : glied[bracket..];
 
-            return names.TryGetValue(name, out string? neu) ? neu + rest : glied;
+            return names.TryGetValue(name, out string? updated) ? updated + rest : glied;
         }));
 }

@@ -43,24 +43,24 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Cleanup_WithoutARunningLoad_StaysQuiet()
+        public void Dispose_WithoutARunningLoad_StaysQuiet()
         {
             SeriesDetailViewModel sut = Build();
 
-            sut.Cleanup();
+            sut.Dispose();
         }
 
         [Fact]
-        public void Cleanup_CalledTwice_StaysQuiet()
+        public void Dispose_CalledTwice_StaysQuiet()
         {
             SeriesDetailViewModel sut = Build();
 
-            sut.Cleanup();
-            sut.Cleanup();
+            sut.Dispose();
+            sut.Dispose();
         }
 
         [Fact]
-        public async Task Cleanup_AfterLoading_StopsTheRemainingWork()
+        public async Task Dispose_AfterLoading_StopsTheRemainingWork()
         {
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(
@@ -70,7 +70,7 @@ namespace EchoPlay.App.Tests.ViewModels
             SeriesDetailViewModel sut = Build(seriesService: seriesService);
             await sut.LoadAsync(seriesService.All[0].Id);
 
-            sut.Cleanup();
+            sut.Dispose();
 
             Assert.Equal("TKKG", sut.Header.SeriesTitle);
         }

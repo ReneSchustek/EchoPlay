@@ -2,6 +2,7 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Abstractions;
+using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
@@ -79,7 +80,30 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.WaitForFileLoadCompleteAsync();
 
             (string Title, string Message) shown = Assert.Single(errorDialog.ShownDialogs);
-            Assert.Equal("Datei beschädigt", shown.Message);
+            Assert.Contains("Datei beschädigt", shown.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task LoadMultipleFileTags_WhenOneFileFails_ReadsTheOthersAndNamesTheBrokenOne()
+        {
+            const string intactPath = @"D:\Media\TKKG\Folge 001\02 - Mitte.mp3";
+            FakeTagService tagService = new([(intactPath, new AudioTag { Title = "Mitte" })])
+            {
+                ReadFailure = new IOException("Datei beschädigt"),
+                ReadFailurePath = FilePath,
+            };
+            FakeErrorDialogService errorDialog = new();
+            TagManagerViewModel sut = Build(tagService, errorDialog);
+
+            sut.SetSelectedFiles([new TagFileItemViewModel(FilePath), new TagFileItemViewModel(intactPath)]);
+            await sut.WaitForFileLoadCompleteAsync();
+
+            // Brach das Lesen beim ersten Fehler ab, blieben auch die lesbaren Dateien
+            // ungelesen, und die Meldung verschwieg, welche Datei es war.
+            Assert.Equal("Mitte", sut.EditorVM.Title);
+            (string Title, string Message) shown = Assert.Single(errorDialog.ShownDialogs);
+            Assert.Contains("01 - Auftakt.mp3", shown.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain("02 - Mitte.mp3", shown.Message, StringComparison.Ordinal);
         }
 
         private static TagManagerViewModel Build(

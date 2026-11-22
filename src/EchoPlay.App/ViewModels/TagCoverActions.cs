@@ -9,7 +9,6 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// Sub-Actions: Cover-Operationen im Tag-Manager (Einzel-Entfernen, Batch-Apply).
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt.")]
     internal sealed class TagCoverActions
     {
         private readonly TagManagerActionsContext _ctx;
@@ -25,6 +24,13 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Public Call-Counter für Tests.</summary>
         public int ApplyCoverToAllCallCount { get; private set; }
 
+        /// <summary>Richtet die Cover-Aktionen ein.</summary>
+        /// <param name="context">Die Dienste des Tag-Managers.</param>
+        /// <param name="fileListVM">Die Dateiliste mit Auswahl.</param>
+        /// <param name="coverVM">Das angezeigte Cover.</param>
+        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
+        /// <param name="setBatchProgress">Setzt den Fortschrittstext.</param>
+        /// <param name="setHasUnsavedChanges">Setzt die Markierung ungespeicherter Änderungen.</param>
         public TagCoverActions(
             TagManagerActionsContext context,
             TagFileListViewModel fileListVM,
@@ -76,20 +82,7 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
-                SafeResourceLoader.Get("TagManagerCoverApplyAllConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        _fileListVM.Files.Count,
-                        "TagManagerCoverApplyAllConfirmMessageSingular",
-                        "TagManagerCoverApplyAllConfirmMessagePlural",
-                        "Das aktuelle Cover wird in {0} Datei geschrieben.",
-                        "Das aktuelle Cover wird in {0} Dateien geschrieben."),
-                    _fileListVM.Files.Count),
-                DialogKey.TagManagerCoverApplyAll);
-
-            if (!confirmed)
+            if (!await ConfirmApplyCoverToAllAsync(_fileListVM.Files.Count))
             {
                 return;
             }
@@ -97,12 +90,26 @@ namespace EchoPlay.App.ViewModels
             byte[] imageData = _coverVM.CoverImageData;
             string mimeType = _coverVM.CoverMimeType ?? "image/jpeg";
 
-            await TagBatchRunner.RunBatchAsync(
+            _ = await TagBatchRunner.RunBatchAsync(
                 _fileListVM.Files,
                 file => _ctx.TagService.WriteCoverAsync(file.FilePath, imageData, mimeType),
                 SafeResourceLoader.Get("TagManagerCoverApplyAllErrorTitle"),
                 DialogKey.TagManagerCoverApplyAllError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
         }
+
+        private Task<bool> ConfirmApplyCoverToAllAsync(int fileCount) =>
+            _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerCoverApplyAllConfirmTitle"),
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    PluralText.Pattern(
+                        fileCount,
+                        "TagManagerCoverApplyAllConfirmMessageSingular",
+                        "TagManagerCoverApplyAllConfirmMessagePlural",
+                        "Das aktuelle Cover wird in {0} Datei geschrieben.",
+                        "Das aktuelle Cover wird in {0} Dateien geschrieben."),
+                    fileCount),
+                DialogKey.TagManagerCoverApplyAll);
     }
 }

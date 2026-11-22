@@ -20,8 +20,6 @@ namespace EchoPlay.Data.Tests.Services
     /// </remarks>
     public sealed class DataServiceGapTests : DbTestBase
     {
-        // ── Serien ───────────────────────────────────────────────────────────────
-
         [Fact]
         public async Task Series_AreFoundByTheirSpotifyArtistId()
         {
@@ -30,12 +28,12 @@ namespace EchoPlay.Data.Tests.Services
                 new Series { Title = "TKKG", SpotifyArtistId = "sp_tkkg" },
                 TestContext.Current.CancellationToken);
 
-            Series? gefunden = await sut.GetBySpotifyArtistIdAsync("sp_tkkg", TestContext.Current.CancellationToken);
-            Series? nicht = await sut.GetBySpotifyArtistIdAsync("sp_unbekannt", TestContext.Current.CancellationToken);
+            Series? found = await sut.GetBySpotifyArtistIdAsync("sp_tkkg", TestContext.Current.CancellationToken);
+            Series? missing = await sut.GetBySpotifyArtistIdAsync("sp_unbekannt", TestContext.Current.CancellationToken);
 
-            Assert.NotNull(gefunden);
-            Assert.Equal("TKKG", gefunden.Title);
-            Assert.Null(nicht);
+            Assert.NotNull(found);
+            Assert.Equal("TKKG", found.Title);
+            Assert.Null(missing);
         }
 
         [Fact]
@@ -46,41 +44,41 @@ namespace EchoPlay.Data.Tests.Services
                 new Series { Title = "Die drei ???", AppleMusicArtistId = "am_ddf" },
                 TestContext.Current.CancellationToken);
 
-            Series? gefunden = await sut.GetByAppleMusicArtistIdAsync("am_ddf", TestContext.Current.CancellationToken);
+            Series? found = await sut.GetByAppleMusicArtistIdAsync("am_ddf", TestContext.Current.CancellationToken);
 
-            Assert.NotNull(gefunden);
-            Assert.Equal("Die drei ???", gefunden.Title);
+            Assert.NotNull(found);
+            Assert.Equal("Die drei ???", found.Title);
         }
 
         [Fact]
         public async Task Series_Update_KeepsTheChangedTitle()
         {
             SeriesDataService sut = CreateSeriesService();
-            Series serie = new() { Title = "Alter Name" };
-            await sut.AddAsync(serie, TestContext.Current.CancellationToken);
+            Series series = new() { Title = "Alter Name" };
+            await sut.AddAsync(series, TestContext.Current.CancellationToken);
 
-            serie.Title = "Neuer Name";
-            await sut.UpdateAsync(serie, TestContext.Current.CancellationToken);
+            series.Title = "Neuer Name";
+            await sut.UpdateAsync(series, TestContext.Current.CancellationToken);
 
-            Series? geladen = await sut.GetByIdAsync(serie.Id, TestContext.Current.CancellationToken);
-            Assert.Equal("Neuer Name", geladen?.Title);
+            Series? loaded = await sut.GetByIdAsync(series.Id, TestContext.Current.CancellationToken);
+            Assert.Equal("Neuer Name", loaded?.Title);
         }
 
         [Fact]
         public async Task Series_CoverLastChecked_IsStored()
         {
             SeriesDataService sut = CreateSeriesService();
-            Series serie = new() { Title = "TKKG" };
-            await sut.AddAsync(serie, TestContext.Current.CancellationToken);
+            Series series = new() { Title = "TKKG" };
+            await sut.AddAsync(series, TestContext.Current.CancellationToken);
 
             DateTime checkedAt = new(2026, 8, 19, 10, 0, 0, DateTimeKind.Utc);
-            await sut.SetCoverLastCheckedAsync(serie.Id, checkedAt, TestContext.Current.CancellationToken);
+            await sut.SetCoverLastCheckedAsync(series.Id, checkedAt, TestContext.Current.CancellationToken);
 
             // Ohne diesen Zeitstempel fragte der Hintergrundlauf dieselbe Serie bei jedem
             // Start erneut bei allen Anbietern an.
-            Series? geladen = await Context.Series.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == serie.Id, TestContext.Current.CancellationToken);
-            Assert.Equal(checkedAt, geladen?.CoverLastChecked);
+            Series? loaded = await Context.Series.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == series.Id, TestContext.Current.CancellationToken);
+            Assert.Equal(checkedAt, loaded?.CoverLastChecked);
         }
 
         [Fact]
@@ -94,27 +92,25 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Empty(await Context.Series.ToListAsync(TestContext.Current.CancellationToken));
         }
 
-        // ── Folgen ───────────────────────────────────────────────────────────────
-
         [Fact]
         public async Task Episodes_AreAddedOneByOneAndInBatches()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             EpisodeDataService sut = new(Context, NullLoggerFactory);
 
             await sut.AddAsync(
-                new Episode { SeriesId = serie.Id, Title = "Folge 1" },
+                new Episode { SeriesId = series.Id, Title = "Folge 1" },
                 TestContext.Current.CancellationToken);
 
             await sut.AddRangeAsync(
             [
-                new Episode { SeriesId = serie.Id, Title = "Folge 2" },
-                new Episode { SeriesId = serie.Id, Title = "Folge 3" },
+                new Episode { SeriesId = series.Id, Title = "Folge 2" },
+                new Episode { SeriesId = series.Id, Title = "Folge 3" },
             ], TestContext.Current.CancellationToken);
 
             // Der Import legt zweihundert Folgen auf einmal an. Einzeln zu schreiben
             // kostet dabei zweihundert Rundläufe zur Datenbank.
-            Assert.Equal(3, (await sut.GetBySeriesIdAsync(serie.Id, TestContext.Current.CancellationToken)).Count);
+            Assert.Equal(3, (await sut.GetBySeriesIdAsync(series.Id, TestContext.Current.CancellationToken)).Count);
         }
 
         [Fact]
@@ -130,15 +126,15 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Episodes_CoverLastChecked_IsStored()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode folge = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
             EpisodeDataService sut = new(Context, NullLoggerFactory);
 
             DateTime checkedAt = new(2026, 8, 19, 10, 0, 0, DateTimeKind.Utc);
-            await sut.SetCoverLastCheckedAsync(folge.Id, checkedAt, TestContext.Current.CancellationToken);
+            await sut.SetCoverLastCheckedAsync(episode.Id, checkedAt, TestContext.Current.CancellationToken);
 
-            Episode? geladen = await sut.GetByIdAsync(folge.Id, TestContext.Current.CancellationToken);
-            Assert.Equal(checkedAt, geladen?.CoverLastChecked);
+            Episode? loaded = await sut.GetByIdAsync(episode.Id, TestContext.Current.CancellationToken);
+            Assert.Equal(checkedAt, loaded?.CoverLastChecked);
         }
 
         [Fact]
@@ -163,52 +159,48 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Empty(zahlen);
         }
 
-        // ── Spuren ───────────────────────────────────────────────────────────────
-
         [Fact]
         public async Task FirstTracks_ForNoEpisodes_AreEmpty()
         {
             LocalTrackDataService sut = new(Context, NullLoggerFactory);
 
-            IReadOnlyDictionary<Guid, LocalTrack> ersteSpuren =
+            IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
                 await sut.GetFirstTracksByEpisodeIdsAsync([], TestContext.Current.CancellationToken);
 
-            Assert.Empty(ersteSpuren);
+            Assert.Empty(firstTracks);
         }
 
         [Fact]
         public async Task FirstTracks_TakeTheLowestTrackNumberPerEpisode()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode folge = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             Context.LocalTracks.AddRange(
-                new LocalTrack { EpisodeId = folge.Id, FilePath = @"D:\03.mp3", TrackNumber = 3 },
-                new LocalTrack { EpisodeId = folge.Id, FilePath = @"D:\01.mp3", TrackNumber = 1 },
-                new LocalTrack { EpisodeId = folge.Id, FilePath = @"D:\02.mp3", TrackNumber = 2 });
+                new LocalTrack { EpisodeId = episode.Id, FilePath = @"D:\03.mp3", TrackNumber = 3 },
+                new LocalTrack { EpisodeId = episode.Id, FilePath = @"D:\01.mp3", TrackNumber = 1 },
+                new LocalTrack { EpisodeId = episode.Id, FilePath = @"D:\02.mp3", TrackNumber = 2 });
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             LocalTrackDataService sut = new(Context, NullLoggerFactory);
 
-            IReadOnlyDictionary<Guid, LocalTrack> ersteSpuren =
-                await sut.GetFirstTracksByEpisodeIdsAsync([folge.Id], TestContext.Current.CancellationToken);
+            IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
+                await sut.GetFirstTracksByEpisodeIdsAsync([episode.Id], TestContext.Current.CancellationToken);
 
             // Die erste Spur trägt das Bild aus der Kennzeichnung. Käme eine beliebige,
             // zeigte die Kachel das Bild aus der Mitte der Folge.
-            Assert.Equal(@"D:\01.mp3", ersteSpuren[folge.Id].FilePath);
+            Assert.Equal(@"D:\01.mp3", firstTracks[episode.Id].FilePath);
         }
-
-        // ── Merkliste ────────────────────────────────────────────────────────────
 
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
         [InlineData("???")]
-        public async Task Remember_WithATitleThatLeavesNothing_StoresNothing(string titel)
+        public async Task Remember_WithATitleThatLeavesNothing_StoresNothing(string title)
         {
             WatchedTitleDataService sut = new(Context, NullLoggerFactory);
 
-            await sut.RememberAsync(titel, TestContext.Current.CancellationToken);
+            await sut.RememberAsync(title, TestContext.Current.CancellationToken);
 
             // Bliebe ein leerer Vergleichstitel stehen, löschte ein späteres Vergessen
             // alle Einträge mit leerem Vergleichstitel auf einmal.
@@ -219,12 +211,12 @@ namespace EchoPlay.Data.Tests.Services
         [InlineData("")]
         [InlineData("   ")]
         [InlineData("???")]
-        public async Task Forget_WithATitleThatLeavesNothing_DeletesNothing(string titel)
+        public async Task Forget_WithATitleThatLeavesNothing_DeletesNothing(string title)
         {
             WatchedTitleDataService sut = new(Context, NullLoggerFactory);
             await sut.RememberAsync("TKKG", TestContext.Current.CancellationToken);
 
-            await sut.ForgetAsync(titel, TestContext.Current.CancellationToken);
+            await sut.ForgetAsync(title, TestContext.Current.CancellationToken);
 
             Assert.NotEmpty(await Context.WatchedTitles.ToListAsync(TestContext.Current.CancellationToken));
         }
@@ -242,10 +234,10 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Sync_WithDuplicateTitles_TakesEachOnlyOnce()
         {
-            Series eine = await DataBuilder.PersistSeriesAsync("TKKG");
-            Series zwei = await DataBuilder.PersistSeriesAsync("TKKG");
-            eine.IsWatched = true;
-            zwei.IsWatched = true;
+            Series one = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series two = await DataBuilder.PersistSeriesAsync("TKKG");
+            one.IsWatched = true;
+            two.IsWatched = true;
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             WatchedTitleDataService sut = new(Context, NullLoggerFactory);
@@ -261,8 +253,8 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Sync_WhenEverythingIsAlreadyRemembered_TakesNothing()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            serie.IsWatched = true;
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            series.IsWatched = true;
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             WatchedTitleDataService sut = new(Context, NullLoggerFactory);
@@ -273,37 +265,29 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Equal(0, nochmal);
         }
 
-        // ── Zwischenspeicher der Neuerscheinungen ────────────────────────────────
+        /// <summary>Folge 250 der Serie im Zwischenspeicher, geprüft zum angegebenen Zeitpunkt.</summary>
+        private static CachedNewRelease Episode250(Series series, DateTime checkedAt, string title = "Folge 250")
+            => new()
+            {
+                SeriesId = series.Id,
+                Title = title,
+                EpisodeNumber = 250,
+                CollectionId = 250,
+                CheckedAtUtc = checkedAt,
+            };
 
         [Fact]
         public async Task CachedReleases_UpsertingAKnownEntry_UpdatesItInPlace()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             CachedNewReleaseDataService sut = new(Context, NullLoggerFactory);
 
             await sut.UpsertRangeAsync(
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = serie.Id,
-                    Title = "Folge 250",
-                    EpisodeNumber = 250,
-                    CollectionId = 250,
-                    CheckedAtUtc = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc),
-                },
-            ], TestContext.Current.CancellationToken);
+                [Episode250(series, new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc))], TestContext.Current.CancellationToken);
 
             await sut.UpsertRangeAsync(
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = serie.Id,
-                    Title = "Folge 250 – Der neue Fall",
-                    EpisodeNumber = 250,
-                    CollectionId = 250,
-                    CheckedAtUtc = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc),
-                },
-            ], TestContext.Current.CancellationToken);
+                [Episode250(series, new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc), "Folge 250 – Der neue Fall")],
+                TestContext.Current.CancellationToken);
 
             // Titel und Bild einer angekündigten Folge ändern sich bis zum Erscheinen
             // noch. Ein zweiter Eintrag stünde doppelt auf der Startseite.
@@ -315,58 +299,40 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task CachedReleases_UpsertingASoftDeletedEntry_BringsItBack()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             CachedNewReleaseDataService sut = new(Context, NullLoggerFactory);
 
             await sut.UpsertRangeAsync(
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = serie.Id,
-                    Title = "Folge 250",
-                    EpisodeNumber = 250,
-                    CollectionId = 250,
-                    CheckedAtUtc = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc),
-                },
-            ], TestContext.Current.CancellationToken);
+                [Episode250(series, new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc))], TestContext.Current.CancellationToken);
 
-            CachedNewRelease vorhanden = await Context.CachedNewReleases.AsTracking()
+            CachedNewRelease existing = await Context.CachedNewReleases.AsTracking()
                 .FirstAsync(TestContext.Current.CancellationToken);
-            vorhanden.MarkAsDeleted(DateTime.UtcNow);
+            existing.MarkAsDeleted(DateTime.UtcNow);
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             await sut.UpsertRangeAsync(
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = serie.Id,
-                    Title = "Folge 250",
-                    EpisodeNumber = 250,
-                    CollectionId = 250,
-                    CheckedAtUtc = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc),
-                },
-            ], TestContext.Current.CancellationToken);
+                [Episode250(series, new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc))], TestContext.Current.CancellationToken);
 
             // Der Zwischenspeicher trägt keine fachlichen Daten. Ein als gelöscht
             // markierter Eintrag darf eine erneut gemeldete Folge nicht dauerhaft
             // verstecken, sonst fehlt sie auf der Startseite, bis jemand aufräumt.
-            CachedNewRelease wieder = Assert.Single(
+            CachedNewRelease again = Assert.Single(
                 await Context.CachedNewReleases.ToListAsync(TestContext.Current.CancellationToken));
-            Assert.False(wieder.IsDeleted);
+            Assert.False(again.IsDeleted);
         }
 
         [Fact]
         public async Task CachedReleases_RemovingOldEntries_WithNothingOld_DeletesNothing()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             CachedNewReleaseDataService sut = new(Context, NullLoggerFactory);
 
             await sut.UpsertRangeAsync(
             [
                 new CachedNewRelease
                 {
-                    SeriesId = serie.Id,
+                    SeriesId = series.Id,
                     Title = "Folge 250",
                     EpisodeNumber = 250,
                     CollectionId = 250,
@@ -375,10 +341,10 @@ namespace EchoPlay.Data.Tests.Services
                 },
             ], TestContext.Current.CancellationToken);
 
-            int entfernt = await sut.RemoveOlderThanAsync(
+            int removed = await sut.RemoveOlderThanAsync(
                 DateTime.UtcNow.AddDays(-30), TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, entfernt);
+            Assert.Equal(0, removed);
             Assert.NotEmpty(await Context.CachedNewReleases.ToListAsync(TestContext.Current.CancellationToken));
         }
     }

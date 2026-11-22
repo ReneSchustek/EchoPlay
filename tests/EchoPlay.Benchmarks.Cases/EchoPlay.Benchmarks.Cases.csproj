@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Die Messungen und ihr Messbestand. Eine Bibliothek, weil BenchmarkDotNet öffentliche, nicht
+    versiegelte Messklassen verlangt; in einer Bibliothek ist das ohne Abschaltung einer Regel
+    möglich. Gestartet werden sie über tests/EchoPlay.Benchmarks.
+  -->
+  <!--
+    Windows-Zielplattform, weil die Cover-Messungen über Windows.Graphics.Imaging dekodieren und
+    kodieren, wie die Anwendung es tut. Die Wächtertests binden nur einzelne Dateien ein und
+    bleiben plattformneutral.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EchoPlay.Core\EchoPlay.Core.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Data\EchoPlay.Data.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.LocalLibrary\EchoPlay.LocalLibrary.csproj" />
+    <ProjectReference Include="..\..\src\EchoPlay.Logger\EchoPlay.Logger.csproj" />
+  </ItemGroup>
+
+</Project>

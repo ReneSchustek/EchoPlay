@@ -44,7 +44,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Einstellungen (<see cref="EchoPlay.Data.Entities.Settings.AppSettings"/>) bleiben erhalten.
         /// </summary>
         /// <remarks>
-        /// Diese Methode führt einen Hard-Delete durch und umgeht den globalen
+        /// Löscht endgültig und umgeht dafür den globalen
         /// Soft-Delete-Filter (<c>IgnoreQueryFilters</c> + <c>ExecuteDeleteAsync</c>).
         /// Begründung: „Bibliothek leeren" ist ein expliziter Nutzer-Befehl mit der Erwartung,
         /// dass die Tabellen anschließend leer sind. Soft-Delete-Reste würden beim

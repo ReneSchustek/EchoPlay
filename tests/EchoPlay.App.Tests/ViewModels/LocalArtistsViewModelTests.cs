@@ -17,10 +17,26 @@ namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
     /// Tests für <see cref="LocalArtistsViewModel"/> mit Schwerpunkt auf dem Zusammenspiel von
-    /// Live-Kachel-Update während des Scans (Commit 67f7adb) und Cover-Nachbau.
+    /// Live-Kachel-Update während des Scans und Cover-Nachbau.
     /// </summary>
     public sealed class LocalArtistsViewModelTests
     {
+        [Fact]
+        public async Task AppendArtistCardAsync_WhenTheDatabaseFails_SwallowsAndSkipsTheCard()
+        {
+            // Läuft losgelöst aus dem Scan-Ereignis. Ein Fehler, der hier entkäme, bliebe
+            // unbeobachtet; die Kachel erscheint spätestens beim abschließenden Neuladen.
+            ServiceCollection services = new();
+            _ = services.AddScoped<IEpisodeDataService>(_ => throw new InvalidOperationException("Datenbank gesperrt"));
+            ServiceProvider provider = services.BuildServiceProvider();
+            LocalArtistsViewModel vm = new(provider.GetRequiredService<IServiceScopeFactory>(), new SeriesCoverBuilder(new FakeCoverService()));
+
+            Exception? error = await Record.ExceptionAsync(() => vm.AppendArtistCardAsync(MakeSeries(TestIds.SeriesA, "TKKG")));
+
+            Assert.Null(error);
+            Assert.Empty(vm.AllArtists);
+        }
+
         private static LocalArtistsViewModel BuildViewModel(
             out FakeCoverService coverService,
             out FakeEpisodeDataService episodeService)
@@ -42,7 +58,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             Series series = new() { Title = title, LocalFolderPath = null };
             // Id hat nur einen protected Setter (EF Core vergibt sie sonst erst bei SaveChanges);
-            // im Test setzen wir sie deterministisch per Reflection.
+            // der Test setzt sie per Reflection auf einen festen Wert.
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
             idProp.SetValue(series, id);
             return series;
@@ -59,10 +75,10 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task AppendArtistCardAsync_ExistingCardWithoutCover_AttemptsCoverRebuild()
         {
-            // Regression zu Commit 67f7adb: Eine schon im Live-Scan angelegte Karte
-            // ohne Cover muss beim erneuten SeriesSynced-Report einen Cover-Nachbau auslösen.
-            // Vor dem Fix kehrte der Existing-Zweig nach UpdateCounts zurück, ohne das Cover
-            // erneut zu bauen, und die Serie blieb die ganze Session ohne Bild.
+            // Eine schon im Live-Scan angelegte Karte ohne Cover muss beim erneuten
+            // SeriesSynced-Report einen Cover-Nachbau auslösen. Kehrte der Existing-Zweig nach
+            // UpdateCounts zurück, ohne das Cover zu bauen, bliebe die Serie die ganze Sitzung
+            // ohne Bild.
             LocalArtistsViewModel vm = BuildViewModel(out FakeCoverService cover, out FakeEpisodeDataService episodes);
             Series series = MakeSeries(TestIds.SeriesA, "Benjamin Blümchen");
             await episodes.AddRangeAsync([
@@ -81,6 +97,20 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(2, cover.SeriesCoverRequests.Count);
             Assert.All(cover.SeriesCoverRequests, id => Assert.Equal(series.Id, id));
             _ = Assert.Single(vm.AllArtists);
+        }
+
+        [Fact]
+        public async Task AppendArtistCardAsync_NewSeries_LandsInItsSection()
+        {
+            LocalArtistsViewModel vm = BuildViewModel(out _, out _);
+            await vm.AppendArtistCardAsync(MakeSeries(TestIds.SeriesA, "Ahoi"));
+            await vm.AppendArtistCardAsync(MakeSeries(TestIds.SeriesB, "Zorro"));
+
+            // Eine während des Einlesens gemeldete Serie gehört unter ihren Buchstaben, nicht
+            // ans Ende hinter Z.
+            await vm.AppendArtistCardAsync(MakeSeries(Guid.NewGuid(), "Ärger im Paradies"));
+
+            Assert.Equal(["Ahoi", "Ärger im Paradies", "Zorro"], vm.AllArtists.Select(a => a.Title));
         }
 
         [Fact]

@@ -63,25 +63,86 @@ namespace EchoPlay.Core.Tests.Models
 
             Assert.Contains("Online verfügbar: Folge 230", text, StringComparison.Ordinal);
             Assert.Contains("Online verfügbar: Folge 231", text, StringComparison.Ordinal);
-            Assert.Contains("Keine lokalen Lücken", text, StringComparison.Ordinal);
+            // Eingerückt ist die Zeile im Serienblock, die Fußzeile nennt die Lücken ohne Einzug.
+            Assert.DoesNotContain("  Lokale Lücken:", text, StringComparison.Ordinal);
         }
 
         [Fact]
-        public void FormatAsText_ShowsAllComplete_WhenNoGapsAndNoOnline()
+        public void FormatAsText_CompleteSeries_IsLeftOut()
         {
-            // Keine Lücken, keine Online-Folgen → "Alle Folgen komplett"
-            SeriesMissingEpisodesResult result = new()
+            // Der Bericht heißt „Fehlende Folgen": Eine vollständige Serie hat darin nichts zu suchen.
+            MissingEpisodesReport report = BuildReport([CompleteSeries("Bibi Blocksberg"), SeriesWithGap("TKKG")]);
+
+            string text = MissingEpisodesReportFormatter.FormatAsText(report);
+
+            Assert.DoesNotContain("Bibi Blocksberg", text, StringComparison.Ordinal);
+            Assert.Contains("TKKG (lokal: 1–210)", text, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void FormatAsText_SeriesWithoutLocalAndOnlineEpisodes_IsLeftOut()
+        {
+            SeriesMissingEpisodesResult empty = new()
             {
-                SeriesTitle = "Bibi Blocksberg",
-                LocalHighestNumber = 145,
+                SeriesTitle = "Leere Serie",
                 LocalGaps = [],
                 OnlineEpisodes = []
             };
 
-            MissingEpisodesReport report = BuildReport([result]);
+            string text = MissingEpisodesReportFormatter.FormatAsText(BuildReport([empty, SeriesWithGap("TKKG")]));
+
+            Assert.DoesNotContain("Leere Serie", text, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void FormatAsText_NothingMissingAnywhere_SaysSo()
+        {
+            MissingEpisodesReport report = BuildReport([CompleteSeries("Bibi Blocksberg"), CompleteSeries("Benjamin Blümchen")]);
+
             string text = MissingEpisodesReportFormatter.FormatAsText(report);
 
-            Assert.Contains("Alle Folgen komplett", text, StringComparison.Ordinal);
+            Assert.Contains("Keine fehlenden Folgen.", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("Bibi Blocksberg", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("Benjamin Blümchen", text, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void FormatAsText_WithFinding_DoesNotSayNothingIsMissing()
+        {
+            string text = MissingEpisodesReportFormatter.FormatAsText(BuildReport([SeriesWithGap("TKKG")]));
+
+            Assert.DoesNotContain("Keine fehlenden Folgen", text, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void FormatAsText_FooterCountsLeftOutSeriesToo()
+        {
+            // Die Fußzeile ist der einzige Hinweis darauf, dass die ausgeblendeten Serien mitgeprüft wurden.
+            MissingEpisodesReport report = BuildReport(
+                [CompleteSeries("Bibi Blocksberg"), CompleteSeries("Benjamin Blümchen"), SeriesWithGap("TKKG")]);
+
+            string text = MissingEpisodesReportFormatter.FormatAsText(report);
+
+            Assert.Contains("Geprüft: 3 Serien", text, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData(false, false, false, false)]
+        [InlineData(true, false, false, true)]
+        [InlineData(false, true, false, true)]
+        [InlineData(false, false, true, true)]
+        public void HasFinding_ReflectsGapOnlineEpisodeOrError(bool hasGap, bool hasOnline, bool hasError, bool expected)
+        {
+            SeriesMissingEpisodesResult result = new()
+            {
+                SeriesTitle = "Serie",
+                LocalHighestNumber = 10,
+                LocalGaps = hasGap ? [4] : [],
+                OnlineEpisodes = hasOnline ? [new OnlineEpisodeInfo { EpisodeNumber = 11, Title = "F11" }] : [],
+                ErrorMessage = hasError ? "Ordner nicht lesbar" : null
+            };
+
+            Assert.Equal(expected, result.HasFinding);
         }
 
         [Fact]
@@ -173,6 +234,22 @@ namespace EchoPlay.Core.Tests.Models
 
             Assert.Equal(3, report.TotalOnlineNew);
         }
+
+        private static SeriesMissingEpisodesResult CompleteSeries(string title) => new()
+        {
+            SeriesTitle = title,
+            LocalHighestNumber = 145,
+            LocalGaps = [],
+            OnlineEpisodes = []
+        };
+
+        private static SeriesMissingEpisodesResult SeriesWithGap(string title) => new()
+        {
+            SeriesTitle = title,
+            LocalHighestNumber = 210,
+            LocalGaps = [42],
+            OnlineEpisodes = []
+        };
 
         /// <summary>
         /// Erstellt einen <see cref="MissingEpisodesReport"/> mit festen Ergebnissen.

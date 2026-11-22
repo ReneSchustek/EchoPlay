@@ -52,7 +52,7 @@ namespace EchoPlay.AppleMusic.Dtos
         /// </summary>
         [JsonPropertyName("artworkUrl100")]
         [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "DTO spiegelt externes iTunes-JSON-Feld 'artworkUrl100'; Uri-Umwandlung würde die Serialisierung doppelt durchlaufen.")]
+            Justification = "Feld der Anbieter-Antwort. Als Uri ließe ein einziges unlesbares Feld die Deserialisierung der ganzen Antwort scheitern; geprüft wird die Adresse beim Übergang ins Import-Modell (WebAddress).")]
         public string? ArtworkUrl100 { get; init; }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace EchoPlay.AppleMusic.Dtos
         /// </summary>
         [JsonPropertyName("collectionViewUrl")]
         [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "DTO spiegelt externes iTunes-JSON-Feld 'collectionViewUrl'; Uri-Umwandlung würde die Serialisierung doppelt durchlaufen.")]
+            Justification = "Feld der Anbieter-Antwort. Als Uri ließe ein einziges unlesbares Feld die Deserialisierung der ganzen Antwort scheitern; geprüft wird die Adresse beim Übergang ins Import-Modell (WebAddress).")]
         public string? CollectionViewUrl { get; init; }
 
         /// <summary>

@@ -51,43 +51,16 @@ namespace EchoPlay.App.Views
         private async Task ShowPatternSelectionDialogAsync(IReadOnlyList<PatternSuggestionDisplay> suggestions)
         {
             StackPanel contentPanel = new() { Spacing = 8 };
-
-            RadioButton? firstButton = null;
-
+            List<RadioButton> choices = [];
             foreach (PatternSuggestionDisplay suggestion in suggestions)
             {
-                // Beschreibungstext: Trefferquote in Prozent oder Hinweis auf flache Struktur
-                string description = suggestion.IsFlatStructure
-                    ? _localizationService.Get("PatternDialogFlatHint")
-                    : string.Format(
-                        CultureInfo.CurrentCulture,
-                        _localizationService.Get("PatternDialogMatchFormat"),
-                        (int)(suggestion.MatchPercentage * 100));
-
-                StackPanel itemPanel = new() { Spacing = 2 };
-
-                // Muster in Monospace-Schrift, das erleichtert das Lesen der Platzhalter
-                RadioButton radio = new()
+                RadioButton radio = PatternChoice(suggestion, isFirst: choices.Count == 0);
+                choices.Add(radio);
+                contentPanel.Children.Add(new StackPanel
                 {
-                    Content = suggestion.Pattern,
-                    Tag = suggestion.Pattern,
-                    FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
-                    IsChecked = firstButton is null
-                };
-
-                TextBlock descBlock = new()
-                {
-                    Text = description,
-                    FontSize = 12,
-                    Margin = new Thickness(28, 0, 0, 0),
-                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
-                };
-
-                itemPanel.Children.Add(radio);
-                itemPanel.Children.Add(descBlock);
-                contentPanel.Children.Add(itemPanel);
-
-                firstButton ??= radio;
+                    Spacing = 2,
+                    Children = { radio, PatternDescription(suggestion) },
+                });
             }
 
             ContentDialog dialog = new()
@@ -100,30 +73,39 @@ namespace EchoPlay.App.Views
             };
 
             Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-            ContentDialogResult result = await dialog.ShowAsync();
-
-            if (result != ContentDialogResult.Primary)
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary
+                && choices.FirstOrDefault(c => c.IsChecked == true) is { Tag: string pattern })
             {
-                return;
-            }
-
-            // Ausgewählten RadioButton finden und Muster übernehmen
-            foreach (UIElement element in contentPanel.Children)
-            {
-                if (element is not StackPanel panel)
-                {
-                    continue;
-                }
-
-                foreach (UIElement child in panel.Children)
-                {
-                    if (child is RadioButton { IsChecked: true, Tag: string pattern })
-                    {
-                        ViewModel.LocalVM.ApplyPatternSuggestion(pattern);
-                        return;
-                    }
-                }
+                ViewModel.LocalVM.ApplyPatternSuggestion(pattern);
             }
         }
+
+        /// <summary>
+        /// Die Auswahl für ein Muster, in Monospace-Schrift; das erleichtert das Lesen der Platzhalter.
+        /// Die Gruppe ist ausdrücklich gesetzt: Jede Auswahl steht in einem eigenen Panel, und ohne
+        /// Gruppennamen schlössen sich die Felder nicht gegenseitig aus.
+        /// </summary>
+        private static RadioButton PatternChoice(PatternSuggestionDisplay suggestion, bool isFirst) => new()
+        {
+            GroupName = "PatternChoice",
+            Content = suggestion.Pattern,
+            Tag = suggestion.Pattern,
+            FontFamily = Helpers.ThemeFonts.Mono(),
+            IsChecked = isFirst
+        };
+
+        /// <summary>Beschreibungstext: Trefferquote in Prozent oder Hinweis auf flache Struktur.</summary>
+        private TextBlock PatternDescription(PatternSuggestionDisplay suggestion) => new()
+        {
+            Text = suggestion.IsFlatStructure
+                ? _localizationService.Get("PatternDialogFlatHint")
+                : string.Format(
+                    CultureInfo.CurrentCulture,
+                    _localizationService.Get("PatternDialogMatchFormat"),
+                    (int)(suggestion.MatchPercentage * 100)),
+            FontSize = 12,
+            Margin = new Thickness(28, 0, 0, 0),
+            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+        };
     }
 }

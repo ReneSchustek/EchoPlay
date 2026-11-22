@@ -94,7 +94,7 @@
 
   <ItemGroup>
     <!-- Erlaubt EchoPlay.App.Tests den Zugriff auf internal-Mitglieder, damit
-         ViewModel-Hilfsmethoden (z.B. BuildAutoLookupQuery) direkt getestet werden
+         ViewModel-Hilfsmethoden (etwa BuildAutoLookupQuery) direkt getestet werden
          können, ohne sie public zu machen. Einheitlich per csproj-Item wie in den
          anderen Modulen (Data/Spotify/AppleMusic/TagManager). -->
     <InternalsVisibleTo Include="EchoPlay.App.Tests" />
@@ -104,12 +104,10 @@
     <!-- Theme-Dictionaries sind reine ResourceDictionaries (kein x:Class).
          Page Remove verhindert, dass der XAML-Compiler sie als Pages behandelt.
 
-         Als Muster und nicht als Einzelliste: Die Liste war einzeln gepflegt, und ein neu
-         angelegtes Wörterbuch fehlte darin, es wurde damit nie ins Ausgabeverzeichnis
-         kopiert, während App.xaml es weiterhin lud. Der Start brach dann genau so ab, wie
-         es beim Publish-Ziel oben beschrieben steht: noch vor der Logger-Initialisierung,
-         ohne eine Zeile im Protokoll. Das Publish-Ziel arbeitet längst mit demselben
-         Muster; beide Stellen sind jetzt gleich. -->
+         Als Muster statt als Einzelliste: Ein neues Wörterbuch, das in einer Liste fehlt,
+         käme nicht ins Ausgabeverzeichnis, während App.xaml es lädt. Der Start bräche dann
+         ab wie beim Publish-Ziel oben beschrieben, noch vor dem Protokoll. Das Publish-Ziel
+         nutzt dasselbe Muster. -->
     <Page Remove="Themes\*.xaml" />
     <Content Include="Themes\*.xaml" />
   </ItemGroup>
@@ -131,6 +129,9 @@
     <Content Include="Assets\Wide310x150Logo.scale-100.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\logo.png" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Mitgelieferte Schriften aller Themes samt Lizenztexten (SIL Open Font License 1.1).
+         Die Themes laden sie über ms-appx; zur Laufzeit wird keine Schrift aus dem Netz geholt. -->
+    <Content Include="Assets\Fonts\*" CopyToOutputDirectory="PreserveNewest" />
     <!-- Transparente Logo-Variante (ohne weißen Hintergrund) für die Über-Seite. Das
          weiß-hinterlegte logo.png bleibt für Splash/Icon; hier auf einer getönten Fläche
          soll das Logo freigestellt sitzen. -->
@@ -146,9 +147,8 @@
     <EmbeddedResource Include="Assets\logo.png" LogicalName="EchoPlay.App.Assets.logo.png" />
   </ItemGroup>
 
-  <!-- Defense-in-Depth: bricht den Build hart, wenn die Datei
-       fehlt oder der EmbeddedResource-Eintrag aus der csproj entfernt wird. Verhindert,
-       dass in Produktion stillschweigend der Dev-Maschinen-Fallback in SplashWindow greift. -->
+  <!-- Bricht den Build ab, wenn das Logo fehlt oder sein EmbeddedResource-Eintrag aus der
+       csproj verschwindet. Sonst stünde der Startbildschirm in jeder Auslieferung ohne Logo da. -->
   <Target Name="ValidateSplashLogoEmbeddedResource" BeforeTargets="BeforeBuild">
     <Error Condition="!Exists('$(MSBuildProjectDirectory)\Assets\logo.png')"
            Text="Splash-Logo 'Assets\logo.png' fehlt im Projekt — Embedded-Resource für SplashWindow nicht herstellbar." />
@@ -182,11 +182,8 @@
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
-  <!--
-    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
-    Tools extension to be activated for this project even if the Windows App SDK Nuget
-    package has not yet been restored.
-  -->
+  <!-- Die Fähigkeit "Msix" schaltet die MSIX-Werkzeuge von Visual Studio für dieses Projekt
+       frei, auch bevor das Windows-App-SDK-Paket wiederhergestellt ist. -->
   <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <ProjectCapability Include="Msix" />
   </ItemGroup>
@@ -211,26 +208,23 @@
     <ProjectReference Include="..\EchoPlay.Spotify\EchoPlay.Spotify.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- appsettings.Development.json wird bewusst NICHT ins Build-Output kopiert. -->
+    <!-- Kopiert wird nur appsettings.json; eine lokale appsettings.Development.json bleibt
+         außen vor und steht in der .gitignore. -->
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
-  <!--
-    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
-    Explorer "Package and Publish" context menu entry to be enabled for this project even if
-    the Windows App SDK Nuget package has not yet been restored.
-  -->
+  <!-- Schaltet im Projektmappen-Explorer den Eintrag "Packen und veröffentlichen" frei,
+       auch bevor das Windows-App-SDK-Paket wiederhergestellt ist. -->
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
-  <!-- Publish Properties -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <!-- Trimming ist für WinUI-3-Desktop-Apps nicht supported: zu viel Reflection
+    <!-- Trimming wird für WinUI-3-Desktop-Apps nicht unterstützt: zu viel Reflection
          (XAML-Bindings, EF Core Expression Trees, JSON-Serialisierung). -->
     <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>

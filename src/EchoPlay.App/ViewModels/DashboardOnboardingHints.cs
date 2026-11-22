@@ -46,8 +46,9 @@ namespace EchoPlay.App.ViewModels
         /// Ohne überwachte Serie fragt der Start gar nicht erst beim Anbieter nach und der
         /// Neuerscheinungs-Abschnitt verschwindet vollständig, der Hinweis macht diesen
         /// Zustand sichtbar, statt ihn wie einen Fehler wirken zu lassen.
-        /// Der Fall tritt nur noch bei Altbeständen auf: Favorisieren schaltet die
-        /// Überwachung inzwischen mit ein (siehe <see cref="ISeriesDataService.SetFavoriteAsync"/>).
+        /// Favorisieren schaltet die Überwachung mit ein (siehe
+        /// <see cref="ISeriesDataService.SetFavoriteAsync"/>). Der Zustand entsteht, wenn die
+        /// Überwachung danach bei allen Favoriten wieder abgeschaltet wird.
         /// </summary>
         public Visibility NoWatchedSeriesHintVisibility =>
             _hasSubscribedSeries && _hasFavoriteSeries && !_hasWatchedSeries

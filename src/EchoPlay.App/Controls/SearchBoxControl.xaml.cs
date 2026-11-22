@@ -90,13 +90,10 @@ namespace EchoPlay.App.Controls
         private void OnTextChanged(object sender, TextChangedEventArgs e) =>
             SearchText = InputBox.Text;
 
-        // ── Zustände des Rahmens ────────────────────────────────────────────────
-        //
         // Die innere TextBox ist rahmenlos, damit Lupe, Eingabe und Löschen-Zeichen als ein
         // Feld wirken. Damit verliert sie aber auch die Rückmeldung, die WinUI sonst selbst
         // zeichnet: Zeiger darüber und (wichtiger) wo die Tastatur gerade steht. Beides
-        // holt der äußere Rahmen hier nach.
-
+        // holt der äußere Rahmen nach.
         private void OnFieldPointerEntered(object sender, PointerRoutedEventArgs e)
         {
             _isPointerOver = true;
@@ -127,8 +124,8 @@ namespace EchoPlay.App.Controls
         /// </summary>
         private void UpdateFieldState()
         {
-            string zustand = _hasFocus ? "Focused" : _isPointerOver ? "PointerOver" : "Normal";
-            _ = VisualStateManager.GoToState(this, zustand, true);
+            string state = _hasFocus ? "Focused" : _isPointerOver ? "PointerOver" : "Normal";
+            _ = VisualStateManager.GoToState(this, state, true);
         }
 
         private void OnKeyDown(object sender, KeyRoutedEventArgs e)

@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Tests.Infrastructure;
 using System;
@@ -23,94 +24,94 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     /// </remarks>
     public sealed class CoverFromTrackAndDownloadTests : IDisposable
     {
-        private static readonly byte[] Bild = [0x11, 0x22, 0x33, 0x44];
+        private static readonly byte[] Image = [0x11, 0x22, 0x33, 0x44];
 
-        private readonly string _ordner;
+        private readonly string _folder;
 
         public CoverFromTrackAndDownloadTests()
         {
-            _ordner = Path.Combine(Path.GetTempPath(), $"echoplay-cover-{Guid.NewGuid():N}");
-            _ = Directory.CreateDirectory(_ordner);
+            _folder = Path.Combine(Path.GetTempPath(), $"echoplay-cover-{Guid.NewGuid():N}");
+            _ = Directory.CreateDirectory(_folder);
         }
 
         public void Dispose()
         {
-            if (Directory.Exists(_ordner))
+            if (Directory.Exists(_folder))
             {
-                Directory.Delete(_ordner, recursive: true);
+                Directory.Delete(_folder, recursive: true);
             }
         }
 
         [Fact]
         public async Task Load_WithoutACoverFileButATaggedTrack_TakesTheEmbeddedImage()
         {
-            string spur = AudioTestFiles.CreateMp3WithCover(_ordner, Bild);
+            string track = AudioTestFiles.CreateMp3WithCover(_folder, Image);
 
-            byte[]? geladen = await new LocalCoverLoader().LoadAsync(_ordner, spur);
+            byte[]? loaded = await new LocalCoverLoader(new FakeLoggerFactory()).LoadAsync(_folder, track);
 
-            Assert.Equal(Bild, geladen);
+            Assert.Equal(Image, loaded);
         }
 
         [Fact]
         public async Task Load_WithATrackWithoutAnImage_ReturnsNothing()
         {
-            string spur = AudioTestFiles.CreateMp3(_ordner);
+            string track = AudioTestFiles.CreateMp3(_folder);
 
-            byte[]? geladen = await new LocalCoverLoader().LoadAsync(_ordner, spur);
+            byte[]? loaded = await new LocalCoverLoader(new FakeLoggerFactory()).LoadAsync(_folder, track);
 
-            Assert.Null(geladen);
+            Assert.Null(loaded);
         }
 
         [Fact]
         public async Task Load_WithAFileThatIsNoAudio_ReturnsNothing()
         {
-            string kaputt = Path.Combine(_ordner, "01 - Kaputt.mp3");
+            string kaputt = Path.Combine(_folder, "01 - Kaputt.mp3");
             await File.WriteAllTextAsync(kaputt, "das ist kein Ton", TestContext.Current.CancellationToken);
 
             // Ein abgebrochener Download sieht genau so aus. Er darf das Einlesen des
             // Ordners nicht beenden.
-            byte[]? geladen = await new LocalCoverLoader().LoadAsync(_ordner, kaputt);
+            byte[]? loaded = await new LocalCoverLoader(new FakeLoggerFactory()).LoadAsync(_folder, kaputt);
 
-            Assert.Null(geladen);
+            Assert.Null(loaded);
         }
 
         [Fact]
         public async Task Load_WithTheCoverFileLocked_FallsBackToTheTrack()
         {
-            string spur = AudioTestFiles.CreateMp3WithCover(_ordner, Bild);
-            string coverPfad = Path.Combine(_ordner, "cover.jpg");
-            await File.WriteAllBytesAsync(coverPfad, [0x99], TestContext.Current.CancellationToken);
+            string track = AudioTestFiles.CreateMp3WithCover(_folder, Image);
+            string coverPath = Path.Combine(_folder, "cover.jpg");
+            await File.WriteAllBytesAsync(coverPath, [0x99], TestContext.Current.CancellationToken);
 
-            using FileStream gesperrt = new(coverPfad, FileMode.Open, FileAccess.Read, FileShare.None);
+            using FileStream locked = new(coverPath, FileMode.Open, FileAccess.Read, FileShare.None);
 
             // Die Datei wird gerade geschrieben. Statt aufzugeben nimmt der Lader das
             // Bild aus der Kennzeichnung.
-            byte[]? geladen = await new LocalCoverLoader().LoadAsync(_ordner, spur);
+            byte[]? loaded = await new LocalCoverLoader(new FakeLoggerFactory()).LoadAsync(_folder, track);
 
-            Assert.Equal(Bild, geladen);
+            Assert.Equal(Image, loaded);
         }
 
         [Fact]
         public async Task Resolve_WithoutAnyLocalFile_DownloadsAndKeepsTheCover()
         {
-            LocalCoverService sut = new(BuildCoverService(HttpStatusCode.OK, Bild));
+            LocalCoverService sut = new(BuildCoverService(HttpStatusCode.OK, Image), new FakeLoggerFactory());
 
             byte[]? resolved = await sut.ResolveAsync(
-                _ordner, "https://i.example.invalid/tkkg.jpg", TestContext.Current.CancellationToken);
+                _folder, new Uri("https://i.example.invalid/tkkg.jpg"), TestContext.Current.CancellationToken);
 
             // Einmal geholt, bleibt das Bild im Ordner. Beim nächsten Start ohne Netz
             // ist es trotzdem da.
-            Assert.Equal(Bild, resolved);
-            Assert.True(File.Exists(Path.Combine(_ordner, "cover.jpg")));
+            Assert.Equal(Image, resolved);
+            Assert.True(File.Exists(Path.Combine(_folder, "cover.jpg")));
         }
 
         [Fact]
         public async Task Resolve_WhenTheDownloadFails_ReturnsNothing()
         {
-            LocalCoverService sut = new(BuildCoverService(HttpStatusCode.NotFound, []));
+            LocalCoverService sut = new(BuildCoverService(HttpStatusCode.NotFound, []), new FakeLoggerFactory());
 
             byte[]? resolved = await sut.ResolveAsync(
-                _ordner, "https://i.example.invalid/tkkg.jpg", TestContext.Current.CancellationToken);
+                _folder, new Uri("https://i.example.invalid/tkkg.jpg"), TestContext.Current.CancellationToken);
 
             // Kein Bild ist kein Abbruchgrund. Die Serie erscheint mit Platzhalter.
             Assert.Null(resolved);
@@ -119,11 +120,11 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task Resolve_WhenTheFolderIsGone_ReturnsNothing()
         {
-            string weg = Path.Combine(Path.GetTempPath(), $"echoplay-weg-{Guid.NewGuid():N}");
-            LocalCoverService sut = new(BuildCoverService(HttpStatusCode.OK, Bild));
+            string route = Path.Combine(Path.GetTempPath(), $"echoplay-weg-{Guid.NewGuid():N}");
+            LocalCoverService sut = new(BuildCoverService(HttpStatusCode.OK, Image), new FakeLoggerFactory());
 
             byte[]? resolved = await sut.ResolveAsync(
-                weg, "https://i.example.invalid/tkkg.jpg", TestContext.Current.CancellationToken);
+                route, new Uri("https://i.example.invalid/tkkg.jpg"), TestContext.Current.CancellationToken);
 
             Assert.Null(resolved);
         }
@@ -131,27 +132,25 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Fact]
         public async Task SaveToDirectory_WithAnExistingCover_KeepsTheOldOne()
         {
-            string ziel = Path.Combine(_ordner, "cover.jpg");
-            await File.WriteAllBytesAsync(ziel, [0x99], TestContext.Current.CancellationToken);
+            string target = Path.Combine(_folder, "cover.jpg");
+            await File.WriteAllBytesAsync(target, [0x99], TestContext.Current.CancellationToken);
 
-            await CoverService.SaveToDirectoryAsync(_ordner, Bild);
+            await CoverService.SaveToDirectoryAsync(_folder, Image);
 
             // Der Anwender kann das Bild von Hand ausgetauscht haben. Es zu überschreiben
             // wäre die eine Änderung, die er nicht rückgängig machen kann.
-            Assert.Equal([0x99], await File.ReadAllBytesAsync(ziel, TestContext.Current.CancellationToken));
+            Assert.Equal([0x99], await File.ReadAllBytesAsync(target, TestContext.Current.CancellationToken));
         }
 
         [Fact]
         public async Task Download_DeliversTheBytesOfTheAnswer()
         {
-            CoverService sut = BuildCoverService(HttpStatusCode.OK, Bild);
+            CoverService sut = BuildCoverService(HttpStatusCode.OK, Image);
 
-            byte[] geladen = await sut.DownloadAsync("https://i.example.invalid/tkkg.jpg");
+            byte[] loaded = await sut.DownloadAsync(new Uri("https://i.example.invalid/tkkg.jpg"), TestContext.Current.CancellationToken);
 
-            Assert.Equal(Bild, geladen);
+            Assert.Equal(Image, loaded);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static CoverService BuildCoverService(HttpStatusCode status, byte[] inhalt)
         {

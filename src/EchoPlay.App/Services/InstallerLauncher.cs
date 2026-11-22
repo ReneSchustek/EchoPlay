@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics;
+using EchoPlay.App.Helpers;
 using EchoPlay.Logger.Abstractions;
 
 namespace EchoPlay.App.Services
@@ -23,7 +23,6 @@ namespace EchoPlay.App.Services
         }
 
         /// <inheritdoc/>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Installer-Start ist Best-Effort: Win32Exception (kein gültiges Image), fehlende Rechte oder eine vom Virenscanner gesperrte Datei dürfen die laufende App nicht beenden — false meldet dem Aufrufer, dass die Installation nicht angelaufen ist.")]
         public bool Start(string setupPath)
         {
             if (string.IsNullOrWhiteSpace(setupPath))
@@ -31,21 +30,13 @@ namespace EchoPlay.App.Services
                 return false;
             }
 
-            try
+            if (ShellLauncher.TryStart(setupPath, out string? failureReason))
             {
-                _ = Process.Start(new ProcessStartInfo
-                {
-                    FileName = setupPath,
-                    UseShellExecute = true
-                });
-
                 return true;
             }
-            catch (Exception ex)
-            {
-                _logger.Warning("Installer-Start fehlgeschlagen: {Reason}", ex.Message);
-                return false;
-            }
+
+            _logger.Warning("Installer-Start fehlgeschlagen: {Reason}", failureReason);
+            return false;
         }
     }
 }

@@ -65,7 +65,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn mehrere Muster-Vorschläge vorliegen oder das beste Ergebnis
         /// unter dem Konfidenz-Schwellwert liegt. Die Page zeigt dann einen Auswahl-Dialog.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal mit Ergebnis-Liste: die Page öffnet einen ContentDialog für die Muster-Auswahl; Action<IReadOnlyList<...>> bleibt klarer als ein dedizierter EventArgs-Typ mit identischer Semantik.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action<IReadOnlyList<PatternSuggestionDisplay>>? PatternSelectionRequested;
 
         /// <summary>Gibt an, ob die lokale Bibliothek aktiv ist.</summary>
@@ -226,7 +226,7 @@ namespace EchoPlay.App.ViewModels
         /// erklärenden Statustext beantwortet, ohne den Service zu belasten.
         /// </summary>
         /// <returns>Der Task ist abgeschlossen, wenn der Abgleich durch ist oder mit einem Statustext abgelehnt wurde.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Manueller Bibliotheks-Sync über die Einstellungen: IO-/DB-/TagLib-Fehler werden in 'StatusMessage' als Nutzer-Fehlermeldung gespiegelt, damit der Sync-Command nicht abbricht.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Manueller Bibliotheks-Sync über die Einstellungen: IO-/DB-/TagLib-Fehler werden in 'SyncStatusText' und einem Dialog gespiegelt, damit der Sync-Command nicht abbricht.")]
         public async Task SyncAsync()
         {
             if (IsSyncing)
@@ -237,15 +237,9 @@ namespace EchoPlay.App.ViewModels
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("LocalLibrarySync");
 
             // Vor dem Start prüfen, denn SyncService würde sonst lautlos ein leeres SyncResult zurückgeben
-            if (!LocalLibraryEnabled)
+            if (SyncBlockedHint() is { } hint)
             {
-                SyncStatusText = SafeResourceLoader.Get("SyncDisabledHint", "Lokale Bibliothek ist deaktiviert.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(_localLibraryRootPath))
-            {
-                SyncStatusText = SafeResourceLoader.Get("SyncNoPathHint", "Kein Bibliotheksordner konfiguriert.");
+                SyncStatusText = hint;
                 return;
             }
 
@@ -268,6 +262,21 @@ namespace EchoPlay.App.ViewModels
             {
                 IsSyncing = false;
             }
+        }
+
+        /// <summary>
+        /// Der Hinweis, warum kein Abgleich möglich ist, oder <see langword="null"/>.
+        /// </summary>
+        private string? SyncBlockedHint()
+        {
+            if (!LocalLibraryEnabled)
+            {
+                return SafeResourceLoader.Get("SyncDisabledHint", "Lokale Bibliothek ist deaktiviert.");
+            }
+
+            return string.IsNullOrWhiteSpace(_localLibraryRootPath)
+                ? SafeResourceLoader.Get("SyncNoPathHint", "Kein Bibliotheksordner konfiguriert.")
+                : null;
         }
 
         /// <summary>

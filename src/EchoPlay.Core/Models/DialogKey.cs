@@ -4,17 +4,15 @@ namespace EchoPlay.Core.Models
     /// Stabile Kennung eines Dialogs, der sich dauerhaft ausblenden lässt.
     /// </summary>
     /// <remarks>
-    /// Gespeichert wird der <b>Name</b> des Werts, nicht die Zahl — ein späteres Umsortieren
+    /// Gespeichert wird der <b>Name</b> des Werts, nicht die Zahl; ein späteres Umsortieren
     /// dieser Aufzählung darf eine gemerkte Unterdrückung nicht auf einen anderen Dialog
     /// umhängen. Jeder Wert braucht in beiden Sprachdateien einen Eintrag
     /// <c>DialogName_&lt;Wert&gt;</c>; ein Test hält das nach.
     /// </remarks>
     public enum DialogKey
     {
-        /// <summary>Kein Dialog. Nur Platzhalter — dieser Wert wird nie unterdrückt.</summary>
+        /// <summary>Kein Dialog. Nur Platzhalter; dieser Wert wird nie unterdrückt.</summary>
         None = 0,
-
-        // ── Rückfragen (Ja/Abbrechen) ───────────────────────────────────────
 
         /// <summary>Vorhandenes Folgen-Cover überschreiben?</summary>
         EpisodeCoverOverwrite,
@@ -69,8 +67,6 @@ namespace EchoPlay.Core.Models
 
         /// <summary>Alle Tags der Datei entfernen?</summary>
         TagManagerRemoveAll,
-
-        // ── Hinweise und Fehlermeldungen ────────────────────────────────────
 
         /// <summary>Cover konnte nicht geladen werden.</summary>
         CoverDownloadFailed,
@@ -154,6 +150,9 @@ namespace EchoPlay.Core.Models
         TagManagerCoverApplyAllError,
 
         /// <summary>Angaben ließen sich nicht auf alle Dateien übernehmen.</summary>
-        TagManagerApplyToAllError
+        TagManagerApplyToAllError,
+
+        /// <summary>Ein Gerät aus dem Abgleich entfernen?</summary>
+        ReplicationDeviceRemove
     }
 }

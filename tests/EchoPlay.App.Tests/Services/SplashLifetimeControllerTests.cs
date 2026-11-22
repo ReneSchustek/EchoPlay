@@ -15,7 +15,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task WaitForMinimumDurationAsync_ElapsedAlreadyExceedsMinimum_ReturnsImmediately()
         {
             SplashLifetimeController controller = new();
-            // Mindestdauer bewusst überschreiten, damit die Wartezeit entfällt.
+            // Mindestdauer überschreiten, damit die Wartezeit entfällt.
             await Task.Delay(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();

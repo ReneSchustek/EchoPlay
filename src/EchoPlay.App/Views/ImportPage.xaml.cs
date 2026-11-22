@@ -10,7 +10,7 @@ using System;
 namespace EchoPlay.App.Views
 {
     /// <summary>
-    /// Ermöglicht die Suche nach Hörspielserien und den Import in die lokale Datenbank.
+    /// Suche nach Hörspielserien und Import in die lokale Datenbank.
     /// Nach erfolgreichem Import wird zur Serienübersicht zurücknavigiert.
     /// </summary>
     public sealed partial class ImportPage : Page

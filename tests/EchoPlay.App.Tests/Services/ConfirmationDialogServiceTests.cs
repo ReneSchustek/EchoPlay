@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Services
     public sealed class ConfirmationDialogServiceTests
     {
         [Fact]
-        public async Task ConfirmAsync_NullXamlRoot_LiefertFalseStattNRE()
+        public async Task ConfirmAsync_NullXamlRoot_ReturnsFalseInsteadOfNre()
         {
             ConfirmationDialogService service = new(static () => null, new FakeDialogSuppressionService());
 
@@ -27,7 +27,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task ConfirmAsync_AusgeblendeteRueckfrage_LiefertJaOhneDialog()
+        public async Task ConfirmAsync_SuppressedQuestion_ReturnsYesWithoutDialog()
         {
             // Gemerkt wird nur ein „Ja". Die ausgeblendete Rückfrage ist deshalb
             // gleichbedeutend mit Zustimmung, und sie darf keinen Dialog mehr bauen.

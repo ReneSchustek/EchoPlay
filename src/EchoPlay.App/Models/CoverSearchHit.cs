@@ -8,15 +8,13 @@ namespace EchoPlay.App.Models
     /// nicht direkt vom <see cref="EchoPlay.LocalLibrary.Cover.CoverSearchResult"/>
     /// abhängen müssen. Mapping erfolgt im <see cref="CoverSearchHit.From"/>-Helper.
     /// </summary>
-    /// <param name="ThumbnailUrl">URL des Vorschaubilds (~250 px) für die Kachelansicht.</param>
-    /// <param name="FullUrl">URL des Originalbilds in voller Auflösung, wird heruntergeladen.</param>
-    /// <param name="ReleaseTitle">Titel des Releases/Albums als Kachelbeschriftung.</param>
-    /// <param name="Source">Herkunft des Treffers (z.B. "Cover Art Archive"), Transparenz für den Nutzer.</param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "DTO hält URL-Rohstrings aus externen Cover-Suchen (Cover Art Archive, iTunes), die ohne Validierung an Image-Kontrollen weitergereicht werden.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO hält URL-Rohstrings aus externen Cover-Suchen (Cover Art Archive, iTunes), die ohne Validierung an Image-Kontrollen weitergereicht werden.")]
+    /// <param name="ThumbnailUrl">Adresse des Vorschaubilds für die Kachelansicht, meist 250 Pixel breit.</param>
+    /// <param name="FullUrl">Adresse des Originalbilds in voller Auflösung, die heruntergeladen wird.</param>
+    /// <param name="ReleaseTitle">Titel des Releases/Albums für die Kachelbeschriftung.</param>
+    /// <param name="Source">Herkunft des Treffers, etwa "Cover Art Archive".</param>
     public sealed record CoverSearchHit(
-        string ThumbnailUrl,
-        string FullUrl,
+        Uri ThumbnailUrl,
+        Uri FullUrl,
         string ReleaseTitle,
         string Source)
     {

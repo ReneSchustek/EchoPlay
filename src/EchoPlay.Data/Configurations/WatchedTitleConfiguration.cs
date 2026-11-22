@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,7 +7,6 @@ namespace EchoPlay.Data.Configurations
     /// <summary>
     /// EF-Core-Konfiguration für die <see cref="WatchedTitle"/>-Entity.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "EF Core instanziiert IEntityTypeConfiguration-Implementierungen zur Modell-Erstellung via ApplyConfigurationsFromAssembly-Reflection.")]
     internal sealed class WatchedTitleConfiguration : IEntityTypeConfiguration<WatchedTitle>
     {
         /// <summary>
@@ -27,11 +25,11 @@ namespace EchoPlay.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(512);
 
-            // Fachlicher Unique-Key. Filter auf aktive Zeilen, damit ein früher entfernter
-            // Titel erneut gemerkt werden kann (gleiche Linie wie CoverImages/SecureSettings).
+            // Fachlicher Unique-Key. Vergessene Titel löscht der Dienst physisch; der Filter auf
+            // aktive Zeilen ist deshalb ohne Wirkung und hält nur die Form der übrigen Merklisten.
             _ = builder.HasIndex(w => w.NormalizedTitle)
                 .IsUnique()
-                .HasFilter("IsDeleted = 0");
+                .HasFilter(SoftDeleteIndexFilter.ActiveRows);
         }
     }
 }

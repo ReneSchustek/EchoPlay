@@ -4,7 +4,7 @@ namespace EchoPlay.Data.Services.Interfaces
 {
     /// <summary>
     /// Schnittstelle für den Zugriff auf benutzerdefinierte Dashboard-Positionen.
-    /// Ermöglicht das Speichern und Laden der Sortierreihenfolge von Serien
+    /// Speichert und lädt die Sortierreihenfolge von Serien
     /// in verschiedenen Dashboard-Bereichen (z.B. Neuerscheinungen, Favoriten).
     /// </summary>
     public interface IDashboardPositionDataService
@@ -27,10 +27,10 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <param name="section">Der Dashboard-Bereich.</param>
         /// <param name="seriesIds">
-        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// Die Serien-IDs in der gewünschten Reihenfolge.
         /// Index 0 = Position 0 (ganz oben), Index 1 = Position 1, usw.
         /// </param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task SaveOrderAsync(string section, IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);
     }
 }

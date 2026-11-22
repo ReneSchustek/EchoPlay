@@ -12,8 +12,7 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Prüft die Reihenfolge der Cover-Quellen für sich. Am Ansichtsmodell hing sie zuvor an
-    /// der ganzen Seite und war nur über sie zu prüfen.
+    /// Prüft die Reihenfolge der Cover-Quellen für sich, ohne die ganze Seite aufzubauen.
     /// </summary>
     /// <remarks>
     /// Das Bild selbst wird nicht geprüft: Ein <see cref="BitmapImage"/> ist im Testhost ohne
@@ -63,20 +62,20 @@ namespace EchoPlay.App.Tests.Services
         public async Task BuildAsync_FolderWithoutCoverFile_ReturnsNull()
         {
             // Ein Ordner ohne cover.jpg ist kein Fehler, die Kachel bleibt ohne Bild.
-            string ordner = Path.Combine(Path.GetTempPath(), "EchoPlayCoverTest_" + Guid.NewGuid().ToString("N"));
-            _ = Directory.CreateDirectory(ordner);
+            string folder = Path.Combine(Path.GetTempPath(), "EchoPlayCoverTest_" + Guid.NewGuid().ToString("N"));
+            _ = Directory.CreateDirectory(folder);
 
             try
             {
                 SeriesCoverBuilder builder = new(new FakeCoverService());
 
-                BitmapImage? cover = await builder.BuildAsync(MakeSeries(ordner));
+                BitmapImage? cover = await builder.BuildAsync(MakeSeries(folder));
 
                 Assert.Null(cover);
             }
             finally
             {
-                Directory.Delete(ordner, recursive: true);
+                Directory.Delete(folder, recursive: true);
             }
         }
 
@@ -113,15 +112,15 @@ namespace EchoPlay.App.Tests.Services
         /// <summary>Cover-Dienst, der beim Lesen scheitert.</summary>
         private sealed class ThrowingCoverService : ICoverService
         {
-            private readonly Exception _fehler;
+            private readonly Exception _error;
 
-            public ThrowingCoverService(Exception? fehler = null)
+            public ThrowingCoverService(Exception? error = null)
             {
-                _fehler = fehler ?? new IOException("Datei gesperrt");
+                _error = error ?? new IOException("Datei gesperrt");
             }
 
             public Task<BitmapImage?> GetSeriesCoverImageAsync(Guid seriesId, CancellationToken cancellationToken = default) =>
-                Task.FromException<BitmapImage?>(_fehler);
+                Task.FromException<BitmapImage?>(_error);
 
             public Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default) =>
                 Task.FromResult<BitmapImage?>(null);
@@ -129,10 +128,10 @@ namespace EchoPlay.App.Tests.Services
             public Task<IReadOnlyDictionary<Guid, byte[]>> GetEpisodeCoverBytesAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default) =>
                 Task.FromResult<IReadOnlyDictionary<Guid, byte[]>>(new Dictionary<Guid, byte[]>());
 
-            public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default) =>
+            public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default) =>
                 Task.CompletedTask;
 
-            public Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default) =>
+            public Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default) =>
                 Task.CompletedTask;
 
             public Task<bool> HasSeriesCoverAsync(Guid seriesId, CancellationToken cancellationToken = default) =>

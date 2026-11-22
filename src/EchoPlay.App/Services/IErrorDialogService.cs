@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Definiert den Vertrag für die Anzeige von Fehler- und Hinweis-Dialogen.
-    /// Ermöglicht ViewModels, Meldungen anzuzeigen, ohne direkt von WinUI abhängig zu sein.
+    /// Fehler- und Hinweisdialoge für ViewModels, ohne dass sie WinUI kennen müssen.
     /// </summary>
     public interface IErrorDialogService
     {

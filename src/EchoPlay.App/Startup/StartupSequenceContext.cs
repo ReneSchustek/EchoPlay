@@ -21,6 +21,8 @@ namespace EchoPlay.App.Startup
     /// <param name="LanguageSwitchService">Setzt die Sprachvorgabe bei jedem Start neu.</param>
     /// <param name="Clock">Zeitquelle für den vermerkten Startzeitpunkt.</param>
     /// <param name="ProviderIdService">Trägt fehlende Anbieter-Kennungen nach.</param>
+    /// <param name="ReleaseCalendarService">Baut den Veröffentlichungskalender im Hintergrund auf.</param>
+    /// <param name="ReplicationService">Gleicht im Hintergrund über den gemeinsamen Ordner ab.</param>
     /// <param name="ThemeService">Richtet das Farbschema vor dem ersten Zeichnen ein.</param>
     /// <param name="Validator">Führt die Prüfungen im Startbild aus.</param>
     /// <param name="UpdateInteraction">Bietet eine gefundene neue Version an.</param>
@@ -31,6 +33,8 @@ namespace EchoPlay.App.Startup
         ILanguageSwitchService LanguageSwitchService,
         IClock Clock,
         BackgroundProviderIdService ProviderIdService,
+        ReleaseCalendarRefreshService ReleaseCalendarService,
+        DeviceReplicationService ReplicationService,
         ThemeService ThemeService,
         IStartupValidator Validator,
         UpdateInteractionService UpdateInteraction,
@@ -45,8 +49,6 @@ namespace EchoPlay.App.Startup
         /// </remarks>
         /// <param name="services">Die Dienstsammlung des Hosts.</param>
         /// <returns>Der gefüllte Kontext.</returns>
-        // Der Container steht hier, weil das die DI-Root ist: gelesen wird einmal beim
-        // Hochfahren, festgehalten wird er nicht.
         public static StartupSequenceContext From(IServiceProvider services)
         {
             ArgumentNullException.ThrowIfNull(services);
@@ -57,6 +59,8 @@ namespace EchoPlay.App.Startup
                 services.GetRequiredService<ILanguageSwitchService>(),
                 services.GetRequiredService<IClock>(),
                 services.GetRequiredService<BackgroundProviderIdService>(),
+                services.GetRequiredService<ReleaseCalendarRefreshService>(),
+                services.GetRequiredService<DeviceReplicationService>(),
                 services.GetRequiredService<ThemeService>(),
                 services.GetRequiredService<IStartupValidator>(),
                 services.GetRequiredService<UpdateInteractionService>(),

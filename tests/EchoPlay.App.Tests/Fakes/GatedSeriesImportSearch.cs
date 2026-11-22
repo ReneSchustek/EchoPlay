@@ -49,7 +49,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Schließt den <paramref name="index"/>-ten Suchaufruf mit den übergebenen
-        /// Treffern ab. Erlaubt Tests, eine veraltete Suche bewusst zuerst auszuliefern,
+        /// Treffern ab. Erlaubt Tests, eine veraltete Suche zuerst auszuliefern,
         /// um zu prüfen, dass das ViewModel ihre Treffer verwirft.
         /// </summary>
         public void CompleteCall(int index, IReadOnlyList<ImportSeries> results)

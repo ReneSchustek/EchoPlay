@@ -43,7 +43,7 @@ namespace EchoPlay.App.Services
         }
         /// <summary>
         /// Sucht Serien mit lokalem Ordner aber ohne Cover in CoverImages
-        /// und lädt <c>cover.jpg</c> aus dem Stammordner. ID3-Fallback entfällt bewusst,
+        /// und lädt <c>cover.jpg</c> aus dem Stammordner. ID3-Fallback entfällt,
         /// weil Serien-Cover nur als Dateien im Stammordner existieren.
         /// </summary>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
@@ -61,52 +61,56 @@ namespace EchoPlay.App.Services
 
             _logger.Info("Lokal-Check Serien: {SeriesCount} Serien gesamt.", allSeries.Count);
 
-            List<Series> seriesWithFolder = [];
-            foreach (Series series in allSeries)
-            {
-                if (!string.IsNullOrEmpty(series.LocalFolderPath))
-                {
-                    seriesWithFolder.Add(series);
-                }
-            }
-
+            List<Series> seriesWithFolder = [.. allSeries.Where(series => !string.IsNullOrEmpty(series.LocalFolderPath))];
             if (seriesWithFolder.Count == 0)
             {
                 return 0;
             }
 
-            List<Guid> seriesIds = seriesWithFolder.Select(s => s.Id).ToList();
-            IReadOnlyDictionary<Guid, byte[]> existingSeries =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Series, seriesIds, ct);
-
-            int missingSeries = seriesWithFolder.Count - existingSeries.Count;
+            IReadOnlyDictionary<Guid, byte[]> existingSeries = await coverImageService.GetImageDataByEntitiesAsync(
+                CoverEntityTypes.Series, [.. seriesWithFolder.Select(s => s.Id)], ct);
             _logger.Info(
                 "Lokal-Check Serien: {WithFolderCount} mit LocalFolderPath, {ExistingCount} in DB, {MissingCount} fehlen.",
-                seriesWithFolder.Count, existingSeries.Count, missingSeries);
+                seriesWithFolder.Count, existingSeries.Count, seriesWithFolder.Count - existingSeries.Count);
 
+            return await LoadMissingSeriesCoversAsync(
+                coverLoader, seriesWithFolder.Where(series => !existingSeries.ContainsKey(series.Id)), ct);
+        }
+
+        /// <summary>Lädt die Cover nacheinander, bis der Abbruch kommt.</summary>
+        /// <returns>Wie viele Cover gefunden wurden.</returns>
+        private async Task<int> LoadMissingSeriesCoversAsync(ILocalCoverLoader coverLoader, IEnumerable<Series> missing, CancellationToken ct)
+        {
             int loaded = 0;
-
-            foreach (Series series in seriesWithFolder)
+            foreach (Series series in missing)
             {
                 if (ct.IsCancellationRequested) break;
-                if (existingSeries.ContainsKey(series.Id)) continue;
-
-                // firstTrackPath bewusst null, für Serien-Cover kein ID3-Fallback.
-                byte[]? coverBytes = await coverLoader.LoadAsync(series.LocalFolderPath, null);
-
-                if (coverBytes is not null)
+                if (await TryLoadLocalSeriesCoverAsync(coverLoader, series, ct))
                 {
-                    await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, cancellationToken: ct);
                     loaded++;
-                    _logger.Debug(() => $"Lokal: Serien-Cover geladen \"{series.Title}\" aus {series.LocalFolderPath}");
-                }
-                else
-                {
-                    _logger.Debug(() => $"Lokal: Kein Cover gefunden für \"{series.Title}\" in {series.LocalFolderPath}");
                 }
             }
 
             return loaded;
+        }
+
+        /// <summary>
+        /// Lädt <c>cover.jpg</c> aus dem Stammordner einer Serie und speichert es. Ohne erste Spur,
+        /// denn für Serien-Cover gibt es keinen ID3-Rückfall.
+        /// </summary>
+        /// <returns><see langword="true"/>, wenn ein Cover gefunden wurde.</returns>
+        private async Task<bool> TryLoadLocalSeriesCoverAsync(ILocalCoverLoader coverLoader, Series series, CancellationToken ct)
+        {
+            byte[]? coverBytes = await coverLoader.LoadAsync(series.LocalFolderPath, null);
+            if (coverBytes is null)
+            {
+                _logger.Debug(() => $"Lokal: Kein Cover gefunden für \"{series.Title}\" in {EchoPlay.Core.Logging.PathRedactor.Redact(series.LocalFolderPath)}");
+                return false;
+            }
+
+            await _coverService.SetSeriesCoverAsync(series.Id, coverBytes, cancellationToken: ct);
+            _logger.Debug(() => $"Lokal: Serien-Cover geladen \"{series.Title}\" aus {EchoPlay.Core.Logging.PathRedactor.Redact(series.LocalFolderPath)}");
+            return true;
         }
         /// <summary>
         /// Sucht Episoden mit lokalem Ordner aber ohne Cover in CoverImages und lädt die
@@ -117,63 +121,50 @@ namespace EchoPlay.App.Services
         internal async Task<int> LoadMissingLocalEpisodeCoversAsync(CancellationToken ct)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider
-                .GetRequiredService<ISeriesDataService>();
-            IEpisodeDataService episodeService = scope.ServiceProvider
-                .GetRequiredService<IEpisodeDataService>();
-            ILocalTrackDataService trackService = scope.ServiceProvider
-                .GetRequiredService<ILocalTrackDataService>();
-            ILocalCoverLoader coverLoader = scope.ServiceProvider
-                .GetRequiredService<ILocalCoverLoader>();
-            ICoverImageDataService coverImageService = scope.ServiceProvider
-                .GetRequiredService<ICoverImageDataService>();
+            CoverTools tools = CoverTools.From(scope.ServiceProvider);
 
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
-            List<Guid> allSeriesIds = [.. allSeries.Select(s => s.Id)];
+            IReadOnlyList<Series> allSeries = await scope.ServiceProvider.GetRequiredService<ISeriesDataService>().GetAllAsync(ct);
+            IReadOnlyList<Episode> allEpisodes = await tools.Episodes.GetBySeriesIdsAsync([.. allSeries.Select(s => s.Id)], ct);
 
-            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeriesIds, ct);
-
-            List<Episode> candidates = [];
-            foreach (Episode episode in allEpisodes)
-            {
-                if (!string.IsNullOrEmpty(episode.LocalFolderPath))
-                {
-                    candidates.Add(episode);
-                }
-            }
-
-            if (candidates.Count == 0)
+            EpisodeCoverResult result = await LoadForEpisodesAsync(allEpisodes, tools, ct);
+            if (result.Candidates == 0)
             {
                 _logger.Info("Lokal-Check Episoden: keine Kandidaten mit lokalem Ordner gefunden.");
                 return 0;
             }
 
-            List<Guid> candidateIds = [.. candidates.Select(e => e.Id)];
+            _logger.Info(
+                "Lokal-Check Episoden: {CandidateCount} mit Ordner, {ExistingCount} in DB, {Loaded} geladen, {NotFound} ohne Cover-Datei.",
+                result.Candidates, result.Existing, result.Loaded, result.NotFound);
+            return result.Loaded;
+        }
+
+        /// <summary>
+        /// Lädt für Folgen mit lokalem Ordner, aber ohne gespeichertes Cover, das Cover aus dem
+        /// Ordner oder dem ersten Track. Die ersten Tracks kommen in einer Abfrage, nicht je Folge.
+        /// </summary>
+        private async Task<EpisodeCoverResult> LoadForEpisodesAsync(IReadOnlyList<Episode> episodes, CoverTools tools, CancellationToken ct)
+        {
+            List<Episode> candidates = [.. episodes.Where(e => !string.IsNullOrEmpty(e.LocalFolderPath))];
+            if (candidates.Count == 0)
+            {
+                return new EpisodeCoverResult(0, 0, 0, 0);
+            }
+
             IReadOnlyDictionary<Guid, byte[]> existing =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, ct);
-
-            List<Guid> missingIds = [.. candidates
-                .Where(e => !existing.ContainsKey(e.Id))
-                .Select(e => e.Id)];
-
+                await tools.Images.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, [.. candidates.Select(e => e.Id)], ct);
+            List<Episode> missing = [.. candidates.Where(e => !existing.ContainsKey(e.Id))];
             IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
-                await trackService.GetFirstTracksByEpisodeIdsAsync(missingIds, ct);
+                await tools.Tracks.GetFirstTracksByEpisodeIdsAsync([.. missing.Select(e => e.Id)], ct);
 
             int loaded = 0;
             int notFound = 0;
-
-            foreach (Episode episode in candidates)
+            foreach (Episode episode in missing)
             {
                 if (ct.IsCancellationRequested) break;
-                if (existing.ContainsKey(episode.Id)) continue;
 
-                string? firstTrackPath = firstTracks.TryGetValue(episode.Id, out LocalTrack? firstTrack)
-                    ? firstTrack.FilePath
-                    : null;
-
-                byte[]? coverBytes = await coverLoader.LoadAsync(
-                    episode.LocalFolderPath, firstTrackPath);
-
+                string? firstTrackPath = firstTracks.TryGetValue(episode.Id, out LocalTrack? firstTrack) ? firstTrack.FilePath : null;
+                byte[]? coverBytes = await tools.Loader.LoadAsync(episode.LocalFolderPath, firstTrackPath);
                 if (coverBytes is not null)
                 {
                     await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, cancellationToken: ct);
@@ -185,17 +176,15 @@ namespace EchoPlay.App.Services
                 }
             }
 
-            _logger.Info(
-                "Lokal-Check Episoden: {CandidateCount} mit Ordner, {ExistingCount} in DB, {Loaded} geladen, {NotFound} ohne Cover-Datei.",
-                candidates.Count, existing.Count, loaded, notFound);
-
-            return loaded;
+            return new EpisodeCoverResult(candidates.Count, existing.Count, loaded, notFound);
         }
+
         /// <summary>
         /// Kopiert vorhandene Cover von lokalen Episoden auf Online-Episoden derselben Serie.
         /// Nutzt <see cref="ICoverCopyService"/>: reines SQL (INSERT OR IGNORE), kein Netzwerk.
         /// Nur Episoden ohne vorhandenes Cover werden befüllt.
-        /// Schnell genug für den Splash (eine SQL-Query pro Online-Serie).
+        /// Schnell genug für den Splash: je Online-Serie zwei Leseabfragen und höchstens drei
+        /// INSERT-Anweisungen, ohne die Bilddaten in die Anwendung zu laden.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         internal async Task<int> CopyLocalToOnlineAsync(CancellationToken cancellationToken = default)
@@ -220,8 +209,8 @@ namespace EchoPlay.App.Services
             return totalCopied;
         }
         /// <summary>
-        /// Stellt sicher, dass alle lokalen Episoden einer Serie (nach Titel) ihre Cover
-        /// in CoverImages haben. Wird synchron vor der Anzeige aufgerufen, damit der
+        /// Lädt die fehlenden Cover aller lokalen Episoden einer Serie (nach Titel) in
+        /// CoverImages. Wird synchron vor der Anzeige aufgerufen, damit der
         /// CoverCopyService danach Quellen findet.
         /// </summary>
         /// <param name="seriesTitle">Titel der Serie (z.B. "Fünf Freunde").</param>
@@ -230,65 +219,15 @@ namespace EchoPlay.App.Services
         internal async Task<int> EnsureLocalCoversForSeriesAsync(string seriesTitle, CancellationToken cancellationToken = default)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider
-                .GetRequiredService<ISeriesDataService>();
-            IEpisodeDataService episodeService = scope.ServiceProvider
-                .GetRequiredService<IEpisodeDataService>();
-            ILocalTrackDataService trackService = scope.ServiceProvider
-                .GetRequiredService<ILocalTrackDataService>();
-            ILocalCoverLoader coverLoader = scope.ServiceProvider
-                .GetRequiredService<ILocalCoverLoader>();
-            ICoverImageDataService coverImageService = scope.ServiceProvider
-                .GetRequiredService<ICoverImageDataService>();
+            CoverTools tools = CoverTools.From(scope.ServiceProvider);
 
             // Alle Serien mit gleichem Titel finden (lokal + online)
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(cancellationToken);
+            IReadOnlyList<Series> allSeries = await scope.ServiceProvider.GetRequiredService<ISeriesDataService>().GetAllAsync(cancellationToken);
             int loaded = 0;
-
-            foreach (Series series in allSeries)
+            foreach (Series series in allSeries.Where(s => string.Equals(s.Title, seriesTitle, StringComparison.OrdinalIgnoreCase)))
             {
-                if (!string.Equals(series.Title, seriesTitle, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
-
-                List<Episode> candidates = [];
-
-                foreach (Episode episode in episodes)
-                {
-                    if (!string.IsNullOrEmpty(episode.LocalFolderPath))
-                    {
-                        candidates.Add(episode);
-                    }
-                }
-
-                if (candidates.Count == 0) continue;
-
-                List<Guid> candidateIds = candidates.Select(e => e.Id).ToList();
-                IReadOnlyDictionary<Guid, byte[]> existing =
-                    await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidateIds, cancellationToken);
-
-                foreach (Episode episode in candidates)
-                {
-                    if (existing.ContainsKey(episode.Id)) continue;
-
-                    string? firstTrackPath = null;
-                    IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id, cancellationToken);
-
-                    if (tracks.Count > 0)
-                    {
-                        firstTrackPath = tracks[0].FilePath;
-                    }
-
-                    byte[]? coverBytes = await coverLoader.LoadAsync(
-                        episode.LocalFolderPath, firstTrackPath);
-
-                    if (coverBytes is not null)
-                    {
-                        await _coverService.SetEpisodeCoverAsync(episode.Id, coverBytes, cancellationToken: cancellationToken);
-                        loaded++;
-                    }
-                }
+                IReadOnlyList<Episode> episodes = await tools.Episodes.GetBySeriesIdAsync(series.Id, cancellationToken);
+                loaded += (await LoadForEpisodesAsync(episodes, tools, cancellationToken)).Loaded;
             }
 
             if (loaded > 0)
@@ -297,6 +236,28 @@ namespace EchoPlay.App.Services
             }
 
             return loaded;
+        }
+
+        /// <summary>Was das Laden der Folgen-Cover ergeben hat.</summary>
+        /// <param name="Candidates">Folgen mit lokalem Ordner.</param>
+        /// <param name="Existing">Davon schon mit Cover.</param>
+        /// <param name="Loaded">Neu geladen.</param>
+        /// <param name="NotFound">Ohne Cover im Ordner oder in der ersten Spur.</param>
+        private sealed record EpisodeCoverResult(int Candidates, int Existing, int Loaded, int NotFound);
+
+        /// <summary>Die Dienste zum Laden lokaler Folgen-Cover, aus dem Bereich des Aufrufers.</summary>
+        /// <param name="Episodes">Folgen lesen.</param>
+        /// <param name="Tracks">Erste Spuren lesen.</param>
+        /// <param name="Loader">Liest Cover aus Ordner und Tags.</param>
+        /// <param name="Images">Gespeicherte Cover.</param>
+        private sealed record CoverTools(IEpisodeDataService Episodes, ILocalTrackDataService Tracks, ILocalCoverLoader Loader, ICoverImageDataService Images)
+        {
+            /// <summary>Holt die Dienste aus dem Bereich.</summary>
+            public static CoverTools From(IServiceProvider services) => new(
+                services.GetRequiredService<IEpisodeDataService>(),
+                services.GetRequiredService<ILocalTrackDataService>(),
+                services.GetRequiredService<ILocalCoverLoader>(),
+                services.GetRequiredService<ICoverImageDataService>());
         }
     }
 }

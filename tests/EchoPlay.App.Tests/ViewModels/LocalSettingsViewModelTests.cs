@@ -31,8 +31,6 @@ namespace EchoPlay.App.Tests.ViewModels
         /// <summary>Das Muster, das ab Werk im Feld steht, als Vergleichswert für „unverändert".</summary>
         private const string DefaultPattern = "{number:000} - {title}";
 
-        // ── Laden und Schreiben ──────────────────────────────────────────────────
-
         [Fact]
         public void LoadFrom_DoesNotLookLikeAUserEdit()
         {
@@ -133,8 +131,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(1, harness.UserEdits);
         }
 
-        // ── Abgleich von Hand ────────────────────────────────────────────────────
-
         [Fact]
         public void SyncButton_StaysOffWithoutAPath()
         {
@@ -208,8 +204,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(harness.ViewModel.IsSyncEnabled);
             _ = Assert.Single(harness.ErrorDialog.ShownDialogs);
         }
-
-        // ── Muster erkennen ──────────────────────────────────────────────────────
 
         [Fact]
         public async Task AnalyzePattern_WithoutAPath_LooksAtNothing()
@@ -318,8 +312,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("{nr} - {title}", harness.ViewModel.EpisodeFolderPattern);
             Assert.Equal(1, harness.UserEdits);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static PatternSuggestion Suggestion(string pattern, double matchPercentage) =>
             new(pattern, MatchCount: 42, matchPercentage);

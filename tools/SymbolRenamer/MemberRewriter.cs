@@ -2,18 +2,23 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-// Benennt Typen und Member um - Klassen, Schnittstellen, Enums, Methoden, Eigenschaften, Felder,
-// Ereignisse und Enum-Werte.
-//
-// Anders als bei lokalen Bezeichnern ist hier jede Verwendungsstelle im ganzen Bestand betroffen,
-// und anders als bei Parametern gibt es keine feste Stellenzahl: Der Name steht in
-// Objektinitialisierern, in nameof, in <see cref="..."/> und in Attributargumenten.
-//
-// Nicht angefasst werden:
-//   - überschriebene Member und Schnittstellen-Umsetzungen (sie erben den Namen über die Wurzel)
-//   - Member, deren Name aus einer fremden Bibliothek stammt
-//   - Eigenschaften, deren Name eine Spalte, ein JSON-Feld oder einen Bindungspfad trägt - die
-//     stehen im Auftrag als Ausnahme
+/// <summary>
+/// Benennt Typen und Member um - Klassen, Schnittstellen, Enums, Methoden, Eigenschaften, Felder,
+/// Ereignisse und Enum-Werte.
+/// <para>
+/// Anders als bei lokalen Bezeichnern ist hier jede Verwendungsstelle im ganzen Bestand betroffen,
+/// und anders als bei Parametern gibt es keine feste Stellenzahl: Der Name steht in
+/// Objektinitialisierern, in nameof, in &lt;see cref="..."/&gt; und in Attributargumenten.
+/// </para>
+/// <para>
+/// Nicht angefasst werden:
+/// </para>
+/// <list type="bullet">
+/// <item><description>überschriebene Member und Schnittstellen-Umsetzungen (sie erben den Namen über die Wurzel)</description></item>
+/// <item><description>Member, deren Name aus einer fremden Bibliothek stammt</description></item>
+/// <item><description>Eigenschaften, deren Name eine Spalte, ein JSON-Feld oder einen Bindungspfad trägt - die stehen im Auftrag als Ausnahme</description></item>
+/// </list>
+/// </summary>
 internal static class MemberRewriter
 {
     public static async Task<(Solution Lösung, int Umbenannt)> RenameAsync(
@@ -116,7 +121,7 @@ internal static class MemberRewriter
                     if (!member.Locations.Any(l => l.IsInSource)
                         || member.IsImplicitlyDeclared
                         || member.IsOverride
-                        || IstSchnittstellenUmsetzung(member)
+                        || IsInterfaceImplementation(member)
                         || member is IMethodSymbol { MethodKind: not MethodKind.Ordinary })
                     {
                         continue;
@@ -148,8 +153,8 @@ internal static class MemberRewriter
             return;
         }
 
-        string neu = Translator.Translate(symbol.Name, dictionary);
-        if (string.Equals(neu, symbol.Name, StringComparison.Ordinal))
+        string updated = Translator.Translate(symbol.Name, dictionary);
+        if (string.Equals(updated, symbol.Name, StringComparison.Ordinal))
         {
             return;
         }
@@ -167,9 +172,9 @@ internal static class MemberRewriter
             occupiedJeType[owner] = occupied;
         }
 
-        if (occupied.Add(neu))
+        if (occupied.Add(updated))
         {
-            newNames[key] = neu;
+            newNames[key] = updated;
         }
     }
 
@@ -311,7 +316,7 @@ internal static class MemberRewriter
 
     private static SyntaxToken? Identifier(SyntaxNode node) => node switch
     {
-        BaseTypeDeclarationSyntax typ => typ.Identifier,
+        BaseTypeDeclarationSyntax typeSymbol => typeSymbol.Identifier,
         DelegateDeclarationSyntax d => d.Identifier,
         MethodDeclarationSyntax m => m.Identifier,
         PropertyDeclarationSyntax p => p.Identifier,
@@ -339,9 +344,9 @@ internal static class MemberRewriter
         definition = Root(definition.OriginalDefinition);
         string? documentationId = definition.GetDocumentationCommentId();
 
-        if (!string.IsNullOrEmpty(documentationId) && newNames.TryGetValue(documentationId, out string? neu))
+        if (!string.IsNullOrEmpty(documentationId) && newNames.TryGetValue(documentationId, out string? updated))
         {
-            replacements[token] = neu;
+            replacements[token] = updated;
         }
     }
 
@@ -364,18 +369,18 @@ internal static class MemberRewriter
             symbol = baseEvent;
         }
 
-        INamedTypeSymbol? typ = symbol.ContainingType;
-        if (typ is null)
+        INamedTypeSymbol? typeSymbol = symbol.ContainingType;
+        if (typeSymbol is null)
         {
             return symbol;
         }
 
-        foreach (INamedTypeSymbol schnittstelle in typ.AllInterfaces)
+        foreach (INamedTypeSymbol interfaceSymbol in typeSymbol.AllInterfaces)
         {
-            foreach (ISymbol open in schnittstelle.GetMembers(symbol.Name))
+            foreach (ISymbol open in interfaceSymbol.GetMembers(symbol.Name))
             {
                 if (SymbolEqualityComparer.Default.Equals(
-                        typ.FindImplementationForInterfaceMember(open), symbol))
+                        typeSymbol.FindImplementationForInterfaceMember(open), symbol))
                 {
                     return open;
                 }
@@ -385,16 +390,16 @@ internal static class MemberRewriter
         return symbol;
     }
 
-    private static bool IstSchnittstellenUmsetzung(ISymbol member)
+    private static bool IsInterfaceImplementation(ISymbol member)
         => !SymbolEqualityComparer.Default.Equals(Root(member), member);
 
     private static IEnumerable<INamedTypeSymbol> AllTypes(INamespaceSymbol space)
     {
-        foreach (INamedTypeSymbol typ in space.GetTypeMembers())
+        foreach (INamedTypeSymbol typeSymbol in space.GetTypeMembers())
         {
-            yield return typ;
+            yield return typeSymbol;
 
-            foreach (INamedTypeSymbol verschachtelt in typ.GetTypeMembers())
+            foreach (INamedTypeSymbol verschachtelt in typeSymbol.GetTypeMembers())
             {
                 yield return verschachtelt;
             }
@@ -402,9 +407,9 @@ internal static class MemberRewriter
 
         foreach (INamespaceSymbol unterraum in space.GetNamespaceMembers())
         {
-            foreach (INamedTypeSymbol typ in AllTypes(unterraum))
+            foreach (INamedTypeSymbol typeSymbol in AllTypes(unterraum))
             {
-                yield return typ;
+                yield return typeSymbol;
             }
         }
     }

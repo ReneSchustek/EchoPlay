@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Logger.Configuration;
 
 namespace EchoPlay.Logger.Management
@@ -25,17 +24,22 @@ namespace EchoPlay.Logger.Management
                 return;
             }
 
-            if (!Directory.Exists(_options.LogDirectory))
+            // Beide Sink-Dateitypen berücksichtigen: FileSink (.log) und JsonLogSink (.jsonl),
+            // auch wenn die JSON-Dateien in einem eigenen Ordner liegen. Sonst wüchsen sie
+            // unbegrenzt, weil sie nie bereinigt würden.
+            string[] directories = [.. new[] { _options.LogDirectory, _options.JsonLogDirectory }
+                .Where(directory => !string.IsNullOrEmpty(directory) && Directory.Exists(directory))
+                .Select(directory => directory!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)];
+            if (directories.Length == 0)
             {
                 return;
             }
 
-            // Beide Sink-Dateitypen berücksichtigen: FileSink (.log) und JsonLogSink (.jsonl).
-            // Sonst wachsen die JSON-Logs unbegrenzt, weil sie nie bereinigt würden.
             string[] logPatterns = ["*.log", "*.jsonl"];
 
-            List<FileInfo> logFiles = [.. logPatterns
-                .SelectMany(pattern => Directory.GetFiles(_options.LogDirectory, pattern))
+            List<FileInfo> logFiles = [.. directories
+                .SelectMany(directory => logPatterns.SelectMany(pattern => Directory.GetFiles(directory, pattern)))
                 .Select(f => new FileInfo(f))
                 .OrderBy(f => f.LastWriteTime)];
 
@@ -111,7 +115,6 @@ namespace EchoPlay.Logger.Management
         /// </summary>
         /// <param name="file">Die zu löschende Datei.</param>
         /// <returns>True wenn erfolgreich, sonst false.</returns>
-        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cleanup darf bei einzelnen Lösch-Fehlern nicht abbrechen; jeder Fehler wird geloggt, restliche Dateien werden weiter bearbeitet.")]
         private static bool TryDeleteFile(FileInfo file)
         {
             try
@@ -119,11 +122,24 @@ namespace EchoPlay.Logger.Management
                 file.Delete();
                 return true;
             }
-            catch (Exception ex)
+            catch (IOException ex)
             {
-                System.Diagnostics.Trace.WriteLine($"LogCleanup: Konnte {file.Name} nicht löschen: {ex.Message}");
+                // Die Datei wird gerade beschrieben oder ist in einem anderen Programm geöffnet, etwa im
+                // Editor; sie bleibt stehen und fällt beim nächsten Aufräumen weg.
+                TraceDeleteFailure(file, ex);
                 return false;
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                TraceDeleteFailure(file, ex);
+                return false;
+            }
+        }
+
+        // Nur auf den Trace-Kanal: Der Logger selbst schreibt in genau diese Dateien.
+        private static void TraceDeleteFailure(FileInfo file, Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"LogCleanup: Konnte {file.Name} nicht löschen: {ex.Message}");
         }
     }
 }

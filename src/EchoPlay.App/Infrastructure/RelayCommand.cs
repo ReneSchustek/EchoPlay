@@ -4,12 +4,8 @@ using System.Windows.Input;
 namespace EchoPlay.App.Infrastructure
 {
     /// <summary>
-    /// Einfache <see cref="ICommand"/>-Implementierung, die eine Aktion als Delegate kapselt.
-    /// Ausreichend für einmalige Aktionen ohne Parameter.
-    ///
-    /// <see cref="ICommand"/> ist der MVVM-Standardweg für Button-Aktionen: Das ViewModel stellt
-    /// ein Command als Property bereit, die View bindet sich per <c>Command="{x:Bind ...}"</c> daran.
-    /// Ist <see cref="CanExecute"/> <c>false</c>, deaktiviert WinUI den Button automatisch.
+    /// Einfache <see cref="ICommand"/>-Implementierung, die eine Aktion ohne Parameter kapselt.
+    /// Mit <see cref="SetEnabled"/> schaltet das ViewModel die gebundene Schaltfläche ab.
     /// </summary>
     public sealed class RelayCommand : ICommand
     {
@@ -27,6 +23,7 @@ namespace EchoPlay.App.Infrastructure
         /// <param name="execute">Die auszuführende Aktion.</param>
         public RelayCommand(Action execute)
         {
+            ArgumentNullException.ThrowIfNull(execute);
             _execute = execute;
         }
 

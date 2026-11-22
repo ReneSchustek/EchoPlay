@@ -1,23 +1,29 @@
 namespace EchoPlay.Data.Context
 {
     /// <summary>
-    /// Berechnet den Speicherort der SQLite-Datenbankdatei basierend auf dem Systempfad.
+    /// Kennt den Speicherort der SQLite-Datenbankdatei im lokalen Anwendungsdaten-Verzeichnis
+    /// des Windows-Benutzers (<c>%LOCALAPPDATA%\EchoPlay\echoplay.db</c>).
     /// </summary>
     public static class DatabasePathProvider
     {
-        /// <summary>
-        /// Ermittelt den absoluten Dateipfad zur Datenbank im lokalen Anwendungsdaten-Verzeichnis.
-        /// </summary>
-        /// <returns>Der vollständige Pfad zur echoplay.db Datei.</returns>
-        public static string GetDatabasePath()
-        {
-            string folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string appFolder = Path.Combine(folder, "EchoPlay");
+        private const string AppFolderName = "EchoPlay";
+        private const string DatabaseFileName = "echoplay.db";
 
-            // Wir stellen sicher, dass das Verzeichnis existiert, damit EF Core beim 
-            // Verbindungsaufbau keine "DirectoryNotFound"-Exception wirft.
-            if (!Directory.Exists(appFolder)) _ = Directory.CreateDirectory(appFolder);
-            return Path.Combine(appFolder, "echoplay.db");
+        /// <summary>
+        /// Ermittelt den absoluten Pfad zur Datenbankdatei und legt das Verzeichnis an, falls es
+        /// noch fehlt.
+        /// </summary>
+        /// <returns>Der vollständige Pfad zur Datei <c>echoplay.db</c>.</returns>
+        public static string PrepareDatabasePath()
+        {
+            string appFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppFolderName);
+
+            // SQLite legt die Datei beim ersten Öffnen selbst an, das Verzeichnis aber nicht;
+            // ohne diesen Schritt scheitert der erste Verbindungsaufbau einer Neuinstallation.
+            _ = Directory.CreateDirectory(appFolder);
+            return Path.Combine(appFolder, DatabaseFileName);
         }
     }
 }

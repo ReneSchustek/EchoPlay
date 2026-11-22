@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
@@ -97,32 +98,7 @@ namespace EchoPlay.App.Tests.Services
                 (FolderRestructureCoordinator coordinator, FakeFolderRestructureService restructure, _) =
                     BuildCoordinator(folderPattern: "{number:000} - {title}");
 
-                restructure.SetAnalyzeResult(new RestructurePreview
-                {
-                    SeriesFolderPath = tempFolder,
-                    FolderCount = 2,
-                    Actions = new List<RestructureAction>
-                    {
-                        new()
-                        {
-                            SourcePath       = Path.Combine(tempFolder, "001 - Erste.mp3"),
-                            TargetFolderPath = Path.Combine(tempFolder, "001 - Erste"),
-                            TargetFolderName = "001 - Erste",
-                            FileName         = "001 - Erste.mp3",
-                            EpisodeNumber    = 1,
-                            EpisodeTitle     = "Erste"
-                        },
-                        new()
-                        {
-                            SourcePath       = Path.Combine(tempFolder, "002 - Zweite.mp3"),
-                            TargetFolderPath = Path.Combine(tempFolder, "002 - Zweite"),
-                            TargetFolderName = "002 - Zweite",
-                            FileName         = "002 - Zweite.mp3",
-                            EpisodeNumber    = 2,
-                            EpisodeTitle     = "Zweite"
-                        }
-                    }
-                });
+                restructure.SetAnalyzeResult(TwoEpisodePreview(tempFolder));
 
                 RestructurePreviewDisplay? result = await coordinator.AnalyzeAsync(tempFolder, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -153,21 +129,12 @@ namespace EchoPlay.App.Tests.Services
                 RestructurePreview original = new()
                 {
                     SeriesFolderPath = tempFolder,
-                    Actions = new List<RestructureAction>
-                    {
-                        new()
-                        {
-                            SourcePath       = Path.Combine(tempFolder, "datei.mp3"),
-                            TargetFolderPath = Path.Combine(tempFolder, "001 - Folge"),
-                            TargetFolderName = "001 - Folge",
-                            FileName         = "datei.mp3"
-                        }
-                    }
+                    Actions = [Move(tempFolder, "datei.mp3", "001 - Folge")]
                 };
                 RestructurePreviewDisplay display = new(original);
                 restructure.SetExecuteResult(filesMoved: 1);
 
-                int moved = await coordinator.ExecuteAsync(display, cancellationToken: TestContext.Current.CancellationToken);
+                int moved = await coordinator.ExecuteAsync(TestIds.SeriesA, display, cancellationToken: TestContext.Current.CancellationToken);
 
                 Assert.Equal(1, moved);
                 Assert.Equal(1, restructure.ExecuteCallCount);
@@ -177,6 +144,32 @@ namespace EchoPlay.App.Tests.Services
                 Directory.Delete(tempFolder);
             }
         }
+
+        /// <summary>Vorschau, die zwei lose Dateien in je einen eigenen Folgenordner verschiebt.</summary>
+        private static RestructurePreview TwoEpisodePreview(string folder)
+            => new()
+            {
+                SeriesFolderPath = folder,
+                FolderCount = 2,
+                Actions =
+                [
+                    Move(folder, "001 - Erste.mp3", "001 - Erste", 1, "Erste"),
+                    Move(folder, "002 - Zweite.mp3", "002 - Zweite", 2, "Zweite")
+                ]
+            };
+
+        /// <summary>Verschiebt eine Datei aus dem Serienordner in den genannten Folgenordner.</summary>
+        private static RestructureAction Move(
+            string folder, string fileName, string targetFolderName, int? number = null, string? title = null)
+            => new()
+            {
+                SourcePath = Path.Combine(folder, fileName),
+                TargetFolderPath = Path.Combine(folder, targetFolderName),
+                TargetFolderName = targetFolderName,
+                FileName = fileName,
+                EpisodeNumber = number,
+                EpisodeTitle = title
+            };
 
         private static string CreateTempFolder()
         {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace EchoPlay.LocalLibrary.Parsing
@@ -6,19 +7,22 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// Erkennt Kassetten-Rips mit a/b-Seiten im Dateinamen und leitet daraus eine
     /// fortlaufende Episodennummer sowie den Titel ab. Wird sowohl vom Scanner als
     /// auch vom Umstrukturierungs-Service genutzt, damit beide dieselbe Logik teilen.
-    /// Unterstützte Formate:
-    /// - <c>01a Titel</c> (Pumuckl)
-    /// - <c>Serie - 01a - Titel</c> (Black Beauty)
-    /// - <c>W03a Titel</c> (Sonderfolgen mit Buchstaben-Präfix)
-    /// - <c>11a</c> (ohne Titel)
+    /// <list type="bullet">
+    /// <item><c>01a Titel</c> (Pumuckl)</item>
+    /// <item><c>Serie - 01a - Titel</c> (Black Beauty)</item>
+    /// <item><c>W03a Titel</c> (Sonderfolgen mit Buchstaben-Präfix)</item>
+    /// <item><c>11a</c> (ohne Titel)</item>
+    /// </list>
     /// </summary>
-    public static class CassetteRipParser
+    public static partial class CassetteRipParser
     {
         // Gruppen: prefix (optional), number, side (a/b), title (optional).
-        private static readonly Regex CassettePattern = new(
+        [GeneratedRegex(
             @"^(?:.*\s-\s)?(?<prefix>[A-Za-z]*)(?<number>\d{1,3})(?<side>[abAB])(?:\s-\s|\s)(?<title>.+)$|" +
             @"^(?<prefix>[A-Za-z]*)(?<number>\d{1,3})(?<side>[abAB])$",
-            RegexOptions.Compiled);
+            RegexOptions.None,
+            matchTimeoutMilliseconds: 500)]
+        private static partial Regex CassettePattern();
 
         /// <summary>
         /// Versucht, einen Dateinamen als Kassetten-Rip zu interpretieren.
@@ -37,7 +41,17 @@ namespace EchoPlay.LocalLibrary.Parsing
             number = null;
             title = null;
 
-            Match cassetteMatch = CassettePattern.Match(fileNameWithoutExt);
+            Match cassetteMatch;
+            try
+            {
+                cassetteMatch = CassettePattern().Match(fileNameWithoutExt);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Ein Dateiname, an dem der Ausdruck hängen bleibt, ist schlicht kein Kassetten-Rip.
+                return false;
+            }
+
             if (!cassetteMatch.Success)
             {
                 return false;
@@ -46,7 +60,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             string cassetteNumberStr = cassetteMatch.Groups["number"].Value;
             char side = char.ToLowerInvariant(cassetteMatch.Groups["side"].Value[0]);
 
-            if (!int.TryParse(cassetteNumberStr, out int cassetteNumber))
+            if (!int.TryParse(cassetteNumberStr, NumberStyles.None, CultureInfo.InvariantCulture, out int cassetteNumber))
             {
                 return false;
             }

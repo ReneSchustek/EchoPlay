@@ -12,6 +12,11 @@ namespace EchoPlay.Core.Http
     {
         /// <summary>
         /// Prüft, ob eine Ausnahme ein erwartbarer, überspringbarer Lade-/Netzwerkfehler ist.
+        /// <see cref="NotSupportedException"/> meldet <c>GetFromJsonAsync</c>, wenn der Anbieter
+        /// statt JSON etwas anderes schickt, etwa eine HTML-Fehlerseite.
+        /// <see cref="InvalidOperationException"/> und <see cref="UriFormatException"/> wirft
+        /// <c>HttpClient</c> bei einer unbrauchbaren Adresse, die aus einer Anbieter-Antwort
+        /// übernommen wurde; das betrifft dann nur dieses eine Element.
         /// </summary>
         /// <param name="ex">Die aufgetretene Ausnahme.</param>
         /// <returns><c>true</c>, wenn der Fehler tolerierbar ist (Element überspringen).</returns>
@@ -19,6 +24,7 @@ namespace EchoPlay.Core.Http
             ex is HttpRequestException
                or TaskCanceledException
                or JsonException
+               or NotSupportedException
                or InvalidOperationException
                or UriFormatException;
 

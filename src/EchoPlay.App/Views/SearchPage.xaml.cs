@@ -12,8 +12,10 @@ namespace EchoPlay.App.Views
     /// Suchergebnisse werden als Kachelgitter mit Import-Option dargestellt.
     ///
     /// Nimmt optionale Navigationsparameter entgegen:
-    /// - "onboarding": zeigt Willkommens-Hinweis (erster Start)
-    /// - beliebiger String: wird als Suchtext vorab eingetragen und die Suche gestartet
+    /// <list type="bullet">
+    /// <item><description>"onboarding": zeigt den Willkommens-Hinweis (erster Start).</description></item>
+    /// <item><description>jede andere Zeichenkette: steht als Suchtext im Feld, und die Suche startet.</description></item>
+    /// </list>
     /// </summary>
     public sealed partial class SearchPage : Page
     {

@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Reiter_TrenntFolgenVonSonderfolgen()
+        public void Tabs_SeparateEpisodesFromSpecials()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Folge 1", 1),
@@ -57,7 +57,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Statusfilter_ZeigtUngehoerteGehoerteUndAngefangene()
+        public void StatusFilter_ShowsUnheardHeardAndStarted()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Ungehört", 1),
@@ -75,7 +75,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Angefangen_ZaehltAuchEineGehoerteFolgeMitOffenerStelle()
+        public void InProgress_IncludesAHeardEpisodeWithAnOpenPosition()
         {
             // Wer eine durchgehörte Folge erneut beginnt, findet sie sonst nirgends wieder,
             // und damit auch keinen Weg zurück in die laufende Wiedergabe.
@@ -94,7 +94,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Suche_IgnoriertGrossUndKleinschreibung()
+        public void Search_IgnoresCase()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Der Superhund", 1),
@@ -107,7 +107,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void SucheUndStatusfilter_WirkenZusammen()
+        public void SearchAndStatusFilter_WorkTogether()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Der Superhund", 1, PlaybackStatus.Finished),
@@ -120,7 +120,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OhneTreffer_ErscheintDerHinweisNurBeiAktivemFilter()
+        public void WithoutHits_TheHintAppearsOnlyWithActiveFilter()
         {
             SeriesEpisodeList list = BuildList(Tile("Der Superhund", 1));
 
@@ -133,7 +133,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Sortierung_NachNummerStelltFolgenOhneNummerHintenAn()
+        public void Sort_ByNumber_PutsEpisodesWithoutNumberLast()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Ohne Nummer"),
@@ -144,7 +144,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Sortierung_NachTitelUndDatum()
+        public void Sort_ByTitleAndDate()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Beta", 2, releaseDate: new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc)),
@@ -160,7 +160,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void NeueSerie_SetztReiterUndStatusfilterZurueck()
+        public void NewSeries_ResetsTabAndStatusFilter()
         {
             // Sonst zeigte eine frisch geöffnete Serie die Einschränkung der vorigen
             // und wirkte leer, obwohl sie Folgen hat.
@@ -180,7 +180,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void FilterZuruecknehmen_ZeigtWiederAlleFolgen()
+        public void ResetFilters_ShowsAllEpisodesAgain()
         {
             SeriesEpisodeList list = BuildList(
                 Tile("Der Superhund", 1),
@@ -197,7 +197,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OhneQuelle_BleibtDieListeLeer()
+        public void WithoutSource_TheListStaysEmpty()
         {
             SeriesEpisodeList list = new();
 
@@ -212,14 +212,14 @@ namespace EchoPlay.App.Tests.ViewModels
         public void Changes_NotifyTheDependentDisplays()
         {
             SeriesEpisodeList list = BuildList(Tile("Der Superhund", 1));
-            List<string?> gemeldet = [];
-            list.PropertyChanged += (_, e) => gemeldet.Add(e.PropertyName);
+            List<string?> reported = [];
+            list.PropertyChanged += (_, e) => reported.Add(e.PropertyName);
 
             list.EpisodeSearchText = "x";
 
-            Assert.Contains(nameof(SeriesEpisodeList.Episodes), gemeldet);
-            Assert.Contains(nameof(SeriesEpisodeList.HasActiveFilter), gemeldet);
-            Assert.Contains(nameof(SeriesEpisodeList.NoResultsVisibility), gemeldet);
+            Assert.Contains(nameof(SeriesEpisodeList.Episodes), reported);
+            Assert.Contains(nameof(SeriesEpisodeList.HasActiveFilter), reported);
+            Assert.Contains(nameof(SeriesEpisodeList.NoResultsVisibility), reported);
         }
     }
 }

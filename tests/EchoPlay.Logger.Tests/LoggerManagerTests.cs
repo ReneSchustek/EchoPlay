@@ -27,7 +27,7 @@ namespace EchoPlay.Logger.Tests
         /// Dispose kann mehrfach aufgerufen werden ohne eine Exception zu werfen (Idempotenz).
         /// </summary>
         [Fact]
-        public void Dispose_KannMehrfachAufgerufenWerden_OhneException()
+        public void Dispose_CanBeCalledRepeatedly_WithoutException()
         {
             EchoPlay.Logger.Core.LoggerFactory loggerFactory = new([], new LoggerOptions { MinimumLevel = LogLevel.Debug });
             LogCleanupService cleanupService = new(new LoggerOptions());

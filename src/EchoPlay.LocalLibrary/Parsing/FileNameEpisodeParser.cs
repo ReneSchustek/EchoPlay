@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace EchoPlay.LocalLibrary.Parsing
 {
     /// <summary>
@@ -15,7 +13,7 @@ namespace EchoPlay.LocalLibrary.Parsing
         /// </summary>
         /// <param name="fileNameWithoutExt">Der Dateiname ohne Erweiterung.</param>
         /// <param name="fileParsers">
-        /// Die zu probierende Parser-Kette, z.B. aus
+        /// Die zu probierende Parser-Kette, etwa aus
         /// <see cref="EpisodeFolderParser.CreateFileNameParserChain"/>.
         /// </param>
         /// <returns>Die erkannte Nummer (oder <c>null</c>) und der Titel (Fallback: Dateiname).</returns>

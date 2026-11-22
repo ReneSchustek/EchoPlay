@@ -43,7 +43,7 @@ namespace EchoPlay.Logger.Tests
         /// WriteAsync erstellt eine .log-Datei im angegebenen Verzeichnis.
         /// </summary>
         [Fact]
-        public async Task WriteAsync_ErstelltLogDateiImVerzeichnis()
+        public async Task WriteAsync_CreatesLogFileInTheDirectory()
         {
             string testDir = Path.Combine(_tempDirectory, "test_erstellt");
             _ = Directory.CreateDirectory(testDir);
@@ -92,7 +92,7 @@ namespace EchoPlay.Logger.Tests
         /// und überschreibt vorhandene Einträge nicht.
         /// </summary>
         [Fact]
-        public async Task WriteAsync_HaengtMehrereMeldungenAnSelbeTagesdatei()
+        public async Task WriteAsync_AppendsSeveralMessagesToTheSameDayFile()
         {
             string testDir = Path.Combine(_tempDirectory, "test_append");
             _ = Directory.CreateDirectory(testDir);
@@ -127,14 +127,14 @@ namespace EchoPlay.Logger.Tests
         /// Der FileSink-Konstruktor erstellt das Log-Verzeichnis, wenn es noch nicht existiert.
         /// </summary>
         [Fact]
-        public void Konstruktor_ErstelltVerzeichnis_WennNichtVorhanden()
+        public void Constructor_CreatesDirectory_WhenMissing()
         {
-            string neuesVerzeichnis = Path.Combine(_tempDirectory, "neues_log_verzeichnis");
-            Assert.False(Directory.Exists(neuesVerzeichnis));
+            string newDirectory = Path.Combine(_tempDirectory, "neues_log_verzeichnis");
+            Assert.False(Directory.Exists(newDirectory));
 
-            _ = new FileSink(neuesVerzeichnis, new DefaultLogFormatter());
+            _ = new FileSink(newDirectory, new DefaultLogFormatter());
 
-            Assert.True(Directory.Exists(neuesVerzeichnis));
+            Assert.True(Directory.Exists(newDirectory));
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace EchoPlay.Logger.Tests
         /// Nach Dispose werden neue Writes still ignoriert, kein ObjectDisposedException beim App-Shutdown.
         /// </summary>
         [Fact]
-        public async Task WriteAsync_NachDispose_IstNoOp()
+        public async Task WriteAsync_AfterDispose_IsNoOp()
         {
             string testDir = Path.Combine(_tempDirectory, "test_disposed");
             _ = Directory.CreateDirectory(testDir);

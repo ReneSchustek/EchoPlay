@@ -84,23 +84,6 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task GetUncheckedEntityIdsAsync_ReturnsUncheckedEntities()
-        {
-            CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid entityId = TestIds.Indexed(6);
-
-            // Platzhalter-Eintrag ohne Bild und mit abgelaufenem LastChecked
-            _ = Context.CoverImages.Add(new CoverImage { EntityType = "Episode", EntityId = entityId, ImageData = [], LastChecked = DateTime.MinValue });
-            _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
-            Context.ChangeTracker.Clear();
-
-            DateTime threshold = TestIds.ReferenceDate.AddDays(-1);
-            IReadOnlyList<Guid> pending = await service.GetUncheckedEntityIdsAsync("Episode", threshold, 10, cancellationToken: TestContext.Current.CancellationToken);
-
-            Assert.Contains(entityId, pending);
-        }
-
-        [Fact]
         public async Task GetImageDataByEntitiesAsync_ReturnsBatchResults()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
@@ -120,25 +103,25 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task GetImageDataByEntitiesAsync_FiltertPlatzhalterOhneBilddaten()
+        public async Task GetImageDataByEntitiesAsync_FiltersPlaceholdersWithoutImageData()
         {
             CoverImageDataService service = new(Context, NullLoggerFactory);
-            Guid mitCover = TestIds.Indexed(9);
-            Guid platzhalter = TestIds.Indexed(10);
+            Guid withCover = TestIds.Indexed(9);
+            Guid placeholder = TestIds.Indexed(10);
 
             // Echtes Cover
-            await service.SetCoverAsync("Episode", mitCover, [0xFF, 0xD8], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SetCoverAsync("Episode", withCover, [0xFF, 0xD8], cancellationToken: TestContext.Current.CancellationToken);
             // Platzhalter: nur LastChecked, keine Bilddaten
-            _ = Context.CoverImages.Add(new CoverImage { EntityType = "Episode", EntityId = platzhalter, ImageData = [], LastChecked = TestIds.ReferenceDate });
+            _ = Context.CoverImages.Add(new CoverImage { EntityType = "Episode", EntityId = placeholder, ImageData = [], LastChecked = TestIds.ReferenceDate });
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             IReadOnlyDictionary<Guid, byte[]> result =
-                await service.GetImageDataByEntitiesAsync("Episode", [mitCover, platzhalter], cancellationToken: TestContext.Current.CancellationToken);
+                await service.GetImageDataByEntitiesAsync("Episode", [withCover, placeholder], cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(result);
-            Assert.True(result.ContainsKey(mitCover));
-            Assert.False(result.ContainsKey(platzhalter));
+            Assert.True(result.ContainsKey(withCover));
+            Assert.False(result.ContainsKey(placeholder));
         }
         [Fact]
         public async Task SetCoverAsync_SetsSourceHash()

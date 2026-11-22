@@ -33,14 +33,14 @@ namespace EchoPlay.App.Startup
             ArgumentNullException.ThrowIfNull(host);
 
             StopBackgroundServices(host, logger);
-            OptimizeDatabase(host);
+            OptimizeDatabase(host, logger);
             DisposeHost(host);
         }
 
         /// <summary>
         /// Hält die Hintergrunddienste an, bevor der Host ihre Instanzen freigibt. Jeder
         /// Dienst bekommt <see cref="StopTimeout"/>, um seinen laufenden Durchgang zu
-        /// beenden; danach wird hart abgebrochen — die Überschreitung protokolliert der
+        /// beenden; danach wird hart abgebrochen, und die Überschreitung protokolliert der
         /// Dienst selbst.
         /// </summary>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
@@ -49,15 +49,22 @@ namespace EchoPlay.App.Startup
         {
             try
             {
-                // Blockierend, weil die Ereignisbehandlung des Fensterschließens nicht
-                // asynchron sein kann. Unkritisch, weil im Herunterfahren kein
-                // Synchronisationskontext der Oberfläche mehr existiert, an dem der
-                // Aufruf hängen bleiben könnte.
+                // Blockierend, weil das Schließen des Fensters nicht asynchron sein kann
+                // (siehe Klassenbeschreibung).
                 host.Services.GetRequiredService<BackgroundCoverService>()
                     .StopAsync(StopTimeout).GetAwaiter().GetResult();
 
-                // Ebenfalls blockierend, und aus demselben Grund unbedenklich.
+                // Aus demselben Grund blockierend.
                 host.Services.GetRequiredService<BackgroundProviderIdService>()
+                    .StopAsync(StopTimeout).GetAwaiter().GetResult();
+
+                // Aus demselben Grund blockierend.
+                host.Services.GetRequiredService<ReleaseCalendarRefreshService>()
+                    .StopAsync(StopTimeout).GetAwaiter().GetResult();
+
+                // Aus demselben Grund blockierend; der Abgleich schreibt dabei die letzten eigenen
+                // Änderungen, damit sie nicht bis zum nächsten Start auf diesem Gerät liegen bleiben.
+                host.Services.GetRequiredService<DeviceReplicationService>()
                     .StopAsync(StopTimeout).GetAwaiter().GetResult();
             }
             catch (Exception ex)
@@ -73,7 +80,7 @@ namespace EchoPlay.App.Startup
         /// </summary>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
             Justification = "Cleanup beim Fensterschließen: SQLite-Optimize ist optional und darf den Shutdown nicht blockieren, unabhängig davon welche Exception aus DbContext oder Maintenance-Service geworfen wird.")]
-        private static void OptimizeDatabase(IHost host)
+        private static void OptimizeDatabase(IHost host, ILogger? logger)
         {
             try
             {
@@ -81,23 +88,21 @@ namespace EchoPlay.App.Startup
                 IDatabaseMaintenanceService maintenance =
                     scope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
 
-                // Blockierend, weil die Ereignisbehandlung des Fensterschließens nicht
-                // asynchron sein kann und im Herunterfahren kein Synchronisationskontext
-                // der Oberfläche mehr existiert, der deadlocken könnte.
+                // Blockierend, weil das Schließen des Fensters nicht asynchron sein kann.
                 maintenance.OptimizeAsync().GetAwaiter().GetResult();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Die Optimierung darf das Beenden niemals blockieren.
+                logger?.Warning("Datenbank-Optimierung beim Beenden fehlgeschlagen: {Reason}", ex.Message);
             }
         }
 
         /// <summary>
         /// Gibt den Host frei. Er entsorgt die Singletons in umgekehrter
         /// Registrierungsreihenfolge, weshalb der Wiedergabedienst vor dem
-        /// Protokoll-Verwalter an die Reihe kommt. Ohne diese Freigabe würde dessen
-        /// 500-ms-Zeitgeber nach dem Schließen des Fensters weiter auslösen und die
-        /// Oberfläche zum Absturz bringen. Der asynchrone Weg sichert nebenbei die
+        /// Protokoll-Verwalter an die Reihe kommt. Ohne diese Freigabe löste der
+        /// 500-ms-Zeitgeber des Wiedergabedienstes nach dem Schließen des Fensters weiter aus
+        /// und brächte die Oberfläche zum Absturz. Der asynchrone Weg sichert nebenbei die
         /// Abspielposition, ohne dass die Dienstlogik dafür blockierend werden müsste.
         /// </summary>
         private static void DisposeHost(IHost host)
@@ -106,9 +111,7 @@ namespace EchoPlay.App.Startup
             // Implementierung kann zusätzlich asynchron freigeben.
             if (host is IAsyncDisposable asyncHost)
             {
-                // Blockierend, weil die Ereignisbehandlung des Fensterschließens nicht
-                // asynchron sein kann und im Herunterfahren kein Synchronisationskontext
-                // der Oberfläche mehr existiert, der deadlocken könnte.
+                // Blockierend, weil das Schließen des Fensters nicht asynchron sein kann.
                 asyncHost.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
             else

@@ -9,9 +9,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// Sie stellt einen isolierten DbContext sowie zentrale Hilfsmittel
     /// für den Aufbau konsistenter Testdaten bereit.
     ///
-    /// Diese Klasse bildet bewusst den technischen Rahmen für Tests
-    /// und kapselt alle Infrastrukturdetails, um die einzelnen Tests
-    /// auf fachliches Verhalten fokussieren zu können.
+    /// Technischer Rahmen der Datentests: Die Infrastruktur steckt hier, die Tests selbst
+    /// beschreiben nur fachliches Verhalten.
     /// </summary>
     [SuppressMessage("Design", "CA1515:Consider making public types internal",
         Justification = "Basisklasse für xUnit-Test-Klassen, die public sein müssen; public ist konsistent mit den Ableitungen.")]
@@ -31,13 +30,13 @@ namespace EchoPlay.Data.Tests.Infrastructure
 
         /// <summary>
         /// Hilfsobjekt zum expliziten Erzeugen und Persistieren valider Testdaten unter Einhaltung der notwendigen Foreign-Key-Reihenfolge.
-        /// Der Builder verhindert implizite Objektgraphen und stellt sicher, dass Tests reale Datenbankzustände widerspiegeln.
+        /// Der Builder verhindert implizite Objektgraphen, damit Tests reale Datenbankzustände abbilden.
         /// </summary>
         protected TestDataBuilder DataBuilder { get; }
 
         /// <summary>
         /// Initialisiert den Testkontext und alle zugehörigen Hilfsmittel.
-        /// Die Initialisierung erfolgt bewusst im Konstruktor, da jede Testklasse einen eigenen, vollständig isolierten Kontext
+        /// Die Initialisierung erfolgt im Konstruktor, da jede Testklasse einen eigenen, vollständig isolierten Kontext
         /// benötigt, um reproduzierbare Ergebnisse zu gewährleisten.
         /// </summary>
         protected DbTestBase()

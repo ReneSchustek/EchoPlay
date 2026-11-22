@@ -62,6 +62,10 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Equal(2, result[2].Position);
         }
 
+        /// <summary>Platz der Serie im Abschnitt der Neuerscheinungen.</summary>
+        private static DashboardPosition NewReleasesPosition(Guid seriesId, int position)
+            => new() { SeriesId = seriesId, Section = "Neuerscheinungen", Position = position };
+
         [Fact]
         public async Task GetBySectionAsync_ReturnsPositionsOrderedByPosition()
         {
@@ -71,27 +75,9 @@ namespace EchoPlay.Data.Tests.Services
             Guid idLow = await CreateSeriesAsync("Serie Low");
             Guid idMid = await CreateSeriesAsync("Serie Mid");
 
-            DashboardPosition positionHigh = new()
-            {
-                SeriesId = idHigh,
-                Section = "Neuerscheinungen",
-                Position = 2
-            };
-            DashboardPosition positionLow = new()
-            {
-                SeriesId = idLow,
-                Section = "Neuerscheinungen",
-                Position = 0
-            };
-            DashboardPosition positionMid = new()
-            {
-                SeriesId = idMid,
-                Section = "Neuerscheinungen",
-                Position = 1
-            };
-
             // Bewusst in unsortierter Reihenfolge einfügen
-            Context.DashboardPositions.AddRange(positionHigh, positionLow, positionMid);
+            Context.DashboardPositions.AddRange(
+                NewReleasesPosition(idHigh, 2), NewReleasesPosition(idLow, 0), NewReleasesPosition(idMid, 1));
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
@@ -136,22 +122,22 @@ namespace EchoPlay.Data.Tests.Services
             // Positionen in zwei verschiedenen Bereichen anlegen,
             // Abfrage für einen Bereich darf nur dessen Einträge liefern
             Guid seriesFav = await CreateSeriesAsync("Favorit");
-            Guid seriesNeu = await CreateSeriesAsync("Neuerscheinung");
+            Guid newSeries = await CreateSeriesAsync("Neuerscheinung");
 
             DashboardPositionDataService service = new(Context, NullLoggerFactory);
 
             await service.SaveOrderAsync("Favoriten", [seriesFav], cancellationToken: TestContext.Current.CancellationToken);
-            await service.SaveOrderAsync("Neuerscheinungen", [seriesNeu], cancellationToken: TestContext.Current.CancellationToken);
+            await service.SaveOrderAsync("Neuerscheinungen", [newSeries], cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             IReadOnlyList<DashboardPosition> favoritenResult = await service.GetBySectionAsync("Favoriten", cancellationToken: TestContext.Current.CancellationToken);
-            IReadOnlyList<DashboardPosition> neuResult = await service.GetBySectionAsync("Neuerscheinungen", cancellationToken: TestContext.Current.CancellationToken);
+            IReadOnlyList<DashboardPosition> newResult = await service.GetBySectionAsync("Neuerscheinungen", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Assert.Single(favoritenResult);
             Assert.Equal(seriesFav, favoritenResult[0].SeriesId);
 
-            _ = Assert.Single(neuResult);
-            Assert.Equal(seriesNeu, neuResult[0].SeriesId);
+            _ = Assert.Single(newResult);
+            Assert.Equal(newSeries, newResult[0].SeriesId);
         }
     }
 }

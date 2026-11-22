@@ -61,6 +61,30 @@ namespace EchoPlay.Logger.Tests.DependencyInjection
         }
 
         [Fact]
+        public void AddEchoPlayLogger_DisposingTheProvider_RunsTheLogCleanup()
+        {
+            string expiredLog = Path.Combine(_logDirectory, "abgelaufen.log");
+            File.WriteAllText(expiredLog, "alt");
+            File.SetLastWriteTime(expiredLog, DateTime.Now.AddDays(-400));
+
+            ServiceCollection services = new();
+            _ = services.AddEchoPlayLogger(options =>
+            {
+                options.LogDirectory = _logDirectory;
+                options.EnableFileLogging = false;
+                options.EnableJsonSink = false;
+            });
+
+            ServiceProvider provider = services.BuildServiceProvider();
+            _ = provider.GetRequiredService<LoggerManager>();
+            provider.Dispose();
+
+            // Der Verwalter räumt beim Freigeben auf; bleibt die Datei stehen, hat der Container
+            // ihn nie freigegeben.
+            Assert.False(File.Exists(expiredLog));
+        }
+
+        [Fact]
         public void AddEchoPlayLogger_ReturnsSameCollection_ForChaining()
         {
             ServiceCollection services = new();

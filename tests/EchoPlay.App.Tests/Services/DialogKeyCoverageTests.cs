@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
         [Theory]
         [InlineData("de")]
         [InlineData("en-US")]
-        public void JederDialogHatEinenNamenInDerSprachdatei(string culture)
+        public void EveryDialogHasANameInTheResourceFile(string culture)
         {
             HashSet<string> keys = LoadKeys(culture);
 
@@ -36,7 +36,7 @@ namespace EchoPlay.App.Tests.Services
         [Theory]
         [InlineData("de")]
         [InlineData("en-US")]
-        public void KeinNameOhneZugehoerigenDialog(string culture)
+        public void NoNameWithoutMatchingDialog(string culture)
         {
             HashSet<string> expected = AllKeys().Select(key => $"DialogName_{key}").ToHashSet(StringComparer.Ordinal);
 
@@ -53,7 +53,7 @@ namespace EchoPlay.App.Tests.Services
         [Theory]
         [InlineData("de")]
         [InlineData("en-US")]
-        public void DieTexteDesHaekchensStehenInBeidenSprachen(string culture)
+        public void CheckboxTextsExistInBothLanguages(string culture)
         {
             HashSet<string> keys = LoadKeys(culture);
 
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void NoneIstKeinAusblendbarerDialog()
+        public void NoneIsNoSuppressibleDialog()
         {
             // DialogKey.None steht für die Dialoge, die sich nicht ausblenden lassen;
             // er darf deshalb weder einen Namen noch einen Platz in der Liste bekommen.

@@ -30,11 +30,12 @@ namespace EchoPlay.App.Helpers
 
         /// <summary>Breite/Höhe des Cover-Bildes innerhalb einer Kachel.</summary>
         private const double CoverImageSize = 130;
+
         /// <summary>
         /// Zeigt den Cover-Such-Dialog und gibt das ausgewählte Ergebnis zurück.
         /// Null wenn der Dialog abgebrochen wurde oder kein Cover ausgewählt.
         /// </summary>
-        /// <param name="initialQuery">Vorbelegter Suchbegriff (z.B. Folgentitel).</param>
+        /// <param name="initialQuery">Vorbelegter Suchbegriff, etwa der Folgentitel.</param>
         /// <param name="searchFunc">
         /// Suchfunktion, meist eine ViewModel-Methode, die intern den Cover-Suchdienst aufruft.
         /// Bekommt die gewünschte Seite mit; eine leere Antwort heißt „nichts mehr da".
@@ -178,7 +179,7 @@ namespace EchoPlay.App.Helpers
         }
 
         /// <summary>
-        /// Baut die Kachel „Weitere Ergebnisse laden", bewusst im Raster und nicht als Knopf
+        /// Baut die Kachel „Weitere Ergebnisse laden", im Raster und nicht als Knopf
         /// darunter: Sie steht dort, wo die Treffer aufhören, und wird genau dann gesehen, wenn
         /// keiner gepasst hat.
         /// </summary>
@@ -193,30 +194,10 @@ namespace EchoPlay.App.Helpers
                 Height = CoverImageSize
             };
 
-            TextBlock label = new()
-            {
-                Text = SafeResourceLoader.Get("CoverSearchLoadMore", "Weitere Ergebnisse laden"),
-                MaxLines = 2,
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = 10,
-                Width = CoverImageSize,
-                Margin = new Thickness(4, 4, 4, 0),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                TextAlignment = TextAlignment.Center
-            };
+            TextBlock label = CreateTileLabel(SafeResourceLoader.Get("CoverSearchLoadMore", "Weitere Ergebnisse laden"));
+            label.TextAlignment = TextAlignment.Center;
 
-            StackPanel tile = new();
-            tile.Children.Add(icon);
-            tile.Children.Add(label);
-
-            return new Border
-            {
-                BorderThickness = new Thickness(1),
-                BorderBrush = (Brush)Application.Current.Resources["DividerStrokeColorDefaultBrush"],
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(2),
-                Child = tile
-            };
+            return CreateTileFrame(icon, label, 1, (Brush)Application.Current.Resources["DividerStrokeColorDefaultBrush"]);
         }
 
         /// <summary>
@@ -231,35 +212,44 @@ namespace EchoPlay.App.Helpers
                 Width = CoverImageSize,
                 Height = CoverImageSize,
                 Stretch = Stretch.UniformToFill,
-                Source = new BitmapImage(new Uri(result.ThumbnailUrl))
+                Source = new BitmapImage(result.ThumbnailUrl)
             };
 
-            TextBlock label = new()
-            {
-                Text = result.ReleaseTitle,
-                MaxLines = 2,
-                TextWrapping = TextWrapping.Wrap,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                FontSize = 10,
-                Width = CoverImageSize,
-                Margin = new Thickness(4, 4, 4, 0),
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
+            TextBlock label = CreateTileLabel(result.ReleaseTitle);
+            label.TextTrimming = TextTrimming.CharacterEllipsis;
 
+            // Der Rahmen ist durchsichtig, bis die Kachel ausgewählt wird; die Breite steht
+            // schon jetzt, damit die Auswahl das Raster nicht verschiebt.
+            return CreateTileFrame(coverImage, label, 2, new SolidColorBrush(Microsoft.UI.Colors.Transparent));
+        }
+
+        /// <summary>Die Beschriftung unter einer Kachel, höchstens zwei Zeilen.</summary>
+        private static TextBlock CreateTileLabel(string text) => new()
+        {
+            Text = text,
+            MaxLines = 2,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 10,
+            Width = CoverImageSize,
+            Margin = new Thickness(4, 4, 4, 0),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        /// <summary>Setzt Bild und Beschriftung untereinander in einen abgerundeten Rahmen.</summary>
+        private static Border CreateTileFrame(UIElement visual, TextBlock label, double borderThickness, Brush borderBrush)
+        {
             StackPanel tile = new();
-            tile.Children.Add(coverImage);
+            tile.Children.Add(visual);
             tile.Children.Add(label);
 
-            Border tileBorder = new()
+            return new Border
             {
-                BorderThickness = new Thickness(2),
-                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(borderThickness),
+                BorderBrush = borderBrush,
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(2),
                 Child = tile
             };
-
-            return tileBorder;
         }
     }
 }

@@ -82,9 +82,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Speichert ein Cover für eine Serie mit 3-Retry bei DB-Fehlern.
         /// </summary>
-        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
-        public async Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public async Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             await WriteWithRetryAsync(EntityTypeSeries, seriesId, imageData, sourceUrl, cancellationToken);
         }
@@ -92,9 +90,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Speichert ein Cover für eine Episode mit 3-Retry bei DB-Fehlern.
         /// </summary>
-        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
-        public async Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public async Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             await WriteWithRetryAsync(EntityTypeEpisode, episodeId, imageData, sourceUrl, cancellationToken);
         }
@@ -147,12 +143,14 @@ namespace EchoPlay.App.Services
             }
             catch (Exception)
             {
+                // Statisch und ohne Protokollkanal: null heißt „nicht darstellbar", jeder Aufrufer
+                // zeigt dann den Platzhalter. Ein kaputtes Bild ist kein Fehler der Anwendung.
                 return null;
             }
         }
 
         /// <summary>
-        /// Schreibt Cover-Daten mit bis zu 3 Versuchen und exponentiellem Backoff.
+        /// Schreibt Cover-Daten mit bis zu 3 Versuchen; die Pause davor wächst linear (100, dann 200 ms).
         /// Jeder Versuch öffnet einen frischen DI-Scope, damit ein korrupter DbContext-Zustand
         /// den nächsten Versuch nicht blockiert.
         /// </summary>
@@ -161,7 +159,7 @@ namespace EchoPlay.App.Services
         /// <param name="entityId">Datenbank-ID der Entität, zu der das Cover gehört.</param>
         /// <param name="imageData">Die Bilddaten des Covers.</param>
         /// <param name="sourceUrl">Adresse, von der das Cover stammt; <see langword="null"/>, wenn es aus einer lokalen Datei kommt.</param>
-        private async Task WriteWithRetryAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl, CancellationToken cancellationToken = default)
+        private async Task WriteWithRetryAsync(string entityType, Guid entityId, byte[] imageData, Uri? sourceUrl, CancellationToken cancellationToken = default)
         {
             for (int attempt = 1; attempt <= 3; attempt++)
             {

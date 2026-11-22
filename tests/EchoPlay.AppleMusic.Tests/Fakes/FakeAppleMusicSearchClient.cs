@@ -49,7 +49,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
         /// <summary>
         /// Simuliert die iTunes-Künstlersuche.
-        /// Die Filterung erfolgt bewusst einfach, um das Verhalten leicht nachvollziehbar zu halten.
+        /// Die Filterung erfolgt einfach, um das Verhalten leicht nachvollziehbar zu halten.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
@@ -98,8 +98,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         }
 
         /// <summary>
-        /// Liefert für Tests keine Tracks zurück.
-        /// Diese Methode dient nur der Vertragstreue.
+        /// Liefert keine Tracks; die Tests hier brauchen die Methode nur, weil die Schnittstelle sie verlangt.
         /// </summary>
         /// <param name="collectionId">Die iTunes-Collection-ID.</param>
         /// <returns>Leere Lookup-Antwort.</returns>

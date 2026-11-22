@@ -1,36 +1,30 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace EchoPlay.Spotify.Configuration
 {
     /// <summary>
     /// Enthält die konfigurierbaren Einstellungen für den Zugriff auf die Spotify-Web-API.
-    /// Die Klasse ist ein reines Options-Modell und enthält bewusst keine Logik.
+    /// Die Klasse ist ein reines Options-Modell und enthält keine Logik.
     /// </summary>
     public sealed class SpotifyOptions
     {
         /// <summary>
-        /// Basis-URL der Spotify-Web-API.
+        /// Basisadresse der Spotify-Web-API.
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "Options-Property wird aus appsettings.json als String gebunden; Uri-Umwandlung würde den Options-Pattern-Bindungsfluss brechen.")]
-        public string ApiBaseUrl { get; init; } = "https://api.spotify.com/v1/";
+        public Uri ApiBaseUrl { get; init; } = new("https://api.spotify.com/v1/");
 
         /// <summary>
-        /// Basis-URL für die Spotify-Authentifizierung.
+        /// Basisadresse für die Spotify-Anmeldung.
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "Options-Property wird aus appsettings.json als String gebunden; Uri-Umwandlung würde den Options-Pattern-Bindungsfluss brechen.")]
-        public string AuthBaseUrl { get; init; } = "https://accounts.spotify.com/";
+        public Uri AuthBaseUrl { get; init; } = new("https://accounts.spotify.com/");
 
         /// <summary>
-        /// ClientId der Spotify-App.
-        /// Muss in appsettings.Development.json oder per Umgebungsvariable gesetzt werden.
+        /// ClientId der Spotify-App. Die Anwendung liest sie aus dem verschlüsselten Speicher des
+        /// Nutzers, nie aus einer Konfigurationsdatei.
         /// </summary>
         public string ClientId { get; init; } = string.Empty;
 
         /// <summary>
-        /// ClientSecret der Spotify-App.
-        /// Muss in appsettings.Development.json oder per Umgebungsvariable gesetzt werden.
+        /// ClientSecret der Spotify-App. Die Anwendung liest es aus dem verschlüsselten Speicher des
+        /// Nutzers, nie aus einer Konfigurationsdatei.
         /// </summary>
         public string ClientSecret { get; init; } = string.Empty;
     }

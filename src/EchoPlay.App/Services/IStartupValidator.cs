@@ -6,8 +6,8 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Führt alle Startup-Validierungen während des Begrüßungsbildschirms durch.
-    /// Prüft Online-Konnektivität, lokale Bibliothek, bereinigt den Cache
-    /// und lädt Neuerscheinungen vor, damit das Dashboard sofort aktuelle Daten zeigen kann.
+    /// Prüft Online-Konnektivität und lokale Bibliothek, räumt den Zwischenspeicher auf und
+    /// frischt die Neuerscheinungen darin auf; die Startseite liest sie von dort.
     /// </summary>
     public interface IStartupValidator
     {

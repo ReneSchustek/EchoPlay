@@ -67,6 +67,65 @@ namespace EchoPlay.App.Tests.Services
                 provider.GetRequiredService<ILoggerFactory>());
         }
 
+        /// <summary>
+        /// Importdienst, bei dem nur Apple Music Folgen liefert; Suche und Spotify bleiben leer.
+        /// </summary>
+        private static ImportService BuildAppleMusicService(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            IReadOnlyList<ImportEpisode> appleMusicEpisodes)
+            => BuildService(new FakeAppSettingsDataService(new AppSettings()), seriesService, episodeService,
+                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
+                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
+                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
+                appleMusicEpisodeSource: new FakeEpisodeImportSource(appleMusicEpisodes));
+
+        /// <summary>Legt die Serie an und liefert sie zurück, wie der Datendienst sie hält.</summary>
+        private static async Task<Series> AddSeriesAsync(FakeSeriesDataService seriesService, Series series)
+        {
+            await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
+            return seriesService.All[^1];
+        }
+
+        /// <summary>Legt „Folge n“ der Serie an, wahlweise mit Cover oder Apple-Music-Album.</summary>
+        private static Task AddEpisodeAsync(
+            FakeEpisodeDataService episodeService,
+            Series series,
+            int number,
+            string? coverUrl = null,
+            string? appleMusicAlbumId = null)
+            => episodeService.AddAsync(
+                new Episode
+                {
+                    SeriesId = series.Id,
+                    Title = $"Folge {number}",
+                    EpisodeNumber = number,
+                    CoverImageUrl = coverUrl,
+                    AppleMusicAlbumId = appleMusicAlbumId
+                },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+        /// <summary>„Folge n“, wie der Anbieter sie liefert, wahlweise mit Cover-Adresse.</summary>
+        private static ImportEpisode ProviderEpisode(string sourceId, int number, string? coverUrl = null)
+            => new()
+            {
+                SourceEpisodeId = sourceId,
+                Title = $"Folge {number}",
+                EpisodeNumber = number,
+                CoverImageUrl = coverUrl is null ? null : new Uri(coverUrl)
+            };
+
+        /// <summary>Ein Hörspiel-Künstler aus der Apple-Music-Suche.</summary>
+        private static ImportSeries AppleMusicArtist(string sourceId, string title)
+            => new()
+            {
+                SourceSeriesId = sourceId,
+                Source = "AppleMusic",
+                Title = title,
+                IsHoerspiel = true,
+                Score = 80
+            };
+
         [Fact]
         public async Task SearchAsync_ReturnsSpotifyResults_WhenProviderIsSpotify()
         {
@@ -349,7 +408,6 @@ namespace EchoPlay.App.Tests.Services
             // Nach dem Import darf in der DB nur eine Episode pro SourceEpisodeId stehen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
-            FakeAppSettingsDataService settings = new(new AppSettings());
 
             IReadOnlyList<ImportEpisode> importEpisodesWithDuplicates =
             [
@@ -360,22 +418,11 @@ namespace EchoPlay.App.Tests.Services
                 new() { SourceEpisodeId = "album-2", Title = "Folge 2: Spuren (Compilation)", EpisodeNumber = 2 },
             ];
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(importEpisodesWithDuplicates));
+            ImportService service = BuildAppleMusicService(seriesService, episodeService, importEpisodesWithDuplicates);
 
-            ImportSeries importSeries = new()
-            {
-                SourceSeriesId = "artist-scotland-yard",
-                Source = "AppleMusic",
-                Title = "Scotland Yard",
-                IsHoerspiel = true,
-                Score = 80
-            };
-
-            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
+            _ = await service.ImportAsync(
+                AppleMusicArtist("artist-scotland-yard", "Scotland Yard"),
+                cancellationToken: TestContext.Current.CancellationToken);
 
             // Drei eindeutige SourceEpisodeIds -> exakt drei Episoden, das erste Vorkommen gewinnt.
             Assert.Equal(3, episodeService.All.Count);
@@ -560,36 +607,20 @@ namespace EchoPlay.App.Tests.Services
             // Delta-Import muss neue Episoden sammeln und in einem einzigen AddRangeAsync persistieren.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
-            FakeAppSettingsDataService settings = new(new AppSettings());
-
-            await seriesService.AddAsync(new Series
-            {
-                Title = "TKKG",
-                AppleMusicArtistId = "artist-tkkg"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Series existingSeries = seriesService.All[0];
+            Series existingSeries = await AddSeriesAsync(
+                seriesService, new Series { Title = "TKKG", AppleMusicArtistId = "artist-tkkg" });
 
             // Drei bestehende Episoden; der Titel-Lookup wird sie ausfiltern.
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 3", EpisodeNumber = 3 }, cancellationToken: TestContext.Current.CancellationToken);
+            await AddEpisodeAsync(episodeService, existingSeries, 1);
+            await AddEpisodeAsync(episodeService, existingSeries, 2);
+            await AddEpisodeAsync(episodeService, existingSeries, 3);
 
             // Provider liefert dieselben drei Folgen + zwei neue.
-            IReadOnlyList<ImportEpisode> providerEpisodes =
+            ImportService service = BuildAppleMusicService(seriesService, episodeService,
             [
-                new() { SourceEpisodeId = "ep1", Title = "Folge 1", EpisodeNumber = 1 },
-                new() { SourceEpisodeId = "ep2", Title = "Folge 2", EpisodeNumber = 2 },
-                new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3 },
-                new() { SourceEpisodeId = "ep4", Title = "Folge 4", EpisodeNumber = 4 },
-                new() { SourceEpisodeId = "ep5", Title = "Folge 5", EpisodeNumber = 5 },
-            ];
-
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
+                ProviderEpisode("ep1", 1), ProviderEpisode("ep2", 2), ProviderEpisode("ep3", 3),
+                ProviderEpisode("ep4", 4), ProviderEpisode("ep5", 5),
+            ]);
 
             int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -608,38 +639,20 @@ namespace EchoPlay.App.Tests.Services
             // UpdateRangeAsync-Aufruf bekommen, nicht pro Treffer (Batch statt N+1).
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
-            FakeAppSettingsDataService settings = new(new AppSettings());
-
-            await seriesService.AddAsync(new Series
-            {
-                Title = "TKKG",
-                AppleMusicArtistId = "artist-tkkg"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            Series existingSeries = seriesService.All[0];
+            Series existingSeries = await AddSeriesAsync(
+                seriesService, new Series { Title = "TKKG", AppleMusicArtistId = "artist-tkkg" });
 
             // Zwei vorhandene Folgen ohne Cover, eine mit bereits gesetztem Cover.
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode { SeriesId = existingSeries.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode
-            {
-                SeriesId = existingSeries.Id,
-                Title = "Folge 3",
-                EpisodeNumber = 3,
-                CoverImageUrl = "https://example.org/already.jpg"
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            await AddEpisodeAsync(episodeService, existingSeries, 1);
+            await AddEpisodeAsync(episodeService, existingSeries, 2);
+            await AddEpisodeAsync(episodeService, existingSeries, 3, coverUrl: "https://example.org/already.jpg");
 
-            IReadOnlyList<ImportEpisode> providerEpisodes =
+            ImportService service = BuildAppleMusicService(seriesService, episodeService,
             [
-                new() { SourceEpisodeId = "ep1", Title = "Folge 1", EpisodeNumber = 1, CoverImageUrl = "https://example.org/cover1.jpg" },
-                new() { SourceEpisodeId = "ep2", Title = "Folge 2", EpisodeNumber = 2, CoverImageUrl = "https://example.org/cover2.jpg" },
-                new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3, CoverImageUrl = "https://example.org/different.jpg" },
-            ];
-
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
+                ProviderEpisode("ep1", 1, "https://example.org/cover1.jpg"),
+                ProviderEpisode("ep2", 2, "https://example.org/cover2.jpg"),
+                ProviderEpisode("ep3", 3, "https://example.org/different.jpg"),
+            ]);
 
             int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -809,35 +822,19 @@ namespace EchoPlay.App.Tests.Services
             // Online-Mediathek gelangen und darf nicht am Vorhanden-Check abprallen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
-            FakeAppSettingsDataService settings = new(new AppSettings());
 
-            await seriesService.AddAsync(new Series
+            _ = await AddSeriesAsync(seriesService, new Series
             {
                 Title = "Die Playmos",
                 AppleMusicArtistId = "267092844",
                 LocalFolderPath = @"D:\Hörspiele\Die Playmos",
                 IsOnlineImported = false
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            });
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(
-                [
-                    new() { SourceEpisodeId = "am1", Title = "Folge 1", EpisodeNumber = 1 },
-                ]));
+            ImportService service = BuildAppleMusicService(seriesService, episodeService, [ProviderEpisode("am1", 1)]);
 
-            ImportSeries importSeries = new()
-            {
-                SourceSeriesId = "267092844",
-                Source = "AppleMusic",
-                Title = "Die Playmos",
-                IsHoerspiel = true,
-                Score = 80
-            };
-
-            _ = await service.ImportAsync(importSeries, cancellationToken: TestContext.Current.CancellationToken);
+            _ = await service.ImportAsync(
+                AppleMusicArtist("267092844", "Die Playmos"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(2, seriesService.All.Count);
             Assert.Contains(seriesService.All, s => s.IsOnlineImported && s.AppleMusicArtistId == "267092844");
@@ -851,41 +848,18 @@ namespace EchoPlay.App.Tests.Services
             // fehlende Folge anlegen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
-            FakeAppSettingsDataService settings = new(new AppSettings());
-
-            await seriesService.AddAsync(new Series
+            Series existingSeries = await AddSeriesAsync(seriesService, new Series
             {
                 Title = "Die drei ???",
                 AppleMusicArtistId = "201306317",
                 IsOnlineImported = true
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            Series existingSeries = seriesService.All[0];
+            });
 
-            await episodeService.AddAsync(new Episode
-            {
-                SeriesId = existingSeries.Id,
-                Title = "Folge 229",
-                EpisodeNumber = 229,
-                AppleMusicAlbumId = "am229"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode
-            {
-                SeriesId = existingSeries.Id,
-                Title = "Folge 230",
-                EpisodeNumber = 230,
-                AppleMusicAlbumId = "am230"
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            await AddEpisodeAsync(episodeService, existingSeries, 229, appleMusicAlbumId: "am229");
+            await AddEpisodeAsync(episodeService, existingSeries, 230, appleMusicAlbumId: "am230");
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(
-                [
-                    new() { SourceEpisodeId = "am229", Title = "Folge 229", EpisodeNumber = 229 },
-                    new() { SourceEpisodeId = "am230", Title = "Folge 230", EpisodeNumber = 230 },
-                    new() { SourceEpisodeId = "am231", Title = "Folge 231", EpisodeNumber = 231 },
-                ]));
+            ImportService service = BuildAppleMusicService(seriesService, episodeService,
+                [ProviderEpisode("am229", 229), ProviderEpisode("am230", 230), ProviderEpisode("am231", 231)]);
 
             int count = await service.ReImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 

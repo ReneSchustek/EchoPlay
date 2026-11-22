@@ -1,6 +1,7 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Startup;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
@@ -44,6 +45,8 @@ namespace EchoPlay.App.Tests.Composition
             Assert.NotNull(context.LanguageSwitchService);
             Assert.NotNull(context.Clock);
             Assert.NotNull(context.ProviderIdService);
+            Assert.NotNull(context.ReleaseCalendarService);
+            Assert.NotNull(context.ReplicationService);
             Assert.NotNull(context.ThemeService);
             Assert.NotNull(context.Validator);
             Assert.NotNull(context.UpdateInteraction);
@@ -63,6 +66,7 @@ namespace EchoPlay.App.Tests.Composition
             // stille Fehlerquellen.
             Assert.Same(first.ThemeService, second.ThemeService);
             Assert.Same(first.PlayerService, second.PlayerService);
+            Assert.Same(first.ReplicationService, second.ReplicationService);
         }
 
         private static ServiceProvider BuildProvider()
@@ -76,7 +80,20 @@ namespace EchoPlay.App.Tests.Composition
             };
 
             ServiceCollection services = new();
-            _ = services.AddHttpClient();
+            AddDataFakes(services);
+            ImportTestServices.AddCoverChain(services);
+            AddBackgroundFakes(services);
+
+            _ = services.AddSingleton(new LoggerManager(
+                new LoggerFactory([], loggerOptions), new LogCleanupService(loggerOptions), loggerOptions));
+
+            AddStartupServices(services);
+            return services.BuildServiceProvider();
+        }
+
+        /// <summary>Registriert die Datendienste als leere Nachbauten.</summary>
+        private static void AddDataFakes(ServiceCollection services)
+        {
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
@@ -84,13 +101,14 @@ namespace EchoPlay.App.Tests.Composition
             _ = services.AddScoped<ILocalCoverLoader>(_ => new FakeLocalCoverLoader());
             _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+        }
 
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+        /// <summary>
+        /// Registriert den Hintergrund-Coverdienst und die Nachbauten für alles, was nach außen
+        /// greift: Zugangsdaten, Drossel, Installer, Wiedergabe und Sprachwechsel.
+        /// </summary>
+        private static void AddBackgroundFakes(ServiceCollection services)
+        {
             _ = services.AddSingleton<ISpotifyCredentialStore>(new FakeSpotifyCredentialStore());
             _ = services.AddSingleton(new BackgroundCoverServiceOptions());
             _ = services.AddSingleton<BackgroundCoverService>();
@@ -98,18 +116,20 @@ namespace EchoPlay.App.Tests.Composition
             _ = services.AddSingleton<IInstallerLauncher>(new FakeInstallerLauncher());
             _ = services.AddSingleton<IPlayerService>(new FakePlayerService());
             _ = services.AddSingleton<ILanguageSwitchService>(new FakeLanguageSwitchService());
+        }
 
-            _ = services.AddSingleton(new LoggerManager(
-                new LoggerFactory([], loggerOptions), new LogCleanupService(loggerOptions), loggerOptions));
-
+        /// <summary>Registriert die echten Dienste, die der Startkontext bündelt.</summary>
+        private static void AddStartupServices(ServiceCollection services)
+        {
             _ = services.AddSingleton<BackgroundProviderIdService>();
+            _ = services.AddSingleton<ReleaseCalendarRefreshService>();
+            _ = services.AddSingleton<DeviceReplicationService>();
             _ = services.AddSingleton<ThemeService>();
             _ = services.AddSingleton<IStartupValidator, StartupValidator>();
             _ = services.AddSingleton<UpdateCheckService>();
+            _ = services.AddSingleton(_ => new EchoPlay.Core.Security.ReleaseSignatureVerifier());
             _ = services.AddSingleton<UpdateDownloadService>();
             _ = services.AddSingleton<UpdateInteractionService>();
-
-            return services.BuildServiceProvider();
         }
     }
 }

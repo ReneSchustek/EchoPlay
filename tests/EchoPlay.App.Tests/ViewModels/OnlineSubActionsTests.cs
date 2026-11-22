@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
@@ -26,8 +27,6 @@ namespace EchoPlay.App.Tests.ViewModels
         private static readonly Guid UnknownSeriesId = new("00000000-0000-0000-0000-deadbeef0001");
         private static readonly Guid UnknownRemoveId = new("00000000-0000-0000-0000-deadbeef0002");
 
-        // ── Gemeinsames Setup ────────────────────────────────────────────────────
-
         private static OnlineLibraryActionsContext BuildContext(
             FakeSeriesDataService? seriesService = null,
             FakeEpisodeDataService? episodeService = null,
@@ -46,31 +45,15 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = activeProvider }));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => spotifySearch ?? new FakeSeriesImportSearch([], "Spotify"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => appleMusicSearch ?? new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
+            ImportTestServices.AddProviderFakes(services, spotifySearch: spotifySearch, appleMusicSearch: appleMusicSearch);
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
-            ImportService importService = new(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new OnlineLibraryActionsContext(
                 ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
@@ -86,8 +69,6 @@ namespace EchoPlay.App.Tests.ViewModels
                 CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
                 RateLimiter: null);
         }
-
-        // ── OnlineSeriesLoader ───────────────────────────────────────────────────
 
         [Fact]
         public async Task OnlineSeriesLoader_LoadAsync_IncrementsCallCount_AndSetsNoProviderFlag()
@@ -131,8 +112,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Contains(completedEpisodeId, state.CompletedEpisodeIds);
         }
-
-        // ── OnlineEpisodePipeline ────────────────────────────────────────────────
 
         [Fact]
         public async Task OnlineEpisodePipeline_SelectSeriesAsync_IncrementsCallCount()
@@ -234,8 +213,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Empty(hits);
         }
-
-        // ── OnlineProviderSearchActions ──────────────────────────────────────────
 
         [Fact]
         public async Task OnlineProviderSearchActions_SearchProviderAsync_EmptyQuery_SkipsSearch()
@@ -339,8 +316,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.False(searchVM.IsSpotifyFallbackHintVisible);
         }
-
-        // ── OnlineBulkRefreshActions ─────────────────────────────────────────────
 
         [Fact]
         public async Task OnlineBulkRefreshActions_ToggleWatchAsync_NullService_IncrementsButSkips()

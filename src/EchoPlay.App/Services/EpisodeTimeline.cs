@@ -82,9 +82,9 @@ namespace EchoPlay.App.Services
         /// <remarks>
         /// Die eine Stelle, an der diese Regel steht. Sie wird an zwei Enden gebraucht: Die
         /// Ansichten fragen, ob eine Folge unter „Angefangen" gehört, der Wiedergabestart
-        /// fragt, ob er fortsetzt. Als der Wiedergabestart eine eigene Fassung hatte, fiel
-        /// er auf den Hörstatus zurück und begann eine wieder aufgenommene Folge stets von
-        /// vorn, während die Liste sie korrekt als angefangen führte.
+        /// fragt, ob er fortsetzt. Hätte der Wiedergabestart eine eigene Fassung, liefen beide
+        /// auseinander: Die Liste führte eine Folge als angefangen, und der Start begänne sie
+        /// trotzdem von vorn.
         ///
         /// Ohne bekannte Gesamtdauer entscheidet die Stelle allein: Es gibt dann nichts,
         /// wogegen sie sich prüfen ließe.

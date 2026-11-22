@@ -26,7 +26,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task ShowAsync_AusgeblendeterHinweis_BautKeinenDialog()
+        public async Task ShowAsync_SuppressedHint_BuildsNoDialog()
         {
             FakeDialogSuppressionService suppression = new();
             suppression.Preset(DialogKey.OfflineModeSearchHint);
@@ -44,7 +44,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task ShowAlwaysAsync_FragtDenMerkzettelGarNichtErstAb()
+        public async Task ShowAlwaysAsync_DoesNotQueryTheSuppressionList()
         {
             // Letzte Verteidigungslinie: unbehandelte Fehler und der fehlgeschlagene Start.
             // Ein einmal gesetztes Häkchen würde dort jede künftige Störung verschlucken.

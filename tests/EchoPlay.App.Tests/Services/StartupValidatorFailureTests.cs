@@ -147,10 +147,12 @@ namespace EchoPlay.App.Tests.Services
                 ActiveProvider = ProviderType.None,
             });
 
+            FakeCachedNewReleaseDataService cacheService = new();
             StartupValidator sut = Build(
                 settings,
                 new StubHandler(HttpStatusCode.OK),
                 seriesService: seriesService,
+                cacheService: cacheService,
                 episodeChecker: new ThrowingEpisodeChecker());
 
             StartupResult result = await sut.ValidateAsync(
@@ -159,10 +161,56 @@ namespace EchoPlay.App.Tests.Services
             // Der Abgleich der Neuerscheinungen ist Beiwerk. Scheitert er, bleibt der
             // Startlauf grün und der Zwischenspeicher unverändert.
             Assert.True(result.IsOnlineAvailable);
-            Assert.Empty(result.CachedReleases);
+            Assert.Empty(await cacheService.GetAllAsync(TestContext.Current.CancellationToken));
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
+        [Fact]
+        public async Task Validate_WhenCleaningTheCacheFails_LogsAndFinishesTheStart()
+        {
+            // So sah es aus, als zwei Starts dieselben abgelaufenen Zeilen wegräumen wollten:
+            // Der langsamere traf auf bereits gelöschte Zeilen, und der ganze Start brach ab.
+            FakeCachedNewReleaseDataService cache = new()
+            {
+                RemoveOlderThanFailure = () => new InvalidOperationException("Zeilen schon entfernt"),
+            };
+            CapturingLogger logger = new();
+
+            StartupValidator sut = Build(
+                new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
+                new StubHandler(HttpStatusCode.OK),
+                cacheService: cache,
+                logger: logger);
+
+            StartupResult result = await sut.ValidateAsync(
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result.Settings);
+            Assert.Contains(logger.Entries, e =>
+                e.Level == "Warning" && e.Message.Contains("Zwischenspeicher", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task Validate_WhenCleaningTheCacheIsCancelled_PassesTheCancellationOn()
+        {
+            using CancellationTokenSource cancellation = new();
+            FakeCachedNewReleaseDataService cache = new()
+            {
+                RemoveOlderThanFailure = () =>
+                {
+                    cancellation.Cancel();
+                    return new OperationCanceledException(cancellation.Token);
+                },
+            };
+
+            StartupValidator sut = Build(
+                new FakeAppSettingsDataService(new AppSettings { OfflineMode = true }),
+                new StubHandler(HttpStatusCode.OK),
+                cacheService: cache);
+
+            // Abbrechen ist kein Aufräumfehler: Es darf nicht als Warnung verschluckt werden.
+            _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => sut.ValidateAsync(cancellationToken: cancellation.Token));
+        }
 
         private static IServiceScopeFactory BuildScopeFactory()
         {
@@ -177,15 +225,18 @@ namespace EchoPlay.App.Tests.Services
             StubHandler handler,
             FakeSeriesDataService? seriesService = null,
             FakeBackgroundCoverService? coverService = null,
-            IOnlineEpisodeChecker? episodeChecker = null)
+            IOnlineEpisodeChecker? episodeChecker = null,
+            FakeCachedNewReleaseDataService? cacheService = null,
+            CapturingLogger? logger = null)
         {
+            FakeCachedNewReleaseDataService cache = cacheService ?? new FakeCachedNewReleaseDataService();
             FakeSeriesDataService series = seriesService ?? new FakeSeriesDataService();
 
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settings);
             _ = services.AddScoped<ISeriesDataService>(_ => series);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<ICachedNewReleaseDataService>(_ => new FakeCachedNewReleaseDataService());
+            _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cache);
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
 
             if (episodeChecker is not null)
@@ -205,7 +256,7 @@ namespace EchoPlay.App.Tests.Services
                 scopeFactory,
                 coverService ?? new FakeBackgroundCoverService(scopeFactory, new FakeCoverDownloader()),
                 provider.GetRequiredService<IHttpClientFactory>(),
-                new FakeLoggerFactory(),
+                logger is null ? new FakeLoggerFactory() : new CapturingLoggerFactory(logger),
                 new FakeClock());
         }
 

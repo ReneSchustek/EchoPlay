@@ -5,6 +5,13 @@ namespace EchoPlay.Core.Scoring
     /// Die Analyse basiert ausschließlich auf Trackanzahl und Trackdauer, da sich Hörspiele
     /// strukturell deutlich von Musikalben unterscheiden.
     /// </summary>
+    /// <remarks>
+    /// Eine Hörspielfolge läuft 40 bis 80 Minuten und ist in wenige lange Kapitel geteilt; ein
+    /// Musikalbum hat zehn bis zwanzig Stücke von drei bis fünf Minuten. Die Schwellen liegen
+    /// dazwischen: ein Kapitel ab zehn Minuten, im Mittel mindestens fünf Minuten, höchstens
+    /// zwanzig Spuren. Folgen, die beim Anbieter in viele kurze Spuren zerlegt sind, fallen
+    /// damit heraus; für sie zählen die übrigen Merkmale der Bewertung.
+    /// </remarks>
     public static class HoerspielAlbumHeuristic
     {
         /// <summary>

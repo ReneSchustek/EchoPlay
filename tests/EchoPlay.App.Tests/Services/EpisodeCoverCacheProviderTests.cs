@@ -96,7 +96,7 @@ namespace EchoPlay.App.Tests.Services
             search.SetResults(
             [
                 new CoverSearchResult(
-                    "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+                    new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                     "TKKG Folge 1", "Cover Art Archive"),
             ]);
 
@@ -138,8 +138,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.Empty(fixture.Downloader.RequestedUrls);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Dienst und Doubles eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required EpisodeCoverCacheService Service { get; init; }
@@ -156,7 +157,7 @@ namespace EchoPlay.App.Tests.Services
             {
                 SourceEpisodeId = "src-1",
                 Title = title,
-                CoverImageUrl = coverUrl,
+                CoverImageUrl = new Uri(coverUrl),
             };
 
         private static async Task<Fixture> BuildAsync(
@@ -172,36 +173,14 @@ namespace EchoPlay.App.Tests.Services
             await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
 
             FakeEpisodeDataService episodeService = new();
-            Guid episodeId = Guid.Empty;
-            if (episodeTitle is not null)
-            {
-                Episode episode = new()
-                {
-                    SeriesId = series.Id,
-                    Title = episodeTitle,
-                    CoverImageUrl = episodeCoverUrl,
-                };
-                await episodeService.AddAsync(episode, TestContext.Current.CancellationToken);
-                episodeId = episode.Id;
-            }
+            Guid episodeId = episodeTitle is null
+                ? Guid.Empty
+                : await AddEpisodeAsync(episodeService, series, episodeTitle, episodeCoverUrl);
 
             FakeCoverDownloader downloader = new();
-            FakeCoverService coverService = new();
-            if (alreadyCovered && episodeId != Guid.Empty)
-            {
-                coverService.ExistingEpisodeCovers[episodeId] = [1];
-            }
+            FakeCoverService coverService = CoverServiceFor(episodeId, alreadyCovered);
 
-            ServiceCollection services = new();
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService { CopiedCount = copiedLocally });
-            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
-            _ = services.AddScoped<ILocalCoverLoader>(_ => new FakeLocalCoverLoader());
-            _ = services.AddScoped<ICoverSearchService>(_ => coverSearch);
-
-            ServiceProvider provider = services.BuildServiceProvider();
+            ServiceProvider provider = BuildProvider(seriesService, episodeService, coverSearch, copiedLocally);
 
             return new Fixture
             {
@@ -218,6 +197,53 @@ namespace EchoPlay.App.Tests.Services
                 EpisodeId = episodeId,
                 SeriesId = series.Id,
             };
+        }
+
+        /// <summary>Cover-Dienst, der für die Folge wahlweise schon ein Cover kennt.</summary>
+        private static FakeCoverService CoverServiceFor(Guid episodeId, bool alreadyCovered)
+        {
+            FakeCoverService coverService = new();
+            if (alreadyCovered && episodeId != Guid.Empty)
+            {
+                coverService.ExistingEpisodeCovers[episodeId] = [1];
+            }
+
+            return coverService;
+        }
+
+        /// <summary>Legt die Folge der Serie an und liefert ihre Kennung.</summary>
+        private static async Task<Guid> AddEpisodeAsync(
+            FakeEpisodeDataService episodeService, Series series, string title, string? coverUrl)
+        {
+            Episode episode = new()
+            {
+                SeriesId = series.Id,
+                Title = title,
+                CoverImageUrl = coverUrl,
+            };
+            await episodeService.AddAsync(episode, TestContext.Current.CancellationToken);
+            return episode.Id;
+        }
+
+        /// <summary>
+        /// Registriert die Daten-Nachbauten und die Suche. Der Kopierdienst meldet
+        /// <paramref name="copiedLocally"/> lokal übernommene Cover.
+        /// </summary>
+        private static ServiceProvider BuildProvider(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            FakeCoverSearchService coverSearch,
+            int copiedLocally)
+        {
+            ServiceCollection services = new();
+            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService { CopiedCount = copiedLocally });
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+            _ = services.AddScoped<ILocalCoverLoader>(_ => new FakeLocalCoverLoader());
+            _ = services.AddScoped<ICoverSearchService>(_ => coverSearch);
+            return services.BuildServiceProvider();
         }
     }
 }

@@ -11,8 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -73,8 +71,6 @@ namespace EchoPlay.App.ViewModels
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable, Fallback auf <see cref="SystemClock"/>.</param>
         /// <param name="spotifyAlbumId">Spotify-Album-Kennung der Folge, sofern bekannt.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-Kennung der Folge, sofern bekannt.</param>
-        [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase",
-            Justification = "Lowercase-Badge-Text wird im UI direkt angezeigt und muss kleingeschrieben bleiben.")]
         public NewEpisodeCardViewModel(
             Guid episodeId,
             Guid seriesId,
@@ -104,79 +100,20 @@ namespace EchoPlay.App.ViewModels
             EpisodeId = episodeId;
             SeriesId = seriesId;
             SeriesName = seriesName;
-            EpisodeTitle = CleanEpisodeTitle(episodeTitle, seriesName);
+            EpisodeTitle = EpisodeCardLabels.CleanEpisodeTitle(episodeTitle, seriesName);
             _coverImage = coverImage;
             EpisodeNumber = episodeNumber;
             _localizationService = localizationService;
             _releaseDate = releaseDate;
 
-            EpisodeNumberText = episodeNumber.HasValue
-                ? string.Format(CultureInfo.CurrentCulture, localizationService?.Get("EpisodeNumberFormat") ?? "Folge {0}", episodeNumber.Value)
-                : null;
+            EpisodeNumberText = FormatEpisodeNumber(localizationService, episodeNumber);
             IsOnlineOnly = !hasLocalTrack;
 
-            // Info-Zeile für das Kachel-Overlay im einheitlichen Format:
-            // "Nr. 170 · 03.04.2026 · online" (Neuerscheinung)
-            // "Nr. 26 · 25.04.2026 · angekündigt" (Ankündigung)
-            if (releaseDate.HasValue)
-            {
-                List<string> parts = [];
+            InfoLineText = EpisodeCardLabels.InfoLine(localizationService, episodeNumber, releaseDate, isAnnounced, hasLocalTrack);
+            ReleaseDateText = FormatFutureReleaseDate(releaseDate, _clock.UtcNow.Date);
 
-                if (episodeNumber.HasValue)
-                {
-                    parts.Add($"Nr. {episodeNumber.Value}");
-                }
-
-                parts.Add(releaseDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture));
-
-                if (isAnnounced)
-                {
-                    string label = localizationService?.Get("BadgeAnnounced") ?? "Angekündigt";
-                    parts.Add(label.ToLowerInvariant());
-                }
-                else if (!hasLocalTrack)
-                {
-                    parts.Add("online");
-                }
-
-                InfoLineText = string.Join(" · ", parts);
-            }
-            else
-            {
-                InfoLineText = null;
-            }
-
-            if (releaseDate.HasValue && releaseDate.Value.Date > _clock.UtcNow.Date)
-            {
-                // Nur das Datum, der Badge zeigt bereits "Angekündigt"
-                ReleaseDateText = releaseDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                ReleaseDateText = null;
-            }
-
-            // Badge-Logik: Angekündigt > Neu ≤7 Tage > kein Badge. Text und Sichtbarkeit
-            // stehen unabhängig von WinUI; nur die Farbe kommt aus der Palette und ist
-            // deshalb ohne laufende Anwendung nicht auflösbar.
-            if (isAnnounced)
-            {
-                BadgeText = localizationService?.Get("BadgeAnnounced") ?? "Angekündigt";
-                BadgeVisibility = Visibility.Visible;
-                BadgeBrush = TryResolveThemeBrush("AccentPrimaryBrush");
-            }
-            else if (releaseDate.HasValue && (_clock.UtcNow.Date - releaseDate.Value.Date).TotalDays <= 7)
-            {
-                BadgeText = localizationService?.Get("BadgeNew") ?? "Neu";
-                BadgeVisibility = Visibility.Visible;
-                BadgeBrush = TryResolveThemeBrush("StatusSuccessBrush");
-            }
-            else
-            {
-                BadgeText = null;
-                BadgeVisibility = Visibility.Collapsed;
-                BadgeBrush = null;
-            }
+            (BadgeText, BadgeVisibility, BadgeBrush) =
+                EpisodeCardLabels.Badge(localizationService, isAnnounced, releaseDate, _clock.UtcNow.Date);
 
             _status = status;
             _progressPercent = progressPercent;
@@ -192,6 +129,20 @@ namespace EchoPlay.App.ViewModels
             MarkAsPlayedCommand = new RelayCommand(() => _ = MarkAsPlayedAsync());
             MarkAsUnplayedCommand = new RelayCommand(() => _ = MarkAsUnplayedAsync());
         }
+
+        private static string? FormatEpisodeNumber(ILocalizationService? localizationService, int? episodeNumber) =>
+            episodeNumber.HasValue
+                ? string.Format(CultureInfo.CurrentCulture, localizationService?.Get("EpisodeNumberFormat") ?? "Folge {0}", episodeNumber.Value)
+                : null;
+
+        /// <summary>
+        /// Das Erscheinungsdatum, aber nur für eine noch nicht erschienene Folge.
+        /// </summary>
+        private static string? FormatFutureReleaseDate(DateTime? releaseDate, DateTime today) =>
+            // Nur das Datum, der Badge zeigt bereits "Angekündigt"
+            releaseDate.HasValue && releaseDate.Value.Date > today
+                ? releaseDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)
+                : null;
 
         /// <summary>ID der Episode.</summary>
         public Guid EpisodeId { get; }
@@ -223,7 +174,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Formatierte Folgennummer (z.B. "Folge 229") oder null.</summary>
         public string? EpisodeNumberText { get; }
 
-        /// <summary>Erscheinungsdatum-Text (z.B. "Erscheint am 15.04.2026") oder null wenn nicht angekündigt.</summary>
+        /// <summary>Erscheinungsdatum einer angekündigten Folge (z.B. "15.04.2026") oder null.</summary>
         public string? ReleaseDateText { get; }
 
         /// <summary>Sichtbarkeit des Erscheinungsdatums auf der Kachel (nur bei Ankündigungen).</summary>
@@ -349,8 +300,8 @@ namespace EchoPlay.App.ViewModels
         public Visibility BadgeVisibility { get; }
 
         /// <summary>
-        /// Hintergrundfarbe des Badge: Akzentfarbe (blau) für Ankündigungen,
-        /// Grün (#4CAF50) für Neuerscheinungen der letzten 7 Tage.
+        /// Hintergrundfarbe des Badge aus der Palette: die Akzentfarbe für Ankündigungen,
+        /// die Erfolgsfarbe für Neuerscheinungen der letzten 7 Tage.
         /// </summary>
         public Microsoft.UI.Xaml.Media.Brush? BadgeBrush { get; }
 
@@ -373,9 +324,9 @@ namespace EchoPlay.App.ViewModels
             // Album vollständig zur Verfügung steht, lohnt der Sprung zum Anbieter. Apple Music
             // führt angekündigte Alben zwar schon als Vorabveröffentlichung, zu hören gibt es
             // dort aber nichts, und der Nutzer landet außerhalb der Anwendung.
-            bool nochNichtErschienen = _releaseDate.HasValue && _releaseDate.Value.Date > _clock.UtcNow.Date;
+            bool notYetReleased = _releaseDate.HasValue && _releaseDate.Value.Date > _clock.UtcNow.Date;
 
-            if (nochNichtErschienen || (IsAnnounced && !_releaseDate.HasValue))
+            if (notYetReleased || (IsAnnounced && !_releaseDate.HasValue))
             {
                 await _errorDialogService.ShowAsync(
                     _localizationService?.Get("EpisodeNotAvailableTitle") ?? "Noch nicht verfügbar",
@@ -450,58 +401,6 @@ namespace EchoPlay.App.ViewModels
 
             Status = PlaybackStatus.NotStarted;
             ProgressPercent = 0;
-        }
-
-        /// <summary>
-        /// Löst einen Farbschlüssel der Palette auf.
-        /// <para>
-        /// Über den Schlüssel und nicht über einen Farbwert im Quelltext: Der Nutzer wählt
-        /// zwischen sechs Paletten, und eine hier fest verdrahtete Farbe stünde in fünf davon
-        /// daneben. Der Schlüsselsatz ist in allen Paletten vollständig. Dass er hier zur
-        /// Laufzeit gesucht wird, ändert daran nichts.
-        /// </para>
-        /// </summary>
-        /// <param name="key">Schlüssel aus der Palette, etwa <c>AccentPrimaryBrush</c>.</param>
-        /// <returns>Der Pinsel, oder <see langword="null"/> ohne laufende Anwendung (Tests).</returns>
-        private static Microsoft.UI.Xaml.Media.Brush? TryResolveThemeBrush(string key)
-        {
-            try
-            {
-                return Microsoft.UI.Xaml.Application.Current.Resources[key] as Microsoft.UI.Xaml.Media.Brush;
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                // Ohne WinUI-Runtime gibt es keine Palette, die Kachel bleibt ohne Farbe.
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Entfernt Serienname und Folgennummer-Prefix aus dem iTunes-Albumnamen,
-        /// damit nur der reine Episodentitel übrig bleibt (z.B. "Zusammengewachsen"
-        /// statt "Kira Kolumna - Folge 26 - Zusammengewachsen").
-        /// </summary>
-        private static string CleanEpisodeTitle(string title, string seriesName)
-        {
-            string cleaned = title;
-
-            // Serienname am Anfang entfernen (z.B. "Kira Kolumna - ...")
-            if (cleaned.StartsWith(seriesName, StringComparison.OrdinalIgnoreCase))
-            {
-                cleaned = cleaned[seriesName.Length..].TrimStart(' ', '-', '–', '—', ':');
-            }
-
-            // Folgennummer-Prefix entfernen:
-            // "Folge 26 - Titel", "170 - Titel", "Folge 170: Titel", "26: Titel"
-            System.Text.RegularExpressions.Match match =
-                System.Text.RegularExpressions.Regex.Match(cleaned, @"^(?:Folge\s+)?\d+\s*[-–—:]\s*");
-            if (match.Success)
-            {
-                cleaned = cleaned[match.Length..];
-            }
-
-            // Falls nichts übrig bleibt, Originaltitel beibehalten
-            return string.IsNullOrWhiteSpace(cleaned) ? title : cleaned;
         }
     }
 }

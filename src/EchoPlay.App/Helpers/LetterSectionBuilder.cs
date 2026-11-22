@@ -129,7 +129,7 @@ namespace EchoPlay.App.Helpers
 
         private static string FormatAutomationName(string format, string header)
         {
-            // Eine Vorlage ohne Platzhalter gäbe jedem Abschnitt denselben Namen — die
+            // Eine Vorlage ohne Platzhalter gäbe jedem Abschnitt denselben Namen; die
             // Sprachausgabe könnte sie dann nicht auseinanderhalten.
             return format.Contains("{0}", StringComparison.Ordinal)
                 ? string.Format(System.Globalization.CultureInfo.CurrentCulture, format, header)

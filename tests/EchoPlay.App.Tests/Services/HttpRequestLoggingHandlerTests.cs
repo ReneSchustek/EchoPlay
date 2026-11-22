@@ -101,17 +101,14 @@ namespace EchoPlay.App.Tests.Services
                 InnerHandler = inner,
             };
 
-            using HttpRequestMessage request = new(
-                HttpMethod.Get,
-                new Uri("https://example.com/retry"));
+            using HttpRequestMessage request = new(HttpMethod.Get, new Uri("https://example.com/retry"));
             using HttpMessageInvoker invoker = new(handler);
 
-            HttpResponseMessage first = await invoker.SendAsync(request, CancellationToken.None);
-            first.Dispose();
-            HttpResponseMessage second = await invoker.SendAsync(request, CancellationToken.None);
-            second.Dispose();
-            HttpResponseMessage third = await invoker.SendAsync(request, CancellationToken.None);
-            third.Dispose();
+            // Dieselbe Anfrage dreimal, wie es die Wiederholungsstrategie tut.
+            for (int i = 0; i < 3; i++)
+            {
+                using HttpResponseMessage response = await invoker.SendAsync(request, CancellationToken.None);
+            }
 
             // Drei Request-Zeilen mit Attempt: 1, 2, 3
             int[] attempts = new[] { 1, 2, 3 };
@@ -233,6 +230,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Antwortet mit festem Status und festem Statustext.
+        /// </summary>
         private sealed class StubInnerHandler(HttpStatusCode status, string reason) : HttpMessageHandler
         {
             private readonly HttpStatusCode _status = status;
@@ -249,6 +249,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Scheitert mit der vorgegebenen Ausnahme.
+        /// </summary>
         private sealed class ThrowingInnerHandler(Exception exception) : HttpMessageHandler
         {
             private readonly Exception _exception = exception;

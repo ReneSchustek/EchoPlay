@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace EchoPlay.Core.Models
 {
     /// <summary>
@@ -8,15 +6,15 @@ namespace EchoPlay.Core.Models
     /// </summary>
     /// <param name="Version">Versionsnummer der neuen Version (z.B. "1.2.0").</param>
     /// <param name="ReleaseNotes">Beschreibungstext des GitHub-Releases (Markdown).</param>
-    /// <param name="DownloadUrl">Direkte Download-URL der Setup-Datei (.exe).</param>
+    /// <param name="DownloadUrl">Geprüfte Adresse der Setup-Datei (.exe) am Release.</param>
     /// <param name="FileSizeBytes">Dateigröße der Setup-Datei in Bytes (0 wenn unbekannt).</param>
-    /// <param name="ExpectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Leer wenn der Release-Body keinen Hash enthält; dann wird die Integritätsprüfung übersprungen.</param>
-    [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "DTO spiegelt GitHub-Release-JSON; Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-    [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt GitHub-Release-JSON; Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
+    /// <param name="ExpectedSha256">Erwarteter SHA-256-Hash der Setup-Datei in Hex (64 Zeichen, Groß-/Kleinschreibung beliebig). Ein Release ohne gültigen Hash wird gar nicht erst als Update angeboten.</param>
+    /// <param name="SignatureUrl">Adresse der losgelösten Signatur (<c>&lt;Setup&gt;.sig</c>) am Release. Ein Release ohne Signatur wird gar nicht erst als Update angeboten.</param>
     public sealed record UpdateInfo(
         string Version,
         string ReleaseNotes,
-        string DownloadUrl,
+        Uri DownloadUrl,
         long FileSizeBytes,
-        string ExpectedSha256);
+        string ExpectedSha256,
+        Uri SignatureUrl);
 }

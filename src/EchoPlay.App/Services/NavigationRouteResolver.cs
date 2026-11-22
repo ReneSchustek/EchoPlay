@@ -7,7 +7,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Reine Mapping-Logik für den NavigationService: bildet
     /// <see cref="NavigationTarget"/>-Enum-Werte auf konkrete Page-Typen ab.
-    /// Extrahiert aus <see cref="NavigationService"/>, damit die Mapping-Tabelle
+    /// Steht getrennt vom <see cref="NavigationService"/>, damit die Mapping-Tabelle
     /// ohne Frame-Initialisierung testbar ist.
     /// </summary>
     public static class NavigationRouteResolver
@@ -18,6 +18,7 @@ namespace EchoPlay.App.Services
             new()
             {
                 [NavigationTarget.Dashboard] = typeof(DashboardPage),
+                [NavigationTarget.Announced] = typeof(AnnouncedPage),
                 [NavigationTarget.OnlineLibrary] = typeof(OnlineLibraryPage),
                 [NavigationTarget.LocalLibrary] = typeof(LocalLibraryPage),
                 [NavigationTarget.Search] = typeof(SearchPage),

@@ -30,7 +30,7 @@ namespace EchoPlay.App.ViewModels
         /// Vorab geladenes Cover-Bild oder <see langword="null"/> wenn kein Cover vorhanden.
         /// </param>
         /// <param name="isCompleted">Ob die Episode als gehört markiert ist.</param>
-        /// <param name="isSpecialEpisode">Ob es sich um eine Sonderfolge handelt (Nummer 0 oder 000-Präfix).</param>
+        /// <param name="isSpecialEpisode">Ob es sich um eine Sonderfolge handelt (Nummer 0, 000-Präfix oder ohne Nummer).</param>
         public LocalEpisodeCardViewModel(
             Guid episodeId,
             int? episodeNumber,
@@ -120,6 +120,5 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public Visibility CompletedCheckVisibility =>
             _isCompleted ? Visibility.Visible : Visibility.Collapsed;
-
     }
 }

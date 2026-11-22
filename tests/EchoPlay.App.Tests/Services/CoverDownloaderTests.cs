@@ -20,19 +20,19 @@ namespace EchoPlay.App.Tests.Services
             new(new StubHttpClientFactory(handler), new FakeLoggerFactory());
 
         [Fact]
-        public async Task DownloadAsync_Erfolg_LiefertBytes()
+        public async Task DownloadAsync_Success_ReturnsBytes()
         {
             byte[] payload = [0x01, 0x02, 0x03];
             CoverDownloader downloader = Build(new StubHandler(HttpStatusCode.OK, payload));
 
             byte[]? result = await downloader.DownloadAsync(
-                "https://example.invalid/cover.jpg", TestContext.Current.CancellationToken);
+                new Uri("https://example.invalid/cover.jpg"), TestContext.Current.CancellationToken);
 
             Assert.Equal(payload, result);
         }
 
         [Fact]
-        public async Task DownloadAsync_LeereAntwort_LiefertNull()
+        public async Task DownloadAsync_EmptyResponse_ReturnsNull()
         {
             // 0 Bytes dürfen nicht in CoverImages landen: der Platzhalter greift dann nicht
             // mehr, und die Nachlade-Läufe halten den Eintrag für erledigt. Zwei der vier
@@ -40,18 +40,18 @@ namespace EchoPlay.App.Tests.Services
             CoverDownloader downloader = Build(new StubHandler(HttpStatusCode.OK, []));
 
             byte[]? result = await downloader.DownloadAsync(
-                "https://example.invalid/leer.jpg", TestContext.Current.CancellationToken);
+                new Uri("https://example.invalid/leer.jpg"), TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task DownloadAsync_HttpFehler_LiefertNull()
+        public async Task DownloadAsync_HttpError_ReturnsNull()
         {
             CoverDownloader downloader = Build(new StubHandler(HttpStatusCode.NotFound, []));
 
             byte[]? result = await downloader.DownloadAsync(
-                "https://example.invalid/fehlt.jpg", TestContext.Current.CancellationToken);
+                new Uri("https://example.invalid/fehlt.jpg"), TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -66,13 +66,13 @@ namespace EchoPlay.App.Tests.Services
                 new TaskCanceledException("timeout", new TimeoutException())));
 
             byte[]? result = await downloader.DownloadAsync(
-                "https://example.invalid/langsam.jpg", TestContext.Current.CancellationToken);
+                new Uri("https://example.invalid/langsam.jpg"), TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task DownloadAsync_Abbruch_WirftWeiter()
+        public async Task DownloadAsync_Cancel_Rethrows()
         {
             // Gegenstück zum Test darüber: ein echter Abbruch ist kein fehlgeschlagener
             // Download und muss die Schleife des Aufrufers beenden.
@@ -82,27 +82,25 @@ namespace EchoPlay.App.Tests.Services
             CoverDownloader downloader = Build(new StubHandler(HttpStatusCode.OK, [0x01]));
 
             _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => downloader.DownloadAsync("https://example.invalid/cover.jpg", cts.Token));
+                () => downloader.DownloadAsync(new Uri("https://example.invalid/cover.jpg"), cts.Token));
         }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("   ")]
-        [InlineData("kein-uri")]
-        [InlineData("/relativ/cover.jpg")]
-        public async Task DownloadAsync_UnbrauchbareUrl_LiefertNullOhneAnfrage(string eingabe)
+        [Fact]
+        public async Task DownloadAsync_WithoutAddress_ThrowsWithoutRequest()
         {
+            // Unbrauchbare Zeichenketten weist WebAddress an der Grenze ab; hier kommt nur noch
+            // eine geprüfte Adresse an. Fehlt sie ganz, ist das ein Fehler des Aufrufers.
             CountingHandler handler = new();
             CoverDownloader downloader = Build(handler);
 
-            byte[]? result = await downloader.DownloadAsync(eingabe, TestContext.Current.CancellationToken);
-
-            Assert.Null(result);
+            _ = await Assert.ThrowsAsync<ArgumentNullException>(
+                () => downloader.DownloadAsync(null!, TestContext.Current.CancellationToken));
             Assert.Equal(0, handler.CallCount);
         }
 
-        // ── Stubs ──────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Gibt Clients über einem gemeinsamen Handler aus, der dabei nicht freigegeben wird.
+        /// </summary>
         private sealed class StubHttpClientFactory : IHttpClientFactory
         {
             private readonly HttpMessageHandler _handler;
@@ -112,6 +110,9 @@ namespace EchoPlay.App.Tests.Services
             public HttpClient CreateClient(string name) => new(_handler, disposeHandler: false);
         }
 
+        /// <summary>
+        /// Antwortet mit festem Status und festen Bytes.
+        /// </summary>
         private sealed class StubHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _status;
@@ -135,6 +136,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Scheitert mit der vorgegebenen Ausnahme.
+        /// </summary>
         private sealed class ThrowingHandler : HttpMessageHandler
         {
             private readonly Exception _exception;
@@ -146,6 +150,9 @@ namespace EchoPlay.App.Tests.Services
                 => Task.FromException<HttpResponseMessage>(_exception);
         }
 
+        /// <summary>
+        /// Zählt Anfragen und antwortet mit einem Byte.
+        /// </summary>
         private sealed class CountingHandler : HttpMessageHandler
         {
             public int CallCount { get; private set; }

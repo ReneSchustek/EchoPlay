@@ -1,4 +1,5 @@
 using EchoPlay.App.Models;
+using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Abstractions;
@@ -6,7 +7,9 @@ using EchoPlay.LocalLibrary.Models;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -54,6 +57,14 @@ namespace EchoPlay.App.Services
                 IFolderRestructureService service =
                     scope.ServiceProvider.GetRequiredService<IFolderRestructureService>();
 
+                // Ein abgebrochener Umbau wird zuerst zurückgespielt; sonst sähe die Vorschau
+                // einen halb umgebauten Ordner.
+                int recovered = service.TryRecoverPendingJournal(seriesFolderPath);
+                if (recovered > 0)
+                {
+                    _logger.Info("Abgebrochenen Ordner-Umbau zurückgespielt: {Count} Dateien", recovered);
+                }
+
                 return service.Analyze(seriesFolderPath, folderPattern);
             });
 
@@ -68,12 +79,13 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <param name="preview">Die zuvor erzeugte Vorschau, die jetzt tatsächlich ausgeführt wird.</param>
-        public async Task<int> ExecuteAsync(RestructurePreviewDisplay preview, CancellationToken cancellationToken = default)
+        /// <param name="seriesId">Die Serie, deren Folgen und Spuren die neuen Pfade bekommen.</param>
+        public async Task<int> ExecuteAsync(Guid seriesId, RestructurePreviewDisplay preview, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(preview);
             RestructurePreview original = preview.Original;
 
-            return await Task.Run(() =>
+            int moved = await Task.Run(() =>
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IFolderRestructureService service =
@@ -81,6 +93,74 @@ namespace EchoPlay.App.Services
 
                 return service.Execute(original);
             });
+
+            // Die Dateien liegen schon am neuen Platz. Ein Abbruch hier ließe die Datenbank auf
+            // den alten Pfaden; deshalb läuft das Nachziehen ohne das Abbruch-Token zu Ende.
+            await RelocateInDatabaseAsync(seriesId, MovedFiles(original)).ConfigureAwait(false);
+            return moved;
+        }
+
+        /// <summary>
+        /// Die Dateien der Vorschau, die nach dem Lauf am Ziel liegen und nicht mehr an der Quelle.
+        /// Übersprungene Dateien (Ziel war schon belegt) fehlen.
+        /// </summary>
+        /// <param name="preview">Die ausgeführte Vorschau.</param>
+        /// <returns>Alter und neuer Pfad je verschobener Datei.</returns>
+        internal static Dictionary<string, string> MovedFiles(RestructurePreview preview)
+        {
+            Dictionary<string, string> moved = new(StringComparer.OrdinalIgnoreCase);
+            foreach (RestructureAction action in preview.Actions)
+            {
+                string destination = Path.Combine(action.TargetFolderPath, action.FileName);
+                if (File.Exists(destination) && !File.Exists(action.SourcePath))
+                {
+                    moved[action.SourcePath] = destination;
+                }
+            }
+
+            return moved;
+        }
+
+        /// <summary>
+        /// Schreibt die Spuren der Serie mit ihren neuen Pfaden und setzt den Ordner jeder
+        /// betroffenen Folge auf den Ordner ihrer Spuren. Hörstände hängen an der Folge und
+        /// bleiben unberührt.
+        /// </summary>
+        private async Task RelocateInDatabaseAsync(Guid seriesId, Dictionary<string, string> moved)
+        {
+            if (moved.Count == 0)
+            {
+                return;
+            }
+
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
+            ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
+
+            int relocated = 0;
+            foreach (Episode episode in await episodeService.GetBySeriesIdAsync(seriesId).ConfigureAwait(false))
+            {
+                IReadOnlyList<LocalTrack> tracks = await trackService.GetByEpisodeIdAsync(episode.Id).ConfigureAwait(false);
+                if (!tracks.Any(track => moved.ContainsKey(track.FilePath)))
+                {
+                    continue;
+                }
+
+                List<LocalTrack> relocatedTracks = [.. tracks.Select(track => new LocalTrack
+                {
+                    EpisodeId = track.EpisodeId,
+                    FilePath = moved.TryGetValue(track.FilePath, out string? target) ? target : track.FilePath,
+                    TrackNumber = track.TrackNumber,
+                    Duration = track.Duration
+                })];
+                await trackService.SaveTracksForEpisodeAsync(episode.Id, relocatedTracks).ConfigureAwait(false);
+
+                episode.LocalFolderPath = Path.GetDirectoryName(relocatedTracks[0].FilePath);
+                await episodeService.UpdateAsync(episode).ConfigureAwait(false);
+                relocated++;
+            }
+
+            _logger.Info("Pfade nach dem Ordner-Umbau nachgezogen: {Count} Folgen", relocated);
         }
 
         /// <summary>

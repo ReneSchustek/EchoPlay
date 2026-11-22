@@ -20,6 +20,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!-- Künstliche Uhr: Zeitgrenzen der HTTP-Pipeline prüfen, ohne dreißig Sekunden zu warten. -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <!-- Syntaxbaum für die Wächter, die Kommentare im ganzen Quellbaum prüfen. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>

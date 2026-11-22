@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Startet die Messungen aus tests/EchoPlay.Benchmarks.Cases. Kein Testprojekt: Es läuft nicht in
+    "dotnet test" mit, weil eine Messung Minuten dauert und bei jedem Commit im Weg stünde. Der
+    Aufruf steht in tools/README.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EchoPlay.Benchmarks.Cases\EchoPlay.Benchmarks.Cases.csproj" />
+  </ItemGroup>
+
+</Project>

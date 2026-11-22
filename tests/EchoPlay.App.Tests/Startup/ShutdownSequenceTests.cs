@@ -93,8 +93,6 @@ namespace EchoPlay.App.Tests.Startup
                 () => ShutdownSequence.Run(host: null!, logger: null));
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static ServiceProvider BuildProvider(FakeDatabaseMaintenanceService maintenance)
         {
             ServiceCollection services = new();

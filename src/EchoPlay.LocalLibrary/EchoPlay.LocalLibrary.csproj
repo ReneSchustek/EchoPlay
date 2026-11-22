@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="EchoPlay.LocalLibrary.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EchoPlay.Core\EchoPlay.Core.csproj" />
     <ProjectReference Include="..\EchoPlay.Logger.Abstractions\EchoPlay.Logger.Abstractions.csproj" />
   </ItemGroup>

@@ -54,7 +54,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             OnlineEpisodeCardViewModel card = new(
                 TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1",
-                providerUrl: "https://example.invalid/album/1");
+                providerUrl: new Uri("https://example.invalid/album/1"));
 
             Assert.Equal(Visibility.Visible, card.OpenInBrowserVisibility);
         }
@@ -129,7 +129,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // obendrein als gehört vermerkt, ohne dass etwas passiert ist.
             OnlineEpisodeCardViewModel card = new(
                 TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1",
-                providerUrl: "file:///C:/Windows/System32/calc.exe");
+                providerUrl: new Uri("file:///C:/Windows/System32/calc.exe"));
 
             card.OpenInBrowserCommand.Execute(null);
 

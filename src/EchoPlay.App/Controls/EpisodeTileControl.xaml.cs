@@ -8,7 +8,7 @@ using System.Windows.Input;
 namespace EchoPlay.App.Controls
 {
     /// <summary>
-    /// Wiederverwendbare Folgen-Kachel (120×120) für lokale und Online-Mediathek.
+    /// Wiederverwendbare Folgen-Kachel (140×140) für lokale und Online-Mediathek.
     /// Zeigt Cover, Text-Overlay (Statuszeile + Titel), Gehört-Häkchen
     /// und einen konfigurierbaren Button oben rechts.
     /// </summary>
@@ -29,8 +29,6 @@ namespace EchoPlay.App.Controls
                 Helpers.SafeResourceLoader.Get("EpisodeTileActionButton", "Weitere Aktionen"));
         }
 
-        // ── Kachel-Klick ────────────────────────────────────────────────────────
-
         /// <summary>Command beim Klick auf die gesamte Kachel (nicht den Aktions-Button).</summary>
         public static readonly DependencyProperty TileCommandProperty =
             DependencyProperty.Register(nameof(TileCommand), typeof(ICommand), typeof(EpisodeTileControl),
@@ -45,13 +43,14 @@ namespace EchoPlay.App.Controls
 
         private void OnTileTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
-            // Nicht auslösen wenn der Aktions-Button geklickt wurde
-            if (ReferenceEquals(e.OriginalSource, ActionButton) || ActionButton.IsPointerOver) return;
+            // Ein Klick auf den Aktions-Button gehört dem Button, nicht der Kachel.
+            if (ReferenceEquals(e.OriginalSource, ActionButton) || ActionButton.IsPointerOver)
+            {
+                return;
+            }
 
             TileCommand?.Execute(null);
         }
-
-        // ── Cover ───────────────────────────────────────────────────────────────
 
         /// <summary>Cover-Bild der Episode. Null zeigt den Platzhalter.</summary>
         public static readonly DependencyProperty CoverImageProperty =
@@ -73,8 +72,6 @@ namespace EchoPlay.App.Controls
             control.PlaceholderBorder.Visibility = image is null ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        // ── Text ────────────────────────────────────────────────────────────────
-
         /// <summary>Titel der Episode (untere Zeile im Overlay).</summary>
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(EpisodeTileControl),
@@ -87,7 +84,7 @@ namespace EchoPlay.App.Controls
             set => SetValue(TitleProperty, value);
         }
 
-        /// <summary>Statustext (obere Zeile im Overlay, z.B. Folgennummer oder Datum).</summary>
+        /// <summary>Statustext (obere Zeile im Overlay, etwa Folgennummer oder Datum).</summary>
         public static readonly DependencyProperty StatusTextValueProperty =
             DependencyProperty.Register(nameof(StatusTextValue), typeof(string), typeof(EpisodeTileControl),
                 new PropertyMetadata(string.Empty, (d, e) => ((EpisodeTileControl)d).StatusText.Text = (string)e.NewValue));
@@ -98,8 +95,6 @@ namespace EchoPlay.App.Controls
             get => (string)GetValue(StatusTextValueProperty);
             set => SetValue(StatusTextValueProperty, value);
         }
-
-        // ── Gehört-Häkchen ──────────────────────────────────────────────────────
 
         /// <summary>Sichtbarkeit des Gehört-Häkchens.</summary>
         public static readonly DependencyProperty CompletedVisibilityProperty =
@@ -113,9 +108,7 @@ namespace EchoPlay.App.Controls
             set => SetValue(CompletedVisibilityProperty, value);
         }
 
-        // ── Aktions-Button ──────────────────────────────────────────────────────
-
-        /// <summary>Glyph des Aktions-Buttons (z.B. "..." oder Browser-Icon).</summary>
+        /// <summary>Glyph des Aktions-Buttons, etwa "..." oder das Browser-Symbol.</summary>
         public static readonly DependencyProperty ActionGlyphProperty =
             DependencyProperty.Register(nameof(ActionGlyph), typeof(string), typeof(EpisodeTileControl),
                 new PropertyMetadata(null, OnActionGlyphChanged));
@@ -132,7 +125,7 @@ namespace EchoPlay.App.Controls
             EpisodeTileControl control = (EpisodeTileControl)d;
             string? glyph = (string?)e.NewValue;
             control.ActionButton.Content = glyph;
-            // Sichtbarkeit nur setzen wenn keine explizite ActionVisibility gebunden ist
+            // Eine ausdrücklich verborgene Schaltfläche bleibt verborgen, auch wenn ein Zeichen kommt.
             if (control.GetValue(ActionVisibilityProperty) is Visibility.Visible ||
                 control.GetValue(ActionVisibilityProperty) is null)
             {
@@ -180,7 +173,6 @@ namespace EchoPlay.App.Controls
         {
             EpisodeTileControl control = (EpisodeTileControl)d;
             control.ActionButton.Flyout = (FlyoutBase?)e.NewValue;
-            // Button sichtbar machen wenn Flyout gesetzt
             if (e.NewValue is not null)
             {
                 control.ActionButton.Visibility = Visibility.Visible;
@@ -189,7 +181,7 @@ namespace EchoPlay.App.Controls
 
         /// <summary>
         /// Tooltip für den Aktions-Button. Derselbe Text wird als Name für die
-        /// Bedienungshilfen gesetzt — der Knopf trägt nur ein Zeichen, ohne Namen ist er
+        /// Bedienungshilfen gesetzt; der Knopf trägt nur ein Zeichen, ohne Namen ist er
         /// für Sprachausgabe und Automation stumm.
         /// </summary>
         public static readonly DependencyProperty ActionTooltipProperty =
@@ -209,10 +201,9 @@ namespace EchoPlay.App.Controls
             set => SetValue(ActionTooltipProperty, value);
         }
 
-        // ── Kachelform: Rand statt Anheben ──────────────────────────────────────
-
-        // Die Zustände stehen im XAML, damit die Farben aus der Palette kommen und nicht
-        // hier im Quelltext stehen. Der Code schaltet nur um.
+        // Beim Überfahren färbt sich nur der Rand in der Akzentfarbe, die Kachel hebt sich
+        // nicht an. Die Zustände stehen im XAML, damit die Farben aus der Palette kommen und
+        // nicht hier im Quelltext stehen. Der Code schaltet nur um.
         private void OnTilePointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) =>
             _ = VisualStateManager.GoToState(this, "PointerOver", true);
 

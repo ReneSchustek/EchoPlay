@@ -6,10 +6,11 @@ namespace EchoPlay.App.Infrastructure
     /// <summary>
     /// <see cref="ICommand"/>-Implementierung, die eine Aktion mit Parameter kapselt.
     /// Wird verwendet, wenn derselbe Command mit unterschiedlichen Werten aufgerufen werden soll,
-    /// z.B. Theme-Wechsel mit dem Theme-Namen als Parameter.
-    ///
+    /// etwa der Theme-Wechsel mit dem Theme-Namen als Parameter.
+    /// <para>
     /// WinUI 3 übergibt den <c>CommandParameter</c> des auslösenden Elements als <see langword="object"/>
-    /// an <see cref="Execute"/>. Der Aufrufer ist verantwortlich für das Casting.
+    /// an <see cref="Execute"/>; die Aktion wandelt ihn selbst in den erwarteten Typ.
+    /// </para>
     /// </summary>
     public sealed class ParameterizedRelayCommand : ICommand
     {
@@ -18,7 +19,7 @@ namespace EchoPlay.App.Infrastructure
         /// <summary>
         /// Von <see cref="ICommand"/> gefordert. <see cref="CanExecute"/> ist für dieses Command
         /// konstant <see langword="true"/>, daher gibt es keinen Zustandswechsel und die Accessoren
-        /// sind bewusst leer.
+        /// sind leer.
         /// </summary>
         public event EventHandler? CanExecuteChanged { add { } remove { } }
 
@@ -28,6 +29,7 @@ namespace EchoPlay.App.Infrastructure
         /// <param name="execute">Die auszuführende Aktion. Erhält den CommandParameter als Argument.</param>
         public ParameterizedRelayCommand(Action<object?> execute)
         {
+            ArgumentNullException.ThrowIfNull(execute);
             _execute = execute;
         }
 

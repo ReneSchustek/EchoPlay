@@ -26,39 +26,87 @@ namespace EchoPlay.App.Tests.Services
     {
         private static SyncService BuildService(
             FakeAppSettingsDataService settingsService,
-            FakeSeriesDataService seriesService,
-            FakeEpisodeDataService episodeService,
-            FakeLocalTrackDataService trackService,
-            FakeLocalLibraryScanner scanner,
-            FakeTrackMatcher trackMatcher,
-            FakeAudioMetadataReader metadataReader,
+            FakeSeriesDataService? seriesService = null,
+            FakeEpisodeDataService? episodeService = null,
+            FakeLocalTrackDataService? trackService = null,
+            FakeLocalLibraryScanner? scanner = null,
+            FakeTrackMatcher? trackMatcher = null,
+            FakeAudioMetadataReader? metadataReader = null,
             FakeScanEventService? scanEventService = null)
+            => new SyncServiceSetup
+            {
+                Settings = settingsService,
+                Series = seriesService ?? new FakeSeriesDataService(),
+                Episodes = episodeService ?? new FakeEpisodeDataService(),
+                Tracks = trackService ?? new FakeLocalTrackDataService(),
+                Scanner = scanner ?? new FakeLocalLibraryScanner([]),
+                TrackMatcher = trackMatcher ?? new FakeTrackMatcher(),
+                MetadataReader = metadataReader ?? new FakeAudioMetadataReader(),
+                ScanEvents = scanEventService ?? new FakeScanEventService(),
+            }.Build();
+
+        /// <summary>
+        /// Einstellungen mit eingeschalteter Mediathek unter <c>/music</c>. Ohne Angabe bleibt
+        /// <see cref="AppSettings.AutoImportAfterScan"/> auf seinem Vorgabewert.
+        /// </summary>
+        private static FakeAppSettingsDataService EnabledSettings(bool? autoImportAfterScan = null)
         {
-            ServiceCollection services = new();
-            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddScoped<ILocalTrackDataService>(_ => trackService);
-            _ = services.AddScoped<ILocalLibraryScanner>(_ => scanner);
-            _ = services.AddScoped<IScanOrchestrator>(_ => new FakeScanOrchestrator(scanner));
-            _ = services.AddScoped<ILocalCoverService>(_ => new FakeLocalCoverService());
-            _ = services.AddScoped<ITrackMatcher>(_ => trackMatcher);
-            _ = services.AddScoped<IAudioMetadataReader>(_ => metadataReader);
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            AppSettings settings = new()
+            {
+                LocalLibraryEnabled = true,
+                LocalLibraryRootPath = "/music"
+            };
 
-            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
-            ServiceProvider provider = services.BuildServiceProvider();
+            if (autoImportAfterScan is bool autoImport)
+            {
+                settings.AutoImportAfterScan = autoImport;
+            }
 
-            EchoPlay.App.Services.CoverService coverService = new(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<ILoggerFactory>());
+            return new FakeAppSettingsDataService(settings);
+        }
 
-            return new SyncService(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<ILoggerFactory>(),
-                scanEventService ?? new FakeScanEventService(),
-                coverService);
+        /// <summary>Datenbestand mit genau einer Serie des angegebenen Titels.</summary>
+        private static async Task<FakeSeriesDataService> SeriesWithAsync(string title)
+        {
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(new Series { Title = title }, cancellationToken: TestContext.Current.CancellationToken);
+            return seriesService;
+        }
+
+        /// <summary>Legt die Folge mit Nummer und dem Titel „Folge n“ zur Serie an.</summary>
+        private static Task AddEpisodeAsync(FakeEpisodeDataService episodeService, Series series, int number)
+            => episodeService.AddAsync(
+                new Episode { SeriesId = series.Id, Title = $"Folge {number}", EpisodeNumber = number },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+        /// <summary>Scan-Ergebnis mit einem Serienordner und seinen Folgenordnern.</summary>
+        private static IReadOnlyList<LocalScanResult> ScanOf(
+            string seriesName, string seriesFolder, params IReadOnlyList<LocalEpisodeScan> episodes)
+            =>
+            [
+                new LocalScanResult
+                {
+                    SeriesName = seriesName,
+                    SeriesFolderPath = seriesFolder,
+                    Episodes = episodes
+                }
+            ];
+
+        /// <summary>Ein Folgenordner mit erkannter (oder fehlender) Nummer und seinen Spuren.</summary>
+        private static LocalEpisodeScan EpisodeScan(string folder, int? number, params string[] tracks)
+            => new() { FolderPath = folder, ParsedNumber = number, TrackPaths = tracks };
+
+        /// <summary>Folgenordner 001 bis <paramref name="count"/> einer neuen Serie, je mit den Spuren.</summary>
+        private static List<LocalEpisodeScan> NumberedEpisodes(int count, params string[] trackNames)
+        {
+            List<LocalEpisodeScan> episodes = new(count);
+            for (int i = 0; i < count; i++)
+            {
+                string folder = $"/music/Neue Serie/{i + 1:000}";
+                episodes.Add(EpisodeScan(folder, i + 1, [.. trackNames.Select(name => $"{folder}/{name}")]));
+            }
+
+            return episodes;
         }
 
         [Fact]
@@ -185,48 +233,15 @@ namespace EchoPlay.App.Tests.Services
         public async Task SyncAsync_UpdatesEpisode_WhenNumberMatches()
         {
             // Lokale Episode wird aktualisiert, wenn die Episodennummer übereinstimmt
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music"
-            });
-
-            FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Series addedSeries = seriesService.All[0];
-
+            FakeSeriesDataService seriesService = await SeriesWithAsync("TKKG");
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode
-            {
-                SeriesId = addedSeries.Id,
-                Title = "Folge 1",
-                EpisodeNumber = 1
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            await AddEpisodeAsync(episodeService, seriesService.All[0], 1);
 
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName       = "TKKG",
-                    SeriesFolderPath = "/music/TKKG",
-                    Episodes         =
-                    [
-                        new LocalEpisodeScan
-                        {
-                            FolderPath   = "/music/TKKG/001 - Folge 1",
-                            ParsedNumber = 1,
-                            TrackPaths   = ["/music/TKKG/001 - Folge 1/track1.mp3"]
-                        }
-                    ]
-                }
-            ];
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("TKKG", "/music/TKKG",
+                EpisodeScan("/music/TKKG/001 - Folge 1", 1, "/music/TKKG/001 - Folge 1/track1.mp3"));
 
-            SyncService service = BuildService(settings, seriesService, episodeService,
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(EnabledSettings(), seriesService, episodeService,
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -237,50 +252,18 @@ namespace EchoPlay.App.Tests.Services
         public async Task SyncAsync_CreatesLocalTracks_ForMatchedEpisode()
         {
             // Für jede gematchte Episode werden LocalTracks gespeichert
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music"
-            });
-
-            FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Die drei ???" }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Series series = seriesService.All[0];
+            FakeSeriesDataService seriesService = await SeriesWithAsync("Die drei ???");
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode
-            {
-                SeriesId = series.Id,
-                Title = "Folge 1",
-                EpisodeNumber = 1
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
+            await AddEpisodeAsync(episodeService, seriesService.All[0], 1);
             Episode episode = episodeService.All[0];
 
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName       = "Die drei ???",
-                    SeriesFolderPath = "/music/Die drei ???",
-                    Episodes         =
-                    [
-                        new LocalEpisodeScan
-                        {
-                            FolderPath   = "/music/Die drei ???/001",
-                            ParsedNumber = 1,
-                            TrackPaths   = ["/music/001/track1.mp3", "/music/001/track2.mp3"]
-                        }
-                    ]
-                }
-            ];
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("Die drei ???", "/music/Die drei ???",
+                EpisodeScan("/music/Die drei ???/001", 1, "/music/001/track1.mp3", "/music/001/track2.mp3"));
 
             FakeLocalTrackDataService trackService = new();
-            SyncService service = BuildService(settings, seriesService, episodeService,
+            SyncService service = BuildService(EnabledSettings(), seriesService, episodeService,
                 trackService: trackService,
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -293,56 +276,21 @@ namespace EchoPlay.App.Tests.Services
         {
             // Alle Zähler müssen nach einem erfolgreichen Sync korrekt befüllt sein;
             // AutoImportAfterScan deaktiviert, damit die unbekannte Serie als "unmatched" gezählt wird.
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music",
-                AutoImportAfterScan = false
-            });
-
-            FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
-            Series series = seriesService.All[0];
-
+            FakeSeriesDataService seriesService = await SeriesWithAsync("TKKG");
             FakeEpisodeDataService episodeService = new();
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 1", EpisodeNumber = 1 }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode { SeriesId = series.Id, Title = "Folge 2", EpisodeNumber = 2 }, cancellationToken: TestContext.Current.CancellationToken);
+            await AddEpisodeAsync(episodeService, seriesService.All[0], 1);
+            await AddEpisodeAsync(episodeService, seriesService.All[0], 2);
 
             IReadOnlyList<LocalScanResult> scanResults =
             [
-                new LocalScanResult
-                {
-                    SeriesName       = "TKKG",
-                    SeriesFolderPath = "/music/TKKG",
-                    Episodes         =
-                    [
-                        new LocalEpisodeScan
-                        {
-                            FolderPath   = "/music/TKKG/001",
-                            ParsedNumber = 1,
-                            TrackPaths   = ["/music/TKKG/001/t1.mp3"]
-                        },
-                        new LocalEpisodeScan
-                        {
-                            FolderPath   = "/music/TKKG/002",
-                            ParsedNumber = 2,
-                            TrackPaths   = ["/music/TKKG/002/t1.mp3", "/music/TKKG/002/t2.mp3"]
-                        }
-                    ]
-                },
-                new LocalScanResult
-                {
-                    SeriesName       = "Unbekannte Serie",
-                    SeriesFolderPath = "/music/Unbekannte Serie",
-                    Episodes         = []
-                }
+                .. ScanOf("TKKG", "/music/TKKG",
+                    EpisodeScan("/music/TKKG/001", 1, "/music/TKKG/001/t1.mp3"),
+                    EpisodeScan("/music/TKKG/002", 2, "/music/TKKG/002/t1.mp3", "/music/TKKG/002/t2.mp3")),
+                .. ScanOf("Unbekannte Serie", "/music/Unbekannte Serie"),
             ];
 
-            SyncService service = BuildService(settings, seriesService, episodeService,
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: false), seriesService, episodeService,
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -357,46 +305,18 @@ namespace EchoPlay.App.Tests.Services
         {
             // Auto-Import einer neuen lokalen Serie mit 10 Folgen muss einen einzigen
             // AddRangeAsync-Aufruf für alle Episoden absetzen, danach pro Episode einen
-            // Track-Batch (das bleibt bewusst pro Episode, weil Tracks pro Folge variieren).
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music",
-                AutoImportAfterScan = true
-            });
-
+            // Track-Batch (das bleibt pro Episode, weil Tracks pro Folge variieren).
             FakeEpisodeDataService episodeService = new();
             FakeLocalTrackDataService trackService = new();
 
             const int episodeCount = 10;
-            List<LocalEpisodeScan> episodes = new(episodeCount);
-            for (int i = 0; i < episodeCount; i++)
-            {
-                episodes.Add(new LocalEpisodeScan
-                {
-                    FolderPath = $"/music/Neue Serie/{i + 1:000}",
-                    ParsedNumber = i + 1,
-                    TrackPaths = [$"/music/Neue Serie/{i + 1:000}/track1.mp3", $"/music/Neue Serie/{i + 1:000}/track2.mp3"]
-                });
-            }
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("Neue Serie", "/music/Neue Serie",
+                NumberedEpisodes(episodeCount, "track1.mp3", "track2.mp3"));
 
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName       = "Neue Serie",
-                    SeriesFolderPath = "/music/Neue Serie",
-                    Episodes         = episodes
-                }
-            ];
-
-            SyncService service = BuildService(settings,
-                seriesService: new FakeSeriesDataService(),
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true),
                 episodeService: episodeService,
                 trackService: trackService,
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -412,39 +332,14 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task SyncAsync_RaisesSeriesSynced_AfterEpisodesPersisted()
         {
-            // Regression: Die Kachel einer neu gescannten Serie blieb auf "0 / 0" stehen, weil
-            // SeriesSynced nur in Phase 3 (vor der Episoden-Persistenz) gemeldet wurde. Es muss
-            // (auch) nach Phase 4 gemeldet werden, dann sieht der Kachel-Handler die echten Zähler.
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music",
-                AutoImportAfterScan = true
-            });
-
+            // Meldete SeriesSynced nur in Phase 3, also vor dem Speichern der Episoden, bliebe die
+            // Kachel einer neu gescannten Serie auf "0 / 0" stehen. Die Meldung muss (auch) nach
+            // Phase 4 kommen, dann sieht der Kachel-Handler die echten Zähler.
             FakeEpisodeDataService episodeService = new();
 
             const int episodeCount = 5;
-            List<LocalEpisodeScan> episodes = new(episodeCount);
-            for (int i = 0; i < episodeCount; i++)
-            {
-                episodes.Add(new LocalEpisodeScan
-                {
-                    FolderPath = $"/music/Neue Serie/{i + 1:000}",
-                    ParsedNumber = i + 1,
-                    TrackPaths = [$"/music/Neue Serie/{i + 1:000}/track1.mp3"]
-                });
-            }
-
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName = "Neue Serie",
-                    SeriesFolderPath = "/music/Neue Serie",
-                    Episodes = episodes
-                }
-            ];
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("Neue Serie", "/music/Neue Serie",
+                NumberedEpisodes(episodeCount, "track1.mp3"));
 
             FakeScanEventService scanEvents = new();
 
@@ -461,69 +356,68 @@ namespace EchoPlay.App.Tests.Services
                 maxEpisodesSeenAtEmit = Math.Max(maxEpisodesSeenAtEmit, seen);
             };
 
-            SyncService service = BuildService(settings,
-                seriesService: new FakeSeriesDataService(),
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true),
                 episodeService: episodeService,
-                trackService: new FakeLocalTrackDataService(),
                 scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader(),
                 scanEventService: scanEvents);
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(emitCount >= 1, "Serie wurde nie über SeriesSynced gemeldet.");
-            // Kern der Regression: Zum Zeitpunkt (mindestens) eines Emits müssen alle Episoden
+            // Der Kern: Zum Zeitpunkt (mindestens) einer Meldung müssen alle Episoden
             // bereits persistiert sein, sonst zeigt die Kachel dauerhaft 0.
             Assert.Equal(episodeCount, maxEpisodesSeenAtEmit);
         }
 
         [Fact]
-        public async Task SyncAsync_SkipsEpisodeScan_WhenParsedNumberNull()
+        public async Task SyncAsync_NewFolderWithoutNumberInKnownSeries_IsCreatedAsSpecialEpisode()
         {
-            // Episodenordner ohne erkennbare Nummer werden übersprungen
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music"
-            });
+            // Ein neuer Ordner ohne erkennbare Nummer in einer bekannten Serie ist eine
+            // Sonderfolge: Er wird angelegt, aber ohne Nummer, damit er keiner regulären Folge
+            // die Nummer nimmt.
+            FakeSeriesDataService seriesService = await SeriesWithAsync("TKKG");
 
-            FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "TKKG" }, cancellationToken: TestContext.Current.CancellationToken);
+            // Keine Nummer erkannt
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("TKKG", "/music/TKKG",
+                EpisodeScan("/music/TKKG/unbekannt", null, "/music/TKKG/unbekannt/track.mp3"));
 
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName       = "TKKG",
-                    SeriesFolderPath = "/music/TKKG",
-                    Episodes         =
-                    [
-                        new LocalEpisodeScan
-                        {
-                            FolderPath   = "/music/TKKG/unbekannt",
-                            ParsedNumber = null,  // Keine Nummer erkannt
-                            TrackPaths   = ["/music/TKKG/unbekannt/track.mp3"]
-                        }
-                    ]
-                }
-            ];
-
-            SyncService service = BuildService(settings, seriesService,
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            FakeEpisodeDataService episodeService = new();
+            SyncService service = BuildService(EnabledSettings(), seriesService,
+                episodeService: episodeService,
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            // Serie matched, aber keine Episode aktualisiert
             Assert.Equal(1, result.SeriesMatched);
-            Assert.Equal(0, result.EpisodesUpdated);
+            Assert.Equal(1, result.EpisodesUpdated);
+            Episode created = Assert.Single(episodeService.All);
+            Assert.Null(created.EpisodeNumber);
+            Assert.Equal("/music/TKKG/unbekannt", created.LocalFolderPath);
         }
 
-        // ── Phasen-Tests (Detection / Materialize-Series / Materialize-Episodes) ───
+        [Fact]
+        public async Task SyncAsync_EpisodeOnTwoCds_NumbersTracksInFileOrder()
+        {
+            // Jede CD beginnt im Tag wieder bei Spur 1; die Wiedergabe sortiert nach Spurnummer.
+            FakeSeriesDataService seriesService = await SeriesWithAsync("TKKG");
+
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("TKKG", "/music/TKKG",
+                EpisodeScan("/music/TKKG/100", 100,
+                    "/music/TKKG/100/CD1/01.mp3", "/music/TKKG/100/CD1/02.mp3", "/music/TKKG/100/CD2/01.mp3"));
+
+            FakeEpisodeDataService episodeService = new();
+            FakeLocalTrackDataService trackService = new();
+            SyncService service = BuildService(EnabledSettings(), seriesService,
+                episodeService: episodeService,
+                trackService: trackService,
+                scanner: new FakeLocalLibraryScanner(scanResults),
+                metadataReader: new FakeAudioMetadataReader(defaultTrackNumber: 1));
+
+            _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            IReadOnlyList<LocalTrack> saved = trackService.SavedTracks[Assert.Single(episodeService.All).Id];
+            Assert.Equal([1, 2, 3], saved.Select(track => track.TrackNumber));
+        }
 
         [Fact]
         public async Task RunDetectionPhase_NewFolders_ReturnsCorrectCount()
@@ -566,33 +460,14 @@ namespace EchoPlay.App.Tests.Services
             // Materialize-Series: scanResult.SeriesName matcht bestehende DB-Serie nach
             // Normalizer-Vergleich -> die existierende Series-Id wird an Phase 4 weitergereicht,
             // KEINE neue Serie wird angelegt.
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music"
-            });
-            FakeSeriesDataService seriesService = new();
-            await seriesService.AddAsync(new Series { Title = "Die drei ???" }, cancellationToken: TestContext.Current.CancellationToken);
-            Series existing = seriesService.All[0];
-            Guid existingId = existing.Id;
+            FakeSeriesDataService seriesService = await SeriesWithAsync("Die drei ???");
+            Guid existingId = seriesService.All[0].Id;
             int seriesCountBefore = seriesService.All.Count;
 
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName       = "Die drei ???",
-                    SeriesFolderPath = "/music/Die drei ???",
-                    Episodes         = []
-                }
-            ];
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("Die drei ???", "/music/Die drei ???");
 
-            SyncService service = BuildService(settings, seriesService,
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(EnabledSettings(), seriesService,
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -610,36 +485,16 @@ namespace EchoPlay.App.Tests.Services
         {
             // Materialize-Episodes: bei Auto-Import einer neuen Serie geht jeder Episodenblock
             // über AddRangeAsync (1 SaveChanges für N Episoden), nicht einzeln per AddAsync.
-            FakeAppSettingsDataService settings = new(new AppSettings
-            {
-                LocalLibraryEnabled = true,
-                LocalLibraryRootPath = "/music",
-                AutoImportAfterScan = true
-            });
             FakeEpisodeDataService episodeService = new();
 
-            IReadOnlyList<LocalScanResult> scanResults =
-            [
-                new LocalScanResult
-                {
-                    SeriesName       = "Brand-neue Serie",
-                    SeriesFolderPath = "/music/Brand-neue Serie",
-                    Episodes         =
-                    [
-                        new LocalEpisodeScan { FolderPath = "/music/Neu/001", ParsedNumber = 1, TrackPaths = ["/music/Neu/001/t.mp3"] },
-                        new LocalEpisodeScan { FolderPath = "/music/Neu/002", ParsedNumber = 2, TrackPaths = ["/music/Neu/002/t.mp3"] },
-                        new LocalEpisodeScan { FolderPath = "/music/Neu/003", ParsedNumber = 3, TrackPaths = ["/music/Neu/003/t.mp3"] }
-                    ]
-                }
-            ];
+            IReadOnlyList<LocalScanResult> scanResults = ScanOf("Brand-neue Serie", "/music/Brand-neue Serie",
+                EpisodeScan("/music/Neu/001", 1, "/music/Neu/001/t.mp3"),
+                EpisodeScan("/music/Neu/002", 2, "/music/Neu/002/t.mp3"),
+                EpisodeScan("/music/Neu/003", 3, "/music/Neu/003/t.mp3"));
 
-            SyncService service = BuildService(settings,
-                seriesService: new FakeSeriesDataService(),
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true),
                 episodeService: episodeService,
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+                scanner: new FakeLocalLibraryScanner(scanResults));
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 

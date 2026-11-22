@@ -24,7 +24,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, nachdem die Serie erfolgreich aus den Favoriten entfernt wurde.
         /// Das Dashboard-ViewModel reagiert darauf und entfernt die Kachel aus der Liste.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Card-VM meldet genau eine Entity-ID an den Dashboard-Container; Action<Guid> bleibt semantisch klarer als ein künstlicher 'SeriesIdEventArgs'-Wrapper.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action<Guid>? RemovedFromFavorites;
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace EchoPlay.App.ViewModels
             RemoveFromFavoritesCommand = new RelayCommand(() => _ = RemoveFromFavoritesAsync());
         }
 
-        /// <summary>Datenbank-ID der Serie – wird bei der Navigation zur Detailseite übergeben.</summary>
+        /// <summary>Datenbank-ID der Serie; sie wird bei der Navigation zur Detailseite übergeben.</summary>
         public Guid SeriesId { get; }
 
         /// <summary>Titel der Serie, z.B. „Die drei ???".</summary>

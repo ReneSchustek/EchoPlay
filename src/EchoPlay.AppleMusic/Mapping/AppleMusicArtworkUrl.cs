@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -18,35 +19,42 @@ namespace EchoPlay.AppleMusic.Mapping
         /// <summary>Kantenlänge, die für die Trefferkachel angefordert wird.</summary>
         public const int SearchResultTileSize = 300;
 
-        [GeneratedRegex(@"/\d+x\d+(?<suffix>[a-z]*)\.(?<extension>jpg|png)$", RegexOptions.IgnoreCase)]
+        /// <summary>
+        /// Kantenlänge für das Cover einer Folge. Es wird gespeichert und auch groß in der
+        /// Detailansicht gezeigt.
+        /// </summary>
+        public const int EpisodeCoverSize = 600;
+
+        [GeneratedRegex(@"/\d+x\d+(?<suffix>[a-z]*)\.(?<extension>jpg|png)$", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 500)]
         private static partial Regex SizeSegmentPattern();
 
         /// <summary>
         /// Ersetzt die Größenangabe im Pfad durch <paramref name="size"/>.
         /// </summary>
-        /// <param name="artworkUrl">Die Adresse aus der Anbieter-Antwort.</param>
+        /// <param name="artworkUrl">Die geprüfte Adresse aus der Anbieter-Antwort.</param>
         /// <param name="size">Die gewünschte Kantenlänge in Pixeln.</param>
         /// <returns>
         /// Die angepasste Adresse. Trägt die Adresse keine erkennbare Größe, kommt sie
-        /// unverändert zurück, denn eine geratene Umschrift wäre schlechter als das kleine Bild.
-        /// Bei <see langword="null"/> oder Leertext bleibt es bei <see langword="null"/>.
+        /// unverändert zurück; eine geratene Umschrift wäre schlechter als das kleine Bild.
+        /// Bei <see langword="null"/> bleibt es bei <see langword="null"/>.
         /// </returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Die Adresse stammt als Zeichenkette aus der Anbieter-Antwort und wird in der gesamten Cover-Kette als Zeichenkette geführt; ein Uri-Umweg brächte nur Umwandlungen.")]
-        public static string? WithSize(string? artworkUrl, int size = SearchResultTileSize)
+        public static Uri? WithSize(Uri? artworkUrl, int size = SearchResultTileSize)
         {
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(size, 0);
 
-            if (string.IsNullOrWhiteSpace(artworkUrl))
+            if (artworkUrl is null)
             {
                 return null;
             }
 
             string edge = size.ToString(CultureInfo.InvariantCulture);
-
-            return SizeSegmentPattern().Replace(
-                artworkUrl,
+            string resized = SizeSegmentPattern().Replace(
+                artworkUrl.OriginalString,
                 match => $"/{edge}x{edge}{match.Groups["suffix"].Value}.{match.Groups["extension"].Value}");
+
+            // Die Umschrift tauscht nur Ziffern im letzten Pfadstück; das Ergebnis ist deshalb
+            // immer wieder eine gültige Adresse.
+            return WebAddress.TryParse(resized) ?? artworkUrl;
         }
     }
 }

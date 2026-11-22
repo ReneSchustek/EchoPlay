@@ -131,7 +131,7 @@ namespace EchoPlay.App.Services
             foreach (DialogSuppression row in rows)
             {
                 // Ein Schlüssel aus einer früheren Fassung, den es nicht mehr gibt, wird
-                // übergangen statt gemeldet — die Zeile schadet niemandem und verschwindet
+                // übergangen statt gemeldet; die Zeile schadet niemandem und verschwindet
                 // mit der nächsten Bereinigung.
                 if (Enum.TryParse(row.Key, out DialogKey key) && key != DialogKey.None)
                 {
@@ -172,12 +172,7 @@ namespace EchoPlay.App.Services
                 }
 
                 IReadOnlyList<SuppressedDialogInfo> rows = await GetSuppressedAsync(cancellationToken).ConfigureAwait(true);
-
-                HashSet<DialogKey> keys = [];
-                foreach (SuppressedDialogInfo row in rows)
-                {
-                    _ = keys.Add(row.Key);
-                }
+                HashSet<DialogKey> keys = [.. rows.Select(row => row.Key)];
 
                 Volatile.Write(ref _suppressed, keys);
                 return keys;

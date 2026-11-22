@@ -7,6 +7,14 @@ namespace EchoPlay.Core.Scoring
     /// Enthält alle Parameter, die bei Spotify und Apple Music identisch sind.
     /// Provider-spezifische Settings erben von dieser Klasse und ergänzen eigene Werte.
     /// </summary>
+    /// <remarks>
+    /// Die Werte sind aufeinander abgestimmt: Enthält der Name den Suchbegriff (50), reicht das
+    /// allein für die Schwelle (50). Ein exakter Wort-Treffer (25) braucht zusätzlich die
+    /// Hörspiel-Struktur der Alben (25). Fehlt diese Struktur ganz, hebt der Abzug (-25) einen
+    /// der Boni auf, sodass ein bloßer Namenstreffer bei einem Musiker nicht genügt, wenn er
+    /// zugleich kein exaktes Wort trifft. Drei Alben genügen für die Struktur und halten die
+    /// Zahl der Anfragen je Kandidat klein.
+    /// </remarks>
     public abstract class HoerspielScorerSettings
     {
         /// <summary>
@@ -62,7 +70,7 @@ namespace EchoPlay.Core.Scoring
 
         /// <summary>
         /// Zuordnung von Ziffern zu Zahlwörtern für Namensvarianten-Erkennung.
-        /// Ermöglicht z.B. den Abgleich von "Die 3 ???" mit "Die drei ???".
+        /// Damit gilt etwa "Die 3 ???" als derselbe Name wie "Die drei ???".
         /// </summary>
         public Dictionary<string, string> NumberWordMapping { get; init; } = new()
         {

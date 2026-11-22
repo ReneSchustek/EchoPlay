@@ -47,7 +47,7 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         public bool HoldsSelection { get; }
 
-        /// <summary>Alle Kacheln des Abschnitts in ihrer Reihenfolge.</summary>
+        /// <summary>Zahl aller Kacheln des Abschnitts, ober- und unterhalb der Aufklappstelle.</summary>
         public int Count => TopItems.Count + BottomItems.Count;
     }
 }

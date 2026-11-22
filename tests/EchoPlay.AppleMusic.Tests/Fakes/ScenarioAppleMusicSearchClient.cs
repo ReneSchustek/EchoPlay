@@ -27,8 +27,22 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
             return Task.FromResult(new ITunesResponseDto<ITunesCollectionDto>());
         }
 
+        /// <summary>Ein Hörspiel-Album des Testkünstlers mit einem Titel.</summary>
+        private static ITunesCollectionDto Album(long collectionId, string name, long artistId, string releaseDate)
+            => new()
+            {
+                WrapperType = "collection",
+                CollectionId = collectionId,
+                CollectionName = name,
+                ArtistId = artistId,
+                ArtistName = "Testkünstler",
+                TrackCount = 1,
+                ReleaseDate = releaseDate,
+                PrimaryGenreName = "Hörspiele"
+            };
+
         /// <summary>
-        /// Liefert zwei Alben in bewusst unsortierter Reihenfolge,
+        /// Liefert zwei Alben in unsortierter Reihenfolge,
         /// um die korrekte Episodenaggregation zu testen.
         /// </summary>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
@@ -42,28 +56,8 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
                 [
                     // Erstes Element ist immer der Künstler
                     new ITunesCollectionDto { WrapperType = "artist" },
-                    new ITunesCollectionDto
-                    {
-                        WrapperType = "collection",
-                        CollectionId = 2002,
-                        CollectionName = "Späteres Album",
-                        ArtistId = artistId,
-                        ArtistName = "Testkünstler",
-                        TrackCount = 1,
-                        ReleaseDate = "1985-01-01T07:00:00Z",
-                        PrimaryGenreName = "Hörspiele"
-                    },
-                    new ITunesCollectionDto
-                    {
-                        WrapperType = "collection",
-                        CollectionId = 1001,
-                        CollectionName = "Früheres Album",
-                        ArtistId = artistId,
-                        ArtistName = "Testkünstler",
-                        TrackCount = 1,
-                        ReleaseDate = "1979-01-01T07:00:00Z",
-                        PrimaryGenreName = "Hörspiele"
-                    }
+                    Album(2002, "Späteres Album", artistId, "1985-01-01T07:00:00Z"),
+                    Album(1001, "Früheres Album", artistId, "1979-01-01T07:00:00Z")
                 ]
             };
 

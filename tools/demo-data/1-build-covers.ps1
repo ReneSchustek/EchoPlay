@@ -9,7 +9,7 @@
     Die Schriftgröße wird zweifach begrenzt: Das längste Einzelwort muss in eine Zeile passen
     (ein Wort lässt sich nicht umbrechen — „Frankenstein" würde sonst mitten im Wort getrennt),
     und der ganze Titel muss in drei Zeilen passen. Beide Schranken sind nötig; mit nur einer
-    von beiden sind in der Erprobung Titel abgeschnitten worden.
+    von beiden werden lange Titel abgeschnitten.
 
 .PARAMETER Target
     Ablageordner für die JPG-Dateien. Wird angelegt, wenn er fehlt.

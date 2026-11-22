@@ -1,6 +1,7 @@
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
@@ -41,38 +42,19 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = activeProvider }));
-            _ = services.AddKeyedScoped<ISeriesImportSearch>(
-                "Spotify",
-                (_, _) => overrideSearch ?? new FakeSeriesImportSearch(searchResults));
-            _ = services.AddKeyedScoped<ISeriesImportSearch>(
-                "AppleMusic",
-                (_, _) => appleMusicSearch ?? new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>(
-                "Spotify",
-                (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>(
-                "AppleMusic",
-                (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
 
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
-            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services, spotifyResults: searchResults, spotifySearch: overrideSearch, appleMusicSearch: appleMusicSearch);
+            ImportTestServices.AddCoverChain(services);
+
             ServiceProvider provider = services.BuildServiceProvider();
 
-            return new ImportService(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<EchoPlay.App.Services.EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            return ImportTestServices.CreateImportService(provider);
         }
 
         private static SearchViewModel BuildViewModel(
@@ -213,7 +195,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task SearchCommand_LokaleSerieMitKuenstlerkennung_BleibtHinzufuegbar()
+        public async Task SearchCommand_LocalSeriesWithArtistId_StaysAddable()
         {
             // Die Neuerscheinungs-Prüfung schreibt die Künstlerkennung auch auf lokal eingelesene
             // Serien. Der Treffer darf deshalb nicht als „bereits vorhanden" gelten, sonst
@@ -437,7 +419,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await vm.WaitForSearchCompleteAsync();
             _ = Assert.Single(vm.Results);
 
-            // Zweite Suche starten, Gate bewusst NICHT freigeben: Results muss bereits leer sein
+            // Zweite Suche starten, Gate NICHT freigeben: Results muss bereits leer sein
             vm.SearchText = "second";
             vm.SearchCommand.Execute(null);
 
@@ -585,7 +567,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 throw new InvalidOperationException("Simulierter Netzwerkfehler");
         }
         [Fact]
-        public async Task Seitenstart_HaeltDieSucheImNurLokalBetriebAn()
+        public async Task PageStart_StopsTheSearchInLocalOnlyMode()
         {
             // Die Suche fragt fremde Gegenstellen. Wer ausdrücklich offline arbeitet,
             // darf davon nichts mitbekommen.
@@ -600,14 +582,14 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Seitenstart_MitSuchtextSuchtSofort()
+        public async Task PageStart_WithSearchText_SearchesImmediately()
         {
-            List<ImportSeries> treffer =
+            List<ImportSeries> hit =
             [
                 new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "id1" }
             ];
 
-            SearchViewModel viewModel = BuildViewModelWithGuard(treffer, new FakePageModeGuard());
+            SearchViewModel viewModel = BuildViewModelWithGuard(hit, new FakePageModeGuard());
 
             await viewModel.InitializeAsync("TKKG");
             await viewModel.WaitForSearchCompleteAsync();
@@ -617,7 +599,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Seitenstart_OhneParameterSuchtNichts()
+        public async Task PageStart_WithoutParameter_SearchesNothing()
         {
             SearchViewModel viewModel = BuildViewModelWithGuard([], new FakePageModeGuard());
 
@@ -630,7 +612,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Seitenstart_MitOnboardingZeigtDenHinweisStattEinerSuche()
+        public async Task PageStart_WithOnboarding_ShowsTheHintInsteadOfASearch()
         {
             SearchViewModel viewModel = BuildViewModelWithGuard([], new FakePageModeGuard());
 
@@ -642,13 +624,13 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Onboarding_VerschwindetMitDerErstenSuche()
+        public async Task Onboarding_DisappearsWithTheFirstSearch()
         {
-            List<ImportSeries> treffer =
+            List<ImportSeries> hit =
             [
                 new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "id1" }
             ];
-            SearchViewModel viewModel = BuildViewModelWithGuard(treffer, new FakePageModeGuard());
+            SearchViewModel viewModel = BuildViewModelWithGuard(hit, new FakePageModeGuard());
             await viewModel.InitializeAsync("onboarding");
 
             viewModel.SearchText = "TKKG";
@@ -659,7 +641,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void ErfolgsHinweis_ErscheintNachDemHinzufuegen()
+        public void SuccessHint_AppearsAfterAdding()
         {
             SearchViewModel viewModel = BuildViewModel([]);
 
@@ -672,7 +654,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void ErfolgsHinweis_FuehrtInDieOnlineMediathek()
+        public void SuccessHint_LeadsToTheOnlineLibrary()
         {
             FakeNavigationService navigation = new();
             ImportService importService = BuildImportService([], new FakeSeriesDataService(), null);
@@ -688,7 +670,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Suchbereich_MerktSichDieWahl()
+        public void SearchScope_RemembersTheChoice()
         {
             SearchViewModel viewModel = BuildViewModel([]);
 
@@ -698,15 +680,15 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LeeresSuchfeld_RaeumtTrefferUndHinweiseAb()
+        public async Task EmptySearchField_ClearsHitsAndHints()
         {
             // Der eingebaute Löschknopf des Suchfelds meldet nur den leeren Text.
             // Bleiben die Treffer stehen, sieht der Anwender Ergebnisse ohne Anfrage.
-            List<ImportSeries> treffer =
+            List<ImportSeries> hit =
             [
                 new ImportSeries { Title = "TKKG", Source = "Spotify", SourceSeriesId = "id1" }
             ];
-            SearchViewModel viewModel = BuildViewModel(treffer);
+            SearchViewModel viewModel = BuildViewModel(hit);
             viewModel.SearchText = "TKKG";
             viewModel.SearchCommand.Execute(null);
             await viewModel.WaitForSearchCompleteAsync();

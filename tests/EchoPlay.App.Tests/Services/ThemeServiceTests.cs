@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.Services
     /// <summary>
     /// Konstruktor-Tests für <see cref="ThemeService"/>.
     /// InitializeAsync/ApplyTheme/PersistThemeAsync berühren Application.Current und App.MainWindow;
-    /// diese WinUI-3-Pfade sind im Unit-Test-Host nicht isolierbar und werden daher bewusst ausgespart.
+    /// diese WinUI-3-Pfade sind im Unit-Test-Host nicht isolierbar und werden daher ausgespart.
     /// </summary>
     public sealed class ThemeServiceTests
     {

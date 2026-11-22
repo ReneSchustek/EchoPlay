@@ -84,6 +84,14 @@
                 HorizontalAlignment="Center"
                 Margin="0,8,0,0"/>
 
+            <!-- Lizenz der mitgelieferten Schriften -->
+            <TextBlock
+                x:Uid="UeberFontLicense"
+                Style="{ThemeResource CaptionTextBlockStyle}"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                HorizontalAlignment="Center"
+                TextWrapping="Wrap"/>
+
             <Rectangle
                 Height="1"
                 Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
@@ -99,7 +107,7 @@
                 x:Uid="UeberOrdnerstrukturText"
                 Style="{ThemeResource CaptionTextBlockStyle}"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                FontFamily="Consolas"
+                FontFamily="{ThemeResource ThemeMonoFontFamily}"
                 TextWrapping="Wrap"
                 Margin="0,4,0,0"/>
 

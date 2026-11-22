@@ -7,7 +7,7 @@ namespace EchoPlay.Logger.Scoping
     /// </summary>
     public static class LogScopeManager
     {
-        private readonly static AsyncLocal<ImmutableStack<string>> _scopeStack = new();
+        private static readonly AsyncLocal<ImmutableStack<string>> _scopeStack = new();
 
         /// <summary>
         /// Gibt die aktuell aktiven Scopes in chronologischer Reihenfolge zurück.

@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Definiert den Vertrag für den zentralen Wiedergabe-Service.
-    /// Ermöglicht die Entkopplung von ViewModels und Tests von der konkreten <see cref="PlayerService"/>-Implementierung.
+    /// Der zentrale Wiedergabedienst. ViewModels und Tests hängen an dieser Schnittstelle statt an
+    /// <see cref="PlayerService"/>, der den Mediaplayer von Windows braucht.
     /// </summary>
     public interface IPlayerService
     {
@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
         /// Wird ausgelöst, wenn ein Wiedergabefehler auftritt.
         /// Die Nachricht ist für die Anzeige an den Nutzer geeignet.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "EventHandler<string> liefert die fertige UI-Fehlermeldung als einfachen String; ein dedizierter EventArgs-Typ brächte keinen Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         event EventHandler<string>? ErrorOccurred;
 
         /// <summary>Gibt an, ob gerade Wiedergabe aktiv ist.</summary>
@@ -63,8 +63,8 @@ namespace EchoPlay.App.Services
         TimeSpan OverallDuration { get; }
 
         /// <summary>
-        /// Wiedergabegeschwindigkeit. 1.0 entspricht normaler Geschwindigkeit.
-        /// Gültige Werte: 0.25 bis 4.0 (Plattformlimit des MediaPlayer).
+        /// Wiedergabegeschwindigkeit. 1.0 entspricht normaler Geschwindigkeit. Der Dienst reicht
+        /// den Wert ungeprüft an den Mediaplayer von Windows weiter.
         /// </summary>
         double PlaybackRate { get; set; }
 
@@ -117,11 +117,11 @@ namespace EchoPlay.App.Services
         /// und leert die Playlist. Der MiniPlayer wird dadurch ausgeblendet,
         /// weil <see cref="CurrentTrackTitle"/> auf null gesetzt wird.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Folgt der Windows.Media.Playback.MediaPlayer.Stop-Konvention und entspricht dem etablierten Wiedergabe-Control-Vokabular.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Die Regel schützt Aufrufer in Visual Basic vor Schlüsselwörtern; EchoPlay wird nur aus C# aufgerufen. Stop und Resume folgen dem Vokabular von Windows.Media.Playback.MediaPlayer.")]
         void Stop();
 
         /// <summary>Setzt eine pausierte Wiedergabe fort.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Folgt der Windows.Media.Playback.MediaPlayer.Play/Resume-Konvention und entspricht dem etablierten Wiedergabe-Control-Vokabular.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Die Regel schützt Aufrufer in Visual Basic vor Schlüsselwörtern; EchoPlay wird nur aus C# aufgerufen. Stop und Resume folgen dem Vokabular von Windows.Media.Playback.MediaPlayer.")]
         void Resume();
 
         /// <summary>Springt zum nächsten Track in der Wiedergabeliste.</summary>
@@ -141,7 +141,7 @@ namespace EchoPlay.App.Services
         /// Bei Ablauf wird die Wiedergabe automatisch pausiert.
         /// </summary>
         /// <param name="duration">
-        /// Zeitspanne bis zum automatischen Stopp. Null deaktiviert den Timer.
+        /// Zeitspanne bis zur automatischen Pause. Null deaktiviert den Timer.
         /// </param>
         void SetSleepTimer(TimeSpan? duration);
     }

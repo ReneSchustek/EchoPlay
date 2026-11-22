@@ -34,7 +34,6 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService? settingsService = null,
             FakeSyncService? syncService = null,
             FakePlayerService? playerService = null,
-            FakeCoverSearchService? coverSearchService = null,
             FakeTrackTitleResolver? titleResolver = null)
         {
             ServiceCollection services = new();
@@ -64,20 +63,52 @@ namespace EchoPlay.App.Tests.ViewModels
                 statusBar,
                 new FakeLocalCoverLoader(),
                 new FakeScanEventService(),
-                coverSearchService ?? new FakeCoverSearchService(),
                 new FakeOnlineAccessGuard(),
-                new FakeOnlineEpisodeChecker(),
                 clock,
                 MissingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());
 
             return new LocalLibraryViewModel(context);
         }
 
+        /// <summary>
+        /// Legt eine Serie mit lokalem Ordner und darin Folge 1 im Unterordner 001 an und liefert
+        /// die Kennung der Folge.
+        /// </summary>
+        private static async Task<Guid> SeedEpisodeWithFolderAsync(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            string seriesTitle,
+            string seriesFolder,
+            string episodeTitle,
+            int trackCount)
+        {
+            await seriesService.AddAsync(
+                new Series { Title = seriesTitle, LocalFolderPath = seriesFolder },
+                cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(new Episode
+            {
+                Title = episodeTitle,
+                SeriesId = seriesService.All[^1].Id,
+                EpisodeNumber = 1,
+                LocalFolderPath = $@"{seriesFolder}\001",
+                LocalTrackCount = trackCount
+            }, cancellationToken: TestContext.Current.CancellationToken);
+            return episodeService.All[^1].Id;
+        }
+
+        /// <summary>Spuren-Nachbau, der für genau eine Folge die angegebenen Spuren kennt.</summary>
+        private static FakeLocalTrackDataService TracksOf(Guid episodeId, params LocalTrack[] tracks)
+            => new(new Dictionary<Guid, IReadOnlyList<LocalTrack>> { [episodeId] = tracks });
+
+        /// <summary>Eine Spur mit Nummer und wahlweise einer Dauer in Minuten.</summary>
+        private static LocalTrack Track(string path, int number, int minutes = 0)
+            => new() { FilePath = path, TrackNumber = number, Duration = TimeSpan.FromMinutes(minutes) };
+
         [Fact]
         public async Task LoadAsync_OnlyShowsSeriesWithLocalFolder()
         {
             // Nur Serien, für die der Scanner einen Ordner gefunden hat, erscheinen in der linken Spalte.
-            // Serien ohne LocalFolderPath werden bewusst ausgeblendet, denn sie wurden noch nicht gescannt.
+            // Serien ohne LocalFolderPath werden ausgeblendet, denn sie wurden noch nicht gescannt.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
@@ -158,36 +189,12 @@ namespace EchoPlay.App.Tests.ViewModels
             // Tracks werden nach TrackNumber aufsteigend gelistet, wichtig für mehrteilige Folgen.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
+            Guid episodeId = await SeedEpisodeWithFolderAsync(
+                seriesService, episodeService, "TKKG", @"C:\Hörspiele\TKKG", "Folge 1", trackCount: 2);
 
-            await seriesService.AddAsync(new Series
-            {
-                Title = "TKKG",
-                LocalFolderPath = @"C:\Hörspiele\TKKG"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Guid tkkg = seriesService.All[0].Id;
-
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Folge 1",
-                SeriesId = tkkg,
-                EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
-                LocalTrackCount = 2
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Guid episodeId = episodeService.All[0].Id;
-
-            Dictionary<Guid, IReadOnlyList<LocalTrack>> existingTracks = new()
-            {
-                [episodeId] =
-                [
-                    new LocalTrack { FilePath = @"C:\TKKG\001_b.mp3", TrackNumber = 2, Duration = TimeSpan.FromMinutes(10) },
-                    new LocalTrack { FilePath = @"C:\TKKG\001_a.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(12) }
-                ]
-            };
-
-            FakeLocalTrackDataService trackService = new(existingTracks);
+            FakeLocalTrackDataService trackService = TracksOf(episodeId,
+                Track(@"C:\TKKG\001_b.mp3", 2, 10),
+                Track(@"C:\TKKG\001_a.mp3", 1, 12));
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService, trackService);
             await vm.Actions.LoadAsync();
 
@@ -205,36 +212,15 @@ namespace EchoPlay.App.Tests.ViewModels
             // Gepflegte Kennzeichnung: In der Liste steht der Titel, nicht der Dateiname.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
+            Guid episodeId = await SeedEpisodeWithFolderAsync(
+                seriesService, episodeService, "Sherlock Holmes", @"C:\Hörspiele\Sherlock", "Das leere Haus", trackCount: 2);
 
-            await seriesService.AddAsync(new Series
-            {
-                Title = "Sherlock Holmes",
-                LocalFolderPath = @"C:\Hörspiele\Sherlock"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Das leere Haus",
-                SeriesId = seriesService.All[0].Id,
-                EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hörspiele\Sherlock\001",
-                LocalTrackCount = 2
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            const string ersterTeil = @"C:\Hörspiele\Sherlock\001\01 - Das leere Haus (Teil 1).mp3";
-            const string zweiterTeil = @"C:\Hörspiele\Sherlock\001\02 - Das leere Haus (Teil 2).mp3";
-
-            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
-            {
-                [episodeService.All[0].Id] =
-                [
-                    new LocalTrack { FilePath = ersterTeil, TrackNumber = 1, Duration = TimeSpan.FromMinutes(4) },
-                    new LocalTrack { FilePath = zweiterTeil, TrackNumber = 2, Duration = TimeSpan.FromMinutes(4) }
-                ]
-            });
+            const string firstPart = @"C:\Hörspiele\Sherlock\001\01 - Das leere Haus (Teil 1).mp3";
+            const string secondPart = @"C:\Hörspiele\Sherlock\001\02 - Das leere Haus (Teil 2).mp3";
+            FakeLocalTrackDataService trackService = TracksOf(episodeId, Track(firstPart, 1, 4), Track(secondPart, 2, 4));
 
             FakeTrackTitleResolver titleResolver = new();
-            titleResolver.TitlesByPath[ersterTeil] = "Das leere Haus (Teil 1)";
+            titleResolver.TitlesByPath[firstPart] = "Das leere Haus (Teil 1)";
             // Zweiter Teil ohne Titel in der Datei, dort greift die Rückfallebene.
 
             LocalLibraryViewModel vm = BuildViewModel(
@@ -389,8 +375,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(Visibility.Visible, vm.TracksVM.TracksAccordionVisibility);
         }
 
-        // ── PlayEpisodeCommand ───────────────────────────────────────────────────
-
         [Fact]
         public async Task PlayEpisodeCommand_PassesTrackPathsInOrder()
         {
@@ -399,36 +383,12 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakePlayerService playerService = new();
+            Guid episodeId = await SeedEpisodeWithFolderAsync(
+                seriesService, episodeService, "TKKG", @"C:\Hörspiele\TKKG", "Folge 1", trackCount: 2);
 
-            await seriesService.AddAsync(new Series
-            {
-                Title = "TKKG",
-                LocalFolderPath = @"C:\Hörspiele\TKKG"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Guid tkkg = seriesService.All[0].Id;
-
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Folge 1",
-                SeriesId = tkkg,
-                EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
-                LocalTrackCount = 2
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            Guid episodeId = episodeService.All[0].Id;
-
-            Dictionary<Guid, IReadOnlyList<LocalTrack>> existingTracks = new()
-            {
-                [episodeId] =
-                [
-                    new LocalTrack { FilePath = @"C:\TKKG\001_b.mp3", TrackNumber = 2 },
-                    new LocalTrack { FilePath = @"C:\TKKG\001_a.mp3", TrackNumber = 1 }
-                ]
-            };
-
-            FakeLocalTrackDataService trackService = new(existingTracks);
+            FakeLocalTrackDataService trackService = TracksOf(episodeId,
+                Track(@"C:\TKKG\001_b.mp3", 2),
+                Track(@"C:\TKKG\001_a.mp3", 1));
             LocalLibraryViewModel vm = BuildViewModel(
                 seriesService, episodeService, trackService, playerService: playerService);
 
@@ -454,36 +414,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // unsichtbar, obwohl die Spuren geladen waren.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
+            Guid episodeId = await SeedEpisodeWithFolderAsync(
+                seriesService, episodeService, "TKKG", @"C:\Hörspiele\TKKG", "Folge 1", trackCount: 1);
 
-            await seriesService.AddAsync(new Series
-            {
-                Title = "TKKG",
-                LocalFolderPath = @"C:\Hörspiele\TKKG"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Folge 1",
-                SeriesId = seriesService.All[0].Id,
-                EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
-                LocalTrackCount = 1
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
-            {
-                [episodeService.All[0].Id] =
-                [
-                    new LocalTrack { FilePath = @"C:\TKKG\001_a.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(12) }
-                ]
-            });
-
+            FakeLocalTrackDataService trackService = TracksOf(episodeId, Track(@"C:\TKKG\001_a.mp3", 1, 12));
             LocalLibraryViewModel vm = BuildViewModel(seriesService, episodeService, trackService);
             await vm.Actions.LoadAsync();
             await vm.Actions.SelectArtistAsync(vm.ArtistsVM.Artists[0]);
 
-            List<string> geaenderteEigenschaften = [];
-            vm.TracksVM.PropertyChanged += (_, e) => geaenderteEigenschaften.Add(e.PropertyName ?? string.Empty);
+            List<string> changedProperties = [];
+            vm.TracksVM.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName ?? string.Empty);
 
             await vm.Actions.SelectEpisodeAsync(vm.EpisodesVM.Episodes[0]);
 
@@ -491,8 +431,8 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(Visibility.Visible, vm.TracksVM.TrackActionsVisibility);
 
             // Ohne diese Meldungen erfährt die Bindung nichts von der Änderung.
-            Assert.Contains(nameof(LocalTracksViewModel.TracksAccordionVisibility), geaenderteEigenschaften);
-            Assert.Contains(nameof(LocalTracksViewModel.TrackActionsVisibility), geaenderteEigenschaften);
+            Assert.Contains(nameof(LocalTracksViewModel.TracksAccordionVisibility), changedProperties);
+            Assert.Contains(nameof(LocalTracksViewModel.TrackActionsVisibility), changedProperties);
         }
 
         [Fact]
@@ -502,30 +442,12 @@ namespace EchoPlay.App.Tests.ViewModels
             // sonst liefe er ins Leere, solange die Spurenliste rechts noch lädt.
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
+            Guid episodeId = await SeedEpisodeWithFolderAsync(
+                seriesService, episodeService, "TKKG", @"C:\Hörspiele\TKKG", "Folge 1", trackCount: 2);
 
-            await seriesService.AddAsync(new Series
-            {
-                Title = "TKKG",
-                LocalFolderPath = @"C:\Hörspiele\TKKG"
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Folge 1",
-                SeriesId = seriesService.All[0].Id,
-                EpisodeNumber = 1,
-                LocalFolderPath = @"C:\Hörspiele\TKKG\001",
-                LocalTrackCount = 2
-            }, cancellationToken: TestContext.Current.CancellationToken);
-
-            FakeLocalTrackDataService trackService = new(new Dictionary<Guid, IReadOnlyList<LocalTrack>>
-            {
-                [episodeService.All[0].Id] =
-                [
-                    new LocalTrack { FilePath = @"C:\TKKG\001_b.mp3", TrackNumber = 2, Duration = TimeSpan.FromMinutes(10) },
-                    new LocalTrack { FilePath = @"C:\TKKG\001_a.mp3", TrackNumber = 1, Duration = TimeSpan.FromMinutes(12) }
-                ]
-            });
+            FakeLocalTrackDataService trackService = TracksOf(episodeId,
+                Track(@"C:\TKKG\001_b.mp3", 2, 10),
+                Track(@"C:\TKKG\001_a.mp3", 1, 12));
 
             FakePlayerService playerService = new();
             LocalLibraryViewModel vm = BuildViewModel(
@@ -562,8 +484,6 @@ namespace EchoPlay.App.Tests.ViewModels
             // Noch keine Folge ausgewählt → keine Tracks → Befehl inaktiv
             Assert.False(vm.TracksVM.PlayEpisodeCommand.CanExecute(null));
         }
-
-        // ── Fehlende Folgen ──────────────────────────────────────────────────────
 
         [Fact]
         public async Task ShowMissingEpisodesAsync_NonExistentFolder_ReportsNoFolder()
@@ -623,8 +543,6 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Single(received!);
             Assert.Contains("Kein lokaler Ordner", received![0], StringComparison.Ordinal);
         }
-
-        // ── Cover-Verwaltung ─────────────────────────────────────────────────────
 
         [Fact]
         public async Task SetCoverAsync_PersistsCoverBytesInCoverImagesTable()

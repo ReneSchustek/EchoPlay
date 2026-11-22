@@ -18,7 +18,7 @@ namespace EchoPlay.App.Services
     /// </remarks>
     public interface IFilePickerService
     {
-        /// <summary>Öffnet einen Folder-Picker. Liefert <c>null</c>, wenn der Nutzer abbricht.</summary>
+        /// <summary>Öffnet einen Folder-Picker. Liefert <see langword="null"/>, wenn der Nutzer abbricht.</summary>
         /// <param name="startLocation">Startort des Dialogs, z. B. die Musikbibliothek.</param>
         Task<StorageFolder?> PickFolderAsync(PickerLocationId startLocation = PickerLocationId.Unspecified);
 
@@ -27,12 +27,12 @@ namespace EchoPlay.App.Services
             IReadOnlyList<string> fileTypeFilters,
             PickerLocationId startLocation = PickerLocationId.Unspecified);
 
-        /// <summary>Öffnet einen File-Open-Picker für eine einzelne Datei. Liefert <c>null</c> bei Abbruch.</summary>
+        /// <summary>Öffnet einen File-Open-Picker für eine einzelne Datei. Liefert <see langword="null"/> bei Abbruch.</summary>
         Task<StorageFile?> PickFileAsync(
             IReadOnlyList<string> fileTypeFilters,
             PickerLocationId startLocation = PickerLocationId.Unspecified);
 
-        /// <summary>Öffnet einen Save-File-Picker. Liefert <c>null</c> bei Abbruch.</summary>
+        /// <summary>Öffnet einen Save-File-Picker. Liefert <see langword="null"/> bei Abbruch.</summary>
         Task<StorageFile?> PickSaveFileAsync(
             string suggestedFileName,
             string fileTypeDescription,

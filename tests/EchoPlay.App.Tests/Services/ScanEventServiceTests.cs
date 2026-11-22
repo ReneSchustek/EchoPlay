@@ -52,7 +52,7 @@ namespace EchoPlay.App.Tests.Services
             service.SeriesSynced += s => captured = s;
 
             Series series = new() { Title = "Test-Serie" };
-            service.RaiseSeriesSynced(series);
+            service.NotifySeriesSynced(series);
 
             Assert.NotNull(captured);
             Assert.Same(series, captured);
@@ -63,7 +63,7 @@ namespace EchoPlay.App.Tests.Services
         {
             ScanEventService service = new();
 
-            Exception? exception = Record.Exception(() => service.RaiseSeriesSynced(new Series { Title = "Titel" }));
+            Exception? exception = Record.Exception(() => service.NotifySeriesSynced(new Series { Title = "Titel" }));
 
             Assert.Null(exception);
         }

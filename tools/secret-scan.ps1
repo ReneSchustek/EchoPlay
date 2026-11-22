@@ -41,22 +41,22 @@ if (-not (Test-Path $config)) {
     exit 2
 }
 
-$modus = if ($History) { 'git' } else { 'dir' }
+$mode = if ($History) { 'git' } else { 'dir' }
 
 # Nicht $args verwenden, denn das ist eine automatische Variable von PowerShell.
-$gitleaksArgs = @($modus, $repoRoot, '--config', $config, '--no-banner')
+$gitleaksArgs = @($mode, $repoRoot, '--config', $config, '--no-banner')
 
 if ($Json) {
     # Ohne Zielangabe in den Temp-Ordner schreiben, damit der Bericht nicht als
     # unversionierte Datei im Repo liegen bleibt.
-    $bericht = if ($OutFile) { $OutFile } else { Join-Path $env:TEMP 'echoplay-secret-scan.json' }
-    $gitleaksArgs += @('--report-format', 'json', '--report-path', $bericht)
-    Write-Host "[secret-scan] Bericht: $bericht" -ForegroundColor Cyan
+    $report = if ($OutFile) { $OutFile } else { Join-Path $env:TEMP 'echoplay-secret-scan.json' }
+    $gitleaksArgs += @('--report-format', 'json', '--report-path', $report)
+    Write-Host "[secret-scan] Bericht: $report" -ForegroundColor Cyan
 } else {
     $gitleaksArgs += '--verbose'
 }
 
-Write-Host "[secret-scan] gitleaks $modus-Scan startet..." -ForegroundColor Cyan
+Write-Host "[secret-scan] gitleaks $mode-Scan startet..." -ForegroundColor Cyan
 & $gitleaks @gitleaksArgs
 $rc = $LASTEXITCODE
 

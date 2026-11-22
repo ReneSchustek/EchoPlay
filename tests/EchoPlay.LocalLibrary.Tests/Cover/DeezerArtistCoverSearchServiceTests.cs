@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using System;
 using System.Collections.Generic;
@@ -38,8 +39,8 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal("TKKG", only.ReleaseTitle);
             Assert.Equal("Deezer (Künstler)", only.Source);
-            Assert.Equal("https://e-cdns-images.dzcdn.net/artist-medium.jpg", only.ThumbnailUrl);
-            Assert.Equal("https://e-cdns-images.dzcdn.net/artist-xl.jpg", only.FullUrl);
+            Assert.Equal(new Uri("https://e-cdns-images.dzcdn.net/artist-medium.jpg"), only.ThumbnailUrl);
+            Assert.Equal(new Uri("https://e-cdns-images.dzcdn.net/artist-xl.jpg"), only.FullUrl);
         }
 
         [Fact]
@@ -57,7 +58,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new();
             HttpClient client = new(handler);
-            DeezerArtistCoverSearchService service = new(client);
+            DeezerArtistCoverSearchService service = new(client, new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Egal", ct: TestContext.Current.CancellationToken);
 
@@ -68,9 +69,13 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new(status, body);
             HttpClient client = new(handler);
-            return new DeezerArtistCoverSearchService(client);
+            return new DeezerArtistCoverSearchService(client, new FakeLoggerFactory());
         }
 
+        /// <summary>
+        /// GET liefert den vorgegebenen Status und Text; im Fehlermodus scheitert die Anfrage wie
+        /// bei einem Netzwerkfehler.
+        /// </summary>
         private sealed class FakeHttpMessageHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _status;

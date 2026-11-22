@@ -50,21 +50,16 @@ namespace EchoPlay.Spotify.Scoring
             bool hasNegativeMusicGenre = HasNegativeMusicGenre(source.Genres);
             bool isKnownSeries = HoerspielNameMatcher.IsKnownSeries(source.Name, _settings.DefaultKnownSeries);
 
-            string normalizedName = HoerspielTextNormalizer.Normalize(source.Name);
-            string normalizedQuery = HoerspielTextNormalizer.Normalize(searchQuery);
-
-            bool nameContainsQuery = normalizedName.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase);
-            bool hasNumberVariantMatch = HoerspielNameMatcher.HasNumberVariantMatch(normalizedName, normalizedQuery, _settings.NumberWordMapping);
-            bool hasExactWordMatch = HoerspielNameMatcher.IsExactWordMatch(normalizedName, normalizedQuery);
+            HoerspielNameMatch names = HoerspielNameMatcher.Compare(source.Name, searchQuery, _settings.NumberWordMapping);
 
             (bool hasAlbums, bool hasHoerspielAlbumStructure) = await AnalyzeAlbumsAsync(source.SpotifyArtistId, cancellationToken).ConfigureAwait(false);
 
             DebugInfoBuilder debug = new();
             debug.Add(hasNegativeMusicGenre, $"Negatives Musikgenre: [{string.Join(", ", source.Genres)}]");
             debug.Add(isKnownSeries, $"Bekannte Serie: '{source.Name}'");
-            debug.Add(nameContainsQuery, "Name-Contains-Match");
-            debug.Add(hasNumberVariantMatch, "Zahlwort-Variante");
-            debug.Add(hasExactWordMatch, "Exaktes Wort-Match");
+            debug.Add(names.ContainsQuery, "Name-Contains-Match");
+            debug.Add(names.NumberVariantMatch, "Zahlwort-Variante");
+            debug.Add(names.ExactWordMatch, "Exaktes Wort-Match");
             debug.Add(hasHoerspielAlbumStructure, "Hörspiel-Albumstruktur");
             debug.Add(!hasHoerspielAlbumStructure && !hasAlbums, "Keine Alben");
 
@@ -76,9 +71,9 @@ namespace EchoPlay.Spotify.Scoring
             {
                 HasNegativeMusicGenre = hasNegativeMusicGenre,
                 IsKnownSeries = isKnownSeries,
-                NameContainsQuery = nameContainsQuery,
-                HasNumberVariantMatch = hasNumberVariantMatch,
-                HasExactWordMatch = hasExactWordMatch,
+                NameContainsQuery = names.ContainsQuery,
+                HasNumberVariantMatch = names.NumberVariantMatch,
+                HasExactWordMatch = names.ExactWordMatch,
                 HasHoerspielAlbumStructure = hasHoerspielAlbumStructure,
                 HasAlbums = hasAlbums,
                 DebugInfo = debugInfo
@@ -137,8 +132,8 @@ namespace EchoPlay.Spotify.Scoring
                     // Schlägt das Laden der Tracks für ein Album fehl, wird es bei der Strukturanalyse
                     // übersprungen, um die Gesamtbewertung nicht zu blockieren.
                     _logger.Warning(
-                        $"Tracks für Spotify-Album '{album.SpotifyAlbumId}' ('{album.Title}') konnten nicht geladen werden. Album wird bei der Hörspielanalyse übersprungen.");
-                    _logger.Error("Fehlerdetails:", ex);
+                        "Tracks für Spotify-Album '{AlbumId}' ('{Title}') nicht geladen, bei der Hörspielanalyse übersprungen: {Reason}",
+                        album.SpotifyAlbumId, album.Title, ex.Message);
                     continue;
                 }
 

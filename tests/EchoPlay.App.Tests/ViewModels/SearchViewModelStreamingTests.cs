@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Abstractions.Time;
@@ -26,7 +27,8 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </remarks>
     public sealed class SearchViewModelStreamingTests
     {
-        private static readonly TimeSpan Frist = TimeSpan.FromSeconds(10);
+        // Fängt nur einen hängenden Lauf ab; ein grüner Lauf wartet nie so lange.
+        private static readonly TimeSpan Deadline = TimeSpan.FromSeconds(10);
 
         [Fact]
         public async Task Search_ShowsTheFirstCardWhileTheSearchIsStillRunning()
@@ -40,7 +42,7 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
 
             search.Publish(Series("Bibi Blocksberg", 100));
-            await firstCard.WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await firstCard.WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             // Die Suche läuft noch, der zweite Treffer ist nicht einmal angefragt.
             _ = Assert.Single(vm.Results);
@@ -48,7 +50,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(vm.IsLoading);
 
             search.Complete();
-            await vm.WaitForSearchCompleteAsync().WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await vm.WaitForSearchCompleteAsync().WaitAsync(Deadline, TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -64,16 +66,16 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Zuerst ein schwacher Treffer ohne Namensbezug …
             search.Publish(Series("Benjamin Blümchen", 100));
-            await firstCard.WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await firstCard.WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             Task secondCard = WaitForResultChange(vm);
 
             // … danach der Namenstreffer. Er gehört nach oben, obwohl er später kommt.
             search.Publish(Series("Bibi und Tina", 60));
-            await secondCard.WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await secondCard.WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             search.Complete();
-            await vm.WaitForSearchCompleteAsync().WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await vm.WaitForSearchCompleteAsync().WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             Assert.Equal(2, vm.Results.Count);
             Assert.Equal("Bibi und Tina", vm.Results[0].Title);
@@ -96,7 +98,7 @@ namespace EchoPlay.App.Tests.ViewModels
             search.Publish(Series("Bibi und Tina", 100));
             search.Complete();
 
-            await vm.WaitForSearchCompleteAsync().WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await vm.WaitForSearchCompleteAsync().WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             Assert.Equal(2, vm.Results.Count);
             Assert.Equal("Bibi und Tina", vm.Results[0].Title);
@@ -125,19 +127,17 @@ namespace EchoPlay.App.Tests.ViewModels
             vm.SearchCommand.Execute(null);
 
             search.Complete();
-            await vm.WaitForSearchCompleteAsync().WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await vm.WaitForSearchCompleteAsync().WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             SearchResultViewModel card = Assert.Single(vm.Results);
-            await (card.CoverLoadTask ?? Task.CompletedTask).WaitAsync(Frist, TestContext.Current.CancellationToken);
+            await (card.CoverLoadTask ?? Task.CompletedTask).WaitAsync(Deadline, TestContext.Current.CancellationToken);
 
             (string Source, string SourceSeriesId, string? CoverUrl, System.Threading.CancellationToken Ct) call =
                 Assert.Single(coverService.SearchCoverRequests);
-            Assert.Equal("Lokal", call.Source);
+            Assert.Equal(ProviderKeys.Local, call.Source);
             Assert.Equal(series.Id.ToString(), call.SourceSeriesId);
             Assert.Null(call.CoverUrl);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Liefert einen Task, der abschließt, sobald eine Karte in die Trefferliste kommt.
@@ -199,30 +199,18 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = ProviderType.AppleMusic }));
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => search);
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => search);
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddScoped<ISeriesDataService>(_ => series);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services, spotifySearch: search, appleMusicSearch: search);
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new SearchViewModel(
                 importService,

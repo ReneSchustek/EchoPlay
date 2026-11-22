@@ -157,11 +157,11 @@
             <SolidColorBrush x:Key="CardHeaderForegroundBrush" Color="#FFFFFF"/>
             <SolidColorBrush x:Key="CardBodyBackgroundBrush"   Color="#1B1E2B"/>
             <SolidColorBrush x:Key="CardBodyForegroundBrush"   Color="#E2E4F3"/>
-            <FontFamily x:Key="ThemeFontFamily">Source Sans 3</FontFamily>
-            <FontFamily x:Key="ThemeMonoFontFamily">JetBrains Mono</FontFamily>
+            <FontFamily x:Key="ThemeFontFamily">ms-appx:///Assets/Fonts/RobotoFlex.ttf#Roboto Flex, Segoe UI Variable Text, Segoe UI</FontFamily>
+            <FontFamily x:Key="ThemeMonoFontFamily">ms-appx:///Assets/Fonts/RobotoMono.ttf#Roboto Mono, Cascadia Mono, Consolas</FontFamily>
             <!-- ContentControlThemeFontFamily überschreibt den WinUI-3-Standard,
                  damit alle built-in Styles (BodyTextBlock, Caption usw.) die Theme-Schrift verwenden -->
-            <FontFamily x:Key="ContentControlThemeFontFamily">Source Sans 3</FontFamily>
+            <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Assets/Fonts/RobotoFlex.ttf#Roboto Flex, Segoe UI Variable Text, Segoe UI</FontFamily>
 
         </ResourceDictionary>
 
@@ -288,9 +288,7 @@
             <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="#2A2F63"/>
             <SolidColorBrush x:Key="SelectionBorderBrush"     Color="#5B4DFF"/>
 
-            <!-- Typografie: Source Sans 3 (ruhig, hochwertig, leicht editorial) -->
-            <!-- Download: https://fonts.google.com/specimen/Source+Sans+3 -->
-            <!-- TTF nach Assets/Fonts/ kopieren und im .csproj als Content deklarieren -->
+            <!-- Typografie: Roboto Flex für Text, Roboto Mono für Muster und Berichte, in allen Themes gleich, passend zu ruhrcoder.de; das Theme bestimmt nur die Farben. Beide liegen als variable Schrift unter Assets/Fonts und reisen mit dem Programm. -->
 
             <!-- Status: nie allein über Farbe ausgedrückt, immer zusätzlich über Wort oder Zeichen. -->
             <SolidColorBrush x:Key="StatusSuccessBrush" Color="#6FBF8A"/>
@@ -332,9 +330,9 @@
             <SolidColorBrush x:Key="CardHeaderForegroundBrush" Color="#FFFFFF"/>
             <SolidColorBrush x:Key="CardBodyBackgroundBrush"   Color="#1B1E2B"/>
             <SolidColorBrush x:Key="CardBodyForegroundBrush"   Color="#E2E4F3"/>
-            <FontFamily x:Key="ThemeFontFamily">Source Sans 3</FontFamily>
-            <FontFamily x:Key="ThemeMonoFontFamily">JetBrains Mono</FontFamily>
-            <FontFamily x:Key="ContentControlThemeFontFamily">Source Sans 3</FontFamily>
+            <FontFamily x:Key="ThemeFontFamily">ms-appx:///Assets/Fonts/RobotoFlex.ttf#Roboto Flex, Segoe UI Variable Text, Segoe UI</FontFamily>
+            <FontFamily x:Key="ThemeMonoFontFamily">ms-appx:///Assets/Fonts/RobotoMono.ttf#Roboto Mono, Cascadia Mono, Consolas</FontFamily>
+            <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Assets/Fonts/RobotoFlex.ttf#Roboto Flex, Segoe UI Variable Text, Segoe UI</FontFamily>
 
         </ResourceDictionary>
 

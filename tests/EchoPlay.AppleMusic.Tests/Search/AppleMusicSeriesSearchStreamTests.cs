@@ -73,7 +73,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
             AppleMusicHoerspielAnalysis analysis = await analyzer.AnalyzeAsync(
                 Artist(9, "Eine neue Hörspielserie", null), "Eine neue Hörspielserie", TestContext.Current.CancellationToken);
 
-            Assert.Equal("https://is1-ssl.mzstatic.com/image/thumb/abc/300x300bb.jpg", analysis.ArtworkUrl);
+            Assert.Equal(new Uri("https://is1-ssl.mzstatic.com/image/thumb/abc/300x300bb.jpg"), analysis.ArtworkUrl);
         }
 
         [Fact]
@@ -189,10 +189,8 @@ namespace EchoPlay.AppleMusic.Tests.Search
             IReadOnlyList<ImportSeries> results = await sut.SearchAsync("Bibi", TestContext.Current.CancellationToken);
 
             ImportSeries series = Assert.Single(results);
-            Assert.Equal("https://is1-ssl.mzstatic.com/image/thumb/abc/300x300bb.jpg", series.CoverImageUrl);
+            Assert.Equal(new Uri("https://is1-ssl.mzstatic.com/image/thumb/abc/300x300bb.jpg"), series.CoverImageUrl);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static LoggerFactory LoggerFactory() => new([], new LoggerOptions());
 

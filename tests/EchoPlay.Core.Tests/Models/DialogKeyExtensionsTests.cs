@@ -18,7 +18,7 @@ namespace EchoPlay.Core.Tests.Models
         [InlineData(DialogKey.TagManagerRemoveAll)]
         [InlineData(DialogKey.TagManagerCoverApplyAll)]
         [InlineData(DialogKey.TagManagerApplyToAll)]
-        public void TagManagerSchreibaktionen_HabenKeinenRueckweg(DialogKey key)
+        public void TagManagerWriteActions_HaveNoWayBack(DialogKey key)
         {
             Assert.True(key.WritesFilesWithoutUndo());
         }
@@ -29,7 +29,7 @@ namespace EchoPlay.Core.Tests.Models
         [InlineData(DialogKey.LibraryReinit)]
         [InlineData(DialogKey.ImportFailed)]
         [InlineData(DialogKey.None)]
-        public void AllesAndere_HatEinenRueckweg(DialogKey key)
+        public void EverythingElse_HasAWayBack(DialogKey key)
         {
             // Löschen läuft in EchoPlay über Soft-Delete und bleibt bis zum Ablauf von
             // DbPurgeDays umkehrbar, deshalb gehört auch das Löschen von der Platte
@@ -38,7 +38,7 @@ namespace EchoPlay.Core.Tests.Models
         }
 
         [Fact]
-        public void GenauFuenfDialogeSindOhneRueckweg()
+        public void ExactlyFiveDialogsHaveNoWayBack()
         {
             int count = Enum.GetValues<DialogKey>().Count(key => key.WritesFilesWithoutUndo());
 

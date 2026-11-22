@@ -18,7 +18,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     /// <remarks>
     /// Bewusst nicht an <see cref="MaintenanceSettingsViewModel"/> angebaut: Das trägt schon
-    /// Datenbankpflege und Protokollansicht. Und der Abschnitt hat nichts zu speichern — er
+    /// Datenbankpflege und Protokollansicht. Und der Abschnitt hat nichts zu speichern; er
     /// wirkt sofort und hängt deshalb nicht am gemeinsamen Speichern-Knopf der Seite.
     /// </remarks>
     public sealed class HiddenDialogsViewModel : ObservableObject
@@ -46,7 +46,7 @@ namespace EchoPlay.App.ViewModels
 
             _suppressionService = suppressionService;
             _localizationService = localizationService;
-            _logger = loggerFactory.CreateLogger("HiddenDialogsViewModel");
+            _logger = loggerFactory.CreateLogger(nameof(HiddenDialogsViewModel));
             Items = [];
         }
 

@@ -6,7 +6,7 @@ namespace EchoPlay.App.Tests.Fakes
 {
     /// <summary>
     /// Testisoliertes Fake für <see cref="IScanEventService"/>.
-    /// Ermöglicht Unit-Tests von <see cref="EchoPlay.App.ViewModels.LocalLibraryViewModel"/>
+    /// Für Unit-Tests von <see cref="EchoPlay.App.ViewModels.LocalLibraryViewModel"/>
     /// und <see cref="SyncService"/>, ohne einen echten Singleton-Service zu benötigen.
     /// Alle Aufrufe werden aufgezeichnet, damit Tests das erwartete Verhalten prüfen können.
     /// </summary>
@@ -39,7 +39,7 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public void RaiseSeriesSynced(Series series)
+        public void NotifySeriesSynced(Series series)
         {
             SeriesSynced?.Invoke(series);
         }

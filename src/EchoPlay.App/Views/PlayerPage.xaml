@@ -124,6 +124,14 @@
                     Command="{x:Bind ViewModel.PlayPauseCommand}"/>
 
                 <Button
+                    x:Uid="PlayerStopButton"
+                    Content="&#xE71A;"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Width="48" Height="48"
+                    CornerRadius="24"
+                    Command="{x:Bind ViewModel.StopCommand}"/>
+
+                <Button
                             x:Uid="PlayerNextButton"
                     Content="&#xE893;"
                     FontFamily="{ThemeResource SymbolThemeFontFamily}"
@@ -165,7 +173,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Playlist-Header: Episodentitel + Metadaten -->
+            <!-- Playlist-Header: Ordnername und Spurenzahl -->
             <StackPanel Grid.Row="0" Margin="0,0,0,8">
                 <TextBlock
                     Text="{x:Bind ViewModel.PlaylistTitle, Mode=OneWay}"

@@ -16,15 +16,13 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class TagManagerViewModelTests
     {
-        // ── BuildAutoLookupQuery ──────────────────────────────────────────────────
-
         [Fact]
         public void BuildAutoLookupQuery_ReturnsSeriesAndEpisode_FromFolderPath()
         {
             // Serienname aus übergeordnetem Ordner, Folgentitel aus Ordnername (ohne Laufnummer)
             string path = @"D:\Hörspiele\Die drei Fragezeichen\001 - Der Super-Papagei";
 
-            string query = TagManagerViewModel.BuildAutoLookupQuery(path);
+            string query = TagLookupCoordinator.BuildAutoLookupQueryCore(path);
 
             Assert.Equal("Die drei Fragezeichen Der Super-Papagei", query);
         }
@@ -35,7 +33,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // "042 - Der Fluch des Drachen" → "Der Fluch des Drachen" (Laufnummer entfernt)
             string path = @"D:\Hörspiele\TKKG\042 - Der Fluch des Drachen";
 
-            string query = TagManagerViewModel.BuildAutoLookupQuery(path);
+            string query = TagLookupCoordinator.BuildAutoLookupQueryCore(path);
 
             Assert.Equal("TKKG Der Fluch des Drachen", query);
         }
@@ -44,7 +42,7 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildAutoLookupQuery_ReturnsEmpty_WhenFolderPathIsNull()
         {
             // Kein geöffneter Ordner → leere Suchanfrage, kein Absturz
-            string query = TagManagerViewModel.BuildAutoLookupQuery(null);
+            string query = TagLookupCoordinator.BuildAutoLookupQueryCore(null);
 
             Assert.Equal(string.Empty, query);
         }
@@ -52,12 +50,10 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void BuildAutoLookupQuery_ReturnsEmpty_WhenFolderPathIsEmpty()
         {
-            string query = TagManagerViewModel.BuildAutoLookupQuery(string.Empty);
+            string query = TagLookupCoordinator.BuildAutoLookupQueryCore(string.Empty);
 
             Assert.Equal(string.Empty, query);
         }
-
-        // ── SelectBestMatch ───────────────────────────────────────────────────────
 
         [Fact]
         public void SelectBestMatch_ReturnsExactTrackCountMatch_WhenAvailable()
@@ -70,7 +66,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 new TagLookupResult { Title = "Auch falsch", TrackCount = 12 }
             ];
 
-            TagLookupResult? match = TagManagerViewModel.SelectBestMatch(results, loadedTrackCount: 8);
+            TagLookupResult? match = TagLookupCoordinator.SelectBestMatchCore(results, loadedTrackCount: 8);
 
             Assert.NotNull(match);
             Assert.Equal("Richtig", match!.Title);
@@ -86,7 +82,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 new TagLookupResult { Title = "Zweiter Treffer", TrackCount = 5 }
             ];
 
-            TagLookupResult? match = TagManagerViewModel.SelectBestMatch(results, loadedTrackCount: 8);
+            TagLookupResult? match = TagLookupCoordinator.SelectBestMatchCore(results, loadedTrackCount: 8);
 
             Assert.NotNull(match);
             Assert.Equal("Erster Treffer", match!.Title);
@@ -102,7 +98,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 new TagLookupResult { Title = "Zweiter",         TrackCount = null }
             ];
 
-            TagLookupResult? match = TagManagerViewModel.SelectBestMatch(results, loadedTrackCount: 8);
+            TagLookupResult? match = TagLookupCoordinator.SelectBestMatchCore(results, loadedTrackCount: 8);
 
             Assert.NotNull(match);
             Assert.Equal("Ohne TrackCount", match!.Title);
@@ -112,12 +108,10 @@ namespace EchoPlay.App.Tests.ViewModels
         public void SelectBestMatch_ReturnsNull_WhenResultsAreEmpty()
         {
             // Keine Ergebnisse → kein Treffer, kein Absturz
-            TagLookupResult? match = TagManagerViewModel.SelectBestMatch([], loadedTrackCount: 8);
+            TagLookupResult? match = TagLookupCoordinator.SelectBestMatchCore([], loadedTrackCount: 8);
 
             Assert.Null(match);
         }
-
-        // ── AutoLookupCommand – Integrations-Szenario ────────────────────────────
 
         [Fact]
         public async Task AutoLookupAsync_FiresAutoLookupApplied_WhenExactTrackCountMatches()
@@ -184,13 +178,11 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Suchanfrage muss Serienname + Folgentitel (ohne Laufnummer) enthalten
             // Query-Bau direkt testen (static Methode, kein LoadFolder nötig)
-            string query = TagManagerViewModel.BuildAutoLookupQuery(
+            string query = TagLookupCoordinator.BuildAutoLookupQueryCore(
                 @"D:\Hörspiele\Fünf Freunde\005 - Fünf Freunde auf der Felseninsel");
 
             Assert.Equal("Fünf Freunde Fünf Freunde auf der Felseninsel", query);
         }
-
-        // ── ApplyLookupResult → HasPendingBatchTag ─────────────────────────────
 
         [Fact]
         public async Task ApplyLookupResult_SetsPendingBatchTag()
@@ -270,13 +262,10 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("Neuer Interpret", vm.Artist);
         }
 
-        // ── ApplyToAll / SaveAll / CoverToAll ────────────────────────────────────
         // Diese Methoden nutzen ResourceLoader.GetString() für Bestätigungsdialoge,
         // was nur im WinUI-Kontext funktioniert. Die Batch-Logik (MergeSharedIntoExisting)
         // wird über die ApplyLookupResult-Tests indirekt validiert.
         // Vollständige Integration wird als manueller Smoke-Test geprüft.
-
-        // ── Mehrfachauswahl ──────────────────────────────────────────────────────
 
         [Fact]
         public async Task SetSelectedFiles_SingleFile_SetsSelectedFile()
@@ -351,8 +340,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.False(vm.HasSelectedFile);
             Assert.Null(vm.Title);
         }
-
-        // ── TagFileItemViewModel.RelativePath ────────────────────────────────────
 
         [Fact]
         public void TagFileItemViewModel_RelativePath_ShowsSubfolderPath()

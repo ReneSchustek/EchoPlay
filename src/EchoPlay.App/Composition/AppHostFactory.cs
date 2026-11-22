@@ -40,7 +40,7 @@ namespace EchoPlay.App.Composition
         }
 
         /// <summary>
-        /// Lädt die Konfiguration. Der Pfad ist bewusst absolut: Ein relativer Dateiname
+        /// Lädt die Konfiguration. Der Pfad ist absolut: Ein relativer Dateiname
         /// löst gegen das aktuelle Arbeitsverzeichnis auf, und der Start scheitert dann,
         /// sobald die Anwendung nicht aus ihrem Installationsordner heraus gestartet wird.
         /// </summary>

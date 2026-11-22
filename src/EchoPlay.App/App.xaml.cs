@@ -4,6 +4,8 @@ using EchoPlay.App.Startup;
 using EchoPlay.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -13,12 +15,13 @@ namespace EchoPlay.App
 {
     /// <summary>
     /// Einstiegspunkt der EchoPlay-Anwendung.
-    ///
+    /// <para>
     /// Die Klasse hält den Lebenszyklus zusammen: Sie ruft den Startlauf ab, öffnet das
     /// Hauptfenster, fängt Fehler ab, die sonst niemand mehr sieht, und stößt das
     /// geordnete Beenden an. Der Aufbau des Dienst-Containers steht daneben in
     /// <see cref="AppHostFactory"/>, die Abschnitte des Startlaufs in
     /// <see cref="StartupSequence"/>.
+    /// </para>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "WinUI-3-Entry-Point-Typ heißt per Konvention 'App' im 'EchoPlay.App'-Namespace.")]
     public partial class App : Application
@@ -27,6 +30,10 @@ namespace EchoPlay.App
         private static StartupResult? _startupResult;
         private Window? _window;
         private StartupSequence? _startup;
+
+        // Das Fenster, das ein umgeleiteter zweiter Start nach vorn holt: erst das Startbild,
+        // danach das Hauptfenster.
+        private Window? _frontWindow;
 
         /// <summary>
         /// Stellt den zentralen ServiceProvider der Anwendung bereit.
@@ -52,7 +59,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Initialisiert das Application-Objekt.
-        /// Der eigentliche Aufbau erfolgt bewusst verzögert in OnLaunched,
+        /// Der eigentliche Aufbau erfolgt verzögert in OnLaunched,
         /// da dort der WinUI-Lebenszyklus garantiert bereit ist.
         /// </summary>
         public App()
@@ -75,7 +82,7 @@ namespace EchoPlay.App
 
         /// <summary>
         /// Wird beim Start der Anwendung aufgerufen.
-        /// Hier wird einmalig der Host erstellt, das Theme geladen und die UI gestartet.
+        /// Erstellt einmalig den Host, lädt das Theme und startet die Oberfläche.
         /// Das Theme wird vor dem ersten Rendern gesetzt, damit kein falsches Theme aufblitzt.
         /// </summary>
         /// <param name="args">Startparameter der Anwendung.</param>
@@ -85,21 +92,20 @@ namespace EchoPlay.App
             SplashWindow? splash = null;
             try
             {
-                // Globaler Handler registrieren, bevor der Host gestartet wird.
-                this.UnhandledException += OnUnhandledException;
+                // Vor allem anderen: Läuft EchoPlay schon, übernimmt die laufende Instanz und
+                // dieser Prozess endet, ohne Datenbank oder Protokoll anzufassen.
+                if (!await new AppInstanceRegistration().TryBecomePrimaryAsync())
+                {
+                    Exit();
+                    return;
+                }
 
-                // Zusätzliche Fanglinien für Exceptions, die WinUIs UnhandledException nicht abfängt:
-                // - AppDomain.UnhandledException: Fehler aus Nicht-UI-Threads (Task.Run ohne await, Threadpool).
-                // - TaskScheduler.UnobservedTaskException: Tasks deren Exception nie per await konsumiert wurde.
-                AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
-                TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+                AppInstanceRegistration.ListenForRedirectedLaunches(
+                    DispatcherQueue.GetForCurrentThread(), OnRedirectedLaunch);
+                RegisterCrashHandlers();
 
                 // Splash sofort zeigen, damit der Nutzer nicht auf einen leeren Bildschirm starrt.
-                // Logo aus Embedded-Resource laden, bevor das Fenster aktiviert wird, sonst
-                // flackert der Splash kurz ohne Logo (BitmapImage.SetSourceAsync ist asynchron).
-                splash = new SplashWindow();
-                await splash.LoadEmbeddedLogoAsync();
-                splash.Activate();
+                splash = await ShowSplashAsync();
                 SplashLifetimeController splashLifetime = new();
 
                 _host ??= AppHostFactory.Create();
@@ -114,15 +120,7 @@ namespace EchoPlay.App
                 // Startup-Validierung + Update-Check.
                 _startupResult = await _startup.RunValidationAsync(splash);
 
-                MainWindow = _window = new MainWindow();
-                _window.Closed += OnWindowClosed;
-
-                // RequestedTheme konnte in InitializeAsync() nicht gesetzt werden,
-                // da das Fenster zu diesem Zeitpunkt noch nicht existierte.
-                // Jetzt, wo Content verfügbar ist, den Wert nachliefern.
-                themeService.SyncRequestedTheme();
-
-                _window.Activate();
+                ShowMainWindow(themeService);
 
                 // Mindestanzeigedauer einhalten, damit der Splash bei warmem Cache nicht aufflackert.
                 await splashLifetime.WaitForMinimumDurationAsync();
@@ -137,6 +135,66 @@ namespace EchoPlay.App
             {
                 await HandleStartupFailureAsync(splash, ex);
             }
+        }
+
+        /// <summary>
+        /// Meldet die Fanglinien für unbehandelte Ausnahmen an, vor dem Host, damit schon
+        /// Startfehler ankommen.
+        /// </summary>
+        private void RegisterCrashHandlers()
+        {
+            this.UnhandledException += OnUnhandledException;
+
+            // Zwei weitere Fanglinien für Ausnahmen, die WinUIs UnhandledException nicht sieht:
+            // AppDomain.UnhandledException für Fehler aus Nicht-UI-Threads (Task.Run ohne await,
+            // Threadpool), TaskScheduler.UnobservedTaskException für Tasks, deren Ausnahme nie per
+            // await abgeholt wurde.
+            AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        }
+
+        private async Task<SplashWindow> ShowSplashAsync()
+        {
+            // Logo aus Embedded-Resource laden, bevor das Fenster aktiviert wird, sonst
+            // flackert der Splash kurz ohne Logo (BitmapImage.SetSourceAsync ist asynchron).
+            SplashWindow splash = new();
+            await splash.LoadEmbeddedLogoAsync();
+            splash.Activate();
+            _frontWindow = splash;
+            return splash;
+        }
+
+        private void ShowMainWindow(ThemeService themeService)
+        {
+            MainWindow = _window = new MainWindow();
+            _window.Closed += OnWindowClosed;
+
+            // RequestedTheme gehört an den Fensterinhalt; den gibt es erst ab hier.
+            themeService.SyncRequestedTheme();
+
+            _window.Activate();
+            _frontWindow = _window;
+        }
+
+        /// <summary>
+        /// Ein zweiter Start hat an diesen Prozess abgegeben: das sichtbare Fenster nach vorn
+        /// holen, ein minimiertes vorher wiederherstellen.
+        /// </summary>
+        private void OnRedirectedLaunch()
+        {
+            AppLogger?.Info("Weiterer Start an die laufende Instanz umgeleitet.");
+
+            if (_frontWindow is null)
+            {
+                return;
+            }
+
+            if (_frontWindow.AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } presenter)
+            {
+                presenter.Restore();
+            }
+
+            _frontWindow.Activate();
         }
 
         /// <summary>
@@ -195,11 +253,9 @@ namespace EchoPlay.App
             AppDomain.CurrentDomain.UnhandledException -= OnDomainUnhandledException;
             TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
 
+            // Das Freigeben des Hosts schließt auch den Protokoll-Verwalter; der Container hat
+            // ihn erzeugt und gibt ihn als Letztes frei, nachdem alle anderen Dienste fertig sind.
             ShutdownSequence.Run(_host!, AppLogger);
-
-            // Sicherheits-Dispose: greift, falls der LoggerManager nicht über den DI-Container
-            // freigegeben wird (z.B. bei nicht-standard Registrierung).
-            _startup?.LoggerManager.Dispose();
         }
 
         /// <summary>
@@ -207,10 +263,11 @@ namespace EchoPlay.App
         /// Verhindert das stille Beenden der Anwendung ohne sichtbaren Hinweis.
         /// </summary>
         /// <param name="sender">Quelle der Exception.</param>
-        /// <param name="e">Enthält die nicht abgefangene Exception und ermöglicht optionales Unterdrücken des Absturzes.</param>
+        /// <param name="e">Die nicht abgefangene Exception; über <c>Handled</c> lässt sich der Absturz unterdrücken.</param>
         private async void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
-            // Absturz verhindern, die Exception wird als Dialog angezeigt
+            // Absturz verhindern; der Fehler steht im Protokoll und, sobald das Hauptfenster offen
+            // ist, in einem Dialog.
             e.Handled = true;
 
             if (AppLogger is not null)
@@ -220,7 +277,7 @@ namespace EchoPlay.App
             else
             {
                 // Fallback, falls Logger noch nicht initialisiert ist. EmergencyTrace kapselt
-                // bewusst Trace.WriteLine, damit die Ausgabe auch im Release-Build erhalten bleibt.
+                // Trace.WriteLine, damit die Ausgabe auch im Release-Build erhalten bleibt.
                 EchoPlay.Logger.Core.EmergencyTrace.Log($"[FATAL] Nicht behandelte Exception: {e.Exception}");
             }
 
@@ -273,7 +330,7 @@ namespace EchoPlay.App
         /// konsumiert wurde (z. B. <c>_ = Task.Run(...)</c> ohne Fehlerbehandlung im Body).
         /// </summary>
         /// <param name="sender">Der <see cref="TaskScheduler"/>, der das Event meldet.</param>
-        /// <param name="e">Enthält die Exception und ermöglicht <c>SetObserved()</c>, um den Crash zu verhindern.</param>
+        /// <param name="e">Die Exception; <c>SetObserved()</c> verhindert den Absturz.</param>
         private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
             => EchoPlay.App.Infrastructure.FatalExceptionHandler.HandleUnobservedTaskException(AppLogger, e);
     }

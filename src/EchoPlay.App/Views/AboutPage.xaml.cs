@@ -34,7 +34,7 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatedTo(e);
 
-            // ToString(3) liefert "Major.Minor.Build"; die Build-Revision lassen wir weg
+            // ToString(3) liefert "Major.Minor.Build"; die Revision bleibt weg.
             string version = typeof(App).Assembly
                 .GetName()
                 .Version?

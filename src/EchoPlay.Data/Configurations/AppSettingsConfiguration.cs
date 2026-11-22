@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -7,9 +6,7 @@ namespace EchoPlay.Data.Configurations
 {
     /// <summary>
     /// EF-Core-Konfiguration für die <see cref="AppSettings"/>-Entity.
-    /// Stellt sicher, dass Einstellungen persistent und konsistent gespeichert werden.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "EF Core instanziiert IEntityTypeConfiguration-Implementierungen zur Modell-Erstellung via ApplyConfigurationsFromAssembly-Reflection.")]
     internal sealed class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>
     {
         /// <summary>
@@ -39,6 +36,9 @@ namespace EchoPlay.Data.Configurations
                 .HasMaxLength(16);
 
             _ = builder.Property(settings => settings.LastOpenedPlayerFolder)
+                .HasMaxLength(512);
+
+            _ = builder.Property(settings => settings.ReplicationFolderPath)
                 .HasMaxLength(512);
         }
     }

@@ -47,7 +47,7 @@ namespace EchoPlay.App.Views
         /// <summary>Schlüssel des Filters für durchgehörte Folgen.</summary>
         private const string FilterKeyHeard = "heard";
 
-        /// <summary>Die Chips des Hörzustands — gehalten, weil sie einander ausschließen.</summary>
+        /// <summary>Die Chips des Hörzustands, als Felder gehalten, weil sie einander ausschließen.</summary>
         private Controls.FilterChip[] _stateChips = [];
 
         /// <summary>
@@ -120,15 +120,11 @@ namespace EchoPlay.App.Views
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             base.OnNavigatedFrom(e);
-            // Cleanup() bricht zusätzlich den lifecycle-CTS ab, sodass laufende
-            // DB-Roundtrips beim Page-Verlassen nicht mehr in den verworfenen VM-State schreiben.
-            ViewModel.Cleanup();
+            // Bricht laufende Datenbank- und Cover-Aufrufe ab, damit sie nicht mehr in das
+            // verworfene Ansichtsmodell schreiben.
+            ViewModel.Dispose();
         }
 
-        /// <summary>
-        /// Wird ausgelöst, wenn der Benutzer eine Episodenkachel auswählt.
-        /// Lädt die zugehörigen lokalen Tracks in die rechte Spalte.
-        /// </summary>
         /// <summary>Tab-Wechsel: reguläre Folgen.</summary>
         private void OnDetailTabRegularChecked(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
@@ -149,6 +145,10 @@ namespace EchoPlay.App.Views
             _ = _navigationService.GoBack();
         }
 
+        /// <summary>
+        /// Wird ausgelöst, wenn der Benutzer eine Episodenkachel auswählt.
+        /// Lädt die zugehörigen lokalen Tracks in die rechte Spalte.
+        /// </summary>
         /// <param name="sender">Das GridView mit den Episodenkacheln.</param>
         /// <param name="e">Enthält die neue Auswahl.</param>
         private async void OnEpisodeSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -206,7 +206,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Öffnet das Album der Folge in Spotify. Die Wiedergabe startet dort der Nutzer selbst –
+        /// Öffnet das Album der Folge in Spotify. Die Wiedergabe startet dort der Nutzer selbst;
         /// EchoPlay bekommt von Spotify keinen Fortschritt zurück.
         /// </summary>
         private void OnOpenInSpotifyClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

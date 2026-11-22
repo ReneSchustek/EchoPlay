@@ -7,11 +7,13 @@ namespace EchoPlay.Logger.Sinks
     /// <summary>
     /// Puffert die letzten N Log-Einträge im Arbeitsspeicher und meldet neue Einträge
     /// in Echtzeit über <see cref="ILiveLogSink.LogEntryAdded"/>.
-    ///
+    /// <para>
     /// Der Puffer arbeitet als Ringpuffer: Sobald die Kapazität erreicht ist,
     /// fällt der älteste Eintrag heraus.
-    /// Der Zugriff ist thread-sicher, denn FileSink und UI-Thread schreiben und lesen gleichzeitig.
-    /// Das Event wird bewusst außerhalb des Locks gefeuert, um Deadlocks auszuschließen.
+    /// Der Zugriff ist thread-sicher, denn Protokollaufrufe aus Hintergrund-Threads schreiben,
+    /// während der UI-Thread die Anzeige liest.
+    /// Das Event wird außerhalb des Locks gefeuert, um Deadlocks auszuschließen.
+    /// </para>
     /// </summary>
     public sealed class MemorySink : ILogSink, ILiveLogSink
     {
@@ -42,7 +44,7 @@ namespace EchoPlay.Logger.Sinks
         }
 
         /// <inheritdoc/>
-        public event Action<LogEntry>? LogEntryAdded;
+        public event EventHandler<LogEntryEventArgs>? LogEntryAdded;
 
         /// <summary>
         /// Fügt einen Eintrag in den Puffer ein und feuert anschließend <see cref="LogEntryAdded"/>.
@@ -64,8 +66,8 @@ namespace EchoPlay.Logger.Sinks
                 _entries.Enqueue(entry);
             }
 
-            // Außerhalb des Locks feuern, denn Subscriber dürfen GetEntries() aufrufen
-            LogEntryAdded?.Invoke(entry);
+            // Außerhalb des Locks feuern; Subscriber dürfen GetEntries() aufrufen
+            LogEntryAdded?.Invoke(this, new LogEntryEventArgs(entry));
 
             return Task.CompletedTask;
         }
@@ -77,7 +79,7 @@ namespace EchoPlay.Logger.Sinks
         /// Unveränderliche Liste der aktuell gepufferten Einträge.
         /// Kann leer sein, wenn noch keine Einträge geschrieben wurden.
         /// </returns>
-        [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "GetEntries legt bei jedem Aufruf eine thread-sichere Kopie des Ringpuffers an; eine Property würde wiederholte Allokationen kaschieren.")]
+        [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Jeder Aufruf legt eine neue, thread-sichere Kopie des Ringpuffers an. Als Eigenschaft sähe ein wiederholter Zugriff billig aus; die Regeldokumentation nennt genau diesen Fall als Grund für eine Methode.")]
         public IReadOnlyList<LogEntry> GetEntries()
         {
             lock (_lock)

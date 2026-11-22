@@ -3,11 +3,13 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using EchoPlay.App.Composition;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -53,16 +55,46 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task CheckForUpdateAsync_CanceledToken_ReturnsNull()
+        public async Task CheckForUpdateAsync_HangingServer_GivesUpAtTheClientLimitAndOffersNothing()
+        {
+            // Über den echten Client mit seiner Wiederholungsregel: Der Dienst setzt keine
+            // eigene Frist, also endet die Prüfung genau an der Gesamtgrenze des Clients,
+            // nach mindestens einer Wiederholung.
+            FakeTimeProvider time = ClockDriver.CreateClock();
+            HangingHttpHandler hanging = new();
+
+            ServiceCollection services = new();
+            _ = services.AddSingleton<TimeProvider>(time);
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<EchoPlay.Data.Services.Interfaces.IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+            _ = services.AddEchoPlayHttpClients();
+            _ = services.AddHttpClient("UpdateCheck").ConfigurePrimaryHttpMessageHandler(() => hanging);
+
+            using ServiceProvider provider = services.BuildServiceProvider();
+            UpdateCheckService service = new(
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                provider.GetRequiredService<IHttpClientFactory>(),
+                new FakeLoggerFactory());
+
+            Task<UpdateInfo?> check = service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+            TimeSpan elapsed = await ClockDriver.RunUntilCompletedAsync(time, check, hanging.FirstAttempt);
+
+            Assert.Null(await check);
+            TimeSpan limit = HttpClientRegistration.UpdateCheckTotalTimeout;
+            Assert.InRange(elapsed, limit, limit + ClockDriver.Tolerance);
+            Assert.True(hanging.Attempts >= 2, $"Nur {hanging.Attempts} Versuch(e) bis zur Grenze.");
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_CanceledToken_PassesTheCancellationOn()
         {
             FakeAppSettingsDataService settings = new(new AppSettings());
             (UpdateCheckService service, _) = BuildService(settings);
             using CancellationTokenSource cts = new();
             await cts.CancelAsync();
 
-            UpdateInfo? result = await service.CheckForUpdateAsync(cts.Token);
-
-            Assert.Null(result);
+            // Abgebrochen ist nicht „kein Update": Der Aufrufer soll den Unterschied sehen.
+            _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CheckForUpdateAsync(cts.Token));
         }
 
         [Fact]
@@ -88,8 +120,6 @@ namespace EchoPlay.App.Tests.Services
             _ = await Assert.ThrowsAsync<OperationCanceledException>(
                 async () => await service.SkipVersionAsync("1.2.3", cts.Token));
         }
-
-        // ── Hash-Extraktor (SHA-256-Hash-Pin aus Release-Body) ────────────────────
 
         [Fact]
         public void ExtractSha256_StandardLine_ReturnsHash()
@@ -151,8 +181,6 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(string.Empty, hash);
         }
 
-        // ── Test-Helfer ──────────────────────────────────────────────────────────
-
         private static (UpdateCheckService Service, RecordingHandler Handler) BuildService(
             FakeAppSettingsDataService settings,
             HttpStatusCode statusCode = HttpStatusCode.OK)
@@ -173,7 +201,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task CheckForUpdateAsync_ReleaseOhneHashZeile_BietetKeinUpdateAn()
+        public async Task CheckForUpdateAsync_ReleaseWithoutHashLine_OffersNoUpdate()
         {
             // Ein Release ohne brauchbaren Hash ist nicht installierbar, der Downloader lehnt
             // es ohnehin ab. Es anzubieten hieße, zu einem Update einzuladen, das systematisch
@@ -188,7 +216,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task CheckForUpdateAsync_ReleaseMitHashZeile_BietetUpdateAn()
+        public async Task CheckForUpdateAsync_ReleaseWithHashLine_OffersUpdate()
         {
             // Gegenstück: Mit gültiger Hash-Zeile kommt das Angebot durch, sonst würde der
             // Test darüber auch bei einem kaputten Update-Check bestehen.
@@ -205,7 +233,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task CheckForUpdateAsync_HashZeileErscheintNichtInDenReleaseNotes()
+        public async Task CheckForUpdateAsync_HashLineDoesNotAppearInTheReleaseNotes()
         {
             // 64 Hex-Zeichen sagen dem Nutzer nichts und verdrängen im Dialog, was ihn
             // interessiert. Der Hash bleibt als ExpectedSha256 erhalten, nur die Anzeige nicht.
@@ -229,9 +257,9 @@ namespace EchoPlay.App.Tests.Services
         [Theory]
         [InlineData("Nur Text ohne Hash.", "Nur Text ohne Hash.")]
         [InlineData("", "")]
-        public void StripSha256Line_WithoutHash_LeavesTextUnchanged(string body, string erwartet)
+        public void StripSha256Line_WithoutHash_LeavesTextUnchanged(string body, string expected)
         {
-            Assert.Equal(erwartet, UpdateCheckService.StripSha256Line(body));
+            Assert.Equal(expected, UpdateCheckService.StripSha256Line(body));
         }
 
         [Fact]
@@ -282,7 +310,7 @@ namespace EchoPlay.App.Tests.Services
         public async Task CheckForUpdateAsync_ReleaseWithoutSetupFile_OffersNothing()
         {
             FakeAppSettingsDataService settings = new(new AppSettings());
-            const string ohneSetup = $$"""
+            const string withoutSetup = $$"""
             {
               "tag_name": "v99.0.0",
               "body": "Neu.\n\nSHA256: {{ValidHash}}",
@@ -290,7 +318,7 @@ namespace EchoPlay.App.Tests.Services
             }
             """;
 
-            UpdateCheckService service = BuildServiceWithHandler(settings, new ReleaseJsonHandler(ohneSetup));
+            UpdateCheckService service = BuildServiceWithHandler(settings, new ReleaseJsonHandler(withoutSetup));
 
             UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
@@ -318,7 +346,23 @@ namespace EchoPlay.App.Tests.Services
         private const string ValidHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
         private static string ReleaseJson(string tag, string body) =>
-            $$"""
+            ReleaseJson(tag, body, signatureName: $"EchoPlay-Setup-{tag}.exe.sig");
+
+        /// <summary>Release mit Setup-Datei und, wenn ein Name genannt ist, einer Signatur dazu.</summary>
+        private static string ReleaseJson(string tag, string body, string? signatureName)
+        {
+            string signatureAsset = signatureName is null
+                ? string.Empty
+                : $$"""
+                ,
+                {
+                  "name": "{{signatureName}}",
+                  "browser_download_url": "https://github.com/ReneSchustek/EchoPlay/releases/download/{{tag}}/{{signatureName}}",
+                  "size": 64
+                }
+                """;
+
+            return $$"""
             {
               "tag_name": "{{tag}}",
               "body": {{System.Text.Json.JsonSerializer.Serialize(body)}},
@@ -327,11 +371,58 @@ namespace EchoPlay.App.Tests.Services
                   "name": "EchoPlay-Setup-{{tag}}.exe",
                   "browser_download_url": "https://github.com/ReneSchustek/EchoPlay/releases/download/{{tag}}/EchoPlay-Setup-{{tag}}.exe",
                   "size": 80000000
-                }
+                }{{signatureAsset}}
               ]
             }
             """;
+        }
 
+        [Fact]
+        public async Task CheckForUpdateAsync_ReleaseWithSignature_OffersItsAddress()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings, new ReleaseJsonHandler(ReleaseJson("v99.0.0", body: $"Neu.\n\nSHA256: {ValidHash}")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            Assert.NotNull(result);
+            Assert.Equal(
+                new Uri("https://github.com/ReneSchustek/EchoPlay/releases/download/v99.0.0/EchoPlay-Setup-v99.0.0.exe.sig"),
+                result.SignatureUrl);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_ReleaseWithoutSignature_OffersNothing()
+        {
+            // Ohne Signatur installiert der Downloader nicht. Das Release anzubieten hieße, zu
+            // einem Update einzuladen, das in jedem Fall abgelehnt wird.
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings, new ReleaseJsonHandler(ReleaseJson("v99.0.0", $"Neu.\n\nSHA256: {ValidHash}", signatureName: null)));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CheckForUpdateAsync_SignatureOfAnotherFile_OffersNothing()
+        {
+            // Eine Signatur gilt für die Datei, deren Namen sie trägt. Eine beliebige .sig
+            // anzunehmen, prüfte womöglich die Signatur einer anderen Datei.
+            FakeAppSettingsDataService settings = new(new AppSettings());
+            UpdateCheckService service = BuildServiceWithHandler(
+                settings, new ReleaseJsonHandler(ReleaseJson("v99.0.0", $"Neu.\n\nSHA256: {ValidHash}", signatureName: "EchoPlay-Portable.zip.sig")));
+
+            UpdateInfo? result = await service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+            Assert.Null(result);
+        }
+
+        /// <summary>
+        /// Antwortet mit dem vorgegebenen Release-JSON.
+        /// </summary>
         private sealed class ReleaseJsonHandler : HttpMessageHandler
         {
             private readonly string _json;
@@ -360,6 +451,9 @@ namespace EchoPlay.App.Tests.Services
                 new FakeLoggerFactory());
         }
 
+        /// <summary>
+        /// Zählt Anfragen und antwortet mit festem Status.
+        /// </summary>
         private sealed class RecordingHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _statusCode;
@@ -381,12 +475,18 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Scheitert mit einem Netzwerkfehler.
+        /// </summary>
         private sealed class ThrowingHandler : HttpMessageHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
                 throw new HttpRequestException("Simulierter Netzwerkfehler");
         }
 
+        /// <summary>
+        /// Gibt Clients über einem gemeinsamen Handler aus, der dabei nicht freigegeben wird.
+        /// </summary>
         private sealed class SingleHandlerFactory : IHttpClientFactory
         {
             private readonly HttpMessageHandler _handler;

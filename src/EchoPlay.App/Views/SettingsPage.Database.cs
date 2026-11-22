@@ -71,36 +71,40 @@ namespace EchoPlay.App.Views
             {
                 // Scope aus RadioButtons ermitteln
                 int selectedIndex = ResetScopeRadio.SelectedIndex;
-                string scopeLabel = selectedIndex switch
-                {
-                    0 => "Online",
-                    1 => "Lokal",
-                    _ => "Alle"
-                };
-
-                TextBlock contentText = new()
-                {
-                    Text = _localizationService.Get("DbResetDialogDescription"),
-                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
-                };
-
-                ContentDialog dialog = new()
-                {
-                    XamlRoot = XamlRoot,
-                    Title = $"{_localizationService.Get("DbResetDialogTitle")} ({scopeLabel})",
-                    Content = contentText,
-                    PrimaryButtonText = _localizationService.Get("DbResetDialogConfirm"),
-                    CloseButtonText = _localizationService.Get("PatternDialogCancel")
-                };
-
-                Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-                ContentDialogResult result = await dialog.ShowAsync();
-
-                if (result == ContentDialogResult.Primary)
+                if (await ConfirmResetAsync(selectedIndex))
                 {
                     await ViewModel.MaintenanceVM.ResetLibraryAsync(selectedIndex);
                 }
             });
+        }
+
+        /// <summary>
+        /// Fragt nach, bevor der gewählte Bereich geleert wird; der Bereich steht im Titel.
+        /// </summary>
+        private async Task<bool> ConfirmResetAsync(int scopeIndex)
+        {
+            string scopeLabel = scopeIndex switch
+            {
+                0 => _localizationService.Get("DbResetScopeShortOnline"),
+                1 => _localizationService.Get("DbResetScopeShortLocal"),
+                _ => _localizationService.Get("DbResetScopeShortAll")
+            };
+
+            ContentDialog dialog = new()
+            {
+                XamlRoot = XamlRoot,
+                Title = $"{_localizationService.Get("DbResetDialogTitle")} ({scopeLabel})",
+                Content = new TextBlock
+                {
+                    Text = _localizationService.Get("DbResetDialogDescription"),
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap
+                },
+                PrimaryButtonText = _localizationService.Get("DbResetDialogConfirm"),
+                CloseButtonText = _localizationService.Get("CommonCancel")
+            };
+
+            Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
+            return await dialog.ShowAsync() == ContentDialogResult.Primary;
         }
     }
 }

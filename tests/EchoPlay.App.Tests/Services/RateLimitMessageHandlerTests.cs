@@ -18,11 +18,11 @@ namespace EchoPlay.App.Tests.Services
             RateLimitMessageHandler sut = new(limiter) { InnerHandler = inner };
             using HttpClient client = new(sut);
 
-            using HttpResponseMessage response = await client.GetAsync(new Uri("https://api.discogs.com/search"), cancellationToken: TestContext.Current.CancellationToken);
+            using HttpResponseMessage response = await client.GetAsync(new Uri("https://musicbrainz.org/ws/2/release"), cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             _ = Assert.Single(limiter.Hosts);
-            Assert.Equal("api.discogs.com", limiter.Hosts[0]);
+            Assert.Equal("musicbrainz.org", limiter.Hosts[0]);
             Assert.Equal(1, inner.CallCount);
         }
 
@@ -101,6 +101,9 @@ namespace EchoPlay.App.Tests.Services
             return (Task<HttpResponseMessage>)method.Invoke(handler, new object[] { request, ct })!;
         }
 
+        /// <summary>
+        /// Hält jeden Host fest und wirft auf Wunsch beim Warten.
+        /// </summary>
         private sealed class RecordingRateLimiter : IHostRateLimiter
         {
             public List<string> Hosts { get; } = [];
@@ -121,6 +124,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Zählt Anfragen und antwortet mit festem Status.
+        /// </summary>
         private sealed class RecordingInnerHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _status;

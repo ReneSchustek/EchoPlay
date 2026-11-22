@@ -12,7 +12,7 @@ namespace EchoPlay.Spotify.Tests.Search
     public sealed class SpotifyArtistSearchTests
     {
         /// <summary>
-        /// Stellt sicher, dass ein bekannter Hörspiel-Künstler über die Suche gefunden wird.
+        /// Prüft, dass ein bekannter Hörspiel-Künstler über die Suche gefunden wird.
         /// </summary>
         [Fact]
         public async Task SearchArtists_KnownArtist_ReturnsResult()

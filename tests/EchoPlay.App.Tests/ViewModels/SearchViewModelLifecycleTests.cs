@@ -93,8 +93,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(sut.Results);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static SearchViewModel Build(
             IReadOnlyList<ImportSeries> spotifyResults,
             FakeSpotifyClientCredentialsProvider? credentialsProvider = null,
@@ -105,33 +103,19 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = ProviderType.Spotify }));
-            _ = services.AddKeyedScoped<ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch(spotifyResults));
-            _ = services.AddKeyedScoped<ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch(appleMusicResults ?? [], "AppleMusic"));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services, spotifyResults: spotifyResults, appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults ?? [], "AppleMusic"));
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new SearchViewModel(
                 importService, new FakeErrorDialogService(), new FakeLocalizationService(), scopeFactory);

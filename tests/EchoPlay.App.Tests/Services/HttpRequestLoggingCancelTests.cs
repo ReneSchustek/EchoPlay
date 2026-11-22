@@ -87,6 +87,9 @@ namespace EchoPlay.App.Tests.Services
             return logger.Entries.First(e => e.Message.Contains(contains, StringComparison.Ordinal));
         }
 
+        /// <summary>
+        /// Bricht jede Anfrage mit OperationCanceledException ab.
+        /// </summary>
         private sealed class CancellingInnerHandler : HttpMessageHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(
@@ -94,6 +97,9 @@ namespace EchoPlay.App.Tests.Services
                 => Task.FromException<HttpResponseMessage>(new OperationCanceledException());
         }
 
+        /// <summary>
+        /// Antwortet mit 200 OK.
+        /// </summary>
         private sealed class StubOkHandler : HttpMessageHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(

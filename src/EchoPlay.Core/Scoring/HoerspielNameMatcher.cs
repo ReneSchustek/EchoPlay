@@ -35,6 +35,30 @@ namespace EchoPlay.Core.Scoring
         }
 
         /// <summary>
+        /// Vergleicht Künstlername und Suchbegriff; beide werden dafür normalisiert.
+        /// </summary>
+        /// <param name="artistName">Der Künstlername, wie der Anbieter ihn liefert.</param>
+        /// <param name="searchQuery">Der Suchbegriff des Nutzers.</param>
+        /// <param name="numberWordMapping">Zuordnung von Ziffern zu Zahlwörtern.</param>
+        /// <returns>Welche der drei Namensmerkmale zutreffen.</returns>
+        public static HoerspielNameMatch Compare(
+            string artistName,
+            string searchQuery,
+            IReadOnlyDictionary<string, string> numberWordMapping)
+        {
+            ArgumentNullException.ThrowIfNull(artistName);
+            ArgumentNullException.ThrowIfNull(searchQuery);
+
+            string normalizedName = HoerspielTextNormalizer.Normalize(artistName);
+            string normalizedQuery = HoerspielTextNormalizer.Normalize(searchQuery);
+
+            return new HoerspielNameMatch(
+                normalizedName.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase),
+                HasNumberVariantMatch(normalizedName, normalizedQuery, numberWordMapping),
+                IsExactWordMatch(normalizedName, normalizedQuery));
+        }
+
+        /// <summary>
         /// Prüft, ob eine Zahlwort-Variante des Suchbegriffs im normalisierten Künstlernamen enthalten ist.
         /// </summary>
         /// <param name="normalizedName">Der normalisierte Künstlername.</param>
@@ -100,6 +124,8 @@ namespace EchoPlay.Core.Scoring
 
         /// <summary>
         /// Erzeugt Namensvarianten durch Ersetzung von Ziffern durch Zahlwörter und umgekehrt.
+        /// Die Zuordnung wird wie der Suchbegriff normalisiert: Dort ist der Umlaut von „fünf“
+        /// bereits aufgelöst, ein Vergleich mit der Form aus den Einstellungen träfe nie.
         /// </summary>
         /// <param name="normalizedQuery">Der normalisierte Suchbegriff.</param>
         /// <param name="numberWordMapping">Zuordnung von Ziffern zu Zahlwörtern.</param>
@@ -112,16 +138,19 @@ namespace EchoPlay.Core.Scoring
 
             foreach (KeyValuePair<string, string> mapping in numberWordMapping)
             {
+                string digit = HoerspielTextNormalizer.Normalize(mapping.Key);
+                string word = HoerspielTextNormalizer.Normalize(mapping.Value);
+
                 // Ziffer → Zahlwort
-                if (normalizedQuery.Contains(mapping.Key, StringComparison.Ordinal))
+                if (normalizedQuery.Contains(digit, StringComparison.Ordinal))
                 {
-                    variants.Add(normalizedQuery.Replace(mapping.Key, mapping.Value, StringComparison.Ordinal));
+                    variants.Add(normalizedQuery.Replace(digit, word, StringComparison.Ordinal));
                 }
 
                 // Zahlwort → Ziffer
-                if (normalizedQuery.Contains(mapping.Value, StringComparison.Ordinal))
+                if (normalizedQuery.Contains(word, StringComparison.Ordinal))
                 {
-                    variants.Add(normalizedQuery.Replace(mapping.Value, mapping.Key, StringComparison.Ordinal));
+                    variants.Add(normalizedQuery.Replace(word, digit, StringComparison.Ordinal));
                 }
             }
 

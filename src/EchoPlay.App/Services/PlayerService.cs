@@ -5,7 +5,9 @@ using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Globalization;
+using System.Threading.Tasks;
+using EchoPlay.App.Helpers;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 
@@ -13,33 +15,19 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Singleton-Service für die Audiowiedergabe.
-    /// Kapselt <see cref="MediaPlayer"/> und <see cref="MediaPlaybackList"/> und stellt
-    /// eine stabile, ereignisbasierte API für den MiniPlayer und die Episodenliste bereit.
+    /// Kapselt <see cref="MediaPlayer"/> und stellt eine stabile, ereignisbasierte API für den
+    /// MiniPlayer und die Episodenliste bereit. Die Abspielliste führt <see cref="PlaybackQueue"/>,
+    /// den Takt für Anzeige, Sicherung und Einschlaf-Timer <see cref="PlaybackTicker"/>, die
+    /// laufende Folge samt Hörstand <see cref="PlayingEpisode"/>.
     /// </summary>
     public sealed class PlayerService : IPlayerService, IAsyncDisposable, IDisposable
     {
-        // Auto-Save alle 30 Sekunden während aktiver Wiedergabe (500 ms × 60 Ticks)
-        private const int AutoSaveIntervalTicks = 60;
-
         private readonly MediaPlayer _player;
-        private readonly MediaPlaybackList _playlist;
-
-        // Die Spurdauern der laufenden Folge. Ohne sie kennt der Dienst nur die Stelle in
-        // der laufenden Datei, und die allein taugt nicht zum Fortsetzen.
-        private EpisodeTimeline _timeline = EpisodeTimeline.Empty;
-        private readonly System.Timers.Timer _positionTimer;
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ILogger _logger;
-        private readonly IClock _clock;
-
-        // _stateLock schützt die veränderlichen Felder dieses Dienstes.
-        private readonly object _stateLock = new();
-        private IReadOnlyList<string> _currentTrackPaths = [];
+        private readonly PlaybackQueue _queue = new();
+        private readonly PlaybackTicker _ticker = new();
+        private readonly PlayingEpisode _episode = new();
         private readonly PlaybackStateWriter _stateWriter;
-
-        private Guid _currentEpisodeId;
-        private readonly SleepTimer _sleepTimer = new();
-        private int _autoSaveTick;
+        private readonly ILogger _logger;
         private bool _disposed;
 
         /// <summary>
@@ -51,123 +39,75 @@ namespace EchoPlay.App.Services
         public PlayerService(IServiceScopeFactory scopeFactory, ILoggerFactory loggerFactory, IClock clock)
         {
             ArgumentNullException.ThrowIfNull(loggerFactory);
-            _scopeFactory = scopeFactory;
             _logger = loggerFactory.CreateLogger("PlayerService");
-            _clock = clock;
             _stateWriter = new PlaybackStateWriter(scopeFactory, _logger, clock);
 
-            _player = new();
-            _playlist = new();
-            _player.Source = _playlist;
+            _player = new() { Source = _queue.List };
 
-            // 500 ms-Takt für Positionsanzeige, Auto-Save und Sleep-Timer-Countdown
-            _positionTimer = new(500);
-            _positionTimer.Elapsed += OnPositionTimerElapsed;
+            _ticker.SaveDue += (_, _) => _ = SavePlaybackStateSnapshotAsync();
+            _ticker.SleepTimerElapsed += (_, _) => Pause();
+            _ticker.Ticked += (_, _) => StateChanged?.Invoke(this, EventArgs.Empty);
 
             _player.PlaybackSession.PlaybackStateChanged += OnPlaybackStateChanged;
-            _playlist.CurrentItemChanged += OnCurrentItemChanged;
+            _queue.List.CurrentItemChanged += OnCurrentItemChanged;
             _player.MediaFailed += OnMediaFailed;
         }
 
-        /// <summary>
-        /// Wird ausgelöst, wenn sich Abspielstatus, Track oder Position geändert haben.
-        /// </summary>
+        /// <inheritdoc/>
         public event EventHandler? StateChanged;
 
         /// <inheritdoc/>
         public event EventHandler<string>? ErrorOccurred;
 
-        /// <summary>
-        /// Gibt an, ob gerade Wiedergabe aktiv ist.
-        /// </summary>
+        /// <inheritdoc/>
         public bool IsPlaying => _player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing;
 
-        /// <summary>
-        /// Titel des aktuell laufenden Tracks (Dateiname ohne Erweiterung).
-        /// Null, wenn nichts spielt.
-        /// </summary>
+        /// <inheritdoc/>
         public string? CurrentTrackTitle { get; private set; }
 
-        /// <summary>
-        /// Dateipfad des aktuell laufenden Tracks. Null, wenn nichts spielt.
-        /// </summary>
+        /// <inheritdoc/>
         public string? CurrentTrackPath { get; private set; }
 
-        /// <summary>
-        /// Dateipfade der laufenden Wiedergabeliste, in Reihenfolge. Leer, wenn nichts spielt.
-        /// </summary>
+        /// <inheritdoc/>
         /// <remarks>
         /// Die Abspielliste selbst führt nur <c>MediaSource</c>-Objekte; die Pfade daraus
         /// zurückzugewinnen ist umständlich und unsicher. Sie werden deshalb beim Start
         /// mitgeschrieben.
         /// </remarks>
-        public IReadOnlyList<string> CurrentTrackPaths
-        {
-            get { lock (_stateLock) { return _currentTrackPaths; } }
-        }
+        public IReadOnlyList<string> CurrentTrackPaths => _episode.TrackPaths;
 
         /// <summary>
-        /// Aktuelle Abspielposition.
+        /// Der zuletzt angestoßene Hintergrundschritt von <see cref="Stop"/>. Das Beenden wartet
+        /// darauf, damit keine Quelle nach dem Freigeben des Players noch angefasst wird.
         /// </summary>
+        internal Task PipelineStopTask { get; private set; } = Task.CompletedTask;
+
+        /// <summary>Die Quellen der laufenden Abspielliste; Einblick für Tests der Freigabe.</summary>
+        internal IReadOnlyList<MediaSource> PlaylistSources => _queue.Sources;
+
+        /// <summary>Anzahl der Einträge in der Abspielliste; Einblick für Tests.</summary>
+        internal int PlaylistItemCount => _queue.Count;
+
+        /// <inheritdoc/>
         public TimeSpan Position => _player.PlaybackSession.Position;
 
-        /// <summary>
-        /// Gesamtdauer des aktuell laufenden Tracks.
-        /// </summary>
+        /// <inheritdoc/>
         public TimeSpan Duration => _player.PlaybackSession.NaturalDuration;
 
-        /// <summary>
-        /// Die Stelle in der ganzen Folge, über alle Spuren gerechnet.
-        /// </summary>
-        public TimeSpan OverallPosition
-        {
-            get
-            {
-                EpisodeTimeline timeline;
-                lock (_stateLock) { timeline = _timeline; }
+        /// <inheritdoc/>
+        public TimeSpan OverallPosition => _episode.ToOverall(_queue.CurrentIndex, _player.PlaybackSession.Position);
 
-                return timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
-            }
-        }
+        /// <inheritdoc/>
+        public TimeSpan OverallDuration => _episode.TotalDuration;
 
-        /// <summary>
-        /// Die Gesamtdauer der Folge über alle Spuren.
-        /// </summary>
-        public TimeSpan OverallDuration
-        {
-            get
-            {
-                lock (_stateLock) { return _timeline.TotalDuration; }
-            }
-        }
-
-        /// <summary>
-        /// Die laufende Spur, nullbasiert. Ohne laufende Wiedergabe null.
-        /// </summary>
-        private int CurrentTrackIndex
-        {
-            get
-            {
-                uint index = _playlist.CurrentItemIndex;
-
-                // Die Abspielliste meldet zwischen zwei Titeln einen unbelegten Index.
-                return index == uint.MaxValue ? 0 : (int)index;
-            }
-        }
-
-        /// <summary>
-        /// Wiedergabegeschwindigkeit. 1.0 entspricht normaler Geschwindigkeit.
-        /// Gültige Werte: 0.25 bis 4.0 (Plattformlimit des MediaPlayer).
-        /// </summary>
+        /// <inheritdoc/>
         public double PlaybackRate
         {
             get => _player.PlaybackSession.PlaybackRate;
             set => _player.PlaybackSession.PlaybackRate = value;
         }
 
-        /// <summary>
-        /// Lautstärke der Wiedergabe, von 0,0 (still) bis 1,0 (voll).
-        /// </summary>
+        /// <inheritdoc/>
         /// <remarks>
         /// Der Wert wirkt sofort, wird hier aber nicht gespeichert: Ein Regler feuert
         /// während des Ziehens dutzende Male, und jede Änderung in die Datenbank zu
@@ -180,6 +120,9 @@ namespace EchoPlay.App.Services
             set
             {
                 double desired = Math.Clamp(value, 0.0, 1.0);
+
+                // Gleitkommawerte aus dem Regler treffen den gespeicherten Wert selten genau; ohne
+                // Toleranz löste derselbe Wert erneut ein Änderungsereignis aus.
                 if (Math.Abs(_player.Volume - desired) < 0.0001)
                 {
                     return;
@@ -190,9 +133,7 @@ namespace EchoPlay.App.Services
             }
         }
 
-        /// <summary>
-        /// Ob die Wiedergabe stummgeschaltet ist.
-        /// </summary>
+        /// <inheritdoc/>
         public bool IsMuted
         {
             get => _player.IsMuted;
@@ -208,24 +149,10 @@ namespace EchoPlay.App.Services
             }
         }
 
-        /// <summary>
-        /// Verbleibende Zeit des Einschlaf-Timers.
-        /// Null, wenn kein Timer aktiv ist.
-        /// </summary>
-        public TimeSpan? SleepTimerRemaining => _sleepTimer.Remaining;
+        /// <inheritdoc/>
+        public TimeSpan? SleepTimerRemaining => _ticker.SleepTimerRemaining;
 
-        /// <summary>
-        /// Startet die Wiedergabe einer Trackliste ab dem angegebenen Index.
-        /// Ein laufender Playback wird dabei gestoppt und ersetzt.
-        /// </summary>
-        /// <param name="episodeId">ID der Episode für die PlaybackState-Persistenz.</param>
-        /// <param name="trackPaths">Absolute Dateipfade der Audiotracks, in Reihenfolge.</param>
-        /// <param name="startIndex">Index des ersten Tracks (0-basiert).</param>
-        /// <param name="resumePosition">
-        /// Stelle, ab der fortgesetzt wird. Mit bekannten Spurdauern gilt sie für die ganze
-        /// Folge und bestimmt damit auch die Spur; sonst für die übergebene Spur.
-        /// </param>
-        /// <param name="trackDurations">Die Dauern der Spuren in Abspielreihenfolge, sofern bekannt.</param>
+        /// <inheritdoc/>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Einstieg: kaputte/fehlende Audio-Dateien, Codec-Fehler oder MediaFoundation-COM-Fehler werden als Nutzer-Fehlermeldung über 'ErrorOccurred' signalisiert, ohne die App zu reißen.")]
         public void Play(
             Guid episodeId,
@@ -242,8 +169,7 @@ namespace EchoPlay.App.Services
                 : new EpisodeTimeline(trackDurations);
 
             // Mit bekannten Spurdauern gilt die Fortsetzstelle für die ganze Folge und
-            // bestimmt damit auch die Spur. Ohne sie gilt die Stelle
-            // für die übergebene Spur.
+            // bestimmt damit auch die Spur. Ohne sie gilt die Stelle für die übergebene Spur.
             TimeSpan positionInTrack = resumePosition;
             if (timeline.IsKnown && resumePosition > TimeSpan.Zero)
             {
@@ -252,54 +178,44 @@ namespace EchoPlay.App.Services
 
             try
             {
-                lock (_stateLock)
-                {
-                    _currentEpisodeId = episodeId;
-                    _autoSaveTick = 0;
-                    _currentTrackPaths = [.. trackPaths];
-                    _timeline = timeline;
-                }
-
-                _playlist.Items.Clear();
-
-                foreach (string path in trackPaths)
-                {
-                    // CA2000: MediaSource-Lebensdauer wird von der MediaPlaybackList verwaltet;
-                    // Dispose erfolgt beim Entfernen aus der Playlist oder beim Player-Shutdown.
-#pragma warning disable CA2000
-                    _playlist.Items.Add(
-                        new MediaPlaybackItem(
-                            Windows.Media.Core.MediaSource.CreateFromUri(new Uri(path))));
-#pragma warning restore CA2000
-                }
-
-                _ = _playlist.MoveTo((uint)Math.Max(0, startIndex));
-                _player.Play();
-
-                if (positionInTrack > TimeSpan.Zero)
-                {
-                    _player.PlaybackSession.Position = positionInTrack;
-                }
-
-                _positionTimer.Start();
+                StartPlayback(episodeId, trackPaths, timeline, startIndex, positionInTrack);
             }
             catch (Exception ex) when (ex is UriFormatException or System.IO.FileNotFoundException or UnauthorizedAccessException or ArgumentException)
             {
                 _logger.Error("Wiedergabe konnte nicht gestartet werden: {Reason}", ex, ex.Message);
-                lock (_stateLock) { ResetPlaybackState(); }
-                ErrorOccurred?.Invoke(this, $"Wiedergabe fehlgeschlagen: {ex.Message}");
+                ResetPlaybackState();
+                ErrorOccurred?.Invoke(this, FormatError("PlayerErrorStartFailed", "Wiedergabe fehlgeschlagen: {0}", ex.Message));
             }
             catch (Exception ex)
             {
                 _logger.Error("Unerwarteter Fehler beim Starten der Wiedergabe: {Reason}", ex, ex.Message);
-                lock (_stateLock) { ResetPlaybackState(); }
-                ErrorOccurred?.Invoke(this, "Ein unerwarteter Fehler ist bei der Wiedergabe aufgetreten.");
+                ResetPlaybackState();
+                ErrorOccurred?.Invoke(this, SafeResourceLoader.Get("PlayerErrorUnexpected", "Ein unerwarteter Fehler ist bei der Wiedergabe aufgetreten."));
             }
         }
 
-        /// <summary>
-        /// Pausiert die Wiedergabe und persistiert die aktuelle Position.
-        /// </summary>
+        private void StartPlayback(
+            Guid episodeId,
+            IReadOnlyList<string> trackPaths,
+            EpisodeTimeline timeline,
+            int startIndex,
+            TimeSpan positionInTrack)
+        {
+            _episode.Start(episodeId, trackPaths, timeline);
+            _ticker.RestartAutoSave();
+            _queue.Load(trackPaths);
+            _queue.MoveTo(startIndex);
+            _player.Play();
+
+            if (positionInTrack > TimeSpan.Zero)
+            {
+                _player.PlaybackSession.Position = positionInTrack;
+            }
+
+            _ticker.Start();
+        }
+
+        /// <inheritdoc/>
         public void Pause()
         {
             _player.Pause();
@@ -307,29 +223,17 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Stoppt die Wiedergabe vollständig: Position speichern, Timer anhalten,
+        /// Stoppt die Wiedergabe vollständig: Position speichern, Takt anhalten,
         /// Titel zurücksetzen. Die eigentlichen Media-Pipeline-Operationen (Pause, Playlist leeren)
         /// laufen auf einem Hintergrund-Thread, weil <c>MediaPlayer.Pause()</c> den UI-Thread
-        /// deadlocken kann wenn die Pipeline gleichzeitig UI-Benachrichtigungen sendet.
+        /// deadlocken kann, wenn die Pipeline gleichzeitig UI-Benachrichtigungen sendet.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Media-Pipeline-Stop auf Hintergrund-Thread: MediaPlayer.Pause / Playlist.Items.Clear können bei gleichzeitigen Pipeline-Events native Fehler werfen, die aber den logischen Stop (State-Reset, State-Persistenz) nicht verhindern dürfen.")]
         public void Stop()
         {
             _logger.Info("Wiedergabe gestoppt – Position wird gespeichert.");
 
-            // EpisodeId und Position unter Lock kopieren, dann State zurücksetzen.
-            // So kann kein paralleler Timer-Callback mit halbfertigem State arbeiten.
-            Guid episodeToSave;
-            TimeSpan positionToSave;
-
-            lock (_stateLock)
-            {
-                episodeToSave = _currentEpisodeId;
-                // Gespeichert wird die Stelle in der Folge, nicht die in der Datei, sonst
-                // setzt die Wiedergabe später in der falschen Spur wieder ein.
-                positionToSave = _timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
-                ResetPlaybackState();
-            }
+            (Guid episodeToSave, TimeSpan positionToSave) = TakeSnapshot();
+            ResetPlaybackState();
 
             if (episodeToSave != Guid.Empty)
             {
@@ -337,46 +241,10 @@ namespace EchoPlay.App.Services
             }
 
             StateChanged?.Invoke(this, EventArgs.Empty);
-
-            // Media-Pipeline auf Hintergrund-Thread stoppen,
-            // denn Pause() und Items.Clear() können den UI-Thread deadlocken
-            _ = System.Threading.Tasks.Task.Run(() =>
-            {
-                try
-                {
-                    _player.Pause();
-                    _playlist.Items.Clear();
-                }
-                catch (Exception ex)
-                {
-                    // Media-Pipeline-Fehler beim Stoppen sind nicht kritisch,
-                    // aber für Diagnose bei subtilen Wiedergabe-Bugs hilfreich.
-                    _logger.Warning("Media-Pipeline-Fehler beim Stop: {Reason}", ex.Message);
-                }
-            });
+            PipelineStopTask = _queue.ClearInBackground(_player.Pause, _logger);
         }
 
-        /// <summary>
-        /// Setzt den internen Wiedergabezustand zurück: Timer anhalten,
-        /// Schlaf-Timer löschen, Titel und Episode-ID leeren.
-        /// Muss unter <see cref="_stateLock"/> aufgerufen werden.
-        /// </summary>
-        private void ResetPlaybackState()
-        {
-            _positionTimer.Stop();
-            _sleepTimer.Set(null);
-            _autoSaveTick = 0;
-
-            CurrentTrackTitle = null;
-            CurrentTrackPath = null;
-            _currentEpisodeId = Guid.Empty;
-            _currentTrackPaths = [];
-            _timeline = EpisodeTimeline.Empty;
-        }
-
-        /// <summary>
-        /// Setzt eine pausierte Wiedergabe fort.
-        /// </summary>
+        /// <inheritdoc/>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "MediaPlayer.Play-Wrapper: native/COM-Fehler beim Fortsetzen (Codec/Stream-Probleme) werden als Nutzer-Fehlermeldung über 'ErrorOccurred' signalisiert, ohne die App zu reißen.")]
         public void Resume()
         {
@@ -387,44 +255,23 @@ namespace EchoPlay.App.Services
             catch (Exception ex)
             {
                 _logger.Error("Wiedergabe konnte nicht fortgesetzt werden: {Reason}", ex, ex.Message);
-                ErrorOccurred?.Invoke(this, "Wiedergabe konnte nicht fortgesetzt werden.");
+                ErrorOccurred?.Invoke(this, SafeResourceLoader.Get("PlayerErrorResumeFailed", "Wiedergabe konnte nicht fortgesetzt werden."));
             }
         }
 
-        /// <summary>
-        /// Springt zum nächsten Track in der Wiedergabeliste.
-        /// </summary>
-        public void SkipToNext()
-        {
-            _ = _playlist.MoveNext();
-        }
+        /// <inheritdoc/>
+        public void SkipToNext() => MoveWithinPlaylist(_queue.MoveNext);
 
-        /// <summary>
-        /// Springt zum vorherigen Track in der Wiedergabeliste.
-        /// </summary>
-        public void SkipToPrevious()
-        {
-            _ = _playlist.MovePrevious();
-        }
+        /// <inheritdoc/>
+        public void SkipToPrevious() => MoveWithinPlaylist(_queue.MovePrevious);
 
-        /// <summary>
-        /// Springt zu einer bestimmten Position im aktuellen Track.
-        /// </summary>
-        /// <param name="position">Die Zielposition.</param>
-        public void SeekTo(TimeSpan position)
-        {
-            _player.PlaybackSession.Position = position;
-        }
+        /// <inheritdoc/>
+        public void SeekTo(TimeSpan position) => _player.PlaybackSession.Position = position;
 
-        /// <summary>
-        /// Setzt oder deaktiviert den Einschlaf-Timer.
-        /// Bei Ablauf wird die Wiedergabe automatisch pausiert.
-        /// </summary>
-        /// <param name="duration">Zeitspanne bis zum automatischen Stopp. Null deaktiviert den Timer.</param>
+        /// <inheritdoc/>
         public void SetSleepTimer(TimeSpan? duration)
         {
-            _sleepTimer.Set(duration);
-
+            _ticker.SetSleepTimer(duration);
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -441,7 +288,7 @@ namespace EchoPlay.App.Services
             }
             _disposed = true;
 
-            _positionTimer.Stop();
+            _ticker.Stop();
 
             try
             {
@@ -452,9 +299,14 @@ namespace EchoPlay.App.Services
                 _logger.Error("Abspielposition konnte beim App-Ende nicht gespeichert werden.", ex);
             }
 
+            // Der Hintergrundschritt fängt seine Fehler selbst; hier geht es nur darum, dass er
+            // fertig ist, bevor Player und Quellen verschwinden.
+            await PipelineStopTask.ConfigureAwait(false);
+
             _stateWriter.Dispose();
-            _positionTimer.Dispose();
+            _ticker.Dispose();
             _player.Dispose();
+            _queue.Dispose();
         }
 
         /// <summary>
@@ -473,49 +325,49 @@ namespace EchoPlay.App.Services
             DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
 
-        private void OnPositionTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        /// <summary>
+        /// Setzt den Wiedergabezustand zurück: Takt anhalten, Einschlaf-Timer löschen,
+        /// Titel und Episode-ID leeren.
+        /// </summary>
+        private void ResetPlaybackState()
         {
-            bool shouldSave = false;
-
-            lock (_stateLock)
-            {
-                // Alle dreißig Sekunden sichern: Die Stelle geht auch dann nicht
-                // verloren, wenn die Anwendung hart beendet wird.
-                _autoSaveTick++;
-                if (_autoSaveTick >= AutoSaveIntervalTicks)
-                {
-                    _autoSaveTick = 0;
-                    shouldSave = true;
-                }
-            }
-
-            // Der Einschlaf-Zeitgeber hängt am selben Takt, gehört aber nicht unter
-            // die Sperre des Wiedergabezustands.
-            bool shouldPause = _sleepTimer.Tick(TimeSpan.FromMilliseconds(500));
-
-            if (shouldSave)
-            {
-                _ = SavePlaybackStateSnapshotAsync();
-            }
-
-            if (shouldPause)
-            {
-                Pause();
-                return;
-            }
-
-            StateChanged?.Invoke(this, EventArgs.Empty);
+            _ticker.Reset();
+            _episode.Clear();
+            CurrentTrackTitle = null;
+            CurrentTrackPath = null;
         }
+
+        /// <summary>
+        /// Wechselt die Spur. Konnte die Pipeline eine Spur nicht öffnen, weist die Abspielliste
+        /// den Wechsel mit einem COM-Fehler ab; die defekte Spur hat <see cref="OnMediaFailed"/>
+        /// dann schon gemeldet, deshalb bleibt es hier beim Protokoll.
+        /// </summary>
+        /// <param name="move">Der Sprung in der Abspielliste.</param>
+        private void MoveWithinPlaylist(Action move)
+        {
+            try
+            {
+                move();
+            }
+            catch (System.Runtime.InteropServices.COMException ex)
+            {
+                _logger.Warning("Spurwechsel von der Abspielliste abgelehnt: {Reason}", ex.Message);
+            }
+        }
+
+        /// <summary>Kennung der laufenden Folge und Stelle darin, in einem Zug gelesen.</summary>
+        private (Guid Id, TimeSpan Position) TakeSnapshot() =>
+            _episode.Snapshot(_queue.CurrentIndex, _player.PlaybackSession.Position);
 
         private void OnPlaybackStateChanged(MediaPlaybackSession session, object args)
         {
-            if (!IsPlaying)
+            if (IsPlaying)
             {
-                _positionTimer.Stop();
+                _ticker.Start();
             }
             else
             {
-                _positionTimer.Start();
+                _ticker.Stop();
             }
 
             StateChanged?.Invoke(this, EventArgs.Empty);
@@ -539,27 +391,29 @@ namespace EchoPlay.App.Services
         /// <param name="args">Fehlerdetails der Media-Pipeline, u. a. die Fehlermeldung.</param>
         private void OnMediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
         {
-            string message = args.ErrorMessage ?? "Unbekannter Wiedergabefehler";
+            string message = args.ErrorMessage ?? SafeResourceLoader.Get("PlayerErrorUnknown", "Unbekannter Wiedergabefehler");
             _logger.Error("MediaPlayer-Fehler: {Message} (Error: {Error})", null, message, args.Error);
-            ErrorOccurred?.Invoke(this, $"Wiedergabefehler: {message}");
+            ErrorOccurred?.Invoke(this, FormatError("PlayerErrorMediaFailed", "Wiedergabefehler: {0}", message));
         }
 
         /// <summary>
-        /// Erstellt einen thread-sicheren Snapshot des aktuellen Zustands und speichert ihn.
-        /// Werte werden unter Lock kopiert, die DB-Persistierung erfolgt außerhalb.
+        /// Setzt eine Fehlermeldung aus der Vorlage der Ressourcen zusammen. Der Miniplayer zeigt
+        /// sie unverändert an, deshalb kommt sie in der Sprache der Oberfläche.
         /// </summary>
-        private async System.Threading.Tasks.Task SavePlaybackStateSnapshotAsync()
+        /// <param name="key">Schlüssel der Vorlage mit einem Platzhalter.</param>
+        /// <param name="fallback">Vorlage, wenn die Ressourcen fehlen (Testprozess).</param>
+        /// <param name="detail">Die Meldung des Systems für den Platzhalter.</param>
+        private static string FormatError(string key, string fallback, string detail)
         {
-            Guid episodeId;
-            TimeSpan position;
+            string format = SafeResourceLoader.Get(key, fallback);
+            return string.Format(CultureInfo.CurrentCulture, format, detail);
+        }
 
-            lock (_stateLock)
-            {
-                episodeId = _currentEpisodeId;
-                position = _timeline.ToOverall(CurrentTrackIndex, _player.PlaybackSession.Position);
-            }
-
-            await _stateWriter.SaveAsync(episodeId, position);
+        /// <summary>Speichert den Hörstand der laufenden Folge.</summary>
+        private Task SavePlaybackStateSnapshotAsync()
+        {
+            (Guid episodeId, TimeSpan position) = TakeSnapshot();
+            return _stateWriter.SaveAsync(episodeId, position);
         }
     }
 }

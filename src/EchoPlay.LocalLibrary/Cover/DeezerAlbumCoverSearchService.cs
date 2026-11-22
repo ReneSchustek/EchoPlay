@@ -1,3 +1,5 @@
+using EchoPlay.Logger.Abstractions;
+using EchoPlay.Core.Http;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
@@ -24,7 +26,8 @@ namespace EchoPlay.LocalLibrary.Cover
         /// Initialisiert den Service mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        public DeezerAlbumCoverSearchService(HttpClient httpClient) : base(httpClient)
+        /// <param name="loggerFactory">Für das Protokoll übersprungener Anfragen.</param>
+        public DeezerAlbumCoverSearchService(HttpClient httpClient, ILoggerFactory loggerFactory) : base(httpClient, loggerFactory)
         {
         }
 
@@ -43,8 +46,9 @@ namespace EchoPlay.LocalLibrary.Cover
 
         private static CoverSearchResult? MapAlbum(DeezerAlbum album, string fallbackTitle)
         {
-            if (string.IsNullOrWhiteSpace(album.CoverMedium)
-                || string.IsNullOrWhiteSpace(album.CoverXl))
+            Uri? thumbnail = WebAddress.TryParse(album.CoverMedium);
+            Uri? full = WebAddress.TryParse(album.CoverXl);
+            if (thumbnail is null || full is null)
             {
                 return null;
             }
@@ -52,14 +56,15 @@ namespace EchoPlay.LocalLibrary.Cover
             string albumTitle = album.Title ?? fallbackTitle;
 
             return new CoverSearchResult(
-                ThumbnailUrl: album.CoverMedium,
-                FullUrl: album.CoverXl,
+                ThumbnailUrl: thumbnail,
+                FullUrl: full,
                 ReleaseTitle: albumTitle,
                 Source: "Deezer (Album)");
         }
 
-        // ── Interne DTO-Klassen für die JSON-Deserialisierung ─────────────────────
-
+        /// <summary>
+        /// Antwort der Deezer-Albensuche; gelesen wird nur die Trefferliste.
+        /// </summary>
         [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class DeezerSearchResponse
         {
@@ -67,6 +72,9 @@ namespace EchoPlay.LocalLibrary.Cover
             public List<DeezerAlbum>? Data { get; set; }
         }
 
+        /// <summary>
+        /// Ein Albumtreffer mit Titel und dem Cover in zwei Größen.
+        /// </summary>
         [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "DTO wird von System.Text.Json via Deserialize<T> per Reflection instanziiert.")]
         private sealed class DeezerAlbum
         {

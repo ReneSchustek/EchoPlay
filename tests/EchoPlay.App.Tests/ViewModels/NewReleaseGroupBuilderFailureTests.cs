@@ -53,8 +53,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(groups);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static CachedNewRelease CachedRelease(Guid seriesId)
             => new()
             {

@@ -7,9 +7,9 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Bündelt die per DI aufgelösten Dienste für <see cref="SettingsViewModel"/>.
-    /// Dieselbe Form wie <see cref="LocalLibraryViewModelContext"/>: Vierzehn einzelne
-    /// Konstruktor-Parameter wären an der Aufrufstelle nicht auseinanderzuhalten —
-    /// zwei vertauschte Dienste gleichen Typs bemerkte kein Übersetzer.
+    /// Dieselbe Form wie <see cref="LocalLibraryViewModelContext"/>: Sechzehn einzelne
+    /// Konstruktor-Parameter wären an der Aufrufstelle nicht auseinanderzuhalten;
+    /// zwei vertauschte Dienste gleichen Typs bemerkte kein Compiler.
     /// Die Reiter-Ansichtsmodelle entstehen intern und gehören nicht hierher.
     /// </summary>
     /// <param name="ScopeFactory">Für datenbanknahe Zugriffe beim Laden und Speichern.</param>
@@ -28,6 +28,8 @@ namespace EchoPlay.App.ViewModels
     /// <param name="SuppressionService">Kennt die dauerhaft ausgeblendeten Hinweise.</param>
     /// <param name="LoggerFactory">Protokolliert, was die Schaltflächen der Hinweisliste nebenher tun.</param>
     /// <param name="LanguageSwitchService">Kapselt Ablage, Sprachvorgabe und Neustart. Nullable für Tests.</param>
+    /// <param name="DataTransfer">Export und Einspielen unter Wartung. Nullable für Tests.</param>
+    /// <param name="Replication">Abgleich zwischen Geräten unter Wartung. Nullable für Tests.</param>
     internal sealed record SettingsViewModelContext(
         IServiceScopeFactory ScopeFactory,
         IThemeService ThemeService,
@@ -44,5 +46,7 @@ namespace EchoPlay.App.ViewModels
         StatusBarViewModel StatusBar,
         IDialogSuppressionService SuppressionService,
         EchoPlay.Logger.Abstractions.ILoggerFactory LoggerFactory,
-        ILanguageSwitchService? LanguageSwitchService = null);
+        ILanguageSwitchService? LanguageSwitchService = null,
+        DataTransferViewModel? DataTransfer = null,
+        ReplicationSettingsViewModel? Replication = null);
 }

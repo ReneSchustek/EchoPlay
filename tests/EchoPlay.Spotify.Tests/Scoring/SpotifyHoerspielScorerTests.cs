@@ -12,9 +12,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
     /// </summary>
     public sealed class SpotifyHoerspielScorerTests
     {
-        // ──────────────────────────────────────────────────────────────
         // Stufe 1: Musik-Genre-Filter
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Ein Künstler mit einem negativen Musik-Genre wird sofort abgelehnt,
@@ -61,9 +59,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.Equal(HoerspielDecisionReason.NegativeMusicGenre, result.Reason);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Stufe 2: Bekannte Serien
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Ein Künstler mit dem Namen einer bekannten Hörspielserie wird sofort akzeptiert.
@@ -108,9 +104,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.Equal(HoerspielDecisionReason.KnownSeriesName, result.Reason);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Stufe 3: Name-Matching
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Wenn der Suchbegriff im Künstlernamen enthalten ist, erhält der Kandidat einen Contains-Bonus.
@@ -165,9 +159,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.True(result.Score >= 50);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Stufe 4: Album-Struktur
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Ein Künstler mit hörspiel-typischen Alben erhält einen Album-Struktur-Bonus.
@@ -241,9 +233,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.Equal(50, result.Score);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Stufe 5: Finale Entscheidung
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Ein Künstler ohne Namensübereinstimmung und ohne Hörspiel-Alben wird abgelehnt.
@@ -267,9 +257,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.True(result.Score < 50);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Cache-Integration
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Ein bereits bewerteter Künstler wird beim zweiten Aufruf aus dem Cache bedient.
@@ -295,9 +283,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.True(first.IsHoerspiel);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // ArtistId-Weitergabe
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Die Artist-ID wird korrekt im Ergebnis mitgeführt.
@@ -319,9 +305,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.Equal("artist-id-check", result.ArtistId);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Hilfsmethoden
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Erstellt einen Scorer mit Standardeinstellungen und leerem Cache.

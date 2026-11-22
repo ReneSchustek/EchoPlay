@@ -1,19 +1,14 @@
 using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.Core.Models;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
-using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Scanning;
-using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -23,7 +18,7 @@ namespace EchoPlay.App.ViewModels
     /// <summary>
     /// ViewModel für die untere Info-Leiste des Hauptfensters.
     /// Zeigt Statistiken (abonnierte Serien, gehörte/offene/neue Folgen),
-    /// ermöglicht den Theme-Wechsel per Flyout und den Sprachwechsel mit App-Neustart.
+    /// bietet den Theme-Wechsel per Flyout und den Sprachwechsel mit App-Neustart an.
     ///
     /// Als Singleton registriert, damit die Statistiken App-weit konsistent sind
     /// und von anderen ViewModels per <see cref="RefreshAsync"/> aktualisiert werden können.
@@ -47,6 +42,7 @@ namespace EchoPlay.App.ViewModels
         private bool _hasUnsavedSettings;
         private bool _isTemporarilyOnline;
         private readonly ILanguageSwitchService? _languageSwitchService;
+        private readonly IErrorDialogService? _errorDialogService;
 
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Abhängigkeiten.
@@ -56,18 +52,21 @@ namespace EchoPlay.App.ViewModels
         /// <param name="taskbar">Service für den Fortschrittsbalken in der Windows-Taskleiste.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel.</param>
         /// <param name="languageSwitchService">Kapselt Persistenz, Sprachpräferenz und Neustart. Nullable für Tests.</param>
+        /// <param name="errorDialogService">Meldet einen Sprachwechsel, dessen Neustart nicht zustande kam. Nullable für Tests.</param>
         public StatusBarViewModel(
             IServiceScopeFactory scopeFactory,
             IThemeService themeService,
             TaskbarProgressService taskbar,
             IClock clock,
-            ILanguageSwitchService? languageSwitchService = null)
+            ILanguageSwitchService? languageSwitchService = null,
+            IErrorDialogService? errorDialogService = null)
         {
             _scopeFactory = scopeFactory;
             _themeService = themeService;
             _taskbar = taskbar;
             _clock = clock;
             _languageSwitchService = languageSwitchService;
+            _errorDialogService = errorDialogService;
 
             ScanProgress = new ScanProgressIndicator(taskbar);
 
@@ -75,8 +74,6 @@ namespace EchoPlay.App.ViewModels
             SwitchThemeCommand = new ParameterizedRelayCommand(param => SwitchTheme(param as string ?? string.Empty));
             SwitchLanguageCommand = new ParameterizedRelayCommand(param => _ = ChangeLanguageAsync(param as string ?? string.Empty));
         }
-
-        // ── Statistiken ──────────────────────────────────────────────────────────
 
         /// <summary>
         /// Anzahl der abonnierten Hörspielserien.
@@ -141,10 +138,8 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Berechnete Anzeige-Texte ─────────────────────────────────────────────
-
         /// <summary>Formatierter Anzeigetext für abonnierte Serien, z.B. "★ 12 Serien".</summary>
-        public string SubscribedSeriesText => Zusammensetzen(
+        public string SubscribedSeriesText => FillCount(
             EchoPlay.App.Helpers.PluralText.Pattern(
                 _subscribedSeriesCount,
                 "StatusBarSubscribedSeriesSingular",
@@ -154,25 +149,25 @@ namespace EchoPlay.App.ViewModels
             _subscribedSeriesCount);
 
         /// <summary>Formatierter Anzeigetext für gehörte Folgen, z.B. "✓ 234 gehört".</summary>
-        public string FinishedEpisodesText => Zusammensetzen(
+        public string FinishedEpisodesText => FillCount(
             EchoPlay.App.Helpers.SafeResourceLoader.Get(
-                "StatusBarFinishedEpisodes", "\u2713 {0} geh\u00f6rt"),
+                "StatusBarFinishedEpisodes", "\u2713 {0} gehört"),
             _finishedEpisodesCount);
 
         /// <summary>Formatierter Anzeigetext für offene Folgen, z.B. "○ 56 offen".</summary>
-        public string UnfinishedEpisodesText => Zusammensetzen(
+        public string UnfinishedEpisodesText => FillCount(
             EchoPlay.App.Helpers.SafeResourceLoader.Get(
                 "StatusBarUnfinishedEpisodes", "\u25cb {0} offen"),
             _unfinishedEpisodesCount);
 
         /// <summary>Formatierter Anzeigetext für neue verfügbare Folgen, z.B. "🆕 3 neu".</summary>
-        public string NewEpisodesText => Zusammensetzen(
+        public string NewEpisodesText => FillCount(
             EchoPlay.App.Helpers.SafeResourceLoader.Get(
                 "StatusBarNewEpisodes", "\U0001f195 {0} neu"),
             _newEpisodesCount);
 
         // Die vier Badge-Texte unterscheiden sich nur im Muster und in der Zahl.
-        private static string Zusammensetzen(string pattern, int count)
+        private static string FillCount(string pattern, int count)
             => string.Format(System.Globalization.CultureInfo.CurrentCulture, pattern, count);
 
         /// <summary>
@@ -188,8 +183,6 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public Visibility NewEpisodesSeparatorVisibility =>
             _newEpisodesCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-        // ── Theme und Sprache ────────────────────────────────────────────────────
 
         /// <summary>
         /// Name des aktiven Farbthemas, z.B. "MidnightLibrary".
@@ -303,8 +296,6 @@ namespace EchoPlay.App.ViewModels
             (Brush)Application.Current.Resources[
                 _isOffline && !_isTemporarilyOnline ? "TextFillColorSecondaryBrush" : "StatusSuccessBrush"];
 
-        // ── Ungespeicherte Einstellungen ─────────────────────────────────────────
-
         /// <summary>
         /// Gibt an, ob auf der Einstellungsseite ungespeicherte Änderungen vorliegen.
         /// Wird vom <see cref="SettingsViewModel"/> gesetzt und steuert den roten Hinweistext
@@ -329,16 +320,12 @@ namespace EchoPlay.App.ViewModels
         public Visibility UnsavedSettingsVisibility =>
             _hasUnsavedSettings ? Visibility.Visible : Visibility.Collapsed;
 
-        // ── Scan-Fortschritt ─────────────────────────────────────────────────────
-
         /// <summary>
         /// Der Fortschritt eines laufenden Vorgangs: Text, Balken und Taskleisten-Symbol.
         /// Die Anzeige bindet direkt auf diesen Bereich; eine zweite Fassung der
         /// Eigenschaften auf dieser Ebene wäre nur eine Fehlerquelle.
         /// </summary>
         public ScanProgressIndicator ScanProgress { get; }
-
-        // ── Commands ─────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Wechselt das aktive Theme. CommandParameter muss ein Theme-Name (string) sein.
@@ -349,8 +336,6 @@ namespace EchoPlay.App.ViewModels
         /// Wechselt die Sprache und startet die App neu. CommandParameter muss ein Sprachcode (string) sein.
         /// </summary>
         public ICommand SwitchLanguageCommand { get; }
-
-        // ── Laden und Aktualisieren ───────────────────────────────────────────────
 
         /// <summary>
         /// Lädt alle Statistiken und die aktuellen Einstellungen aus der Datenbank.
@@ -367,16 +352,13 @@ namespace EchoPlay.App.ViewModels
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
 
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            IPlaybackStateDataService playbackService = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
             IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
 
             // Einstellungen laden; gibt Theme, Sprache und aktiven Provider für die Anzeige
             AppSettings settings = await settingsService.GetAsync();
             ActiveTheme = settings.ActiveTheme;
             ActiveLanguage = settings.ActiveLanguage;
-            ActiveProviderDisplay = await ResolveProviderDisplayAsync(scope, settings.ActiveProvider);
+            ActiveProviderDisplay = await StatusBarStatistics.ResolveProviderDisplayAsync(scope, settings.ActiveProvider);
 
             // Sichtbarkeit der Online-Mediathek: nur einblenden wenn ein Provider gewählt ist
             bool providerActive = settings.ActiveProvider != ProviderType.None;
@@ -397,88 +379,12 @@ namespace EchoPlay.App.ViewModels
                 OnPropertyChanged(nameof(OnlineOfflineBrush));
             }
 
-            // Abonnierte Serien zählen und als Basis für Episode-Iteration nutzen
-            IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync();
-            SubscribedSeriesCount = subscribedSeries.Count;
-
-            // Alle Wiedergabestände einmalig laden, das vermeidet N+1-Queries beim Episoden-Abgleich
-            IReadOnlyList<PlaybackState> allStates = await playbackService.GetAllAsync();
-            HashSet<Guid> completedEpisodeIds = allStates
-                .Where(s => s.IsCompleted)
-                .Select(s => s.EpisodeId)
-                .ToHashSet();
-
-            // Alle Episoden der abonnierten Serien in einem einzigen Query laden,
-            // denn ein Query pro Serie wäre ein N+1-Problem.
-            List<Guid> seriesIds = subscribedSeries.Select(s => s.Id).ToList();
-            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(seriesIds);
-
-            // Statistiken über alle Episoden berechnen
-            int finished = 0;
-            int unfinished = 0;
-            int newCount = 0;
-            DateTime today = _clock.UtcNow.Date;
-
-            foreach (Episode episode in allEpisodes)
-            {
-                if (completedEpisodeIds.Contains(episode.Id))
-                {
-                    finished++;
-                }
-                else
-                {
-                    unfinished++;
-
-                    // "Neu" = bereits veröffentlicht, aber noch nicht gehört.
-                    // Zukünftige Episoden (ReleaseDate > heute) werden hier nicht gezählt.
-                    if (episode.ReleaseDate.HasValue && episode.ReleaseDate.Value.Date <= today)
-                    {
-                        newCount++;
-                    }
-                }
-            }
-
-            FinishedEpisodesCount = finished;
-            UnfinishedEpisodesCount = unfinished;
-            NewEpisodesCount = newCount;
+            LibraryCounts counts = await StatusBarStatistics.CountAsync(scope, _clock.UtcNow.Date);
+            SubscribedSeriesCount = counts.SubscribedSeries;
+            FinishedEpisodesCount = counts.FinishedEpisodes;
+            UnfinishedEpisodesCount = counts.UnfinishedEpisodes;
+            NewEpisodesCount = counts.NewEpisodes;
         }
-
-        /// <summary>
-        /// Ermittelt den anzuzeigenden Provider-Namen credential-bewusst. Ist Spotify gewählt,
-        /// aber sind keine Spotify-Credentials hinterlegt (oder nicht entschlüsselbar → DPAPI-Purge),
-        /// lenkt die Suche transparent auf Apple Music (siehe <c>ImportService.ResolveProviderAsync</c>).
-        /// Die Info-Leiste darf dann nicht fälschlich „Spotify" als verbunden zeigen, sondern den
-        /// effektiv nutzbaren Zustand („Spotify getrennt – Apple Music aktiv").
-        /// </summary>
-        /// <param name="scope">Aktueller DI-Scope aus <see cref="RefreshAsync"/>.</param>
-        /// <param name="provider">Der in den AppSettings gewählte Provider.</param>
-        /// <returns>Der anzuzeigende Provider-Text.</returns>
-        private static async Task<string> ResolveProviderDisplayAsync(IServiceScope scope, ProviderType provider)
-        {
-            switch (provider)
-            {
-                case ProviderType.Spotify:
-                    // GetService (nicht GetRequiredService): fehlt der Provider (z.B. in Tests
-                    // ohne Spotify-Registrierung), bleibt es beim schlichten "Spotify"-Hinweis.
-                    ISpotifyClientCredentialsProvider? credentialsProvider =
-                        scope.ServiceProvider.GetService<ISpotifyClientCredentialsProvider>();
-                    if (credentialsProvider is not null && await credentialsProvider.GetAsync() is null)
-                    {
-                        ILocalizationService localization =
-                            scope.ServiceProvider.GetRequiredService<ILocalizationService>();
-                        return localization.Get("StatusBarSpotifyDisconnected");
-                    }
-                    return "Spotify";
-                case ProviderType.AppleMusic:
-                    return "Apple Music";
-                case ProviderType.Both:
-                    return "Spotify + Apple Music";
-                default:
-                    return string.Empty;
-            }
-        }
-
-        // ── Theme-Wechsel ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Wendet das angegebene Theme sofort an.
@@ -495,8 +401,6 @@ namespace EchoPlay.App.ViewModels
             _themeService.ApplyTheme(themeName);
             ActiveTheme = themeName;
         }
-
-        // ── Sprachwechsel ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Speichert die neue Sprache in AppSettings und startet die App neu.
@@ -515,7 +419,18 @@ namespace EchoPlay.App.ViewModels
             // die Einstellungsseite nutzt exakt denselben Weg.
             if (_languageSwitchService is not null)
             {
-                _ = await _languageSwitchService.ChangeLanguageAsync(languageCode);
+                bool restarted = await _languageSwitchService.ChangeLanguageAsync(languageCode);
+
+                // Gespeichert ist die Sprache, nur der Neustart kam nicht zustande. Ohne Hinweis
+                // glaubte der Nutzer, die Auswahl sei verloren; die Einstellungsseite sagt es ebenso.
+                if (!restarted && _errorDialogService is not null)
+                {
+                    await _errorDialogService.ShowAsync(
+                        EchoPlay.App.Helpers.SafeResourceLoader.Get("LanguageRestartTitle"),
+                        EchoPlay.App.Helpers.SafeResourceLoader.Get("LanguageRestartManualMessage"),
+                        DialogKey.LanguageRestartManual);
+                }
+
                 return;
             }
 

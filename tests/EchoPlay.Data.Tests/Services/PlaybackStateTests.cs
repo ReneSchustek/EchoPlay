@@ -12,11 +12,9 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class PlaybackStateTests : DbTestBase
     {
         /// <summary>
-        /// Stellt sicher, dass ein gespeicherter PlaybackState über die EpisodeId korrekt wieder abgerufen werden kann.
-        /// Dieser Test validiert das grundlegende Zusammenspiel zwischen Datenbankpersistenz, Foreign-Key-Beziehung und Abfrageverhalten
-        /// des Services ohne Berücksichtigung von Soft-Delete oder Cascades.
+        /// Prüft, dass ein gespeicherter PlaybackState über die EpisodeId korrekt wieder abgerufen werden kann.
+        /// Nur Speichern, Fremdschlüssel und Abfrage, ohne logische Löschung oder Kaskaden.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
         public async Task AddAndGetByEpisodeId_ReturnsPlaybackState()
         {
@@ -26,7 +24,7 @@ namespace EchoPlay.Data.Tests.Services
             // Die Episode stellt die fachliche Klammer für den PlaybackState dar und muss vor dem Wiedergabestatus physisch existieren.
             Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Episode");
 
-            // Der PlaybackState selbst enthält keine Fachlogik zur Erstellung, sondern wird bewusst direkt im Test konfiguriert, um das
+            // Der PlaybackState selbst enthält keine Fachlogik zur Erstellung, sondern wird direkt im Test konfiguriert, um das
             // Serviceverhalten isoliert zu prüfen.
             PlaybackState playbackState = new()
             {

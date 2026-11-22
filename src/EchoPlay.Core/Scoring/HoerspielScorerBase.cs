@@ -5,7 +5,7 @@ namespace EchoPlay.Core.Scoring
 {
     /// <summary>
     /// Gemeinsame Basis für provider-spezifische Hörspiel-Scorer. Kapselt das wiederkehrende
-    /// Gerüst von <see cref="ScoreAsync"/> – Log-Scope, Cache-Lookup, Analyse-Aufruf, Cache-Store
+    /// Gerüst von <see cref="ScoreAsync"/>: Log-Scope, Cache-Lookup, Analyse-Aufruf, Cache-Store
     /// und Ergebnis-Logging. Ableitungen liefern nur die Artist-Identität, den Provider-Namen
     /// und die eigentliche Analyse-und-Bewertung.
     /// </summary>

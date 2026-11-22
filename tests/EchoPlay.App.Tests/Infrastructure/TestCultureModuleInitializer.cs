@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// dieser Assembly ausgeführt, unabhängig davon, ob xunit.runner.json
     /// kopiert wurde oder nicht.
     ///
-    /// Nur für App.Tests bewusst gepinnt: andere Test-Projekte könnten kulturneutral
+    /// Nur für App.Tests gepinnt: andere Test-Projekte könnten kulturneutral
     /// laufen und sollen sich nicht den Default abdrehen lassen.
     /// </summary>
     internal static class TestCultureModuleInitializer

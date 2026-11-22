@@ -1,3 +1,4 @@
+using EchoPlay.Core.Replication;
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
@@ -10,25 +11,30 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// EF-Core-basierte Implementierung des Datenservices für Serien.
-    /// Diese Klasse kapselt den technischen Datenzugriff und stellt sicher, dass alle Zugriffe und Änderungen den definierten Soft-Delete- und
-    /// Cascade-Regeln des Projekts entsprechen.
+    /// Alle Zugriffe und Änderungen an Serien laufen hier durch und halten damit die Regeln der
+    /// logischen Löschung und der Kaskade ein.
     /// </summary>
-    /// <remarks>Initialisiert eine neue Instanz des <see cref="SeriesDataService"/>.</remarks>
     /// <param name="context">Der zu verwendende EF-Core-Datenbankkontext.</param>
     /// <param name="watchedTitles">Die Merkliste überwachter Serientitel.</param>
     /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
+    /// <param name="clock">
+    /// Die Uhr für den Änderungszeitpunkt der Merker, die per Massenänderung gesetzt werden und
+    /// deshalb am Speichern vorbeigehen. Ohne Uhr bleibt ein vorhandener Zeitpunkt unverändert.
+    /// </param>
     public sealed class SeriesDataService(
         EchoPlayDbContext context,
         IWatchedTitleDataService watchedTitles,
-        EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory) : ISeriesDataService
+        EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory,
+        IHybridClock? clock = null) : ISeriesDataService
     {
         private readonly EchoPlayDbContext _context = context;
         private readonly IWatchedTitleDataService _watchedTitles = watchedTitles;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger = loggerFactory.CreateLogger("SeriesDataService");
+        private readonly IHybridClock? _clock = clock;
 
         /// <summary>
         /// Liefert alle nicht logisch gelöschten Serien sortiert nach Titel.
-        /// Der globale Soft-Delete-QueryFilter stellt sicher, dass gelöschte Datensätze standardmäßig nicht berücksichtigt werden.
+        /// Gelöschte Datensätze blendet der globale Abfragefilter der logischen Löschung aus.
         /// </summary>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<Series>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -38,7 +44,6 @@ namespace EchoPlay.Data.Services
             _logger.Debug("Lade alle Serien.");
 
             List<Series> result = await _context.Series
-
                 .OrderBy(series => series.Title)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
 
@@ -50,8 +55,8 @@ namespace EchoPlay.Data.Services
         /// <summary>
         /// Liefert eine Serie anhand ihrer eindeutigen ID oder <c>null</c>,
         /// wenn sie nicht existiert oder logisch gelöscht wurde.
-        /// Der Zugriff erfolgt über <see cref="DbSet{TEntity}.FindAsync(object[])"/>, da es sich um einen Primary-Key-Zugriff handelt und diese Methode
-        /// optimal für Skalierung und Change-Tracker-Nutzung geeignet ist.
+        /// Der Zugriff erfolgt über <see cref="DbSet{TEntity}.FindAsync(object[])"/>: Ein Primärschlüssel-Zugriff
+        /// prüft zuerst den Änderungsverfolger und fragt nur sonst die Datenbank.
         /// </summary>
         /// <param name="id">Die eindeutige Serien-ID.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
@@ -156,7 +161,6 @@ namespace EchoPlay.Data.Services
             _logger.Debug("Lade abonnierte Serien.");
 
             List<Series> result = await _context.Series
-
                 .Where(series => series.IsSubscribed)
                 .OrderBy(series => series.Title)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -188,7 +192,6 @@ namespace EchoPlay.Data.Services
             _logger.Debug("Lade favorisierte Serien.");
 
             List<Series> result = await _context.Series
-
                 .Where(series => series.IsFavorite)
                 .OrderBy(series => series.Title)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -200,9 +203,9 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Setzt den Favoritenstatus einer Serie dauerhaft.
-        /// Favorisieren aktiviert zugleich die Überwachung (<see cref="Series.IsWatched"/>) –
+        /// Favorisieren aktiviert zugleich die Überwachung (<see cref="Series.IsWatched"/>);
         /// ein Favorit ohne Überwachung würde nie unter „Neuerscheinungen" auftauchen.
-        /// Das Entfernen aus den Favoriten lässt die Überwachung bewusst unangetastet:
+        /// Das Entfernen aus den Favoriten lässt die Überwachung unangetastet:
         /// Der Nutzer schaltet sie separat über das Auge-Symbol ab.
         /// Existiert die Serie nicht, wird der Aufruf mit einer Warnung ignoriert.
         /// </summary>
@@ -219,12 +222,20 @@ namespace EchoPlay.Data.Services
 
             // Beide Flags in einem UPDATE: so kann zwischen Favorit und Überwachung
             // kein Zustand entstehen, in dem die Serie favorisiert, aber unbeobachtet ist.
+            string? stamp = _clock?.Now().ToString();
             int updated = await _context.Series
                 .Where(s => s.Id == seriesId)
                 .ExecuteUpdateAsync(
-                    setters => setters
-                        .SetProperty(s => s.IsFavorite, true)
-                        .SetProperty(s => s.IsWatched, true),
+                    setters =>
+                    {
+                        _ = setters
+                            .SetProperty(s => s.IsFavorite, true)
+                            .SetProperty(s => s.IsWatched, true);
+                        if (stamp is not null)
+                        {
+                            _ = setters.SetProperty(s => s.ChangeStamp, stamp);
+                        }
+                    },
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -259,7 +270,7 @@ namespace EchoPlay.Data.Services
 
         /// <inheritdoc/>
         /// <param name="seriesId">Datenbank-ID der Serie.</param>
-        /// <param name="checkedAt">Zeitpunkt der letzten Cover-Prüfung — verhindert, dass dieselbe Serie ständig erneut bei den Anbietern angefragt wird.</param>
+        /// <param name="checkedAt">Zeitpunkt der letzten Cover-Prüfung; sie verhindert, dass dieselbe Serie ständig erneut bei den Anbietern angefragt wird.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task SetCoverLastCheckedAsync(Guid seriesId, DateTime checkedAt, CancellationToken cancellationToken = default)
         {
@@ -292,7 +303,7 @@ namespace EchoPlay.Data.Services
         }
 
         /// <summary>
-        /// Entfernt den gemerkten Titel wieder – der Nutzer hat die Überwachung bewusst abgeschaltet.
+        /// Entfernt den gemerkten Titel wieder; der Nutzer hat die Überwachung bewusst abgeschaltet.
         /// </summary>
         private async Task ForgetTitleOfAsync(Guid seriesId, CancellationToken cancellationToken)
         {
@@ -319,7 +330,7 @@ namespace EchoPlay.Data.Services
         }
 
         // ExecuteUpdateAsync spart das einleitende SELECT (1 SQL-Statement statt 2);
-        // Logger gibt nur noch die ID aus, weil das Entity nicht geladen wird.
+        // das Protokoll nennt nur die ID, weil die Serie nicht geladen wird.
         private async Task SetFlagAsync(
             Guid seriesId,
             System.Linq.Expressions.Expression<Func<Series, bool>> selector,
@@ -327,9 +338,19 @@ namespace EchoPlay.Data.Services
             string flagName,
             CancellationToken cancellationToken = default)
         {
+            string? stamp = _clock?.Now().ToString();
             int updated = await _context.Series
                 .Where(s => s.Id == seriesId)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(selector, value), cancellationToken)
+                .ExecuteUpdateAsync(
+                    setters =>
+                    {
+                        _ = setters.SetProperty(selector, value);
+                        if (stamp is not null)
+                        {
+                            _ = setters.SetProperty(s => s.ChangeStamp, stamp);
+                        }
+                    },
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             if (updated == 0)
@@ -343,7 +364,7 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Markiert eine Serie sowie alle untergeordneten Episoden und deren PlaybackStates als logisch gelöscht.
-        /// Diese Methode setzt die oberste Regel der Soft-Delete-Matrix um:
+        /// Die oberste Regel der Soft-Delete-Matrix:
         /// Eine gelöschte Serie darf keine aktiven oder sichtbaren Kindelemente besitzen.
         /// </summary>
         /// <param name="id">Die eindeutige ID der zu löschenden Serie.</param>
@@ -361,44 +382,21 @@ namespace EchoPlay.Data.Services
                 return;
             }
 
-            // Transaktion stellt sicher, dass Serie, Episoden und PlaybackStates
-            // atomar als gelöscht markiert werden. Ein Fehler während SaveChanges
-            // rollback alle Änderungen vollständig.
+            // In einer Transaktion werden Serie, Episoden und PlaybackStates gemeinsam als gelöscht
+            // markiert. Scheitert SaveChanges, rollt sie alle Änderungen zurück.
             IDbContextTransaction transaction =
                 await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                series.MarkAsDeleted(EntityClock.Current.UtcNow);
-
-                List<Episode> episodes =
-                    await _context.Episodes
-                        .AsTracking()
-                        .Where(episode => episode.SeriesId == id)
-                        .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-                // Alle EpisodeIds sammeln, um PlaybackStates in einem einzigen Query zu laden statt pro Episode einzeln (N+1 vermeiden).
-                List<Guid> episodeIds = episodes.Select(episode => episode.Id).ToList();
-
-                List<PlaybackState> playbackStates =
-                    await _context.PlaybackStates
-                        .AsTracking()
-                        .Where(state => episodeIds.Contains(state.EpisodeId))
-                        .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-                episodes.MarkRangeDeleted();
-                playbackStates.MarkRangeDeleted();
-
-                _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await MarkTreeDeletedAsync(series, cancellationToken).ConfigureAwait(false);
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-
-                _logger.Info(
-                    "Serie '{SeriesTitle}' (ID: {SeriesId}) und {EpisodeCount} Episode(n) sowie {PlaybackStateCount} PlaybackState(s) als gelöscht markiert.",
-                    series.Title, id, episodes.Count, playbackStates.Count);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                // Ohne Token: Ist der Aufrufer abgebrochen, würfe der Rollback mit seinem Token
+                // selbst, überdeckte den eigentlichen Fehler und ließe die Transaktion offen.
+                await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
                 _logger.Error("Soft-Delete für Serie '{SeriesId}' fehlgeschlagen – Transaktion zurückgerollt.", ex, id);
                 throw;
             }
@@ -406,6 +404,52 @@ namespace EchoPlay.Data.Services
             {
                 await transaction.DisposeAsync().ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Markiert Serie, Folgen und Wiedergabestände als gelöscht und speichert; die
+        /// Transaktion des Aufrufers umschließt das.
+        /// </summary>
+        private async Task MarkTreeDeletedAsync(Series series, CancellationToken cancellationToken)
+        {
+            series.MarkAsDeleted(EntityClock.Current.UtcNow);
+
+            (List<Episode> episodes, List<PlaybackState> playbackStates) =
+                await LoadTrackedChildrenAsync(series.Id, cancellationToken).ConfigureAwait(false);
+
+            episodes.MarkRangeDeleted();
+            playbackStates.MarkRangeDeleted();
+
+            _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            _logger.Info(
+                "Serie '{SeriesTitle}' (ID: {SeriesId}) und {EpisodeCount} Episode(n) sowie {PlaybackStateCount} PlaybackState(s) als gelöscht markiert.",
+                series.Title, series.Id, episodes.Count, playbackStates.Count);
+        }
+
+        /// <summary>
+        /// Lädt die Folgen einer Serie und deren Wiedergabestände mit Änderungsverfolgung.
+        /// </summary>
+        private async Task<(List<Episode> Episodes, List<PlaybackState> PlaybackStates)> LoadTrackedChildrenAsync(
+            Guid seriesId,
+            CancellationToken cancellationToken)
+        {
+            List<Episode> episodes =
+                await _context.Episodes
+                    .AsTracking()
+                    .Where(episode => episode.SeriesId == seriesId)
+                    .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            // Alle EpisodeIds sammeln, um PlaybackStates in einem einzigen Query zu laden statt pro Episode einzeln (N+1 vermeiden).
+            List<Guid> episodeIds = episodes.Select(episode => episode.Id).ToList();
+
+            List<PlaybackState> playbackStates =
+                await _context.PlaybackStates
+                    .AsTracking()
+                    .Where(state => episodeIds.Contains(state.EpisodeId))
+                    .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            return (episodes, playbackStates);
         }
     }
 }

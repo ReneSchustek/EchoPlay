@@ -7,12 +7,13 @@ namespace EchoPlay.LocalLibrary.Cover
     public interface ILocalCoverLoader
     {
         /// <summary>
-        /// Sucht ein Cover-Bild mit folgender Priorität:
-        /// 1. <c>cover.jpg</c> im Episodenordner (<paramref name="episodeFolderPath"/>)
-        /// 2. Erstes Bild aus den ID3-Tags der ersten Audiodatei (<paramref name="firstTrackPath"/>)
-        /// 3. Kein Cover → gibt <see langword="null"/> zurück
-        ///
-        /// Fehler beim Lesen werden still ignoriert, damit ein defektes Cover die UI nicht blockiert.
+        /// Sucht ein Cover-Bild in dieser Reihenfolge:
+        /// <list type="number">
+        /// <item><c>cover.jpg</c> im Episodenordner (<paramref name="episodeFolderPath"/>)</item>
+        /// <item>das erste Bild aus den ID3-Tags der ersten Audiodatei (<paramref name="firstTrackPath"/>)</item>
+        /// </list>
+        /// Eine unlesbare Datei gilt als „kein Cover" und steht als Warnung im Protokoll; ein
+        /// defektes Bild hält die Anzeige nicht auf.
         /// </summary>
         /// <param name="episodeFolderPath">
         /// Absoluter Pfad zum Episodenordner. Wird auf <c>cover.jpg</c> geprüft.

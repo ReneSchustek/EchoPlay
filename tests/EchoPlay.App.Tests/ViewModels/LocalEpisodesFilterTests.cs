@@ -150,8 +150,6 @@ namespace EchoPlay.App.Tests.ViewModels
                 () => sut.LoadForSeriesAsync(null!, [], [], []));
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static ServiceProvider BuildProvider()
         {
             ServiceCollection services = new();

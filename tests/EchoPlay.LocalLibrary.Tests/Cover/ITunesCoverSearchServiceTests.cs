@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using System;
 using System.Collections.Generic;
@@ -38,8 +39,8 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal("TKKG – Folge 1", only.ReleaseTitle);
             Assert.Equal("iTunes", only.Source);
-            Assert.Contains("250x250bb", only.ThumbnailUrl, StringComparison.Ordinal);
-            Assert.Contains("600x600bb", only.FullUrl, StringComparison.Ordinal);
+            Assert.Contains("250x250bb", only.ThumbnailUrl.OriginalString, StringComparison.Ordinal);
+            Assert.Contains("600x600bb", only.FullUrl.OriginalString, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -57,7 +58,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new();
             HttpClient client = new(handler);
-            ITunesCoverSearchService service = new(client);
+            ITunesCoverSearchService service = new(client, new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Egal", ct: TestContext.Current.CancellationToken);
 
@@ -68,9 +69,13 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new(status, body);
             HttpClient client = new(handler);
-            return new ITunesCoverSearchService(client);
+            return new ITunesCoverSearchService(client, new FakeLoggerFactory());
         }
 
+        /// <summary>
+        /// GET liefert den vorgegebenen Status und Text; im Fehlermodus scheitert die Anfrage wie
+        /// bei einem Netzwerkfehler.
+        /// </summary>
         private sealed class FakeHttpMessageHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _status;

@@ -22,7 +22,7 @@ string libraryRoot = Args.Count > 1 ? Args[1] : @"C:\Hörspiele-Demo";
 // Fester Zeitpunkt statt DateTime.Now: Die Aufnahmen sollen bei jedem Lauf gleich aussehen.
 DateTime reference = new(2026, 8, 11, 19, 30, 0, DateTimeKind.Utc);
 
-var connection = new SqliteConnection($"Data Source={databasePath}");
+SqliteConnection connection = new($"Data Source={databasePath}");
 connection.Open();
 
 // --- 0. Schutz vor der echten Sammlung -------------------------------------------------

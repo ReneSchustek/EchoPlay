@@ -50,6 +50,42 @@ namespace EchoPlay.App.Tests.ViewModels
                 Clock: new FakeClock()));
         }
 
+        /// <summary>
+        /// Legt eine abonnierte, überwachte Serie an, wahlweise als Favorit, und liefert sie zurück.
+        /// </summary>
+        private static async Task<Series> AddWatchedSeriesAsync(
+            FakeSeriesDataService seriesService, string title, bool isFavorite = true)
+        {
+            await seriesService.AddAsync(
+                new Series { Title = title, IsSubscribed = true, IsFavorite = isFavorite, IsWatched = true },
+                cancellationToken: TestContext.Current.CancellationToken);
+            return seriesService.All[^1];
+        }
+
+        /// <summary>Legt eine Folge der Serie an und liefert ihre Kennung.</summary>
+        private static async Task<Guid> AddEpisodeAsync(
+            FakeEpisodeDataService episodeService, Guid seriesId, string title, int? number, int localTrackCount)
+        {
+            await episodeService.AddAsync(
+                new Episode { Title = title, SeriesId = seriesId, EpisodeNumber = number, LocalTrackCount = localTrackCount },
+                cancellationToken: TestContext.Current.CancellationToken);
+            return episodeService.All[^1].Id;
+        }
+
+        /// <summary>Eine Neuerscheinung im Zwischenspeicher, geprüft am Referenztag.</summary>
+        private static CachedNewRelease Release(
+            Series series, string title, int number, DateTime releaseDate, long collectionId)
+            => new()
+            {
+                SeriesId = series.Id,
+                Series = series,
+                Title = title,
+                EpisodeNumber = number,
+                ReleaseDate = releaseDate,
+                CollectionId = collectionId,
+                CheckedAtUtc = TestIds.ReferenceDate
+            };
+
         [Fact]
         public async Task LoadAsync_SetsIsLoadingDuringLoad()
         {
@@ -191,41 +227,17 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
-            Guid seriesId = seriesService.All[0].Id;
+            Series series = await AddWatchedSeriesAsync(seriesService, "TKKG");
 
             // Lokale Episode mit Folgennummer 230, als gehört markiert
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Gehörte Folge",
-                SeriesId = seriesId,
-                EpisodeNumber = 230,
-                LocalTrackCount = 1
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            Guid episodeId = episodeService.All[0].Id;
-
-            await stateService.AddAsync(new PlaybackState
-            {
-                EpisodeId = episodeId,
-                IsCompleted = true,
-                LastPosition = TimeSpan.FromMinutes(60)
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            Guid episodeId = await AddEpisodeAsync(episodeService, series.Id, "Gehörte Folge", 230, localTrackCount: 1);
+            await stateService.AddAsync(
+                new PlaybackState { EpisodeId = episodeId, IsCompleted = true, LastPosition = TimeSpan.FromMinutes(60) },
+                cancellationToken: TestContext.Current.CancellationToken);
 
             // DB-Cache kennt die gleiche Folge 230
-            Series series = seriesService.All[0];
             FakeCachedNewReleaseDataService cacheService = new(
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = seriesId,
-                    Series = series,
-                    Title = "TKKG - Folge 230",
-                    EpisodeNumber = 230,
-                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
-                    CollectionId = 12345,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                }
-            ]);
+                [Release(series, "TKKG - Folge 230", 230, TestIds.ReferenceDate.AddDays(-5), 12345)]);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService, cacheService: cacheService);
             await vm.LoadAsync();
@@ -235,54 +247,24 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LoadAsync_GroupsAnnouncedSeparatelyFromMonths()
+        public async Task LoadAsync_LeavesAnnouncedOut()
         {
-            // Erschienene Folgen → Monatsgruppe; angekündigte → "Angekündigt"-Gruppe
+            // Erschienene Folgen → Monatsgruppe; angekündigte stehen auf der eigenen Seite
             FakeSeriesDataService seriesService = new();
-            FakeEpisodeDataService episodeService = new();
-
-            await seriesService.AddAsync(new Series { Title = "Die drei Fragezeichen", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
-            Series series = seriesService.All[0];
+            Series series = await AddWatchedSeriesAsync(seriesService, "Die drei Fragezeichen");
 
             // DB-Cache mit einer verfügbaren und einer angekündigten Folge
             FakeCachedNewReleaseDataService cacheService = new(
             [
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Series = series,
-                    Title = "Verfügbare Folge",
-                    EpisodeNumber = 238,
-                    ReleaseDate = TestIds.ReferenceDate.AddDays(-1),
-                    CollectionId = 100,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                },
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Series = series,
-                    Title = "Angekündigte Folge",
-                    EpisodeNumber = 239,
-                    ReleaseDate = TestIds.ReferenceDate.AddDays(7),
-                    CollectionId = 101,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                }
+                Release(series, "Verfügbare Folge", 238, TestIds.ReferenceDate.AddDays(-1), 100),
+                Release(series, "Angekündigte Folge", 239, TestIds.ReferenceDate.AddDays(7), 101)
             ]);
 
-            DashboardViewModel vm = BuildViewModel(seriesService, episodeService, cacheService: cacheService);
+            DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService(), cacheService: cacheService);
             await vm.LoadAsync();
 
-            // Zwei Gruppen: "Angekündigt" und der aktuelle Monat
-            Assert.Equal(2, vm.NeuerscheinungenVM.NewEpisodeGroups.Count);
-
-            // "Angekündigt" ist die erste Gruppe (SortKey 0 = ganz oben)
-            NewEpisodesGroupViewModel announcedGroup = vm.NeuerscheinungenVM.NewEpisodeGroups[0];
-            Assert.Equal("Angekündigt", announcedGroup.GroupLabel);
-            _ = Assert.Single(announcedGroup.Episodes);
-            Assert.Equal("Angekündigte Folge", announcedGroup.Episodes[0].EpisodeTitle);
-
-            // Monatsgruppe enthält die verfügbare Folge
-            NewEpisodesGroupViewModel monthGroup = vm.NeuerscheinungenVM.NewEpisodeGroups[1];
+            // Nur der Monat der erschienenen Folge; die angekündigte fehlt
+            NewEpisodesGroupViewModel monthGroup = Assert.Single(vm.NeuerscheinungenVM.NewEpisodeGroups);
             _ = Assert.Single(monthGroup.Episodes);
             Assert.Equal("Verfügbare Folge", monthGroup.Episodes[0].EpisodeTitle);
         }
@@ -292,37 +274,16 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Neueste Folge soll zuerst erscheinen (Cache liefert absteigend sortiert)
             FakeSeriesDataService seriesService = new();
-            FakeEpisodeDataService episodeService = new();
-
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsFavorite = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
-            Series series = seriesService.All[0];
+            Series series = await AddWatchedSeriesAsync(seriesService, "TKKG");
 
             // DB-Cache: zwei Folgen mit unterschiedlichem Datum
             FakeCachedNewReleaseDataService cacheService = new(
             [
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Series = series,
-                    Title = "Folge Neu",
-                    EpisodeNumber = 231,
-                    ReleaseDate = TestIds.ReferenceDate.AddDays(-1),
-                    CollectionId = 200,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                },
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Series = series,
-                    Title = "Folge Alt",
-                    EpisodeNumber = 230,
-                    ReleaseDate = TestIds.ReferenceDate.AddDays(-5),
-                    CollectionId = 201,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                }
+                Release(series, "Folge Neu", 231, TestIds.ReferenceDate.AddDays(-1), 200),
+                Release(series, "Folge Alt", 230, TestIds.ReferenceDate.AddDays(-5), 201)
             ]);
 
-            DashboardViewModel vm = BuildViewModel(seriesService, episodeService, cacheService: cacheService);
+            DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService(), cacheService: cacheService);
             await vm.LoadAsync();
 
             List<NewEpisodeCardViewModel> episodes = vm.NeuerscheinungenVM.NewEpisodeGroups.SelectMany(g => g.Episodes).ToList();
@@ -336,36 +297,15 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Einträge aus verschiedenen Monaten → je eine Monatsgruppe
             FakeSeriesDataService seriesService = new();
-            FakeEpisodeDataService episodeService = new();
-
-            await seriesService.AddAsync(new Series { Title = "TKKG", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
-            Series series = seriesService.All[0];
+            Series series = await AddWatchedSeriesAsync(seriesService, "TKKG", isFavorite: false);
 
             FakeCachedNewReleaseDataService cacheService = new(
             [
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Series = series,
-                    Title = "Januar-Folge",
-                    EpisodeNumber = 231,
-                    ReleaseDate = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 300,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                },
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Series = series,
-                    Title = "Dezember-Folge",
-                    EpisodeNumber = 230,
-                    ReleaseDate = new DateTime(2025, 12, 10, 0, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 301,
-                    CheckedAtUtc = TestIds.ReferenceDate
-                }
+                Release(series, "Januar-Folge", 231, new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), 300),
+                Release(series, "Dezember-Folge", 230, new DateTime(2025, 12, 10, 0, 0, 0, DateTimeKind.Utc), 301)
             ]);
 
-            DashboardViewModel vm = BuildViewModel(seriesService, episodeService, cacheService: cacheService);
+            DashboardViewModel vm = BuildViewModel(seriesService, new FakeEpisodeDataService(), cacheService: cacheService);
             await vm.LoadAsync();
 
             // Zwei Monatsgruppen: Januar und Dezember (neuester zuerst)
@@ -609,41 +549,25 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeEpisodeDataService episodeService = new();
             FakePlaybackStateDataService stateService = new();
 
-            await seriesService.AddAsync(new Series { Title = "Serie A", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
-            await seriesService.AddAsync(new Series { Title = "Serie B", IsSubscribed = true, IsWatched = true }, cancellationToken: TestContext.Current.CancellationToken);
-            Guid seriesAId = seriesService.All[0].Id;
-            Guid seriesBId = seriesService.All[1].Id;
-
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Folge A",
-                SeriesId = seriesAId,
-                LocalTrackCount = 0
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            await episodeService.AddAsync(new Episode
-            {
-                Title = "Folge B",
-                SeriesId = seriesBId,
-                LocalTrackCount = 1
-            }, cancellationToken: TestContext.Current.CancellationToken);
-            Guid episodeAId = episodeService.All[0].Id;
-            Guid episodeBId = episodeService.All[1].Id;
+            Series seriesA = await AddWatchedSeriesAsync(seriesService, "Serie A", isFavorite: false);
+            Series seriesB = await AddWatchedSeriesAsync(seriesService, "Serie B", isFavorite: false);
+            Guid episodeAId = await AddEpisodeAsync(episodeService, seriesA.Id, "Folge A", null, localTrackCount: 0);
+            Guid episodeBId = await AddEpisodeAsync(episodeService, seriesB.Id, "Folge B", null, localTrackCount: 1);
 
             // Serie A: älter gehört, aber neueres UpdatedAt
-            await stateService.AddAsync(new PlaybackState
-            {
-                EpisodeId = episodeAId,
-                IsCompleted = true,
-                LastPlayedAt = TestIds.ReferenceDate.AddHours(-2)
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            await stateService.AddAsync(
+                new PlaybackState { EpisodeId = episodeAId, IsCompleted = true, LastPlayedAt = TestIds.ReferenceDate.AddHours(-2) },
+                cancellationToken: TestContext.Current.CancellationToken);
 
             // Serie B: neuer gehört, aber älteres UpdatedAt
-            await stateService.AddAsync(new PlaybackState
-            {
-                EpisodeId = episodeBId,
-                LastPosition = TimeSpan.FromMinutes(10),
-                LastPlayedAt = TestIds.ReferenceDate.AddMinutes(-30)
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            await stateService.AddAsync(
+                new PlaybackState
+                {
+                    EpisodeId = episodeBId,
+                    LastPosition = TimeSpan.FromMinutes(10),
+                    LastPlayedAt = TestIds.ReferenceDate.AddMinutes(-30)
+                },
+                cancellationToken: TestContext.Current.CancellationToken);
 
             DashboardViewModel vm = BuildViewModel(seriesService, episodeService, stateService);
             await vm.LoadAsync();
@@ -653,8 +577,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("Serie B", vm.ZuletztGehoertVM.Items[0].SeriesName);
             Assert.Equal("Serie A", vm.ZuletztGehoertVM.Items[1].SeriesName);
         }
-
-        // ── CleanEpisodeTitle ──────────────────────────────────────────────
 
         [Fact]
         public void CleanTitle_RemovesSeriesNameAndFolgePrefix()
@@ -716,8 +638,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("TKKG", card.EpisodeTitle);
         }
 
-        // ── InfoLineVisibility / ReleaseDateVisibility ────────────────────
-
         [Fact]
         public void InfoLineVisibility_WithReleaseDate_Visible()
         {
@@ -776,8 +696,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains("Nr. 170", card.InfoLineText!, StringComparison.Ordinal);
             Assert.Contains("online", card.InfoLineText!, StringComparison.Ordinal);
         }
-
-        // ── Cover-Entkopplung: Folgen-Cover laden im Hintergrund ─────────
 
         [Fact]
         public void NewEpisodeCard_InitiallyWithoutEpisodeCover_HasEpisodeCoverIsFalse()

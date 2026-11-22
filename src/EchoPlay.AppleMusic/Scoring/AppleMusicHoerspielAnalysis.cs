@@ -4,8 +4,7 @@ namespace EchoPlay.AppleMusic.Scoring
 {
     /// <summary>
     /// Internes Analyse-Ergebnis der Apple-Music-Hörspiel-Heuristik.
-    /// Enthält ausschließlich Boolean-Flags und Debug-Informationen.
-    /// Seit dem Wechsel auf die iTunes Search API steht auch ein Genre-Flag zur Verfügung.
+    /// Enthält Boolean-Flags, die Cover-Adresse aus der Albenprüfung und Debug-Informationen.
     /// </summary>
     internal sealed class AppleMusicHoerspielAnalysis : IHoerspielAnalysis
     {
@@ -41,7 +40,7 @@ namespace EchoPlay.AppleMusic.Scoring
 
         /// <summary>
         /// Gibt an, ob das primäre Genre des Künstlers auf Hörspiel-Inhalte hinweist.
-        /// Dieses Flag ist seit dem Wechsel auf die iTunes Search API verfügbar.
+        /// Die iTunes Search API liefert das Genre schon in der Künstlerantwort.
         /// </summary>
         public bool HasHoerspielGenre { get; init; }
 
@@ -50,7 +49,7 @@ namespace EchoPlay.AppleMusic.Scoring
         /// Auf Künstlerebene liefert die iTunes Search API kein Artwork; das erste Album
         /// der Serie ist die nächstbeste und bereits vorliegende Quelle.
         /// </summary>
-        public string? ArtworkUrl { get; init; }
+        public Uri? ArtworkUrl { get; init; }
 
         /// <summary>
         /// Menschenlesbare Debug-Information zur Analyse.

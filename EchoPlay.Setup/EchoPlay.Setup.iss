@@ -1,7 +1,8 @@
 ; Inno-Setup-Skript für EchoPlay — erzeugt eine Setup.exe aus dem self-contained
 ; Publish (dist\setup-publish). Die App bringt die .NET- und Windows-App-SDK-Laufzeit
 ; selbst mit (WindowsAppSDKSelfContained), daher braucht der Zielrechner keine
-; vorinstallierte Runtime und das Paket muss nicht signiert werden.
+; vorinstallierte Runtime und das Paket braucht kein Code-Signing-Zertifikat. Die Echtheit
+; der fertigen Setup.exe prüft der Auto-Updater über eine eigene Signatur (tools\sign-release.ps1).
 ;
 ; Build (vom Repo-Root):
 ;   tools\publish-setup.ps1            -> publiziert + kompiliert die Setup.exe
@@ -29,17 +30,19 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppSupportURL}
 AppUpdatesURL={#MyAppURL}
-; {autopf} passt sich der Installationsart an: Programme (alle Benutzer) oder
-; %LOCALAPPDATA%\Programs (nur ich). Der Benutzer kann den Pfad frei ändern.
+; Mit Adminrechten löst {autopf} auf C:\Program Files auf. Der Benutzer kann den Pfad
+; frei ändern; ein früher gewählter Ordner wird nicht vorgeschlagen, weil ältere Versionen
+; ins Benutzerprofil installierten und der Vorschlag dorthin zurückführte.
 DefaultDirName={autopf}\{#MyAppName}
+UsePreviousAppDir=no
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 DisableDirPage=no
 AllowUNCPath=no
-; Standard ohne Adminrechte (nur ich); im Dialog auf "für alle Benutzer" wechselbar
-; (dann UAC-Elevation für den Programme-Ordner).
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+; Programme gehören nach C:\Program Files, nicht ins Benutzerprofil. Das Setup fragt
+; deshalb immer nach Adminrechten (UAC); die eingebaute Aktualisierung startet es über die
+; Shell, sodass Windows die Abfrage zeigt.
+PrivilegesRequired=admin
 ; Windows 10 Version 1809 (Build 17763) ist das Minimum — ältere Versionen sind nicht
 ; kompatibel mit WinUI 3 und der verwendeten Windows App SDK-Version.
 MinVersion=10.0.17763
@@ -76,3 +79,41 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+
+[CustomMessages]
+german.OldUserInstallRemovalFailed=Die bisherige Installation im Benutzerprofil ließ sich nicht entfernen. Bitte EchoPlay über „Apps & Features“ deinstallieren und das Setup erneut starten. Einstellungen und Mediathek bleiben dabei erhalten.
+english.OldUserInstallRemovalFailed=The previous installation in the user profile could not be removed. Please uninstall EchoPlay via "Apps & features" and run the setup again. Settings and library are kept.
+
+[Code]
+// Ältere Versionen installierten ohne Adminrechte nach %LOCALAPPDATA%\Programs und trugen
+// sich unter HKCU als installiert ein. Bleibt diese Installation liegen, stünde EchoPlay
+// zweimal auf dem Rechner und in der Liste der Apps. Das Setup entfernt sie deshalb still,
+// bevor es unter Program Files installiert. Einstellungen und Mediathek liegen getrennt
+// unter %LOCALAPPDATA%\EchoPlay und bleiben unberührt.
+const
+  UserUninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{4507e02b-3490-46e6-9510-6f111d5926de}_is1';
+
+function RemoveUserProfileInstallation(): Boolean;
+var
+  UninstallString: String;
+  ResultCode: Integer;
+begin
+  Result := True;
+  if not RegQueryStringValue(HKCU, UserUninstallKey, 'UninstallString', UninstallString) then
+    Exit;
+
+  UninstallString := RemoveQuotes(UninstallString);
+  if not FileExists(UninstallString) then
+    Exit;
+
+  Log('Installation im Benutzerprofil gefunden, wird entfernt: ' + UninstallString);
+  Result := Exec(UninstallString, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE,
+    ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  if not RemoveUserProfileInstallation() then
+    Result := ExpandConstant('{cm:OldUserInstallRemovalFailed}');
+end;

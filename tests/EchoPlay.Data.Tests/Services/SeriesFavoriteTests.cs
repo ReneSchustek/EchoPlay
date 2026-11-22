@@ -104,11 +104,11 @@ namespace EchoPlay.Data.Tests.Services
             // Favorisierte Serien werden alphabetisch sortiert zurückgegeben
             Series bibi = await DataBuilder.PersistSeriesAsync("Bibi Blocksberg");
             Series tkkg = await DataBuilder.PersistSeriesAsync("TKKG");
-            Series drei = await DataBuilder.PersistSeriesAsync("Die drei ???");
+            Series three = await DataBuilder.PersistSeriesAsync("Die drei ???");
 
             bibi.IsFavorite = true;
             tkkg.IsFavorite = true;
-            drei.IsFavorite = true;
+            three.IsFavorite = true;
             _ = await Context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 

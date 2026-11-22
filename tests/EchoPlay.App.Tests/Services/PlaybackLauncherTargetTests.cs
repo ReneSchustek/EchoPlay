@@ -12,14 +12,14 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public void TryBuildSpotifyTargets_WithAlbumId_PointsToAlbum()
         {
-            bool erfolg = PlaybackLauncher.TryBuildSpotifyTargets(
+            bool success = PlaybackLauncher.TryBuildSpotifyTargets(
                 "4aawyAB9vmqN3uQ7FjRGTy",
                 "Fünf Freunde",
                 "Folge 17",
                 out string? appUri,
                 out string? webUrl);
 
-            Assert.True(erfolg);
+            Assert.True(success);
             Assert.Contains("4aawyAB9vmqN3uQ7FjRGTy", appUri, StringComparison.Ordinal);
             Assert.Contains("4aawyAB9vmqN3uQ7FjRGTy", webUrl, StringComparison.Ordinal);
         }
@@ -28,14 +28,14 @@ namespace EchoPlay.App.Tests.Services
         public void TryBuildSpotifyTargets_WithoutAlbumId_FallsBackToSearch()
         {
             // Ohne Kennung bleibt die Suche - besser als eine Abweisung, denn die Folge gibt es.
-            bool erfolg = PlaybackLauncher.TryBuildSpotifyTargets(
+            bool success = PlaybackLauncher.TryBuildSpotifyTargets(
                 null,
                 "Fünf Freunde",
                 "Folge 17",
                 out string? appUri,
                 out string? webUrl);
 
-            Assert.True(erfolg);
+            Assert.True(success);
             Assert.NotNull(webUrl);
             Assert.Contains("search", webUrl, StringComparison.OrdinalIgnoreCase);
             Assert.NotNull(appUri);
@@ -47,18 +47,18 @@ namespace EchoPlay.App.Tests.Services
             // Der Fall, an dem die erste Fassung scheiterte: „Fünf Freunde Junior, Folge 17"
             // trägt keine Spotify-Kennung, aber eine von Apple Music. Eine unscharfe
             // Spotify-Suche darf den genauen Treffer nicht verdrängen.
-            bool spotifyGenau = PlaybackLauncher.TryBuildSpotifyTargets(
+            bool spotifyExact = PlaybackLauncher.TryBuildSpotifyTargets(
                 spotifyAlbumId: null, string.Empty, string.Empty, out _, out string? ohneTitel);
 
-            Assert.False(spotifyGenau);
+            Assert.False(spotifyExact);
             Assert.Null(ohneTitel);
 
             // Mit Titeln entsteht sehr wohl ein Ziel - deshalb muss die Suche hinter den
             // genauen Treffern stehen und nicht davor.
-            bool spotifySuche = PlaybackLauncher.TryBuildSpotifyTargets(
+            bool spotifySearch = PlaybackLauncher.TryBuildSpotifyTargets(
                 spotifyAlbumId: null, "Fünf Freunde Junior", "Folge 17", out _, out string? mitTitel);
 
-            Assert.True(spotifySuche);
+            Assert.True(spotifySearch);
             Assert.NotNull(mitTitel);
         }
 
@@ -67,14 +67,14 @@ namespace EchoPlay.App.Tests.Services
         {
             // Weder Kennung noch Titel: Hier gibt es nichts zu öffnen, und der Aufrufer muss
             // den Hinweis zeigen statt ins Leere zu springen.
-            bool erfolg = PlaybackLauncher.TryBuildSpotifyTargets(
+            bool success = PlaybackLauncher.TryBuildSpotifyTargets(
                 null,
                 string.Empty,
                 string.Empty,
                 out string? appUri,
                 out string? webUrl);
 
-            Assert.False(erfolg);
+            Assert.False(success);
             Assert.Null(appUri);
             Assert.Null(webUrl);
         }

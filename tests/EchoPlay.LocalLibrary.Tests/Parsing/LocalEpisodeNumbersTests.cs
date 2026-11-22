@@ -69,7 +69,7 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
         public void Scan_SingleNumberAmongManyUnnumbered_IsIgnored()
         {
             // „Arsène Lupin – 813" ist ein Romantitel. Als Folge 813 gelesen
-            // entstanden 812 erfundene Lücken.
+            // entstünden 812 erfundene Lücken.
             string[] folders =
             [
                 "Arsène Lupin - Der Gentleman-Einbrecher",
@@ -152,11 +152,104 @@ namespace EchoPlay.LocalLibrary.Tests.Parsing
             Assert.Equal(0, LocalEpisodeNumbers.Highest(["Sammlung", "Bonusmaterial"]));
         }
 
+        [Fact]
+        public void Assign_SpecialFoldersInNumberedSeries_GetNoNumber()
+        {
+            // Echte Ordner aus „Die drei Ausrufezeichen". Die vier Sonderordner trugen in der
+            // Datenbank die Nummern 87 bis 90, weil durchgezählt wurde; der echte Ordner 087
+            // stand dadurch als 85 da.
+            string[] folders =
+            [
+                "Die drei Ausrufezeichen - 086 - Rätselhafter Raub",
+                "Die drei Ausrufezeichen - 087 - Geheimnisvoller Liebestrank",
+                "Die drei Ausrufezeichen - 088 - Die Krimi-Verschwörung",
+                "Die drei Ausrufezeichen - XXX - Adventskalender 2013 - Engel in Gefahr",
+                "Die drei Ausrufezeichen - XXX - Adventskalender 2014 - Eisprinzessin in Not",
+                "Die drei Ausrufezeichen - XXX - Adventskalender 2017 - Das Weihnachtsrätsel",
+                "Die drei Ausrufezeichen - XXX - Das Original Hörspiel zum Kinofilm"
+            ];
+
+            Assert.Equal([86, 87, 88, null, null, null, null], LocalEpisodeNumbers.Assign(folders, preferred: null));
+        }
+
+        [Fact]
+        public void Assign_PreferredPatternMatches_WinsOverGeneralPatterns()
+        {
+            // „038 - 01 - …" ist Folge 38 mit Kapitel 01. Die allgemeinen Muster läsen die 01;
+            // das eingestellte Muster des Nutzers weiß es besser.
+            string[] folders = ["037 - Pumuckl und die Gummiente", "038 - 01 - Pumuckl und der blaue Klabauter"];
+
+            IReadOnlyList<int?> numbers = LocalEpisodeNumbers.Assign(
+                folders,
+                name => int.TryParse(name.AsSpan(0, 3), out int number) ? number : null);
+
+            Assert.Equal([37, 38], numbers);
+        }
+
+        [Fact]
+        public void Assign_PreferredPatternGivesZero_FallsBackToGeneralPatterns()
+        {
+            // „000 - Adventskalender" ist eine Sonderfolge; 0 ist keine Folgennummer.
+            string[] folders = ["001 - Erste", "000 - Adventskalender 2021"];
+
+            IReadOnlyList<int?> numbers = LocalEpisodeNumbers.Assign(
+                folders,
+                name => int.TryParse(name.AsSpan(0, 3), out int number) ? number : null);
+
+            Assert.Equal([1, null], numbers);
+        }
+
+        [Fact]
+        public void Assign_NoFolderCarriesANumber_CountsInOrder()
+        {
+            // Ohne jede Nummer ist die Reihenfolge der Ordner die Nummerierung.
+            string[] folders = ["Staffel 1", "Staffel 2", "Bonus"];
+
+            Assert.Equal([1, 2, 3], LocalEpisodeNumbers.Assign(folders, preferred: null));
+        }
+
+        [Fact]
+        public void Assign_YearsOnly_CountsInOrder()
+        {
+            // Jahrgänge sind keine Folgennummern; die Serie gilt als unnummeriert.
+            string[] folders = ["1995 - Alles verboten", "1996 - Empööörend"];
+
+            Assert.Equal([1, 2], LocalEpisodeNumbers.Assign(folders, preferred: null));
+        }
+
+        [Fact]
+        public void Assign_LoneNumberTooLargeForCollection_CountsInOrder()
+        {
+            // „Arsène Lupin - 813" ist ein Romantitel, keine Folge 813 bei drei Ordnern.
+            string[] folders = ["Arsène Lupin - 813 - Der Roman", "Der Gentleman-Einbrecher", "Die hohle Nadel"];
+
+            Assert.Equal([1, 2, 3], LocalEpisodeNumbers.Assign(folders, preferred: null));
+        }
+
+        [Fact]
+        public void Assign_LoneNumberFromPreferredPattern_IsKept()
+        {
+            // Ein einzelner Ordner „042", den das gewählte Muster erkennt, ist Folge 42.
+            IReadOnlyList<int?> numbers = LocalEpisodeNumbers.Assign(
+                ["042"],
+                name => int.TryParse(name, out int number) ? number : null);
+
+            Assert.Equal([42], numbers);
+        }
+
+        [Fact]
+        public void Assign_EmptyList_ReturnsEmpty()
+        {
+            Assert.Empty(LocalEpisodeNumbers.Assign([], preferred: null));
+        }
+
         [Theory]
         [InlineData("1984 - Orwell", null)]      // Jahreszahl im Titel, keine Folge 198
         [InlineData("045a - Sonderfolge", 45)]   // Buchstaben-Suffix
         [InlineData("012-013 - Doppelfolge", 12)] // Doppelfolge: erste Nummer zählt
         [InlineData("Kinderparty", null)]
+        [InlineData("Die drei Ausrufezeichen - 066 -Tanz der Herzen", 66)] // fehlendes Leerzeichen nach dem Trenner
+        [InlineData("Die drei Ausrufezeichen - XXX - Das Original Hörspiel zum Kinofilm", null)]
         public void ExtractNumber_EdgeCases(string folderName, int? expected)
         {
             Assert.Equal(expected, LocalEpisodeNumbers.ExtractNumber(folderName));

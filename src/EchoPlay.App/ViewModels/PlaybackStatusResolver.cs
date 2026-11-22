@@ -6,7 +6,7 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Leitet den UI-<see cref="PlaybackStatus"/> aus einem gespeicherten <see cref="PlaybackState"/> ab.
-    /// Zentralisiert die Ableitungsregel, die sonst in mehreren ViewModels dupliziert war.
+    /// Eine Stelle für die Ableitungsregel, die mehrere ViewModels brauchen.
     /// </summary>
     internal static class PlaybackStatusResolver
     {
@@ -44,7 +44,7 @@ namespace EchoPlay.App.ViewModels
         /// weiterzuhören gibt.
         /// </summary>
         /// <remarks>
-        /// Das ist bewusst eine eigene Aussage neben <see cref="Resolve"/>: Ein Hörspiel
+        /// Das ist eine eigene Aussage neben <see cref="Resolve"/>: Ein Hörspiel
         /// hört man nicht einmal im Leben. Wer eine bereits gehörte Folge erneut startet
         /// und in der Mitte aufhört, hat sie weiterhin gehört und trotzdem eine Stelle,
         /// an der er fortsetzen möchte. Beides in einen Wert zu pressen hieße, dass
@@ -63,6 +63,27 @@ namespace EchoPlay.App.ViewModels
         {
             return state is not null
                    && EchoPlay.App.Services.EpisodeTimeline.HasOpenPosition(state.LastPosition, episodeDuration);
+        }
+
+        /// <summary>
+        /// Berechnet den Fortschritt einer Folge in Prozent (0–100) für den Balken einer Kachel.
+        /// </summary>
+        /// <param name="state">Der gespeicherte Wiedergabezustand oder <c>null</c>.</param>
+        /// <param name="episodeDuration">Die Gesamtdauer der Folge; <see cref="TimeSpan.Zero"/>, wenn unbekannt.</param>
+        /// <returns>
+        /// Null ohne Zustand oder ohne bekannte Dauer, hundert bei einer gehörten Folge, sonst
+        /// der Anteil der Position an der Dauer.
+        /// </returns>
+        public static double ProgressPercent(PlaybackState? state, TimeSpan episodeDuration)
+        {
+            if (state is null || episodeDuration <= TimeSpan.Zero)
+            {
+                return 0;
+            }
+
+            return state.IsCompleted
+                ? 100
+                : Math.Min(100, state.LastPosition.TotalSeconds / episodeDuration.TotalSeconds * 100);
         }
     }
 }

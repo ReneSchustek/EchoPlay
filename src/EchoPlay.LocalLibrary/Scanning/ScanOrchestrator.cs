@@ -1,27 +1,15 @@
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Security;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Scanning
 {
     /// <summary>
-    /// Implementierung von <see cref="IScanOrchestrator"/>.
-    /// Koordiniert den vierphasigen Scan: Vorbereitung → Serien → Folgen → Tracks.
-    /// Die Vorab-Zählung der Audiodateien in Phase 1 ermöglicht einen deterministischen
-    /// Fortschrittsbalken in Phase 4, ohne den eigentlichen Scan zu verlangsamen.
+    /// Setzt den Phasen-Fortschritt über den Scan des <see cref="ILocalLibraryScanner"/>.
+    /// Der Scanner meldet nur Zähler; erst hier werden daraus die vier Phasen der Anzeige.
     /// </summary>
     public sealed class ScanOrchestrator : IScanOrchestrator
     {
         private readonly ILocalLibraryScanner _scanner;
-
-        // Unterstützte Audiodatei-Erweiterungen für die Vorab-Zählung in Phase 1
-        private static readonly System.Collections.Generic.IReadOnlyList<string> AudioGlobPatterns =
-            EchoPlay.Core.AudioExtensions.GlobPatterns;
 
         /// <summary>
         /// Initialisiert den Orchestrator mit dem zugrundeliegenden Dateisystem-Scanner.
@@ -29,6 +17,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <param name="scanner">Der Scanner für die eigentliche Dateiverarbeitung.</param>
         public ScanOrchestrator(ILocalLibraryScanner scanner)
         {
+            ArgumentNullException.ThrowIfNull(scanner);
             _scanner = scanner;
         }
 
@@ -39,28 +28,16 @@ namespace EchoPlay.LocalLibrary.Scanning
             IProgress<ScanProgress>? progress = null,
             CancellationToken cancellationToken = default)
         {
-            // ── Phase 1: Vorbereitung ──────────────────────────────────────────────
-            // Audiodateien vorab zählen, damit Phase 4 einen deterministischen Fortschritt liefert.
-            // Indeterministischer Balken solange die Zählung läuft.
-            progress?.Report(new ScanProgress
-            {
-                Phase = 1,
-                PhaseLabel = ScanPhaseLabels.Preparation,
-                StatusText = ScanPhaseLabels.Preparation
-            });
-
-            int totalFiles = await Task.Run(
-                () => CountAudioFiles(rootPath),
-                cancellationToken).ConfigureAwait(false);
-
-            // ── Phasen 2–4: Scanner-Delegation ────────────────────────────────────
-            // Der ILocalLibraryScanner übernimmt Serien-, Episoden- und Track-Erkennung.
-            // Fortschritts-Events werden mit Phasen-Metadaten angereichert.
-            IProgress<ScanProgress>? wrappedProgress = null;
+            IProgress<ScanProgress>? phasedProgress = null;
 
             if (progress is not null)
             {
-                // Phase 2 sofort melden, bevor der Scanner startet
+                progress.Report(new ScanProgress
+                {
+                    Phase = 1,
+                    PhaseLabel = ScanPhaseLabels.Preparation,
+                    StatusText = ScanPhaseLabels.Preparation
+                });
                 progress.Report(new ScanProgress
                 {
                     Phase = 2,
@@ -68,84 +45,37 @@ namespace EchoPlay.LocalLibrary.Scanning
                     StatusText = ScanPhaseLabels.Series
                 });
 
-                wrappedProgress = new Progress<ScanProgress>(p =>
-                {
-                    // Phase anhand der verfügbaren Zähler ableiten:
-                    // TotalFiles > 0 → Track-Scan läuft (Phase 4)
-                    // TotalSeries > 0 → Episoden/Serien-Sync (Phase 3)
-                    int phase = p.TotalFiles > 0 ? 4 : 3;
-
-                    string label = phase switch
-                    {
-                        4 => ScanPhaseLabels.Tracks,
-                        _ => ScanPhaseLabels.Episodes
-                    };
-
-                    progress.Report(new ScanProgress
-                    {
-                        Phase = phase,
-                        PhaseLabel = label,
-                        ProcessedFiles = p.ProcessedFiles,
-                        // Vorab-Zählung aus Phase 1 verwenden, sofern der Scanner keinen Wert liefert
-                        TotalFiles = p.TotalFiles > 0 ? p.TotalFiles : totalFiles,
-                        ProcessedSeries = p.ProcessedSeries,
-                        TotalSeries = p.TotalSeries,
-                        StatusText = p.StatusText,
-                        DetailText = p.DetailText
-                    });
-                });
+                phasedProgress = new Progress<ScanProgress>(p => progress.Report(WithPhase(p)));
             }
 
             return await _scanner.ScanSeriesAsync(
                 rootPath,
                 episodeFolderPattern,
-                wrappedProgress,
+                phasedProgress,
                 onSeriesScanned: null,
                 cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Zählt alle unterstützten Audiodateien im Verzeichnisbaum.
-        /// Wird in Phase 1 auf dem Threadpool ausgeführt um den UI-Thread nicht zu blockieren.
-        /// Bei IO-Fehlern (z.B. fehlende Rechte) wird 0 zurückgegeben, Phase 4 läuft dann
-        /// weiter mit indeterministischem Balken.
+        /// Ordnet eine Meldung des Scanners ihrer Phase zu. Kennt der Scanner die Gesamtzahl der
+        /// Audiodateien, liest er Spuren (Phase 4); scheiterte seine Vorab-Zählung, bleibt der
+        /// Balken unbestimmt und die Anzeige bei „Folgen werden ermittelt".
         /// </summary>
-        /// <param name="rootPath">Absoluter Pfad zum Bibliotheks-Wurzelordner.</param>
-        /// <returns>Anzahl der Audiodateien oder 0 bei Fehler.</returns>
-        private static int CountAudioFiles(string rootPath)
+        private static ScanProgress WithPhase(ScanProgress scannerProgress)
         {
-            if (!Directory.Exists(rootPath))
-            {
-                return 0;
-            }
+            bool tracksKnown = scannerProgress.TotalFiles > 0;
 
-            int count = 0;
-
-            try
+            return new ScanProgress
             {
-                foreach (string extension in AudioGlobPatterns)
-                {
-                    count += Directory.GetFiles(rootPath, extension, SearchOption.AllDirectories).Length;
-                }
-            }
-            catch (IOException)
-            {
-                // IO-Fehler (inkl. PathTooLongException, DirectoryNotFoundException): Ohne Zählung läuft der Scan trotzdem
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Zugriffsrechte: Ohne Zählung läuft der Scan trotzdem
-            }
-            catch (SecurityException)
-            {
-                // Zugriffsrechte: Ohne Zählung läuft der Scan trotzdem
-            }
-            catch (ArgumentException)
-            {
-                // Ungültiger Pfad: Ohne Zählung läuft der Scan trotzdem
-            }
-
-            return count;
+                Phase = tracksKnown ? 4 : 3,
+                PhaseLabel = tracksKnown ? ScanPhaseLabels.Tracks : ScanPhaseLabels.Episodes,
+                ProcessedFiles = scannerProgress.ProcessedFiles,
+                TotalFiles = scannerProgress.TotalFiles,
+                ProcessedSeries = scannerProgress.ProcessedSeries,
+                TotalSeries = scannerProgress.TotalSeries,
+                StatusText = scannerProgress.StatusText,
+                DetailText = scannerProgress.DetailText
+            };
         }
     }
 }

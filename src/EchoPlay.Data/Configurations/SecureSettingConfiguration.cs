@@ -25,7 +25,7 @@ namespace EchoPlay.Data.Configurations
             // UNIQUE schließt Soft-Delete-Einträge aus, damit nach DeleteAsync ein Re-Insert für denselben Key möglich bleibt.
             _ = builder.HasIndex(s => s.Key)
                    .IsUnique()
-                   .HasFilter("IsDeleted = 0");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows);
         }
     }
 }

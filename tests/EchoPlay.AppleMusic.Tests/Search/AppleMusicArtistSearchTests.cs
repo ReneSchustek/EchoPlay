@@ -11,7 +11,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
     public sealed class AppleMusicArtistSearchTests
     {
         /// <summary>
-        /// Stellt sicher, dass ein bekannter Hörspiel-Künstler über die Suche gefunden wird.
+        /// Prüft, dass ein bekannter Hörspiel-Künstler über die Suche gefunden wird.
         /// </summary>
         [Fact]
         public async Task SearchArtists_KnownArtist_ReturnsResult()
@@ -28,7 +28,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
         }
 
         /// <summary>
-        /// Stellt sicher, dass ein nicht vorhandener Künstler nicht gefunden wird.
+        /// Prüft, dass ein nicht vorhandener Künstler nicht gefunden wird.
         /// </summary>
         [Fact]
         public async Task SearchArtists_UnknownArtist_ReturnsEmptyResult()
@@ -44,7 +44,7 @@ namespace EchoPlay.AppleMusic.Tests.Search
         }
 
         /// <summary>
-        /// Stellt sicher, dass das Genre des Künstlers korrekt mitgeliefert wird.
+        /// Prüft, dass das Genre des Künstlers korrekt mitgeliefert wird.
         /// </summary>
         [Fact]
         public async Task SearchArtists_KnownArtist_ContainsGenre()

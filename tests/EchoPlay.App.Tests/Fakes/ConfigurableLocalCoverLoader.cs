@@ -12,7 +12,7 @@ namespace EchoPlay.App.Tests.Fakes
     /// </summary>
     /// <remarks>
     /// Zeichnet zusätzlich auf, mit welchen Argumenten geladen wurde. Daran hängt eine echte
-    /// Zusage: Für Serien-Cover wird bewusst kein Titelpfad mitgegeben, weil es dort keinen
+    /// Zusage: Für Serien-Cover wird kein Titelpfad mitgegeben, weil es dort keinen
     /// Rückgriff auf die Kennzeichnung der Datei gibt.
     /// </remarks>
     internal sealed class ConfigurableLocalCoverLoader : ILocalCoverLoader

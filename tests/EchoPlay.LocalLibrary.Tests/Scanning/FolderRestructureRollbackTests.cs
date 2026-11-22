@@ -23,18 +23,18 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public sealed class FolderRestructureRollbackTests : IDisposable
     {
-        private readonly string _wurzel;
+        private readonly string _root;
 
         public FolderRestructureRollbackTests()
         {
-            _wurzel = Directory.CreateTempSubdirectory("echoplay_umbau_").FullName;
+            _root = Directory.CreateTempSubdirectory("echoplay_umbau_").FullName;
         }
 
         public void Dispose()
         {
-            if (Directory.Exists(_wurzel))
+            if (Directory.Exists(_root))
             {
-                Directory.Delete(_wurzel, recursive: true);
+                Directory.Delete(_root, recursive: true);
             }
         }
 
@@ -43,48 +43,48 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         {
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
-            RestructurePreview vorschau = sut.Analyze(
-                Path.Combine(_wurzel, "gibt-es-nicht"), "{number} - {title}");
+            RestructurePreview preview = sut.Analyze(
+                Path.Combine(_root, "gibt-es-nicht"), "{number} - {title}");
 
-            Assert.True(vorschau.IsEmpty);
-            Assert.Equal(0, vorschau.FolderCount);
+            Assert.True(preview.IsEmpty);
+            Assert.Equal(0, preview.FolderCount);
         }
 
         [Fact]
         public void Analyze_ForAFolderThatCannotBeRead_ReturnsAnEmptyPreview()
         {
-            using LockedFolder gesperrt = LockedFolder.Create(_wurzel);
+            using LockedFolder locked = LockedFolder.Create(_root);
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
             // Der Ordner ist da, sein Inhalt nicht lesbar. Eine leere Vorschau ist die
             // ehrliche Antwort, der Dialog zeigt dann „nichts zu tun" statt zu stürzen.
-            RestructurePreview vorschau = sut.Analyze(gesperrt.Path, "{number} - {title}");
+            RestructurePreview preview = sut.Analyze(locked.Path, "{number} - {title}");
 
-            Assert.True(vorschau.IsEmpty);
+            Assert.True(preview.IsEmpty);
         }
 
         [Fact]
         public void Execute_WhenTheTargetFileAlreadyExists_SkipsIt()
         {
-            string quelle = Path.Combine(_wurzel, "001 - Der Fall.mp3");
-            File.WriteAllText(quelle, "ton");
+            string source = Path.Combine(_root, "001 - Der Fall.mp3");
+            File.WriteAllText(source, "ton");
 
-            string zielOrdner = Directory.CreateDirectory(Path.Combine(_wurzel, "001 - Der Fall")).FullName;
-            string belegt = Path.Combine(zielOrdner, "001 - Der Fall.mp3");
-            File.WriteAllText(belegt, "anderer ton");
+            string targetFolder = Directory.CreateDirectory(Path.Combine(_root, "001 - Der Fall")).FullName;
+            string occupied = Path.Combine(targetFolder, "001 - Der Fall.mp3");
+            File.WriteAllText(occupied, "anderer ton");
 
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
             int verschoben = sut.Execute(new RestructurePreview
             {
-                SeriesFolderPath = _wurzel,
+                SeriesFolderPath = _root,
                 FolderCount = 1,
                 Actions =
                 [
                     new RestructureAction
                     {
-                        SourcePath = quelle,
-                        TargetFolderPath = zielOrdner,
+                        SourcePath = source,
+                        TargetFolderPath = targetFolder,
                         TargetFolderName = "001 - Der Fall",
                         FileName = "001 - Der Fall.mp3",
                     },
@@ -93,63 +93,62 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
 
             // Überschreiben wäre Datenverlust. Die Datei bleibt liegen, wo sie ist.
             Assert.Equal(0, verschoben);
-            Assert.Equal("anderer ton", File.ReadAllText(belegt));
-            Assert.True(File.Exists(quelle));
+            Assert.Equal("anderer ton", File.ReadAllText(occupied));
+            Assert.True(File.Exists(source));
         }
+
+        /// <summary>Verschiebt die Datei unter ihrem Namen in den angegebenen Zielordner.</summary>
+        private static RestructureAction Move(string source, string targetFolderPath, string targetFolderName)
+            => new()
+            {
+                SourcePath = source,
+                TargetFolderPath = targetFolderPath,
+                TargetFolderName = targetFolderName,
+                FileName = Path.GetFileName(source),
+            };
 
         [Fact]
         public void Execute_WhenOneMoveFails_PutsEverythingBack()
         {
-            string ersteQuelle = Path.Combine(_wurzel, "001 - Erste.mp3");
-            string zweiteQuelle = Path.Combine(_wurzel, "002 - Zweite.mp3");
-            File.WriteAllText(ersteQuelle, "ton eins");
-            File.WriteAllText(zweiteQuelle, "ton zwei");
+            string firstSource = Path.Combine(_root, "001 - Erste.mp3");
+            string secondSource = Path.Combine(_root, "002 - Zweite.mp3");
+            File.WriteAllText(firstSource, "ton eins");
+            File.WriteAllText(secondSource, "ton zwei");
 
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
-            List<RestructureAction> aktionen =
+            List<RestructureAction> actions =
             [
-                new RestructureAction
-                {
-                    SourcePath = ersteQuelle,
-                    TargetFolderPath = Path.Combine(_wurzel, "001 - Erste"),
-                    TargetFolderName = "001 - Erste",
-                    FileName = "001 - Erste.mp3",
-                },
-                new RestructureAction
-                {
-                    // Ein Pfad mit Nullzeichen lässt sich nicht anlegen, hier bricht der Umbau ab.
-                    SourcePath = zweiteQuelle,
-                    TargetFolderPath = _wurzel + "\\\0kaputt",
-                    TargetFolderName = "kaputt",
-                    FileName = "002 - Zweite.mp3",
-                },
+                Move(firstSource, Path.Combine(_root, "001 - Erste"), "001 - Erste"),
+
+                // Ein Pfad mit Nullzeichen lässt sich nicht anlegen, hier bricht der Umbau ab.
+                Move(secondSource, _root + "\\\0kaputt", "kaputt"),
             ];
 
             _ = Assert.ThrowsAny<Exception>(() => sut.Execute(new RestructurePreview
             {
-                SeriesFolderPath = _wurzel,
+                SeriesFolderPath = _root,
                 FolderCount = 2,
-                Actions = aktionen,
+                Actions = actions,
             }));
 
             // Alles oder nichts: Nach dem Rückweg liegen beide Dateien wieder da, wo sie
             // waren, und der angefangene Zielordner ist weg.
-            Assert.True(File.Exists(ersteQuelle));
-            Assert.True(File.Exists(zweiteQuelle));
-            Assert.False(Directory.Exists(Path.Combine(_wurzel, "001 - Erste")));
+            Assert.True(File.Exists(firstSource));
+            Assert.True(File.Exists(secondSource));
+            Assert.False(Directory.Exists(Path.Combine(_root, "001 - Erste")));
         }
 
         [Fact]
         public void Recover_WithAJournalThatCannotBeRead_ReportsNothingRecovered()
         {
             File.WriteAllText(
-                Path.Combine(_wurzel, FolderRestructureService.JournalFileName),
+                Path.Combine(_root, FolderRestructureService.JournalFileName),
                 "das ist kein JSON");
 
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
-            int recovered = sut.TryRecoverPendingJournal(_wurzel);
+            int recovered = sut.TryRecoverPendingJournal(_root);
 
             // Ein unlesbares Journal ist ärgerlich, aber kein Grund, den Start abzubrechen.
             Assert.Equal(0, recovered);
@@ -158,12 +157,12 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public void Recover_WithAnEmptyJournal_RemovesIt()
         {
-            string journal = Path.Combine(_wurzel, FolderRestructureService.JournalFileName);
+            string journal = Path.Combine(_root, FolderRestructureService.JournalFileName);
             File.WriteAllText(journal, "[]");
 
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
-            int recovered = sut.TryRecoverPendingJournal(_wurzel);
+            int recovered = sut.TryRecoverPendingJournal(_root);
 
             Assert.Equal(0, recovered);
             Assert.False(File.Exists(journal));
@@ -172,14 +171,14 @@ namespace EchoPlay.LocalLibrary.Tests.Scanning
         [Fact]
         public void Recover_WithAnEntryWhoseFileIsGone_KeepsGoing()
         {
-            string journal = Path.Combine(_wurzel, FolderRestructureService.JournalFileName);
+            string journal = Path.Combine(_root, FolderRestructureService.JournalFileName);
             File.WriteAllText(
                 journal,
                 """[{"Source":"C:\\gibt-es-nicht\\a.mp3","Destination":"C:\\gibt-es-auch-nicht\\a.mp3"}]""");
 
             FolderRestructureService sut = new(new FakeLoggerFactory());
 
-            int recovered = sut.TryRecoverPendingJournal(_wurzel);
+            int recovered = sut.TryRecoverPendingJournal(_root);
 
             // Der Anwender kann die Datei zwischenzeitlich selbst zurückgeschoben haben.
             Assert.Equal(0, recovered);

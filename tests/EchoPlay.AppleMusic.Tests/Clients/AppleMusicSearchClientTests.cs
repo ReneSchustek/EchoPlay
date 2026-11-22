@@ -103,8 +103,6 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             Assert.Contains("limit=10", handler.RequestUris[0].Query, StringComparison.Ordinal);
         }
 
-        // ── Test-Helfer ──────────────────────────────────────────────────────────
-
         private static AppleMusicSearchClient BuildClient(string responseJson, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             RecordingHandler handler = new(statusCode, responseJson);
@@ -112,6 +110,9 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             return new AppleMusicSearchClient(http, NullLoggerFactory.Instance);
         }
 
+        /// <summary>
+        /// Merkt sich jede angefragte Adresse und antwortet mit festem Status und JSON.
+        /// </summary>
         private sealed class RecordingHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _statusCode;
@@ -142,6 +143,10 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             }
         }
 
+        /// <summary>
+        /// Echte Logger-Fabrik ohne Senken: Die Protokollaufrufe laufen durch, schreiben aber
+        /// nichts.
+        /// </summary>
         private static class NullLoggerFactory
         {
             public static readonly LoggerFactory Instance = new([], new LoggerOptions());

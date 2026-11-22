@@ -11,8 +11,8 @@ namespace EchoPlay.App.ViewModels
     /// (<see cref="TagLoadActions"/>, <see cref="TagSaveActions"/>,
     /// <see cref="TagLookupActions"/>, <see cref="TagCoverActions"/>,
     /// <see cref="TagRenameActions"/>) und delegiert alle public Methoden. Das Top-VM
-    /// <see cref="TagManagerViewModel"/> hält nur noch Commands, Zustands-Properties und
-    /// die Pass-Through-Schicht. Folgt dem Muster aus dem Dashboard-Refactor.
+    /// <see cref="TagManagerViewModel"/> hält Commands, Zustands-Properties und die
+    /// Pass-Through-Schicht; dasselbe Muster wie bei <see cref="OnlineLibraryActions"/>.
     /// </summary>
     internal sealed class TagManagerActions
     {

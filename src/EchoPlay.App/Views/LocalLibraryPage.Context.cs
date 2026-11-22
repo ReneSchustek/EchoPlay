@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {
@@ -41,6 +42,9 @@ namespace EchoPlay.App.Views
             }
         }
 
+        /// <summary>
+        /// Markiert alle Folgen der Serie als gehört.
+        /// </summary>
         private async void OnMarkAllAsReadClick(object sender, RoutedEventArgs e)
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
@@ -61,6 +65,10 @@ namespace EchoPlay.App.Views
             }
         }
 
+        /// <summary>
+        /// Löscht die Serie aus der Bibliothek und ihren Ordner von der Platte, nach Bestätigung
+        /// im Ansichtsmodell.
+        /// </summary>
         private async void OnDeleteSeriesFromDiskClick(object sender, RoutedEventArgs e)
         {
             if (sender is MenuFlyoutItem { Tag: Guid seriesId })
@@ -71,7 +79,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Markiert eine Episode als gehört (nach Bestätigung).
+        /// Markiert eine Episode als gehört.
         /// </summary>
         private async void OnEpisodeMarkPlayedClick(object sender, RoutedEventArgs e)
         {
@@ -84,7 +92,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Markiert eine Episode als ungehört (nach Bestätigung).
+        /// Markiert eine Episode als ungehört.
         /// </summary>
         private async void OnEpisodeMarkUnplayedClick(object sender, RoutedEventArgs e)
         {
@@ -107,64 +115,134 @@ namespace EchoPlay.App.Views
                 return;
             }
 
+            await AsyncEventHandler.RunSafelyAsync(() => RestructureAsync(seriesId));
+        }
+
+        /// <summary>Erstellt die Vorschau, fragt nach und baut bei Bestätigung um.</summary>
+        private async Task RestructureAsync(Guid seriesId)
+        {
+            RestructurePreviewDisplay? preview = await AnalyzeRestructureAsync(seriesId);
+            if (preview is null || preview.IsEmpty)
+            {
+                return;
+            }
+
+            using Helpers.DialogReentrancyGuard? restructureGuard = Helpers.DialogReentrancyGuard.TryAcquire();
+            if (restructureGuard is null) return;
+
+            ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                Content.XamlRoot,
+                title: _resources.GetString("RestructureDialogTitle"),
+                content: RestructurePreviewText(preview),
+                primaryButtonText: _resources.GetString("RestructureExecuteButton"),
+                closeButtonText: _resources.GetString("CommonCancelButton"),
+                useMonospace: true,
+                monospaceFontSize: 12,
+                defaultButton: ContentDialogButton.Close);
+
+            // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
+            if (result == ContentDialogResult.Primary
+                && await ViewModel.Actions.ExecuteRestructureAsync(seriesId, preview) > 0)
+            {
+                await ViewModel.Actions.LoadAsync();
+            }
+        }
+
+        /// <summary>
+        /// Erstellt die Vorschau im Hintergrund. Lokale Methode statt Lambda, denn <c>+=</c> und
+        /// <c>-=</c> müssen dieselbe Delegate-Identität haben, sonst ist das Abmelden wirkungslos
+        /// und der Handler hängt am ViewModel weiter.
+        /// </summary>
+        private async Task<RestructurePreviewDisplay?> AnalyzeRestructureAsync(Guid seriesId)
+        {
+            RestructurePreviewDisplay? preview = null;
+            void CapturePreview(RestructurePreviewDisplay p) => preview = p;
+
+            ViewModel.Actions.RestructurePreviewReady += CapturePreview;
+            try
+            {
+                await ViewModel.Actions.AnalyzeRestructureAsync(seriesId);
+            }
+            finally
+            {
+                ViewModel.Actions.RestructurePreviewReady -= CapturePreview;
+            }
+
+            return preview;
+        }
+
+        /// <summary>Der Vorschau-Text: Zusammenfassung, dann je Datei ihr Zielordner.</summary>
+        private string RestructurePreviewText(RestructurePreviewDisplay preview)
+        {
+            System.Text.StringBuilder sb = new();
+            _ = sb.AppendLine(string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                _resources.GetString("RestructurePreviewSummary"),
+                preview.FileCount,
+                preview.FolderCount));
+            _ = sb.AppendLine();
+
+            foreach (RestructureActionDisplay action in preview.Actions)
+            {
+                _ = sb.Append("  ").AppendLine(action.FileName);
+                _ = sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Benennt die Folgenordner der gewählten Serie nach dem eingestellten Muster um, mit
+        /// dem Titel aus dem Album-Tag. Zeigt erst die Vorschau, danach das Ergebnis.
+        /// </summary>
+        private async void OnFolderRenameClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuFlyoutItem { Tag: Guid seriesId })
+            {
+                return;
+            }
+
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                // Vorschau im Hintergrund erstellen.
-                // Lokale Methode statt Lambda, denn `+=` und `-=` müssen dieselbe Delegate-Identität haben,
-                // sonst ist das Unsubscribe ein No-Op und der Handler hängt am VM weiter.
-                RestructurePreviewDisplay? preview = null;
-                void CapturePreview(RestructurePreviewDisplay p) => preview = p;
-
-                ViewModel.Actions.RestructurePreviewReady += CapturePreview;
-                try
-                {
-                    await ViewModel.Actions.AnalyzeRestructureAsync(seriesId);
-                }
-                finally
-                {
-                    ViewModel.Actions.RestructurePreviewReady -= CapturePreview;
-                }
-
-                if (preview is null || preview.IsEmpty)
+                EchoPlay.LocalLibrary.Models.FolderRenamePlan? plan = await ViewModel.FolderRename.PlanAsync(seriesId);
+                if (plan is null)
                 {
                     return;
                 }
 
-                using Helpers.DialogReentrancyGuard? restructureGuard = Helpers.DialogReentrancyGuard.TryAcquire();
-                if (restructureGuard is null) return;
+                using Helpers.DialogReentrancyGuard? guard = Helpers.DialogReentrancyGuard.TryAcquire();
+                if (guard is null) return;
 
-                // Vorschau-Text zusammenbauen
-                System.Text.StringBuilder sb = new();
-                _ = sb.Append(preview.FileCount).Append(" Dateien \u2192 ").Append(preview.FolderCount).AppendLine(" Ordner");
-                _ = sb.AppendLine();
-
-                foreach (RestructureActionDisplay action in preview.Actions)
+                if (await ShowFolderRenamePreviewAsync(plan) != ContentDialogResult.Primary)
                 {
-                    _ = sb.Append("  ").AppendLine(action.FileName);
-                    _ = sb.Append("    \u2192 ").Append(action.TargetFolderName).AppendLine("/");
+                    return;
                 }
 
-                ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
+                EchoPlay.LocalLibrary.Models.FolderRenameResult result = await ViewModel.FolderRename.ExecuteAsync(seriesId, plan);
+                _ = await Helpers.ScrollableTextDialog.ShowAsync(
                     Content.XamlRoot,
-                    title: _resources.GetString("RestructureDialogTitle"),
-                    content: sb.ToString(),
-                    primaryButtonText: _resources.GetString("RestructureExecuteButton"),
-                    closeButtonText: _resources.GetString("CommonCancelButton"),
-                    useMonospace: true,
-                    monospaceFontSize: 12,
-                    defaultButton: ContentDialogButton.Close);
-
-                if (result == ContentDialogResult.Primary)
-                {
-                    int movedCount = await ViewModel.Actions.ExecuteRestructureAsync(preview);
-
-                    // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
-                    if (movedCount > 0)
-                    {
-                        await ViewModel.Actions.LoadAsync();
-                    }
-                }
+                    title: _resources.GetString("FolderRenameDialogTitle"),
+                    content: ViewModels.FolderRenamePreviewText.BuildResult(result),
+                    closeButtonText: _resources.GetString("CommonCloseButton"));
             });
+        }
+
+        /// <summary>
+        /// Zeigt die geplanten Umbenennungen; ohne eine einzige gibt es nur „Schließen“.
+        /// </summary>
+        private Task<ContentDialogResult> ShowFolderRenamePreviewAsync(EchoPlay.LocalLibrary.Models.FolderRenamePlan plan)
+        {
+            bool canRename = plan.Renames.Count > 0;
+            return Helpers.ScrollableTextDialog.ShowAsync(
+                Content.XamlRoot,
+                title: _resources.GetString("FolderRenameDialogTitle"),
+                content: ViewModels.FolderRenamePreviewText.Build(plan),
+                primaryButtonText: canRename ? _resources.GetString("FolderRenameExecuteButton") : null,
+                closeButtonText: _resources.GetString(canRename ? "CommonCancelButton" : "CommonCloseButton"),
+                maxHeight: 500,
+                useMonospace: true,
+                monospaceFontSize: 12,
+                defaultButton: ContentDialogButton.Close);
         }
     }
 }

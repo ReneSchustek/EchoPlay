@@ -2,20 +2,29 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-// Benennt Parameter um - Methoden-, Konstruktor-, Lambda- und lokale Funktionsparameter.
-//
-// Ein Parametername steht an drei Stellen, und zwei davon liegen in fremden Dokumenten:
-//   1. Deklaration und Verwendungen im Rumpf   (eigenes Dokument)
-//   2. <param name="..."> und <paramref name="..."> (eigenes Dokument, aber XML statt Code)
-//   3. benanntes Argument beim Aufrufer         (jedes andere Dokument)
-// Im Bestand sind das 6.361 benannte Argumente und 3.204 param-Einträge - keine Randfälle.
-//
-// Renamer.RenameSymbolAsync könnte das, übersetzt aber für jeden einzelnen Namen die gesamte
-// Projektmappe neu. Bei 631 Namen ist das ein Lauf über Stunden. Stattdessen werden erst alle
-// Umbenennungen gesammelt und dann in einem Durchgang über alle Dokumente angewandt.
-//
-// Der Vergleich läuft über einen Schlüssel statt über Symbolgleichheit: Dasselbe Symbol ist in
-// der Compilation des deklarierenden Projekts ein anderes Objekt als in der des aufrufenden.
+/// <summary>
+/// Benennt Parameter um - Methoden-, Konstruktor-, Lambda- und lokale Funktionsparameter.
+/// <para>
+/// Ein Parametername steht an drei Stellen, und zwei davon liegen in fremden Dokumenten:
+/// </para>
+/// <code>
+///   1. Deklaration und Verwendungen im Rumpf   (eigenes Dokument)
+///   2. &lt;param name="..."&gt; und &lt;paramref name="..."&gt; (eigenes Dokument, aber XML statt Code)
+///   3. benanntes Argument beim Aufrufer         (jedes andere Dokument)
+/// </code>
+/// <para>
+/// Benannte Argumente und param-Einträge sind in einer gewachsenen Projektmappe keine Randfälle.
+/// </para>
+/// <para>
+/// Renamer.RenameSymbolAsync könnte das, übersetzt aber für jeden einzelnen Namen die gesamte
+/// Projektmappe neu. Bei einigen hundert Namen ist das ein Lauf über Stunden. Stattdessen werden erst alle
+/// Umbenennungen gesammelt und dann in einem Durchgang über alle Dokumente angewandt.
+/// </para>
+/// <para>
+/// Der Vergleich läuft über einen Schlüssel statt über Symbolgleichheit: Dasselbe Symbol ist in der
+/// Compilation des deklarierenden Projekts ein anderes Objekt als in der des aufrufenden.
+/// </para>
+/// </summary>
 internal static class ParameterRenamer
 {
     public static async Task<(Solution Lösung, int Umbenannt)> RenameAsync(
@@ -68,9 +77,9 @@ internal static class ParameterRenamer
         Dictionary<string, string> neueNamen = new(StringComparer.Ordinal);
         Dictionary<string, HashSet<string>> occupiedJeMethod = new(StringComparer.Ordinal);
 
-        foreach (ProjectId projektId in solution.ProjectIds)
+        foreach (ProjectId projectId in solution.ProjectIds)
         {
-            Project project = solution.GetProject(projektId)!;
+            Project project = solution.GetProject(projectId)!;
             if (projects is { Length: > 0 } && !projects.Contains(project.Name, StringComparer.Ordinal))
             {
                 continue;
@@ -106,13 +115,13 @@ internal static class ParameterRenamer
                         continue;
                     }
 
-                    string neu = Translator.Translate(parameter.Name, dictionary);
-                    if (string.Equals(neu, parameter.Name, StringComparison.Ordinal))
+                    string updated = Translator.Translate(parameter.Name, dictionary);
+                    if (string.Equals(updated, parameter.Name, StringComparison.Ordinal))
                     {
                         continue;
                     }
 
-                    if (IstUeberschreibbar(parameter) && InOtherLanguageReserved(neu))
+                    if (IsOverridable(parameter) && InOtherLanguageReserved(updated))
                     {
                         continue;
                     }
@@ -130,9 +139,9 @@ internal static class ParameterRenamer
                         occupiedJeMethod[method] = occupied;
                     }
 
-                    if (occupied.Add(neu))
+                    if (occupied.Add(updated))
                     {
-                        neueNamen[key] = neu;
+                        neueNamen[key] = updated;
                     }
                 }
             }
@@ -145,41 +154,41 @@ internal static class ParameterRenamer
         Document document,
         IReadOnlyDictionary<string, string> newNames)
     {
-        SyntaxNode? wurzel = await document.GetSyntaxRootAsync().ConfigureAwait(false);
-        SemanticModel? modell = await document.GetSemanticModelAsync().ConfigureAwait(false);
-        if (wurzel is null || modell is null)
+        SyntaxNode? root = await document.GetSyntaxRootAsync().ConfigureAwait(false);
+        SemanticModel? model = await document.GetSemanticModelAsync().ConfigureAwait(false);
+        if (root is null || model is null)
         {
             return null;
         }
 
         Dictionary<SyntaxToken, string> replacements = new();
 
-        foreach (SyntaxNode knoten in wurzel.DescendantNodes(descendIntoTrivia: true))
+        foreach (SyntaxNode node in root.DescendantNodes(descendIntoTrivia: true))
         {
-            switch (knoten)
+            switch (node)
             {
                 // Deklaration
-                case ParameterSyntax p when modell.GetDeclaredSymbol(p) is IParameterSymbol ps:
+                case ParameterSyntax p when model.GetDeclaredSymbol(p) is IParameterSymbol ps:
                     Merke(replacements, p.Identifier, ps, newNames);
                     break;
 
                 // Verwendung im Rumpf
                 case IdentifierNameSyntax v
-                    when modell.GetSymbolInfo(v).Symbol is IParameterSymbol vs:
+                    when model.GetSymbolInfo(v).Symbol is IParameterSymbol vs:
                     Merke(replacements, v.Identifier, vs, newNames);
                     break;
 
                 // Benanntes Argument beim Aufrufer: Methode(wert: 3)
                 case NameColonSyntax n
-                    when modell.GetSymbolInfo(n.Name).Symbol is IParameterSymbol ns:
+                    when model.GetSymbolInfo(n.Name).Symbol is IParameterSymbol ns:
                     Merke(replacements, n.Name.Identifier, ns, newNames);
                     break;
             }
         }
 
-        CollectDocs(wurzel, modell, newNames, replacements);
+        CollectDocs(root, model, newNames, replacements);
 
-        Dictionary<SyntaxToken, string> templates = CollectTemplates(wurzel, modell, newNames);
+        Dictionary<SyntaxToken, string> templates = CollectTemplates(root, model, newNames);
 
         if (replacements.Count == 0 && templates.Count == 0)
         {
@@ -189,7 +198,7 @@ internal static class ParameterRenamer
         // Bezeichner und Vorlagen wandern in einem Zug. Zwei aufeinanderfolgende Durchgänge gingen
         // nicht: Nach dem ersten ist der Baum ein anderer, und die Token des zweiten liegen darin
         // nicht mehr.
-        return wurzel.ReplaceTokens(
+        return root.ReplaceTokens(
             replacements.Keys.Concat(templates.Keys),
             (alt, _) => replacements.TryGetValue(alt, out string? identifier)
                 ? SyntaxFactory.Identifier(alt.LeadingTrivia, identifier, alt.TrailingTrivia)
@@ -199,7 +208,7 @@ internal static class ParameterRenamer
 
     // Ein Log-Platzhalter bindet an den Parameternamen, steht aber als Zeichenkette im
     // [LoggerMessage]-Attribut: Message = "... {Tot} ...". Wandert der Parameter allein, bricht der
-    // Quell-Generator mit LOGGEN010 ab - im Bestand betrifft das 110 Vorlagen.
+    // Quell-Generator mit LOGGEN010 ab.
     private static Dictionary<SyntaxToken, string> CollectTemplates(
         SyntaxNode root,
         SemanticModel model,
@@ -207,9 +216,9 @@ internal static class ParameterRenamer
     {
         Dictionary<SyntaxToken, string> vorlagen = new();
 
-        foreach (MethodDeclarationSyntax methode in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
+        foreach (MethodDeclarationSyntax method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
         {
-            if (model.GetDeclaredSymbol(methode) is not IMethodSymbol symbol)
+            if (model.GetDeclaredSymbol(method) is not IMethodSymbol symbol)
             {
                 continue;
             }
@@ -218,9 +227,9 @@ internal static class ParameterRenamer
             foreach (IParameterSymbol parameter in symbol.Parameters)
             {
                 string? parameterKey = Key(parameter);
-                if (parameterKey is not null && newNames.TryGetValue(parameterKey, out string? neu))
+                if (parameterKey is not null && newNames.TryGetValue(parameterKey, out string? updated))
                 {
-                    placeholder[parameter.Name] = neu;
+                    placeholder[parameter.Name] = updated;
                 }
             }
 
@@ -229,16 +238,16 @@ internal static class ParameterRenamer
                 continue;
             }
 
-            foreach (LiteralExpressionSyntax literal in methode.AttributeLists
+            foreach (LiteralExpressionSyntax literal in method.AttributeLists
                 .SelectMany(list => list.DescendantNodes())
                 .OfType<LiteralExpressionSyntax>()
                 .Where(l => l.IsKind(SyntaxKind.StringLiteralExpression)))
             {
                 string alt = literal.Token.ValueText;
-                string neu = ReplacePlaceholders(alt, placeholder);
-                if (!string.Equals(alt, neu, StringComparison.Ordinal))
+                string updated = ReplacePlaceholders(alt, placeholder);
+                if (!string.Equals(alt, updated, StringComparison.Ordinal))
                 {
-                    vorlagen[literal.Token] = neu;
+                    vorlagen[literal.Token] = updated;
                 }
             }
 
@@ -282,10 +291,10 @@ internal static class ParameterRenamer
                 .Where(l => l.IsKind(SyntaxKind.StringLiteralExpression)))
             {
                 string alt = literal.Token.ValueText;
-                string neu = ReplaceRoutePlaceholders(alt, placeholder);
-                if (!string.Equals(alt, neu, StringComparison.Ordinal))
+                string updated = ReplaceRoutePlaceholders(alt, placeholder);
+                if (!string.Equals(alt, updated, StringComparison.Ordinal))
                 {
-                    templates[literal.Token] = neu;
+                    templates[literal.Token] = updated;
                 }
             }
         }
@@ -296,8 +305,8 @@ internal static class ParameterRenamer
         => System.Text.RegularExpressions.Regex.Replace(
             route,
             @"\{([A-Za-zÄÖÜäöüß_][A-Za-z0-9ÄÖÜäöüß_]*)(:[^}]*)?\}",
-            matches => placeholder.TryGetValue(matches.Groups[1].Value, out string? neu)
-                ? $"{{{neu}{matches.Groups[2].Value}}}"
+            matches => placeholder.TryGetValue(matches.Groups[1].Value, out string? updated)
+                ? $"{{{updated}{matches.Groups[2].Value}}}"
                 : matches.Value);
 
     private static string ReplacePlaceholders(string template, IReadOnlyDictionary<string, string> placeholder)
@@ -363,7 +372,7 @@ internal static class ParameterRenamer
     // Parameter am primären Konstruktor hängen.
     private static IEnumerable<IParameterSymbol> ParametersOf(ISymbol owner) => owner switch
     {
-        IMethodSymbol methode => methode.Parameters,
+        IMethodSymbol method => method.Parameters,
         INamedTypeSymbol type => type.InstanceConstructors.SelectMany(k => k.Parameters),
         _ => [],
     };
@@ -375,9 +384,9 @@ internal static class ParameterRenamer
         IReadOnlyDictionary<string, string> newNames)
     {
         string? parameterKey = Key(parameter);
-        if (parameterKey is not null && newNames.TryGetValue(parameterKey, out string? neu))
+        if (parameterKey is not null && newNames.TryGetValue(parameterKey, out string? updated))
         {
-            replacements[token] = neu;
+            replacements[token] = updated;
         }
     }
 
@@ -392,8 +401,8 @@ internal static class ParameterRenamer
     {
         parameter = OnDeclaration(parameter);
 
-        ISymbol? owner = parameter.ContainingSymbol is IMethodSymbol methode
-            ? Root(methode)
+        ISymbol? owner = parameter.ContainingSymbol is IMethodSymbol method
+            ? Root(method)
             : parameter.ContainingSymbol;
 
         if (owner is null)
@@ -401,8 +410,8 @@ internal static class ParameterRenamer
             return null;
         }
 
-        string? kennung = owner.GetDocumentationCommentId();
-        if (string.IsNullOrEmpty(kennung))
+        string? symbolKey = owner.GetDocumentationCommentId();
+        if (string.IsNullOrEmpty(symbolKey))
         {
             // Lambdas und lokale Funktionen haben keine Doku-Kennung. Sie sind dokumentlokal,
             // deshalb reicht die Deklarationsstelle als Kennzeichen.
@@ -412,10 +421,10 @@ internal static class ParameterRenamer
                 return null;
             }
 
-            kennung = $"{location.SourceTree?.FilePath}:{location.SourceSpan.Start}";
+            symbolKey = $"{location.SourceTree?.FilePath}:{location.SourceSpan.Start}";
         }
 
-        return $"{kennung}#{parameter.Ordinal}";
+        return $"{symbolKey}#{parameter.Ordinal}";
     }
 
     // An der Aufrufstelle steht selten dasselbe Symbol wie an der Deklaration:
@@ -429,20 +438,20 @@ internal static class ParameterRenamer
     // Beide Male zeigt der Schlüssel sonst ins Leere und das benannte Argument bleibt stehen.
     private static IParameterSymbol OnDeclaration(IParameterSymbol parameter)
     {
-        if (parameter.ContainingSymbol is not IMethodSymbol methode)
+        if (parameter.ContainingSymbol is not IMethodSymbol method)
         {
             return parameter;
         }
 
-        if (methode.ReducedFrom is { } unreduziert)
+        if (method.ReducedFrom is { } unreduziert)
         {
-            methode = unreduziert;
-            return methode.Parameters[parameter.Ordinal + 1];
+            method = unreduziert;
+            return method.Parameters[parameter.Ordinal + 1];
         }
 
-        return SymbolEqualityComparer.Default.Equals(methode, methode.OriginalDefinition)
+        return SymbolEqualityComparer.Default.Equals(method, method.OriginalDefinition)
             ? parameter
-            : methode.OriginalDefinition.Parameters[parameter.Ordinal];
+            : method.OriginalDefinition.Parameters[parameter.Ordinal];
     }
 
     // CA1716 verbietet an überschreibbaren Membern Parameternamen, die in einer anderen
@@ -460,12 +469,12 @@ internal static class ParameterRenamer
 
     private static bool InOtherLanguageReserved(string name) => OtherLanguages.Contains(name);
 
-    private static bool IstUeberschreibbar(IParameterSymbol parameter)
+    private static bool IsOverridable(IParameterSymbol parameter)
     {
         // Maßgeblich ist die Wurzel der Familie: Wird die Umsetzung zuerst gefunden, ist sie selbst
         // nicht virtuell - die Schnittstelle darüber aber schon, und die Regel gilt für beide.
-        ISymbol? owner = parameter.ContainingSymbol is IMethodSymbol methode
-            ? Root(methode)
+        ISymbol? owner = parameter.ContainingSymbol is IMethodSymbol method
+            ? Root(method)
             : parameter.ContainingSymbol;
 
         return owner is not null
@@ -484,9 +493,9 @@ internal static class ParameterRenamer
             method = method.OverriddenMethod;
         }
 
-        foreach (INamedTypeSymbol schnittstelle in method.ContainingType.AllInterfaces)
+        foreach (INamedTypeSymbol interfaceSymbol in method.ContainingType.AllInterfaces)
         {
-            foreach (IMethodSymbol open in schnittstelle.GetMembers(method.Name).OfType<IMethodSymbol>())
+            foreach (IMethodSymbol open in interfaceSymbol.GetMembers(method.Name).OfType<IMethodSymbol>())
             {
                 if (SymbolEqualityComparer.Default.Equals(
                         method.ContainingType.FindImplementationForInterfaceMember(open), method))

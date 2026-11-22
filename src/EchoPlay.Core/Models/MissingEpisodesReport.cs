@@ -86,6 +86,14 @@ namespace EchoPlay.Core.Models
         /// Null bei erfolgreicher Prüfung.
         /// </summary>
         public string? ErrorMessage { get; init; }
+
+        /// <summary>
+        /// Ob der Bericht über diese Serie etwas zu sagen hat: eine Lücke, eine neue Folge
+        /// online oder eine gescheiterte Prüfung. Eine gescheiterte Prüfung zählt mit, weil
+        /// die Serie dann nicht als vollständig gelten darf.
+        /// </summary>
+        public bool HasFinding =>
+            ErrorMessage is not null || LocalGaps.Count > 0 || OnlineEpisodes.Count > 0;
     }
 
     /// <summary>
@@ -123,11 +131,7 @@ namespace EchoPlay.Core.Models
             _ = sb.AppendLine("===================================");
             _ = sb.AppendLine();
 
-            foreach (SeriesMissingEpisodesResult result in report.Results)
-            {
-                FormatSeriesBlock(sb, result);
-                _ = sb.AppendLine();
-            }
+            AppendFindings(sb, report.Results);
 
             _ = sb.AppendLine("===================================");
             _ = sb.Append(CultureInfo.InvariantCulture,
@@ -136,6 +140,28 @@ namespace EchoPlay.Core.Models
                 $"Online neu: {report.TotalOnlineNew}");
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Schreibt die Serien mit Befund; ohne einen steht dort ein eigener Satz.
+        /// </summary>
+        private static void AppendFindings(StringBuilder sb, IReadOnlyList<SeriesMissingEpisodesResult> results)
+        {
+            // Vollständige Serien fehlen im Bericht, er heißt „Fehlende Folgen". Wie viele
+            // insgesamt geprüft wurden, sagt die Fußzeile.
+            bool anyFinding = false;
+            foreach (SeriesMissingEpisodesResult result in results.Where(result => result.HasFinding))
+            {
+                anyFinding = true;
+                FormatSeriesBlock(sb, result);
+                _ = sb.AppendLine();
+            }
+
+            if (!anyFinding)
+            {
+                _ = sb.AppendLine("Keine fehlenden Folgen.");
+                _ = sb.AppendLine();
+            }
         }
 
         /// <summary>
@@ -166,10 +192,6 @@ namespace EchoPlay.Core.Models
                 }
                 _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Lokale Lücken: {string.Join(", ", gapStrings)}");
             }
-            else if (result.LocalHighestNumber > 0)
-            {
-                _ = sb.AppendLine("  Keine lokalen Lücken.");
-            }
 
             // Online verfügbare Folgen
             if (result.OnlineEpisodes.Count > 0)
@@ -179,13 +201,6 @@ namespace EchoPlay.Core.Models
                     _ = sb.AppendLine(CultureInfo.InvariantCulture,
                         $"  Online verfügbar: Folge {ep.EpisodeNumber:D3} – {ep.Title}");
                 }
-            }
-
-            // Alles komplett
-            if (result.LocalGaps.Count == 0 && result.OnlineEpisodes.Count == 0
-                && result.LocalHighestNumber > 0)
-            {
-                _ = sb.AppendLine("  Alle Folgen komplett.");
             }
         }
     }

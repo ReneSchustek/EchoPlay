@@ -10,11 +10,11 @@ namespace EchoPlay.App.Helpers
     /// Ordnet Titel dem Buchstaben zu, unter dem sie in einer Liste stehen. Das ist die Grundlage
     /// für die Sprungleiste über der Mediathek und für deren Gruppenüberschriften.
     /// <para>
-    /// Der Buchstabe folgt der Sortierung, die die Anwendung ohnehin verwendet, und erfindet
-    /// keine eigene. <c>SeriesDataService</c> sortiert nach <c>Title</c>, ohne führende Artikel
-    /// abzutrennen; „Die drei ???" steht damit unter <c>D</c>. Würde die Leiste hier eine
-    /// eigene Regel anwenden und den Artikel abschneiden, zeigte der Sprung auf <c>D</c> auf
-    /// einen Eintrag, der in der Liste unter <c>T</c> steht, und der Nutzer landete im Nichts.
+    /// Buchstabe und Sortierung folgen derselben Regel: Die Listen unter der Leiste sortieren mit
+    /// <see cref="TitleOrder"/>, und der sortiert zuerst nach <see cref="BucketOf"/>. „Ärger"
+    /// steht damit unter <c>A</c> und auch zwischen den übrigen A-Titeln, „hui buh" unter
+    /// <c>H</c>, Titel mit Ziffer am Ende wie das Fach <c>#</c> in der Leiste. Führende Artikel
+    /// bleiben Teil des Titels; „Die drei ???" steht unter <c>D</c>.
     /// </para>
     /// </summary>
     public static class AlphabetIndex
@@ -35,6 +35,13 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         public static IReadOnlyList<char> Buckets { get; } =
             [.. Enumerable.Range('A', 26).Select(c => (char)c).Append(OtherBucket)];
+
+        /// <summary>
+        /// Sortierung für Listen unter der Sprungleiste: zuerst das Fach in der Reihenfolge von
+        /// <see cref="Buckets"/>, darin deutsch und ohne Groß-/Kleinschreibung, bei Gleichstand
+        /// nach Zeichencode, damit die Reihenfolge eindeutig bleibt.
+        /// </summary>
+        public static IComparer<string?> TitleOrder { get; } = Comparer<string?>.Create(CompareTitles);
 
         /// <summary>
         /// Bestimmt den Buchstaben, unter dem ein Titel einsortiert wird.
@@ -76,6 +83,27 @@ namespace EchoPlay.App.Helpers
             ArgumentNullException.ThrowIfNull(titles);
 
             return titles.Select(BucketOf).ToHashSet();
+        }
+
+        private static readonly CompareInfo GermanCompare = CultureInfo.GetCultureInfo("de-DE").CompareInfo;
+
+        private static int CompareTitles(string? left, string? right)
+        {
+            int byBucket = BucketRank(left).CompareTo(BucketRank(right));
+            if (byBucket != 0)
+            {
+                return byBucket;
+            }
+
+            int byText = GermanCompare.Compare(left, right, CompareOptions.IgnoreCase);
+            return byText != 0 ? byText : string.CompareOrdinal(left, right);
+        }
+
+        // A–Z liegen auf 0–25, das Sammelfach dahinter auf 26: wie in der Leiste.
+        private static int BucketRank(string? title)
+        {
+            char bucket = BucketOf(title);
+            return bucket == OtherBucket ? 26 : bucket - 'A';
         }
 
         /// <summary>

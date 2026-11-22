@@ -4,7 +4,7 @@ using EchoPlay.Data.Services.Projections;
 namespace EchoPlay.Data.Services.Interfaces
 {
     /// <summary>
-    /// Schnittstelle für den Zugriff auf Wiedergabestände. Ermöglicht die Persistierung von Fortschrittsdaten pro Episode.
+    /// Zugriff auf die Wiedergabestände, einer je Episode.
     /// </summary>
     public interface IPlaybackStateDataService
     {
@@ -68,7 +68,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// </summary>
         /// <remarks>
         /// Für den Altbestand: Vor der Spiegelung in <see cref="MarkCompletedAsync"/> blieb die
-        /// jeweils andere Quelle auf „offen" stehen. Der Aufruf ist idempotent — ohne Rückstand
+        /// jeweils andere Quelle auf „offen" stehen. Der Aufruf ist idempotent; ohne Rückstand
         /// tut er nichts und braucht deshalb keinen Einmal-Schalter in den Einstellungen.
         /// </remarks>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
@@ -90,7 +90,7 @@ namespace EchoPlay.Data.Services.Interfaces
 
         /// <summary>
         /// Liefert die Episode-IDs aller abgeschlossenen Wiedergabestände für die angegebenen Episoden.
-        /// Ermöglicht effizientes Filtern nach "gehört"/"ungehört" ohne N+1-Problem.
+        /// Eine Abfrage für alle Episoden, damit das Filtern nach "gehört"/"ungehört" keine Abfrage je Episode braucht.
         /// </summary>
         /// <param name="episodeIds">Die zu prüfenden Episode-IDs.</param>
         /// <returns>
@@ -103,7 +103,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <summary>
         /// Liefert die zuletzt aktiven Wiedergabestände als schmale Projektion für Dashboard-Ansichten.
         /// Server-seitig sortiert (DESC nach LastPlayedAt/UpdatedAt/CreatedAt) und auf <paramref name="maxRows"/>
-        /// begrenzt – verhindert das Materialisieren der gesamten Tabelle für „Zuletzt gehört".
+        /// begrenzt; das verhindert das Materialisieren der gesamten Tabelle für „Zuletzt gehört".
         /// </summary>
         /// <param name="maxRows">Maximale Anzahl zurückgegebener Zeilen. Werte ≤ 0 liefern eine leere Liste.</param>
         /// <returns>

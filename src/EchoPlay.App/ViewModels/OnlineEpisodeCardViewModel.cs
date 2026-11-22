@@ -33,7 +33,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="title">Episodentitel.</param>
         /// <param name="releaseDate">Erscheinungsdatum oder null.</param>
         /// <param name="isCompleted">Ob die Episode als gehört markiert ist.</param>
-        /// <param name="providerUrl">URL zum Öffnen beim Provider oder null.</param>
+        /// <param name="providerUrl">Geprüfte Adresse zum Öffnen beim Anbieter oder null.</param>
         /// <param name="scopeFactory">Für DB-Zugriff beim Setzen des Gehört-Status. Null in Tests.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable, Fallback auf <see cref="SystemClock"/>.</param>
         /// <param name="appleMusicAlbumId">Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
@@ -44,9 +44,7 @@ namespace EchoPlay.App.ViewModels
             string title,
             DateTime? releaseDate = null,
             bool isCompleted = false,
-            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-                Justification = "providerUrl stammt aus iTunes/Spotify-API und wird als string an UI-Bindings weitergereicht.")]
-            string? providerUrl = null,
+            Uri? providerUrl = null,
             IServiceScopeFactory? scopeFactory = null,
             IClock? clock = null,
             string? appleMusicAlbumId = null,
@@ -79,9 +77,7 @@ namespace EchoPlay.App.ViewModels
         public DateTime? ReleaseDate { get; }
 
         /// <summary>URL zum Öffnen der Folge beim Provider. Null bei lokalen Folgen.</summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings",
-            Justification = "Property spiegelt den string-Konstruktor-Parameter providerUrl und wird per x:Bind an UI-Elemente gebunden.")]
-        public string? ProviderUrl { get; }
+        public Uri? ProviderUrl { get; }
 
         /// <summary>Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</summary>
         public string? AppleMusicAlbumId { get; }
@@ -94,7 +90,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Sichtbarkeit des "Im Browser öffnen"-Buttons.</summary>
         public Visibility OpenInBrowserVisibility =>
-            !string.IsNullOrEmpty(ProviderUrl) ? Visibility.Visible : Visibility.Collapsed;
+            ProviderUrl is not null ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
         /// Ob die Episode als gehört markiert ist.
@@ -158,7 +154,7 @@ namespace EchoPlay.App.ViewModels
         {
             return AppleMusicAlbumId is not null
                 ? $"https://music.apple.com/de/album/{AppleMusicAlbumId}"
-                : $"https://music.apple.com/de/search?term={Uri.EscapeDataString($"{Title}")}";
+                : $"https://music.apple.com/de/search?term={Uri.EscapeDataString(Title)}";
         }
 
         /// <summary>
@@ -169,17 +165,20 @@ namespace EchoPlay.App.ViewModels
         {
             return SpotifyAlbumId is not null
                 ? $"https://open.spotify.com/album/{SpotifyAlbumId}"
-                : $"https://open.spotify.com/search/{Uri.EscapeDataString($"{Title}")}";
+                : $"https://open.spotify.com/search/{Uri.EscapeDataString(Title)}";
         }
 
         /// <summary>
         /// Speichert den Gehört-Status in der Datenbank.
         /// Erstellt einen neuen PlaybackState wenn noch keiner existiert.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Toggle-Persistenz des 'Abgeschlossen'-Status: DbContext-/Concurrency-Fehler dürfen die Kachel nicht zerstören; der Fehler wird geloggt, die nächste Nutzeraktion kann es erneut versuchen.")]
-        private async Task PersistCompletedStatusAsync()
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Speichern des Gehört-Status nebenher: Datenbankfehler dürfen die Kachel nicht zerstören; der Fehler wird protokolliert, die nächste Nutzeraktion kann es erneut versuchen.")]
+        internal async Task PersistCompletedStatusAsync()
         {
-            if (_scopeFactory is null) return;
+            if (_scopeFactory is null)
+            {
+                return;
+            }
 
             try
             {
@@ -191,9 +190,12 @@ namespace EchoPlay.App.ViewModels
                 // get-modify-set, das zuvor nur LastPlayedAt setzte und CompletedAt = null ließ.
                 await stateService.MarkCompletedAsync(EpisodeId, _clock.UtcNow);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // DB-Fehler beim Status-Setzen ist nicht kritisch, die UI zeigt Häkchen trotzdem
+                // Das Häkchen bleibt stehen; ohne Protokollzeile fiele der verlorene Stand
+                // erst beim nächsten Start auf.
+                EchoPlay.App.Infrastructure.ScopedLogger.Create(_scopeFactory, nameof(OnlineEpisodeCardViewModel))?
+                    .Warning("Gehört-Status für \"{Title}\" nicht gespeichert: {Reason}", Title, ex.Message);
             }
         }
     }

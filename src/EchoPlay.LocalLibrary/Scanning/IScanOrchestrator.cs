@@ -1,27 +1,22 @@
 using EchoPlay.LocalLibrary.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Scanning
 {
     /// <summary>
-    /// Koordiniert den vierphasigen Bibliotheks-Scan und meldet Phasen-Fortschritt.
-    /// Im Gegensatz zum <see cref="EchoPlay.LocalLibrary.Abstractions.ILocalLibraryScanner"/>
-    /// zählt der Orchestrator die Gesamtzahl der Audiodateien in Phase 1 vor,
-    /// damit der Fortschrittsbalken in Phase 4 deterministisch ist.
+    /// Führt den Bibliotheks-Scan aus und meldet dabei, in welcher der vier Phasen er steht.
+    /// Der <see cref="EchoPlay.LocalLibrary.Abstractions.ILocalLibraryScanner"/> selbst kennt
+    /// keine Phasen, nur Zähler.
     /// </summary>
     public interface IScanOrchestrator
     {
         /// <summary>
-        /// Führt den vierphasigen Scan durch und meldet Phasen-Fortschritt über den
-        /// <paramref name="progress"/>-Parameter.
+        /// Führt den Scan durch und meldet den Phasen-Fortschritt über
+        /// <paramref name="progress"/>.
         /// <para>
-        /// Phase 1 (Vorbereitung): Audiodateien zählen (Fortschrittsbalken indeterministisch).<br/>
-        /// Phase 2 (Serien erkennen): Ordnerstruktur ermitteln.<br/>
-        /// Phase 3 (Folgen ermitteln): Episodenordner pro Serie scannen.<br/>
-        /// Phase 4 (Tracks scannen): ID3-Metadaten lesen (deterministischer Fortschritt).
+        /// Phase 1 (Vorbereitung) und Phase 2 (Serien erkennen) stehen am Anfang, solange der
+        /// Scanner die Audiodateien zählt; der Balken ist dabei unbestimmt.<br/>
+        /// Phase 4 (Tracks scannen) folgt mit Prozentangabe, sobald die Gesamtzahl bekannt ist.<br/>
+        /// Phase 3 (Folgen ermitteln) erscheint statt Phase 4, wenn die Zählung scheiterte.
         /// </para>
         /// </summary>
         /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis der Bibliothek.</param>

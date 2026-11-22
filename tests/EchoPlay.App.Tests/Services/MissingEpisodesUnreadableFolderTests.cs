@@ -79,8 +79,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Koordinator und Serie eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required MissingEpisodesCoordinator Coordinator { get; init; }
@@ -100,6 +101,8 @@ namespace EchoPlay.App.Tests.Services
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+            _ = services.AddScoped<KnownNewEpisodeLookup>();
             _ = services.AddScoped<IOnlineEpisodeChecker>(_ => new FakeOnlineEpisodeChecker());
             ServiceProvider provider = services.BuildServiceProvider();
 

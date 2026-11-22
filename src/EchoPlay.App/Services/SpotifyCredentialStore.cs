@@ -89,17 +89,24 @@ namespace EchoPlay.App.Services
             catch (CryptographicException ex)
             {
                 // Nach Windows-Profil-Migration oder PC-Wechsel sind die Cipher-Bytes nicht mehr
-                // entschlüsselbar. Ohne Aufräumen loggt jeder Start denselben Fehler, daher
-                // löschen wir die korrupten Records und erzwingen eine Neu-Eingabe durch den Nutzer.
+                // entschlüsselbar. Ohne Aufräumen loggt jeder Start denselben Fehler, deshalb werden die
+                // unlesbaren Einträge gelöscht, und der Nutzer gibt die Zugangsdaten neu ein.
                 _logger.Warning("Spotify-Credentials konnten nicht entschlüsselt werden ({Reason}). Korrupte Records werden entfernt.", ex.Message);
-
-                await service.DeleteAsync(KeyClientId, cancellationToken).ConfigureAwait(false);
-                await service.DeleteAsync(KeyClientSecret, cancellationToken).ConfigureAwait(false);
-
-                _hasCredentials = false;
-                _lastLoadFailedDueToCorruption = true;
+                await DiscardUnreadableAsync(service, cancellationToken).ConfigureAwait(false);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Löscht beide Einträge und merkt sich den Grund, damit die Oberfläche einmal darauf hinweist.
+        /// </summary>
+        private async Task DiscardUnreadableAsync(ISecureSettingsDataService service, CancellationToken cancellationToken)
+        {
+            await service.DeleteAsync(KeyClientId, cancellationToken).ConfigureAwait(false);
+            await service.DeleteAsync(KeyClientSecret, cancellationToken).ConfigureAwait(false);
+
+            _hasCredentials = false;
+            _lastLoadFailedDueToCorruption = true;
         }
 
         /// <inheritdoc/>

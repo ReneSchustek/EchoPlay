@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -9,7 +8,6 @@ namespace EchoPlay.Data.Configurations
     /// EF-Core-Konfiguration für die <see cref="CachedNewRelease"/>-Entity.
     /// Definiert Tabellenname, Spalteneinschränkungen, Indizes und die Beziehung zur Serie.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "EF Core instanziiert IEntityTypeConfiguration-Implementierungen zur Modell-Erstellung via ApplyConfigurationsFromAssembly-Reflection.")]
     internal sealed class CachedNewReleaseConfiguration : IEntityTypeConfiguration<CachedNewRelease>
     {
         /// <summary>

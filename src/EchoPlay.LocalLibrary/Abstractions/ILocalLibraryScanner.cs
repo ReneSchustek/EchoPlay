@@ -4,19 +4,20 @@ using EchoPlay.LocalLibrary.Scanning;
 namespace EchoPlay.LocalLibrary.Abstractions
 {
     /// <summary>
-    /// Definiert den Vertrag für das Scannen einer lokalen Hörspielbibliothek.
+    /// Durchsucht eine lokale Hörspielbibliothek.
     /// </summary>
     public interface ILocalLibraryScanner
     {
         /// <summary>
         /// Gibt alle direkten Unterordner des Wurzelverzeichnisses zurück.
         /// Sehr schnell: nur <c>Directory.GetDirectories</c>, kein Dateisystem-Scan tiefer.
-        /// Ermöglicht dem SyncService eine sofortige Vorab-Anzeige aller erkannten Serienordner.
+        /// Damit zeigt der SyncService alle erkannten Serienordner sofort vorab an.
         /// Bei IO-Fehlern wird eine leere Liste zurückgegeben.
         /// </summary>
         /// <param name="rootPath">Absoluter Pfad zum Wurzelverzeichnis der Bibliothek.</param>
         /// <returns>Absoluter Pfad jedes direkten Unterordners, oder leere Liste bei Fehler.</returns>
         IReadOnlyList<string> GetSeriesFolders(string rootPath);
+
         /// <summary>
         /// Durchsucht das angegebene Wurzelverzeichnis nach Hörspielserien und Episoden.
         /// Die Episodenordner werden anhand des übergebenen Musters erkannt und geparst.
@@ -32,10 +33,10 @@ namespace EchoPlay.LocalLibrary.Abstractions
         /// </param>
         /// <param name="onSeriesScanned">
         /// Optionaler Callback, der nach jeder vollständig gescannten Serie aufgerufen wird.
-        /// Ermöglicht es dem Aufrufer, Serien sofort zu verarbeiten, ohne auf das Gesamtergebnis
+        /// Damit verarbeitet der Aufrufer Serien sofort, ohne auf das Gesamtergebnis
         /// zu warten, als Grundlage für die progressive Anzeige in der UI.
         /// </param>
-        /// <param name="ct">Abbruchtoken; ermöglicht sauberes Beenden bei App-Schließen.</param>
+        /// <param name="ct">Abbruchtoken, damit der Scan beim Schließen der Anwendung sauber endet.</param>
         /// <returns>
         /// Liste aller gefundenen Serien mit ihren Episoden.
         /// Gibt eine leere Liste zurück, wenn das Verzeichnis nicht existiert oder leer ist.

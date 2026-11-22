@@ -13,11 +13,10 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// noch nicht existieren.
     /// </summary>
     /// <remarks>
-    /// <c>Guid.NewGuid()</c> als Verzeichnis-Suffix ist hier bewusst: xUnit ruft Tests parallel
-    /// in derselben Klasse auf, und die SQLite-Backup-Pfade brauchen physische Isolation.
-    /// Eine feste Konstante würde unter Parallelität Datei-Locks und falsche Negativ-Funde
-    /// erzeugen. Die NewGuid-Nutzung ist auf die Verzeichnis-Eindeutigkeit beschränkt und
-    /// hat keine semantische Wirkung auf die Testausgabe.
+    /// <c>Guid.NewGuid()</c> als Verzeichnis-Suffix: xUnit erzeugt je Test eine eigene Instanz,
+    /// und jede bekommt damit ein eigenes Verzeichnis für ihre Sicherungen. Weder parallel
+    /// laufende Testklassen noch Reste eines abgebrochenen Laufs geraten so in einen fremden
+    /// Test. Die Guid bestimmt nur den Ort, nicht das Ergebnis.
     /// </remarks>
     public sealed class DatabaseInitializerBackupTests : IDisposable
     {
@@ -71,16 +70,21 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Leere Datei-DB: Alle Migrationen sind pending → Backup soll angelegt werden.
             using (EchoPlayDbContext context = CreateFileContext())
             {
-                DatabaseInitializer initializer = new(context);
+                DatabaseInitializer initializer = new(context, new DatabaseFileLocation(_dbPath));
                 await initializer.InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             string[] backups = GetBackupFiles();
             _ = Assert.Single(backups);
 
-            // Der Snapshot muss ein gültiges SQLite-File sein, nicht die 0-Byte-Stub-Kopie.
-            FileInfo info = new(backups[0]);
-            Assert.True(info.Length >= 0, "Backup-Datei sollte erzeugt sein.");
+            // Eine leere Datei entsteht auch dann, wenn nur die Hülle geschrieben wurde. Erst eine
+            // Abfrage belegt, dass die Kopie eine lesbare Datenbank ist.
+            Assert.True(new FileInfo(backups[0]).Length > 0, "Die Sicherung darf nicht leer sein.");
+            await using SqliteConnection backup = new($"Data Source={backups[0]};Mode=ReadOnly;Pooling=False");
+            await backup.OpenAsync(TestContext.Current.CancellationToken);
+            using SqliteCommand check = backup.CreateCommand();
+            check.CommandText = "PRAGMA integrity_check";
+            Assert.Equal("ok", (string?)await check.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -88,7 +92,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         {
             using (EchoPlayDbContext first = CreateFileContext())
             {
-                await new DatabaseInitializer(first).InitializeAsync(TestContext.Current.CancellationToken);
+                await new DatabaseInitializer(first, new DatabaseFileLocation(_dbPath)).InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             string[] afterFirst = GetBackupFiles();
@@ -97,7 +101,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Beim zweiten Durchlauf gibt es keine pending Migrationen mehr.
             using (EchoPlayDbContext second = CreateFileContext())
             {
-                await new DatabaseInitializer(second).InitializeAsync(TestContext.Current.CancellationToken);
+                await new DatabaseInitializer(second, new DatabaseFileLocation(_dbPath)).InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             string[] afterSecond = GetBackupFiles();
@@ -111,11 +115,11 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // das macht später der AppSettingsDataService bei erstem Zugriff. Für den
             // Backup-Check ist das ein valider „noch-keine-Nutzerdaten"-Zustand.
             using EchoPlayDbContext context = CreateFileContext();
-            await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
+            await new DatabaseInitializer(context, new DatabaseFileLocation(_dbPath)).InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.Empty(context.AppSettings);
 
-            DatabaseInitializer initializer = new(context);
+            DatabaseInitializer initializer = new(context, new DatabaseFileLocation(_dbPath));
             (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.True(enabled);
@@ -126,7 +130,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         public async Task TryReadBackupSettingsAsync_Honors_OptOut()
         {
             using EchoPlayDbContext context = CreateFileContext();
-            await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
+            await new DatabaseInitializer(context, new DatabaseFileLocation(_dbPath)).InitializeAsync(TestContext.Current.CancellationToken);
 
             AppSettings settings = new()
             {
@@ -136,7 +140,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = context.AppSettings.Add(settings);
             _ = await context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            DatabaseInitializer initializer = new(context);
+            DatabaseInitializer initializer = new(context, new DatabaseFileLocation(_dbPath));
             (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.False(enabled);
@@ -147,7 +151,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         public async Task TryReadBackupSettingsAsync_Clamps_RetentionCount()
         {
             using EchoPlayDbContext context = CreateFileContext();
-            await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
+            await new DatabaseInitializer(context, new DatabaseFileLocation(_dbPath)).InitializeAsync(TestContext.Current.CancellationToken);
 
             AppSettings settings = new()
             {
@@ -156,7 +160,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = context.AppSettings.Add(settings);
             _ = await context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-            DatabaseInitializer initializer = new(context);
+            DatabaseInitializer initializer = new(context, new DatabaseFileLocation(_dbPath));
             (_, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
             Assert.Equal(20, retention);
@@ -174,7 +178,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = builder.UseSqlite(connection);
 
             using EchoPlayDbContext context = new(builder.Options);
-            DatabaseInitializer initializer = new(context);
+            DatabaseInitializer initializer = new(context, new DatabaseFileLocation(_dbPath));
 
             (bool enabled, int retention) = await initializer.TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
 
@@ -188,7 +192,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // Initial-Migration erzeugt das erste echte Backup.
             using (EchoPlayDbContext context = CreateFileContext())
             {
-                await new DatabaseInitializer(context).InitializeAsync(TestContext.Current.CancellationToken);
+                await new DatabaseInitializer(context, new DatabaseFileLocation(_dbPath)).InitializeAsync(TestContext.Current.CancellationToken);
             }
 
             // Ältere Backup-Artefakte simulieren (ISO-Zeitstempel sortieren lexikografisch).
@@ -211,8 +215,8 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // implizit nach VACUUM INTO; die Retention-Logik ist datei-basiert und kann
             // ohne echte Migration isoliert getestet werden).
             using EchoPlayDbContext ctx = CreateFileContext();
-            DatabaseInitializer initializer = new(ctx);
-            initializer.CleanupOldBackups(_dbPath, retentionCount: 2);
+            DatabaseInitializer initializer = new(ctx, new DatabaseFileLocation(_dbPath));
+            initializer.CleanupOldBackups(retentionCount: 2);
 
             string[] remaining = GetBackupFiles();
             Assert.Equal(2, remaining.Length);
@@ -224,51 +228,95 @@ namespace EchoPlay.Data.Tests.Infrastructure
         }
 
         [Fact]
+        public void CleanupOldBackups_LeavesHandNamedCopiesOutOfTheCount()
+        {
+            // Von Hand benannte Kopien sortieren vor jeden Zeitstempel. Zählten sie mit, wäre
+            // die frische Sicherung die „älteste" und flöge sofort wieder raus.
+            string[] handNamed =
+            [
+                _dbPath + ".backup-vor-umbau-20260901-155606",
+                _dbPath + ".backup-vor-umbau-20260901-155606-wal",
+                _dbPath + ".backup-vor-umbau-20260901-155606-shm",
+            ];
+            string fresh = _dbPath + ".backup-20261119-130020";
+            foreach (string path in handNamed.Append(fresh))
+            {
+                File.WriteAllText(path, "dummy");
+            }
+
+            using EchoPlayDbContext ctx = CreateFileContext();
+            new DatabaseInitializer(ctx, new DatabaseFileLocation(_dbPath)).CleanupOldBackups(retentionCount: 1);
+
+            Assert.True(File.Exists(fresh));
+            Assert.All(handNamed, path => Assert.True(File.Exists(path)));
+        }
+
+        [Theory]
+        [InlineData("echoplay.db.backup-20261119-130020", true)]
+        [InlineData("echoplay.db.backup-20261119-130020-wal", false)]
+        [InlineData("echoplay.db.backup-vor-umbau-20260901-155606", false)]
+        [InlineData("andere.db.backup-20261119-130020", false)]
+        public void IsTimestampedBackup_AcceptsOnlyTheOwnNamePattern(string fileName, bool expected)
+        {
+            Assert.Equal(expected, DatabaseInitializer.IsTimestampedBackup(fileName, "echoplay.db.backup-"));
+        }
+
+        /// <summary>
+        /// AppSettings-Tabelle im Stand vor der Migrations-Historie, mit einer Zeile, in der die
+        /// Sicherung abgeschaltet ist.
+        /// </summary>
+        private const string OptOutAppSettingsSql = """
+            CREATE TABLE "AppSettings" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_AppSettings" PRIMARY KEY,
+                "ActiveProvider" INTEGER NOT NULL DEFAULT 0,
+                "LocalLibraryEnabled" INTEGER NOT NULL DEFAULT 1,
+                "LocalLibraryRootPath" TEXT NULL,
+                "EpisodeFolderPattern" TEXT NOT NULL DEFAULT '{number:000} - {title}',
+                "SaveCoverToDirectory" INTEGER NOT NULL DEFAULT 1,
+                "ActiveTheme" TEXT NOT NULL DEFAULT 'MidnightLibrary',
+                "ActiveLanguage" TEXT NOT NULL DEFAULT 'de',
+                "LastOpenedPlayerFolder" TEXT NULL,
+                "LogRetentionDays" INTEGER NOT NULL DEFAULT 30,
+                "MinimumLogLevel" INTEGER NOT NULL DEFAULT 2,
+                "AutoImportAfterScan" INTEGER NOT NULL DEFAULT 1,
+                "DbPurgeDays" INTEGER NOT NULL DEFAULT 30,
+                "LastAppStart" TEXT NULL,
+                "NewReleaseDays" INTEGER NOT NULL DEFAULT 90,
+                "OfflineMode" INTEGER NOT NULL DEFAULT 0,
+                "OnlineOnlyMode" INTEGER NOT NULL DEFAULT 0,
+                "SkippedUpdateVersion" TEXT NULL,
+                "ClearCacheOnNextStart" INTEGER NOT NULL DEFAULT 0,
+                "DbBackupEnabled" INTEGER NOT NULL DEFAULT 0,
+                "DbBackupRetentionCount" INTEGER NOT NULL DEFAULT 5,
+                "OnlineEpisodeSortIndex" INTEGER NOT NULL DEFAULT 0,
+                "Volume" REAL NOT NULL DEFAULT 1.0,
+                "IsMuted" INTEGER NOT NULL DEFAULT 0,
+                "IsDeleted" INTEGER NOT NULL DEFAULT 0,
+                "CreatedAt" TEXT NOT NULL DEFAULT '2026-01-01T00:00:00',
+                "UpdatedAt" TEXT NULL,
+                "DeletedAt" TEXT NULL
+            );
+            INSERT INTO "AppSettings" ("Id") VALUES ('11111111-1111-1111-1111-111111111111');
+            """;
+
+        /// <summary>Legt die Tabelle aus <see cref="OptOutAppSettingsSql"/> in der Testdatei an.</summary>
+        private async Task CreateOptOutSettingsTableAsync()
+        {
+            await using SqliteConnection setup = new($"Data Source={_dbPath}");
+            await setup.OpenAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            using SqliteCommand cmd = setup.CreateCommand();
+            cmd.CommandText = OptOutAppSettingsSql;
+            _ = await cmd.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
         public async Task InitializeAsync_OptOut_Skips_Backup_On_InitialMigration()
         {
             // Manuell AppSettings-Tabelle inkl. Backup-Spalten anlegen und eine
             // Zeile mit Opt-Out setzen, damit beim Lauf von InitializeAsync die
             // Opt-Out-Semantik greift (pending migrations + AppSettings lesbar).
-            await using (SqliteConnection setup = new($"Data Source={_dbPath}"))
-            {
-                await setup.OpenAsync(cancellationToken: TestContext.Current.CancellationToken);
-
-                using SqliteCommand cmd = setup.CreateCommand();
-                cmd.CommandText = """
-                    CREATE TABLE "AppSettings" (
-                        "Id" TEXT NOT NULL CONSTRAINT "PK_AppSettings" PRIMARY KEY,
-                        "ActiveProvider" INTEGER NOT NULL DEFAULT 0,
-                        "LocalLibraryEnabled" INTEGER NOT NULL DEFAULT 1,
-                        "LocalLibraryRootPath" TEXT NULL,
-                        "EpisodeFolderPattern" TEXT NOT NULL DEFAULT '{number:000} - {title}',
-                        "SaveCoverToDirectory" INTEGER NOT NULL DEFAULT 1,
-                        "ActiveTheme" TEXT NOT NULL DEFAULT 'MidnightLibrary',
-                        "ActiveLanguage" TEXT NOT NULL DEFAULT 'de',
-                        "LastOpenedPlayerFolder" TEXT NULL,
-                        "LogRetentionDays" INTEGER NOT NULL DEFAULT 30,
-                        "MinimumLogLevel" INTEGER NOT NULL DEFAULT 2,
-                        "AutoImportAfterScan" INTEGER NOT NULL DEFAULT 1,
-                        "DbPurgeDays" INTEGER NOT NULL DEFAULT 30,
-                        "LastAppStart" TEXT NULL,
-                        "NewReleaseDays" INTEGER NOT NULL DEFAULT 90,
-                        "OfflineMode" INTEGER NOT NULL DEFAULT 0,
-                        "OnlineOnlyMode" INTEGER NOT NULL DEFAULT 0,
-                        "SkippedUpdateVersion" TEXT NULL,
-                        "ClearCacheOnNextStart" INTEGER NOT NULL DEFAULT 0,
-                        "DbBackupEnabled" INTEGER NOT NULL DEFAULT 0,
-                        "DbBackupRetentionCount" INTEGER NOT NULL DEFAULT 5,
-                        "OnlineEpisodeSortIndex" INTEGER NOT NULL DEFAULT 0,
-                        "Volume" REAL NOT NULL DEFAULT 1.0,
-                        "IsMuted" INTEGER NOT NULL DEFAULT 0,
-                        "IsDeleted" INTEGER NOT NULL DEFAULT 0,
-                        "CreatedAt" TEXT NOT NULL DEFAULT '2026-01-01T00:00:00',
-                        "UpdatedAt" TEXT NULL,
-                        "DeletedAt" TEXT NULL
-                    );
-                    INSERT INTO "AppSettings" ("Id") VALUES ('11111111-1111-1111-1111-111111111111');
-                    """;
-                _ = await cmd.ExecuteNonQueryAsync(cancellationToken: TestContext.Current.CancellationToken);
-            }
+            await CreateOptOutSettingsTableAsync();
 
             // Kein Backup-File vor dem Init.
             Assert.Empty(GetBackupFiles());
@@ -277,10 +325,10 @@ namespace EchoPlay.Data.Tests.Infrastructure
             // die echte AppSettings-Zeile mit DbBackupEnabled=0 → Backup muss übersprungen werden.
             using EchoPlayDbContext context = CreateFileContext();
 
-            // Hinweis: MigrateAsync würde die AppSettings-Tabelle noch einmal anzulegen versuchen
-            // und scheitern. Wir testen daher gezielt die Backup-Gate-Logik, nicht die
-            // vollständige Migration.
-            (bool enabled, _) = await new DatabaseInitializer(context).TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
+            // MigrateAsync würde die AppSettings-Tabelle ein zweites Mal anlegen wollen und
+            // scheitern. Geprüft wird deshalb gezielt die Entscheidung über die Sicherung, nicht
+            // die vollständige Migration.
+            (bool enabled, _) = await new DatabaseInitializer(context, new DatabaseFileLocation(_dbPath)).TryReadBackupSettingsAsync(TestContext.Current.CancellationToken);
             Assert.False(enabled);
 
             // Backup wurde nicht angelegt, weil der Aufrufer `enabled=false` bekommt und

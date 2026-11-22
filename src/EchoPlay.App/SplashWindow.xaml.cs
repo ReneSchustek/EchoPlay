@@ -17,21 +17,19 @@ namespace EchoPlay.App
 {
     /// <summary>
     /// Startbildschirm der Anwendung.
-    /// Wird beim App-Start angezeigt, während Datenbank und DI-Container initialisiert werden.
-    /// Schließt sich erst, wenn <see cref="App.OnLaunched"/> das Hauptfenster aktiviert hat.
+    /// Steht, während Datenbank und Dienst-Container eingerichtet werden, und schließt sich erst,
+    /// wenn <see cref="App.OnLaunched"/> das Hauptfenster aktiviert hat.
     /// </summary>
     public sealed partial class SplashWindow : Window
     {
-        private const int FensterBreite = 480;
-        private const int FensterHoehe = 300;
+        // AppWindow.Resize rechnet in physischen Pixeln. Bei 100 % Skalierung fasst die Höhe die
+        // Spalte aus dem XAML, die rund 280 Pixel braucht.
+        private const int WindowWidth = 480;
+        private const int WindowHeight = 300;
 
-        // Embedded-Resource-Name: <RootNamespace>.<Pfad-mit-Punkten>.<Datei>.
-        // Per LogicalName in der csproj fixiert, damit MSBuild-Heuristiken den Namen nicht ändern.
+        // Per LogicalName in der csproj festgelegt; ein Build-Ziel dort bricht ab, wenn der
+        // Eintrag fehlt. Ohne Logo bliebe der Startbildschirm trotzdem stehen.
         private const string LogoResourceName = "EchoPlay.App.Assets.logo.png";
-
-        // Fallback-Pfad: greift nur, wenn die Embedded-Resource fehlt.
-        // In Produktion existiert der Pfad nicht; der Splash zeigt dann kein Logo, statt zu crashen.
-        private const string FallbackLogoPath = @"F:\Entwicklung\_Icons\Icon_Ruhrcoder_quadrat.png";
 
         /// <summary>
         /// Erstellt das Splash-Fenster, zeigt die Version an und positioniert es mittig auf dem Bildschirm.
@@ -40,21 +38,20 @@ namespace EchoPlay.App
         {
             this.InitializeComponent();
 
-            ZeigeVersion();
-            ZentriereUndGroesse();
-            EntferneTitelleiste();
+            ShowVersion();
+            CenterAndResize();
+            HideTitleBar();
 
-            // WCAG 1.1.1: Logo dekorativ markieren, damit der Screen-Reader es skippt.
-            // Bewusst per Code-Behind statt XAML, weil das XAML-Markup-Pattern unter
-            // unpackaged WinUI 3 einen Markup-Reader-Bug auslöst
-            // (Stack-Trace: "Window.Title set more than once" beim Parser-Pass).
+            // WCAG 1.1.1: Das Logo ist Schmuck; der Bildschirmleser überspringt es.
+            // Im Code statt im XAML, weil die Angabe im Markup unter unpackaged WinUI 3 beim
+            // Einlesen mit "Window.Title set more than once" scheitert.
             AutomationProperties.SetAccessibilityView(LogoImage, AccessibilityView.Raw);
         }
 
         /// <summary>
-        /// Lädt das Splash-Logo aus der Embedded-Resource und setzt es als <see cref="BitmapImage"/>
-        /// auf <c>LogoImage</c>. Muss vor <see cref="Window.Activate"/> awaited werden, damit das Logo
-        /// bereits im ersten Frame sichtbar ist (sonst flackert der Splash kurz ohne Logo).
+        /// Lädt das Logo aus der eingebetteten Ressource. Muss vor <see cref="Window.Activate"/>
+        /// abgewartet werden, sonst zeigt der erste Frame den Startbildschirm kurz ohne Logo.
+        /// Fehlt die Ressource oder ist sie kein Bild, bleibt das Logo leer; der Start geht weiter.
         /// </summary>
         public async Task LoadEmbeddedLogoAsync()
         {
@@ -62,25 +59,20 @@ namespace EchoPlay.App
 
             if (resourceStream is null)
             {
-                EmergencyTrace.Log($"[SplashWindow] Embedded-Resource '{LogoResourceName}' nicht gefunden — versuche Fallback.");
-                await LoadFallbackLogoAsync().ConfigureAwait(true);
+                EmergencyTrace.Log($"[SplashWindow] Eingebettete Ressource '{LogoResourceName}' fehlt, Startbildschirm ohne Logo.");
                 return;
             }
 
             BitmapImage? bitmap = await DecodeStreamAsBitmapAsync(resourceStream).ConfigureAwait(true);
-            if (bitmap is null)
+            if (bitmap is not null)
             {
-                EmergencyTrace.Log($"[SplashWindow] Embedded-Logo konnte nicht dekodiert werden — versuche Fallback.");
-                await LoadFallbackLogoAsync().ConfigureAwait(true);
-                return;
+                LogoImage.Source = bitmap;
             }
-
-            LogoImage.Source = bitmap;
         }
 
         /// <summary>
         /// Aktualisiert den Statustext unterhalb des Ladebalkens.
-        /// Wird von <see cref="App.OnLaunched"/> aufgerufen, um den aktuellen Startup-Schritt anzuzeigen.
+        /// Die Prüfung beim Start meldet darüber, bei welchem Schritt sie steht.
         /// </summary>
         /// <param name="text">Der anzuzeigende Statustext.</param>
         public void SetStatus(string text)
@@ -92,7 +84,7 @@ namespace EchoPlay.App
         /// Liest die Assembly-Version und zeigt sie im Versionsfeld an.
         /// Fällt auf "1.0.0" zurück, wenn keine Versionsinformation vorhanden ist.
         /// </summary>
-        private void ZeigeVersion()
+        private void ShowVersion()
         {
             Version? version = Assembly.GetExecutingAssembly().GetName().Version;
             VersionTextBlock.Text = version is not null
@@ -103,21 +95,21 @@ namespace EchoPlay.App
         /// <summary>
         /// Setzt die Fenstergröße und zentriert es auf dem primären Bildschirm.
         /// </summary>
-        private void ZentriereUndGroesse()
+        private void CenterAndResize()
         {
             AppWindow appWindow = this.AppWindow;
-            appWindow.Resize(new SizeInt32(FensterBreite, FensterHoehe));
+            appWindow.Resize(new SizeInt32(WindowWidth, WindowHeight));
 
             DisplayArea displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Nearest);
-            int x = (displayArea.WorkArea.Width - FensterBreite) / 2;
-            int y = (displayArea.WorkArea.Height - FensterHoehe) / 2;
+            int x = (displayArea.WorkArea.Width - WindowWidth) / 2;
+            int y = (displayArea.WorkArea.Height - WindowHeight) / 2;
             appWindow.Move(new PointInt32(x, y));
         }
 
         /// <summary>
-        /// Blendet die Titelleiste aus. Der Splash wirkt als reines Branding-Fenster ohne Fensterchrom.
+        /// Blendet die Titelleiste aus; der Startbildschirm zeigt nur Logo und Fortschritt.
         /// </summary>
-        private void EntferneTitelleiste()
+        private void HideTitleBar()
         {
             if (AppWindowTitleBar.IsCustomizationSupported())
             {
@@ -128,41 +120,8 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Versucht den Dev-Maschinen-Fallback aus <see cref="FallbackLogoPath"/> zu laden.
-        /// Schlägt das fehl (z. B. in Produktion, wo der Pfad nicht existiert), bleibt der Splash
-        /// ohne Logo, bewusst, damit der Start nicht an einem Branding-Asset hängt.
-        /// </summary>
-        private async Task LoadFallbackLogoAsync()
-        {
-            if (!File.Exists(FallbackLogoPath))
-            {
-                EmergencyTrace.Log($"[SplashWindow] Fallback-Logo '{FallbackLogoPath}' nicht vorhanden — Splash bleibt logo-los.");
-                return;
-            }
-
-            try
-            {
-                using FileStream fileStream = File.OpenRead(FallbackLogoPath);
-                BitmapImage? bitmap = await DecodeStreamAsBitmapAsync(fileStream).ConfigureAwait(true);
-                if (bitmap is not null)
-                {
-                    LogoImage.Source = bitmap;
-                }
-            }
-            catch (IOException ex)
-            {
-                EmergencyTrace.Log($"[SplashWindow] Fallback-Logo IO-Fehler: {ex.Message}");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                EmergencyTrace.Log($"[SplashWindow] Fallback-Logo Zugriffsfehler: {ex.Message}");
-            }
-        }
-
-        /// <summary>
         /// Dekodiert beliebige <see cref="Stream"/>-Daten als <see cref="BitmapImage"/>.
-        /// Liefert <c>null</c>, wenn die Daten kein gültiges Bild sind; der Aufrufer entscheidet,
-        /// ob er einen Fallback versucht oder das Logo weglässt.
+        /// Liefert <c>null</c>, wenn die Daten kein gültiges Bild sind.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "BitmapImage.SetSourceAsync wirft bei korrupten Bilddaten native WIC/COM-Fehler ohne stabile Typ-Hierarchie; für den Splash reicht ein null-Rückgabewert plus EmergencyTrace, ohne den App-Start zu blockieren.")]
         private static async Task<BitmapImage?> DecodeStreamAsBitmapAsync(Stream source)
@@ -185,9 +144,8 @@ namespace EchoPlay.App
         }
 
         /// <summary>
-        /// Liest einen Stream vollständig in ein Byte-Array. Splash-Logos sind klein (wenige KB);
-        /// die Komplettkopie vermeidet Lifecycle-Probleme zwischen Quell-Stream und der asynchronen
-        /// Bild-Dekodierung.
+        /// Liest einen Stream vollständig in ein Byte-Array. Das Logo ist wenige Kilobyte groß;
+        /// die Kopie löst die Dekodierung vom Quell-Stream, den der Aufrufer danach schließt.
         /// </summary>
         private static async Task<byte[]> ReadAllBytesAsync(Stream source)
         {

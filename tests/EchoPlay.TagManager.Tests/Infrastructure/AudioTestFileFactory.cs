@@ -4,7 +4,7 @@ namespace EchoPlay.TagManager.Tests.Infrastructure
 {
     /// <summary>
     /// Erzeugt minimale, gültige Audiodateien als temporäre Dateien für Tests.
-    /// Die Binärdaten sind hardcodiert – keine echten Audioinhalte, nur das Minimum,
+    /// Die Binärdaten sind hardcodiert: keine echten Audioinhalte, nur das Minimum,
     /// das TagLib# für das Lesen und Schreiben von Metadaten benötigt.
     /// </summary>
     internal static class AudioTestFileFactory

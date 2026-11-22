@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 
 // xUnit-InlineData liefert Theorie-Parameter ausschließlich als primitive Werte;
-// die getesteten Hilfsmethoden nehmen bewusst einen string (nicht Uri) entgegen.
+// die getesteten Hilfsmethoden nehmen einen string (nicht Uri) entgegen.
 [assembly: SuppressMessage(
     "Design",
     "CA1054:URI-like parameters should not be strings",

@@ -15,7 +15,8 @@ namespace EchoPlay.App.Tests.ViewModels
             bool isFavorite = false,
             bool isWatched = false,
             int local = 1,
-            int total = 1) =>
+            int total = 1,
+            bool isIncomplete = false) =>
             new(
                 seriesId: Guid.NewGuid(),
                 title: title,
@@ -25,7 +26,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 totalEpisodeCount: total,
                 isFavorite: isFavorite,
                 isWatched: isWatched,
-                scopeFactory: null!);
+                scopeFactory: null!,
+                isIncomplete: isIncomplete);
 
         [Fact]
         public void ArtistFilter_WithoutCriteria_KeepsEverything()
@@ -60,17 +62,17 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         /// <summary>
-        /// Unvollständig heißt: Es sind Folgen bekannt, von denen welche fehlen. Ohne bekannte
-        /// Folgen fehlt die Auskunft, nicht der Bestand.
+        /// Der Filter folgt der Angabe der Kachel, nicht den Folgenzählern: Eine lokale Serie
+        /// kennt nur ihre eigenen Ordner, die Zähler sind dort immer gleich.
         /// </summary>
         [Fact]
-        public void ArtistFilter_IncompleteNeedsKnownEpisodes()
+        public void ArtistFilter_IncompleteFollowsTheCard()
         {
             LocalArtistFilter filter = new() { IncompleteOnly = true };
 
-            Assert.True(filter.Matches(Card("Lückenhaft", local: 1, total: 3)));
+            Assert.True(filter.Matches(Card("Lückenhaft", isIncomplete: true)));
             Assert.False(filter.Matches(Card("Vollständig", local: 3, total: 3)));
-            Assert.False(filter.Matches(Card("Ohne Folgen", local: 0, total: 0)));
+            Assert.False(filter.Matches(Card("Zähler sagen lückenhaft", local: 1, total: 3)));
         }
 
         [Fact]

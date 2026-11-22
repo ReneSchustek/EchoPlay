@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using EchoPlay.Core.Parsing;
 
@@ -12,7 +13,7 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// Ein Muster, das für die ganze Serie gewinnt, reicht nicht. Drei Regeln kommen hinzu,
     /// jeweils aus gemessenen Fehlbefunden an einer 92-Serien-Sammlung abgeleitet:
     /// <list type="bullet">
-    /// <item>Jeder Ordner wird gegen <b>alle</b> Muster geprüft. Sonst zählen Ordner, die zufällig
+    /// <item>Jeder Ordner wird gegen alle Muster geprüft. Sonst zählen Ordner, die zufällig
     /// anders benannt sind, als fehlend, bei „Sherlock Holmes – Die geheimen Fälle" 38 von 67.</item>
     /// <item>Ordner, die nur aus einer Zahl bestehen („001"), werden erkannt. Alle übrigen Muster
     /// verlangen einen Titelteil.</item>
@@ -21,7 +22,7 @@ namespace EchoPlay.LocalLibrary.Parsing
     /// erzeugte 1999 erfundene Lücken.</item>
     /// </list>
     /// </remarks>
-    public static class LocalEpisodeNumbers
+    public static partial class LocalEpisodeNumbers
     {
         // Reihenfolge zählt: das erste passende Muster gewinnt pro Ordner. Spezifische Muster
         // (mit Präfix oder Schlüsselwort) stehen vor den allgemeinen.
@@ -35,7 +36,7 @@ namespace EchoPlay.LocalLibrary.Parsing
             "{number:000}_{title}",
             "{number:000} {title}",
             "{title} - {number:000}",
-            // Ordner ohne Titelteil, z.B. „001", denn kein anderes Muster deckt das ab.
+            // Ordner ohne Titelteil wie „001"; kein anderes Muster deckt das ab.
             "{number:000}"
         ];
 
@@ -43,11 +44,17 @@ namespace EchoPlay.LocalLibrary.Parsing
             [.. PatternCandidates.Select(p => new EpisodeFolderParser(p))];
 
         // Auffangnetz für Tippfehler in der Nummerierung: „203- Titel" (fehlendes Leerzeichen),
-        // „203.Titel", „203_Titel". Ohne das galt in der Sammlung eine vorhandene TKKG-Folge als
-        // fehlend, nur weil ein Leerzeichen im Ordnernamen fehlte.
+        // „203.Titel", „203_Titel". Ohne das Netz gälte eine vorhandene Folge als fehlend, nur
+        // weil ein Leerzeichen im Ordnernamen fehlt.
         // (?!\d) verhindert, dass Jahreszahlen wie „1984 - …" als Folge 198 gelesen werden.
-        private static readonly Regex LeadingNumber =
-            new(@"^(\d{1,3})(?!\d)", RegexOptions.Compiled, TimeSpan.FromMilliseconds(500));
+        [GeneratedRegex(@"^(\d{1,3})(?!\d)", RegexOptions.None, matchTimeoutMilliseconds: 500)]
+        private static partial Regex LeadingNumber();
+
+        // Dasselbe Netz für die Nummer zwischen Serienname und Titel. „Serie - 066 -Titel" mit
+        // fehlendem Leerzeichen trifft keines der Muster; ohne dieses Netz stünde Folge 66 als
+        // Lücke im Bericht, obwohl der Ordner vorliegt.
+        [GeneratedRegex(@"\s-\s*(\d{1,3})(?!\d)\s*-", RegexOptions.None, matchTimeoutMilliseconds: 500)]
+        private static partial Regex SeparatedNumber();
 
         // Toleranz für die einzige-Zahl-Regel: Eine allein stehende Nummer wird nur geglaubt,
         // wenn sie zur Größe der Sammlung passt. „Arsène Lupin – 813" bei 16 Ordnern ist ein
@@ -63,36 +70,99 @@ namespace EchoPlay.LocalLibrary.Parsing
         {
             ArgumentNullException.ThrowIfNull(folderNames);
 
-            SortedSet<int> numbers = [];
-            int folderCount = 0;
+            int?[] perFolder = ExtractPerFolder([.. folderNames], preferred: null);
+            return [.. new SortedSet<int>(perFolder.OfType<int>())];
+        }
 
-            foreach (string name in folderNames)
+        /// <summary>
+        /// Ordnet jedem Ordner einer Serie seine Folgennummer zu, in der Reihenfolge der Eingabe.
+        /// </summary>
+        /// <param name="folderNames">Ordnernamen einer Serie (nur der Name, kein Pfad), in Anzeigereihenfolge.</param>
+        /// <param name="preferred">
+        /// Vorrangige Erkennung, typischerweise das in den Einstellungen gewählte Muster. Liefert sie
+        /// eine plausible Nummer, gilt diese; sonst greifen die allgemeinen Muster. Das Muster des
+        /// Nutzers kennt seine Sammlung besser: „038 - 01 - Pumuckl und der blaue Klabauter“ ist
+        /// Folge 38, die allgemeinen Muster läsen die 01.
+        /// </param>
+        /// <returns>
+        /// Je Ordner die Nummer oder <see langword="null"/>. Ordner ohne Nummer in einer sonst
+        /// nummerierten Serie sind Sonderfolgen (Adventskalender, Kinofilm) und bekommen keine,
+        /// damit sie keiner regulären Folge die Nummer wegnehmen. Trägt kein einziger Ordner eine
+        /// Nummer, ist die Reihenfolge die Nummerierung: dann wird ab 1 durchgezählt.
+        /// </returns>
+        public static IReadOnlyList<int?> Assign(IReadOnlyList<string> folderNames, Func<string, int?>? preferred)
+        {
+            ArgumentNullException.ThrowIfNull(folderNames);
+
+            int?[] perFolder = ExtractPerFolder(folderNames, preferred);
+            if (perFolder.Any(number => number.HasValue))
             {
-                folderCount++;
-                int? number = ExtractNumber(name);
-                if (number.HasValue)
+                return perFolder;
+            }
+
+            return [.. Enumerable.Range(1, perFolder.Length).Select(index => (int?)index)];
+        }
+
+        /// <summary>
+        /// Ob wenigstens ein Ordner der Serie eine Folgennummer im Namen trägt. Bei
+        /// <see langword="false"/> stammen die Nummern aus <see cref="Assign"/> nur aus der
+        /// Reihenfolge.
+        /// </summary>
+        /// <param name="folderNames">Ordnernamen einer Serie.</param>
+        /// <param name="preferred">Vorrangige Erkennung wie bei <see cref="Assign"/>.</param>
+        /// <returns><see langword="true"/>, wenn die Serie nummeriert ist.</returns>
+        public static bool IsNumbered(IReadOnlyList<string> folderNames, Func<string, int?>? preferred)
+        {
+            ArgumentNullException.ThrowIfNull(folderNames);
+
+            return ExtractPerFolder(folderNames, preferred).Any(number => number.HasValue);
+        }
+
+        /// <summary>
+        /// Liest je Ordner die Nummer und verwirft eine allein stehende aus den allgemeinen
+        /// Mustern, die nicht zur Sammlungsgröße passt.
+        /// </summary>
+        /// <remarks>
+        /// Eine Nummer, die das vorrangige Muster erkannt hat, bleibt von dieser Prüfung
+        /// ausgenommen: Der Nutzer hat das Muster für seine Ordner gewählt, ein einzelner
+        /// Ordner „042" ist dann Folge 42 und kein Titelbestandteil.
+        /// </remarks>
+        private static int?[] ExtractPerFolder(IReadOnlyList<string> folderNames, Func<string, int?>? preferred)
+        {
+            int?[] numbers = new int?[folderNames.Count];
+            bool anyFromPreferred = false;
+            for (int i = 0; i < folderNames.Count; i++)
+            {
+                int? fromPreferred = preferred?.Invoke(folderNames[i]);
+                if (IsPlausible(fromPreferred))
                 {
-                    _ = numbers.Add(number.Value);
+                    numbers[i] = fromPreferred;
+                    anyFromPreferred = true;
+                }
+                else
+                {
+                    numbers[i] = ExtractNumber(folderNames[i]);
                 }
             }
 
             // Genau eine Nummer und diese passt nicht zur Sammlungsgröße: eher Titelbestandteil
             // als Nummerierung. Ohne zweite Nummer gibt es nichts, was sie stützt.
-            if (numbers.Count == 1 && numbers.Min > folderCount + SingleNumberTolerance)
+            int[] distinct = [.. numbers.OfType<int>().Distinct()];
+            if (!anyFromPreferred && distinct.Length == 1 && distinct[0] > folderNames.Count + SingleNumberTolerance)
             {
-                return [];
+                Array.Clear(numbers);
             }
 
-            return [.. numbers];
+            return numbers;
         }
 
         /// <summary>
         /// Liefert die fehlenden Nummern zwischen der kleinsten und der größten gefundenen Folge.
         /// </summary>
-        /// <param name="numbers">Vorhandene Folgennummern.</param>
+        /// <param name="numbers">Vorhandene Folgennummern, aufsteigend sortiert wie aus <see cref="Scan"/>.</param>
         /// <returns>Die fehlenden Nummern, aufsteigend.</returns>
         /// <remarks>
-        /// Bewusst ab der kleinsten vorhandenen Nummer statt ab 1: Wer eine Serie erst ab Folge 50
+        /// Gezählt wird ab der kleinsten vorhandenen Nummer, nicht ab 1: Wer eine Serie erst ab Folge 50
         /// sammelt, hat keine 49 Lücken. Er hat 49 Folgen, die er nicht besitzen will.
         /// </remarks>
         public static IReadOnlyList<int> FindGaps(IReadOnlyList<int> numbers)
@@ -151,21 +221,26 @@ namespace EchoPlay.LocalLibrary.Parsing
                 }
             }
 
-            // Kein Muster passt: führende Zahl als letzte Chance.
+            // Kein Muster passt: führende Zahl, dann die Zahl zwischen zwei Trennern als letzte Chance.
+            return MatchNumber(LeadingNumber(), folderName) ?? MatchNumber(SeparatedNumber(), folderName);
+        }
+
+        private static int? MatchNumber(Regex pattern, string folderName)
+        {
             try
             {
-                Match match = LeadingNumber.Match(folderName);
-                if (match.Success && int.TryParse(match.Groups[1].Value, out int leading) && IsPlausible(leading))
-                {
-                    return leading;
-                }
+                Match match = pattern.Match(folderName);
+                return match.Success
+                    && int.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out int number)
+                    && IsPlausible(number)
+                    ? number
+                    : null;
             }
             catch (RegexMatchTimeoutException)
             {
                 // Pathologischer Ordnername, gilt als „keine Nummer".
+                return null;
             }
-
-            return null;
         }
 
         // Jahreszahlen und Katalognummern sind keine Folgennummern (gleiche Grenze wie EpisodeNumberParser).

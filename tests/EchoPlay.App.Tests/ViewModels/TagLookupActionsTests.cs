@@ -1,6 +1,7 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -26,8 +27,6 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class TagLookupActionsTests
     {
         private const string FolderPath = @"D:\Media\Die drei Fragezeichen\001 Der Super-Papagei";
-
-        // ── Manuelle Suche ───────────────────────────────────────────────────────
 
         [Fact]
         public async Task LookupOnline_WithoutSelection_AsksNothing()
@@ -71,7 +70,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             Harness harness = Harness.Build();
             harness.SelectFirstFile();
-            harness.Editor.Title = "(verschieden)";
+            harness.Editor.Title = TagEditorFieldsViewModel.MixedValuePlaceholder;
 
             await harness.Actions.LookupOnlineAsync();
 
@@ -107,8 +106,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal("Zeitüberschreitung", shown.Message);
             Assert.Equal([true, false], harness.LookingUpStates);
         }
-
-        // ── Automatische Suche ───────────────────────────────────────────────────
 
         [Fact]
         public async Task AutoLookup_WithoutFolder_SendsNoRequest()
@@ -239,8 +236,6 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.Actions.WaitForAutoLookupCompleteAsync();
         }
 
-        // ── Auf alle Dateien anwenden ────────────────────────────────────────────
-
         [Fact]
         public async Task ApplyToAll_WithoutAPreviousHit_WritesNothing()
         {
@@ -333,8 +328,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.False(harness.PreviewRefreshed);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static TagLookupResult Result(string title, uint? trackCount, string album = "Album") =>
             new()
             {
@@ -417,18 +410,8 @@ namespace EchoPlay.App.Tests.ViewModels
                     ($@"{FolderPath}\track3.mp3", new AudioTag { Title = "Kapitel 3", TrackNumber = 3 }),
                 ]);
 
-                ServiceCollection services = new();
-                _ = services.AddScoped<ITagLookupService>(_ => lookupService);
-                ServiceProvider provider = services.BuildServiceProvider();
-
-                TagManagerActionsContext context = new(
-                    TagService: tagService,
-                    LookupCoordinator: new TagLookupCoordinator(
-                        provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory()),
-                    FileRenameService: new FakeFileRenameService(),
-                    ErrorDialogService: errorDialog,
-                    ConfirmationDialogService: confirmation,
-                    OnlineAccessGuard: onlineGuard);
+                TagManagerActionsContext context = TagActionsTestContext.Create(
+                    tagService, errorDialog, confirmation, lookupService, onlineGuard: onlineGuard);
 
                 Harness harness = new()
                 {
@@ -442,7 +425,17 @@ namespace EchoPlay.App.Tests.ViewModels
                     Confirmation = confirmation,
                 };
 
-                harness.Actions = new TagLookupActions(
+                harness.Actions = CreateActions(harness, context);
+
+                return harness;
+            }
+
+            /// <summary>
+            /// Verdrahtet die Aktionen mit dem Prüfstand: Suchzustand, Statustext und das
+            /// Auffrischen der Umbenenn-Vorschau landen in seinen Feldern.
+            /// </summary>
+            private static TagLookupActions CreateActions(Harness harness, TagManagerActionsContext context)
+                => new(
                     context,
                     harness.FileList,
                     harness.Editor,
@@ -458,9 +451,6 @@ namespace EchoPlay.App.Tests.ViewModels
                         harness.PreviewRefreshed = true;
                         return Task.CompletedTask;
                     });
-
-                return harness;
-            }
         }
     }
 }

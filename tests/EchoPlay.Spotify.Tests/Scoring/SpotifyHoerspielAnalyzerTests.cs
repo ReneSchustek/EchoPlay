@@ -157,9 +157,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
             Assert.False(result.HasHoerspielAlbumStructure);
         }
 
-        // ──────────────────────────────────────────────────────────────
         // Hilfsmethoden
-        // ──────────────────────────────────────────────────────────────
 
         /// <summary>
         /// Erstellt einen Analyzer mit Standardeinstellungen.

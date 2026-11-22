@@ -18,13 +18,13 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     /// <remarks>
     /// Das fertige Bildobjekt entsteht am Fenster und lässt sich im Testlauf nicht
-    /// erzeugen. Geprüft ist deshalb, wo die Fabrik nachsieht und wo bewusst nicht, denn
+    /// erzeugen. Geprüft ist deshalb, wo die Fabrik nachsieht und wo nicht, denn
     /// jeder überflüssige Griff auf die Platte kostet bei einer vollen Übersicht
     /// hundertfach Zeit.
     /// </remarks>
     public sealed class CoverViewModelFactoryTests
     {
-        /// <summary>Ein Ordner ohne cover.jpg; er existiert bewusst nicht.</summary>
+        /// <summary>Ein Ordner ohne cover.jpg; er existiert nicht.</summary>
         private const string FolderWithoutCover = @"D:\Media\TKKG\Folge 001";
 
         [Fact]
@@ -198,6 +198,33 @@ namespace EchoPlay.App.Tests.Services
             _ = Assert.Single(loader.Calls);
         }
 
+        [Theory]
+        [InlineData(@"Coverolder.jpg")]
+        [InlineData("keine Adresse")]
+        public async Task BuildSeriesCoverAsync_WithAnUnreadableAddress_ReturnsNoCover(string storedValue)
+        {
+            CoverViewModelFactory sut = BuildFactory(out _);
+            Series series = new() { Title = "Alt", CoverImageUrl = storedValue };
+
+            // Alte Bestände führen dort auch relative Pfade; die Ansicht zeigt dann den Platzhalter.
+            Assert.Null(await sut.BuildSeriesCoverAsync(series, TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
+        public async Task BuildEpisodeCoverAsync_WhenCancelled_PassesTheCancellationOn()
+        {
+            ServiceCollection services = new();
+            _ = services.AddScoped<ILocalCoverLoader>(_ => new CancellingLocalCoverLoader());
+            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
+            CoverViewModelFactory sut = new(services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>());
+            Episode episode = new() { Title = "Folge 1", LocalFolderPath = FolderWithoutCover };
+
+            // Ein Abbruch ist kein unlesbares Cover: Er muss beim Aufrufer ankommen, statt still
+            // in den Platzhalter zu münden.
+            _ = await Assert.ThrowsAsync<OperationCanceledException>(
+                () => sut.BuildEpisodeCoverAsync(episode, TestContext.Current.CancellationToken));
+        }
+
         private static string CreateTempFolder()
         {
             string path = Path.Combine(
@@ -221,6 +248,17 @@ namespace EchoPlay.App.Tests.Services
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new CoverViewModelFactory(provider.GetRequiredService<IServiceScopeFactory>(), coverService);
+        }
+
+        /// <summary>
+        /// Bricht jeden Ladeversuch mit OperationCanceledException ab.
+        /// </summary>
+        private sealed class CancellingLocalCoverLoader : ILocalCoverLoader
+        {
+            public Task<byte[]?> LoadAsync(string? episodeFolderPath, string? firstTrackPath)
+            {
+                throw new OperationCanceledException();
+            }
         }
     }
 }

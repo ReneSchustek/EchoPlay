@@ -24,6 +24,7 @@ namespace EchoPlay.App.ViewModels
     {
         private readonly IPlayerService _playerService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
         private readonly DispatcherQueue? _dispatcherQueue;
 
         private ObservableCollection<PlaylistItemViewModel> _playlistItems = [];
@@ -31,8 +32,6 @@ namespace EchoPlay.App.ViewModels
         private BitmapImage? _coverImage;
         private bool _isPlaying;
         private string _currentTitle = string.Empty;
-
-        // Einmal zerlegt statt bei jedem Positions-Tick.
         private string _playlistTitle = string.Empty;
         private string _playlistSubtitle = string.Empty;
 
@@ -41,27 +40,20 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="playerService">Zentraler Service für die Audiowiedergabe.</param>
         /// <param name="scopeFactory">Für Datenbankzugriffe (AppSettings, LastOpenedPlayerFolder) und den Cover-Loader.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "DispatcherQueue.GetForCurrentThread() wirft in WinRT-losen Prozessen (Unit-Test-Host) native/COM-Fehler; der Fallback auf 'null' erlaubt das VM auch außerhalb von WinUI zu konstruieren.")]
         public PlayerViewModel(IPlayerService playerService, IServiceScopeFactory scopeFactory)
         {
             _playerService = playerService;
             _scopeFactory = scopeFactory;
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(scopeFactory, nameof(PlayerViewModel));
             Volume = new VolumeControl(playerService, scopeFactory);
             Time = new PlaybackTimeDisplay(playerService);
 
-            // GetForCurrentThread() wirft in WinRT-losen Prozessen (z.B. Unit-Tests), daher try-catch.
-            try
-            {
-                _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-            }
-            catch (Exception)
-            {
-                _dispatcherQueue = null;
-            }
+            _dispatcherQueue = UiDispatcher.TryGetForCurrentThread();
 
             _playerService.StateChanged += OnPlayerStateChanged;
 
             PlayPauseCommand = new RelayCommand(() => TogglePlayPause());
+            StopCommand = new RelayCommand(Stop);
             NextCommand = new RelayCommand(() => _playerService.SkipToNext());
             PreviousCommand = new RelayCommand(() => _playerService.SkipToPrevious());
 
@@ -140,8 +132,7 @@ namespace EchoPlay.App.ViewModels
         public PlaybackTimeDisplay Time { get; }
 
         /// <summary>
-        /// Titel der Playlist: Episodentitel oder Ordnername.
-        /// Ersetzt die statische Überschrift "Tracks".
+        /// Titel der Playlist: der Name des Ordners, aus dem die Dateien stammen.
         /// </summary>
         public string PlaylistTitle
         {
@@ -150,7 +141,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Untertitel der Playlist: Gesamtspielzeit und Trackanzahl (z.B. "1:12:34 · 8 Tracks").
+        /// Untertitel der Playlist: die Anzahl der Spuren, etwa „8 Tracks“.
         /// </summary>
         public string PlaylistSubtitle
         {
@@ -160,6 +151,14 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Play/Pause-Befehl: umschalten zwischen Wiedergabe und Pause.</summary>
         public ICommand PlayPauseCommand { get; }
+
+        /// <summary>
+        /// Beendet die Wiedergabe. Der Dienst merkt sich die Stelle in der Folge, die nächste
+        /// Wiedergabe derselben Folge setzt dort ein. Titel und Zeitanzeige leeren sich über
+        /// <see cref="IPlayerService.StateChanged"/>; die Wiedergabeliste bleibt stehen, damit
+        /// ein Doppelklick die Datei ohne neues Öffnen wieder startet.
+        /// </summary>
+        public ICommand StopCommand { get; }
 
         /// <summary>Zum nächsten Track springen.</summary>
         public ICommand NextCommand { get; }
@@ -176,7 +175,7 @@ namespace EchoPlay.App.ViewModels
         public void LoadFolder(string folderPath)
         {
             // Alle Dateien holen und nach unterstützten Audioformaten filtern;
-            // Directory.GetFiles unterstützt kein Multi-Pattern, deshalb filtern wir selbst
+            // Directory.GetFiles kennt nur ein Muster je Aufruf, deshalb wird hier selbst gefiltert.
             string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly)
                 .Where(EchoPlay.Core.AudioExtensions.IsAudioFile)
                 .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
@@ -280,8 +279,9 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            BuildPlaylist(running);
-            PlaylistSubtitle = $"{running.Count} {(running.Count == 1 ? "Track" : "Tracks")}";
+            // Nur anzeigen, nicht neu starten: Ein erneutes Play begänne bei der ersten Spur
+            // und ohne Folgenbezug, der Hörstand der laufenden Folge würde nicht mehr gespeichert.
+            ShowPlaylist(running);
 
             // Das Cover der laufenden Spur, nicht das der ersten: Wer mitten in einer Folge
             // einsteigt, soll sehen, was gerade läuft.
@@ -352,6 +352,24 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private void BuildPlaylist(IReadOnlyList<string> paths)
         {
+            ShowPlaylist(paths);
+
+            if (paths.Count == 0)
+            {
+                return;
+            }
+
+            // Ohne Folgenbezug: Guid.Empty hält den Wiedergabedienst davon ab, einen Hörstand zu speichern.
+            _playerService.Play(Guid.Empty, paths, startIndex: 0);
+            _ = LoadCoverFromId3Async(paths[0]);
+        }
+
+        /// <summary>
+        /// Zeigt eine Liste von Dateipfaden als Playlist samt Kopfzeile, ohne die Wiedergabe
+        /// anzufassen.
+        /// </summary>
+        private void ShowPlaylist(IReadOnlyList<string> paths)
+        {
             ObservableCollection<PlaylistItemViewModel> items = new();
 
             for (int i = 0; i < paths.Count; i++)
@@ -362,8 +380,7 @@ namespace EchoPlay.App.ViewModels
             PlaylistItems = items;
             _pendingTitleFill = FillTitlesAsync(items);
 
-            // Playlist-Header: Ordnername als Titel, Trackanzahl als Untertitel.
-            // Gesamtdauer wird erst nach dem Start aktualisiert (Mediaplayer kennt sie vorher nicht).
+            // Playlist-Header: Ordnername als Titel, Spurenzahl als Untertitel.
             if (paths.Count > 0)
             {
                 string? folderPath = Path.GetDirectoryName(paths[0]);
@@ -376,17 +393,11 @@ namespace EchoPlay.App.ViewModels
                 PlaylistTitle = string.Empty;
             }
 
-            string trackWord = paths.Count == 1 ? "Track" : "Tracks";
-            PlaylistSubtitle = $"{paths.Count} {trackWord}";
-
-            if (paths.Count == 0)
-            {
-                return;
-            }
-
-            // Episodenlosen Standalone-Playback: Guid.Empty unterdrückt PlaybackState-Persistenz im PlayerService
-            _playerService.Play(Guid.Empty, paths, startIndex: 0);
-            _ = LoadCoverFromId3Async(paths[0]);
+            PlaylistSubtitle = string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                EchoPlay.App.Helpers.PluralText.Pattern(
+                    paths.Count, "LocalTrackCountSingular", "LocalTrackCountPlural", "{0} Track", "{0} Tracks"),
+                paths.Count);
         }
 
         /// <summary>
@@ -423,6 +434,12 @@ namespace EchoPlay.App.ViewModels
             {
                 _playerService.Resume();
             }
+        }
+
+        private void Stop()
+        {
+            using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("PlayerStop");
+            _playerService.Stop();
         }
 
         /// <summary>
@@ -462,10 +479,11 @@ namespace EchoPlay.App.ViewModels
                 await bitmap.SetSourceAsync(randomAccessStream);
                 CoverImage = bitmap;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // ID3-Tag fehlt oder ist beschädigt: kein Cover anzeigen, kein Absturz.
-                // Häufige Ursachen: korrupte MP3-Datei, fehlende Leserechte, ungültiges Bildformat.
+                // Beschädigte Datei, fehlende Leserechte oder ein ungültiges Bildformat: Der Player
+                // läuft ohne Cover weiter.
+                _logger?.Warning("Cover der laufenden Folge nicht anzeigbar: {Reason}", ex.Message);
                 CoverImage = null;
             }
         }

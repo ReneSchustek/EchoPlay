@@ -13,7 +13,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// </param>
     /// <param name="Relevance">
     /// Rangwert für die Reihenfolge der Bewertung: je höher, desto eher wird der Künstler
-    /// geprüft. Sorgt dafür, dass die aussichtsreichen Treffer zuerst auf dem Schirm stehen.
+    /// geprüft. Die aussichtsreichen Treffer stehen damit zuerst auf dem Schirm.
     /// </param>
     internal readonly record struct AppleMusicArtistCandidate(
         ITunesArtistDto Artist,
@@ -41,8 +41,10 @@ namespace EchoPlay.AppleMusic.Scoring
     /// </remarks>
     internal static class AppleMusicArtistPrefilter
     {
-        // Rangwerte der Vorauswahl. Die Abstände sind bewusst grob: Sie ordnen die
-        // Kandidaten, sie berechnen keine Bewertung; die macht der Scorer.
+        // Rangwerte der Vorauswahl. Die Abstände sind grob, weil sie die Kandidaten nur ordnen;
+        // die Bewertung macht der Scorer. Aus den Summen folgt die Reihenfolge: Eine bekannte
+        // Serie steht über allem (sonst höchstens 170), ein exakter Worttreffer über jedem
+        // Teiltreffer mit Genre (70), und ein Namenstreffer ohne Genre über dem Genre allein.
         private const int KnownSeriesRelevance = 1000;
         private const int ExactWordMatchRelevance = 100;
         private const int NameContainsRelevance = 50;

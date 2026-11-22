@@ -1,9 +1,6 @@
+using EchoPlay.Core;
 using EchoPlay.LocalLibrary.IO;
 using EchoPlay.LocalLibrary.Parsing;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Analysis
 {
@@ -30,8 +27,8 @@ namespace EchoPlay.LocalLibrary.Analysis
         ];
 
         /// <summary>
-        /// Mindest-Trefferquote, damit ein Muster als Vorschlag gilt.
-        /// Ein Muster mit weniger als 50 % Übereinstimmung ist in der Praxis unbrauchbar.
+        /// Mindest-Trefferquote, damit ein Muster als Vorschlag gilt. Trifft ein Muster nicht
+        /// einmal die Hälfte der Namen, fehlten mit ihm beim Einlesen mehr Nummern, als es liefert.
         /// </summary>
         private const double MinMatchPercentage = 0.5;
 
@@ -49,7 +46,7 @@ namespace EchoPlay.LocalLibrary.Analysis
                 return Task.FromResult<IReadOnlyList<PatternSuggestion>>([]);
             }
 
-            // Dateisystem-Operationen bei großen Bibliotheken in Thread-Pool auslagern
+            // Das Auflisten der Ordner ist synchron und liefe sonst auf dem UI-Thread.
             return Task.Run(() => AnalyzeInternal(libraryRootPath));
         }
 
@@ -59,8 +56,6 @@ namespace EchoPlay.LocalLibrary.Analysis
         /// </summary>
         private static IReadOnlyList<PatternSuggestion> AnalyzeInternal(string libraryRootPath)
         {
-            // Schritt 1: Episodenordner-Namen aus den Serien-Unterordnern sammeln.
-            // hasFlatSeries wird gesetzt wenn mindestens eine Serie ohne Unterordner aber mit MP3s gefunden wurde.
             List<string> episodeFolderNames = CollectEpisodeFolderNames(libraryRootPath, out bool hasFlatSeries);
 
             if (episodeFolderNames.Count == 0 && !hasFlatSeries)
@@ -68,67 +63,51 @@ namespace EchoPlay.LocalLibrary.Analysis
                 return [];
             }
 
-            List<PatternSuggestion> suggestions = [];
+            List<PatternSuggestion> suggestions = [.. Score(episodeFolderNames, isFlatStructure: false)];
 
-            // Schritt 2: Feste Kandidaten-Muster gegen die gesammelten Ordnernamen testen
-            if (episodeFolderNames.Count > 0)
-            {
-                foreach (string pattern in CandidatePatterns)
-                {
-                    EpisodeFolderParser parser = new(pattern);
-                    int matchCount = 0;
-
-                    foreach (string name in episodeFolderNames)
-                    {
-                        if (parser.TryParse(name, out _, out _))
-                        {
-                            matchCount++;
-                        }
-                    }
-
-                    double matchPercentage = (double)matchCount / episodeFolderNames.Count;
-
-                    if (matchPercentage >= MinMatchPercentage)
-                    {
-                        suggestions.Add(new PatternSuggestion(pattern, matchCount, matchPercentage));
-                    }
-                }
-            }
-
-            // Schritt 3: Flache Serien separat analysieren (Dateinamen statt Ordnernamen)
+            // Flache Serien liefern Dateinamen statt Ordnernamen. Ein Muster, das schon die
+            // Ordner trifft, erscheint nur einmal.
             if (hasFlatSeries)
             {
-                List<string> flatFileNames = CollectFlatSeriesFileNames(libraryRootPath);
-
-                if (flatFileNames.Count > 0)
+                foreach (PatternSuggestion flat in Score(CollectFlatSeriesFileNames(libraryRootPath), isFlatStructure: true))
                 {
-                    foreach (string pattern in CandidatePatterns)
+                    if (!suggestions.Any(s => s.Pattern == flat.Pattern))
                     {
-                        EpisodeFolderParser parser = new(pattern);
-                        int matchCount = flatFileNames.Count(name => parser.TryParse(name, out _, out _));
-                        double matchPercentage = (double)matchCount / flatFileNames.Count;
-
-                        if (matchPercentage >= MinMatchPercentage)
-                        {
-                            // Nur als separaten Vorschlag hinzufügen, wenn das Muster nicht bereits durch
-                            // die Ordner-Analyse abgedeckt wurde, denn doppelte Einträge verwirren nur
-                            if (!suggestions.Any(s => s.Pattern == pattern))
-                            {
-                                suggestions.Add(new PatternSuggestion(pattern, matchCount, matchPercentage, IsFlatStructure: true));
-                            }
-                        }
+                        suggestions.Add(flat);
                     }
                 }
             }
 
-            // Bester Treffer zuerst; bei gleichem Score die Reihenfolge aus CandidatePatterns beibehalten.
-            // "{number:000}" steht bewusst vor "{number}", weil es das spezifischere Muster ist
-            IReadOnlyList<PatternSuggestion> result = suggestions
+            // Bester Treffer zuerst, bei gleicher Quote die Reihenfolge aus CandidatePatterns.
+            // „{number:000}" und „{number}" lesen dieselben Namen und treffen deshalb gleich oft;
+            // vorn steht „{number:000}", weil es beim Umbenennen dreistellige Nummern schreibt,
+            // die im Explorer in der richtigen Reihenfolge stehen.
+            return [.. suggestions
                 .OrderByDescending(s => s.MatchPercentage)
-                .ThenBy(s => Array.IndexOf(CandidatePatterns, s.Pattern))
-                .ToList();
+                .ThenBy(s => Array.IndexOf(CandidatePatterns, s.Pattern))];
+        }
 
-            return result;
+        /// <summary>
+        /// Prüft jedes Kandidaten-Muster gegen die Namen und liefert die, die oft genug treffen.
+        /// </summary>
+        private static IEnumerable<PatternSuggestion> Score(List<string> names, bool isFlatStructure)
+        {
+            if (names.Count == 0)
+            {
+                yield break;
+            }
+
+            foreach (string pattern in CandidatePatterns)
+            {
+                EpisodeFolderParser parser = new(pattern);
+                int matchCount = names.Count(name => parser.TryParse(name, out _, out _));
+                double matchPercentage = (double)matchCount / names.Count;
+
+                if (matchPercentage >= MinMatchPercentage)
+                {
+                    yield return new PatternSuggestion(pattern, matchCount, matchPercentage, isFlatStructure);
+                }
+            }
         }
 
         /// <summary>
@@ -148,7 +127,8 @@ namespace EchoPlay.LocalLibrary.Analysis
 
             string[] seriesFolders = SafeFileSystem.EnumerateDirectories(libraryRootPath);
 
-            // Stichprobe begrenzen, denn bei >20 Serien wird das Ergebnis nicht genauer, aber langsamer
+            // Zwanzig Serien zeigen das Benennungsschema der Sammlung; jede weitere kostet auf
+            // einem Netzlaufwerk spürbar Zeit, ohne den Vorschlag zu ändern.
             foreach (string seriesFolder in seriesFolders.Take(MaxSeriesSampleCount))
             {
                 string[] episodeFolders;
@@ -157,35 +137,20 @@ namespace EchoPlay.LocalLibrary.Analysis
                 {
                     episodeFolders = Directory.GetDirectories(seriesFolder);
                 }
-                catch (IOException)
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    continue;
-                }
-                catch (System.UnauthorizedAccessException)
-                {
+                    // Eine Stichprobe für den Mustervorschlag: Ein unlesbarer Ordner fällt heraus,
+                    // das Einlesen meldet denselben Ordner mit Grund im Protokoll.
                     continue;
                 }
 
                 if (episodeFolders.Length == 0)
                 {
-                    // Keine Unterordner: prüfen, ob direkt Audiodateien vorhanden sind
-                    if (HasAudioFiles(seriesFolder))
-                    {
-                        hasFlatSeries = true;
-                    }
-
+                    hasFlatSeries |= SafeFileSystem.EnumerateFiles(seriesFolder).Any(AudioExtensions.IsAudioFile);
                     continue;
                 }
 
-                foreach (string episodeFolder in episodeFolders)
-                {
-                    string? name = Path.GetFileName(episodeFolder);
-
-                    if (name is not null)
-                    {
-                        names.Add(name);
-                    }
-                }
+                names.AddRange(episodeFolders.Select(Path.GetFileName).OfType<string>());
             }
 
             return names;
@@ -209,34 +174,13 @@ namespace EchoPlay.LocalLibrary.Analysis
                     continue;
                 }
 
-                foreach (string file in SafeFileSystem.EnumerateFiles(seriesFolder).Where(IsAudioFile))
-                {
-                    string? nameWithoutExt = Path.GetFileNameWithoutExtension(file);
-
-                    if (nameWithoutExt is not null)
-                    {
-                        names.Add(nameWithoutExt);
-                    }
-                }
+                names.AddRange(SafeFileSystem.EnumerateFiles(seriesFolder)
+                    .Where(AudioExtensions.IsAudioFile)
+                    .Select(Path.GetFileNameWithoutExtension)
+                    .OfType<string>());
             }
 
             return names;
-        }
-
-        /// <summary>
-        /// Gibt <see langword="true"/> zurück, wenn der Ordner direkte Audiodateien enthält.
-        /// </summary>
-        private static bool HasAudioFiles(string folderPath)
-        {
-            return SafeFileSystem.EnumerateFiles(folderPath).Any(IsAudioFile);
-        }
-
-        /// <summary>
-        /// Gibt <see langword="true"/> zurück, wenn der Dateipfad eine bekannte Audioerweiterung hat.
-        /// </summary>
-        private static bool IsAudioFile(string filePath)
-        {
-            return EchoPlay.Core.AudioExtensions.IsAudioFile(filePath);
         }
     }
 }

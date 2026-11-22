@@ -1,35 +1,40 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
+using EchoPlay.Core.Http;
+using EchoPlay.Logger.Abstractions;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Gemeinsame Basis für Cover-Such-Services, die eine JSON-API abfragen und die Treffer
-    /// auf <see cref="CoverSearchResult"/> abbilden. Die Helfer-Methode <see cref="SearchJsonAsync"/>
-    /// kapselt Whitespace-Guard, GET-mit-Fehlertoleranz und die Ergebnis-Schleife; Ableitungen
-    /// liefern nur URL-Aufbau, Trefferliste und Einzelabbildung.
+    /// auf <see cref="CoverSearchResult"/> abbilden. <see cref="SearchJsonAsync"/> übernimmt
+    /// die Prüfung auf leere Suchbegriffe, die fehlertolerante Abfrage und das Blättern;
+    /// Ableitungen liefern nur Adresse, Trefferliste und Einzelabbildung.
     /// </summary>
     public abstract class JsonCoverSearchServiceBase : ICoverSearchService
     {
-        /// <summary>Der vorkonfigurierte HTTP-Client (inkl. evtl. nötigem User-Agent-Header).</summary>
+        /// <summary>Der vorkonfigurierte HTTP-Client, wo nötig mit User-Agent-Header.</summary>
         protected HttpClient HttpClient { get; }
 
-        /// <summary>Maximale Trefferzahl; Standard 9 (3×3-Grid). Ableitungen können abweichen.</summary>
+        /// <summary>
+        /// Protokolliert übersprungene Anfragen. Transportfehler meldet schon der HTTP-Handler;
+        /// hier geht es vor allem um Antworten, die sich nicht lesen lassen.
+        /// </summary>
+        protected ILogger Logger { get; }
+
+        /// <summary>Treffer je Seite; neun füllen das 3×3-Raster des Auswahldialogs.</summary>
         protected virtual int MaxResults => 9;
 
         /// <summary>
         /// Initialisiert die Basis mit einem vorkonfigurierten <see cref="HttpClient"/>.
         /// </summary>
         /// <param name="httpClient">HTTP-Client, bereitgestellt durch IHttpClientFactory.</param>
-        protected JsonCoverSearchServiceBase(HttpClient httpClient)
+        /// <param name="loggerFactory">Für das Protokoll übersprungener Anfragen.</param>
+        protected JsonCoverSearchServiceBase(HttpClient httpClient, ILoggerFactory loggerFactory)
         {
             ArgumentNullException.ThrowIfNull(httpClient);
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             HttpClient = httpClient;
+            Logger = loggerFactory.CreateLogger(GetType().Name);
         }
 
         /// <summary>
@@ -78,69 +83,40 @@ namespace EchoPlay.LocalLibrary.Cover
                 return [];
             }
 
-            TResponse? response;
-
-            try
-            {
-                string encodedTitle = Uri.EscapeDataString(title);
-                string url = buildUrl(encodedTitle, page.ToWindow(MaxResults, SupportsOffset));
-
-                response = await HttpClient.GetFromJsonAsync<TResponse>(url, ct).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (IsTransientRequestError(ex))
-            {
-                // Netzwerkfehler oder JSON-Deserialisierung → leere Liste, kein Absturz
-                return [];
-            }
-
-            if (response is null)
-            {
-                return [];
-            }
-
-            IReadOnlyList<TItem>? items = getItems(response);
+            CoverSearchWindow window = page.ToWindow(MaxResults, SupportsOffset);
+            TResponse? response = await FetchAsync<TResponse>(buildUrl(Uri.EscapeDataString(title), window), ct).ConfigureAwait(false);
+            IReadOnlyList<TItem>? items = response is null ? null : getItems(response);
             if (items is not { Count: > 0 })
             {
                 return [];
             }
 
-            List<CoverSearchResult> results = [];
-
             // Bei APIs ohne Versatz enthält die Antwort die schon gezeigten Treffer erneut;
-            // die fallen hier weg. Gezählt wird vor dem Abbilden, damit verworfene Treffer
+            // die fallen hier weg. Übersprungen wird vor dem Abbilden, damit verworfene Treffer
             // (kein Bild hinterlegt) die Zählung nicht verschieben.
-            int zuUeberspringen = page.ToWindow(MaxResults, SupportsOffset).SkipLocally;
-            int gesehen = 0;
-
-            foreach (TItem item in items)
-            {
-                if (gesehen++ < zuUeberspringen)
-                {
-                    continue;
-                }
-
-                CoverSearchResult? result = mapItem(item, title);
-                if (result is not null)
-                {
-                    results.Add(result);
-                }
-            }
-
-            return results;
+            return [.. items
+                .Skip(window.SkipLocally)
+                .Select(item => mapItem(item, title))
+                .Where(result => result is not null)
+                .Select(result => result!)];
         }
 
-        /// <summary>
-        /// Erkennt erwartbare Netzwerk- und Deserialisierungsfehler, bei denen eine leere
-        /// Ergebnisliste statt einer Ausnahme geliefert wird.
-        /// </summary>
-        /// <param name="ex">Die aufgetretene Ausnahme.</param>
-        /// <returns><c>true</c>, wenn der Fehler tolerierbar ist.</returns>
-        internal static bool IsTransientRequestError(Exception ex) =>
-            ex is HttpRequestException
-               or TaskCanceledException
-               or JsonException
-               or NotSupportedException
-               or UriFormatException
-               or InvalidOperationException;
+        /// <summary>Fragt den Anbieter und liest die Antwort.</summary>
+        /// <returns>Die Antwort, oder leer, wenn der Anbieter nicht oder unlesbar geantwortet hat.</returns>
+        private async Task<TResponse?> FetchAsync<TResponse>(string url, CancellationToken ct)
+            where TResponse : class
+        {
+            try
+            {
+                return await HttpClient.GetFromJsonAsync<TResponse>(url, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (TransientRequestError.IsTransient(ex, ct))
+            {
+                // Ein Anbieter, der nicht antwortet oder Unlesbares schickt, fällt für diese Suche
+                // aus; die anderen liefern weiter. Ein Abbruch des Aufrufers geht dagegen durch.
+                Logger.Warning("Cover-Suche übersprungen: {Reason}", ex.Message);
+                return null;
+            }
+        }
     }
 }

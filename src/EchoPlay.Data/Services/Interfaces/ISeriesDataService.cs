@@ -45,7 +45,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// <remarks>
         /// Beantwortet die Frage „steckt dieser Künstler schon in der Online-Mediathek?".
         /// Eine rein lokal eingelesene Serie trägt dieselbe Künstlerkennung, sobald die
-        /// Neuerscheinungs-Prüfung sie ermittelt hat – sie darf den Online-Import deshalb
+        /// Neuerscheinungs-Prüfung sie ermittelt hat; sie darf den Online-Import deshalb
         /// nicht blockieren.
         /// </remarks>
         /// <param name="spotifyArtistId">Die ID des Künstlers von Spotify.</param>

@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
@@ -6,14 +7,10 @@ using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
@@ -29,10 +26,15 @@ namespace EchoPlay.App.Services
         private readonly StatusBarViewModel _statusBar;
         private readonly IClock _clock;
         private readonly ILogger _logger;
+        private readonly LocalEpisodeGapAnalyzer _gapAnalyzer;
 
         /// <summary>
         /// Initialisiert den Koordinator mit den benötigten Diensten.
         /// </summary>
+        /// <param name="scopeFactory">Öffnet je Prüfung einen eigenen Datenbankbereich.</param>
+        /// <param name="statusBar">Zeigt Fortschritt und den vorübergehenden Online-Status.</param>
+        /// <param name="clock">Zeitquelle für den Zeitpunkt des Berichts.</param>
+        /// <param name="loggerFactory">Fabrik für den Protokollkanal.</param>
         public MissingEpisodesCoordinator(
             IServiceScopeFactory scopeFactory,
             StatusBarViewModel statusBar,
@@ -48,6 +50,7 @@ namespace EchoPlay.App.Services
             _statusBar = statusBar;
             _clock = clock;
             _logger = loggerFactory.CreateLogger("MissingEpisodesCoordinator");
+            _gapAnalyzer = new LocalEpisodeGapAnalyzer(_logger);
         }
 
         /// <inheritdoc/>
@@ -70,17 +73,15 @@ namespace EchoPlay.App.Services
             }
 
             // Phase 1: Dateisystem-Lücken im Thread-Pool analysieren
-            List<string> result = await Task.Run(() => AnalyzeMissingEpisodes(seriesFolderPath));
+            List<string> result = await Task.Run(() => LocalEpisodeGapAnalyzer.Describe(seriesFolderPath));
 
-            // Phase 2: Online-Abgleich nur wenn gewünscht
-            if (mode == MissingEpisodesMode.WithOnline)
+            // Phase 2: neue Folgen, aus der Datenbank immer, live nur wenn gewünscht
+            List<string> newEpisodeMessages = await AnalyzeNewEpisodesAsync(
+                seriesId, seriesFolderPath, mode == MissingEpisodesMode.WithOnline, cancellationToken);
+            if (newEpisodeMessages.Count > 0)
             {
-                List<string> onlineMessages = await AnalyzeLiveOnlineMissingAsync(seriesId, seriesFolderPath, cancellationToken);
-                if (onlineMessages.Count > 0)
-                {
-                    result.Add(string.Empty);
-                    result.AddRange(onlineMessages);
-                }
+                result.Add(string.Empty);
+                result.AddRange(newEpisodeMessages);
             }
 
             return result;
@@ -93,11 +94,7 @@ namespace EchoPlay.App.Services
         {
             if (mode == MissingEpisodesMode.Cancel)
             {
-                return new MissingEpisodesReport
-                {
-                    CheckedAtUtc = _clock.UtcNow,
-                    Results = []
-                };
+                return CreateReport([]);
             }
 
             bool onlineAvailable = mode == MissingEpisodesMode.WithOnline;
@@ -109,40 +106,7 @@ namespace EchoPlay.App.Services
 
             try
             {
-                using IServiceScope scope = _scopeFactory.CreateScope();
-                ISeriesDataService seriesService = scope.ServiceProvider
-                    .GetRequiredService<ISeriesDataService>();
-                IOnlineEpisodeChecker checker = scope.ServiceProvider
-                    .GetRequiredService<IOnlineEpisodeChecker>();
-
-                IReadOnlyList<Series> subscribed = await seriesService.GetSubscribedAsync(cancellationToken);
-
-                List<Series> localSeries = subscribed
-                    .Where(s => !string.IsNullOrWhiteSpace(s.LocalFolderPath))
-                    .OrderBy(s => s.Title)
-                    .ToList();
-
-                List<SeriesMissingEpisodesResult> results = new(localSeries.Count);
-
-                // Dasselbe Muster nutzt der Neuerscheinungs-Abgleich in der Online-Mediathek.
-                string progressPattern = SafeResourceLoader.Get(
-                    "OnlineRefreshProgressText", "Prüfe Serie {0}/{1}: {2} \u2026");
-
-                for (int i = 0; i < localSeries.Count; i++)
-                {
-                    Series series = localSeries[i];
-                    _statusBar.ScanProgress.SetText(string.Format(
-                        CultureInfo.CurrentCulture, progressPattern, i + 1, localSeries.Count, series.Title));
-
-                    SeriesMissingEpisodesResult result = await CheckSingleSeriesForReportAsync(series, onlineAvailable, checker, cancellationToken);
-                    results.Add(result);
-                }
-
-                return new MissingEpisodesReport
-                {
-                    CheckedAtUtc = _clock.UtcNow,
-                    Results = results
-                };
+                return CreateReport(await CheckLocalSeriesAsync(onlineAvailable, cancellationToken));
             }
             finally
             {
@@ -155,80 +119,76 @@ namespace EchoPlay.App.Services
             }
         }
 
-        /// <summary>
-        /// Live-Online-Abgleich per iTunes für die übergebene Serie. Setzt während
-        /// der Prüfung den temporären Online-Status (Nutzer hat im Dialog bereits zugestimmt).
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Live-Online-Abgleich: Provider-Fehler (iTunes-Search-API, HTTP-Timeout) dürfen den Dialog-Flow nicht reißen; der StatusBar-Flag wird im finally zurückgesetzt und die Ergebnisliste bleibt im Fehlerfall leer.")]
-        private async Task<List<string>> AnalyzeLiveOnlineMissingAsync(
-            Guid seriesId,
-            string seriesFolderPath, CancellationToken cancellationToken = default)
+        private MissingEpisodesReport CreateReport(IReadOnlyList<SeriesMissingEpisodesResult> results) => new()
         {
-            _statusBar.IsTemporarilyOnline = true;
+            CheckedAtUtc = _clock.UtcNow,
+            Results = results
+        };
+
+        /// <summary>
+        /// Prüft jede abonnierte Serie mit lokalem Ordner, alphabetisch, und zeigt den Fortschritt
+        /// in der Statusleiste.
+        /// </summary>
+        private async Task<List<SeriesMissingEpisodesResult>> CheckLocalSeriesAsync(bool onlineAvailable, CancellationToken cancellationToken)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IOnlineEpisodeChecker checker = scope.ServiceProvider.GetRequiredService<IOnlineEpisodeChecker>();
+            KnownNewEpisodeLookup knownEpisodes = scope.ServiceProvider.GetRequiredService<KnownNewEpisodeLookup>();
+            IReadOnlyList<Series> subscribed = await scope.ServiceProvider
+                .GetRequiredService<ISeriesDataService>()
+                .GetSubscribedAsync(cancellationToken);
+
+            List<Series> localSeries = [.. subscribed
+                .Where(s => !string.IsNullOrWhiteSpace(s.LocalFolderPath))
+                .OrderBy(s => s.Title)];
+
+            // Dasselbe Muster nutzt der Neuerscheinungs-Abgleich in der Online-Mediathek.
+            string progressPattern = SafeResourceLoader.Get(
+                "OnlineRefreshProgressText", "Prüfe Serie {0}/{1}: {2} \u2026");
+
+            List<SeriesMissingEpisodesResult> results = new(localSeries.Count);
+            for (int i = 0; i < localSeries.Count; i++)
+            {
+                Series series = localSeries[i];
+                _statusBar.ScanProgress.SetText(string.Format(
+                    CultureInfo.CurrentCulture, progressPattern, i + 1, localSeries.Count, series.Title));
+
+                results.Add(await CheckSingleSeriesForReportAsync(
+                    series, onlineAvailable ? checker : null, knownEpisodes, cancellationToken));
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Neue Folgen nach der letzten lokalen Nummer für den Einzelbericht: die beim Anbieter
+        /// bekannten aus der Datenbank, mit <paramref name="includeLive"/> zusätzlich der
+        /// Live-Abgleich. Während des Live-Abgleichs zeigt die Statusleiste den temporären
+        /// Online-Status (Nutzer hat im Dialog bereits zugestimmt).
+        /// </summary>
+        /// <param name="seriesId">Die geprüfte Serie.</param>
+        /// <param name="seriesFolderPath">Ihr lokaler Ordner.</param>
+        /// <param name="includeLive">Ob zusätzlich live beim Anbieter abgefragt wird.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neue Folgen sind eine Ergänzung zur lokalen Lückensuche: Datenbank- oder Provider-Fehler (iTunes-Search-API, HTTP-Timeout) dürfen den Dialog nicht reißen; der StatusBar-Flag wird im finally zurückgesetzt und die Liste bleibt im Fehlerfall leer.")]
+        private async Task<List<string>> AnalyzeNewEpisodesAsync(
+            Guid seriesId, string seriesFolderPath, bool includeLive, CancellationToken cancellationToken = default)
+        {
+            _statusBar.IsTemporarilyOnline = includeLive;
 
             try
             {
-                using IServiceScope scope = _scopeFactory.CreateScope();
-                ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                IOnlineEpisodeChecker checker = scope.ServiceProvider.GetRequiredService<IOnlineEpisodeChecker>();
-                Series? series = await seriesService.GetByIdAsync(seriesId, cancellationToken);
-
-                if (series is null)
-                {
-                    return [];
-                }
-
-                CheckableSeriesInfo checkable = new()
-                {
-                    SeriesId = series.Id,
-                    Title = series.Title,
-                    AppleMusicArtistId = series.AppleMusicArtistId,
-                    LocalFolderPath = seriesFolderPath,
-                    CoverImageUrl = series.CoverImageUrl
-                };
-
-                IReadOnlyList<OnlineEpisodeCheckResult> results =
-                    await checker.CheckAllAsync([checkable], cancellationToken);
-
-                if (results.Count == 0)
-                {
-                    return [];
-                }
-
-                OnlineEpisodeCheckResult checkResult = results[0];
-
-                if (checkResult.MissingOnlineEpisodes.Count == 0)
-                {
-                    return [];
-                }
-
-                // Muster erst in eine Variable: mit dem Aufruf direkt im string.Format
-                // verlangt der Analyzer ein zwischengespeichertes CompositeFormat, was bei
-                // einem zur Laufzeit wechselnden Sprachtext nichts brächte.
-                string headerPattern = SafeResourceLoader.Get(
-                    "MissingEpisodesOnlineHeader", "Online verfügbar (nach Folge {0}):");
-                string entryPattern = SafeResourceLoader.Get(
-                    "MissingEpisodesOnlineEntry", "  Folge {0} \u2013 {1}");
-
-                List<string> messages =
-                [
-                    string.Format(CultureInfo.CurrentCulture, headerPattern, checkResult.LocalHighestNumber),
-                    string.Empty
-                ];
-
-                foreach (MissingOnlineEpisode ep in checkResult.MissingOnlineEpisodes)
-                {
-                    messages.Add(string.Format(
-                        CultureInfo.CurrentCulture,
-                        entryPattern,
-                        ep.EpisodeNumber.ToString("D3", CultureInfo.CurrentCulture),
-                        ep.AlbumTitle));
-                }
-
-                return messages;
+                return await CollectNewEpisodesAsync(seriesId, seriesFolderPath, includeLive, cancellationToken);
             }
-            catch (Exception)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                // Ein Abbruch des Aufrufers ist kein Fehlschlag und gehört nach oben.
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Ohne diesen Teil zeigt der Dialog eben nur die lokalen Lücken.
+                _logger.Warning("Abgleich neuer Folgen fehlgeschlagen: {Reason}", ex.Message);
                 return [];
             }
             finally
@@ -238,58 +198,124 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Prüft eine einzelne Serie für den Gesamtbericht: lokale Lücken plus optionaler
-        /// Online-Abgleich. Fehler werden als <see cref="SeriesMissingEpisodesResult.ErrorMessage"/>
+        /// Sucht die Folgen nach der höchsten lokalen Nummer, in der Datenbank und auf Wunsch live,
+        /// und liefert sie als Zeilen für den Dialog.
+        /// </summary>
+        private async Task<List<string>> CollectNewEpisodesAsync(
+            Guid seriesId, string seriesFolderPath, bool includeLive, CancellationToken cancellationToken)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
+            Series? series = await seriesService.GetByIdAsync(seriesId, cancellationToken);
+            int localHighest = await Task.Run(() => OnlineEpisodeChecker.GetLocalHighestEpisodeNumber(seriesFolderPath, _logger));
+
+            if (series is null || localHighest == 0)
+            {
+                return [];
+            }
+
+            IReadOnlyList<OnlineEpisodeInfo> known = await scope.ServiceProvider
+                .GetRequiredService<KnownNewEpisodeLookup>()
+                .FindAfterAsync(series, localHighest, cancellationToken);
+            IReadOnlyList<OnlineEpisodeInfo> live = includeLive
+                ? (await CheckLiveAsync(series, seriesFolderPath,
+                    scope.ServiceProvider.GetRequiredService<IOnlineEpisodeChecker>(), cancellationToken)).Episodes
+                : [];
+
+            return FormatNewEpisodes(localHighest, KnownNewEpisodeLookup.Merge(known, live));
+        }
+
+        /// <summary>
+        /// Fragt beim Anbieter live ab, welche Folgen nach der letzten lokalen Nummer erschienen sind.
+        /// </summary>
+        /// <param name="series">Die lokale Serie.</param>
+        /// <param name="seriesFolderPath">Ihr lokaler Ordner, aus dem die höchste Nummer gelesen wird.</param>
+        /// <param name="checker">Der Live-Abgleich.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
+        /// <returns>Die neuen Folgen und die höchste Nummer beim Anbieter; leer und 0 ohne Ergebnis.</returns>
+        private static async Task<(IReadOnlyList<OnlineEpisodeInfo> Episodes, int OnlineHighest)> CheckLiveAsync(
+            Series series, string seriesFolderPath, IOnlineEpisodeChecker checker, CancellationToken cancellationToken)
+        {
+            CheckableSeriesInfo checkable = new()
+            {
+                SeriesId = series.Id,
+                Title = series.Title,
+                AppleMusicArtistId = series.AppleMusicArtistId,
+                LocalFolderPath = seriesFolderPath,
+                CoverImageUrl = WebAddress.TryParse(series.CoverImageUrl)
+            };
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckAllAsync([checkable], cancellationToken);
+            if (results.Count == 0)
+            {
+                return ([], 0);
+            }
+
+            List<OnlineEpisodeInfo> episodes = results[0].MissingOnlineEpisodes
+                .Select(episode => new OnlineEpisodeInfo { EpisodeNumber = episode.EpisodeNumber, Title = episode.AlbumTitle })
+                .ToList();
+            return (episodes, results[0].OnlineHighestNumber);
+        }
+
+        /// <summary>Schreibt die neuen Folgen als Zeilen für den Einzelbericht.</summary>
+        /// <param name="localHighest">Höchste lokale Nummer, sie steht in der Überschrift.</param>
+        /// <param name="episodes">Die neuen Folgen, aufsteigend.</param>
+        private static List<string> FormatNewEpisodes(int localHighest, IReadOnlyList<OnlineEpisodeInfo> episodes)
+        {
+            if (episodes.Count == 0)
+            {
+                return [];
+            }
+
+            // Muster erst in eine Variable: mit dem Aufruf direkt im string.Format
+            // verlangt der Analyzer ein zwischengespeichertes CompositeFormat, was bei
+            // einem zur Laufzeit wechselnden Sprachtext nichts brächte.
+            string headerPattern = SafeResourceLoader.Get(
+                "MissingEpisodesOnlineHeader", "Online verfügbar (nach Folge {0}):");
+            string entryPattern = SafeResourceLoader.Get(
+                "MissingEpisodesOnlineEntry", "  Folge {0} \u2013 {1}");
+
+            List<string> messages =
+            [
+                string.Format(CultureInfo.CurrentCulture, headerPattern, localHighest),
+                string.Empty
+            ];
+
+            foreach (OnlineEpisodeInfo episode in episodes)
+            {
+                messages.Add(string.Format(
+                    CultureInfo.CurrentCulture,
+                    entryPattern,
+                    episode.EpisodeNumber.ToString("D3", CultureInfo.CurrentCulture),
+                    episode.Title));
+            }
+
+            return messages;
+        }
+
+        /// <summary>
+        /// Prüft eine einzelne Serie für den Gesamtbericht: lokale Lücken, die beim Anbieter
+        /// schon bekannten neuen Folgen und, wenn <paramref name="liveChecker"/> gesetzt ist, der
+        /// Live-Abgleich. Fehler werden als <see cref="SeriesMissingEpisodesResult.ErrorMessage"/>
         /// im Bericht weitergereicht, ohne die gesamte Prüfung zu stoppen.
         /// </summary>
+        /// <param name="series">Die lokale Serie.</param>
+        /// <param name="liveChecker">Live-Abgleich; null bei „Nur offline".</param>
+        /// <param name="knownEpisodes">Suche nach den neuen Folgen in der Datenbank.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Pro-Serie-Check für den Gesamtbericht: HTTP-/iTunes-Fehler oder DB-Fehler einer einzelnen Serie werden als 'ErrorMessage' im Report weitergereicht, damit die Bericht-Schleife für die übrigen Serien weiterläuft.")]
         private async Task<SeriesMissingEpisodesResult> CheckSingleSeriesForReportAsync(
-            Series series, bool onlineAvailable, IOnlineEpisodeChecker checker, CancellationToken cancellationToken = default)
+            Series series, IOnlineEpisodeChecker? liveChecker, KnownNewEpisodeLookup knownEpisodes,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                List<int> gaps = [];
-                int localHighest = 0;
+                (List<int> gaps, int localHighest) = await AnalyzeLocalFolderAsync(series);
 
-                if (!string.IsNullOrWhiteSpace(series.LocalFolderPath)
-                    && Directory.Exists(series.LocalFolderPath))
-                {
-                    (gaps, localHighest) = await Task.Run(
-                        () => AnalyzeMissingEpisodesForReport(series.LocalFolderPath));
-                }
-
-                int onlineHighest = 0;
-                List<OnlineEpisodeInfo> onlineEpisodes = [];
-
-                if (onlineAvailable && localHighest > 0)
-                {
-                    CheckableSeriesInfo checkable = new()
-                    {
-                        SeriesId = series.Id,
-                        Title = series.Title,
-                        AppleMusicArtistId = series.AppleMusicArtistId,
-                        LocalFolderPath = series.LocalFolderPath,
-                        CoverImageUrl = series.CoverImageUrl
-                    };
-
-                    IReadOnlyList<OnlineEpisodeCheckResult> checkResults =
-                        await checker.CheckAllAsync([checkable], cancellationToken);
-
-                    if (checkResults.Count > 0)
-                    {
-                        OnlineEpisodeCheckResult cr = checkResults[0];
-                        onlineHighest = cr.OnlineHighestNumber;
-
-                        foreach (MissingOnlineEpisode ep in cr.MissingOnlineEpisodes)
-                        {
-                            onlineEpisodes.Add(new OnlineEpisodeInfo
-                            {
-                                EpisodeNumber = ep.EpisodeNumber,
-                                Title = ep.AlbumTitle
-                            });
-                        }
-                    }
-                }
+                // Ohne erkannte Nummer gibt es kein „danach": Jede Folge des Anbieters wäre neu.
+                (IReadOnlyList<OnlineEpisodeInfo> onlineEpisodes, int onlineHighest) = localHighest > 0
+                    ? await FindOnlineAfterAsync(series, localHighest, liveChecker, knownEpisodes, cancellationToken)
+                    : ([], 0);
 
                 return new SeriesMissingEpisodesResult
                 {
@@ -300,176 +326,56 @@ namespace EchoPlay.App.Services
                     OnlineEpisodes = onlineEpisodes
                 };
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Ein Abbruch des Aufrufers ist kein Fehlschlag und gehört nach oben.
+                throw;
+            }
             catch (Exception ex)
             {
-                return new SeriesMissingEpisodesResult
-                {
-                    SeriesTitle = series.Title,
-                    LocalGaps = [],
-                    OnlineEpisodes = [],
-                    ErrorMessage = ex.Message
-                };
+                return FailedResult(series, ex.Message);
             }
         }
 
-        /// <summary>
-        /// Analysiert lokale Lücken und liefert sowohl die fehlenden Nummern als auch
-        /// die höchste gefundene Nummer. Strukturierte Variante für den Gesamtbericht.
-        /// Läuft im Thread-Pool und darf keine UI-Elemente anfassen.
-        /// </summary>
-        /// <param name="seriesFolderPath">Absoluter Pfad des Serienordners.</param>
-        private static (List<int> Gaps, int MaxNumber) AnalyzeMissingEpisodesForReport(string seriesFolderPath)
+        /// <summary>Der Berichtseintrag einer Serie, deren Prüfung scheiterte.</summary>
+        private static SeriesMissingEpisodesResult FailedResult(Series series, string reason) => new()
         {
-            string[] subfolders;
-            try
+            SeriesTitle = series.Title,
+            LocalGaps = [],
+            OnlineEpisodes = [],
+            ErrorMessage = reason
+        };
+
+        /// <summary>
+        /// Lücken und höchste Nummer im Serienordner; ohne vorhandenen Ordner beides leer.
+        /// </summary>
+        private async Task<(List<int> Gaps, int Highest)> AnalyzeLocalFolderAsync(Series series)
+        {
+            string? folder = series.LocalFolderPath;
+            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
             {
-                subfolders = Directory.GetDirectories(seriesFolderPath);
-            }
-            catch (IOException)
-            {
-                // Serienordner nicht lesbar, kein Bericht möglich
-                return ([], 0);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Keine Leserechte, kein Bericht möglich
                 return ([], 0);
             }
 
-            List<string> episodeFolderNames = [];
-            foreach (string folder in subfolders)
-            {
-                try
-                {
-                    bool hasAudio = Directory
-                        .GetFiles(folder, "*.*", SearchOption.AllDirectories)
-                        .Any(EchoPlay.Core.AudioExtensions.IsAudioFile);
-
-                    if (hasAudio)
-                    {
-                        string? name = Path.GetFileName(folder);
-                        if (name is not null)
-                        {
-                            episodeFolderNames.Add(name);
-                        }
-                    }
-                }
-                catch (IOException) { /* Einzelner Ordner nicht lesbar, Rest weiterscannen */ }
-                catch (UnauthorizedAccessException) { /* Kein Zugriff, überspringen */ }
-            }
-
-            if (episodeFolderNames.Count == 0) return ([], 0);
-
-            IReadOnlyList<int> numbers = LocalEpisodeNumbers.Scan(episodeFolderNames);
-            if (numbers.Count == 0) return ([], 0);
-
-            return ([.. LocalEpisodeNumbers.FindGaps(numbers)], numbers[^1]);
+            return await Task.Run(() => _gapAnalyzer.AnalyzeForReport(folder));
         }
 
         /// <summary>
-        /// Analysiert den Serienordner auf fehlende Folgen und gibt Anzeige-Meldungen zurück.
-        /// Wird für die Einzelserien-Prüfung verwendet (formatierter Text für den Dialog).
+        /// Die Folgen des Anbieters nach der letzten lokalen Nummer: die bekannten aus der Datenbank,
+        /// mit <paramref name="liveChecker"/> zusätzlich die aus dem Live-Abgleich.
         /// </summary>
-        /// <param name="seriesFolderPath">Stammordner der Serie, dessen Unterordner ausgewertet werden.</param>
-        private static List<string> AnalyzeMissingEpisodes(string seriesFolderPath)
+        /// <returns>Die Folgen und die höchste Nummer beim Anbieter.</returns>
+        private static async Task<(IReadOnlyList<OnlineEpisodeInfo> Episodes, int Highest)> FindOnlineAfterAsync(
+            Series series, int localHighest, IOnlineEpisodeChecker? liveChecker, KnownNewEpisodeLookup knownEpisodes,
+            CancellationToken cancellationToken)
         {
-            string[] subfolders;
-            try
-            {
-                subfolders = Directory.GetDirectories(seriesFolderPath);
-            }
-            catch (IOException)
-            {
-                return [SafeResourceLoader.Get(
-                    "MissingEpisodesFolderUnreadable", "Ordner konnte nicht gelesen werden.")];
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return [SafeResourceLoader.Get(
-                    "MissingEpisodesFolderAccessDenied", "Zugriff auf den Ordner verweigert.")];
-            }
+            IReadOnlyList<OnlineEpisodeInfo> known = await knownEpisodes.FindAfterAsync(series, localHighest, cancellationToken);
+            (IReadOnlyList<OnlineEpisodeInfo> live, int liveHighest) = liveChecker is null
+                ? ([], 0)
+                : await CheckLiveAsync(series, series.LocalFolderPath!, liveChecker, cancellationToken); // localHighest > 0 setzt den Ordner voraus
 
-            // Nur Ordner mit mindestens einer Audiodatei sind echte Folgen.
-            // Jubiläumsfolgen können Audio in Unterordnern (CD1, Teil A) ablegen,
-            // deshalb wird rekursiv gesucht (SearchOption.AllDirectories).
-            List<string> episodeFolderNames = [];
-            foreach (string folder in subfolders)
-            {
-                try
-                {
-                    bool hasAudio = Directory
-                        .GetFiles(folder, "*.*", SearchOption.AllDirectories)
-                        .Any(EchoPlay.Core.AudioExtensions.IsAudioFile);
-
-                    if (hasAudio)
-                    {
-                        string? name = Path.GetFileName(folder);
-                        if (name is not null)
-                        {
-                            episodeFolderNames.Add(name);
-                        }
-                    }
-                }
-                catch (IOException) { /* Einzelner Ordner nicht lesbar, Rest weiterscannen */ }
-                catch (UnauthorizedAccessException) { /* Kein Zugriff, überspringen */ }
-            }
-
-            if (episodeFolderNames.Count == 0)
-            {
-                return [SafeResourceLoader.Get(
-                    "MissingEpisodesNoEpisodeFolders", "Keine Folgenordner mit Audiodateien gefunden.")];
-            }
-
-            IReadOnlyList<int> numbers = LocalEpisodeNumbers.Scan(episodeFolderNames);
-            if (numbers.Count == 0)
-            {
-                return [string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        episodeFolderNames.Count,
-                        "MissingEpisodesNoNumbersSingular",
-                        "MissingEpisodesNoNumbersPlural",
-                        "{0} Folge vorhanden (keine Nummerierung erkannt).",
-                        "{0} Folgen vorhanden (keine Nummerierung erkannt)."),
-                    episodeFolderNames.Count)];
-            }
-
-            IReadOnlyList<int> gaps = LocalEpisodeNumbers.FindGaps(numbers);
-            int minNumber = numbers[0];
-            int maxNumber = numbers[^1];
-
-            if (gaps.Count == 0)
-            {
-                string noGapsPattern = SafeResourceLoader.Get(
-                    "MissingEpisodesNoGaps", "Alle Folgen vorhanden ({0}–{1}), keine Lücken.");
-                return [string.Format(CultureInfo.CurrentCulture, noGapsPattern, minNumber, maxNumber)];
-            }
-
-            List<string> messages =
-            [
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        gaps.Count,
-                        "MissingEpisodesGapsHeaderSingular",
-                        "MissingEpisodesGapsHeaderPlural",
-                        "{0} fehlende Folge im Bereich {1}–{2}:",
-                        "{0} fehlende Folgen im Bereich {1}–{2}:"),
-                    gaps.Count, minNumber, maxNumber),
-                string.Empty
-            ];
-
-            string gapEntryPattern = SafeResourceLoader.Get("MissingEpisodesGapEntry", "  Folge {0}");
-            foreach (int gap in gaps)
-            {
-                messages.Add(string.Format(
-                    CultureInfo.CurrentCulture,
-                    gapEntryPattern,
-                    gap.ToString("D3", CultureInfo.CurrentCulture)));
-            }
-
-            return messages;
+            IReadOnlyList<OnlineEpisodeInfo> merged = KnownNewEpisodeLookup.Merge(known, live);
+            return (merged, Math.Max(liveHighest, merged.Count > 0 ? merged[^1].EpisodeNumber : 0));
         }
-
     }
 }

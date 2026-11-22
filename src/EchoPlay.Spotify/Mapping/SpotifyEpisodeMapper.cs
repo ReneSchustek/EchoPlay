@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Spotify.Dtos;
 
@@ -17,7 +18,7 @@ namespace EchoPlay.Spotify.Mapping
         /// <param name="album">Das Spotify-Album.</param>
         /// <param name="tracks">Die Tracks des Albums, nur für die Dauerberechnung.</param>
         /// <param name="orderIndex">Sortierposition innerhalb der Serie.</param>
-        /// <returns>Eine Import-Episode die das gesamte Album repräsentiert.</returns>
+        /// <returns>Eine Import-Episode, die das gesamte Album darstellt.</returns>
         public static ImportEpisode MapAlbumToEpisode(SpotifyAlbumDto album, IReadOnlyList<SpotifyTrackDto> tracks, int orderIndex)
         {
             ArgumentNullException.ThrowIfNull(album);
@@ -30,10 +31,9 @@ namespace EchoPlay.Spotify.Mapping
                 releaseDate: album.ReleaseDate,
                 trackDurations: tracks.Select(track => track.Duration),
                 orderIndex: orderIndex,
-                providerUrl: $"https://open.spotify.com/album/{album.SpotifyAlbumId}",
-                coverImageUrl: album.ImageUrl,
+                providerUrl: WebAddress.TryParse($"https://open.spotify.com/album/{Uri.EscapeDataString(album.SpotifyAlbumId)}"),
+                coverImageUrl: WebAddress.TryParse(album.ImageUrl),
                 source: "Spotify");
         }
-
     }
 }

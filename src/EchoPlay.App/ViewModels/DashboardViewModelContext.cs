@@ -22,6 +22,7 @@ namespace EchoPlay.App.ViewModels
     /// <param name="Clock">Zeitquelle. Nullable; fehlt sie, gilt die Systemzeit.</param>
     /// <param name="BackgroundCoverService">Trägt fehlende Folgen-Cover nach. Nullable für Tests.</param>
     /// <param name="NewReleaseEventService">Meldet Änderungen am Neuerscheinungs-Zwischenspeicher. Nullable für Tests.</param>
+    /// <param name="ReleaseCalendarService">Baut den Veröffentlichungskalender auf und meldet neue Einträge. Nullable für Tests.</param>
     internal sealed record DashboardViewModelContext(
         IServiceScopeFactory ScopeFactory,
         IErrorDialogService ErrorDialogService,
@@ -32,5 +33,6 @@ namespace EchoPlay.App.ViewModels
         ILocalizationService? LocalizationService = null,
         IClock? Clock = null,
         BackgroundCoverService? BackgroundCoverService = null,
-        INewReleaseEventService? NewReleaseEventService = null);
+        INewReleaseEventService? NewReleaseEventService = null,
+        ReleaseCalendarRefreshService? ReleaseCalendarService = null);
 }

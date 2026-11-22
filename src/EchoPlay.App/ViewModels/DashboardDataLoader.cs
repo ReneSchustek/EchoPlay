@@ -82,7 +82,7 @@ namespace EchoPlay.App.ViewModels
                 episodeTitle: episode.Title,
                 coverImage: cover,
                 status: PlaybackStatusResolver.Resolve(state),
-                progressPercent: CalculateProgress(state, episode.Duration),
+                progressPercent: PlaybackStatusResolver.ProgressPercent(state, episode.Duration),
                 hasLocalTrack: hasLocalTrack,
                 isAnnounced: isAnnounced,
                 scopeFactory: _scopeFactory,
@@ -121,7 +121,7 @@ namespace EchoPlay.App.ViewModels
         {
             // Eine offene Stelle zählt, nicht der Hörstatus: Wer eine gehörte Folge erneut
             // angefangen hat, findet sie hier wieder. Ob die Stelle wirklich offen ist,
-            // entscheidet sich erst mit der Dauer der Folge — die steht unten beim Bauen
+            // entscheidet sich erst mit der Dauer der Folge; die steht unten beim Bauen
             // der Kachel zur Verfügung, hier noch nicht.
             List<PlaybackState> activeStates = SelectStates(allStates, s => s.LastPosition > TimeSpan.Zero);
             SortByMostRecent(activeStates, s => s.UpdatedAt ?? s.CreatedAt);
@@ -166,7 +166,7 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyList<Series> subscribedSeries,
             CancellationToken cancellationToken = default)
         {
-            // Stände mit echter Hörzeit oder als gehört gekennzeichnet — Letzteres trifft
+            // Stände mit echter Hörzeit oder als gehört gekennzeichnet; Letzteres trifft
             // Folgen, die außerhalb der Anwendung gehört wurden.
             List<PlaybackState> activeStates = SelectStates(allStates, s => s.LastPosition > TimeSpan.Zero || s.IsCompleted);
             SortByMostRecent(activeStates, s => s.LastPlayedAt ?? s.UpdatedAt ?? s.CreatedAt);
@@ -204,25 +204,6 @@ namespace EchoPlay.App.ViewModels
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Berechnet den Wiedergabefortschritt in Prozent (0–100).
-        /// Ohne Zustand oder ohne bekannte Gesamtdauer sind es null Prozent.
-        /// </summary>
-        private static double CalculateProgress(PlaybackState? state, TimeSpan duration)
-        {
-            if (state is null || duration == TimeSpan.Zero)
-            {
-                return 0;
-            }
-
-            if (state.IsCompleted)
-            {
-                return 100;
-            }
-
-            return Math.Min(100, state.LastPosition.TotalSeconds / duration.TotalSeconds * 100);
         }
 
         /// <summary>Filtert die Wiedergabestände nach der übergebenen Bedingung.</summary>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EchoPlay.Logger.Abstractions;
@@ -79,27 +78,14 @@ namespace EchoPlay.App.Services
             {
                 HttpResponseMessage response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 sw.Stop();
-
-                string line = FormatResponseLine(
-                    (int)response.StatusCode,
-                    response.ReasonPhrase,
-                    sw.ElapsedMilliseconds,
-                    attempt);
-
-                if ((int)response.StatusCode >= 400)
-                {
-                    _logger.Warning(line);
-                }
-                else
-                {
-                    _logger.Info(line);
-                }
-
+                LogResponse(response, sw.ElapsedMilliseconds, attempt);
                 return response;
             }
             catch (OperationCanceledException)
             {
-                // Abbruch durch CancellationToken ist kein Fehler, nur Info.
+                // Abbruch steht als Info, auch wenn ihn die Zeitgrenze eines Versuchs auslöst: Das
+                // Token hier kommt aus der Wiederholungsregel, und ob nachgefasst wird, zeigt die
+                // nächste Zeile mit höherem Versuchszähler.
                 sw.Stop();
                 _logger.Info(FormatCancelLine(sw.ElapsedMilliseconds, attempt));
                 throw;
@@ -110,6 +96,20 @@ namespace EchoPlay.App.Services
                 _logger.Warning(FormatFailureLine(ex, sw.ElapsedMilliseconds, attempt));
                 throw;
             }
+        }
+
+        /// <summary>Protokolliert die Antwort; ab Status 400 als Warnung.</summary>
+        private void LogResponse(HttpResponseMessage response, long elapsedMs, int attempt)
+        {
+            string line = FormatResponseLine((int)response.StatusCode, response.ReasonPhrase, elapsedMs, attempt);
+
+            if ((int)response.StatusCode >= 400)
+            {
+                _logger.Warning(line);
+                return;
+            }
+
+            _logger.Info(line);
         }
 
         private string FormatRequestLine(string method, string redactedUrl, int attempt)
@@ -178,48 +178,27 @@ namespace EchoPlay.App.Services
                 return baseUrl;
             }
 
-            StringBuilder sb = new(baseUrl.Length + query.Length);
-            _ = sb.Append(baseUrl);
-            _ = sb.Append('?');
+            IEnumerable<string> pairs = query.TrimStart('?')
+                .Split('&', StringSplitOptions.None)
+                .Where(pair => pair.Length > 0)
+                .Select(RedactPair);
+            return baseUrl + "?" + string.Join('&', pairs);
+        }
 
-            string raw = query.TrimStart('?');
-            string[] pairs = raw.Split('&', StringSplitOptions.None);
-            bool first = true;
-            foreach (string pair in pairs)
+        /// <summary>
+        /// Ein Paar aus Schlüssel und Wert; der Wert eines sensiblen Schlüssels wird zu <c>***</c>.
+        /// Ein Schlüssel ohne Gleichheitszeichen bleibt, wie er ist.
+        /// </summary>
+        private static string RedactPair(string pair)
+        {
+            int eq = pair.IndexOf('=', StringComparison.Ordinal);
+            if (eq < 0)
             {
-                if (pair.Length == 0)
-                {
-                    continue;
-                }
-
-                if (!first)
-                {
-                    _ = sb.Append('&');
-                }
-                first = false;
-
-                int eq = pair.IndexOf('=', StringComparison.Ordinal);
-                string key = eq >= 0 ? pair[..eq] : pair;
-                string value = eq >= 0 ? pair[(eq + 1)..] : string.Empty;
-
-                _ = sb.Append(key);
-                if (eq < 0)
-                {
-                    continue;
-                }
-
-                _ = sb.Append('=');
-                if (SensitiveQueryKeys.Contains(key))
-                {
-                    _ = sb.Append("***");
-                }
-                else
-                {
-                    _ = sb.Append(value);
-                }
+                return pair;
             }
 
-            return sb.ToString();
+            string key = pair[..eq];
+            return SensitiveQueryKeys.Contains(key) ? key + "=***" : pair;
         }
 
         /// <summary>

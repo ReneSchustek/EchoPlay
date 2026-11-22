@@ -4,7 +4,7 @@ namespace EchoPlay.Spotify.Tests.Scoring
 {
     /// <summary>
     /// Tests für den Hörspiel-Entscheidungscache.
-    /// Stellt sicher, dass gespeicherte Ergebnisse korrekt abgerufen werden
+    /// Prüft, dass gespeicherte Ergebnisse korrekt abgerufen werden
     /// und nicht vorhandene Einträge sauber behandelt werden.
     /// </summary>
     public sealed class HoerspielDecisionCacheTests

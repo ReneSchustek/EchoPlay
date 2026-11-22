@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 
 namespace EchoPlay.App.Models
 {
@@ -14,7 +14,7 @@ namespace EchoPlay.App.Models
         private readonly EchoPlay.LocalLibrary.Models.RestructurePreview _original;
 
         /// <summary>
-        /// Erstellt das Wrapper-Modell aus einem LocalLibrary-Suchergebnis.
+        /// Erstellt das Wrapper-Modell aus der Vorschau des Restrukturierungs-Service.
         /// Mappt jede Aktion sofort auf das schmale <see cref="RestructureActionDisplay"/>-Record,
         /// damit die UI keine LocalLibrary-Typen mehr sieht.
         /// </summary>

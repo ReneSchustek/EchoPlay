@@ -19,30 +19,34 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class EpisodeCoverCacheServiceCancelTests
     {
+        /// <summary>Legt eine abonnierte Serie mit zwei Folgen an, die je eine Cover-Adresse tragen.</summary>
+        private static async Task<Series> SeedSeriesWithTwoCoverUrlsAsync(
+            FakeSeriesDataService seriesService, FakeEpisodeDataService episodeService)
+        {
+            Series series = new() { Title = "Testserie", IsSubscribed = true };
+            await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
+
+            foreach (string title in new[] { "Folge 1", "Folge 2" })
+            {
+                await episodeService.AddAsync(
+                    new Episode { SeriesId = series.Id, Title = title, CoverImageUrl = "https://example.invalid/" + title + ".jpg" },
+                    cancellationToken: TestContext.Current.CancellationToken);
+            }
+
+            return series;
+        }
+
         [Fact]
-        public async Task CacheCoversAsync_AbbruchImDownload_ProtokolliertKeineWarnung()
+        public async Task CacheCoversAsync_CancelDuringDownload_LogsNoWarning()
         {
             using CancellationTokenSource cts = new();
 
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
 
-            Series series = new() { Title = "Testserie", IsSubscribed = true };
-            await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
-
             // Zwei Folgen mit Provider-Adresse: Die erste bricht ab, die zweite darf danach
             // nicht mehr an die Reihe kommen.
-            foreach (string titel in new[] { "Folge 1", "Folge 2" })
-            {
-                await episodeService.AddAsync(
-                    new Episode
-                    {
-                        SeriesId = series.Id,
-                        Title = titel,
-                        CoverImageUrl = "https://example.invalid/" + titel + ".jpg"
-                    },
-                    cancellationToken: TestContext.Current.CancellationToken);
-            }
+            Series series = await SeedSeriesWithTwoCoverUrlsAsync(seriesService, episodeService);
 
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
@@ -62,7 +66,7 @@ namespace EchoPlay.App.Tests.Services
 
             await service.CacheCoversAsync(series.Id, ct: cts.Token);
 
-            // Der öffentliche Einstiegspunkt schluckt den Abbruch bewusst, er darf aber
+            // Der öffentliche Einstiegspunkt schluckt den Abbruch, er darf aber
             // nicht als Fehlschlag der Folge im Protokoll erscheinen.
             Assert.DoesNotContain(logger.Entries, e => e.Level == "Warning");
 
@@ -83,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
 
             public int CallCount { get; private set; }
 
-            public async Task<byte[]?> DownloadAsync(string url, CancellationToken cancellationToken = default)
+            public async Task<byte[]?> DownloadAsync(Uri url, CancellationToken cancellationToken = default)
             {
                 CallCount++;
                 await _cts.CancelAsync().ConfigureAwait(false);

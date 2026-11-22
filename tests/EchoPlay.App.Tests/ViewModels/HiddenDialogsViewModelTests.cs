@@ -25,7 +25,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task OhneEintraege_ZeigtDenLeerenHinweisStattEinerLeerenListe()
+        public async Task WithoutEntries_ShowsTheEmptyHintInsteadOfAnEmptyList()
         {
             (HiddenDialogsViewModel viewModel, _) = Build();
 
@@ -38,7 +38,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task MitEintraegen_ZeigtDieListe()
+        public async Task WithEntries_ShowsTheList()
         {
             (HiddenDialogsViewModel viewModel, FakeDialogSuppressionService suppression) = Build();
             suppression.Preset(DialogKey.SeriesRemoveFromLibrary);
@@ -53,7 +53,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task JedeZeileTraegtDenLokalisiertenNamen()
+        public async Task EveryRowCarriesTheLocalizedName()
         {
             (HiddenDialogsViewModel viewModel, FakeDialogSuppressionService suppression) = Build();
             suppression.Preset(DialogKey.LibraryReinit);
@@ -66,7 +66,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Schreibaktionen_TragenDenWarnhinweis()
+        public async Task WriteActions_CarryTheWarning()
         {
             (HiddenDialogsViewModel viewModel, FakeDialogSuppressionService suppression) = Build();
             suppression.Preset(DialogKey.TagManagerRename);
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task RestoreAsync_NimmtGenauEineZeileAusDerListe()
+        public async Task RestoreAsync_RemovesExactlyOneRowFromTheList()
         {
             (HiddenDialogsViewModel viewModel, FakeDialogSuppressionService suppression) = Build();
             suppression.Preset(DialogKey.LibraryReinit);
@@ -99,7 +99,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task RestoreAllAsync_LeertDieListe()
+        public async Task RestoreAllAsync_ClearsTheList()
         {
             (HiddenDialogsViewModel viewModel, FakeDialogSuppressionService suppression) = Build();
             suppression.Preset(DialogKey.LibraryReinit);
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task NachDemLaden_IstNichtsMehrInArbeit()
+        public async Task AfterLoading_NothingIsInProgress()
         {
             (HiddenDialogsViewModel viewModel, _) = Build();
 

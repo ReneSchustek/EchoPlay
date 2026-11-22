@@ -15,7 +15,7 @@ namespace EchoPlay.App.ViewModels
         ILocalizationService LocalizationService,
         IOnlineAccessGuard OnlineAccessGuard,
         EpisodeCoverCacheService? CoverCacheService,
-        ICoverService CoverService,
+        ICoverService? CoverService,
         BackgroundCoverService? BackgroundCoverService,
         IWatchToggleService? WatchToggleService,
         ICoverDownloader CoverDownloader,

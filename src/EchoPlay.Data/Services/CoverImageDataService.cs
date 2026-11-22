@@ -32,7 +32,6 @@ namespace EchoPlay.Data.Services
         public async Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
         {
             return await _context.CoverImages
-
                 .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -47,7 +46,6 @@ namespace EchoPlay.Data.Services
 
             // Ein einziger Query mit WHERE EntityId IN (...), kein N+1
             List<CoverImage> covers = await _context.CoverImages
-
                 .Where(c => c.EntityType == entityType && entityIds.Contains(c.EntityId))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -73,40 +71,25 @@ namespace EchoPlay.Data.Services
         /// <param name="imageData">Die Bilddaten des Covers.</param>
         /// <param name="sourceUrl">Adresse, von der das Cover stammt; <see langword="null"/>, wenn es aus einer lokalen Datei kommt.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public async Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default)
         {
-            // Upsert per SQL: INSERT OR REPLACE vermeidet Race Conditions zwischen
-            // parallelen Scopes (z.B. RunOnceAsync im Splash + Start im Hintergrund).
-            DateTime now = EntityClock.Current.UtcNow;
-            string hash = ComputeHash(imageData);
-
-            CoverImage? existing = await _context.CoverImages
-                .AsTracking()
-                .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
-                .ConfigureAwait(false);
-
-            if (existing is not null)
+            // Upsert: vorhandenes Cover ändern, sonst einfügen. Legt ein paralleler Scope
+            // (z.B. Splash und Hintergrunddienst) im selben Moment an, fängt der UNIQUE-Index
+            // das ab, und das Einfügen wird als Änderung wiederholt.
+            CoverImage cover = new()
             {
-                existing.ImageData = imageData;
-                existing.SourceHash = hash;
-                existing.SourceUrl = sourceUrl ?? existing.SourceUrl;
-                existing.LastChecked = now;
-            }
-            else
+                EntityType = entityType,
+                EntityId = entityId,
+                ImageData = imageData,
+                SourceHash = ComputeHash(imageData),
+                SourceUrl = sourceUrl?.OriginalString,
+                LastChecked = EntityClock.Current.UtcNow
+            };
+
+            if (!await TryUpdateExistingAsync(cover, cancellationToken).ConfigureAwait(false))
             {
-                // Neuen Eintrag anlegen, bei UNIQUE-Konflikt (paralleler Insert)
-                // wird der Fehler abgefangen und als Update wiederholt.
                 try
                 {
-                    CoverImage cover = new()
-                    {
-                        EntityType = entityType,
-                        EntityId = entityId,
-                        ImageData = imageData,
-                        SourceHash = hash,
-                        SourceUrl = sourceUrl,
-                        LastChecked = now
-                    };
                     _ = _context.CoverImages.Add(cover);
                     _ = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     _logger.Debug(() => $"Cover gespeichert: {entityType} {entityId}");
@@ -117,19 +100,7 @@ namespace EchoPlay.Data.Services
                     // UNIQUE-Konflikt: ein anderer Scope hat parallel eingefügt.
                     // Change-Tracker zurücksetzen und als Update wiederholen.
                     _context.ChangeTracker.Clear();
-
-                    CoverImage? retry = await _context.CoverImages
-                        .AsTracking()
-                        .FirstOrDefaultAsync(ByEntity(entityType, entityId), cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (retry is not null)
-                    {
-                        retry.ImageData = imageData;
-                        retry.SourceHash = hash;
-                        retry.SourceUrl = sourceUrl ?? retry.SourceUrl;
-                        retry.LastChecked = now;
-                    }
+                    _ = await TryUpdateExistingAsync(cover, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -137,27 +108,27 @@ namespace EchoPlay.Data.Services
             _logger.Debug(() => $"Cover gespeichert: {entityType} {entityId}");
         }
 
-        /// <inheritdoc/>
-        public async Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
-            string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Überträgt Bild, Prüfsumme, Herkunft und Prüfzeit auf ein vorhandenes Cover, noch ohne zu
+        /// speichern. Eine bekannte Herkunft bleibt stehen, wenn das neue Bild keine mitbringt.
+        /// </summary>
+        /// <returns><see langword="true"/>, wenn es das Cover schon gab.</returns>
+        private async Task<bool> TryUpdateExistingAsync(CoverImage cover, CancellationToken cancellationToken)
         {
-            // Entities die entweder noch nie geprüft wurden (kein Eintrag in CoverImages)
-            // oder deren LastChecked abgelaufen ist UND kein Cover haben
-            // Für Serien: alle Series-IDs ohne Cover-Eintrag oder mit abgelaufenem Check
-            // Für Episoden: alle Episode-IDs ohne Cover-Eintrag oder mit abgelaufenem Check
-
-            // Entities MIT abgelaufenem Check und OHNE Bild
-            List<Guid> expired = await _context.CoverImages
-
-                .Where(c => c.EntityType == entityType
-                    && c.ImageData.Length == 0
-                    && (c.LastChecked == null || c.LastChecked < cooldownThreshold))
-                .Select(c => c.EntityId)
-                .Take(limit)
-                .ToListAsync(cancellationToken)
+            CoverImage? existing = await _context.CoverImages
+                .AsTracking()
+                .FirstOrDefaultAsync(ByEntity(cover.EntityType, cover.EntityId), cancellationToken)
                 .ConfigureAwait(false);
+            if (existing is null)
+            {
+                return false;
+            }
 
-            return expired;
+            existing.ImageData = cover.ImageData;
+            existing.SourceHash = cover.SourceHash;
+            existing.SourceUrl = cover.SourceUrl ?? existing.SourceUrl;
+            existing.LastChecked = cover.LastChecked;
+            return true;
         }
 
         /// <inheritdoc/>
@@ -170,7 +141,6 @@ namespace EchoPlay.Data.Services
             // ImageData.Length im Predicate kann je nach EF-Core-Version/Provider zu
             // Übersetzungsproblemen führen, daher wird die Länge per Projektion ermittelt.
             int? length = await _context.CoverImages
-
                 .Where(ByEntity(entityType, entityId))
                 .Select(c => (int?)c.ImageData.Length)
                 .FirstOrDefaultAsync(cancellationToken)
@@ -236,6 +206,7 @@ namespace EchoPlay.Data.Services
         /// <param name="data">Die Bilddaten, über die der Hash gebildet wird.</param>
         private static string ComputeHash(byte[] data)
         {
+            // SHA-256 liefert 32 Byte.
             Span<byte> hash = stackalloc byte[32];
             _ = SHA256.HashData(data, hash);
             return Convert.ToHexString(hash);

@@ -2,6 +2,7 @@ using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Infrastructure;
+using EchoPlay.Data.Replication;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Core;
@@ -51,11 +52,20 @@ namespace EchoPlay.App.Startup
             ILogger logger = context.LoggerManager.Factory.CreateLogger("App");
             logger.Info("Anwendung gestartet");
 
+            // Ein vorgemerktes Einspielen ersetzt die Datenbank, bevor irgendetwas sie öffnet. Danach
+            // bringt die gewöhnliche Migration das eingespielte Paket auf den aktuellen Stand.
+            ImportCarryOver? carryOver = await ImportStartup.BeforeOpenAsync(context.ScopeFactory);
+
             // Eigener Bereich, weil der Initialisierer scoped ist (Lebensdauer des
             // Datenbankkontexts).
             using IServiceScope dbScope = context.ScopeFactory.CreateScope();
             DatabaseInitializer initializer = dbScope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
             await initializer.InitializeAsync();
+
+            if (carryOver is not null)
+            {
+                _ = await ImportStartup.AfterMigrationAsync(context.ScopeFactory, carryOver, logger);
+            }
 
             return new StartupSequence(context, logger);
         }
@@ -139,6 +149,14 @@ namespace EchoPlay.App.Startup
             // Ergänzt fehlende Anbieter-Kennungen. Kein Dateisystem-Durchlauf, kein
             // Cover-Download: läuft nebenher, ohne das Startbild aufzuhalten.
             _context.ProviderIdService.Start();
+
+            // Der Veröffentlichungskalender fragt alle Serien bei iTunes ab und braucht dafür
+            // Minuten. Er wartet selbst, bis das Startbild durch ist, und läuft dann nebenher.
+            _context.ReleaseCalendarService.Start();
+
+            // Der Abgleich wartet ebenfalls, bis das Startbild durch ist; ohne gemeinsamen Ordner
+            // tut er nichts.
+            _context.ReplicationService.Start();
 
             // Das Farbschema wird vor dem Öffnen des Fensters gesetzt, damit nichts flackert.
             await _context.ThemeService.InitializeAsync();

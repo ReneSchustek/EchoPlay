@@ -11,6 +11,27 @@ namespace EchoPlay.Data.Tests.Services
     /// </summary>
     public sealed class CachedNewReleaseTests : DbTestBase
     {
+        /// <summary>Zeitpunkt der Prüfung, den die Einträge ohne eigene Angabe tragen.</summary>
+        private static readonly DateTime CheckedAt = new(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>Ein Eintrag für die Serie, geprüft zu <see cref="CheckedAt"/>, sofern nicht anders angegeben.</summary>
+        private static CachedNewRelease Entry(
+            Series series,
+            string title,
+            DateTime releaseDate,
+            long collectionId,
+            int? episodeNumber = null,
+            DateTime? checkedAt = null)
+            => new()
+            {
+                SeriesId = series.Id,
+                Title = title,
+                EpisodeNumber = episodeNumber,
+                ReleaseDate = releaseDate,
+                CollectionId = collectionId,
+                CheckedAtUtc = checkedAt ?? CheckedAt
+            };
+
         [Fact]
         public async Task GetAllAsync_ReturnsEmptyList_WhenCacheEmpty()
         {
@@ -101,35 +122,15 @@ namespace EchoPlay.Data.Tests.Services
             CachedNewReleaseDataService service = new(Context, NullLoggerFactory);
 
             // Erster Insert
+            DateTime releaseDate = new(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
             List<CachedNewRelease> initial =
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Title = "Alter Titel",
-                    EpisodeNumber = 150,
-                    ReleaseDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 300001,
-                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc).AddDays(-1)
-                }
-            ];
+                [Entry(series, "Alter Titel", releaseDate, 300001, episodeNumber: 150, checkedAt: CheckedAt.AddDays(-1))];
 
             await service.UpsertRangeAsync(initial, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
 
             // Zweiter Insert: gleiche CollectionId, neuer Titel
-            List<CachedNewRelease> updated =
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Title = "Neuer Titel",
-                    EpisodeNumber = 150,
-                    ReleaseDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 300001,
-                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
-                }
-            ];
+            List<CachedNewRelease> updated = [Entry(series, "Neuer Titel", releaseDate, 300001, episodeNumber: 150)];
 
             await service.UpsertRangeAsync(updated, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();
@@ -151,22 +152,8 @@ namespace EchoPlay.Data.Tests.Services
 
             List<CachedNewRelease> entries =
             [
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Title = "Zu alt",
-                    ReleaseDate = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 400001,
-                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
-                },
-                new CachedNewRelease
-                {
-                    SeriesId = series.Id,
-                    Title = "Aktuell",
-                    ReleaseDate = new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 400002,
-                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
-                }
+                Entry(series, "Zu alt", new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), 400001),
+                Entry(series, "Aktuell", new DateTime(2026, 3, 15, 0, 0, 0, DateTimeKind.Utc), 400002)
             ];
 
             await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
@@ -276,24 +263,7 @@ namespace EchoPlay.Data.Tests.Services
             CachedNewReleaseDataService service = new(Context, NullLoggerFactory);
 
             List<CachedNewRelease> entries =
-            [
-                new CachedNewRelease
-                {
-                    SeriesId = seriesA.Id,
-                    Title = "Folge von A",
-                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 700001,
-                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
-                },
-                new CachedNewRelease
-                {
-                    SeriesId = seriesB.Id,
-                    Title = "Folge von B",
-                    ReleaseDate = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc),
-                    CollectionId = 700002,
-                    CheckedAtUtc = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc)
-                }
-            ];
+                [Entry(seriesA, "Folge von A", CheckedAt, 700001), Entry(seriesB, "Folge von B", CheckedAt, 700002)];
 
             await service.UpsertRangeAsync(entries, cancellationToken: TestContext.Current.CancellationToken);
             Context.ChangeTracker.Clear();

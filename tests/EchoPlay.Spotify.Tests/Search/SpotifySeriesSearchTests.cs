@@ -12,12 +12,12 @@ namespace EchoPlay.Spotify.Tests.Search
 {
     /// <summary>
     /// Fachliche Tests für die Spotify-Seriensuche.
-    /// Die Tests prüfen ausschließlich vertraglich zugesichertes Verhalten und vermeiden bewusst Annahmen über interne Bewertungslogik.
+    /// Die Tests prüfen ausschließlich vertraglich zugesichertes Verhalten und vermeiden Annahmen über interne Bewertungslogik.
     /// </summary>
     public sealed class SpotifySeriesSearchTests
     {
         /// <summary>
-        /// Stellt sicher, dass ein fachlich geeigneter Spotify-Künstler die Seriensuche passiert und als Import-Serie zurückgegeben wird.
+        /// Prüft, dass ein fachlich geeigneter Spotify-Künstler die Seriensuche passiert und als Import-Serie zurückgegeben wird.
         /// </summary>
         [Fact]
         public async Task Search_KnownHoerspielArtist_ReturnsImportSeries()
@@ -65,7 +65,7 @@ namespace EchoPlay.Spotify.Tests.Search
         }
 
         /// <summary>
-        /// Stellt sicher, dass ein fachlich ungeeigneter Künstler von der Seriensuche vollständig ausgeschlossen wird.
+        /// Prüft, dass ein fachlich ungeeigneter Künstler von der Seriensuche vollständig ausgeschlossen wird.
         /// </summary>
         [Fact]
         public async Task Search_NonHoerspielArtist_ReturnsNoSeries()

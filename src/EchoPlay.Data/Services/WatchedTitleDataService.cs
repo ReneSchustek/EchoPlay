@@ -11,7 +11,6 @@ namespace EchoPlay.Data.Services
     /// EF-Core-basierte Verwaltung der Merkliste überwachter Serientitel.
     /// </summary>
     /// <remarks>
-    /// Initialisiert eine neue Instanz des <see cref="WatchedTitleDataService"/>.
     /// <para>
     /// <see cref="SyncFromWatchedSeriesAsync"/> liest die <c>Series</c>-Tabelle mit, lesend und
     /// nur auf den Titel projiziert. Der Abgleich ist per Definition „leite die Merkliste aus den
@@ -93,8 +92,8 @@ namespace EchoPlay.Data.Services
 
             // Ohne diese Prüfung würde ein Titel, von dem die Normalisierung nichts übrig lässt
             // (etwa „???"), alle Einträge mit leerem Vergleichstitel auf einmal löschen.
-            // RememberAsync legt solche Zeilen zwar nie an, verlassen wollen wir uns darauf
-            // beim Löschen aber nicht.
+            // RememberAsync legt solche Zeilen zwar nie an, das Löschen verlässt sich aber nicht
+            // darauf.
             if (string.IsNullOrWhiteSpace(normalized))
             {
                 return;
@@ -125,22 +124,7 @@ namespace EchoPlay.Data.Services
                     .ToListAsync(cancellationToken).ConfigureAwait(false),
                 StringComparer.Ordinal);
 
-            List<WatchedTitle> missing = [];
-
-            foreach (string title in watchedSeriesTitles)
-            {
-                string normalized = HoerspielTextNormalizer.Normalize(title);
-
-                // known dient zugleich als Dedup innerhalb dieses Laufs; die Prod-DB
-                // enthält Serien-Duplikate mit identischem Titel.
-                if (string.IsNullOrWhiteSpace(normalized) || !known.Add(normalized))
-                {
-                    continue;
-                }
-
-                missing.Add(new WatchedTitle { Title = title, NormalizedTitle = normalized });
-            }
-
+            List<WatchedTitle> missing = CollectMissing(watchedSeriesTitles, known);
             if (missing.Count == 0)
             {
                 return 0;
@@ -159,6 +143,32 @@ namespace EchoPlay.Data.Services
 
             _logger.Info("{Count} überwachte Serientitel in die Merkliste übernommen.", missing.Count);
             return missing.Count;
+        }
+
+        /// <summary>
+        /// Die Titel, deren normalisierte Form noch nicht in der Merkliste steht.
+        /// </summary>
+        /// <param name="titles">Die Titel der überwachten Serien.</param>
+        /// <param name="known">Die vorhandenen normalisierten Titel; wird um die neuen ergänzt.</param>
+        private static List<WatchedTitle> CollectMissing(List<string> titles, HashSet<string> known)
+        {
+            List<WatchedTitle> missing = [];
+
+            foreach (string title in titles)
+            {
+                string normalized = HoerspielTextNormalizer.Normalize(title);
+
+                // known dient zugleich als Dedup innerhalb dieses Laufs; die Prod-DB
+                // enthält Serien-Duplikate mit identischem Titel.
+                if (string.IsNullOrWhiteSpace(normalized) || !known.Add(normalized))
+                {
+                    continue;
+                }
+
+                missing.Add(new WatchedTitle { Title = title, NormalizedTitle = normalized });
+            }
+
+            return missing;
         }
     }
 }

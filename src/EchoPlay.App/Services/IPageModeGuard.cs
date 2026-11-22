@@ -12,7 +12,7 @@ namespace EchoPlay.App.Services
     public interface IPageModeGuard
     {
         /// <summary>
-        /// Stellt sicher, dass die aufrufende Page Online-Funktionen nutzen darf.
+        /// Prüft, ob die aufrufende Page Online-Funktionen nutzen darf.
         /// Blockiert, wenn der Offline-Modus in den AppSettings aktiv ist.
         /// </summary>
         /// <returns>
@@ -24,7 +24,7 @@ namespace EchoPlay.App.Services
         Task<bool> EnsureOnlineAccessAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Stellt sicher, dass die aufrufende Page lokale Inhalte anzeigen darf.
+        /// Prüft, ob die aufrufende Page lokale Inhalte anzeigen darf.
         /// Blockiert, wenn der Nur-Online-Modus in den AppSettings aktiv ist.
         /// </summary>
         /// <returns>

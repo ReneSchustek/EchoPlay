@@ -17,7 +17,10 @@ namespace EchoPlay.App.Tests.Services
     public sealed class LanguageSwitchServiceTests
     {
         private static (LanguageSwitchService Service, FakeAppSettingsDataService Settings, FakeProcessLauncher Launcher)
-            Build(string? executablePath = @"C:\Programs\EchoPlay\EchoPlay.App.exe", bool startSucceeds = true)
+            Build(
+                string? executablePath = @"C:\Programs\EchoPlay\EchoPlay.App.exe",
+                bool startSucceeds = true,
+                FakeAppInstanceRegistration? registration = null)
         {
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveLanguage = "de" });
             FakeProcessLauncher launcher = new(executablePath, startSucceeds);
@@ -29,6 +32,7 @@ namespace EchoPlay.App.Tests.Services
             LanguageSwitchService service = new(
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 launcher,
+                registration ?? new FakeAppInstanceRegistration(),
                 new FakeLoggerFactory());
 
             return (service, settings, launcher);
@@ -80,6 +84,47 @@ namespace EchoPlay.App.Tests.Services
             bool restarted = await service.ChangeLanguageAsync("en", CancellationToken.None);
 
             Assert.False(restarted);
+        }
+
+        [Fact]
+        public async Task ChangeLanguageAsync_ReleasesTheInstanceBeforeStartingTheSuccessor()
+        {
+            // Hielte dieser Prozess den Anspruch noch, gäbe der Nachfolger an ihn ab und
+            // endete sofort. Nach dem Beenden hier liefe dann gar keine Instanz mehr.
+            FakeAppInstanceRegistration registration = new();
+            (LanguageSwitchService service, _, FakeProcessLauncher launcher) = Build(registration: registration);
+            int startsBeforeRelease = -1;
+            registration.OnRelease = () => startsBeforeRelease = launcher.StartedPaths.Count;
+
+            _ = await service.ChangeLanguageAsync("en", CancellationToken.None);
+
+            Assert.Equal(["Release"], registration.Calls);
+            Assert.Equal(0, startsBeforeRelease);
+            _ = Assert.Single(launcher.StartedPaths);
+        }
+
+        [Fact]
+        public async Task ChangeLanguageAsync_LauncherRefuses_ReclaimsTheInstance()
+        {
+            // Der Prozess bleibt offen, also muss er weiter die laufende Instanz sein,
+            // sonst liefe ab jetzt jeder weitere Start nebenher.
+            FakeAppInstanceRegistration registration = new();
+            (LanguageSwitchService service, _, _) = Build(startSucceeds: false, registration: registration);
+
+            _ = await service.ChangeLanguageAsync("en", CancellationToken.None);
+
+            Assert.Equal(["Release", "Reclaim"], registration.Calls);
+        }
+
+        [Fact]
+        public async Task ChangeLanguageAsync_UnknownExecutablePath_KeepsTheInstance()
+        {
+            FakeAppInstanceRegistration registration = new();
+            (LanguageSwitchService service, _, _) = Build(executablePath: null, registration: registration);
+
+            _ = await service.ChangeLanguageAsync("en", CancellationToken.None);
+
+            Assert.Empty(registration.Calls);
         }
 
         [Fact]

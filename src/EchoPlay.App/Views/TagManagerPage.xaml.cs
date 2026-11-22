@@ -110,8 +110,8 @@ namespace EchoPlay.App.Views
             ViewModel.AutoLookupApplied -= OnAutoLookupApplied;
             ViewModel.LoadCoverRequested -= OnLoadCoverRequested;
             ViewModel.RenamePreviewReady -= OnRenamePreviewReady;
-            // TagManagerViewModel implementiert kein IDisposable, hält aber mehrere
-            // Subscriptions auf _actions und Sub-VMs.
+
+            // Die übrigen Abos hält das ViewModel auf seine eigenen Teile; sie enden mit ihm.
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace EchoPlay.App.Views
         {
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                EchoPlay.App.Helpers.SafeResourceStrings resources = new();
+                Helpers.SafeResourceStrings resources = _resources;
 
                 if (results.Count == 0)
                 {
@@ -155,39 +155,47 @@ namespace EchoPlay.App.Views
                     return;
                 }
 
-                // ListView mit den Suchergebnissen als Dialog-Inhalt
-                ListView resultList = new()
-                {
-                    ItemsSource = results,
-                    Height = 200
-                };
-
-                resultList.ItemTemplate = (DataTemplate)Resources["LookupResultTemplate"];
-
-                ContentDialog dialog = new()
-                {
-                    Title = resources.GetString("TagManagerLookupDialogTitle"),
-                    Content = resultList,
-                    PrimaryButtonText = resources.GetString("TagManagerLookupApplyButton"),
-                    CloseButtonText = resources.GetString("TagManagerLookupCancelButton"),
-                    XamlRoot = XamlRoot
-                };
-
-                // "Übernehmen" nur aktivieren wenn ein Eintrag ausgewählt ist
-                dialog.IsPrimaryButtonEnabled = false;
-                resultList.SelectionChanged += (_, _) =>
-                {
-                    dialog.IsPrimaryButtonEnabled = resultList.SelectedItem is not null;
-                };
-
-                Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
-                ContentDialogResult dialogResult = await dialog.ShowAsync();
-
-                if (dialogResult == ContentDialogResult.Primary && resultList.SelectedItem is TagLookupCandidate selected)
+                if (await PickLookupCandidateAsync(results) is { } selected)
                 {
                     ViewModel.ApplyLookupCandidate(selected.Index);
                 }
             });
+        }
+
+        /// <summary>
+        /// Zeigt die Treffer zur Auswahl; liefert den übernommenen oder <see langword="null"/>.
+        /// </summary>
+        private async Task<TagLookupCandidate?> PickLookupCandidateAsync(IReadOnlyList<TagLookupCandidate> results)
+        {
+            // ListView mit den Suchergebnissen als Dialog-Inhalt
+            ListView resultList = new()
+            {
+                ItemsSource = results,
+                Height = 200
+            };
+
+            resultList.ItemTemplate = (DataTemplate)Resources["LookupResultTemplate"];
+
+            ContentDialog dialog = new()
+            {
+                Title = _resources.GetString("TagManagerLookupDialogTitle"),
+                Content = resultList,
+                PrimaryButtonText = _resources.GetString("TagManagerLookupApplyButton"),
+                CloseButtonText = _resources.GetString("TagManagerLookupCancelButton"),
+                XamlRoot = XamlRoot
+            };
+
+            // "Übernehmen" nur aktivieren wenn ein Eintrag ausgewählt ist
+            dialog.IsPrimaryButtonEnabled = false;
+            resultList.SelectionChanged += (_, _) =>
+            {
+                dialog.IsPrimaryButtonEnabled = resultList.SelectedItem is not null;
+            };
+
+            Helpers.ContentDialogDragHelper.MakeDraggable(dialog);
+            ContentDialogResult dialogResult = await dialog.ShowAsync();
+
+            return dialogResult == ContentDialogResult.Primary ? resultList.SelectedItem as TagLookupCandidate : null;
         }
 
         /// <summary>
@@ -197,7 +205,11 @@ namespace EchoPlay.App.Views
         private void OnAutoLookupApplied(object? sender, TagLookupCandidate result)
         {
             // Kurze Bestätigung statt Dialog, denn die Tags sind bereits übernommen
-            AutoLookupInfoBar.Message = $"Tags übernommen: {result.Artist} – {result.Album}";
+            AutoLookupInfoBar.Message = string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                _resources.GetString("TagManagerAutoLookupAppliedFormat"),
+                result.Artist,
+                result.Album);
             AutoLookupInfoBar.IsOpen = true;
         }
 

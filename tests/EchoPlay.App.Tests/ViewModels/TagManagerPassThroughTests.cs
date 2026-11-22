@@ -38,7 +38,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Dateiliste_ZeigtSuchtextFilterUndAuswahl()
+        public async Task FileList_ShowsSearchTextFilterAndSelection()
         {
             IReadOnlyList<(string, AudioTag)> dateien =
             [
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Auswahl_ReichtDieMarkiertenDateienDurch()
+        public async Task Selection_PassesTheMarkedFilesThrough()
         {
             IReadOnlyList<(string, AudioTag)> dateien =
             [
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Editorfelder_SchreibenInDasUnterAnsichtsmodell()
+        public void EditorFields_WriteIntoTheSubViewModel()
         {
             TagManagerViewModel viewModel = BuildViewModel();
 
@@ -115,7 +115,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Cover_ZeigtDenZustandDesUnterAnsichtsmodells()
+        public void Cover_ShowsTheStateOfTheSubViewModel()
         {
             TagManagerViewModel viewModel = BuildViewModel();
 
@@ -124,7 +124,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Umbenennen_ReichtMusterUndVorschauDurch()
+        public void Rename_PassesPatternAndPreviewThrough()
         {
             TagManagerViewModel viewModel = BuildViewModel();
 
@@ -136,7 +136,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Anzeigen_BleibenOhneVorgangUnsichtbar()
+        public void Indicators_WithoutOperation_StayHidden()
         {
             // Lade-, Such- und Fortschrittsanzeige gehören zum Ruhezustand der Seite:
             // Sie dürfen nicht stehen bleiben, wenn gerade nichts läuft.

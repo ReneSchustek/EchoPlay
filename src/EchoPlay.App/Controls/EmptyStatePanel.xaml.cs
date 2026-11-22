@@ -6,8 +6,8 @@ namespace EchoPlay.App.Controls
 {
     /// <summary>
     /// Wiederverwendbarer Leer-Zustand mit Icon, Hinweistext und optionalem Aktions-Button.
-    /// Wird überall dort eingesetzt, wo "Keine Daten"-Zustände angezeigt werden:
-    /// Online-Mediathek (kein Provider, keine Serien), lokale Mediathek (kein Scan) etc.
+    /// Steht überall dort, wo eine Liste leer ist, etwa in der Online-Mediathek ohne Anbieter
+    /// oder Serien und in der lokalen Mediathek vor dem ersten Einlesen.
     /// </summary>
     public sealed partial class EmptyStatePanel : UserControl
     {
@@ -19,7 +19,7 @@ namespace EchoPlay.App.Controls
             InitializeComponent();
         }
 
-        /// <summary>Glyph des Icons (z.B. Lupe, Warnung, Info).</summary>
+        /// <summary>Glyph des Icons, etwa Lupe, Warnung oder Info.</summary>
         public static readonly DependencyProperty GlyphProperty =
             DependencyProperty.Register(nameof(Glyph), typeof(string), typeof(EmptyStatePanel),
                 new PropertyMetadata("\uE8D6", (d, e) => ((EmptyStatePanel)d).IconElement.Glyph = (string)e.NewValue));

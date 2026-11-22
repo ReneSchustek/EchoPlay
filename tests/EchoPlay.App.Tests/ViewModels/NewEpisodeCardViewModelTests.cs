@@ -22,7 +22,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </remarks>
     public sealed class NewEpisodeCardViewModelTests
     {
-        private static readonly DateTime Heute = new(2026, 8, 18, 12, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime Today = new(2026, 8, 18, 12, 0, 0, DateTimeKind.Utc);
 
         private static (NewEpisodeCardViewModel Card, FakePlaybackStateDataService States, FakeErrorDialogService Errors)
             Build(
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 episodeNumber,
                 releaseDate,
                 localizationService: null,
-                clock: new FakeClock { UtcNow = Heute });
+                clock: new FakeClock { UtcNow = Today });
 
             return (card, states, errors);
         }
@@ -84,7 +84,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Titel_VerliertSerienNamenUndFolgennummer()
+        public void Title_LosesSeriesNameAndEpisodeNumber()
         {
             // Der Albumname des Anbieters wiederholt Serie und Nummer. Auf der Kachel
             // stünde dann dreimal dasselbe.
@@ -94,7 +94,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Titel_BleibtStehenWennNichtsUebrigBliebe()
+        public void Title_StaysWhenNothingWouldRemain()
         {
             (NewEpisodeCardViewModel card, _, _) = Build(episodeTitle: "TKKG", seriesName: "TKKG");
 
@@ -102,17 +102,17 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Folgennummer_ErscheintNurWennSieBekanntIst()
+        public void EpisodeNumber_AppearsOnlyWhenKnown()
         {
-            (NewEpisodeCardViewModel mitNummer, _, _) = Build(episodeNumber: 229);
-            (NewEpisodeCardViewModel ohneNummer, _, _) = Build();
+            (NewEpisodeCardViewModel withNumber, _, _) = Build(episodeNumber: 229);
+            (NewEpisodeCardViewModel withoutNumber, _, _) = Build();
 
-            Assert.Equal("Folge 229", mitNummer.EpisodeNumberText);
-            Assert.Null(ohneNummer.EpisodeNumberText);
+            Assert.Equal("Folge 229", withNumber.EpisodeNumberText);
+            Assert.Null(withoutNumber.EpisodeNumberText);
         }
 
         [Fact]
-        public void Infozeile_NenntNummerDatumUndHerkunft()
+        public void InfoLine_NamesNumberDateAndOrigin()
         {
             (NewEpisodeCardViewModel card, _, _) = Build(
                 hasLocalTrack: false,
@@ -125,7 +125,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Infozeile_BleibtOhneErscheinungsdatumAus()
+        public void InfoLine_WithoutReleaseDate_StaysOff()
         {
             (NewEpisodeCardViewModel card, _, _) = Build(episodeNumber: 5);
 
@@ -134,13 +134,13 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Ankuendigung_ZeigtDatumUndKennzeichen()
+        public void Announcement_ShowsDateAndBadge()
         {
             (NewEpisodeCardViewModel card, _, _) = Build(
                 hasLocalTrack: false,
                 isAnnounced: true,
                 episodeNumber: 26,
-                releaseDate: Heute.AddDays(30));
+                releaseDate: Today.AddDays(30));
 
             Assert.Equal("17.09.2026", card.ReleaseDateText);
             Assert.Equal(Visibility.Visible, card.ReleaseDateVisibility);
@@ -150,9 +150,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void FrischeFolge_TraegtDasNeuKennzeichen()
+        public void FreshEpisode_CarriesTheNewBadge()
         {
-            (NewEpisodeCardViewModel card, _, _) = Build(releaseDate: Heute.AddDays(-3));
+            (NewEpisodeCardViewModel card, _, _) = Build(releaseDate: Today.AddDays(-3));
 
             Assert.Equal("Neu", card.BadgeText);
             Assert.Equal(Visibility.Visible, card.BadgeVisibility);
@@ -160,9 +160,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void AeltereFolge_TraegtKeinKennzeichen()
+        public void OlderEpisode_CarriesNoBadge()
         {
-            (NewEpisodeCardViewModel card, _, _) = Build(releaseDate: Heute.AddDays(-30));
+            (NewEpisodeCardViewModel card, _, _) = Build(releaseDate: Today.AddDays(-30));
 
             Assert.Null(card.BadgeText);
             Assert.Equal(Visibility.Collapsed, card.BadgeVisibility);
@@ -170,7 +170,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Fortschrittsbalken_ErscheintNurBeiAngefangenenFolgen()
+        public void ProgressBar_AppearsOnlyForStartedEpisodes()
         {
             (NewEpisodeCardViewModel inProgress, _, _) = Build(status: PlaybackStatus.InProgress, progressPercent: 42);
             (NewEpisodeCardViewModel finished, _, _) = Build(status: PlaybackStatus.Finished);
@@ -183,7 +183,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void CoverTausch_IgnoriertEinLeeresBild()
+        public void CoverSwap_IgnoresAnEmptyImage()
         {
             // Ein fehlgeschlagener Nachlade-Versuch darf das bereits gezeigte Serien-Cover
             // nicht durch eine Lücke ersetzen.
@@ -196,7 +196,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void CoverFreigabe_SetztDasKennzeichenZurueck()
+        public void CoverRelease_ResetsTheFlag()
         {
             (NewEpisodeCardViewModel card, _, _) = Build();
 
@@ -207,7 +207,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Automationsnamen_NennenDieFolge()
+        public void AutomationNames_NameTheEpisode()
         {
             (NewEpisodeCardViewModel card, _, _) = Build(episodeTitle: "Der Superhund");
 
@@ -216,12 +216,12 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Abspielen_MeldetEineNochNichtErschieneneFolge()
+        public async Task Play_ReportsAnEpisodeNotYetReleased()
         {
             (NewEpisodeCardViewModel card, _, FakeErrorDialogService errors) = Build(
                 hasLocalTrack: false,
                 isAnnounced: true,
-                releaseDate: Heute.AddDays(10));
+                releaseDate: Today.AddDays(10));
 
             card.PlayCommand.Execute(null);
             _ = await errors.FirstDialogShown.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -231,7 +231,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlsGehoert_SchreibtDenStandUndSetztDieAnzeige()
+        public async Task MarkPlayed_WritesTheStateAndUpdatesTheDisplay()
         {
             (NewEpisodeCardViewModel card, FakePlaybackStateDataService states, _) =
                 Build(status: PlaybackStatus.InProgress, progressPercent: 30);
@@ -246,7 +246,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlsGehoert_BleibtNachAblehnungAus()
+        public async Task MarkPlayed_AfterDecline_DoesNothing()
         {
             (NewEpisodeCardViewModel card, FakePlaybackStateDataService states, _) =
                 Build(status: PlaybackStatus.InProgress, progressPercent: 30, confirmResult: false);
@@ -259,7 +259,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlsUngehoert_LoeschtDenStandUndSetztDieAnzeigeZurueck()
+        public async Task MarkUnplayed_DeletesTheStateAndResetsTheDisplay()
         {
             (NewEpisodeCardViewModel card, FakePlaybackStateDataService states, _) =
                 Build(status: PlaybackStatus.Finished, progressPercent: 100);
@@ -275,7 +275,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlsUngehoert_BleibtNachAblehnungAus()
+        public async Task MarkUnplayed_AfterDecline_DoesNothing()
         {
             (NewEpisodeCardViewModel card, FakePlaybackStateDataService states, _) =
                 Build(status: PlaybackStatus.Finished, confirmResult: false);

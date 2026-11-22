@@ -45,10 +45,11 @@ namespace EchoPlay.App.Tests.Helpers
         }
     }
 
+    /// <summary>
+    /// Eigene Testsammlung ohne Parallellauf, weil der Wächter einen statischen Zähler teilt.
+    /// </summary>
     [CollectionDefinition(Name, DisableParallelization = true)]
     [SuppressMessage("Design", "CA1515:Consider making public types internal", Justification = "xUnit-Collection-Definition muss public sein (xUnit1027).")]
-    [SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "xUnit-Collection-Fixtures sind per Konvention Klassen mit festem Namen.")]
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "xUnit instanziiert die Fixture per Reflection.")]
     public sealed class DialogReentrancyGuardTestFixture
     {
         internal const string Name = "DialogReentrancyGuard";

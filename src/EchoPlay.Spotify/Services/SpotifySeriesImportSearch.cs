@@ -47,7 +47,7 @@ namespace EchoPlay.Spotify.Services
 
         /// <summary>
         /// Sucht nach Hörspielserien und meldet jeden Treffer, sobald er feststeht.
-        /// Schlägt die Bewertung eines einzelnen Künstlers fehl, wird dieser übersprungen –
+        /// Schlägt die Bewertung eines einzelnen Künstlers fehl, wird dieser übersprungen;
         /// die restlichen Ergebnisse bleiben unberührt. Ein Abbruch der umgebenden Operation
         /// beendet die Suche dagegen sofort und gilt nicht als Fehlschlag.
         /// </summary>
@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Services
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"Import:Spotify:Search");
+            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("Import:Spotify:Search");
 
             _logger.Debug(() => $"Spotify-Seriensuche gestartet: '{query}'.");
 
@@ -116,9 +116,9 @@ namespace EchoPlay.Spotify.Services
             catch (Exception ex)
             {
                 // Einzelne Bewertungsfehler dürfen die Gesamtsuche nicht unterbrechen.
-                _logger.Warning(
-                    $"Bewertung für Spotify-Künstler '{artist.SpotifyArtistId}' ({artist.Name}) fehlgeschlagen. Künstler wird übersprungen.");
-                _logger.Error("Fehlerdetails:", ex);
+                _logger.Error(
+                    "Bewertung für Spotify-Künstler '{ArtistId}' ({Name}) fehlgeschlagen, Künstler übersprungen.",
+                    ex, artist.SpotifyArtistId, artist.Name);
                 return null;
             }
         }

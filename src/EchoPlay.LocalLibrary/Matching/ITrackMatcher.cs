@@ -3,8 +3,8 @@ using EchoPlay.Core.Models;
 namespace EchoPlay.LocalLibrary.Matching
 {
     /// <summary>
-    /// Definiert den Vertrag für den Abgleich zwischen lokalen und Online-Tracks.
-    /// Ermöglicht die Entkopplung des SyncService von der konkreten Implementierung.
+    /// Abgleich zwischen lokalen und Online-Tracks. Die Übernahme der Folgen hängt nur an dieser
+    /// Schnittstelle und lässt sich so ohne echte Dateien prüfen.
     /// </summary>
     public interface ITrackMatcher
     {

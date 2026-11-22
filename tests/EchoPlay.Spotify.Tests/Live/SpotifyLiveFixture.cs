@@ -28,20 +28,40 @@ namespace EchoPlay.Spotify.Tests.Live
         /// </summary>
         public ISpotifyApiClient ApiClient { get; }
 
-        /// <summary>
-        /// Erstellt die Fixture mit manuell verdrahteter HTTP-Pipeline.
-        /// </summary>
-        public SpotifyLiveFixture()
+        /// <summary>Liest die Spotify-Einstellungen aus appsettings.json und den Benutzergeheimnissen.</summary>
+        private static SpotifyOptions LoadOptions()
         {
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
                 .AddUserSecrets<SpotifyLiveFixture>()
                 .Build();
 
-            SpotifyOptions spotifyOptions = configuration
+            return configuration
                 .GetSection("Spotify")
                 .Get<SpotifyOptions>()
                 ?? throw new InvalidOperationException("Spotify-Konfiguration fehlt.");
+        }
+
+        /// <summary>
+        /// Auth-Handler mit eigenem InnerHandler. PooledConnectionLifetime = Zero verhindert, dass
+        /// abgelaufene Verbindungen wiederverwendet werden, denn Spotify schließt
+        /// Idle-Connections aggressiv, was sonst zu SocketExceptions führt.
+        /// </summary>
+        private static SpotifyAuthMessageHandler CreateAuthHandler(SpotifyTokenClient tokenClient)
+            => new(tokenClient)
+            {
+                InnerHandler = new SocketsHttpHandler
+                {
+                    PooledConnectionLifetime = TimeSpan.Zero
+                }
+            };
+
+        /// <summary>
+        /// Erstellt die Fixture mit manuell verdrahteter HTTP-Pipeline.
+        /// </summary>
+        public SpotifyLiveFixture()
+        {
+            SpotifyOptions spotifyOptions = LoadOptions();
 
             EchoPlay.Logger.Abstractions.ILoggerFactory loggerFactory =
                 new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions());
@@ -49,7 +69,7 @@ namespace EchoPlay.Spotify.Tests.Live
             // HttpClient für Token-Anfragen (Client-Credentials-Flow)
             _tokenHttpClient = new HttpClient
             {
-                BaseAddress = new Uri(spotifyOptions.AuthBaseUrl)
+                BaseAddress = spotifyOptions.AuthBaseUrl
             };
 
             SpotifyTokenClient tokenClient = new(
@@ -58,23 +78,11 @@ namespace EchoPlay.Spotify.Tests.Live
                 loggerFactory,
                 new FakeClock());
 
-            // Auth-Handler mit eigenem InnerHandler.
-            // PooledConnectionLifetime = Zero verhindert, dass abgelaufene
-            // Verbindungen wiederverwendet werden, denn Spotify schließt
-            // Idle-Connections aggressiv, was sonst zu SocketExceptions führt.
-            SpotifyAuthMessageHandler authHandler = new(tokenClient)
-            {
-                InnerHandler = new SocketsHttpHandler
-                {
-                    PooledConnectionLifetime = TimeSpan.Zero
-                }
-            };
-
             // Test-Fixture als Ausnahme von der IHttpClientFactory-Pflicht: Die Factory bietet keinen Zugang
-            // zum SocketsHttpHandler-Setup, das wegen Spotifys Idle-Drops erforderlich ist (siehe oben).
-            _apiHttpClient = new HttpClient(authHandler, disposeHandler: true)
+            // zum SocketsHttpHandler-Setup, das wegen Spotifys Idle-Drops erforderlich ist (siehe CreateAuthHandler).
+            _apiHttpClient = new HttpClient(CreateAuthHandler(tokenClient), disposeHandler: true)
             {
-                BaseAddress = new Uri(spotifyOptions.ApiBaseUrl)
+                BaseAddress = spotifyOptions.ApiBaseUrl
             };
 
             ApiClient = new SpotifyApiClient(_apiHttpClient, loggerFactory);
@@ -89,6 +97,9 @@ namespace EchoPlay.Spotify.Tests.Live
             _tokenHttpClient.Dispose();
         }
 
+        /// <summary>
+        /// Gibt für jeden Namen denselben Client aus.
+        /// </summary>
         private sealed class SingleClientHttpClientFactory : IHttpClientFactory
         {
             private readonly HttpClient _httpClient;
@@ -98,6 +109,9 @@ namespace EchoPlay.Spotify.Tests.Live
             public HttpClient CreateClient(string name) => _httpClient;
         }
 
+        /// <summary>
+        /// Liefert die Zugangsdaten aus den Optionen des Live-Laufs.
+        /// </summary>
         private sealed class StaticCredentialsProvider : ISpotifyClientCredentialsProvider
         {
             private readonly SpotifyClientCredentials _credentials;

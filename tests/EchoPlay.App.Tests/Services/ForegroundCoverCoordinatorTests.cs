@@ -36,22 +36,8 @@ namespace EchoPlay.App.Tests.Services
             ForegroundCoverCoordinator coordinator = BuildCoordinator(downloader: downloader);
 
             byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
-                ProviderKeys.Spotify, SpotifyArtistId, string.Empty, TestContext.Current.CancellationToken);
+                ProviderKeys.Spotify, SpotifyArtistId, null, TestContext.Current.CancellationToken);
 
-            Assert.Null(result);
-            Assert.Empty(downloader.RequestedUrls);
-        }
-
-        [Fact]
-        public async Task RequestCoverForSearchResult_WithMalformedUrl_DoesNotDownload()
-        {
-            FakeCoverDownloader downloader = new();
-            ForegroundCoverCoordinator coordinator = BuildCoordinator(downloader: downloader);
-
-            byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
-                ProviderKeys.Spotify, SpotifyArtistId, "nicht-als-adresse-lesbar", TestContext.Current.CancellationToken);
-
-            // Eine Adresse, die sich nicht auflösen lässt, ist kein Grund für einen Versuch.
             Assert.Null(result);
             Assert.Empty(downloader.RequestedUrls);
         }
@@ -72,7 +58,7 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService, coverImages: coverImages, downloader: downloader);
 
             byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
-                ProviderKeys.Spotify, SpotifyArtistId, CoverUrl, TestContext.Current.CancellationToken);
+                ProviderKeys.Spotify, SpotifyArtistId, new Uri(CoverUrl), TestContext.Current.CancellationToken);
 
             // Steht die Serie schon in der Mediathek, ist ihr Bild bereits bezahlt. Ein
             // erneuter Abruf kostet Wartekontingent beim Anbieter für nichts.
@@ -87,7 +73,7 @@ namespace EchoPlay.App.Tests.Services
             ForegroundCoverCoordinator coordinator = BuildCoordinator(downloader: downloader);
 
             byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
-                ProviderKeys.Spotify, SpotifyArtistId, CoverUrl, TestContext.Current.CancellationToken);
+                ProviderKeys.Spotify, SpotifyArtistId, new Uri(CoverUrl), TestContext.Current.CancellationToken);
 
             Assert.Equal(DownloadedBytes, result);
             Assert.Equal([CoverUrl], downloader.RequestedUrls);
@@ -101,7 +87,7 @@ namespace EchoPlay.App.Tests.Services
             ForegroundCoverCoordinator coordinator = BuildCoordinator(downloader: downloader, rateLimiter: rateLimiter);
 
             _ = await coordinator.RequestCoverForSearchResultAsync(
-                ProviderKeys.Spotify, SpotifyArtistId, CoverUrl, TestContext.Current.CancellationToken);
+                ProviderKeys.Spotify, SpotifyArtistId, new Uri(CoverUrl), TestContext.Current.CancellationToken);
 
             // Die Suche läuft, während der Anwender zusieht, sie muss sich beim Wartelimit
             // als Vordergrund melden, sonst steht sie hinter dem Hintergrundlauf an.
@@ -122,7 +108,7 @@ namespace EchoPlay.App.Tests.Services
                 seriesService: seriesService, downloader: downloader);
 
             byte[]? result = await coordinator.RequestCoverForSearchResultAsync(
-                "EinAnbieterDenEsNichtGibt", SpotifyArtistId, CoverUrl, TestContext.Current.CancellationToken);
+                "EinAnbieterDenEsNichtGibt", SpotifyArtistId, new Uri(CoverUrl), TestContext.Current.CancellationToken);
 
             // Bei unbekannter Quelle lässt sich die Serie nicht zuordnen. Dann wird geladen,
             // statt stillschweigend das Bild einer fremden Serie zu liefern.
@@ -291,7 +277,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task EnqueueForEpisodes_OhneAblage_HoltDasCoverVonDerPlatte()
+        public async Task EnqueueForEpisodes_WithoutStoredCover_TakesItFromDisk()
         {
             // Reihenfolge der Quellen: erst die Ablage, dann die Platte. Was von der Platte
             // kommt, wandert in die Ablage, beim nächsten Aufbau fällt der Griff weg.
@@ -325,7 +311,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task EnqueueForEpisodes_OhneCoverAufDerPlatte_LaedtVomAnbieter()
+        public async Task EnqueueForEpisodes_WithoutCoverOnDisk_LoadsFromProvider()
         {
             FakeEpisodeDataService episodes = new();
             Episode episode = new()
@@ -355,33 +341,33 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task EnqueueForEpisodes_OhneQuelleMeldetNichts()
+        public async Task EnqueueForEpisodes_WithoutSource_ReportsNothing()
         {
             // Eine Folge ohne Ordner und ohne Adresse hat keine Cover-Quelle. Die Kachel
             // behält ihren Platzhalter, und die übrigen Folgen laufen weiter durch.
-            Guid mitAblage = new("dddddddd-1111-2222-3333-999999999994");
+            Guid withStoredCover = new("dddddddd-1111-2222-3333-999999999994");
 
             FakeEpisodeDataService episodes = new();
             Episode episode = new() { Title = "Ohne Quelle", SeriesId = TestIds.SeriesA };
             await episodes.AddAsync(episode, TestContext.Current.CancellationToken);
-            Guid ohneQuelle = episode.Id;
+            Guid withoutSource = episode.Id;
 
             FakeCoverService coverService = new();
-            coverService.ExistingEpisodeCovers[mitAblage] = StoredBytes;
+            coverService.ExistingEpisodeCovers[withStoredCover] = StoredBytes;
 
             ForegroundCoverCoordinator coordinator = BuildCoordinator(
                 episodeService: episodes, coverService: coverService);
 
-            List<Guid> gemeldet = [];
+            List<Guid> reported = [];
             TaskCompletionSource delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            coordinator.EnqueueForEpisodes([ohneQuelle, mitAblage], (id, bytes) =>
+            coordinator.EnqueueForEpisodes([withoutSource, withStoredCover], (id, bytes) =>
             {
-                lock (gemeldet)
+                lock (reported)
                 {
-                    gemeldet.Add(id);
+                    reported.Add(id);
                 }
 
-                if (id == mitAblage)
+                if (id == withStoredCover)
                 {
                     _ = delivered.TrySetResult();
                 }
@@ -389,31 +375,31 @@ namespace EchoPlay.App.Tests.Services
 
             await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
-            lock (gemeldet)
+            lock (reported)
             {
-                Assert.Equal([mitAblage], gemeldet);
+                Assert.Equal([withStoredCover], reported);
             }
         }
 
         [Fact]
-        public async Task EnqueueForEpisodes_UnbekannteFolgeWirdUebersprungen()
+        public async Task EnqueueForEpisodes_UnknownEpisodeIsSkipped()
         {
             // Die Kachel kann aus einem Bestand stammen, der inzwischen gelöscht wurde.
-            Guid unbekannt = new("dddddddd-1111-2222-3333-999999999995");
-            Guid bekannt = new("dddddddd-1111-2222-3333-999999999996");
+            Guid unknown = new("dddddddd-1111-2222-3333-999999999995");
+            Guid known = new("dddddddd-1111-2222-3333-999999999996");
 
             FakeCoverService coverService = new();
-            coverService.ExistingEpisodeCovers[bekannt] = StoredBytes;
+            coverService.ExistingEpisodeCovers[known] = StoredBytes;
 
             ForegroundCoverCoordinator coordinator = BuildCoordinator(coverService: coverService);
 
             TaskCompletionSource delivered = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            List<Guid> gemeldet = [];
-            coordinator.EnqueueForEpisodes([unbekannt, bekannt], (id, bytes) =>
+            List<Guid> reported = [];
+            coordinator.EnqueueForEpisodes([unknown, known], (id, bytes) =>
             {
-                lock (gemeldet)
+                lock (reported)
                 {
-                    gemeldet.Add(id);
+                    reported.Add(id);
                 }
 
                 _ = delivered.TrySetResult();
@@ -421,9 +407,9 @@ namespace EchoPlay.App.Tests.Services
 
             await delivered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
-            lock (gemeldet)
+            lock (reported)
             {
-                Assert.Equal([bekannt], gemeldet);
+                Assert.Equal([known], reported);
             }
         }
 

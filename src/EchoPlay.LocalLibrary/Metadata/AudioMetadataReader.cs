@@ -2,21 +2,11 @@ namespace EchoPlay.LocalLibrary.Metadata
 {
     /// <summary>
     /// Liest Metadaten aus lokalen Audiodateien via TagLibSharp.
-    /// Unterstützt alle Formate, die TagLibSharp erkennt (.mp3, .m4a, .flac, .ogg u.a.).
+    /// Unterstützt alle Formate, die TagLibSharp erkennt, darunter .mp3, .m4a, .flac und .ogg.
     /// </summary>
     public sealed class AudioMetadataReader : IAudioMetadataReader
     {
-        /// <summary>
-        /// Liest Abspieldauer und Tracknummer aus der angegebenen Audiodatei.
-        /// </summary>
-        /// <param name="filePath">Absoluter Pfad zur Audiodatei.</param>
-        /// <returns>
-        /// Ein Tupel aus <c>Duration</c> und <c>TrackNumber</c>.
-        /// <c>TrackNumber</c> ist 0, wenn keine Tracknummer in den Tags gespeichert ist.
-        /// </returns>
-        /// <exception cref="TagLib.UnsupportedFormatException">
-        /// Wird geworfen, wenn das Dateiformat nicht unterstützt wird.
-        /// </exception>
+        /// <inheritdoc/>
         public (TimeSpan Duration, int TrackNumber) Read(string filePath)
         {
             using TagLib.File file = TagLib.File.Create(filePath);

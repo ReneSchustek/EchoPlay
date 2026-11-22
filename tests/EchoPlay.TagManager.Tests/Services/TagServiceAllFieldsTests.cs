@@ -24,6 +24,25 @@ namespace EchoPlay.TagManager.Tests.Services
     /// </remarks>
     public sealed class TagServiceAllFieldsTests
     {
+        /// <summary>Ein Tag, in dem jedes Feld belegt ist, das der Verwalter schreiben kann.</summary>
+        private static AudioTag EveryFieldSet()
+            => new()
+            {
+                Title = "Der Fall des Jahres",
+                Album = "TKKG Folge 250",
+                Artist = "TKKG",
+                AlbumArtist = "Europa",
+                Comment = "Eigene Aufnahme",
+                Genre = "Hörspiel",
+                Year = 2026,
+                TrackNumber = 3,
+                TrackCount = 12,
+                DiscNumber = 1,
+                DiscCount = 2,
+                CoverImageData = [0x01, 0x02, 0x03],
+                CoverMimeType = "image/png",
+            };
+
         [Fact]
         public async Task Write_WithEveryField_StoresThemAll()
         {
@@ -31,41 +50,24 @@ namespace EchoPlay.TagManager.Tests.Services
             try
             {
                 TagService sut = new(new FakeLoggerFactory());
-                AudioTag alles = new()
-                {
-                    Title = "Der Fall des Jahres",
-                    Album = "TKKG Folge 250",
-                    Artist = "TKKG",
-                    AlbumArtist = "Europa",
-                    Comment = "Eigene Aufnahme",
-                    Genre = "Hörspiel",
-                    Year = 2026,
-                    TrackNumber = 3,
-                    TrackCount = 12,
-                    DiscNumber = 1,
-                    DiscCount = 2,
-                    CoverImageData = [0x01, 0x02, 0x03],
-                    CoverMimeType = "image/png",
-                };
-
-                await sut.WriteAsync(path, alles);
-                AudioTag gelesen = await sut.ReadAsync(path);
+                await sut.WriteAsync(path, EveryFieldSet());
+                AudioTag readBack = await sut.ReadAsync(path);
 
                 // Der Kennzeichnungs-Verwalter ist der einzige Weg, auf dem der Anwender
                 // eigene Aufnahmen benennt. Fällt ein Feld dabei unter den Tisch, merkt
                 // er es erst, wenn die Mediathek die Folge falsch einsortiert.
-                Assert.Equal("Der Fall des Jahres", gelesen.Title);
-                Assert.Equal("TKKG Folge 250", gelesen.Album);
-                Assert.Equal("TKKG", gelesen.Artist);
-                Assert.Equal("Europa", gelesen.AlbumArtist);
-                Assert.Equal("Eigene Aufnahme", gelesen.Comment);
-                Assert.Equal("Hörspiel", gelesen.Genre);
-                Assert.Equal(2026u, gelesen.Year);
-                Assert.Equal(3u, gelesen.TrackNumber);
-                Assert.Equal(12u, gelesen.TrackCount);
-                Assert.Equal(1u, gelesen.DiscNumber);
-                Assert.Equal(2u, gelesen.DiscCount);
-                Assert.NotNull(gelesen.CoverImageData);
+                Assert.Equal("Der Fall des Jahres", readBack.Title);
+                Assert.Equal("TKKG Folge 250", readBack.Album);
+                Assert.Equal("TKKG", readBack.Artist);
+                Assert.Equal("Europa", readBack.AlbumArtist);
+                Assert.Equal("Eigene Aufnahme", readBack.Comment);
+                Assert.Equal("Hörspiel", readBack.Genre);
+                Assert.Equal(2026u, readBack.Year);
+                Assert.Equal(3u, readBack.TrackNumber);
+                Assert.Equal(12u, readBack.TrackCount);
+                Assert.Equal(1u, readBack.DiscNumber);
+                Assert.Equal(2u, readBack.DiscCount);
+                Assert.NotNull(readBack.CoverImageData);
             }
             finally
             {
@@ -118,8 +120,8 @@ namespace EchoPlay.TagManager.Tests.Services
             _ = Directory.CreateDirectory(folder);
             try
             {
-                string gut = AudioTestFileFactory.CreateTempMp3();
-                File.Move(gut, Path.Combine(folder, "01 - Gut.mp3"));
+                string good = AudioTestFileFactory.CreateTempMp3();
+                File.Move(good, Path.Combine(folder, "01 - Gut.mp3"));
 
                 // Eine Textdatei mit Audio-Endung: Genau so sieht ein abgebrochener
                 // Download aus.
@@ -129,10 +131,10 @@ namespace EchoPlay.TagManager.Tests.Services
 
                 TagService sut = new(new FakeLoggerFactory());
 
-                IReadOnlyList<(string FilePath, AudioTag Tag)> gelesen = await sut.ReadFolderAsync(folder);
+                IReadOnlyList<(string FilePath, AudioTag Tag)> readBack = await sut.ReadFolderAsync(folder);
 
                 // Eine kaputte Datei kostet ihre eigene Zeile, nicht den ganzen Ordner.
-                (string FilePath, AudioTag Tag) einzig = Assert.Single(gelesen);
+                (string FilePath, AudioTag Tag) einzig = Assert.Single(readBack);
                 Assert.EndsWith("01 - Gut.mp3", einzig.FilePath, StringComparison.Ordinal);
             }
             finally

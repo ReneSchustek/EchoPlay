@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
@@ -77,8 +78,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal("https://i.example.invalid/tkkg.jpg", coverUrl);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Dienst und Cover-Doubles eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required SyncService Service { get; init; }
@@ -104,31 +106,15 @@ namespace EchoPlay.App.Tests.Services
                 LocalLibraryRootPath = @"D:\Media",
             });
 
-            ServiceCollection services = new();
-            _ = services.AddScoped<IAppSettingsDataService>(_ => settings);
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
-            _ = services.AddScoped<ILocalLibraryScanner>(_ => scanner);
-            _ = services.AddScoped<IScanOrchestrator>(_ => new FakeScanOrchestrator(scanner));
-            _ = services.AddScoped<ILocalCoverService>(_ => localCovers);
-            _ = services.AddScoped<ITrackMatcher>(_ => new FakeTrackMatcher());
-            _ = services.AddScoped<IAudioMetadataReader>(_ => new FakeAudioMetadataReader());
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
-            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
-
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
             return new Fixture
             {
-                Service = new SyncService(
-                    scopeFactory,
-                    provider.GetRequiredService<ILoggerFactory>(),
-                    new FakeScanEventService(),
-                    coverService),
+                Service = new SyncServiceSetup
+                {
+                    Settings = settings,
+                    Series = seriesService,
+                    Scanner = scanner,
+                    LocalCovers = localCovers,
+                }.Build(coverService),
                 CoverService = coverService,
                 LocalCovers = localCovers,
             };

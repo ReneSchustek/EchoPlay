@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.App.Services;
 using EchoPlay.Spotify.Configuration;
 using System.Threading;
@@ -33,8 +34,8 @@ namespace EchoPlay.App.Tests.Fakes
 
             return new SpotifyOptions
             {
-                ApiBaseUrl = "https://api.spotify.com/v1",
-                AuthBaseUrl = "https://accounts.spotify.com/api/token",
+                ApiBaseUrl = new Uri("https://api.spotify.com/v1"),
+                AuthBaseUrl = new Uri("https://accounts.spotify.com/api/token"),
                 ClientId = credentials.Value.ClientId,
                 ClientSecret = credentials.Value.ClientSecret
             };

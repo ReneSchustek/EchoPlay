@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Settings;
@@ -17,13 +18,20 @@ namespace EchoPlay.App.Services
     /// Sucht Serien und Alben beim Anbieter.
     /// </summary>
     /// <remarks>
-    /// Das Suchen und das Übernehmen in den eigenen Bestand sind zwei Dinge: Die Suche
-    /// fragt eine fremde Gegenstelle und schreibt nichts, der Import schreibt und fragt
-    /// niemanden. Sie standen in einer Klasse, weil beide denselben Anbieter kennen
-    /// müssen.
+    /// Das Suchen und das Übernehmen in den eigenen Bestand sind getrennt: Die Suche fragt
+    /// eine fremde Gegenstelle und schreibt nichts, der Import schreibt und fragt niemanden.
+    /// Gemeinsam ist beiden nur die Wahl des Anbieters.
     /// </remarks>
     internal sealed class ProviderSearch
     {
+        // Albentreffer ergänzen die Seriensuche; fünfzehn je Suchlauf halten die
+        // Ergebnisliste überschaubar.
+        private const int AlbumResultLimit = 15;
+
+        // Albentreffer durchlaufen die Hörspiel-Bewertung nicht. Ein fester Wert stellt sie in
+        // der Rangfolge neben bewertete Serien, statt sie mit null Punkten ans Ende zu schieben.
+        private const int AlbumResultScore = 50;
+
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
 
@@ -82,7 +90,7 @@ namespace EchoPlay.App.Services
         /// Sucht wie <see cref="SearchAsync"/>, meldet die Treffer aber einzeln, sobald sie feststehen.
         /// </summary>
         /// <remarks>
-        /// Der Hinweis auf den Spotify-Rückfall fehlt hier bewusst: Er hängt an den
+        /// Der Hinweis auf den Spotify-Rückfall fehlt hier: Er hängt an den
         /// Einstellungen, nicht am Ergebnis, und die Albensuche desselben Suchlaufs meldet ihn
         /// bereits. Ein zweiter Meldeweg hätte nur die Signatur verkompliziert.
         /// </remarks>
@@ -126,7 +134,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Wählt den effektiven Provider für einen Suchlauf. Bildet das bestehende Both→AppleMusic-Mapping
         /// ab und prüft zusätzlich, ob Spotify-Credentials hinterlegt sind. Fehlen sie, wird transparent
-        /// auf Apple Music umgelenkt und ein Warning geloggt — die AppSettings bleiben unverändert.
+        /// auf Apple Music umgelenkt und ein Warning geloggt; die AppSettings bleiben unverändert.
         /// </summary>
         /// <param name="scope">DI-Scope für den Credential-Store-Lookup.</param>
         /// <param name="activeProvider">Vom Nutzer gewählter Provider aus den AppSettings.</param>
@@ -162,10 +170,10 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Sucht beim aktiven Provider nach Alben (einzelnen Folgen) anhand eines Suchbegriffs.
         /// Ergänzt die Seriensuche (<see cref="SearchAsync"/>) um die Möglichkeit,
-        /// gezielt nach Folgentiteln zu suchen (z.B. "Kapatenhund"). Teilt das Spotify→Apple-Music-Fallback-
+        /// gezielt nach Folgentiteln zu suchen (z.B. "Karpatenhund"). Teilt das Spotify→Apple-Music-Fallback-
         /// Verhalten von <see cref="SearchAsync"/>.
         /// </summary>
-        /// <param name="query">Suchbegriff – wird an die Provider-API weitergereicht.</param>
+        /// <param name="query">Suchbegriff; er wird an die Provider-API weitergereicht.</param>
         /// <returns>Album-Treffer plus Flag, ob der Spotify-Fallback gegriffen hat.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<SearchOutcome> SearchAlbumsAsync(string query, CancellationToken cancellationToken = default)
@@ -189,72 +197,67 @@ namespace EchoPlay.App.Services
 
             _logger.Debug(() => $"Album-Suche nach \"{query}\" via {importProvider}");
 
-            List<ImportSeries> results = [];
-
-            if (importProvider == ProviderType.Spotify)
+            List<ImportSeries> results = importProvider switch
             {
-                EchoPlay.Spotify.Abstractions.ISpotifyApiClient? spotifyClient =
-                    scope.ServiceProvider.GetService<EchoPlay.Spotify.Abstractions.ISpotifyApiClient>();
-
-                if (spotifyClient is null)
-                {
-                    return new SearchOutcome([], spotifyFallbackApplied);
-                }
-
-                IReadOnlyList<EchoPlay.Spotify.Dtos.SpotifyAlbumDto> albums =
-                    await spotifyClient.SearchAlbumsAsync(query, 15, cancellationToken);
-
-                foreach (EchoPlay.Spotify.Dtos.SpotifyAlbumDto album in albums)
-                {
-                    results.Add(new ImportSeries
-                    {
-                        SourceSeriesId = album.SpotifyAlbumId,
-                        Source = ProviderKeys.Spotify,
-                        Title = album.Title,
-                        ArtistName = album.ArtistName,
-                        CoverImageUrl = album.ImageUrl,
-                        IsAlbumResult = true,
-                        IsHoerspiel = true,
-                        Score = 50
-                    });
-                }
-            }
-            else if (importProvider == ProviderType.AppleMusic)
-            {
-                EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient? appleClient =
-                    scope.ServiceProvider.GetService<EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient>();
-
-                if (appleClient is null)
-                {
-                    return new SearchOutcome([], spotifyFallbackApplied);
-                }
-
-                EchoPlay.AppleMusic.Dtos.ITunesResponseDto<EchoPlay.AppleMusic.Dtos.ITunesCollectionDto> response =
-                    await appleClient.SearchAlbumsAsync(query, 15, cancellationToken);
-
-                foreach (EchoPlay.AppleMusic.Dtos.ITunesCollectionDto album in response.Results)
-                {
-                    if (!string.Equals(album.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    results.Add(new ImportSeries
-                    {
-                        SourceSeriesId = album.CollectionId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        Source = ProviderKeys.AppleMusic,
-                        Title = album.CollectionName,
-                        ArtistName = album.ArtistName,
-                        CoverImageUrl = EchoPlay.AppleMusic.Mapping.AppleMusicArtworkUrl.WithSize(album.ArtworkUrl100),
-                        IsAlbumResult = true,
-                        IsHoerspiel = true,
-                        Score = 50
-                    });
-                }
-            }
-
+                ProviderType.Spotify => await SearchSpotifyAlbumsAsync(scope.ServiceProvider, query, cancellationToken),
+                ProviderType.AppleMusic => await SearchAppleAlbumsAsync(scope.ServiceProvider, query, cancellationToken),
+                _ => [],
+            };
             return new SearchOutcome(results, spotifyFallbackApplied);
         }
 
+        /// <summary>Album-Suche bei Spotify; ohne Client keine Treffer.</summary>
+        private static async Task<List<ImportSeries>> SearchSpotifyAlbumsAsync(IServiceProvider services, string query, CancellationToken cancellationToken)
+        {
+            EchoPlay.Spotify.Abstractions.ISpotifyApiClient? spotifyClient =
+                services.GetService<EchoPlay.Spotify.Abstractions.ISpotifyApiClient>();
+            if (spotifyClient is null)
+            {
+                return [];
+            }
+
+            IReadOnlyList<EchoPlay.Spotify.Dtos.SpotifyAlbumDto> albums =
+                await spotifyClient.SearchAlbumsAsync(query, AlbumResultLimit, cancellationToken);
+
+            return [.. albums.Select(album => new ImportSeries
+            {
+                SourceSeriesId = album.SpotifyAlbumId,
+                Source = ProviderKeys.Spotify,
+                Title = album.Title,
+                ArtistName = album.ArtistName,
+                CoverImageUrl = WebAddress.TryParse(album.ImageUrl),
+                IsAlbumResult = true,
+                IsHoerspiel = true,
+                Score = AlbumResultScore
+            })];
+        }
+
+        /// <summary>Album-Suche bei Apple Music; nur Sammlungen zählen, ohne Client keine Treffer.</summary>
+        private static async Task<List<ImportSeries>> SearchAppleAlbumsAsync(IServiceProvider services, string query, CancellationToken cancellationToken)
+        {
+            EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient? appleClient =
+                services.GetService<EchoPlay.AppleMusic.Abstractions.IAppleMusicSearchClient>();
+            if (appleClient is null)
+            {
+                return [];
+            }
+
+            EchoPlay.AppleMusic.Dtos.ITunesResponseDto<EchoPlay.AppleMusic.Dtos.ITunesCollectionDto> response =
+                await appleClient.SearchAlbumsAsync(query, AlbumResultLimit, cancellationToken);
+
+            return [.. response.Results
+                .Where(album => string.Equals(album.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
+                .Select(album => new ImportSeries
+                {
+                    SourceSeriesId = album.CollectionId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    Source = ProviderKeys.AppleMusic,
+                    Title = album.CollectionName,
+                    ArtistName = album.ArtistName,
+                    CoverImageUrl = EchoPlay.AppleMusic.Mapping.AppleMusicArtworkUrl.WithSize(WebAddress.TryParse(album.ArtworkUrl100)),
+                    IsAlbumResult = true,
+                    IsHoerspiel = true,
+                    Score = AlbumResultScore
+                })];
+        }
     }
 }

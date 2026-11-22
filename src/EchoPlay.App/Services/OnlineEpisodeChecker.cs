@@ -5,12 +5,11 @@ using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Parsing;
-using System.Text.RegularExpressions;
 
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Prüft abonnierte Serien gegen die iTunes API auf neue Folgen.
+    /// Prüft die übergebenen Serien gegen die iTunes API auf neue Folgen.
     /// Vergleicht die höchste online verfügbare Episodennummer mit der höchsten
     /// lokal vorhandenen Nummer (aus den Ordnernamen im Serienverzeichnis).
     /// </summary>
@@ -24,13 +23,6 @@ namespace EchoPlay.App.Services
     /// </remarks>
     internal sealed class OnlineEpisodeChecker : IOnlineEpisodeChecker
     {
-        /// <summary>
-        /// Pause zwischen iTunes-API-Aufrufen, denn iTunes erlaubt ~20 Requests/Minute.
-        /// 1,5 Sekunden sind ein guter Kompromiss: schnell genug für viele Serien,
-        /// aber unter dem Limit von ~20 Anfragen pro Minute.
-        /// </summary>
-        private static readonly TimeSpan RateLimitDelay = TimeSpan.FromMilliseconds(1500);
-
         private readonly IAppleMusicSearchClient _appleMusicClient;
         private readonly ISeriesDataService _seriesDataService;
         private readonly EchoPlay.Logger.Abstractions.ILogger _logger;
@@ -80,9 +72,14 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Gemeinsame Schleife für sequenzielle Serienprüfungen mit Rate-Limiting.
-        /// Jede Serie wird einzeln geprüft; Fehler bei einer Serie blockieren die restlichen nicht.
+        /// Gemeinsame Schleife für die Serienprüfung, eine Serie nach der anderen. Fehler bei
+        /// einer Serie blockieren die restlichen nicht.
         /// </summary>
+        /// <remarks>
+        /// Eine eigene Pause zwischen den Serien braucht es nicht: Der HTTP-Client für iTunes
+        /// läuft über die Ratenbremse aus <c>AppServiceRegistration</c>, die zwischen zwei
+        /// Anfragen an itunes.apple.com 1,5 Sekunden einhält, auch über Seriengrenzen hinweg.
+        /// </remarks>
         /// <param name="subscribedSeries">Zu prüfende Serien.</param>
         /// <param name="checkFunc">Prüflogik pro Serie (CheckSingle oder CheckNewReleases).</param>
         /// <param name="cancellationToken">Abbruch-Token.</param>
@@ -95,11 +92,9 @@ namespace EchoPlay.App.Services
         {
             List<OnlineEpisodeCheckResult> results = [];
 
-            for (int i = 0; i < subscribedSeries.Count; i++)
+            foreach (CheckableSeriesInfo series in subscribedSeries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                CheckableSeriesInfo series = subscribedSeries[i];
 
                 try
                 {
@@ -110,19 +105,15 @@ namespace EchoPlay.App.Services
                         results.Add(result);
                     }
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
+                    // Ein Abbruch des Aufrufers beendet den Durchlauf. Eine Zeitüberschreitung
+                    // bei iTunes dagegen trifft nur diese Serie und fällt in den Zweig darunter.
                     throw;
                 }
                 catch (Exception ex)
                 {
                     _logger.Warning("Prüfung für '{SeriesTitle}' fehlgeschlagen: {Reason}", series.Title, ex.Message);
-                }
-
-                // Rate-Limiting: Pause vor dem nächsten API-Aufruf (nicht nach dem letzten)
-                if (i < subscribedSeries.Count - 1)
-                {
-                    await Task.Delay(RateLimitDelay, cancellationToken);
                 }
             }
 
@@ -142,74 +133,14 @@ namespace EchoPlay.App.Services
             DateTime cutoffDate,
             CancellationToken ct = default)
         {
-            // Apple Music Artist ID ermitteln
-            long? artistId = await ResolveArtistIdAsync(series, ct);
-
-            if (artistId is null)
-            {
-                _logger.Debug(() => $"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
-                return null;
-            }
-
-            // Alle Alben des Künstlers laden
-            ITunesResponseDto<ITunesCollectionDto> albumResponse = await _appleMusicClient
-                .LookupAlbumsAsync(artistId.Value, ct);
-
-            List<ITunesCollectionDto> albums = albumResponse.Results
-                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (albums.Count == 0)
+            List<ITunesCollectionDto>? albums = await LoadAlbumsAsync(series, ct);
+            if (albums is null)
             {
                 return null;
             }
 
-            // Alben im Zeitfenster sammeln (Cutoff bis heute) und Ankündigungen (Zukunft)
-            DateTime today = _clock.UtcNow.Date;
-            List<NewReleaseEpisode> newReleases = [];
-            List<AnnouncedEpisode> announced = [];
-
-            foreach (ITunesCollectionDto album in albums)
-            {
-                if (!TryParseReleaseDate(album.ReleaseDate, out DateTime releaseDate))
-                {
-                    continue;
-                }
-
-                int? episodeNumber = ExtractEpisodeNumber(album.CollectionName);
-
-                if (releaseDate.Date > today)
-                {
-                    // Angekündigt: Datum in der Zukunft
-                    announced.Add(new AnnouncedEpisode
-                    {
-                        Title = album.CollectionName,
-                        ReleaseDate = releaseDate
-                    });
-
-                    // Ankündigungen auch als NewRelease aufnehmen (mit Zukunftsdatum)
-                    newReleases.Add(new NewReleaseEpisode
-                    {
-                        Title = album.CollectionName,
-                        EpisodeNumber = episodeNumber,
-                        ReleaseDate = releaseDate,
-                        CoverUrl = album.ArtworkUrl100,
-                        CollectionId = album.CollectionId
-                    });
-                }
-                else if (releaseDate.Date >= cutoffDate.Date)
-                {
-                    // Neuerscheinung: im Zeitfenster
-                    newReleases.Add(new NewReleaseEpisode
-                    {
-                        Title = album.CollectionName,
-                        EpisodeNumber = episodeNumber,
-                        ReleaseDate = releaseDate,
-                        CoverUrl = album.ArtworkUrl100,
-                        CollectionId = album.CollectionId
-                    });
-                }
-            }
+            (List<NewReleaseEpisode> newReleases, List<AnnouncedEpisode> announced) =
+                ITunesAlbumEvaluation.CollectNewReleases(albums, cutoffDate, _clock.UtcNow.Date);
 
             // Keine relevanten Ergebnisse? Serie nicht ins Ergebnis aufnehmen.
             if (newReleases.Count == 0 && announced.Count == 0)
@@ -217,16 +148,9 @@ namespace EchoPlay.App.Services
                 return null;
             }
 
-            // Neueste zuerst sortieren
-            newReleases.Sort((a, b) => b.ReleaseDate.CompareTo(a.ReleaseDate));
-
             // Lokalen Stand ermitteln (für Höchstnummer-Vergleich)
-            int localHighest = GetLocalHighestEpisodeNumber(series.LocalFolderPath);
-            int onlineHighest = newReleases
-                .Where(e => e.EpisodeNumber.HasValue)
-                .Select(e => e.EpisodeNumber!.Value)
-                .DefaultIfEmpty(0)
-                .Max();
+            int localHighest = GetLocalHighestEpisodeNumber(series.LocalFolderPath, _logger);
+            int onlineHighest = HighestNumber(newReleases);
 
             return new OnlineEpisodeCheckResult
             {
@@ -242,8 +166,16 @@ namespace EchoPlay.App.Services
             };
         }
 
+        /// <summary>Die höchste Folgennummer unter den Neuerscheinungen, 0 ohne nummerierte.</summary>
+        private static int HighestNumber(List<NewReleaseEpisode> newReleases) => newReleases
+            .Where(e => e.EpisodeNumber.HasValue)
+            .Select(e => e.EpisodeNumber!.Value)
+            .DefaultIfEmpty(0)
+            .Max();
+
         /// <summary>
-        /// Prüft eine einzelne Serie gegen die iTunes API.
+        /// Prüft eine einzelne Serie gegen die iTunes API: Welche Nummern gibt es beim Anbieter,
+        /// die lokal noch fehlen?
         /// </summary>
         /// <param name="series">Die zu prüfende Serie.</param>
         /// <param name="ct">Abbruchtoken für die API-Aufrufe.</param>
@@ -251,81 +183,15 @@ namespace EchoPlay.App.Services
         private async Task<OnlineEpisodeCheckResult?> CheckSingleSeriesAsync(
             CheckableSeriesInfo series, CancellationToken ct = default)
         {
-            // Schritt 1: Apple Music Artist ID ermitteln
-            long? artistId = await ResolveArtistIdAsync(series, ct);
-
-            if (artistId is null)
-            {
-                _logger.Debug(() => $"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
-                return null;
-            }
-
-            // Schritt 2: Alle Alben des Künstlers laden
-            ITunesResponseDto<ITunesCollectionDto> albumResponse = await _appleMusicClient
-                .LookupAlbumsAsync(artistId.Value, ct);
-
-            List<ITunesCollectionDto> albums = albumResponse.Results
-                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (albums.Count == 0)
+            List<ITunesCollectionDto>? albums = await LoadAlbumsAsync(series, ct);
+            if (albums is null)
             {
                 return null;
             }
 
-            // Schritt 3: Episodennummern aus Albumnamen extrahieren
-            int onlineHighest = 0;
-            List<AnnouncedEpisode> announced = [];
-            // Nummer → Albumname für die spätere Fehlende-Folgen-Liste
-            Dictionary<int, string> episodesByNumber = [];
-            DateTime today = _clock.UtcNow.Date;
-
-            foreach (ITunesCollectionDto album in albums)
-            {
-                int? episodeNumber = ExtractEpisodeNumber(album.CollectionName);
-
-                // ExtractEpisodeNumber filtert bereits auf 1–999
-                if (episodeNumber.HasValue)
-                {
-                    // Prüfen ob die Folge angekündigt ist (Erscheinungsdatum in der Zukunft)
-                    if (TryParseReleaseDate(album.ReleaseDate, out DateTime releaseDate) && releaseDate > today)
-                    {
-                        announced.Add(new AnnouncedEpisode
-                        {
-                            Title = album.CollectionName,
-                            ReleaseDate = releaseDate
-                        });
-                    }
-
-                    // Albumname merken, er wird für die Fehlende-Folgen-Liste benötigt
-                    _ = episodesByNumber.TryAdd(episodeNumber.Value, album.CollectionName);
-
-                    if (episodeNumber.Value > onlineHighest)
-                    {
-                        onlineHighest = episodeNumber.Value;
-                    }
-                }
-            }
-
-            // Schritt 4: Lokale Ordner scannen
-            int localHighest = GetLocalHighestEpisodeNumber(series.LocalFolderPath);
-
-            // Schritt 5: Fehlende Folgen (online vorhanden, lokal nicht) sammeln
-            List<MissingOnlineEpisode> missingOnline = [];
-            for (int n = localHighest + 1; n <= onlineHighest; n++)
-            {
-                string albumTitle = episodesByNumber.TryGetValue(n, out string? name)
-                    ? name
-                    : FormattableString.Invariant($"Folge {n:D3}");
-
-                missingOnline.Add(new MissingOnlineEpisode
-                {
-                    EpisodeNumber = n,
-                    AlbumTitle = albumTitle
-                });
-            }
-
-            int newCount = Math.Max(0, onlineHighest - localHighest);
+            int localHighest = GetLocalHighestEpisodeNumber(series.LocalFolderPath, _logger);
+            (int onlineHighest, List<AnnouncedEpisode> announced, List<MissingOnlineEpisode> missingOnline) =
+                ITunesAlbumEvaluation.CollectMissing(albums, localHighest, _clock.UtcNow.Date);
 
             return new OnlineEpisodeCheckResult
             {
@@ -333,12 +199,36 @@ namespace EchoPlay.App.Services
                 SeriesTitle = series.Title,
                 OnlineHighestNumber = onlineHighest,
                 LocalHighestNumber = localHighest,
-                NewEpisodesCount = newCount,
+                NewEpisodesCount = Math.Max(0, onlineHighest - localHighest),
                 AnnouncedEpisodes = announced,
                 MissingOnlineEpisodes = missingOnline,
                 CoverUrl = series.CoverImageUrl,
                 CheckedAtUtc = _clock.UtcNow
             };
+        }
+
+        /// <summary>
+        /// Lädt die Alben des Künstlers einer Serie.
+        /// </summary>
+        /// <param name="series">Die zu prüfende Serie.</param>
+        /// <param name="ct">Abbruchtoken für die API-Aufrufe.</param>
+        /// <returns>Die Alben, oder null ohne Künstler-Kennung oder ohne Alben.</returns>
+        private async Task<List<ITunesCollectionDto>?> LoadAlbumsAsync(CheckableSeriesInfo series, CancellationToken ct)
+        {
+            long? artistId = await ResolveArtistIdAsync(series, ct);
+            if (artistId is null)
+            {
+                _logger.Debug(() => $"Keine iTunes-Artist-ID für '{series.Title}' gefunden – übersprungen.");
+                return null;
+            }
+
+            ITunesResponseDto<ITunesCollectionDto> albumResponse = await _appleMusicClient
+                .LookupAlbumsAsync(artistId.Value, ct);
+
+            List<ITunesCollectionDto> albums = [.. albumResponse.Results
+                .Where(r => string.Equals(r.WrapperType, "collection", StringComparison.OrdinalIgnoreCase))];
+
+            return albums.Count == 0 ? null : albums;
         }
 
         /// <summary>
@@ -363,9 +253,11 @@ namespace EchoPlay.App.Services
                 .SearchArtistsAsync(series.Title, limit: 5, ct);
 
             // Den besten Treffer nehmen, idealerweise exakte Übereinstimmung im Namen
-            ITunesArtistDto? bestMatch = searchResponse.Results
-                .FirstOrDefault(a => string.Equals(a.ArtistName, series.Title, StringComparison.OrdinalIgnoreCase))
-                ?? searchResponse.Results.FirstOrDefault();
+            IReadOnlyList<ITunesArtistDto> candidates = searchResponse.Results;
+            ITunesArtistDto? exactMatch = candidates
+                .FirstOrDefault(a => string.Equals(a.ArtistName, series.Title, StringComparison.OrdinalIgnoreCase));
+            ITunesArtistDto? bestMatch = exactMatch
+                ?? (!series.RequireExactArtistName && candidates.Count > 0 ? candidates[0] : null);
 
             if (bestMatch is null)
             {
@@ -395,13 +287,13 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Ermittelt die höchste Episodennummer aus den lokalen Ordnernamen.
-        /// Verwendet dieselbe Parser-Logik wie die Fehlende-Folgen-Analyse:
-        /// Alle Kandidatenmuster werden getestet, das Muster mit den meisten Treffern gewinnt.
+        /// Ermittelt die höchste Episodennummer aus den lokalen Ordnernamen, mit derselben Regel
+        /// wie die Fehlende-Folgen-Analyse: jeder Ordner gegen alle Muster, nur Ordner mit Audio.
         /// </summary>
         /// <param name="localFolderPath">Pfad zum Serienordner, oder null wenn nicht lokal vorhanden.</param>
+        /// <param name="logger">Protokollkanal für einen nicht lesbaren Serienordner; ohne ihn bleibt es bei der 0.</param>
         /// <returns>Die höchste gefundene Nummer, oder 0 wenn kein Ordner vorhanden oder keine Nummern erkannt.</returns>
-        internal static int GetLocalHighestEpisodeNumber(string? localFolderPath)
+        internal static int GetLocalHighestEpisodeNumber(string? localFolderPath, EchoPlay.Logger.Abstractions.ILogger? logger = null)
         {
             if (string.IsNullOrWhiteSpace(localFolderPath) || !Directory.Exists(localFolderPath))
             {
@@ -413,18 +305,18 @@ namespace EchoPlay.App.Services
             {
                 subfolders = Directory.GetDirectories(localFolderPath);
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                return 0;
-            }
-            catch (UnauthorizedAccessException)
-            {
+                // Mit 0 gilt jede Folge beim Anbieter als neu; der Grund steht im Protokoll.
+                logger?.Warning("Serienordner nicht lesbar, höchste lokale Folge unbekannt: {Folder} – {Reason}", EchoPlay.Core.Logging.PathRedactor.Redact(localFolderPath), ex.Message);
                 return 0;
             }
 
             // Ordnernamen extrahieren (nur der Name, kein Pfad)
+            // Ein Ordner ohne Audio ist keine vorhandene Folge; zählte er mit, schiene die Serie
+            // weiter, als sie ist, und neue Folgen beim Anbieter fielen unter den Tisch.
             List<string> folderNames = [];
-            foreach (string folder in subfolders)
+            foreach (string folder in subfolders.Where(EchoPlay.LocalLibrary.Scanning.EpisodeAudioFiles.HasAudio))
             {
                 string? name = Path.GetFileName(folder);
                 if (name is not null)
@@ -437,25 +329,6 @@ namespace EchoPlay.App.Services
             // Muster geprüft, Jahreszahlen fallen raus. Ein einziges Gewinner-Muster
             // ließe abweichend benannte Ordner die höchste Nummer verfälschen.
             return LocalEpisodeNumbers.Highest(folderNames);
-        }
-
-        /// <summary>
-        /// Versucht ein iTunes-Releasedatum zu parsen.
-        /// iTunes liefert Daten im ISO-8601-Format (z.B. "2026-04-15T07:00:00Z").
-        /// </summary>
-        /// <param name="dateString">Der Rohwert von iTunes, erwartet im ISO-8601-Format.</param>
-        /// <param name="result">Das geparste Datum; bei Misserfolg <c>default</c>.</param>
-        private static bool TryParseReleaseDate(string? dateString, out DateTime result)
-        {
-            result = default;
-
-            if (string.IsNullOrWhiteSpace(dateString))
-            {
-                return false;
-            }
-
-            return DateTime.TryParse(dateString, System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.RoundtripKind, out result);
         }
     }
 }

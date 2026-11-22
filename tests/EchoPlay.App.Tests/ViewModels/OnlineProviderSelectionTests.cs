@@ -84,8 +84,6 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Single(seriesService.All);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static Task<OnlineLibraryViewModel> SearchAsync(params ImportSeries[] results)
             => SearchWithStoreAsync(new FakeSeriesDataService(), results);
 
@@ -115,31 +113,15 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddScoped<IAppSettingsDataService>(
                 _ => new FakeAppSettingsDataService(new AppSettings { ActiveProvider = ProviderType.Spotify }));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch(searchResults, "Spotify"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
             _ = services.AddSingleton<EchoPlay.Spotify.Auth.ISpotifyClientCredentialsProvider>(
                 FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services, spotifyResults: searchResults);
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new OnlineLibraryViewModel(
                 scopeFactory,

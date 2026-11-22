@@ -159,8 +159,9 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.False(result.HasEpisodeCover);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Provider und Doubles eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required DashboardCoverProvider Provider { get; init; }
@@ -197,13 +198,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ILocalCoverLoader>(_ => new FakeLocalCoverLoader());
             _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<ICoverDownloader>(downloader);
-            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            _ = services.AddSingleton<ICoverService>(
-                sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddCoverChain(services, downloader);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();

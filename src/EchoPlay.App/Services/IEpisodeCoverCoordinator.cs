@@ -11,7 +11,7 @@ namespace EchoPlay.App.Services
     /// Serien und Episoden. Kapselt die Bestätigungs-Dialoge beim Überschreiben,
     /// den HTTP-Download eines gewählten Cover-Hits, das Speichern in der
     /// CoverImages-Tabelle, das optionale Schreiben von <c>cover.jpg</c> und das
-    /// abschließende Update der Card-Bitmap. Aus dem LocalLibraryViewModel ausgelagert.
+    /// abschließende Update der Card-Bitmap.
     /// </summary>
     public interface IEpisodeCoverCoordinator
     {
@@ -19,7 +19,7 @@ namespace EchoPlay.App.Services
         /// Sucht Cover-Kandidaten für den angegebenen Begriff und liefert die Treffer
         /// als App-eigene <see cref="CoverSearchHit"/>-Wrapper.
         /// </summary>
-        /// <param name="query">Suchbegriff – meist der Serien- oder Folgentitel.</param>
+        /// <param name="query">Suchbegriff, meist der Serien- oder Folgentitel.</param>
         /// <param name="page">Welcher Abschnitt der Trefferliste geholt wird; leere Antwort heißt „nichts mehr da".</param>
         /// <param name="ct">Abbruchtoken, z.B. für Dialog-Schließen.</param>
         Task<IReadOnlyList<CoverSearchHit>> SearchCoversAsync(string query, EchoPlay.LocalLibrary.Cover.CoverSearchPage page, CancellationToken ct);

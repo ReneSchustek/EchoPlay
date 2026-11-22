@@ -5,7 +5,7 @@ namespace EchoPlay.Logger.Tests.Fakes
 {
     /// <summary>
     /// Test-Formatter, der alle zur Formatierung übergebenen Einträge aufzeichnet.
-    /// Ermöglicht die Prüfung, ob und mit welchen Einträgen ein Formatter aufgerufen wurde.
+    /// Damit prüfen Tests, ob und mit welchen Einträgen der Formatter aufgerufen wurde.
     /// </summary>
     internal sealed class CapturingFormatter : ILogFormatter
     {

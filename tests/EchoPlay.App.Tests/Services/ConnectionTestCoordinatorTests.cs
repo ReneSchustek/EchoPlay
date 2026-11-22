@@ -65,8 +65,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.Null(result.ErrorDetail);
         }
 
-        // ── Test-Stubs ─────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Scheitert bei jedem Aufruf mit der vorgegebenen Ausnahme.
+        /// </summary>
         private sealed class ThrowingSpotifyClient : ISpotifyApiClient
         {
             private readonly Exception _ex;

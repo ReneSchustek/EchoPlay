@@ -22,7 +22,7 @@ namespace EchoPlay.Core.Parsing
 
             Match match = NumberPattern().Match(albumTitle);
 
-            if (match.Success && int.TryParse(match.Value, out int number))
+            if (match.Success && int.TryParse(match.Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int number))
             {
                 return number is > 0 and < 1000 ? number : null;
             }
@@ -30,7 +30,7 @@ namespace EchoPlay.Core.Parsing
             return null;
         }
 
-        [GeneratedRegex(@"\d+", RegexOptions.Compiled)]
+        [GeneratedRegex(@"\d+", RegexOptions.None, matchTimeoutMilliseconds: 500)]
         private static partial Regex NumberPattern();
     }
 }

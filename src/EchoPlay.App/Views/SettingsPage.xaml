@@ -283,7 +283,7 @@
                 </ScrollViewer>
             </TabViewItem>
 
-            <!-- ── Tab 3: Lokal (Bibliothekspfad, Muster, Sync, DB-Pflege) ──── -->
+            <!-- ── Tab 3: Lokal (Bibliothekspfad, Muster, Sync) ──── -->
             <TabViewItem x:Uid="TabLokal" IsClosable="False">
                 <ScrollViewer Padding="24,16,24,32">
                     <StackPanel Spacing="12">
@@ -387,7 +387,7 @@
                                         Tag="{x:Bind Pattern}"
                                         Click="OnPatternSuggestionClick">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
-                                            <TextBlock Text="{x:Bind Pattern}" FontFamily="Consolas"/>
+                                            <TextBlock Text="{x:Bind Pattern}" FontFamily="{ThemeResource ThemeMonoFontFamily}"/>
                                             <TextBlock
                                                 Text="{x:Bind MatchCount}"
                                                 Style="{ThemeResource CaptionTextBlockStyle}"
@@ -468,6 +468,185 @@
                             Style="{ThemeResource CaptionTextBlockStyle}"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             TextWrapping="Wrap"/>
+
+                        <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
+
+                        <!-- Umzug: Daten exportieren und einspielen -->
+                        <TextBlock
+                            x:Uid="DataTransferHeading"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Margin="0,8,0,4"/>
+
+                        <TextBlock
+                            x:Uid="DataTransferDescription"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                x:Uid="DataExportButton"
+                                IsEnabled="{x:Bind ViewModel.DataTransferVM.IsNotBusy, Mode=OneWay, FallbackValue=False}"
+                                Click="OnDataExportClick">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xEDE1;" FontSize="{StaticResource IconSizeM}"/>
+                                    <TextBlock x:Uid="DataExportButtonLabel" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                x:Uid="DataImportButton"
+                                IsEnabled="{x:Bind ViewModel.DataTransferVM.IsNotBusy, Mode=OneWay, FallbackValue=False}"
+                                Click="OnDataImportClick">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8B5;" FontSize="{StaticResource IconSizeM}"/>
+                                    <TextBlock x:Uid="DataImportButtonLabel" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <ProgressBar
+                                Value="{x:Bind ViewModel.DataTransferVM.Progress, Mode=OneWay, FallbackValue=0}"
+                                Visibility="{x:Bind ViewModel.DataTransferVM.BusyVisibility, Mode=OneWay, FallbackValue=Collapsed}"
+                                Width="160"
+                                VerticalAlignment="Center"/>
+                            <Button
+                                x:Uid="DataTransferCancelButton"
+                                Visibility="{x:Bind ViewModel.DataTransferVM.BusyVisibility, Mode=OneWay, FallbackValue=Collapsed}"
+                                Click="OnDataTransferCancelClick"/>
+                        </StackPanel>
+
+                        <!-- Mediathek mitnehmen: Dateien samt Datenpaket in einem Archiv -->
+                        <TextBlock
+                            x:Uid="LibraryTransferDescription"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                x:Uid="LibraryPackButton"
+                                IsEnabled="{x:Bind ViewModel.DataTransferVM.IsNotBusy, Mode=OneWay, FallbackValue=False}"
+                                Click="OnLibraryPackClick">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE7B8;" FontSize="{StaticResource IconSizeM}"/>
+                                    <TextBlock x:Uid="LibraryPackButtonLabel" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                x:Uid="LibraryUnpackButton"
+                                IsEnabled="{x:Bind ViewModel.DataTransferVM.IsNotBusy, Mode=OneWay, FallbackValue=False}"
+                                Click="OnLibraryUnpackClick">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8B7;" FontSize="{StaticResource IconSizeM}"/>
+                                    <TextBlock x:Uid="LibraryUnpackButtonLabel" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <TextBlock
+                            Text="{x:Bind ViewModel.DataTransferVM.StatusText, Mode=OneWay, FallbackValue=''}"
+                            Visibility="{x:Bind ViewModel.DataTransferVM.StatusVisibility, Mode=OneWay, FallbackValue=Collapsed}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
+
+                        <!-- Abgleich zwischen Geräten über einen gemeinsamen Ordner -->
+                        <TextBlock
+                            x:Uid="ReplicationHeading"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            Margin="0,8,0,4"/>
+
+                        <TextBlock
+                            x:Uid="ReplicationDescription"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                x:Uid="ReplicationFolderButton"
+                                Click="OnReplicationFolderClick">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8B7;" FontSize="{StaticResource IconSizeM}" AutomationProperties.AccessibilityView="Raw"/>
+                                    <TextBlock x:Uid="ReplicationFolderButtonLabel" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <TextBlock
+                                Text="{x:Bind ViewModel.ReplicationVM.FolderText, Mode=OneWay, FallbackValue=''}"
+                                VerticalAlignment="Center"
+                                TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="ReplicationEnabledToggle"
+                            x:Uid="ReplicationEnabledToggle"
+                            IsOn="{x:Bind ViewModel.ReplicationVM.IsEnabled, Mode=OneWay, FallbackValue=False}"
+                            IsEnabled="{x:Bind ViewModel.ReplicationVM.CanEnable, Mode=OneWay, FallbackValue=False}"
+                            Toggled="OnReplicationToggled"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button
+                                x:Uid="ReplicationRunNowButton"
+                                IsEnabled="{x:Bind ViewModel.ReplicationVM.CanRunNow, Mode=OneWay, FallbackValue=False}"
+                                Click="OnReplicationRunNowClick"/>
+                            <TextBlock
+                                Text="{x:Bind ViewModel.ReplicationVM.OwnDeviceText, Mode=OneWay, FallbackValue=''}"
+                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <TextBlock
+                            Text="{x:Bind ViewModel.ReplicationVM.LastRunText, Mode=OneWay, FallbackValue=''}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            TextWrapping="Wrap"/>
+                        <TextBlock
+                            Text="{x:Bind ViewModel.ReplicationVM.ErrorText, Mode=OneWay, FallbackValue=''}"
+                            Visibility="{x:Bind ViewModel.ReplicationVM.ErrorVisibility, Mode=OneWay, FallbackValue=Collapsed}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                            TextWrapping="Wrap"/>
+
+                        <TextBlock
+                            x:Uid="ReplicationDevicesHeading"
+                            Style="{ThemeResource BodyStrongTextBlockStyle}"
+                            Margin="0,8,0,0"/>
+                        <TextBlock
+                            x:Uid="ReplicationNoDevices"
+                            Visibility="{x:Bind ViewModel.ReplicationVM.NoDevicesVisibility, Mode=OneWay, FallbackValue=Visible}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap"/>
+                        <ItemsControl
+                            ItemsSource="{x:Bind ViewModel.ReplicationVM.Devices, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.ReplicationVM.DevicesVisibility, Mode=OneWay, FallbackValue=Collapsed}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ReplicationDeviceItemViewModel">
+                                    <Grid ColumnSpacing="12" Margin="0,6,0,6" AutomationProperties.Name="{x:Bind Name}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{x:Bind Name}" Style="{ThemeResource BodyStrongTextBlockStyle}"/>
+                                            <TextBlock Text="{x:Bind LastSeenText}" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{x:Bind AppliedText}" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock
+                                                Text="{x:Bind ErrorText}"
+                                                Visibility="{x:Bind ErrorVisibility}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Button
+                                            x:Uid="ReplicationRemoveButton"
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Command="{x:Bind RemoveCommand}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
                         <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,12,0,0"/>
 
@@ -621,14 +800,14 @@
                             x:Name="LogFileComboBox"
                             x:Uid="LogFileComboBox"
                             Grid.Column="0"
-                            ItemsSource="{x:Bind ViewModel.MaintenanceVM.AvailableLogFiles, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.LogViewerVM.AvailableLogFiles, Mode=OneWay}"
                             DisplayMemberPath="FileName"
                             HorizontalAlignment="Stretch"
                             SelectionChanged="OnLogFileSelectionChanged"/>
                         <ToggleButton
                             x:Uid="LogLiveViewToggle"
                             Grid.Column="1"
-                            IsChecked="{x:Bind ViewModel.MaintenanceVM.IsLiveViewActive, Mode=TwoWay}"
+                            IsChecked="{x:Bind ViewModel.LogViewerVM.IsLiveViewActive, Mode=TwoWay}"
                             VerticalAlignment="Bottom"/>
                     </Grid>
 
@@ -646,10 +825,10 @@
                         <TextBox
                             x:Uid="LogSearchBox"
                             Grid.Column="0"
-                            Text="{x:Bind ViewModel.MaintenanceVM.LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            Text="{x:Bind ViewModel.LogViewerVM.LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <ComboBox
                             Grid.Column="1"
-                            SelectedIndex="{x:Bind ViewModel.MaintenanceVM.LogLevelFilterIndex, Mode=TwoWay}"
+                            SelectedIndex="{x:Bind ViewModel.LogViewerVM.LogLevelFilterIndex, Mode=TwoWay}"
                             Width="130">
                             <ComboBoxItem x:Uid="LogLevelAll"/>
                             <ComboBoxItem x:Uid="LogLevelInfo"/>
@@ -676,7 +855,7 @@
                             HorizontalScrollBarVisibility="Disabled">
                             <RichTextBlock
                                 x:Name="LogRichTextBlock"
-                                FontFamily="Consolas"
+                                FontFamily="{ThemeResource ThemeMonoFontFamily}"
                                 FontSize="11"
                                 IsTextSelectionEnabled="True"
                                 TextWrapping="Wrap"

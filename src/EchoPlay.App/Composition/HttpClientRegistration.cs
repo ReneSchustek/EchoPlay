@@ -12,8 +12,46 @@ namespace EchoPlay.App.Composition
     /// einheitliche Zeitgrenzen, Kennungen und Wiederholungsregeln, statt dass jeder
     /// Verbraucher eine eigene Instanz hält.
     /// </summary>
+    /// <remarks>
+    /// An einem Client mit Wiederholungsregel steht die Zeitgrenze ausschließlich in deren
+    /// Optionen (<c>AttemptTimeout</c>, <c>TotalRequestTimeout</c>). Die Regel setzt
+    /// <see cref="System.Net.Http.HttpClient.Timeout"/> auf unendlich, sobald sie nach der
+    /// Client-Konfiguration angehängt wird. Eine dort gesetzte Grenze sähe aus, als gelte sie,
+    /// und hätte keine Wirkung.
+    /// </remarks>
     internal static class HttpClientRegistration
     {
+        /// <summary>
+        /// Grenze je Versuch an den Clients der fremden Schnittstellen. Eine Suchanfrage
+        /// antwortet im Normalfall in unter einer Sekunde; zehn Sekunden lassen Raum für
+        /// eine langsame Leitung und für die Wartezeit an der Ratenbremse, die innerhalb
+        /// des Versuchs liegt.
+        /// </summary>
+        internal static readonly TimeSpan ProviderAttemptTimeout = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Gesamtgrenze einer Anfrage an eine fremde Schnittstelle, alle Wiederholungen
+        /// eingerechnet. Kürzer schnitte sie die Wartezeit ab, die ein 429 mit
+        /// <c>Retry-After</c> verlangt, und der Aufruf scheiterte, obwohl der nächste
+        /// Versuch durchgegangen wäre.
+        /// </summary>
+        internal static readonly TimeSpan ProviderTotalTimeout = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Grenze je Versuch der Aktualisierungsprüfung. GitHub beantwortet die Abfrage
+        /// des neuesten Release in der Regel in einer Viertelsekunde; zwei Sekunden lassen
+        /// Raum für eine langsame Leitung und noch einen zweiten Versuch innerhalb der
+        /// Gesamtgrenze.
+        /// </summary>
+        internal static readonly TimeSpan UpdateCheckAttemptTimeout = TimeSpan.FromSeconds(2);
+
+        /// <summary>
+        /// Gesamtgrenze der Aktualisierungsprüfung samt Wiederholungen. Die Prüfung läuft im
+        /// Startbild und hält den Start auf, solange sie dauert; länger als fünf Sekunden
+        /// soll niemand auf das Fenster warten, nur weil GitHub nicht antwortet.
+        /// </summary>
+        internal static readonly TimeSpan UpdateCheckTotalTimeout = TimeSpan.FromSeconds(5);
+
         /// <summary>
         /// Registriert die benannten Clients für Cover-Abruf, Erreichbarkeitsprüfung,
         /// Aktualisierungsprüfung und Aktualisierungs-Download.
@@ -35,8 +73,8 @@ namespace EchoPlay.App.Composition
         /// </summary>
         /// <remarks>
         /// Muss nach der Registrierung der Module laufen: <c>AddHttpClient&lt;T&gt;()</c> ist
-        /// additiv, Basisadresse und Zeitgrenze aus den Modul-Erweiterungen bleiben erhalten.
-        /// Die Reihenfolge ist bewusst gewählt: Die Wiederholungsregel wird zuerst
+        /// additiv, die Basisadresse aus den Modul-Erweiterungen bleibt erhalten.
+        /// Die Reihenfolge ist gewollt: Die Wiederholungsregel wird zuerst
         /// angehängt und wirkt damit als äußerer Handler, die Ratenbremse liegt innen.
         /// So wartet jeder Wiederholungsversuch erneut an der Bremse und die Quote der
         /// fremden Schnittstelle bleibt gewahrt.
@@ -51,7 +89,6 @@ namespace EchoPlay.App.Composition
             AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.ITunesCoverSearchService>(), withRateLimit: true);
             AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerArtistCoverSearchService>(), withRateLimit: false);
             AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerAlbumCoverSearchService>(), withRateLimit: false);
-            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DiscogsCoverSearchService>(), withRateLimit: true);
 
             // MusicBrainzLookupService ist internal; der benannte Client heißt per Konvention
             // wie die Schnittstelle des typisierten Clients.
@@ -65,15 +102,41 @@ namespace EchoPlay.App.Composition
         /// </summary>
         /// <param name="clientBuilder">Der Aufbau des betroffenen Clients.</param>
         /// <param name="withRateLimit">Ob die Ratenbremse je Gegenstelle greifen soll.</param>
-        public static void AttachResilience(IHttpClientBuilder clientBuilder, bool withRateLimit)
+        /// <param name="configureOptions">
+        /// Eigene Optionen der Wiederholungsregel; ohne Angabe gelten die Grenzen der
+        /// fremden Schnittstellen (<see cref="ProviderAttemptTimeout"/>,
+        /// <see cref="ProviderTotalTimeout"/>).
+        /// </param>
+        public static void AttachResilience(
+            IHttpClientBuilder clientBuilder,
+            bool withRateLimit,
+            Action<HttpStandardResilienceOptions>? configureOptions = null)
         {
-            _ = clientBuilder.AddStandardResilienceHandler();
+            AttachRetryPipeline(clientBuilder, configureOptions);
             if (withRateLimit)
             {
                 _ = clientBuilder.AddHttpMessageHandler<RateLimitMessageHandler>();
             }
 
             AttachRequestLogging(clientBuilder);
+        }
+
+        /// <summary>
+        /// Hängt nur die Standard-Wiederholungsregel an einen Client. Für Clients, die
+        /// zwischen Regel und Protokollierung einen eigenen Handler brauchen.
+        /// </summary>
+        /// <param name="clientBuilder">Der Aufbau des betroffenen Clients.</param>
+        /// <param name="configureOptions">
+        /// Eigene Optionen der Wiederholungsregel; ohne Angabe gelten die Grenzen der
+        /// fremden Schnittstellen.
+        /// </param>
+        public static void AttachRetryPipeline(
+            IHttpClientBuilder clientBuilder,
+            Action<HttpStandardResilienceOptions>? configureOptions = null)
+        {
+            ArgumentNullException.ThrowIfNull(clientBuilder);
+
+            _ = clientBuilder.AddStandardResilienceHandler(configureOptions ?? ApplyProviderTimeouts);
         }
 
         /// <summary>
@@ -93,28 +156,36 @@ namespace EchoPlay.App.Composition
                     clientName));
         }
 
-        /// <summary>Client für den Cover-Abruf: kurze Zeitgrenze, drei Wiederholungen.</summary>
+        /// <summary>
+        /// Setzt die Grenzen der fremden Schnittstellen. Der Standard der Bibliothek hat
+        /// heute dieselben Werte; sie stehen trotzdem hier, damit die geltende Grenze im
+        /// Code steht und nicht an einer Paketversion hängt.
+        /// </summary>
+        private static void ApplyProviderTimeouts(HttpStandardResilienceOptions options)
+        {
+            options.AttemptTimeout.Timeout = ProviderAttemptTimeout;
+            options.TotalRequestTimeout.Timeout = ProviderTotalTimeout;
+        }
+
+        /// <summary>
+        /// Client für den Cover-Abruf mit den Grenzen der fremden Schnittstellen und der
+        /// Standard-Wiederholung (drei Versuche, wachsender Abstand mit Streuung).
+        /// </summary>
         private static void AddCoverDownloadClient(IServiceCollection services)
         {
             IHttpClientBuilder builder = services.AddHttpClient(CoverDownloader.HttpClientName, client =>
             {
-                client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-CoverDownload/1.0");
             });
 
-            _ = builder.AddStandardResilienceHandler(options =>
-            {
-                options.Retry.MaxRetryAttempts = 3;
-                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-                options.Retry.UseJitter = true;
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
-                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
-            });
-
+            AttachRetryPipeline(builder);
             AttachRequestLogging(builder);
         }
 
-        /// <summary>Client für die Erreichbarkeitsprüfung: sehr kurze Zeitgrenze, keine Wiederholung.</summary>
+        /// <summary>
+        /// Client für die Erreichbarkeitsprüfung: fünf Sekunden, keine Wiederholung. Die Prüfung
+        /// läuft im Startbild; wer offline ist, soll nicht länger auf das Fenster warten.
+        /// </summary>
         private static void AddOnlineCheckClient(IServiceCollection services)
         {
             IHttpClientBuilder builder = services.AddHttpClient("OnlineCheck", client =>
@@ -127,17 +198,16 @@ namespace EchoPlay.App.Composition
         }
 
         /// <summary>
-        /// Client für den Download des Installationspakets. Großzügige Zeitgrenze für die
-        /// rund 80 MB des eigenständigen Pakets, auch auf langsamen Leitungen.
+        /// Client für den Download des Installationspakets. Fünf Minuten für die rund 80 MB
+        /// des eigenständigen Pakets reichen bis hinunter zu etwa 270 KB je Sekunde.
         /// </summary>
         /// <remarks>
-        /// Bewusst ohne Standard-Wiederholungsregel: Deren Zeitgrenze je Versuch ist für
-        /// kleine, gepufferte Aufrufe gedacht und würde einen großen Datenstrom in ein
-        /// Versuchsfenster zwängen. Zudem verlangt der eingebaute Schutzschalter eine
-        /// Messdauer von mindestens dem doppelten Versuchsfenster. Eine Kopplung, die erst
-        /// beim ersten Benutzen des Clients zuschlägt und den Download dann vollständig
-        /// scheitern lässt. Ein fehlgeschlagener Download wird beim nächsten Start erneut
-        /// angeboten.
+        /// Ohne Standard-Wiederholungsregel: Deren Zeitgrenze je Versuch ist für kleine,
+        /// gepufferte Aufrufe gedacht und würde einen großen Datenstrom in ein Versuchsfenster
+        /// zwängen. Zudem verlangt der eingebaute Schutzschalter eine Messdauer von mindestens
+        /// dem doppelten Versuchsfenster, eine Kopplung, die erst beim ersten Benutzen des
+        /// Clients zuschlägt und den Download dann vollständig scheitern lässt. Ein
+        /// fehlgeschlagener Download wird beim nächsten Start erneut angeboten.
         /// </remarks>
         private static void AddUpdateDownloadClient(IServiceCollection services)
         {
@@ -151,15 +221,20 @@ namespace EchoPlay.App.Composition
         }
 
         /// <summary>
-        /// Client für die Aktualisierungsprüfung gegen GitHub. Zwei Wiederholungen mit
-        /// Streuung decken Ratenbegrenzung (429) und kurzzeitige Serverfehler ab, ohne den
-        /// Start spürbar aufzuhalten.
+        /// Client für die Aktualisierungsprüfung gegen GitHub. Diese Regel ist die einzige
+        /// Frist der Prüfung (<see cref="UpdateCheckAttemptTimeout"/>,
+        /// <see cref="UpdateCheckTotalTimeout"/>); der Dienst setzt keine eigene.
         /// </summary>
+        /// <remarks>
+        /// Die Wiederholungen fangen einen hängenden ersten Versuch und kurze Serverfehler ab.
+        /// Gegen die Ratenbegrenzung von GitHub helfen sie nicht: Ein 429 verlangt dort
+        /// Minuten, die Gesamtgrenze bricht vorher ab, und das Update wird beim nächsten
+        /// Start erneut gesucht.
+        /// </remarks>
         private static void AddUpdateCheckClient(IServiceCollection services)
         {
             IHttpClientBuilder builder = services.AddHttpClient("UpdateCheck", client =>
             {
-                client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay-UpdateCheck/1.0");
                 client.DefaultRequestHeaders.Accept.Add(
                     new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
@@ -170,8 +245,12 @@ namespace EchoPlay.App.Composition
                 options.Retry.MaxRetryAttempts = 2;
                 options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
                 options.Retry.UseJitter = true;
-                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
-                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(15);
+
+                // Der Standard wartet zwei Sekunden vor der ersten Wiederholung; das ließe in
+                // fünf Sekunden keinen vollständigen zweiten Versuch mehr zu.
+                options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+                options.AttemptTimeout.Timeout = UpdateCheckAttemptTimeout;
+                options.TotalRequestTimeout.Timeout = UpdateCheckTotalTimeout;
             });
 
             AttachRequestLogging(builder);

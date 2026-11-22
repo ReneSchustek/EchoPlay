@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <summary>
         /// Wenn gesetzt, wartet der Priority-Aufruf auf diesen Task, bevor er zurückkehrt.
-        /// Ermöglicht deterministische Tests, die den Abbruch beobachten wollen.
+        /// Damit beobachten Tests den Abbruch, ohne auf Zeitpunkte zu raten.
         /// </summary>
         public TaskCompletionSource? PriorityHold { get; set; }
 
@@ -98,9 +98,9 @@ namespace EchoPlay.App.Tests.Fakes
 
         /// <inheritdoc/>
         public override Task<byte[]?> RequestCoverForSearchResultAsync(
-            string source, string sourceSeriesId, string? coverUrl, CancellationToken ct = default)
+            string source, string sourceSeriesId, Uri? coverUrl, CancellationToken ct = default)
         {
-            SearchCoverRequests.Add((source, sourceSeriesId, coverUrl, ct));
+            SearchCoverRequests.Add((source, sourceSeriesId, coverUrl?.OriginalString, ct));
             return Task.FromResult(SearchCoverResponse);
         }
     }

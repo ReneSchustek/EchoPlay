@@ -48,6 +48,8 @@ namespace EchoPlay.App.ViewModels
             set
             {
                 double desired = Math.Clamp(value, 0, 100) / 100;
+                // Über ×100 und /100 entstehen Rundungsreste; ohne Toleranz zählte das Zurückschreiben
+                // desselben Reglerwerts als Änderung.
                 if (Math.Abs(_playerService.Volume - desired) < 0.0001)
                 {
                     return;
@@ -75,6 +77,7 @@ namespace EchoPlay.App.ViewModels
         /// Das Zeichen des Lautsprechers: durchgestrichen bei Stummschaltung, sonst nach
         /// Lautstärke abgestuft.
         /// </summary>
+        // Drei Stufen zu je einem Drittel des Bereichs, passend zu den drei Lautsprecher-Symbolen.
         public string VolumeGlyph => _playerService.IsMuted || _playerService.Volume <= 0
             ? ""
             : _playerService.Volume < 0.34
@@ -111,12 +114,12 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task ToggleMuteAsync()
         {
-            bool neuStumm = !_playerService.IsMuted;
-            _playerService.IsMuted = neuStumm;
+            bool muted = !_playerService.IsMuted;
+            _playerService.IsMuted = muted;
 
             // Ein voll heruntergedrehter Regler und aufgehobene Stummschaltung ergäben
             // zusammen wieder Stille, dann bekommt die Wiedergabe eine hörbare Grundlage.
-            if (!neuStumm && _playerService.Volume <= 0)
+            if (!muted && _playerService.Volume <= 0)
             {
                 _playerService.Volume = MinimumAudibleVolume;
             }

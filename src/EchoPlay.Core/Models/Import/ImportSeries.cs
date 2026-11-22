@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace EchoPlay.Core.Models.Import
 {
     /// <summary>
@@ -11,7 +9,7 @@ namespace EchoPlay.Core.Models.Import
         /// <summary>
         /// Eindeutige Kennung der Serie innerhalb der jeweiligen Importquelle.
         /// Die Bedeutung des Wertes ist anbieterabhängig (z.B. Spotify-Artist-ID, Apple-Music-Artist-ID),
-        /// wird jedoch im Core bewusst neutral behandelt.
+        /// wird jedoch im Core neutral behandelt.
         /// </summary>
         public required string SourceSeriesId { get; init; }
 
@@ -32,10 +30,9 @@ namespace EchoPlay.Core.Models.Import
         public string? Description { get; init; }
 
         /// <summary>
-        /// URL zum Coverbild der Serie.
+        /// Geprüfte Adresse zum Coverbild der Serie.
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-        public string? CoverImageUrl { get; init; }
+        public Uri? CoverImageUrl { get; init; }
 
         /// <summary>
         /// Gibt an, ob die Serie anhand fachlicher Heuristiken als Hörspiel erkannt wurde.

@@ -24,19 +24,19 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Purge_RemovesADeletedEpisodeWithItsTracksAndProgress()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode folge = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             _ = Context.LocalTracks.Add(new LocalTrack
             {
-                EpisodeId = folge.Id,
+                EpisodeId = episode.Id,
                 FilePath = @"D:\Media\TKKG\01.mp3",
                 TrackNumber = 1,
             });
-            _ = Context.PlaybackStates.Add(new PlaybackState { EpisodeId = folge.Id });
+            _ = Context.PlaybackStates.Add(new PlaybackState { EpisodeId = episode.Id });
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            folge.MarkAsDeleted(DateTime.UtcNow.AddDays(-40));
+            episode.MarkAsDeleted(DateTime.UtcNow.AddDays(-40));
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             DatabaseMaintenanceService sut = new(Context, NullLoggerFactory);
@@ -52,19 +52,19 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Purge_RemovesADeletedSeriesWithEpisodesThatAreNotMarkedThemselves()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode folge = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             _ = Context.LocalTracks.Add(new LocalTrack
             {
-                EpisodeId = folge.Id,
+                EpisodeId = episode.Id,
                 FilePath = @"D:\Media\TKKG\01.mp3",
                 TrackNumber = 1,
             });
-            _ = Context.PlaybackStates.Add(new PlaybackState { EpisodeId = folge.Id });
+            _ = Context.PlaybackStates.Add(new PlaybackState { EpisodeId = episode.Id });
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            serie.MarkAsDeleted(DateTime.UtcNow.AddDays(-40));
+            series.MarkAsDeleted(DateTime.UtcNow.AddDays(-40));
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             DatabaseMaintenanceService sut = new(Context, NullLoggerFactory);
@@ -81,10 +81,10 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Purge_KeepsWhatWasDeletedRecently()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            _ = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            _ = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
-            serie.MarkAsDeleted(DateTime.UtcNow.AddDays(-3));
+            series.MarkAsDeleted(DateTime.UtcNow.AddDays(-3));
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             DatabaseMaintenanceService sut = new(Context, NullLoggerFactory);
@@ -99,8 +99,8 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Purge_KeepsWhatIsNotDeleted()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            _ = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            _ = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             DatabaseMaintenanceService sut = new(Context, NullLoggerFactory);
 

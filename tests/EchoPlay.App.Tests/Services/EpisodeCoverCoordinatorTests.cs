@@ -50,7 +50,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task RohesCover_LandetInDerAblageDerSerie()
+        public async Task RawCover_LandsInTheStoreOfTheSeries()
         {
             // Bis hierher ist der Weg ohne Fenster prüfbar: Die Ablage bekommt die Bytes.
             // Das Bildobjekt danach entsteht am Dispatcher und bleibt im Testlauf leer.
@@ -65,7 +65,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task RohesCover_LandetInDerAblageDerFolge()
+        public async Task RawCover_LandsInTheStoreOfTheEpisode()
         {
             FakeCoverService coverService = new();
             EpisodeCoverCoordinator coordinator = BuildCoordinatorWithStore(coverService);
@@ -77,7 +77,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task GewaehlterTreffer_WirdGeladenUndAbgelegt()
+        public async Task SelectedHit_IsLoadedAndStored()
         {
             // Der Klick auf einen Treffer lädt erst das Bild und legt es dann ab. Ohne den
             // Download wäre die Ablage leer, ohne die Ablage wäre das Bild nach dem
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.Services
 
             await coordinator.ApplySelectedSeriesCoverAsync(
                 card,
-                new CoverSearchHit("https://example.com/klein.jpg", "https://example.com/voll.jpg", "TKKG 1", "Test"),
+                new CoverSearchHit(new Uri("https://example.com/klein.jpg"), new Uri("https://example.com/voll.jpg"), "TKKG 1", "Test"),
                 TestContext.Current.CancellationToken);
 
             Assert.Equal(["https://example.com/voll.jpg"], downloader.RequestedUrls);
@@ -98,7 +98,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task GewaehlterTreffer_LandetAuchAufDerFolge()
+        public async Task SelectedHit_AlsoLandsOnTheEpisode()
         {
             FakeCoverDownloader downloader = new();
             downloader.SetResponse("https://example.com/voll.jpg", [9, 9]);
@@ -108,7 +108,7 @@ namespace EchoPlay.App.Tests.Services
 
             await coordinator.ApplySelectedEpisodeCoverAsync(
                 card,
-                new CoverSearchHit("https://example.com/klein.jpg", "https://example.com/voll.jpg", "TKKG 1", "Test"),
+                new CoverSearchHit(new Uri("https://example.com/klein.jpg"), new Uri("https://example.com/voll.jpg"), "TKKG 1", "Test"),
                 TestContext.Current.CancellationToken);
 
             Assert.Equal([card.EpisodeId], coverService.StoredEpisodeCovers);
@@ -190,8 +190,8 @@ namespace EchoPlay.App.Tests.Services
             FakeCoverSearchService searchService = new();
             searchService.SetResults(new List<CoverSearchResult>
             {
-                new("https://thumb/1", "https://full/1", "Folge 1",  "Cover Art Archive"),
-                new("https://thumb/2", "https://full/2", "Folge 2",  "iTunes")
+                new(new Uri("https://thumb/1"), new Uri("https://full/1"), "Folge 1",  "Cover Art Archive"),
+                new(new Uri("https://thumb/2"), new Uri("https://full/2"), "Folge 2",  "iTunes")
             });
 
             EpisodeCoverCoordinator coordinator = BuildCoordinator(searchService);
@@ -200,11 +200,11 @@ namespace EchoPlay.App.Tests.Services
                 "Hörspiel", EchoPlay.LocalLibrary.Cover.CoverSearchPage.First, CancellationToken.None);
 
             Assert.Equal(2, hits.Count);
-            Assert.Equal("https://thumb/1", hits[0].ThumbnailUrl);
-            Assert.Equal("https://full/1", hits[0].FullUrl);
+            Assert.Equal(new Uri("https://thumb/1"), hits[0].ThumbnailUrl);
+            Assert.Equal(new Uri("https://full/1"), hits[0].FullUrl);
             Assert.Equal("Folge 1", hits[0].ReleaseTitle);
             Assert.Equal("Cover Art Archive", hits[0].Source);
-            Assert.Equal("https://full/2", hits[1].FullUrl);
+            Assert.Equal(new Uri("https://full/2"), hits[1].FullUrl);
             Assert.Equal("iTunes", hits[1].Source);
         }
 
@@ -216,7 +216,7 @@ namespace EchoPlay.App.Tests.Services
                 new FakeCoverSearchService(), new FakeCoverDownloader(), errorDialog);
 
             LocalArtistCardViewModel card = BuildArtistCard();
-            CoverSearchHit hit = new("https://thumb/1", "https://full/1", "Folge 1", "iTunes");
+            CoverSearchHit hit = new(new Uri("https://thumb/1"), new Uri("https://full/1"), "Folge 1", "iTunes");
 
             await coordinator.ApplySelectedSeriesCoverAsync(card, hit, TestContext.Current.CancellationToken);
 

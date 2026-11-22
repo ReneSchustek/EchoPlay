@@ -27,15 +27,6 @@ namespace EchoPlay.App.Tests.Views
         private static readonly XNamespace X = "http://schemas.microsoft.com/winfx/2006/xaml";
 
         /// <summary>
-        /// Wörterbücher unter <c>Themes/</c>, die keine Farbpalette sind: <c>Tokens.xaml</c> führt
-        /// ausschließlich Form (Abstände, Radien, Größen), <c>Brand.xaml</c> die bewusst
-        /// theme-unabhängigen Farben des Startbilds, <c>ControlStyles.xaml</c> die gemeinsamen
-        /// Textstile, die ihre Farben nur aus der jeweils geladenen Palette beziehen.
-        /// </summary>
-        private static readonly string[] NonPaletteDictionaries =
-            ["Tokens.xaml", "Brand.xaml", "ControlStyles.xaml"];
-
-        /// <summary>
         /// Attribute, hinter denen eine Farbe steht. Für benannte Farben („White") ist diese
         /// Einschränkung nötig, weil ein Wort wie „Gray" sonst auch in Fließtext anschlüge.
         /// </summary>
@@ -67,34 +58,26 @@ namespace EchoPlay.App.Tests.Views
         {
             Dictionary<string, HashSet<string>> paletten = [];
 
-            foreach (string file in EnumeratePaletteFiles())
+            foreach ((string palette, string section, XElement dictionary) in PaletteFiles.EnumerateSections())
             {
-                XDocument doc = XDocument.Load(file);
-                string name = Path.GetFileNameWithoutExtension(file);
-
-                foreach (XElement section in doc.Descendants()
-                    .Where(e => e.Name.LocalName == "ResourceDictionary" && e.Attribute(X + "Key") is not null))
-                {
-                    string sectionName = section.Attribute(X + "Key")!.Value;
-                    paletten[$"{name}/{sectionName}"] =
-                    [
-                        .. section.Elements()
-                            .Select(e => e.Attribute(X + "Key")?.Value)
-                            .Where(k => k is not null)
-                            .Select(k => k!)
-                    ];
-                }
+                paletten[$"{palette}/{section}"] =
+                [
+                    .. dictionary.Elements()
+                        .Select(e => e.Attribute(X + "Key")?.Value)
+                        .Where(k => k is not null)
+                        .Select(k => k!)
+                ];
             }
 
             Assert.True(paletten.Count > 0, "Keine Farbpalette gefunden — der Test prüft sonst nichts.");
 
             // Die Vereinigungsmenge ist der Maßstab: Was irgendeine Palette führt, müssen alle führen.
-            HashSet<string> alle = [.. paletten.Values.SelectMany(v => v)];
+            HashSet<string> all = [.. paletten.Values.SelectMany(v => v)];
 
             List<string> offenders = [];
             foreach (KeyValuePair<string, HashSet<string>> palette in paletten.OrderBy(p => p.Key, StringComparer.Ordinal))
             {
-                string[] fehlend = [.. alle.Except(palette.Value).OrderBy(k => k, StringComparer.Ordinal)];
+                string[] fehlend = [.. all.Except(palette.Value).OrderBy(k => k, StringComparer.Ordinal)];
                 if (fehlend.Length > 0)
                 {
                     offenders.Add($"{palette.Key} fehlen {fehlend.Length}: {string.Join(", ", fehlend)}");
@@ -116,7 +99,7 @@ namespace EchoPlay.App.Tests.Views
         {
             List<string> offenders = [];
 
-            foreach (string file in EnumeratePaletteFiles())
+            foreach (string file in PaletteFiles.Enumerate())
             {
                 XDocument doc = XDocument.Load(file);
 
@@ -124,11 +107,11 @@ namespace EchoPlay.App.Tests.Views
                     .Where(e => e.Name.LocalName == "ResourceDictionary" && e.Attribute(X + "Key") is not null)
                     .Select(e => e.Attribute(X + "Key")!.Value)];
 
-                foreach (string erwartet in new[] { "Light", "Dark" })
+                foreach (string expected in new[] { "Light", "Dark" })
                 {
-                    if (!sections.Contains(erwartet, StringComparer.Ordinal))
+                    if (!sections.Contains(expected, StringComparer.Ordinal))
                     {
-                        offenders.Add($"{Path.GetFileName(file)} führt keinen Abschnitt \"{erwartet}\"");
+                        offenders.Add($"{Path.GetFileName(file)} führt keinen Abschnitt \"{expected}\"");
                     }
                 }
             }
@@ -169,17 +152,17 @@ namespace EchoPlay.App.Tests.Views
 
         private static bool IsColorValue(XElement element, XAttribute attribute)
         {
-            string wert = attribute.Value.Trim();
-            if (wert.Length == 0 || AllowedNamedValues.Contains(wert, StringComparer.OrdinalIgnoreCase))
+            string value = attribute.Value.Trim();
+            if (value.Length == 0 || AllowedNamedValues.Contains(value, StringComparer.OrdinalIgnoreCase))
             {
                 return false;
             }
 
             // Ein Wert dieser Form ist praktisch immer eine Farbe, unabhängig davon, hinter
             // welchem Attribut er steht. Fängt auch Setter-Value und Animationsziele ab.
-            if (HexColor.IsMatch(wert)) return true;
+            if (HexColor.IsMatch(value)) return true;
 
-            if (!NamedColor.IsMatch(wert)) return false;
+            if (!NamedColor.IsMatch(value)) return false;
 
             // Benannte Farben nur dort melden, wo tatsächlich eine Farbe erwartet wird.
             string name = attribute.Name.LocalName;
@@ -195,13 +178,6 @@ namespace EchoPlay.App.Tests.Views
 
         private static int LineOf(XElement element) =>
             (element as System.Xml.IXmlLineInfo)?.LineNumber ?? 0;
-
-        /// <summary>Die sechs Farbpaletten unter <c>Themes/</c>.</summary>
-        private static IEnumerable<string> EnumeratePaletteFiles() =>
-            Directory
-                .EnumerateFiles(Path.Combine(RepositoryPaths.AppProject(), "Themes"), "*.xaml", SearchOption.TopDirectoryOnly)
-                .Where(p => !NonPaletteDictionaries.Contains(Path.GetFileName(p), StringComparer.OrdinalIgnoreCase))
-                .OrderBy(p => p, StringComparer.Ordinal);
 
         /// <summary>
         /// Alles, was Oberfläche ist: Seiten, Bausteine, Fenster. Ohne die Wörterbücher unter

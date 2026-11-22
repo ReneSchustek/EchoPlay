@@ -53,10 +53,16 @@ namespace EchoPlay.App.Tests.Fakes
             return FailOrComplete();
         }
 
+        /// <summary>
+        /// Ist gesetzt, endet <see cref="ClearLibraryAsync"/> erst mit dieser Aufgabe. So bleibt ein
+        /// Lauf offen, während der Test einen zweiten anstößt.
+        /// </summary>
+        public Task? ClearLibraryHold { get; set; }
+
         public Task ClearLibraryAsync()
         {
             ClearAllCount++;
-            return FailOrComplete();
+            return ClearLibraryHold ?? FailOrComplete();
         }
 
         public Task ClearOnlineLibraryAsync()

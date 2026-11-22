@@ -17,6 +17,7 @@ namespace EchoPlay.App.ViewModels
     internal sealed class OnlineBulkRefreshActions
     {
         private readonly OnlineLibraryActionsContext _ctx;
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
         private readonly OnlineSeriesViewModel _seriesVM;
         private readonly OnlineEpisodesViewModel _episodesVM;
         private readonly Action<bool> _setIsLoading;
@@ -32,6 +33,13 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Public Call-Counter für Tests.</summary>
         public int ToggleWatchCallCount { get; private set; }
 
+        /// <summary>Richtet die Sammelaktionen ein.</summary>
+        /// <param name="context">Die Dienste der Online-Mediathek.</param>
+        /// <param name="seriesVM">Die Serienliste.</param>
+        /// <param name="episodesVM">Die Folgen der gewählten Serie.</param>
+        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
+        /// <param name="setLoadingStatusText">Setzt den Statustext während des Abgleichs.</param>
+        /// <param name="reloadAfterRefreshAsync">Lädt die Mediathek nach dem Abgleich neu.</param>
         public OnlineBulkRefreshActions(
             OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,
@@ -41,6 +49,7 @@ namespace EchoPlay.App.ViewModels
             Func<Task> reloadAfterRefreshAsync)
         {
             _ctx = context;
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(context.ScopeFactory, nameof(OnlineBulkRefreshActions));
             _seriesVM = seriesVM;
             _episodesVM = episodesVM;
             _setIsLoading = setIsLoading;
@@ -55,16 +64,7 @@ namespace EchoPlay.App.ViewModels
         {
             RemoveSeriesCallCount++;
 
-            SeriesCardViewModel? card = null;
-            foreach (SeriesCardViewModel c in _seriesVM.AllSeries)
-            {
-                if (c.Id == seriesId)
-                {
-                    card = c;
-                    break;
-                }
-            }
-
+            SeriesCardViewModel? card = _seriesVM.AllSeries.FirstOrDefault(c => c.Id == seriesId);
             if (card is null)
             {
                 return;
@@ -117,7 +117,7 @@ namespace EchoPlay.App.ViewModels
         /// Offline-Modus wird vorher der Online-Zugang angefragt; bei Ablehnung kehrt die
         /// Methode ohne Aktion zurück.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bulk-Refresh: Einzelserien-Fehler werden übersprungen, übergreifende Fehler landen als Dialog; Loading-State im finally geklärt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bulk-Refresh: übergreifende Fehler landen als Dialog; Loading-State im finally geklärt.")]
         public async Task RefreshAllOnlineSeriesAsync()
         {
             RefreshAllCallCount++;
@@ -133,44 +133,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
-                ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
-
-                // Nur Online-Serien mit Provider-Zuordnung prüfen
-                List<Series> onlineSeries = [];
-                foreach (Series series in allSeries)
-                {
-                    if (series.IsOnlineImported)
-                    {
-                        onlineSeries.Add(series);
-                    }
-                }
-
-                for (int i = 0; i < onlineSeries.Count; i++)
-                {
-                    Series series = onlineSeries[i];
-                    _setLoadingStatusText(string.Format(
-                        CultureInfo.CurrentCulture,
-                        _ctx.LocalizationService.Get("OnlineRefreshProgressText"),
-                        i + 1, onlineSeries.Count, series.Title));
-
-                    try
-                    {
-                        _ = await _ctx.ImportService.DeltaImportEpisodesAsync(series);
-                    }
-                    catch (Exception)
-                    {
-                        // Einzelne Serien-Fehler nicht abbrechen, nächste Serie prüfen
-                    }
-
-                    // Rate-Limiting: drosselt aufeinanderfolgende Provider-Aufrufe
-                    if (_ctx.RateLimiter is not null && i < onlineSeries.Count - 1)
-                    {
-                        await _ctx.RateLimiter.WaitAsync("itunes.apple.com");
-                    }
-                }
-
+                await DeltaImportAllAsync(await LoadOnlineSeriesAsync());
                 _setLoadingStatusText(string.Empty);
 
                 // Ansicht aktualisieren, damit neue Folgen sichtbar werden
@@ -185,6 +148,49 @@ namespace EchoPlay.App.ViewModels
             {
                 _setLoadingStatusText(string.Empty);
                 _setIsLoading(false);
+            }
+        }
+
+        /// <summary>Gleicht die Serien nacheinander ab und meldet den Fortschritt je Serie.</summary>
+        private async Task DeltaImportAllAsync(List<Series> onlineSeries)
+        {
+            for (int i = 0; i < onlineSeries.Count; i++)
+            {
+                Series series = onlineSeries[i];
+                _setLoadingStatusText(string.Format(
+                    CultureInfo.CurrentCulture,
+                    _ctx.LocalizationService.Get("OnlineRefreshProgressText"),
+                    i + 1, onlineSeries.Count, series.Title));
+
+                await DeltaImportSeriesAsync(series);
+
+                // Rate-Limiting: drosselt aufeinanderfolgende Provider-Aufrufe
+                if (_ctx.RateLimiter is not null && i < onlineSeries.Count - 1)
+                {
+                    await _ctx.RateLimiter.WaitAsync("itunes.apple.com");
+                }
+            }
+        }
+
+        /// <summary>Die Online-Serien mit Provider-Zuordnung; nur sie lassen sich abgleichen.</summary>
+        private async Task<List<Series>> LoadOnlineSeriesAsync()
+        {
+            using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
+            IReadOnlyList<Series> allSeries = await scope.ServiceProvider.GetRequiredService<ISeriesDataService>().GetAllAsync();
+            return [.. allSeries.Where(series => series.IsOnlineImported)];
+        }
+
+        /// <summary>Gleicht eine Serie ab. Ein Fehler bei einer Serie bricht den Abgleich der übrigen nicht ab.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bulk-Refresh: Einzelserien-Fehler (Provider, Netz, Datenbank) werden protokolliert und übersprungen, damit die übrigen Serien abgeglichen werden.")]
+        private async Task DeltaImportSeriesAsync(Series series)
+        {
+            try
+            {
+                _ = await _ctx.ImportService.DeltaImportEpisodesAsync(series);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error("Abgleich der Serie \"{Title}\" fehlgeschlagen: {Reason}", ex, series.Title, ex.Message);
             }
         }
     }

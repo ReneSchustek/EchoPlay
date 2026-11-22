@@ -12,8 +12,9 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// Kopiert Cover-Daten zwischen Entities komplett in SQL über die CoverImages-Tabelle.
-    /// Kein Blob wird nach C# geladen – die gesamte Kopie läuft in der Datenbank.
-    /// Dreistufig: Episoden-Cover (exakt) → Episoden-Cover (Nummer) → Serien-Cover (Fallback).
+    /// Kein Blob wird nach C# geladen; die gesamte Kopie läuft in der Datenbank.
+    /// Dreistufig: gleicher Serientitel mit Nummer und Titel → gleicher Serientitel mit Nummer →
+    /// serienübergreifend Nummer und Titel-Schlagwort aus lokalen Serien.
     /// </summary>
     public sealed class CoverCopyService(
         EchoPlayDbContext context,
@@ -91,7 +92,6 @@ namespace EchoPlay.Data.Services
         public async Task<int> CopyFromMatchingEpisodesAsync(Guid targetSeriesId, CancellationToken cancellationToken = default)
         {
             Series? targetSeries = await _context.Series
-
                 .FirstOrDefaultAsync(s => s.Id == targetSeriesId, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -101,7 +101,6 @@ namespace EchoPlay.Data.Services
 
             // Prüfen ob überhaupt Episoden ohne Cover existieren
             bool hasMissing = await _context.Episodes
-
                 .AnyAsync(e => e.SeriesId == targetSeriesId
                     && !_context.CoverImages.Any(ci =>
                         ci.EntityType == CoverEntityTypes.Episode && ci.EntityId == e.Id), cancellationToken)

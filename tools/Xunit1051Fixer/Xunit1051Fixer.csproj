@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Tool-Projekt ist nicht Teil der Solution-Build-Pipeline. -->
+    <!-- Werkzeug, kein Produktivcode und nicht Teil der Projektmappe: Die Analyzer-Strenge des Repos gilt hier nicht. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CA1707;CA1812;CA1303;CA1305;CA1849;CA2007;IDE0058</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -16,6 +16,10 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="Microsoft.Build.Locator" />
+    <!-- Hebt das transitive Paket aus Workspaces.MSBuild auf einen Stand ohne bekannte Lücke. -->
+    <PackageReference Include="Microsoft.Build.Tasks.Core" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
 </Project>

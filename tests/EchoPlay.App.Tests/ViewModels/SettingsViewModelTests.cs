@@ -141,6 +141,25 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
+        public async Task SaveAsync_KeepsValuesOtherPartsWroteWhileThePageWasOpen()
+        {
+            FakeAppSettingsDataService settings = new(new AppSettings { Volume = 0.5 });
+            SettingsViewModel vm = BuildViewModel(settings);
+            await vm.LoadAsync();
+
+            // Die Datenbank liefert je Zugriff einen eigenen Datensatz. So schreibt der
+            // Lautstärkeregler, während die Einstellungsseite offen ist.
+            await settings.SaveAsync(new AppSettings { Volume = 0.8 }, TestContext.Current.CancellationToken);
+
+            vm.GeneralVM.ActiveTheme = "ModernClassic";
+            await vm.SaveAsync();
+
+            AppSettings stored = await settings.GetAsync(TestContext.Current.CancellationToken);
+            Assert.Equal(0.8, stored.Volume);
+            Assert.Equal("ModernClassic", stored.ActiveTheme);
+        }
+
+        [Fact]
         public void ApplyTheme_UpdatesActiveTheme_AndCallsThemeService()
         {
             // ApplyTheme muss ActiveTheme setzen und den ThemeService aufrufen
@@ -222,8 +241,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(vm.LocalVM.IsSyncEnabled);
             Assert.False(vm.LocalVM.IsSyncing);
         }
-
-        // --- HasUnsavedChanges-Tests ---
 
         [Fact]
         public async Task HasUnsavedChanges_IsFalse_AfterLoad()
@@ -320,8 +337,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(vm.HasUnsavedChanges);
         }
 
-        // --- Log-Viewer-Tests ---
-
         [Fact]
         public void RefreshLogs_ReturnsEmpty_WhenLiveViewUnavailable()
         {
@@ -330,10 +345,10 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
 
-            vm.MaintenanceVM.RefreshLogs();
+            vm.LogViewerVM.RefreshLogs();
 
-            Assert.Empty(vm.MaintenanceVM.LogEntries);
-            Assert.False(vm.MaintenanceVM.IsLogViewerAvailable);
+            Assert.Empty(vm.LogViewerVM.LogEntries);
+            Assert.False(vm.LogViewerVM.IsLogViewerAvailable);
         }
 
         [Fact]
@@ -346,9 +361,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.MaintenanceVM.RefreshLogs();
+            vm.LogViewerVM.RefreshLogs();
 
-            Assert.Equal(2, vm.MaintenanceVM.LogEntries.Count);
+            Assert.Equal(2, vm.LogViewerVM.LogEntries.Count);
         }
 
         [Fact]
@@ -361,14 +376,14 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.MaintenanceVM.LogSearchText = "spotify";
+            vm.LogViewerVM.LogSearchText = "spotify";
 
-            _ = Assert.Single(vm.MaintenanceVM.LogEntries);
-            Assert.Contains("Spotify", vm.MaintenanceVM.LogEntries[0], StringComparison.Ordinal);
+            _ = Assert.Single(vm.LogViewerVM.LogEntries);
+            Assert.Contains("Spotify", vm.LogViewerVM.LogEntries[0], StringComparison.Ordinal);
         }
 
         [Fact]
-        public void LogFilter_MeldetPropertyChanged_DamitDieAnzeigeNeuZeichnet()
+        public void LogFilter_RaisesPropertyChanged_SoTheDisplayRedraws()
         {
             // Die Protokollanzeige der Einstellungsseite hängt nicht per Binding am ViewModel,
             // der RichTextBlock wird im Code-Behind von Hand gefüllt. Es gibt also nur ein
@@ -380,14 +395,14 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
 
-            List<string?> gemeldet = [];
-            vm.MaintenanceVM.PropertyChanged += (_, e) => gemeldet.Add(e.PropertyName);
+            List<string?> reported = [];
+            vm.LogViewerVM.PropertyChanged += (_, e) => reported.Add(e.PropertyName);
 
-            vm.MaintenanceVM.LogSearchText = "spotify";
-            vm.MaintenanceVM.LogMinimumLevel = LogLevel.Warning;
+            vm.LogViewerVM.LogSearchText = "spotify";
+            vm.LogViewerVM.LogMinimumLevel = LogLevel.Warning;
 
-            Assert.Contains(nameof(MaintenanceSettingsViewModel.LogSearchText), gemeldet);
-            Assert.Contains(nameof(MaintenanceSettingsViewModel.LogMinimumLevel), gemeldet);
+            Assert.Contains(nameof(LogViewerViewModel.LogSearchText), reported);
+            Assert.Contains(nameof(LogViewerViewModel.LogMinimumLevel), reported);
         }
 
         [Fact]
@@ -402,9 +417,9 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.MaintenanceVM.LogMinimumLevel = LogLevel.Warning;
+            vm.LogViewerVM.LogMinimumLevel = LogLevel.Warning;
 
-            Assert.Equal(2, vm.MaintenanceVM.LogEntries.Count);
+            Assert.Equal(2, vm.LogViewerVM.LogEntries.Count);
         }
 
         [Fact]
@@ -417,10 +432,10 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
-            vm.MaintenanceVM.RefreshLogs();
+            vm.LogViewerVM.RefreshLogs();
 
-            _ = Assert.Single(vm.MaintenanceVM.LogEntries);
-            Assert.Contains("Verbindung getrennt", vm.MaintenanceVM.LogEntries[0], StringComparison.Ordinal);
+            _ = Assert.Single(vm.LogViewerVM.LogEntries);
+            Assert.Contains("Verbindung getrennt", vm.LogViewerVM.LogEntries[0], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -430,15 +445,13 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService settings = new(new AppSettings());
             SettingsViewModel vm = BuildViewModel(settings);
 
-            vm.MaintenanceVM.LogLevelFilterIndex = 2;
-            Assert.Equal(LogLevel.Warning, vm.MaintenanceVM.LogMinimumLevel);
-            Assert.Equal(2, vm.MaintenanceVM.LogLevelFilterIndex);
+            vm.LogViewerVM.LogLevelFilterIndex = 2;
+            Assert.Equal(LogLevel.Warning, vm.LogViewerVM.LogMinimumLevel);
+            Assert.Equal(2, vm.LogViewerVM.LogLevelFilterIndex);
 
-            vm.MaintenanceVM.LogLevelFilterIndex = 0;
-            Assert.Equal(LogLevel.Debug, vm.MaintenanceVM.LogMinimumLevel);
+            vm.LogViewerVM.LogLevelFilterIndex = 0;
+            Assert.Equal(LogLevel.Debug, vm.LogViewerVM.LogMinimumLevel);
         }
-
-        // ── Verbindungstest ─────────────────────────────────────────────────
 
         [Fact]
         public async Task TestConnectionAsync_Success_SetsSuccessResult()
@@ -484,8 +497,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             Assert.Empty(coordinator.Calls);
         }
-
-        // ── ResetLibrary ────────────────────────────────────────────────────
 
         [Fact]
         public async Task ResetLibraryAsync_Online_CallsClearOnline()

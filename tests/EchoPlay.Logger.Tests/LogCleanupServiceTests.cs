@@ -65,10 +65,35 @@ namespace EchoPlay.Logger.Tests
         }
 
         /// <summary>
+        /// Liegen die JSON-Protokolle in einem eigenen Ordner, räumt die Bereinigung auch dort auf.
+        /// </summary>
+        [Fact]
+        public void Cleanup_WithSeparateJsonDirectory_DeletesOldJsonFilesThere()
+        {
+            string jsonDirectory = Path.Combine(_tempDirectory, "json");
+            _ = Directory.CreateDirectory(jsonDirectory);
+            string oldJson = Path.Combine(jsonDirectory, "2025-01-01.jsonl");
+            File.WriteAllText(oldJson, "{}");
+            File.SetLastWriteTime(oldJson, DateTime.Now.AddDays(-60));
+
+            LoggerOptions options = new()
+            {
+                LogDirectory = _tempDirectory,
+                JsonLogDirectory = jsonDirectory,
+                EnableAutoCleanup = true,
+                RetentionDays = 7
+            };
+
+            new LogCleanupService(options).Cleanup();
+
+            Assert.False(File.Exists(oldJson));
+        }
+
+        /// <summary>
         /// Cleanup mit nicht existierendem Verzeichnis wirft keine Exception.
         /// </summary>
         [Fact]
-        public void Cleanup_MitNichtExistierendemVerzeichnis_WirftKeineException()
+        public void Cleanup_WithMissingDirectory_DoesNotThrow()
         {
             LoggerOptions options = new()
             {
@@ -90,9 +115,9 @@ namespace EchoPlay.Logger.Tests
         public void Cleanup_BeyondRetentionDays_DeletesOldFiles()
         {
             // Datei ist 10 Tage alt und überschreitet die konfigurierte Aufbewahrung von 7 Tagen
-            string alteDatei = Path.Combine(_tempDirectory, "2026-02-01.log");
-            File.WriteAllText(alteDatei, "Alter Eintrag");
-            File.SetLastWriteTime(alteDatei, DateTime.Now.AddDays(-10));
+            string oldFile = Path.Combine(_tempDirectory, "2026-02-01.log");
+            File.WriteAllText(oldFile, "Alter Eintrag");
+            File.SetLastWriteTime(oldFile, DateTime.Now.AddDays(-10));
 
             LoggerOptions options = new()
             {
@@ -105,7 +130,45 @@ namespace EchoPlay.Logger.Tests
             LogCleanupService service = new(options);
             service.Cleanup();
 
-            Assert.False(File.Exists(alteDatei));
+            Assert.False(File.Exists(oldFile));
+        }
+
+        /// <summary>
+        /// Eine abgelaufene Datei, die sich nicht löschen lässt, bleibt stehen, ohne das Aufräumen
+        /// der übrigen oder den Aufrufer zu stören.
+        /// </summary>
+        [Fact]
+        public void Cleanup_WithAReadOnlyExpiredFile_KeepsItAndCarriesOn()
+        {
+            string locked = Path.Combine(_tempDirectory, "2026-01-01.log");
+            string expired = Path.Combine(_tempDirectory, "2026-01-02.log");
+            File.WriteAllText(locked, "schreibgeschützt");
+            File.WriteAllText(expired, "alt");
+            File.SetLastWriteTime(locked, DateTime.Now.AddDays(-10));
+            File.SetLastWriteTime(expired, DateTime.Now.AddDays(-10));
+
+            // Schreibgeschützt verweigert Windows das Löschen mit UnauthorizedAccessException.
+            File.SetAttributes(locked, FileAttributes.ReadOnly);
+            try
+            {
+                LoggerOptions options = new()
+                {
+                    LogDirectory = _tempDirectory,
+                    EnableAutoCleanup = true,
+                    RetentionDays = 7,
+                    MaxTotalSizeMb = 0
+                };
+
+                new LogCleanupService(options).Cleanup();
+
+                Assert.True(File.Exists(locked));
+                Assert.False(File.Exists(expired));
+            }
+            finally
+            {
+                // Sonst ließe sich das Testverzeichnis beim Aufräumen nicht mehr löschen.
+                File.SetAttributes(locked, FileAttributes.Normal);
+            }
         }
 
         /// <summary>
@@ -115,9 +178,9 @@ namespace EchoPlay.Logger.Tests
         public void Cleanup_WithinRetentionDays_DeletesNoFiles()
         {
             // Datei ist 1 Tag alt und liegt innerhalb der Aufbewahrung von 7 Tagen
-            string aktuelleLogDatei = Path.Combine(_tempDirectory, "2026-03-01.log");
-            File.WriteAllText(aktuelleLogDatei, "Aktueller Eintrag");
-            File.SetLastWriteTime(aktuelleLogDatei, DateTime.Now.AddDays(-1));
+            string currentLogFile = Path.Combine(_tempDirectory, "2026-03-01.log");
+            File.WriteAllText(currentLogFile, "Aktueller Eintrag");
+            File.SetLastWriteTime(currentLogFile, DateTime.Now.AddDays(-1));
 
             LoggerOptions options = new()
             {
@@ -130,7 +193,7 @@ namespace EchoPlay.Logger.Tests
             LogCleanupService service = new(options);
             service.Cleanup();
 
-            Assert.True(File.Exists(aktuelleLogDatei));
+            Assert.True(File.Exists(currentLogFile));
         }
 
         /// <summary>
@@ -140,10 +203,10 @@ namespace EchoPlay.Logger.Tests
         public void Cleanup_BelowSizeLimit_DeletesNoFiles()
         {
             // Kleine Testdateien (wenige Bytes) liegen weit unter dem Limit von 100 MB
-            string logDatei1 = Path.Combine(_tempDirectory, "2026-03-01.log");
-            string logDatei2 = Path.Combine(_tempDirectory, "2026-03-02.log");
-            File.WriteAllText(logDatei1, "Eintrag 1");
-            File.WriteAllText(logDatei2, "Eintrag 2");
+            string logFile1 = Path.Combine(_tempDirectory, "2026-03-01.log");
+            string logFile2 = Path.Combine(_tempDirectory, "2026-03-02.log");
+            File.WriteAllText(logFile1, "Eintrag 1");
+            File.WriteAllText(logFile2, "Eintrag 2");
 
             LoggerOptions options = new()
             {
@@ -156,8 +219,8 @@ namespace EchoPlay.Logger.Tests
             LogCleanupService service = new(options);
             service.Cleanup();
 
-            Assert.True(File.Exists(logDatei1));
-            Assert.True(File.Exists(logDatei2));
+            Assert.True(File.Exists(logFile1));
+            Assert.True(File.Exists(logFile2));
         }
 
         /// <summary>
@@ -166,14 +229,14 @@ namespace EchoPlay.Logger.Tests
         [Fact]
         public void Cleanup_WithOldAndNewFiles_DeletesOnlyOld()
         {
-            string alteDatei = Path.Combine(_tempDirectory, "alt.log");
-            string neueDatei = Path.Combine(_tempDirectory, "neu.log");
+            string oldFile = Path.Combine(_tempDirectory, "alt.log");
+            string newFile = Path.Combine(_tempDirectory, "neu.log");
 
-            File.WriteAllText(alteDatei, "Alter Eintrag");
-            File.WriteAllText(neueDatei, "Neuer Eintrag");
+            File.WriteAllText(oldFile, "Alter Eintrag");
+            File.WriteAllText(newFile, "Neuer Eintrag");
 
-            File.SetLastWriteTime(alteDatei, DateTime.Now.AddDays(-30));
-            File.SetLastWriteTime(neueDatei, DateTime.Now.AddDays(-1));
+            File.SetLastWriteTime(oldFile, DateTime.Now.AddDays(-30));
+            File.SetLastWriteTime(newFile, DateTime.Now.AddDays(-1));
 
             LoggerOptions options = new()
             {
@@ -186,8 +249,8 @@ namespace EchoPlay.Logger.Tests
             LogCleanupService service = new(options);
             service.Cleanup();
 
-            Assert.False(File.Exists(alteDatei));
-            Assert.True(File.Exists(neueDatei));
+            Assert.False(File.Exists(oldFile));
+            Assert.True(File.Exists(newFile));
         }
     }
 }

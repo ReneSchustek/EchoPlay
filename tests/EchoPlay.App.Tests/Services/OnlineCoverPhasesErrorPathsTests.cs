@@ -17,25 +17,45 @@ namespace EchoPlay.App.Tests.Services
     /// Was der Nachtrag fehlender Cover-Adressen tut, wenn der Anbieter nicht liefert.
     /// </summary>
     /// <remarks>
-    /// Die beiden Fälle sehen im Quelltext ähnlich aus und müssen sich trotzdem
-    /// unterschiedlich verhalten: Ein Anbieterfehler betrifft eine Serie und darf den Lauf
-    /// über die übrigen nicht beenden. Ein Abbruch betrifft den ganzen Lauf. Würde er wie
-    /// ein Serienfehler behandelt, liefe die Schleife nach dem Schließen des Fensters
-    /// weiter, bis zufällig die nächste Abbruchprüfung greift.
+    /// Die Fälle sehen im Quelltext ähnlich aus und müssen sich trotzdem unterschiedlich
+    /// verhalten: Ein Anbieterfehler und eine Zeitüberschreitung betreffen eine Serie und
+    /// dürfen den Lauf über die übrigen nicht beenden. Ein Abbruch des Aufrufers betrifft den
+    /// ganzen Lauf. Würde er wie ein Serienfehler behandelt, liefe die Schleife nach dem
+    /// Schließen des Fensters weiter, bis zufällig die nächste Abbruchprüfung greift.
     /// </remarks>
     public sealed class OnlineCoverPhasesErrorPathsTests
     {
         private const string AppleArtistId = "201306317";
         private const string EpisodeTitle = "Folge 001 - Der Super-Papagei";
 
-        /// <summary>Eine Importquelle, die den Abbruch der umgebenden Operation meldet.</summary>
-        private sealed class CancellingImportSource : IEpisodeImportSource
+        /// <summary>
+        /// Eine Importquelle, die mitten in der Abfrage den Lauf abbricht, so wie das Schließen
+        /// des Fensters es tut, und dann den Abbruch meldet.
+        /// </summary>
+        private sealed class CancellingImportSource(CancellationTokenSource run) : IEpisodeImportSource
+        {
+            public async Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(
+                string sourceSeriesId,
+                IReadOnlySet<string>? knownEpisodeTitles = null,
+                CancellationToken cancellationToken = default)
+            {
+                await run.CancelAsync();
+                throw new OperationCanceledException(cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Eine Importquelle, deren Anfrage an der Zeitgrenze des HTTP-Clients scheitert. Der
+        /// Client meldet das als <see cref="TaskCanceledException"/>, ohne dass der Aufrufer
+        /// abgebrochen hätte.
+        /// </summary>
+        private sealed class TimingOutImportSource : IEpisodeImportSource
         {
             public Task<IReadOnlyList<ImportEpisode>> GetEpisodesAsync(
                 string sourceSeriesId,
                 IReadOnlySet<string>? knownEpisodeTitles = null,
                 CancellationToken cancellationToken = default)
-                => Task.FromException<IReadOnlyList<ImportEpisode>>(new OperationCanceledException());
+                => Task.FromException<IReadOnlyList<ImportEpisode>>(new TaskCanceledException("Zeitgrenze erreicht"));
         }
 
         [Fact]
@@ -60,11 +80,28 @@ namespace EchoPlay.App.Tests.Services
         public async Task UpdateMissingCoverUrls_WhenTheRunIsCancelled_StopsInsteadOfWarning()
         {
             (FakeSeriesDataService seriesService, FakeEpisodeDataService episodeService, _) = await SeedAsync();
+            using CancellationTokenSource run = new();
 
-            OnlineCoverPhases phases = BuildPhases(seriesService, episodeService, new CancellingImportSource());
+            OnlineCoverPhases phases = BuildPhases(seriesService, episodeService, new CancellingImportSource(run));
 
             _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => phases.UpdateMissingCoverUrlsAsync(CancellationToken.None));
+                () => phases.UpdateMissingCoverUrlsAsync(run.Token));
+        }
+
+        [Fact]
+        public async Task UpdateMissingCoverUrls_WhenTheProviderTimesOut_TreatsItAsASeriesFailure()
+        {
+            (FakeSeriesDataService seriesService, FakeEpisodeDataService episodeService, Episode episode) =
+                await SeedAsync();
+
+            OnlineCoverPhases phases = BuildPhases(seriesService, episodeService, new TimingOutImportSource());
+
+            // Die Zeitüberschreitung trifft nur diese Serie: kein Wurf, der den Lauf über die
+            // übrigen Serien beenden würde.
+            int updated = await phases.UpdateMissingCoverUrlsAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, updated);
+            Assert.True(string.IsNullOrEmpty(episode.CoverImageUrl));
         }
 
         /// <summary>
@@ -106,16 +143,14 @@ namespace EchoPlay.App.Tests.Services
                 new FakeCoverService(),
                 new FakeCoverDownloader(),
                 new FakeSpotifyCredentialStore(),
-                new FakeClock(),
-                rateLimiter: null,
-                new FakeLogger());
+                                new FakeLogger());
         }
 
         private static ImportEpisode EpisodeFromProvider() => new()
         {
             SourceEpisodeId = "provider-folge-001",
             Title = EpisodeTitle,
-            CoverImageUrl = "https://is1.mzstatic.com/image/apple.jpg",
+            CoverImageUrl = new Uri("https://is1.mzstatic.com/image/apple.jpg"),
         };
     }
 }

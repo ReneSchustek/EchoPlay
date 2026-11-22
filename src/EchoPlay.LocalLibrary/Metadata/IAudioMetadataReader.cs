@@ -1,10 +1,8 @@
-using System;
-
 namespace EchoPlay.LocalLibrary.Metadata
 {
     /// <summary>
-    /// Definiert den Vertrag zum Auslesen von Metadaten aus Audiodateien.
-    /// Ermöglicht die Entkopplung des SyncService von der konkreten Implementierung.
+    /// Liest Metadaten aus Audiodateien. Die Übernahme der Folgen hängt nur an dieser
+    /// Schnittstelle und lässt sich so ohne echte Dateien prüfen.
     /// </summary>
     public interface IAudioMetadataReader
     {
@@ -16,6 +14,9 @@ namespace EchoPlay.LocalLibrary.Metadata
         /// Ein Tupel aus <c>Duration</c> und <c>TrackNumber</c>.
         /// <c>TrackNumber</c> ist 0, wenn keine Tracknummer in den Tags gespeichert ist.
         /// </returns>
+        /// <exception cref="TagLib.UnsupportedFormatException">Wenn TagLib# das Format nicht kennt.</exception>
+        /// <exception cref="TagLib.CorruptFileException">Wenn die Datei beschädigt ist.</exception>
+        /// <exception cref="System.IO.IOException">Wenn die Datei nicht lesbar ist.</exception>
         (TimeSpan Duration, int TrackNumber) Read(string filePath);
     }
 }

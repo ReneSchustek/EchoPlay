@@ -5,11 +5,12 @@ namespace EchoPlay.App
     /// <summary>
     /// Fest verdrahtetes Spendenziel für den freiwilligen „Kaffee spendieren"-Eintrag.
     /// <para>
-    /// Die Ziel-URL ist bewusst eine Compile-Zeit-Konstante und wird <b>niemals</b> aus
+    /// Die Ziel-URL ist eine Compile-Zeit-Konstante und wird nie aus
     /// <c>appsettings</c>, Datenbank, Umgebungsvariable oder Netz-Antwort gelesen, so gibt es
     /// zur Laufzeit keinen austauschbaren Wert, über den jemand das Geld umleiten könnte.
-    /// Die Manipulationssicherheit des Distributionswegs liefert das SHA-256-Hash-Pinning der
-    /// Release-Binary (eine getauschte URL ändert den Hash und fällt bei der Prüfung durch).
+    /// Die Manipulationssicherheit des Distributionswegs liefern Signatur und SHA-256 der
+    /// Setup-Datei: Eine getauschte URL ändert die Datei, und ohne den privaten Release-Schlüssel
+    /// entsteht für die geänderte Datei keine gültige Signatur.
     /// </para>
     /// </summary>
     internal static class SupportDonation

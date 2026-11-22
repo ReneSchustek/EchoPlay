@@ -73,6 +73,26 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.NotEmpty(group.GroupLabel);
         }
 
+        [Theory]
+        [InlineData("kein Link")]
+        [InlineData("file:///C:/Windows/win.ini")]
+        public async Task Build_WithUnusableCoverAddress_StillShowsTheRelease(string coverAddress)
+        {
+            Series series = new() { Title = "TKKG", IsWatched = true };
+            CachedNewRelease release = CachedRelease(series.Id, "TKKG - Folge 240");
+            release.CoverUrl = coverAddress;
+            Fixture fixture = Build(release);
+
+            // Die Adresse kommt vom Anbieter. Eine kaputte warf und ließ die Startseite ohne
+            // Neuerscheinungen; eine lokale hätte die Kachel eine Datei laden lassen.
+            IReadOnlyList<NewEpisodesGroupViewModel> groups =
+                await fixture.Builder.BuildAsync([series], TestContext.Current.CancellationToken);
+
+            NewEpisodesGroupViewModel group = Assert.Single(groups);
+            NewEpisodeCardViewModel card = Assert.Single(group.Episodes);
+            Assert.Null(card.CoverImage);
+        }
+
         [Fact]
         public async Task Build_WhenTheEpisodeIsAlreadyKnownButUnheard_StillShowsIt()
         {
@@ -119,8 +139,9 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(groups);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Der Baustein eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required NewReleaseGroupBuilder Builder { get; init; }

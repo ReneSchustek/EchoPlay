@@ -1,10 +1,11 @@
-using EchoPlay.Core.Models;
-using System;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Services;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace EchoPlay.App.Infrastructure
 {
@@ -69,14 +70,17 @@ namespace EchoPlay.App.Infrastructure
                 logger.Warning("Handler '{OperationName}' fehlgeschlagen: {Reason}", operationName, ex.Message);
                 try
                 {
+                    // Ohne geladene Ressourcen bleibt wenigstens die Fehlermeldung selbst stehen.
+                    string messageFormat = SafeResourceLoader.Get("UnexpectedErrorMessage", "{0}");
                     await errorDialog.ShowAlwaysAsync(
-                        "Aktion fehlgeschlagen",
-                        $"Beim Ausführen der Aktion ist ein Fehler aufgetreten:\n\n{ex.Message}")
+                        SafeResourceLoader.Get("UnexpectedErrorTitle"),
+                        string.Format(CultureInfo.CurrentCulture, messageFormat, ex.Message))
                         .ConfigureAwait(true);
                 }
                 catch
                 {
-                    // Dialog konnte nicht angezeigt werden, Logging hat bereits stattgefunden
+                    // WinUI erlaubt nur einen offenen Dialog; ist schon einer offen, bleibt es beim
+                    // Protokolleintrag oben.
                 }
             }
         }

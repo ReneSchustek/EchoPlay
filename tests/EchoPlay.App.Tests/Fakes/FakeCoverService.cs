@@ -77,14 +77,14 @@ namespace EchoPlay.App.Tests.Fakes
         public Dictionary<Guid, byte[]> ExistingEpisodeCovers { get; } = [];
 
         /// <inheritdoc/>
-        public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             _storedSeriesCovers.Add(seriesId);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             _storedEpisodeCovers.Add(episodeId);
             return Task.CompletedTask;

@@ -16,7 +16,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
 
         /// <summary>
         /// Führt eine fachliche Hörspiel-Bewertung durch.
-        /// Die übergebenen Daten werden bewusst ignoriert, da dieser Fake ausschließlich für kontrollierte Tests gedacht ist.
+        /// Die übergebenen Daten werden ignoriert, da dieser Fake ausschließlich für kontrollierte Tests gedacht ist.
         /// </summary>
         /// <param name="source">Der Spotify-Künstler.</param>
         /// <param name="searchQuery">Der ursprüngliche Suchbegriff.</param>

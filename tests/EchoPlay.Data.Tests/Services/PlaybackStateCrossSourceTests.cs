@@ -13,19 +13,19 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class PlaybackStateCrossSourceTests : DbTestBase
     {
         [Fact]
-        public async Task MarkCompleted_SetztDasGegenstueckDerAnderenQuelleMit()
+        public async Task MarkCompleted_AlsoSetsTheCounterpartOfTheOtherSource()
         {
-            (Episode lokal, Episode online) = await ZweiQuellenAsync("TKKG", 1, "Die Jagd nach den Millionendieben");
+            (Episode local, Episode online) = await TwoSourcesAsync("TKKG", 1, "Die Jagd nach den Millionendieben");
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
-            await service.MarkCompletedAsync(lokal.Id, new DateTime(2026, 7, 30, 12, 0, 0, DateTimeKind.Utc),
+            await service.MarkCompletedAsync(local.Id, new DateTime(2026, 7, 30, 12, 0, 0, DateTimeKind.Utc),
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            PlaybackState? gegenstueck = await service.GetByEpisodeIdAsync(
+            PlaybackState? counterpart = await service.GetByEpisodeIdAsync(
                 online.Id, cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.NotNull(gegenstueck);
-            Assert.True(gegenstueck.IsCompleted);
+            Assert.NotNull(counterpart);
+            Assert.True(counterpart.IsCompleted);
         }
 
         [Fact]
@@ -34,34 +34,34 @@ namespace EchoPlay.Data.Tests.Services
             // Der Folgentitel darf nicht Teil der Zuordnung sein: Lokal und online benennen
             // dieselbe Folge unterschiedlich, in der Produktivbibliothek bei 0 von 925 Paaren
             // gleich. Mit Titelvergleich hätte der Abgleich nie gegriffen.
-            Series lokaleSerie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Series onlineSerie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode lokal = await FolgeAsync(lokaleSerie, 1, "Die Jagd nach den Millionendieben");
-            Episode online = await FolgeAsync(onlineSerie, 1, "Die Jagd nach den Millionendieben (Remastered)");
+            Series localSeries = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series onlineSeries = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode local = await EpisodeAsync(localSeries, 1, "Die Jagd nach den Millionendieben");
+            Episode online = await EpisodeAsync(onlineSeries, 1, "Die Jagd nach den Millionendieben (Remastered)");
 
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
-            await service.MarkCompletedAsync(lokal.Id, DateTime.UtcNow,
+            await service.MarkCompletedAsync(local.Id, DateTime.UtcNow,
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            PlaybackState? gegenstueck = await service.GetByEpisodeIdAsync(
+            PlaybackState? counterpart = await service.GetByEpisodeIdAsync(
                 online.Id, cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.NotNull(gegenstueck);
-            Assert.True(gegenstueck.IsCompleted);
+            Assert.NotNull(counterpart);
+            Assert.True(counterpart.IsCompleted);
         }
 
         [Fact]
         public async Task MarkCompleted_DoesNotTransferWithDifferentEpisodeNumber()
         {
-            Series lokaleSerie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Series onlineSerie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode lokal = await FolgeAsync(lokaleSerie, 1, "Gleicher Titel");
-            Episode online = await FolgeAsync(onlineSerie, 2, "Gleicher Titel");
+            Series localSeries = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series onlineSeries = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode local = await EpisodeAsync(localSeries, 1, "Gleicher Titel");
+            Episode online = await EpisodeAsync(onlineSeries, 2, "Gleicher Titel");
 
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
-            await service.MarkCompletedAsync(lokal.Id, DateTime.UtcNow,
+            await service.MarkCompletedAsync(local.Id, DateTime.UtcNow,
                 cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(await service.GetByEpisodeIdAsync(
@@ -69,69 +69,69 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         [Fact]
-        public async Task MarkNotStarted_SetztAuchDasGegenstueckZurueck()
+        public async Task MarkNotStarted_AlsoResetsTheCounterpart()
         {
             // Gegenrichtung: Ohne sie würde der Abgleich wiederherstellen, was der Nutzer
             // gerade zurückgenommen hat.
-            (Episode lokal, Episode online) = await ZweiQuellenAsync("Fünf Freunde", 7, "und der Zirkus");
+            (Episode local, Episode online) = await TwoSourcesAsync("Fünf Freunde", 7, "und der Zirkus");
 
             // Beide Stände direkt setzen, nicht über MarkCompletedAsync: Sonst besteht der Test
             // auch ohne die Spiegelung im Zurücksetzen, weil das Gegenstück gar nie gesetzt war.
             // Genau das hat die Gegenprobe aufgedeckt.
-            foreach (Guid episodeId in new[] { lokal.Id, online.Id })
+            foreach (Guid episodeId in new[] { local.Id, online.Id })
             {
-                PlaybackState vorhanden = new() { EpisodeId = episodeId };
-                vorhanden.MarkCompleted(new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc));
-                _ = Context.PlaybackStates.Add(vorhanden);
+                PlaybackState existing = new() { EpisodeId = episodeId };
+                existing.MarkCompleted(new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc));
+                _ = Context.PlaybackStates.Add(existing);
             }
 
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
-            await service.MarkNotStartedAsync(lokal.Id, cancellationToken: TestContext.Current.CancellationToken);
+            await service.MarkNotStartedAsync(local.Id, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.Null(await service.GetByEpisodeIdAsync(
-                lokal.Id, cancellationToken: TestContext.Current.CancellationToken));
+                local.Id, cancellationToken: TestContext.Current.CancellationToken));
             Assert.Null(await service.GetByEpisodeIdAsync(
                 online.Id, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
-        public async Task Synchronize_HoltDenAltbestandNachUndIstDanachStill()
+        public async Task Synchronize_CatchesUpTheBacklogAndIsQuietAfterwards()
         {
             // Altfall: lokal gehört, online offen. Das ist der Zustand, den 904 Folgen hatten, bevor
             // die Spiegelung existierte.
-            (Episode lokal, Episode online) = await ZweiQuellenAsync("TKKG Junior", 3, "Der Hund von Baskerville");
+            (Episode local, Episode online) = await TwoSourcesAsync("TKKG Junior", 3, "Der Hund von Baskerville");
 
-            PlaybackState alt = new() { EpisodeId = lokal.Id };
+            PlaybackState alt = new() { EpisodeId = local.Id };
             alt.MarkCompleted(new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc));
             _ = Context.PlaybackStates.Add(alt);
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
-            int ersterLauf = await service.SynchronizeCompletionAcrossSourcesAsync(
+            int firstRun = await service.SynchronizeCompletionAcrossSourcesAsync(
                 cancellationToken: TestContext.Current.CancellationToken);
-            int zweiterLauf = await service.SynchronizeCompletionAcrossSourcesAsync(
+            int secondRun = await service.SynchronizeCompletionAcrossSourcesAsync(
                 cancellationToken: TestContext.Current.CancellationToken);
 
-            Assert.Equal(1, ersterLauf);
+            Assert.Equal(1, firstRun);
 
             // Idempotenz ist der Grund, warum der Abgleich ohne Einmal-Schalter und ohne
             // Migration auskommt: Er darf bei jedem Start laufen.
-            Assert.Equal(0, zweiterLauf);
+            Assert.Equal(0, secondRun);
 
-            PlaybackState? nachher = await service.GetByEpisodeIdAsync(
+            PlaybackState? after = await service.GetByEpisodeIdAsync(
                 online.Id, cancellationToken: TestContext.Current.CancellationToken);
-            Assert.NotNull(nachher);
-            Assert.True(nachher.IsCompleted);
+            Assert.NotNull(after);
+            Assert.True(after.IsCompleted);
         }
 
         [Fact]
-        public async Task Synchronize_OhneRueckstandAendertNichts()
+        public async Task Synchronize_WithoutBacklog_ChangesNothing()
         {
-            _ = await ZweiQuellenAsync("Pumuckl", 1, "Meister Eder und sein Pumuckl");
+            _ = await TwoSourcesAsync("Pumuckl", 1, "Meister Eder und sein Pumuckl");
             PlaybackStateDataService service = new(Context, NullLoggerFactory);
 
             Assert.Equal(0, await service.SynchronizeCompletionAcrossSourcesAsync(
@@ -142,25 +142,25 @@ namespace EchoPlay.Data.Tests.Services
         /// Legt dieselbe Folge zweimal an, in zwei Serien mit identischem Titel, wie es beim
         /// Nebeneinander von lokalem Einlesen und Anbieter-Import entsteht.
         /// </summary>
-        private async Task<(Episode Lokal, Episode Online)> ZweiQuellenAsync(string serie, int nummer, string folge)
+        private async Task<(Episode Lokal, Episode Online)> TwoSourcesAsync(string series, int number, string storedEpisode)
         {
-            Series lokaleSerie = await DataBuilder.PersistSeriesAsync(serie);
-            Series onlineSerie = await DataBuilder.PersistSeriesAsync(serie);
+            Series localSeries = await DataBuilder.PersistSeriesAsync(series);
+            Series onlineSeries = await DataBuilder.PersistSeriesAsync(series);
 
-            return (await FolgeAsync(lokaleSerie, nummer, folge), await FolgeAsync(onlineSerie, nummer, folge));
+            return (await EpisodeAsync(localSeries, number, storedEpisode), await EpisodeAsync(onlineSeries, number, storedEpisode));
         }
 
         /// <summary>
         /// Persistiert eine Folge mit Nummer. Der Builder setzt nur den Titel, der Abgleich
         /// braucht aber beides.
         /// </summary>
-        private async Task<Episode> FolgeAsync(Series serie, int nummer, string titel)
+        private async Task<Episode> EpisodeAsync(Series series, int number, string title)
         {
             Episode episode = new()
             {
-                SeriesId = serie.Id,
-                Title = titel,
-                EpisodeNumber = nummer
+                SeriesId = series.Id,
+                Title = title,
+                EpisodeNumber = number
             };
 
             _ = Context.Episodes.Add(episode);

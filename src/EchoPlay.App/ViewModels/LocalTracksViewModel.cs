@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -165,19 +167,32 @@ namespace EchoPlay.App.ViewModels
 
             Tracks = trackRows;
 
-            string durationText = totalDuration.TotalHours >= 1
-                ? $"{(int)totalDuration.TotalHours}:{totalDuration.Minutes:D2}:{totalDuration.Seconds:D2}"
-                : $"{(int)totalDuration.TotalMinutes}:{totalDuration.Seconds:D2}";
-
-            string trackWord = tracks.Count == 1 ? "Track" : "Tracks";
-            string numberPart = episode.EpisodeNumber.HasValue
-                ? $"Folge {episode.EpisodeNumber.Value} \u00B7 "
-                : string.Empty;
-
-            TrackPanelSubtitle = $"{numberPart}{tracks.Count} {trackWord} \u00B7 {durationText}";
+            TrackPanelSubtitle = BuildSubtitle(episode.EpisodeNumber, tracks.Count, totalDuration);
             OnPropertyChanged(nameof(TrackPanelSubtitle));
 
             await TrackTitleFiller.FillAsync(_scopeFactory, trackRows, cancellationToken);
+        }
+
+        /// <summary>
+        /// Baut den Untertitel aus Folgennummer, Spurenzahl und Gesamtdauer. Die Wörter kommen
+        /// aus den Sprachressourcen, die Dauer im selben Format wie im Player.
+        /// </summary>
+        private static string BuildSubtitle(int? episodeNumber, int trackCount, TimeSpan totalDuration)
+        {
+            string tracksPart = string.Format(
+                CultureInfo.CurrentCulture,
+                PluralText.Pattern(trackCount, "LocalTrackCountSingular", "LocalTrackCountPlural", "{0} Track", "{0} Tracks"),
+                trackCount);
+            string durationPart = PlaybackTimeFormat.Format(totalDuration);
+
+            if (!episodeNumber.HasValue)
+            {
+                return $"{tracksPart} \u00B7 {durationPart}";
+            }
+
+            string numberPattern = SafeResourceLoader.Get("EpisodeNumberFormat", "Folge {0}");
+            string numberPart = string.Format(CultureInfo.CurrentCulture, numberPattern, episodeNumber.Value);
+            return $"{numberPart} \u00B7 {tracksPart} \u00B7 {durationPart}";
         }
 
         /// <summary>Setzt die Track-Auswahl zurück (kein Episode-Bereich, keine Tracks).</summary>
@@ -189,7 +204,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Startet die übergebene Folge, und zwar an der zuletzt gespeicherten Stelle, sofern sie nicht
-        /// abgeschlossen ist. Setzt bewusst nicht voraus, dass die Spuren rechts bereits
+        /// abgeschlossen ist. Setzt nicht voraus, dass die Spuren rechts bereits
         /// angezeigt werden: Der Doppelklick auf eine Kachel soll auch dann greifen, wenn die
         /// Liste noch lädt.
         /// </summary>

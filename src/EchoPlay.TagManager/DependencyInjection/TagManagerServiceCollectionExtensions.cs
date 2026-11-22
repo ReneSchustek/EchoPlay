@@ -28,7 +28,7 @@ namespace EchoPlay.TagManager.DependencyInjection
             _ = services.AddHttpClient<ITagLookupService, MusicBrainzLookupService>(client =>
             {
                 client.BaseAddress = new Uri("https://musicbrainz.org/");
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay/1.0 (echoplay@ruhrcoder.de)");
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("EchoPlay/1.0 (info@ruhrcoder.de)");
             });
 
             return services;

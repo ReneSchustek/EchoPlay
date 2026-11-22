@@ -1,3 +1,4 @@
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
@@ -150,6 +151,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Harness harness = Harness.Build();
 
             int moved = await harness.Actions.ExecuteRestructureAsync(
+                TestIds.SeriesA,
                 new RestructurePreviewDisplay(
                     new EchoPlay.LocalLibrary.Models.RestructurePreview
                     {
@@ -175,7 +177,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task FehlendeFolgen_FragtOhneDialogNurDenBestand()
+        public async Task MissingEpisodes_WithoutDialog_ChecksOnlyTheCollection()
         {
             // Ohne angemeldeten Dialog gilt "nur offline" - ein Unit-Test darf keine
             // Anbieter-Abfrage auslösen.
@@ -199,7 +201,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task FehlendeFolgen_AbbruchImDialogPrueftNichts()
+        public async Task MissingEpisodes_CancelInDialog_ChecksNothing()
         {
             FakeMissingEpisodesCoordinator coordinator = new();
             Harness harness = Harness.Build(missingEpisodesCoordinator: coordinator);
@@ -215,7 +217,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task GesamtpruefungMeldetDenBericht()
+        public async Task FullCheck_ReportsTheReport()
         {
             FakeMissingEpisodesCoordinator coordinator = new();
             Harness harness = Harness.Build(missingEpisodesCoordinator: coordinator);
@@ -230,7 +232,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Gesamtprüfung_AbbruchImDialogMeldetNichts()
+        public async Task FullCheck_CancelInDialog_ReportsNothing()
         {
             FakeMissingEpisodesCoordinator coordinator = new();
             Harness harness = Harness.Build(missingEpisodesCoordinator: coordinator);
@@ -246,7 +248,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Ordnerassistent_OhneVorschauMeldetNichts()
+        public async Task FolderAssistant_WithoutPreview_ReportsNothing()
         {
             // Kein verschiebbarer Bestand heißt: kein Dialog. Ein leeres Fenster wäre
             // schlimmer als gar keins.
@@ -267,7 +269,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Ordnerassistent_MeldetDieVorschau()
+        public async Task FolderAssistant_ReportsThePreview()
         {
             RestructurePreviewDisplay preview = new(
                 new EchoPlay.LocalLibrary.Models.RestructurePreview
@@ -301,7 +303,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Ordnerassistent_OhneOrdnerAmEintragAnalysiertNichts()
+        public async Task FolderAssistant_WithoutFolderOnTheEntry_AnalyzesNothing()
         {
             FakeFolderRestructureCoordinator coordinator = new();
             Harness harness = Harness.Build(restructureCoordinator: coordinator);
@@ -312,7 +314,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Ordnerassistent_MeldetDieAnzahlVerschobenerDateien()
+        public async Task FolderAssistant_ReportsTheNumberOfMovedFiles()
         {
             FakeFolderRestructureCoordinator coordinator = new() { MovedFileCount = 12 };
             Harness harness = Harness.Build(restructureCoordinator: coordinator);
@@ -324,18 +326,18 @@ namespace EchoPlay.App.Tests.ViewModels
                     Actions = []
                 });
 
-            int moved = await harness.Actions.ExecuteRestructureAsync(preview);
+            int moved = await harness.Actions.ExecuteRestructureAsync(TestIds.SeriesA, preview);
 
             Assert.Equal(12, moved);
             Assert.Equal(1, coordinator.ExecuteCallCount);
         }
 
         [Fact]
-        public async Task Coversuche_ReichtBegriffUndAbschnittWeiter()
+        public async Task CoverSearch_PassesQueryAndPageOn()
         {
             FakeEpisodeCoverCoordinator coordinator = new()
             {
-                Hits = [new CoverSearchHit("thumb", "voll", "TKKG 1", "Test")]
+                Hits = [new CoverSearchHit(new Uri("https://example.invalid/thumb"), new Uri("https://example.invalid/voll"), "TKKG 1", "Test")]
             };
             Harness harness = Harness.Build(coverCoordinator: coordinator);
 
@@ -356,7 +358,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await harness.SeriesService.AddAsync(series, TestContext.Current.CancellationToken);
             await harness.ArtistsVM.LoadFromDatabaseAsync();
             LocalArtistCardViewModel card = harness.ArtistsVM.AllArtists[0];
-            CoverSearchHit hit = new("thumb", "voll", "TKKG 1", "Test");
+            CoverSearchHit hit = new(new Uri("https://example.invalid/thumb"), new Uri("https://example.invalid/voll"), "TKKG 1", "Test");
 
             await harness.Actions.ApplySeriesCoverFromBytesAsync(card, [1, 2, 3]);
             await harness.Actions.ApplySelectedSeriesCoverAsync(card, hit);
@@ -366,7 +368,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Coverübernahme_OhneKoordinatorBleibtWirkungslos()
+        public async Task CoverApply_WithoutCoordinator_HasNoEffect()
         {
             // Ohne Koordinator darf der Aufruf nichts tun und nichts reißen - die Kachel
             // behält ihr bisheriges Bild.
@@ -378,7 +380,7 @@ namespace EchoPlay.App.Tests.ViewModels
             LocalArtistCardViewModel card = harness.ArtistsVM.AllArtists[0];
 
             await harness.Actions.ApplySeriesCoverFromBytesAsync(card, [1]);
-            await harness.Actions.ApplySelectedSeriesCoverAsync(card, new CoverSearchHit("t", "v", "r", "s"));
+            await harness.Actions.ApplySelectedSeriesCoverAsync(card, new CoverSearchHit(new Uri("https://example.invalid/t"), new Uri("https://example.invalid/v"), "r", "s"));
 
             Assert.Null(card.CoverImage);
         }
@@ -418,9 +420,34 @@ namespace EchoPlay.App.Tests.ViewModels
                 _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
                 _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
 
-                ServiceProvider provider = services.BuildServiceProvider();
-                IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+                IServiceScopeFactory scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
+                LocalArtistsViewModel artistsVM = new(scopeFactory);
 
+                return new Harness
+                {
+                    Actions = CreateActions(
+                        scopeFactory, confirmResult, artistsVM,
+                        watchToggleService, restructureCoordinator, missingEpisodesCoordinator, coverCoordinator),
+                    SeriesService = seriesService,
+                    EpisodeService = episodeService,
+                    PlaybackService = playbackService,
+                    ArtistsVM = artistsVM,
+                };
+            }
+
+            /// <summary>
+            /// Baut die Aktionen samt Teil-ViewModels. Die Statusleiste ist echt, damit die Tests
+            /// ihre Meldungen sehen; Scan, Wiedergabe und Dialoge sind Nachbauten.
+            /// </summary>
+            private static LocalLibraryActions CreateActions(
+                IServiceScopeFactory scopeFactory,
+                bool confirmResult,
+                LocalArtistsViewModel artistsVM,
+                FakeWatchToggleService? watchToggleService,
+                FakeFolderRestructureCoordinator? restructureCoordinator,
+                FakeMissingEpisodesCoordinator? missingEpisodesCoordinator,
+                FakeEpisodeCoverCoordinator? coverCoordinator)
+            {
                 StatusBarViewModel statusBar = new(
                     scopeFactory, new FakeThemeService(), new TaskbarProgressService(), new FakeClock());
 
@@ -433,15 +460,10 @@ namespace EchoPlay.App.Tests.ViewModels
                     new FakeScanEventService(),
                     _ => { });
 
-                LocalArtistsViewModel artistsVM = new(scopeFactory);
-                LocalEpisodesViewModel episodesVM = new(scopeFactory, new FakeLocalCoverLoader(), new FakeClock());
-                LocalTracksViewModel tracksVM = new(new FakePlayerService(), scopeFactory, _ => { });
-
-                LocalLibraryActions actions = new(
+                return new LocalLibraryActions(
                     scopeFactory,
                     new FakeConfirmationDialogService(confirmResult),
                     statusBar,
-                    new FakeCoverSearchService(),
                     new FakeOnlineAccessGuard(),
                     watchToggleService,
                     restructureCoordinator,
@@ -450,17 +472,8 @@ namespace EchoPlay.App.Tests.ViewModels
                     new FakeClock(),
                     scanVM,
                     artistsVM,
-                    episodesVM,
-                    tracksVM);
-
-                return new Harness
-                {
-                    Actions = actions,
-                    SeriesService = seriesService,
-                    EpisodeService = episodeService,
-                    PlaybackService = playbackService,
-                    ArtistsVM = artistsVM,
-                };
+                    new LocalEpisodesViewModel(scopeFactory, new FakeLocalCoverLoader(), new FakeClock()),
+                    new LocalTracksViewModel(new FakePlayerService(), scopeFactory, _ => { }));
             }
         }
     }

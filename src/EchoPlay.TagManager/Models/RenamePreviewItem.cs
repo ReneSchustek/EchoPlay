@@ -1,7 +1,7 @@
 namespace EchoPlay.TagManager.Models
 {
     /// <summary>
-    /// Repräsentiert einen einzelnen Eintrag in der Umbennungs-Vorschau.
+    /// Repräsentiert einen einzelnen Eintrag in der Umbenennungs-Vorschau.
     /// Enthält den alten und neuen Dateinamen sowie die für das Umbenennen
     /// benötigten vollständigen Pfade.
     /// </summary>

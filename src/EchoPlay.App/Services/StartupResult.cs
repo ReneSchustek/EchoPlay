@@ -1,26 +1,23 @@
-using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Ergebnis der Startup-Validierung, die während des Begrüßungsbildschirms läuft.
-    /// Enthält vorgeladene Daten und Statusmeldungen, damit das Dashboard keine
-    /// eigenen Checks mehr durchführen muss.
+    /// Die Startseite liest daraus, ob sie offline arbeitet und welche Hinweise sie zeigt;
+    /// ihre Daten lädt sie selbst.
     /// </summary>
     public sealed class StartupResult
     {
         /// <summary>
         /// Gibt an, ob eine Internetverbindung verfügbar ist.
-        /// Bei <see langword="false"/> werden Online-Funktionen (Neuerscheinungen, Suche) deaktiviert.
+        /// Bei <see langword="false"/> blendet die Startseite die Neuerscheinungen aus.
         /// </summary>
         public bool IsOnlineAvailable { get; init; }
 
         /// <summary>
         /// Gibt an, ob das konfigurierte lokale Bibliotheksverzeichnis erreichbar und lesbar ist.
-        /// Bei <see langword="false"/> werden lokale Funktionen (Scan, Sync) temporär deaktiviert.
+        /// Der Wert steht im Startprotokoll; den Hinweis für den Nutzer trägt <see cref="LocalLibraryHintText"/>.
         /// </summary>
         public bool IsLocalLibraryAvailable { get; init; }
 
@@ -37,24 +34,8 @@ namespace EchoPlay.App.Services
         public string? LocalLibraryHintText { get; init; }
 
         /// <summary>
-        /// Alle abonnierten Serien, vorgeladen während des Splashs.
-        /// Das Dashboard greift direkt auf diese Liste zu, ohne erneuten DB-Zugriff.
-        /// </summary>
-        public IReadOnlyList<Series> SubscribedSeries { get; init; } = [];
-
-        /// <summary>
-        /// Bereinigte Neuerscheinungen aus dem Cache (nur überwachte Serien).
-        /// </summary>
-        public IReadOnlyList<CachedNewRelease> CachedReleases { get; init; } = [];
-
-        /// <summary>
         /// Die beim Start geladenen Anwendungseinstellungen.
         /// </summary>
         public AppSettings Settings { get; init; } = new();
-
-        /// <summary>
-        /// Cutoff-Datum für den Neuerscheinungen-Filter (berechnet aus LastAppStart und NewReleaseDays).
-        /// </summary>
-        public DateTime NewReleaseCutoffDate { get; init; }
     }
 }

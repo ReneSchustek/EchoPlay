@@ -64,8 +64,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(coverLoader.Calls);
         }
 
-        // ── Reihenfolge der drei Stufen ──────────────────────────────────────
-
         [Fact]
         public async Task LoadSingle_WithCoverInDatabase_DoesNotTouchTheFolder()
         {
@@ -151,8 +149,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Null(card.CoverImage);
         }
 
-        // ── Chargen ──────────────────────────────────────────────────────
-
         [Fact]
         public async Task LoadRest_WithOneBatch_ReadsEveryEpisodeOnce()
         {
@@ -203,9 +199,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(1, coverLoader.CallCount);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────
-
-        /// <summary>Ein Ordner, in dem kein cover.jpg liegt; er existiert bewusst nicht.</summary>
+        /// <summary>Ein Ordner, in dem kein cover.jpg liegt; er existiert nicht.</summary>
         private const string FolderWithoutCover = @"D:\Media\TKKG\Folge 001";
 
         private static List<(LocalEpisodeCardViewModel Card, Episode Episode)> BuildQueue(int count)

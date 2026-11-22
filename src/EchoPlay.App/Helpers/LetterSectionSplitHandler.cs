@@ -32,7 +32,7 @@ namespace EchoPlay.App.Helpers
         /// <param name="topHost">Liste oberhalb des Folgenbereichs.</param>
         /// <param name="bottomHost">Liste unterhalb des Folgenbereichs.</param>
         /// <param name="getItems">Liefert die aktuelle Kachelliste aus dem ViewModel.</param>
-        /// <param name="titleOf">Liefert den Titel einer Kachel — er bestimmt den Buchstaben.</param>
+        /// <param name="titleOf">Liefert den Titel einer Kachel; er bestimmt den Buchstaben.</param>
         /// <param name="getSelectedIndex">Liefert den gewählten Index; -1, wenn nichts gewählt ist.</param>
         /// <param name="getAvailableWidth">Liefert die verfügbare Breite in Pixel.</param>
         /// <param name="automationNameFormat">
@@ -40,7 +40,7 @@ namespace EchoPlay.App.Helpers
         /// </param>
         /// <param name="groupByLetter">
         /// Ob nach Buchstaben gegliedert wird. <see langword="null"/> heißt: immer. Seiten, die
-        /// auch anders sortieren können, geben hier ihre Sortierung weiter — bei einer Liste
+        /// auch anders sortieren können, geben hier ihre Sortierung weiter; bei einer Liste
         /// nach Folgenanzahl wäre eine Buchstaben-Gliederung nur noch Zufall.
         /// </param>
         /// <param name="ungroupedAutomationName">

@@ -93,7 +93,7 @@ namespace EchoPlay.App.Tests.ViewModels
             sut.Activate();
 
             sut.Deactivate();
-            scanEvents.RaiseSeriesSynced(new Series { Title = "TKKG", LocalFolderPath = FolderPath });
+            scanEvents.NotifySeriesSynced(new Series { Title = "TKKG", LocalFolderPath = FolderPath });
 
             Assert.Empty(sut.ArtistsVM.Artists);
         }
@@ -105,7 +105,7 @@ namespace EchoPlay.App.Tests.ViewModels
             sut.Activate();
 
             sut.Dispose();
-            scanEvents.RaiseSeriesSynced(new Series { Title = "TKKG", LocalFolderPath = FolderPath });
+            scanEvents.NotifySeriesSynced(new Series { Title = "TKKG", LocalFolderPath = FolderPath });
 
             Assert.Empty(sut.ArtistsVM.Artists);
         }
@@ -132,8 +132,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.NotNull(sut.CheckAllSeriesCommand);
             Assert.True(sut.CheckAllSeriesCommand.CanExecute(null));
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private const string FolderPath = @"D:\Media\TKKG";
 
@@ -167,9 +165,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 statusBar,
                 new FakeLocalCoverLoader(),
                 scanEvents,
-                new FakeCoverSearchService(),
                 new FakeOnlineAccessGuard(),
-                new FakeOnlineEpisodeChecker(),
                 clock,
                 PageModeGuard: pageModeGuard,
                 MissingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());

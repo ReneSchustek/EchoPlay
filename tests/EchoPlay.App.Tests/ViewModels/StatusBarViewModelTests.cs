@@ -108,7 +108,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Guid seriesId = seriesService.All[0].Id;
 
             // Gestern erschienen, noch nicht gehört → zählt als neu
-            Episode epNeu = new()
+            Episode newEpisode = new()
             {
                 Title = "Folge 1",
                 SeriesId = seriesId,
@@ -122,7 +122,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 ReleaseDate = TestIds.ReferenceDate.AddDays(7)
             };
 
-            await episodeService.AddAsync(epNeu, cancellationToken: TestContext.Current.CancellationToken);
+            await episodeService.AddAsync(newEpisode, cancellationToken: TestContext.Current.CancellationToken);
             await episodeService.AddAsync(epKommend, cancellationToken: TestContext.Current.CancellationToken);
 
             (StatusBarViewModel vm, _) = BuildViewModel(

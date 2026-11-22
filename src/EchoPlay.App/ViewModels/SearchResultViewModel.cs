@@ -78,7 +78,7 @@ namespace EchoPlay.App.ViewModels
             _onImportCompleted = onImportCompleted;
             _isImported = isAlreadyImported;
 
-            // Bei Album-Ergebnissen: Künstlername als Untertitel anzeigen
+            // Bei Album-Ergebnissen steht der Künstlername vor dem Albumtitel.
             Title = importSeries.IsAlbumResult && !string.IsNullOrEmpty(importSeries.ArtistName)
                 ? $"{importSeries.ArtistName} – {importSeries.Title}"
                 : importSeries.Title;
@@ -99,8 +99,8 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Task der laufenden Cover-Lade-Operation. Tests warten darauf, um determinismus
-        /// zu garantieren; Produktionscode lässt den Task fire-and-forget laufen.
+        /// Task der laufenden Cover-Lade-Operation. Tests warten darauf, damit sie deterministisch
+        /// laufen; im Betrieb läuft der Task losgelöst.
         /// </summary>
         internal Task? CoverLoadTask { get; }
 
@@ -254,12 +254,13 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Anzeigename der Quelle, aus der dieses Ergebnis stammt.
-        /// "AppleMusic" wird als "Apple Music" (mit Leerzeichen) dargestellt,
-        /// alle anderen Werte ("Spotify", "Lokal") bleiben unverändert.
+        /// "AppleMusic" wird als "Apple Music" (mit Leerzeichen) dargestellt, der eigene Bestand
+        /// in der Sprache der Oberfläche; Anbieternamen wie "Spotify" bleiben unverändert.
         /// </summary>
         public string SourceLabel => _importSeries.Source switch
         {
             ProviderKeys.AppleMusic => "Apple Music",
+            ProviderKeys.Local => EchoPlay.App.Helpers.SafeResourceLoader.Get("SearchSourceLocal", "Lokal"),
             _ => _importSeries.Source
         };
 
@@ -283,19 +284,13 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                // Progress<T> wird auf dem UI-Thread konstruiert und marshallt die Berichte
-                // dorthin zurück, der Import selbst läuft mit ConfigureAwait(false) im Hintergrund.
-                IProgress<string> progress = new Progress<string>(text => ImportStatusText = text);
-                _ = await _importService.ImportAsync(_importSeries, progress, _cancellationToken);
-                // Erst nach erfolgreichem Import den Status setzen, kein optimistisches Update
-                IsImported = true;
-                _parentViewModel?.NotifySeriesAdded();
-
-                // Callback für die aufrufende Seite, z.B. Online-Mediathek Serienliste aktualisieren
-                if (_onImportCompleted is not null)
-                {
-                    await _onImportCompleted();
-                }
+                await ImportAndNotifyAsync();
+            }
+            catch (OperationCanceledException) when (_cancellationToken.IsCancellationRequested)
+            {
+                // Die Karte wurde verworfen (neue Suche, Seite verlassen). Kein Fehler für den
+                // Nutzer; nur der Fortschrittstext darf nicht auf „läuft" stehen bleiben.
+                ImportStatusText = string.Empty;
             }
             catch (Exception ex)
             {
@@ -305,6 +300,23 @@ namespace EchoPlay.App.ViewModels
             finally
             {
                 IsImporting = false;
+            }
+        }
+
+        private async Task ImportAndNotifyAsync()
+        {
+            // Progress<T> wird auf dem UI-Thread konstruiert und marshallt die Berichte
+            // dorthin zurück, der Import selbst läuft mit ConfigureAwait(false) im Hintergrund.
+            IProgress<string> progress = new Progress<string>(text => ImportStatusText = text);
+            _ = await _importService.ImportAsync(_importSeries, progress, _cancellationToken);
+            // Erst nach erfolgreichem Import den Status setzen, kein optimistisches Update
+            IsImported = true;
+            _parentViewModel?.NotifySeriesAdded();
+
+            // Callback für die aufrufende Seite, z.B. Online-Mediathek Serienliste aktualisieren
+            if (_onImportCompleted is not null)
+            {
+                await _onImportCompleted();
             }
         }
 
@@ -319,7 +331,7 @@ namespace EchoPlay.App.ViewModels
         /// Die WinRT-COM-Typen für die Analyse leben in <see cref="Services.CoverBrightnessAnalyzer"/>.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse für eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler dürfen die Kachel nicht zerstören – der Platzhalter bleibt stehen.")]
-        private async Task LoadCoverAndAnalyzeAsync(string? coverUrl)
+        private async Task LoadCoverAndAnalyzeAsync(Uri? coverUrl)
         {
             try
             {

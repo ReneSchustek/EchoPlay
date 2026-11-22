@@ -1,6 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using EchoPlay.Logger.Models;
-
 namespace EchoPlay.Logger.Sinks
 {
     /// <summary>
@@ -20,7 +17,6 @@ namespace EchoPlay.Logger.Sinks
         /// in der Regel ein Hintergrund-Thread. Subscriber müssen selbst auf den UI-Thread
         /// wechseln (z.B. via <c>DispatcherQueue.TryEnqueue</c>).
         /// </summary>
-        [SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Action<T> ist in EchoPlay-Logger bewusst verwendet; EventHandler<T> wäre hier Overkill.")]
-        event Action<LogEntry> LogEntryAdded;
+        event EventHandler<LogEntryEventArgs>? LogEntryAdded;
     }
 }

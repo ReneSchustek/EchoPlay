@@ -23,7 +23,7 @@ namespace EchoPlay.App.Services
         /// </param>
         /// <returns><see langword="true"/>, wenn der Dialog künftig ausbleiben soll.</returns>
         /// <remarks>
-        /// Eine gemerkte Ablehnung gibt es bewusst nicht: Sie würde die Schaltfläche stumm
+        /// Eine gemerkte Ablehnung gibt es nicht: Sie würde die Schaltfläche stumm
         /// wirkungslos machen, und niemand rechnet damit.
         /// </remarks>
         public static bool ShouldRemember(DialogKey key, bool isCheckBoxChecked, bool isAffirmative) =>

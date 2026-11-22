@@ -11,7 +11,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class TagFileListFilterTests
     {
-        private const string Ordner = @"C:\Hörspiele\Bibi";
+        private const string Folder = @"C:\Hörspiele\Bibi";
 
         private static TagFileListViewModel BuildList()
         {
@@ -19,11 +19,11 @@ namespace EchoPlay.App.Tests.ViewModels
 
             list.SetFiles(
                 [
-                    new TagFileItemViewModel($@"{Ordner}\01 Hexerei.mp3", Ordner),
-                    new TagFileItemViewModel($@"{Ordner}\02 Der Bericht.mp3", Ordner),
-                    new TagFileItemViewModel($@"{Ordner}\03 Hexbesen.mp3", Ordner)
+                    new TagFileItemViewModel($@"{Folder}\01 Hexerei.mp3", Folder),
+                    new TagFileItemViewModel($@"{Folder}\02 Der Bericht.mp3", Folder),
+                    new TagFileItemViewModel($@"{Folder}\03 Hexbesen.mp3", Folder)
                 ],
-                Ordner);
+                Folder);
 
             return list;
         }
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagFileListViewModel list = BuildList();
             list.SearchText = "hex";
 
-            list.SetFiles([new TagFileItemViewModel($@"{Ordner}\04 Ausflug.mp3", Ordner)], Ordner);
+            list.SetFiles([new TagFileItemViewModel($@"{Folder}\04 Ausflug.mp3", Folder)], Folder);
 
             Assert.Empty(list.Files);
             Assert.Equal(Visibility.Visible, list.NoResultsVisibility);

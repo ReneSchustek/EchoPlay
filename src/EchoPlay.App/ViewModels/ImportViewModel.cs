@@ -30,7 +30,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Wird ausgelöst, wenn eine Serie erfolgreich importiert wurde.
-        /// Ermöglicht der Seite, anschließend zur Serienübersicht zurückzunavigieren.
+        /// Die Seite navigiert daraufhin zur Serienübersicht zurück.
         /// </summary>
         public event EventHandler? ImportSucceeded;
 
@@ -43,7 +43,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="localizationService">Liefert lokalisierte UI-Strings aus den Ressourcendateien.</param>
         /// <param name="statusBar">
         /// StatusBar-ViewModel für Fortschrittsanzeige während des Imports.
-        /// <see langword="null"/> ist erlaubt – dann entfällt die Fortschrittsanzeige (z.B. in Tests).
+        /// <see langword="null"/> ist erlaubt; dann entfällt die Fortschrittsanzeige (z.B. in Tests).
         /// </param>
         public ImportViewModel(ImportService importService, IErrorDialogService errorDialogService, IOnlineAccessGuard onlineAccessGuard, ILocalizationService localizationService, StatusBarViewModel? statusBar = null)
         {
@@ -137,21 +137,7 @@ namespace EchoPlay.App.ViewModels
                 SearchOutcome outcome = await _importService.SearchAsync(SearchQuery);
                 IReadOnlyList<ImportSeries> found = outcome.Results;
 
-                List<ImportResultViewModel> rows = new(found.Count);
-
-                foreach (ImportSeries series in found)
-                {
-                    bool alreadyImported = await _importService.IsAlreadyImportedAsync(series);
-
-                    ImportResultViewModel row = new(
-                        series,
-                        alreadyImported,
-                        new RelayCommand(() => _ = ImportAsync(series)));
-
-                    rows.Add(row);
-                }
-
-                Results = rows;
+                Results = await BuildResultRowsAsync(found);
                 StatusText = found.Count == 0 ? _localizationService.Get("ImportNoResults") : string.Empty;
             }
             catch (Exception ex)
@@ -163,6 +149,25 @@ namespace EchoPlay.App.ViewModels
             {
                 IsSearching = false;
             }
+        }
+
+        /// <summary>
+        /// Baut je Treffer eine Zeile mit dem Hinweis, ob die Serie schon in der Bibliothek ist.
+        /// </summary>
+        private async Task<List<ImportResultViewModel>> BuildResultRowsAsync(IReadOnlyList<ImportSeries> found)
+        {
+            List<ImportResultViewModel> rows = new(found.Count);
+
+            foreach (ImportSeries series in found)
+            {
+                bool alreadyImported = await _importService.IsAlreadyImportedAsync(series);
+                rows.Add(new ImportResultViewModel(
+                    series,
+                    alreadyImported,
+                    new RelayCommand(() => _ = ImportAsync(series))));
+            }
+
+            return rows;
         }
 
         /// <summary>
@@ -192,14 +197,7 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                // Progress-Callback leitet Meldungen gleichzeitig an die Seite und die Info-Leiste weiter
-                Progress<string> progress = new(text =>
-                {
-                    StatusText = text;
-                    _statusBar?.ScanProgress.SetText(text);
-                });
-
-                _ = await _importService.ImportAsync(series, progress);
+                _ = await _importService.ImportAsync(series, CreateImportProgress());
                 StatusText = string.Format(CultureInfo.CurrentCulture, _localizationService.Get("ImportSuccess"), series.Title);
                 ImportSucceeded?.Invoke(this, EventArgs.Empty);
             }
@@ -215,5 +213,14 @@ namespace EchoPlay.App.ViewModels
                 _statusBar?.ScanProgress.Clear();
             }
         }
+
+        /// <summary>
+        /// Leitet Meldungen gleichzeitig an die Seite und die Info-Leiste weiter.
+        /// </summary>
+        private Progress<string> CreateImportProgress() => new(text =>
+        {
+            StatusText = text;
+            _statusBar?.ScanProgress.SetText(text);
+        });
     }
 }

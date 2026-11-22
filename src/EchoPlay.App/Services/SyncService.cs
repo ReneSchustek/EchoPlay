@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using EchoPlay.App.Helpers;
 using EchoPlay.Core.Models;
 using EchoPlay.Core.Scoring;
@@ -27,10 +28,10 @@ namespace EchoPlay.App.Services
     /// gespeicherten Serien und Episoden ab. Der Sync ist manuell auslösbar
     /// und idempotent; jeder Durchlauf überschreibt vorherige Ergebnisse.
     ///
-    /// Die Hauptmethode <see cref="SyncAsync"/> orchestriert vier Phasen
-    /// (Detection / Scan / Materialize-Series / Materialize-Episodes), jede
-    /// in einer eigenen privaten Methode. Phasen-Records (siehe unten)
-    /// koppeln den Datenfluss zwischen den Phasen.
+    /// Die Hauptmethode <see cref="SyncAsync"/> führt vier Phasen nacheinander aus:
+    /// Erkennen, Einlesen, Serien anlegen und Folgen anlegen. Die ersten drei stehen als
+    /// interne Methoden hier, die vierte liegt in <see cref="LocalEpisodeMaterializer"/>.
+    /// Danach folgt der Cover-Abgleich. Die Records unten tragen die Daten von Phase zu Phase.
     /// </summary>
     public sealed class SyncService : ISyncService
     {
@@ -64,8 +65,6 @@ namespace EchoPlay.App.Services
             _coverService = coverService;
             _episodeMaterializer = new LocalEpisodeMaterializer(_logger, scanEventService);
         }
-
-        // ── Phasen-Records ──────────────────────────────────────────────────
 
         /// <summary>Output der Detection-Phase.</summary>
         internal sealed record DetectionResult(
@@ -106,38 +105,13 @@ namespace EchoPlay.App.Services
                 return new SyncResult();
             }
 
-            _logger.Info("Sync gestartet: {RootPath}", settings.LocalLibraryRootPath);
+            _logger.Info("Sync gestartet: {RootPath}", EchoPlay.Core.Logging.PathRedactor.Redact(settings.LocalLibraryRootPath));
 
             _scanEventService.BeginScan();
             try
             {
-                // Phase 1: Sofortige Erkennung bekannter Serien (emit-only)
-                DetectionResult detection = await RunDetectionPhaseAsync(
-                    sp, settings, progress, onSeriesSynced, cancellationToken);
-
-                // Phase 2: Vollständiger Filesystem-Scan
-                IReadOnlyList<LocalScanResult> scanResults = await RunScanPhaseAsync(
-                    sp, settings, progress, cancellationToken);
-
-                // Phase 3: Serien anlegen oder mit DB matchen
-                MaterializationResult materialization = await MaterializeSeriesAsync(
-                    sp, scanResults, detection, settings, forceImportAll,
-                    onSeriesSynced, cancellationToken);
-
-                // Phase 4: Episoden, Tracks und Cover für jede Serie persistieren
-                (int episodesUpdated, int tracksCreated) = await _episodeMaterializer.MaterializeEpisodesAsync(
-                    sp, materialization, progress, cancellationToken);
-
-                // Cover-Abgleich: lokale Episoden ohne Cover ggf. aus DB übernehmen
-                await ApplyDbCoversToLocalEpisodesAsync(sp, cancellationToken);
-
-                SyncResult result = new()
-                {
-                    SeriesMatched = materialization.Matched,
-                    SeriesUnmatched = materialization.Unmatched,
-                    EpisodesUpdated = episodesUpdated,
-                    TracksCreated = tracksCreated
-                };
+                SyncResult result = await RunPhasesAsync(
+                    sp, settings, progress, forceImportAll, onSeriesSynced, cancellationToken);
 
                 _logger.Info("Sync abgeschlossen: {Result}", result);
                 return result;
@@ -148,7 +122,46 @@ namespace EchoPlay.App.Services
             }
         }
 
-        // ── Phase 1: Detection ─────────────────────────────────────────────────
+        /// <summary>
+        /// Führt die vier Phasen des Abgleichs nacheinander aus und danach den Cover-Abgleich.
+        /// </summary>
+        private async Task<SyncResult> RunPhasesAsync(
+            IServiceProvider sp,
+            AppSettings settings,
+            IProgress<ScanProgress>? progress,
+            bool forceImportAll,
+            IProgress<Series>? onSeriesSynced,
+            CancellationToken cancellationToken)
+        {
+            // Phase 1: Sofortige Erkennung bekannter Serien (emit-only)
+            DetectionResult detection = await RunDetectionPhaseAsync(
+                sp, settings, progress, onSeriesSynced, cancellationToken);
+
+            // Phase 2: Vollständiger Filesystem-Scan
+            IReadOnlyList<LocalScanResult> scanResults = await RunScanPhaseAsync(
+                sp, settings, progress, cancellationToken);
+
+            // Phase 3: Serien anlegen oder mit DB matchen
+            MaterializationResult materialization = await MaterializeSeriesAsync(
+                sp, scanResults, detection, settings, forceImportAll,
+                onSeriesSynced, cancellationToken);
+
+            // Phase 4: Folgen und Spuren jeder Serie speichern; die Cover folgen im Abgleich danach.
+            (int episodesUpdated, int tracksCreated) = await _episodeMaterializer.MaterializeEpisodesAsync(
+                sp, materialization, progress, cancellationToken);
+
+            // Cover-Abgleich: fehlende Folgen-Cover aus passenden Folgen der Datenbank
+            // übernehmen und, wenn eingeschaltet, als cover.jpg in die Folgenordner legen.
+            await ApplyDbCoversToLocalEpisodesAsync(sp, settings.SaveCoverToDirectory, cancellationToken);
+
+            return new SyncResult
+            {
+                SeriesMatched = materialization.Matched,
+                SeriesUnmatched = materialization.Unmatched,
+                EpisodesUpdated = episodesUpdated,
+                TracksCreated = tracksCreated
+            };
+        }
 
         /// <summary>
         /// Liest die DB-Serien, ermittelt verwendete Ordnerpfade und durchsucht
@@ -186,18 +199,16 @@ namespace EchoPlay.App.Services
                 if (known is not null)
                 {
                     onSeriesSynced?.Report(known);
-                    _scanEventService.RaiseSeriesSynced(known);
+                    _scanEventService.NotifySeriesSynced(known);
                 }
             }
 
             return new DetectionResult(seriesFolders, usedFolderPaths, dbSeries);
         }
 
-        // ── Phase 2: Scan ──────────────────────────────────────────────────────
-
         /// <summary>
-        /// Läuft den orchestrierten Filesystem-Scan (Phase 2-4 intern beim
-        /// Orchestrator: Audiodateien zählen, Serien, Folgen, Tracks).
+        /// Liest das Dateisystem über den <see cref="IScanOrchestrator"/> ein. Dessen
+        /// Fortschritt zeigt eigene vier Phasen: Vorbereitung, Serien, Folgen, Spuren.
         /// </summary>
         // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         internal static async Task<IReadOnlyList<LocalScanResult>> RunScanPhaseAsync(
@@ -213,8 +224,6 @@ namespace EchoPlay.App.Services
                 progress,
                 cancellationToken);
         }
-
-        // ── Phase 3: Materialize Series ────────────────────────────────────────
 
         /// <summary>
         /// Entscheidet pro <see cref="LocalScanResult"/>, ob eine Serie neu angelegt,
@@ -232,85 +241,89 @@ namespace EchoPlay.App.Services
             IProgress<Series>? onSeriesSynced,
             CancellationToken cancellationToken)
         {
-            ISeriesDataService seriesService = sp.GetRequiredService<ISeriesDataService>();
-            ILocalCoverService localCoverService = sp.GetRequiredService<ILocalCoverService>();
             IWatchedTitleDataService watchedTitleService = sp.GetRequiredService<IWatchedTitleDataService>();
 
             // Früher überwachte Titel: gibt neu eingelesenen Serien ihre Überwachung zurück,
             // nachdem die Mediathek geleert wurde (Series-Zeilen sind dabei physisch weg).
-            IReadOnlySet<string> watchedTitles = await watchedTitleService.GetAllAsync(cancellationToken);
+            SeriesStores stores = new(
+                sp.GetRequiredService<ISeriesDataService>(),
+                sp.GetRequiredService<ILocalCoverService>(),
+                await watchedTitleService.GetAllAsync(cancellationToken));
 
             List<SeriesPipelineEntry> entries = new(scanResults.Count);
-            int matched = 0;
             int unmatched = 0;
-
             foreach (LocalScanResult scanResult in scanResults)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 Series? matchedSeries = FindMatchingSeries(detection.DbSeries, scanResult.SeriesName);
-
-                if (matchedSeries is null)
+                if (matchedSeries is not null)
                 {
-                    bool shouldImport = (settings.AutoImportAfterScan || forceImportAll)
-                        && !detection.UsedFolderPaths.Contains(scanResult.SeriesFolderPath);
-
-                    if (!shouldImport)
-                    {
-                        unmatched++;
-                        continue;
-                    }
-
-                    // Neue Serie anlegen
-                    Series importedSeries = new()
-                    {
-                        Title = scanResult.SeriesName,
-                        LocalFolderPath = scanResult.SeriesFolderPath,
-                        IsSubscribed = true,
-                        IsWatched = watchedTitles.Contains(
-                            EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(scanResult.SeriesName))
-                    };
-
-                    await seriesService.AddAsync(importedSeries, cancellationToken);
-                    _ = detection.UsedFolderPaths.Add(scanResult.SeriesFolderPath);
-
-                    // Cover für die neue Serie auflösen, falls noch keins vorhanden
-                    byte[]? coverData = await ResolveCoverSafelyAsync(
-                        localCoverService, scanResult.SeriesFolderPath, coverImageUrl: null, cancellationToken);
-                    if (coverData is not null && !await _coverService.HasSeriesCoverAsync(importedSeries.Id, cancellationToken))
-                    {
-                        await _coverService.SetSeriesCoverAsync(importedSeries.Id, coverData, cancellationToken: cancellationToken);
-                    }
-
-                    onSeriesSynced?.Report(importedSeries);
-                    _scanEventService.RaiseSeriesSynced(importedSeries);
-
-                    entries.Add(new SeriesPipelineEntry(importedSeries, scanResult, IsNewlyCreated: true));
-                    matched++;
+                    await UpdateMatchedSeriesAsync(matchedSeries, scanResult, stores, cancellationToken);
+                    entries.Add(new SeriesPipelineEntry(matchedSeries, scanResult, IsNewlyCreated: false));
                     continue;
                 }
 
-                // Vorhandene Serie: Ordnerpfad aktualisieren und Cover ggf. setzen
-                matched++;
-                matchedSeries.LocalFolderPath = scanResult.SeriesFolderPath;
-
-                if (!await _coverService.HasSeriesCoverAsync(matchedSeries.Id, cancellationToken))
+                if (!(settings.AutoImportAfterScan || forceImportAll) || detection.UsedFolderPaths.Contains(scanResult.SeriesFolderPath))
                 {
-                    byte[]? coverData = await ResolveCoverSafelyAsync(
-                        localCoverService, scanResult.SeriesFolderPath, matchedSeries.CoverImageUrl, cancellationToken);
-                    if (coverData is not null)
-                    {
-                        await _coverService.SetSeriesCoverAsync(matchedSeries.Id, coverData, cancellationToken: cancellationToken);
-                    }
+                    unmatched++;
+                    continue;
                 }
 
-                await seriesService.UpdateAsync(matchedSeries, cancellationToken);
-                _scanEventService.RaiseSeriesSynced(matchedSeries);
-
-                entries.Add(new SeriesPipelineEntry(matchedSeries, scanResult, IsNewlyCreated: false));
+                Series importedSeries = await ImportNewSeriesAsync(scanResult, detection, stores, cancellationToken);
+                onSeriesSynced?.Report(importedSeries);
+                _scanEventService.NotifySeriesSynced(importedSeries);
+                entries.Add(new SeriesPipelineEntry(importedSeries, scanResult, IsNewlyCreated: true));
             }
 
-            return new MaterializationResult(entries, matched, unmatched);
+            return new MaterializationResult(entries, entries.Count, unmatched);
+        }
+
+        /// <summary>Legt eine neu gefundene Serie samt Cover an.</summary>
+        private async Task<Series> ImportNewSeriesAsync(
+            LocalScanResult scanResult, DetectionResult detection, SeriesStores stores, CancellationToken cancellationToken)
+        {
+            Series importedSeries = new()
+            {
+                Title = scanResult.SeriesName,
+                LocalFolderPath = scanResult.SeriesFolderPath,
+                IsSubscribed = true,
+                IsWatched = stores.WatchedTitles.Contains(
+                    EchoPlay.Core.Scoring.HoerspielTextNormalizer.Normalize(scanResult.SeriesName))
+            };
+
+            await stores.Series.AddAsync(importedSeries, cancellationToken);
+            _ = detection.UsedFolderPaths.Add(scanResult.SeriesFolderPath);
+
+            // Cover für die neue Serie auflösen, falls noch keins vorhanden
+            byte[]? coverData = await ResolveCoverSafelyAsync(
+                stores.Covers, scanResult.SeriesFolderPath, coverImageUrl: null, cancellationToken);
+            if (coverData is not null && !await _coverService.HasSeriesCoverAsync(importedSeries.Id, cancellationToken))
+            {
+                await _coverService.SetSeriesCoverAsync(importedSeries.Id, coverData, cancellationToken: cancellationToken);
+            }
+
+            return importedSeries;
+        }
+
+        /// <summary>Vorhandene Serie: Ordnerpfad aktualisieren und Cover ggf. setzen.</summary>
+        private async Task UpdateMatchedSeriesAsync(
+            Series matchedSeries, LocalScanResult scanResult, SeriesStores stores, CancellationToken cancellationToken)
+        {
+            matchedSeries.LocalFolderPath = scanResult.SeriesFolderPath;
+
+            if (!await _coverService.HasSeriesCoverAsync(matchedSeries.Id, cancellationToken))
+            {
+                byte[]? coverData = await ResolveCoverSafelyAsync(
+                    stores.Covers, scanResult.SeriesFolderPath, matchedSeries.CoverImageUrl, cancellationToken);
+                if (coverData is not null)
+                {
+                    await _coverService.SetSeriesCoverAsync(matchedSeries.Id, coverData, cancellationToken: cancellationToken);
+                }
+            }
+
+            await stores.Series.UpdateAsync(matchedSeries, cancellationToken);
+            _scanEventService.NotifySeriesSynced(matchedSeries);
         }
 
         private static Series? FindMatchingSeries(IReadOnlyList<Series> series, string folderName)
@@ -326,7 +339,7 @@ namespace EchoPlay.App.Services
             return null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Auflösung pro Ordner: IO-/HTTP-/Bild-Dekodier-Fehler dürfen den Scan-Vorgang nicht stoppen; ein fehlendes Cover wird zu 'null', damit die Episode ohne Cover angelegt wird.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Auflösung je Serienordner: IO-/HTTP-/Bild-Dekodier-Fehler dürfen den Scan-Vorgang nicht stoppen; ein fehlendes Cover wird zu 'null', damit die Serie ohne Cover angelegt wird.")]
         private async Task<byte[]?> ResolveCoverSafelyAsync(
             ILocalCoverService coverService,
             string folderPath,
@@ -335,87 +348,107 @@ namespace EchoPlay.App.Services
         {
             try
             {
-                return await coverService.ResolveAsync(folderPath, coverImageUrl, cancellationToken);
+                return await coverService.ResolveAsync(folderPath, WebAddress.TryParse(coverImageUrl), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Ein Abbruch des Aufrufers ist kein Fehlschlag und gehört nach oben.
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.Warning("Cover-Auflösung fehlgeschlagen für '{FolderPath}': {Reason}", folderPath, ex.Message);
+                _logger.Warning("Cover-Auflösung fehlgeschlagen für '{FolderPath}': {Reason}", EchoPlay.Core.Logging.PathRedactor.Redact(folderPath), ex.Message);
                 return null;
             }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Optionaler Cover-Copy-Schritt nach Scan: DB-/IO-Fehler beim Übernehmen von Covern aus anderen Episoden oder beim Schreiben von cover.jpg dürfen den Scan-Abschluss nicht blockieren.")]
         // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
-        private async Task ApplyDbCoversToLocalEpisodesAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+        private async Task ApplyDbCoversToLocalEpisodesAsync(
+            IServiceProvider serviceProvider,
+            bool saveCoverToDirectory,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                ICoverCopyService coverCopy = serviceProvider.GetRequiredService<ICoverCopyService>();
-                ISeriesDataService seriesService = serviceProvider.GetRequiredService<ISeriesDataService>();
-                IEpisodeDataService episodeService = serviceProvider.GetRequiredService<IEpisodeDataService>();
-                ICoverImageDataService coverImageService = serviceProvider.GetRequiredService<ICoverImageDataService>();
+                IReadOnlyList<Series> allSeries = await serviceProvider.GetRequiredService<ISeriesDataService>().GetAllAsync(cancellationToken);
+                List<Series> localSeries = [.. allSeries.Where(series => !string.IsNullOrEmpty(series.LocalFolderPath))];
 
-                IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(cancellationToken);
-                int totalCopied = 0;
+                await CopyCoversFromDatabaseAsync(serviceProvider.GetRequiredService<ICoverCopyService>(), localSeries, cancellationToken);
 
-                foreach (Series series in allSeries)
+                // Wer das Speichern im Ordner abgeschaltet hat, will keine Dateien in seiner
+                // Sammlung; dieselbe Einstellung gilt auch beim Setzen eines Covers von Hand.
+                if (!saveCoverToDirectory)
                 {
-                    if (string.IsNullOrEmpty(series.LocalFolderPath)) continue;
-                    int copied = await coverCopy.CopyFromMatchingEpisodesAsync(series.Id, cancellationToken);
-                    totalCopied += copied;
+                    return;
                 }
 
-                if (totalCopied > 0)
+                foreach (Series series in localSeries)
                 {
-                    _logger.Info("Cover-Abgleich nach Scan: {TotalCopied} Cover aus DB übernommen.", totalCopied);
+                    await WriteEpisodeCoverFilesAsync(serviceProvider, series, cancellationToken);
                 }
-
-                foreach (Series series in allSeries)
-                {
-                    if (string.IsNullOrEmpty(series.LocalFolderPath)) continue;
-
-                    IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(series.Id, cancellationToken);
-
-                    List<Episode> localEpisodes = [];
-                    foreach (Episode episode in episodes)
-                    {
-                        if (!string.IsNullOrEmpty(episode.LocalFolderPath))
-                        {
-                            localEpisodes.Add(episode);
-                        }
-                    }
-
-                    if (localEpisodes.Count == 0) continue;
-
-                    List<Guid> ids = localEpisodes.Select(e => e.Id).ToList();
-                    IReadOnlyDictionary<Guid, byte[]> covers =
-                        await coverImageService.GetImageDataByEntitiesAsync(
-                            CoverEntityTypes.Episode, ids, cancellationToken);
-
-                    foreach (Episode episode in localEpisodes)
-                    {
-                        if (!covers.TryGetValue(episode.Id, out byte[]? coverData)) continue;
-
-                        string coverPath = Path.Combine(
-                            episode.LocalFolderPath!, Core.CoverConstants.CoverFileName);
-
-                        if (File.Exists(coverPath)) continue;
-
-                        try
-                        {
-                            await File.WriteAllBytesAsync(coverPath, coverData, cancellationToken);
-                        }
-                        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                        {
-                            _logger.Debug(() => $"Cover-Datei konnte nicht geschrieben werden: {coverPath} – {ex.Message}");
-                        }
-                    }
-                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Ein Abbruch des Aufrufers ist kein Fehlschlag und gehört nach oben.
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.Warning("Cover-Abgleich nach Scan fehlgeschlagen: {Reason}", ex.Message);
             }
         }
+
+        /// <summary>Übernimmt für jede lokale Serie die Cover gleicher Folgen aus der Datenbank.</summary>
+        private async Task CopyCoversFromDatabaseAsync(ICoverCopyService coverCopy, List<Series> localSeries, CancellationToken cancellationToken)
+        {
+            int totalCopied = 0;
+            foreach (Series series in localSeries)
+            {
+                totalCopied += await coverCopy.CopyFromMatchingEpisodesAsync(series.Id, cancellationToken);
+            }
+
+            if (totalCopied > 0)
+            {
+                _logger.Info("Cover-Abgleich nach Scan: {TotalCopied} Cover aus DB übernommen.", totalCopied);
+            }
+        }
+
+        /// <summary>
+        /// Schreibt für die lokalen Folgen einer Serie eine <c>cover.jpg</c> aus der Datenbank,
+        /// wo noch keine liegt. Eine Datei, die sich nicht schreiben lässt, wird übergangen.
+        /// </summary>
+        private async Task WriteEpisodeCoverFilesAsync(IServiceProvider serviceProvider, Series series, CancellationToken cancellationToken)
+        {
+            IReadOnlyList<Episode> episodes = await serviceProvider.GetRequiredService<IEpisodeDataService>().GetBySeriesIdAsync(series.Id, cancellationToken);
+            List<Episode> localEpisodes = [.. episodes.Where(episode => !string.IsNullOrEmpty(episode.LocalFolderPath))];
+            if (localEpisodes.Count == 0) return;
+
+            IReadOnlyDictionary<Guid, byte[]> covers = await serviceProvider.GetRequiredService<ICoverImageDataService>()
+                .GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, [.. localEpisodes.Select(e => e.Id)], cancellationToken);
+
+            foreach (Episode episode in localEpisodes)
+            {
+                if (!covers.TryGetValue(episode.Id, out byte[]? coverData)) continue;
+
+                string coverPath = Path.Combine(episode.LocalFolderPath!, Core.CoverConstants.CoverFileName);
+                if (File.Exists(coverPath)) continue;
+
+                try
+                {
+                    await File.WriteAllBytesAsync(coverPath, coverData, cancellationToken);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.Debug(() => $"Cover-Datei konnte nicht geschrieben werden: {EchoPlay.Core.Logging.PathRedactor.Redact(coverPath)} – {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>Die Dienste und Merkmale eines Materialisierungs-Durchgangs.</summary>
+        /// <param name="Series">Serien lesen und schreiben.</param>
+        /// <param name="Covers">Löst Cover aus dem Serienordner auf.</param>
+        /// <param name="WatchedTitles">Früher überwachte Titel, normalisiert.</param>
+        private sealed record SeriesStores(ISeriesDataService Series, ILocalCoverService Covers, IReadOnlySet<string> WatchedTitles);
     }
 }

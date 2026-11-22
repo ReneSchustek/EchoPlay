@@ -1,15 +1,18 @@
 using Microsoft.CodeAnalysis;
 
-// Sammelt Typen, Member und Parameter, deren Name ein deutsches Wortsegment trägt, und liefert
-// sie als Umbenennungsaufträge. Die Aufträge laufen anschließend durch dieselbe Roslyn-Schleife
-// wie handgeschriebene - damit wandern benannte Argumente und <param name="..."> mit.
-//
-// Warum nicht wie bei den lokalen Bezeichnern dokumentweise: Ein Member ist von überall
-// erreichbar. Ein Textersatz im Deklarationsdokument ließe jeden Aufrufer in einem anderen
-// Projekt stehen.
+/// <summary>
+/// Sammelt Typen, Member und Parameter, deren Name ein deutsches Wortsegment trägt, und liefert sie
+/// als Umbenennungsaufträge. Die Aufträge laufen anschließend durch dieselbe Roslyn-Schleife wie
+/// handgeschriebene - damit wandern benannte Argumente und &lt;param name="..."&gt; mit.
+/// <para>
+/// Warum nicht wie bei den lokalen Bezeichnern dokumentweise: Ein Member ist von überall
+/// erreichbar. Ein Textersatz im Deklarationsdokument ließe jeden Aufrufer in einem anderen Projekt
+/// stehen.
+/// </para>
+/// </summary>
 internal static class MemberCollector
 {
-    public static async Task<List<(string Kind, string? Container, string From, string To, string Projekt)>> CollectAsync(
+    public static async Task<List<(string Kind, string? Container, string From, string To, string Project)>> CollectAsync(
         Solution solution,
         IReadOnlyDictionary<string, string> dictionary,
         string[]? projects)
@@ -49,7 +52,7 @@ internal static class MemberCollector
                     // Überschriebene und Interface-Umsetzungen erben ihren Namen. Wird die
                     // Basis umbenannt, wandert die Ableitung mit; einzeln umbenannt entstünde
                     // eine zweite, unverbundene Methode.
-                    if (member.IsOverride || IstSchnittstellenUmsetzung(member))
+                    if (member.IsOverride || IsInterfaceImplementation(member))
                     {
                         continue;
                     }
@@ -77,8 +80,8 @@ internal static class MemberCollector
             return;
         }
 
-        string neu = Translator.Translate(name, dictionary);
-        if (string.Equals(neu, name, StringComparison.Ordinal))
+        string updated = Translator.Translate(name, dictionary);
+        if (string.Equals(updated, name, StringComparison.Ordinal))
         {
             return;
         }
@@ -88,23 +91,23 @@ internal static class MemberCollector
         string key = $"{kind}|{container}|{name}";
         if (seen.Add(key))
         {
-            jobs.Add((kind, container, name, neu, project));
+            jobs.Add((kind, container, name, updated, project));
         }
     }
 
-    private static bool IstSchnittstellenUmsetzung(ISymbol member)
+    private static bool IsInterfaceImplementation(ISymbol member)
     {
-        INamedTypeSymbol? typ = member.ContainingType;
-        if (typ is null)
+        INamedTypeSymbol? typeSymbol = member.ContainingType;
+        if (typeSymbol is null)
         {
             return false;
         }
 
-        foreach (INamedTypeSymbol schnittstelle in typ.AllInterfaces)
+        foreach (INamedTypeSymbol interfaceSymbol in typeSymbol.AllInterfaces)
         {
-            foreach (ISymbol open in schnittstelle.GetMembers(member.Name))
+            foreach (ISymbol open in interfaceSymbol.GetMembers(member.Name))
             {
-                if (SymbolEqualityComparer.Default.Equals(typ.FindImplementationForInterfaceMember(open), member))
+                if (SymbolEqualityComparer.Default.Equals(typeSymbol.FindImplementationForInterfaceMember(open), member))
                 {
                     return true;
                 }
@@ -116,11 +119,11 @@ internal static class MemberCollector
 
     private static IEnumerable<INamedTypeSymbol> AllTypes(INamespaceSymbol space)
     {
-        foreach (INamedTypeSymbol typ in space.GetTypeMembers())
+        foreach (INamedTypeSymbol typeSymbol in space.GetTypeMembers())
         {
-            yield return typ;
+            yield return typeSymbol;
 
-            foreach (INamedTypeSymbol verschachtelt in typ.GetTypeMembers())
+            foreach (INamedTypeSymbol verschachtelt in typeSymbol.GetTypeMembers())
             {
                 yield return verschachtelt;
             }
@@ -128,9 +131,9 @@ internal static class MemberCollector
 
         foreach (INamespaceSymbol unterraum in space.GetNamespaceMembers())
         {
-            foreach (INamedTypeSymbol typ in AllTypes(unterraum))
+            foreach (INamedTypeSymbol typeSymbol in AllTypes(unterraum))
             {
-                yield return typ;
+                yield return typeSymbol;
             }
         }
     }

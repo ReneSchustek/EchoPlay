@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Contracts;
 
 namespace EchoPlay.Data.Entities.Settings
 {
@@ -12,7 +13,7 @@ namespace EchoPlay.Data.Entities.Settings
     /// fünfzig unterdrückbare Dialoge, und jeder weitere bekäme sonst eine eigene Spalte samt
     /// Migration.
     /// <para>
-    /// <see cref="Key"/> ist bewusst Text und nicht die Aufzählung <c>DialogKey</c>. Fällt ein
+    /// <see cref="Key"/> ist Text und nicht die Aufzählung <c>DialogKey</c>. Fällt ein
     /// Dialog irgendwann weg, steht seine Zeile weiter in der Datenbank. Sie soll dann
     /// übergangen werden und nicht beim Lesen die ganze Abfrage reißen.
     /// </para>
@@ -20,6 +21,7 @@ namespace EchoPlay.Data.Entities.Settings
     public class DialogSuppression : BaseEntity
     {
         /// <summary>Name des <c>DialogKey</c>-Werts, fachlicher Schlüssel der Zeile.</summary>
+        [DataScope(DataScope.Shared)]
         public string Key { get; set; } = string.Empty;
     }
 }

@@ -12,7 +12,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// Der Scorer enthält ausschließlich Arithmetik und Entscheidungslogik.
     /// Die eigentliche Analyse wird an den <see cref="AppleMusicHoerspielAnalyzer"/> delegiert;
     /// das Score-Gerüst (Cache, Logging) stammt aus <see cref="HoerspielScorerBase{TSource}"/>.
-    /// Seit dem Wechsel auf die iTunes Search API wird zusätzlich das Genre als positiver Indikator genutzt.
+    /// Zusätzlich zählt das Genre aus der Künstlerantwort als positiver Indikator.
     /// Thread-Safety: Alle Felder sind <c>readonly</c>, der gemeinsame <see cref="HoerspielDecisionCache"/>
     /// ist thread-safe. Instanzen dürfen parallel von mehreren Scopes genutzt werden.
     /// </summary>
@@ -23,8 +23,8 @@ namespace EchoPlay.AppleMusic.Scoring
 
         // Cover-Adresse je Künstler aus der Albenprüfung. Der gemeinsame Entscheidungs-Cache
         // hält nur Bewertungen; das Artwork ist ein Anzeigemerkmal und bleibt deshalb hier.
-        // Die Registrierung ist Scoped — der Speicher lebt genau einen Suchlauf.
-        private readonly ConcurrentDictionary<string, string?> _artworkByArtistId = new(StringComparer.Ordinal);
+        // Die Registrierung ist Scoped; der Speicher lebt genau einen Suchlauf.
+        private readonly ConcurrentDictionary<string, Uri?> _artworkByArtistId = new(StringComparer.Ordinal);
 
         /// <summary>
         /// Initialisiert den Scorer mit Analyzer, Einstellungen, Cache und Logger.
@@ -64,7 +64,7 @@ namespace EchoPlay.AppleMusic.Scoring
 
             HoerspielScoreResult score = await ScoreAsync(artist, searchQuery, cancellationToken).ConfigureAwait(false);
 
-            _ = _artworkByArtistId.TryGetValue(GetArtistId(artist), out string? artworkUrl);
+            _ = _artworkByArtistId.TryGetValue(GetArtistId(artist), out Uri? artworkUrl);
 
             return new AppleMusicArtistScore(score, artworkUrl);
         }

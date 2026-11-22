@@ -33,7 +33,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task IsSuppressedAsync_OhneEintrag_LiefertFalse()
+        public async Task IsSuppressedAsync_WithoutEntry_ReturnsFalse()
         {
             (DialogSuppressionService service, _) = Build();
 
@@ -41,7 +41,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task IsSuppressedAsync_None_FragtDieDatenbankNichtEinmal()
+        public async Task IsSuppressedAsync_None_DoesNotEvenQueryTheDatabase()
         {
             (DialogSuppressionService service, FakeDialogSuppressionDataService data) = Build();
 
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task SuppressAsync_WirktSofortUndUeberlebtDieNaechsteAbfrage()
+        public async Task SuppressAsync_TakesEffectAtOnceAndSurvivesTheNextQuery()
         {
             (DialogSuppressionService service, _) = Build();
 
@@ -60,7 +60,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task ZweiAbfragen_LesenNurEinmalAusDerDatenbank()
+        public async Task TwoQueries_ReadFromTheDatabaseOnlyOnce()
         {
             (DialogSuppressionService service, FakeDialogSuppressionDataService data) = Build();
 
@@ -71,7 +71,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task RestoreAsync_NimmtDenEintragAuchAusDemZwischenspeicher()
+        public async Task RestoreAsync_AlsoRemovesTheEntryFromTheCache()
         {
             (DialogSuppressionService service, _) = Build();
             await service.SuppressAsync(DialogKey.OnlineSearchFailed, TestContext.Current.CancellationToken);
@@ -83,7 +83,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task RestoreAllAsync_LeertDenZwischenspeicher()
+        public async Task RestoreAllAsync_ClearsTheCache()
         {
             (DialogSuppressionService service, _) = Build();
             await service.SuppressAsync(DialogKey.ImportFailed, TestContext.Current.CancellationToken);
@@ -97,7 +97,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task GetSuppressedAsync_UeberspringtUnbekannteSchluessel()
+        public async Task GetSuppressedAsync_SkipsUnknownKeys()
         {
             (DialogSuppressionService service, FakeDialogSuppressionDataService data) = Build();
             await data.SuppressAsync("DiesenDialogGibtEsNichtMehr", TestContext.Current.CancellationToken);
@@ -111,7 +111,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task NichtLesbareTabelle_ZeigtDenDialogUndVersuchtEsErneut()
+        public async Task UnreadableTable_ShowsTheDialogAndRetries()
         {
             // Vor der ersten Migration oder bei gesperrter Datenbank ist die Tabelle nicht
             // lesbar. Ein nicht lesbarer Merkzettel darf keinen Hinweis verschlucken, und
@@ -128,7 +128,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void Constructor_OhneBereichsfabrik_Wirft()
+        public void Constructor_WithoutScopeFactory_Throws()
         {
             _ = Assert.Throws<ArgumentNullException>(
                 () => new DialogSuppressionService(null!, new FakeLoggerFactory()));

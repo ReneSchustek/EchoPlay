@@ -10,7 +10,7 @@ namespace EchoPlay.Spotify.Tests.TestData
     {
         /// <summary>
         /// Ein einzelner Hörspiel-Künstler.
-        /// Wird bewusst eindeutig gewählt, um Suchtests reproduzierbar zu halten.
+        /// Wird eindeutig gewählt, um Suchtests reproduzierbar zu halten.
         /// </summary>
         public static SpotifyArtistDto DieDreiFragezeichen => new()
         {
@@ -20,7 +20,7 @@ namespace EchoPlay.Spotify.Tests.TestData
             // Genres werden später für Scoring- und Filtertests relevant.
             Genres = ["hörspiel", "kinderhörspiel"],
 
-            // Bilder sind für fachliche Tests irrelevant und werden daher bewusst weggelassen.
+            // Bilder sind für fachliche Tests irrelevant und werden daher weggelassen.
             ImageUrl = null
         };
 
@@ -41,7 +41,7 @@ namespace EchoPlay.Spotify.Tests.TestData
         /// <summary>
         /// Ein einzelner Track, der eine komplette Hörspielfolge repräsentiert.
         /// </summary>
-        public static SpotifyTrackDto Folge1 => new()
+        public static SpotifyTrackDto Episode1 => new()
         {
             SpotifyTrackId = "track-001",
             Title = "Folge 1",
@@ -51,7 +51,7 @@ namespace EchoPlay.Spotify.Tests.TestData
 
         /// <summary>
         /// Repräsentiert einen fachlich ungeeigneten Künstler.
-        /// Dieser Datensatz wird bewusst generisch gehalten, da es nicht um Spotify-spezifische Details geht,
+        /// Dieser Datensatz wird generisch gehalten, da es nicht um Spotify-spezifische Details geht,
         /// sondern um die Ablehnung durch die Seriensuche.
         /// </summary>
         internal static SpotifyArtistDto UnsuitableArtist => new()

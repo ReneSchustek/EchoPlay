@@ -132,7 +132,7 @@ namespace EchoPlay.App.Tests.Services
                 {
                     SourceEpisodeId = "itunes-1",
                     Title = "Folge 1",
-                    CoverImageUrl = "https://example.invalid/cover.jpg"
+                    CoverImageUrl = new Uri("https://example.invalid/cover.jpg")
                 }
             ];
 

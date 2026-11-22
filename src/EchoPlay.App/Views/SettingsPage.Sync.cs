@@ -45,7 +45,7 @@ namespace EchoPlay.App.Views
             {
                 case ProviderKeys.Spotify: RadioSpotify.IsChecked = true; break;
                 case ProviderKeys.AppleMusic: RadioAppleMusic.IsChecked = true; break;
-                case "Both": RadioBoth.IsChecked = true; break;
+                case ProviderKeys.Both: RadioBoth.IsChecked = true; break;
                 default: RadioNone.IsChecked = true; break;
             }
         }

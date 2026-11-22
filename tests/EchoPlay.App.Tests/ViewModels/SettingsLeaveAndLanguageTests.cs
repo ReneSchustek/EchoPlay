@@ -38,15 +38,11 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             _ = services.AddScoped<IDatabaseMaintenanceService>(_ => new FakeDatabaseMaintenanceService());
 
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            IServiceScopeFactory scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
             FakeSpotifyCredentialStore credentialStore = new();
             StatusBarViewModel statusBar = new(
-                scopeFactory,
-                new FakeThemeService(),
-                new TaskbarProgressService(),
-                new FakeClock());
+                scopeFactory, new FakeThemeService(), new TaskbarProgressService(), new FakeClock());
 
             return new SettingsViewModel(new SettingsViewModelContext(
                 scopeFactory,
@@ -68,7 +64,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Verlassen_OhneAenderungFragtNicht()
+        public async Task Leave_WithoutChange_DoesNotAsk()
         {
             FakeConfirmationDialogService confirmation = new();
             SettingsViewModel sut = BuildViewModel(new FakeAppSettingsDataService(), confirmation);
@@ -81,7 +77,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Verlassen_MitAenderungSpeichertNachZustimmung()
+        public async Task Leave_WithChange_SavesAfterConsent()
         {
             FakeAppSettingsDataService settingsService = new();
             FakeConfirmationDialogService confirmation = new(result: true);
@@ -99,9 +95,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Verlassen_MitAblehnungNavigiertOhneZuSpeichern()
+        public async Task Leave_WithDecline_NavigatesWithoutSaving()
         {
-            // "Nein" verwirft die Änderung bewusst. Die Seite darf trotzdem verlassen werden,
+            // "Nein" verwirft die Änderung. Die Seite darf trotzdem verlassen werden,
             // sonst sitzt der Nutzer in den Einstellungen fest.
             FakeAppSettingsDataService settingsService = new();
             FakeConfirmationDialogService confirmation = new(result: false);
@@ -119,7 +115,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Speichern_WarntWennOnlineOhneAnbieterBleibt()
+        public async Task Save_WarnsWhenOnlineStaysWithoutProvider()
         {
             // Ohne Anbieter bleibt die Online-Mediathek unsichtbar. Wer den Offline-Modus
             // abschaltet und keinen Anbieter wählt, bekommt sonst eine leere Oberfläche.
@@ -139,7 +135,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Speichern_WarntNichtWennEinAnbieterGewaehltIst()
+        public async Task Save_DoesNotWarnWhenAProviderIsSelected()
         {
             FakeErrorDialogService errorDialog = new();
             SettingsViewModel sut = BuildViewModel(
@@ -157,7 +153,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_SpeichertUndStartetNachBestaetigung()
+        public async Task LanguageSwitch_SavesAndRestartsAfterConfirmation()
         {
             FakeAppSettingsDataService settingsService = new();
             FakeLanguageSwitchService languageSwitch = new();
@@ -181,7 +177,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_BleibtOhneBestaetigungAus()
+        public async Task LanguageSwitch_WithoutConfirmation_DoesNothing()
         {
             FakeAppSettingsDataService settingsService = new();
             FakeLanguageSwitchService languageSwitch = new();
@@ -199,7 +195,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_MeldetDenAusgebliebenenNeustart()
+        public async Task LanguageSwitch_ReportsTheMissingRestart()
         {
             // Die Sprache steht in der Datenbank, der Neustart kam nicht zustande.
             // Ohne Hinweis hielte der Nutzer die Auswahl für verloren.
@@ -220,7 +216,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_IgnoriertLeerenCode()
+        public async Task LanguageSwitch_IgnoresEmptyCode()
         {
             FakeAppSettingsDataService settingsService = new();
             FakeConfirmationDialogService confirmation = new();
@@ -234,7 +230,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_TutNichtsOhneGeladeneEinstellungen()
+        public async Task LanguageSwitch_DoesNothingWithoutLoadedSettings()
         {
             // Ohne vorheriges Laden gibt es keine Entität, die geschrieben werden dürfte.
             FakeAppSettingsDataService settingsService = new();

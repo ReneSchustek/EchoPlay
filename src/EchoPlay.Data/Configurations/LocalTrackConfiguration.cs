@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,7 +7,6 @@ namespace EchoPlay.Data.Configurations
     /// <summary>
     /// EF-Core-Konfiguration für lokale Audiodateien einer Episode.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "EF Core instanziiert IEntityTypeConfiguration-Implementierungen zur Modell-Erstellung via ApplyConfigurationsFromAssembly-Reflection.")]
     internal sealed class LocalTrackConfiguration : IEntityTypeConfiguration<LocalTrack>
     {
         /// <summary>

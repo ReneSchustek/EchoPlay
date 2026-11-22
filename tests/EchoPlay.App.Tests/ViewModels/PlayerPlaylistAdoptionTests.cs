@@ -67,8 +67,6 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Single(sut.PlaylistItems);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static PlayerViewModel BuildViewModel(
             FakePlayerService playerService, ILocalCoverLoader? coverLoader = null)
         {

@@ -1,6 +1,7 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
@@ -33,8 +34,9 @@ namespace EchoPlay.App.Tests.ViewModels
         /// <summary>Wie viele Cover die Pipeline vor dem ersten Zeichnen holt.</summary>
         private const int FirstVisibleCovers = 24;
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Kontext, Teil-ViewModels und Doubles der Online-Folgenansicht für einen Testfall.
+        /// </summary>
         private sealed class Harness
         {
             public required OnlineLibraryActionsContext Context { get; init; }
@@ -77,25 +79,28 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ICoverCopyService>(_ => coverCopy);
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddSingleton<ICoverDownloader>(downloader);
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddCoverChain(services, downloader);
 
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+            return new Harness
+            {
+                Context = CreateContext(services.BuildServiceProvider(), downloader, withCoverCache),
+                Episodes = episodeService,
+                CoverCopy = coverCopy,
+                CoverImages = coverImages,
+                Downloader = downloader,
+            };
+        }
 
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
-
-            OnlineLibraryActionsContext context = new(
-                ScopeFactory: scopeFactory,
+        /// <summary>
+        /// Kontext der Online-Aktionen über dem fertigen Provider. Den Folgen-Cover-Cache bekommt
+        /// er nur, wenn der Testfall ihn prüft.
+        /// </summary>
+        private static OnlineLibraryActionsContext CreateContext(
+            ServiceProvider provider, FakeCoverDownloader downloader, bool withCoverCache)
+            => new(
+                ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
                 ConfirmationDialogService: new FakeConfirmationDialogService(),
-                ImportService: importService,
+                ImportService: ImportTestServices.CreateImportService(provider),
                 ErrorDialogService: new FakeErrorDialogService(),
                 LocalizationService: new FakeLocalizationService(),
                 OnlineAccessGuard: new FakeOnlineAccessGuard(),
@@ -105,16 +110,6 @@ namespace EchoPlay.App.Tests.ViewModels
                 WatchToggleService: null,
                 CoverDownloader: downloader,
                 RateLimiter: null);
-
-            return new Harness
-            {
-                Context = context,
-                Episodes = episodeService,
-                CoverCopy = coverCopy,
-                CoverImages = coverImages,
-                Downloader = downloader,
-            };
-        }
 
         /// <summary>
         /// Legt fortlaufend nummerierte Folgen einer Serie an und gibt sie in dieser
@@ -137,8 +132,6 @@ namespace EchoPlay.App.Tests.ViewModels
             }
             return created;
         }
-
-        // ── Serienwahl ───────────────────────────────────────────────────────────
 
         [Fact]
         public async Task SelectSeriesAsync_WithEpisodesOfTheSeries_ShowsThemAsCards()
@@ -201,6 +194,22 @@ namespace EchoPlay.App.Tests.ViewModels
             await sut.SelectSeriesAsync(card);
             sut.Dispose();
 
+            Assert.False(harness.EpisodesVM.IsLoadingEpisodes);
+        }
+
+        [Fact]
+        public async Task SelectSeriesAsync_WhenLoadingFails_StillEndsTheLoadingIndicator()
+        {
+            Harness harness = BuildHarness();
+            harness.CoverCopy.Failure = new InvalidOperationException("Datenbank gesperrt");
+            SeriesCardViewModel card = harness.CreateCard(SeriesId, "TKKG");
+            harness.SeriesVM.SetAllSeries([card]);
+
+            OnlineEpisodePipeline sut = harness.CreatePipeline();
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.SelectSeriesAsync(card));
+            sut.Dispose();
+
+            // Der Fehler geht an den Aufrufer; die Ladeanzeige darf trotzdem nicht stehen bleiben.
             Assert.False(harness.EpisodesVM.IsLoadingEpisodes);
         }
 
@@ -277,8 +286,6 @@ namespace EchoPlay.App.Tests.ViewModels
 
             sut.Dispose();
         }
-
-        // ── Chargen beim Abruf der Bilddaten ─────────────────────────────────────
 
         [Fact]
         public async Task SelectSeriesAsync_WithMoreEpisodesThanTheFirstScreen_RequestsOnlyTheVisibleCoversUpFront()
@@ -397,16 +404,14 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(harness.CoverImages.BatchRequests.Count >= 4);
         }
 
-        // ── Cover-Suche ──────────────────────────────────────────────────────────
-
         [Fact]
         public async Task SearchEpisodeCoversAsync_WithResults_MapsEveryResultToAHit()
         {
             FakeCoverSearchService search = new();
             search.SetResults(
             [
-                new("https://example.invalid/thumb1.jpg", "https://example.invalid/full1.jpg", "Folge 1", "Cover Art Archive"),
-                new("https://example.invalid/thumb2.jpg", "https://example.invalid/full2.jpg", "Folge 2", "iTunes"),
+                new(new Uri("https://example.invalid/thumb1.jpg"), new Uri("https://example.invalid/full1.jpg"), "Folge 1", "Cover Art Archive"),
+                new(new Uri("https://example.invalid/thumb2.jpg"), new Uri("https://example.invalid/full2.jpg"), "Folge 2", "iTunes"),
             ]);
 
             IReadOnlyList<CoverSearchHit> hits = await OnlineEpisodePipeline.SearchEpisodeCoversAsync(
@@ -414,7 +419,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 TestContext.Current.CancellationToken);
 
             Assert.Equal(2, hits.Count);
-            Assert.Equal("https://example.invalid/full1.jpg", hits[0].FullUrl);
+            Assert.Equal(new Uri("https://example.invalid/full1.jpg"), hits[0].FullUrl);
             Assert.Equal("Folge 2", hits[1].ReleaseTitle);
             Assert.Equal("iTunes", hits[1].Source);
         }
@@ -432,8 +437,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal(0, search.LastPage.Index);
         }
 
-        // ── Übernahme eines gewählten Covers ─────────────────────────────────────
-
         [Fact]
         public async Task ApplySelectedEpisodeCoverAsync_WhenDownloadFails_StoresNothing()
         {
@@ -441,7 +444,7 @@ namespace EchoPlay.App.Tests.ViewModels
             OnlineEpisodeCardViewModel card = new(
                 episodeId: EpisodeId, episodeNumber: 1, title: "Folge 1");
             CoverSearchHit hit = new(
-                "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+                new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");
 
             OnlineEpisodePipeline sut = harness.CreatePipeline();
@@ -464,7 +467,7 @@ namespace EchoPlay.App.Tests.ViewModels
             OnlineEpisodeCardViewModel card = new(
                 episodeId: EpisodeId, episodeNumber: 1, title: "Folge 1");
             CoverSearchHit hit = new(
-                "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+                new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");
 
             OnlineEpisodePipeline sut = harness.CreatePipeline();
@@ -485,7 +488,7 @@ namespace EchoPlay.App.Tests.ViewModels
             OnlineEpisodeCardViewModel card = new(
                 episodeId: EpisodeId, episodeNumber: 1, title: "Folge 1");
             CoverSearchHit hit = new(
-                "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+                new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");
 
             OnlineEpisodePipeline sut = harness.CreatePipeline();

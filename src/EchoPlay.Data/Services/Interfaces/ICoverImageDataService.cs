@@ -1,7 +1,6 @@
 using EchoPlay.Data.Entities.Library;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,23 +36,14 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Speichert oder aktualisiert ein Cover für eine Entity.
         /// Existiert bereits ein Cover, werden Bilddaten und SourceUrl überschrieben.
         /// </summary>
-        Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData,
-            [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-                Justification = "Internal API akzeptiert die URL so, wie sie in der DB-Spalte CoverImage.SourceUrl persistiert wird. Uri-Refactor würde Cascade durch Cover-Kaskade und Call-Sites erfordern und ist bewusst nicht umgesetzt.")]
-            string? sourceUrl = null,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Liefert Entities, deren Cover noch nie geprüft wurde oder deren Cooldown abgelaufen ist.
-        /// Für den Background-Worker: gibt die nächsten zu prüfenden Entities zurück.
-        /// </summary>
         /// <param name="entityType">"Series" oder "Episode".</param>
-        /// <param name="cooldownThreshold">Zeitpunkt, vor dem LastChecked liegen muss (oder NULL).</param>
-        /// <param name="limit">Maximale Anzahl Ergebnisse.</param>
+        /// <param name="entityId">ID der verknüpften Entity.</param>
+        /// <param name="imageData">Die Bilddaten.</param>
+        /// <param name="sourceUrl">Herkunft des Bilds; <see langword="null"/> lässt eine gespeicherte Herkunft stehen.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Entity-IDs die geprüft werden sollen.</returns>
-        Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
-            string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default);
+        Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData,
+            Uri? sourceUrl = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Prüft ob ein Cover für eine Entity existiert.
@@ -66,7 +56,7 @@ namespace EchoPlay.Data.Services.Interfaces
 
         /// <summary>
         /// Löscht alle Cover-Einträge aus der Tabelle.
-        /// Wird beim Cache-Reset aufgerufen – der BackgroundCoverService baut die Cover danach neu auf.
+        /// Wird beim Cache-Reset aufgerufen; der BackgroundCoverService baut die Cover danach neu auf.
         /// </summary>
         /// <returns>Anzahl der gelöschten Einträge.</returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>

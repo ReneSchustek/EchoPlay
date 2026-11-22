@@ -41,6 +41,16 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <!-- Angekündigt: was bei den vorhandenen Serien noch erscheint -->
+                <NavigationViewItem
+                    x:Name="NavAnnounced"
+                    x:Uid="NavAnnounced"
+                    Tag="Announced">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE787;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
                 <!-- Mediathek ist ein expandierbarer Eintrag mit zwei Unterseiten -->
                 <NavigationViewItem
                     x:Uid="NavLibrary"
@@ -164,6 +174,13 @@
                     Click="OnPlayPauseClick">
                     <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="18"/>
                 </Button>
+                <!-- Stopp blendet den Mini-Player wie das ✕ aus, nach dem Stopp ist kein Titel
+                     mehr geladen. Derselbe Click-Weg wie dort, aus demselben Grund. -->
+                <Button
+                    x:Uid="MiniPlayerStopButton"
+                    Click="OnMiniPlayerStopClick">
+                    <FontIcon Glyph="&#xE71A;" FontSize="16"/>
+                </Button>
                 <Button
                     x:Uid="MiniPlayerNextButton"
                     Command="{x:Bind MiniPlayer.NextCommand}">
@@ -283,7 +300,7 @@
             <Button
                 Grid.ColumnSpan="3"
                 x:Uid="MiniPlayerCloseButton"
-                Click="OnMiniPlayerCloseClick"
+                Click="OnMiniPlayerStopClick"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
                 Padding="6"
@@ -296,7 +313,7 @@
         </Grid>
 
         <!-- Scan-Fortschrittsbalken: 3 px hoch, nur sichtbar, während ein Scan läuft.
-             IsIndeterminate wechselt automatisch: deterministisch sobald TotalFiles bekannt ist. -->
+             Ohne bekannte Gesamtzahl der Dateien läuft er unbestimmt, danach mit Prozentangabe. -->
         <ProgressBar
             Grid.Row="2"
             Height="3"
@@ -433,6 +450,16 @@
                     Margin="8,0"
                     Visibility="{x:Bind StatusBar.UnsavedSettingsVisibility, Mode=OneWay}"/>
 
+                <!-- Abgleich: nur sichtbar, während er läuft oder wenn er gestört ist -->
+                <TextBlock
+                    Text="{x:Bind ReplicationStatus.HintText, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ReplicationStatus.DetailText, Mode=OneWay}"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Margin="8,0"
+                    Visibility="{x:Bind ReplicationStatus.HintVisibility, Mode=OneWay}"/>
+
             </StackPanel>
 
             <!-- Mittlere Gruppe: Scan-Fortschrittstext (nur sichtbar, während ein Scan läuft) -->
@@ -470,7 +497,7 @@
                         VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Aktiver Metadaten-Anbieter, z.B. "Spotify" oder "Apple Music" -->
+                <!-- Aktiver Metadaten-Anbieter, etwa "Spotify" oder "Apple Music" -->
                 <TextBlock
                     Text="{x:Bind StatusBar.ActiveProviderDisplay, Mode=OneWay}"
                     Style="{ThemeResource CaptionTextBlockStyle}"
@@ -509,7 +536,7 @@
 
         </Grid>
 
-        <!-- Theme-Wechsel-Overlay: semitr. Deckfolie mit Ladeindikator während das neue Theme angewendet wird.
+        <!-- Theme-Wechsel-Overlay: halbdurchsichtige Deckfläche mit Ladeanzeige, solange das neue Theme greift.
              Statische Farbe statt ThemeResource, sonst würde der Overlay selbst beim Wechsel aufleuchten.
              Liegt über allen anderen Inhalten (letztes Kind im Grid = höchster Z-Index). -->
         <Grid

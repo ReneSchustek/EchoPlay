@@ -23,10 +23,6 @@ namespace EchoPlay.App.Tests.Views
     {
         private static readonly XNamespace X = "http://schemas.microsoft.com/winfx/2006/xaml";
 
-        /// <summary>Wörterbücher unter <c>Themes/</c>, die keine Farbpalette sind.</summary>
-        private static readonly string[] NonPaletteDictionaries =
-            ["Tokens.xaml", "Brand.xaml", "ControlStyles.xaml"];
-
         /// <summary>Mindestkontrast für Text nach der Zugänglichkeitsvorgabe.</summary>
         private const double MinimumTextContrast = 4.5;
 
@@ -127,37 +123,29 @@ namespace EchoPlay.App.Tests.Views
             List<string> offenders = [];
             int measuredPairs = 0;
 
-            foreach (string file in EnumeratePaletteFiles())
+            foreach ((string paletteName, string sectionName, XElement dictionary) in PaletteFiles.EnumerateSections())
             {
-                string paletteName = Path.GetFileNameWithoutExtension(file);
-                XDocument document = XDocument.Load(file);
+                Dictionary<string, string> brushes = ReadBrushes(dictionary);
 
-                foreach (XElement dictionary in document.Descendants()
-                    .Where(e => e.Name.LocalName == "ResourceDictionary" && e.Attribute(X + "Key") is not null))
+                foreach ((string foregroundKey, string backgroundKey, string usage) in pairings)
                 {
-                    string sectionName = dictionary.Attribute(X + "Key")!.Value;
-                    Dictionary<string, string> brushes = ReadBrushes(dictionary);
-
-                    foreach ((string foregroundKey, string backgroundKey, string usage) in pairings)
+                    if (!brushes.TryGetValue(foregroundKey, out string? foreground)
+                        || !brushes.TryGetValue(backgroundKey, out string? background))
                     {
-                        if (!brushes.TryGetValue(foregroundKey, out string? foreground)
-                            || !brushes.TryGetValue(backgroundKey, out string? background))
-                        {
-                            // Fehlende Schlüssel meldet AllPalettes_ShareTheSameKeySet, hier
-                            // wäre es nur dieselbe Meldung ein zweites Mal.
-                            continue;
-                        }
+                        // Fehlende Schlüssel meldet AllPalettes_ShareTheSameKeySet, hier
+                        // wäre es nur dieselbe Meldung ein zweites Mal.
+                        continue;
+                    }
 
-                        double ratio = ContrastRatio(foreground, background);
-                        measuredPairs++;
+                    double ratio = ContrastRatio(foreground, background);
+                    measuredPairs++;
 
-                        if (ratio < minimum)
-                        {
-                            offenders.Add(string.Format(
-                                CultureInfo.InvariantCulture,
-                                "{0}/{1}: {2} — {3} auf {4} nur {5:F2}:1",
-                                paletteName, sectionName, usage, foregroundKey, backgroundKey, ratio));
-                        }
+                    if (ratio < minimum)
+                    {
+                        offenders.Add(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "{0}/{1}: {2} — {3} auf {4} nur {5:F2}:1",
+                            paletteName, sectionName, usage, foregroundKey, backgroundKey, ratio));
                     }
                 }
             }
@@ -254,11 +242,5 @@ namespace EchoPlay.App.Tests.Views
                 byte.Parse(digits[2..4], NumberStyles.HexNumber, CultureInfo.InvariantCulture),
                 byte.Parse(digits[4..6], NumberStyles.HexNumber, CultureInfo.InvariantCulture));
         }
-
-        private static IEnumerable<string> EnumeratePaletteFiles() =>
-            Directory
-                .EnumerateFiles(Path.Combine(RepositoryPaths.AppProject(), "Themes"), "*.xaml", SearchOption.TopDirectoryOnly)
-                .Where(p => !NonPaletteDictionaries.Contains(Path.GetFileName(p), StringComparer.OrdinalIgnoreCase))
-                .OrderBy(p => p, StringComparer.Ordinal);
     }
 }

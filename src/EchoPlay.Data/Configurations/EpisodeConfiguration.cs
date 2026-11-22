@@ -19,6 +19,20 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.HasKey(e => e.Id);
 
+            ConfigureProperties(builder);
+
+            // Restrict statt Cascade, da das Projekt ausschließlich Soft-Delete verwendet.
+            // Physisches Löschen einer Serie darf nicht automatisch Episoden entfernen.
+            _ = builder.HasOne(e => e.Series)
+                   .WithMany()
+                   .HasForeignKey(e => e.SeriesId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            ConfigureIndexes(builder);
+        }
+
+        private static void ConfigureProperties(EntityTypeBuilder<Episode> builder)
+        {
             _ = builder.Property(e => e.Title)
                    .IsRequired()
                    .HasMaxLength(256);
@@ -47,24 +61,20 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.Property(e => e.AppleMusicAlbumId)
                    .HasMaxLength(64);
+        }
 
-            // Restrict statt Cascade, da das Projekt ausschließlich Soft-Delete verwendet.
-            // Physisches Löschen einer Serie darf nicht automatisch Episoden entfernen.
-            _ = builder.HasOne(e => e.Series)
-                   .WithMany()
-                   .HasForeignKey(e => e.SeriesId)
-                   .OnDelete(DeleteBehavior.Restrict);
-
+        private static void ConfigureIndexes(EntityTypeBuilder<Episode> builder)
+        {
             _ = builder.HasIndex(e => new { e.SeriesId, e.EpisodeNumber });
 
-            // Lokal-Bibliothek: "fehlende lokale Episoden" werden über SeriesId + LocalFolderPath gesucht.
-            // Ohne diesen Index ist GetMissingLocalEpisodesAsync ein Full-Table-Scan.
+            // Lokale Mediathek: Folgen einer Serie mit oder ohne lokalen Ordner werden über
+            // SeriesId + LocalFolderPath gesucht (Zähler der Kacheln, Einlesen).
             _ = builder.HasIndex(e => new { e.SeriesId, e.LocalFolderPath })
-                   .HasFilter("IsDeleted = 0");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows);
 
             // Dashboard "Neuerscheinungen" + zukünftige Sortier-Pfade lesen nach ReleaseDate.
             _ = builder.HasIndex(e => e.ReleaseDate)
-                   .HasFilter("IsDeleted = 0 AND ReleaseDate IS NOT NULL");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows + " AND ReleaseDate IS NOT NULL");
 
             // Metadaten-Lookup: Spotify sucht Episoden über die AlbumId, um Duplikate zu vermeiden.
             _ = builder.HasIndex(e => e.SpotifyAlbumId)

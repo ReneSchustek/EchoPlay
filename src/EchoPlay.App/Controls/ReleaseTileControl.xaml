@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kachel einer Veröffentlichung aus dem Kalender: Cover, Kennzeichen, Serie, Tag und Titel.
+     Startseite und Seite „Angekündigt" zeigen dieselbe Kachel; was ein Klick tut, legt die
+     jeweilige Seite fest. Das Cover wird in Kachelgröße dekodiert. -->
+<UserControl
+    x:Class="EchoPlay.App.Controls.ReleaseTileControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Width="160" Height="160" CornerRadius="{StaticResource CardCornerRadius}">
+        <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
+        <Image Width="160" Height="160" Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="{x:Bind Item.CoverUri, Mode=OneWay}" DecodePixelWidth="160"/>
+            </Image.Source>
+        </Image>
+        <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                Margin="4,4,0,0" CornerRadius="{StaticResource ControlCornerRadius}"
+                Background="{ThemeResource AccentFillColorDefaultBrush}" Padding="6,2"
+                Visibility="{x:Bind Item.BadgeVisibility, Mode=OneWay}">
+            <TextBlock Text="{x:Bind Item.BadgeText, Mode=OneWay}" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                       FontSize="10" FontWeight="SemiBold"/>
+        </Border>
+        <Border VerticalAlignment="Bottom" Background="{StaticResource MediaScrimStrongBrush}"
+                CornerRadius="{StaticResource CardBodyCornerRadius}" Padding="6,4">
+            <StackPanel>
+                <TextBlock Text="{x:Bind Item.SeriesName, Mode=OneWay}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"
+                           MaxLines="1" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{x:Bind Item.DateLine, Mode=OneWay}" Foreground="{StaticResource TextOnMediaMutedBrush}" FontSize="10"/>
+                <TextBlock Text="{x:Bind Item.EpisodeTitle, Mode=OneWay}" Foreground="{StaticResource TextOnMediaBrush}" FontSize="12"
+                           MaxLines="1" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

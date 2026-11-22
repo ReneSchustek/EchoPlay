@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Core.Models;
 
 namespace EchoPlay.Core.Abstractions
@@ -12,14 +11,14 @@ namespace EchoPlay.Core.Abstractions
     public interface IOnlineEpisodeChecker
     {
         /// <summary>
-        /// Prüft alle übergebenen Serien sequenziell gegen die iTunes API.
-        /// Zwischen den API-Aufrufen wird ein Rate-Limiting-Delay eingehalten.
+        /// Prüft alle übergebenen Serien nacheinander gegen die iTunes API. Den Abstand
+        /// zwischen den Anfragen hält die Ratenbremse des HTTP-Clients ein.
         /// Serien, deren Prüfung fehlschlägt (z.B. kein Netz), werden übersprungen.
         /// </summary>
         /// <param name="subscribedSeries">Die zu prüfenden Serien.</param>
         /// <param name="cancellationToken">Abbruchtoken für die Hintergrundprüfung.</param>
         /// <returns>
-        /// Liste der Prüfergebnisse – nur für Serien, die erfolgreich geprüft werden konnten.
+        /// Liste der Prüfergebnisse, nur für Serien, die erfolgreich geprüft werden konnten.
         /// Kann leer sein, wenn alle Prüfungen fehlschlagen.
         /// </returns>
         Task<IReadOnlyList<OnlineEpisodeCheckResult>> CheckAllAsync(
@@ -66,7 +65,14 @@ namespace EchoPlay.Core.Abstractions
         public string? LocalFolderPath { get; init; }
 
         /// <summary>URL zum Serien-Cover.</summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-        public string? CoverImageUrl { get; init; }
+        public Uri? CoverImageUrl { get; init; }
+
+        /// <summary>
+        /// Ob die Namenssuche nur einen Künstler mit genau diesem Namen gelten lässt. Ohne den
+        /// Schalter nimmt sie mangels exaktem Treffer den ersten Kandidaten; bei kurzen
+        /// Serientiteln wie „Rätsel" ist das oft ein fremder Künstler, dessen Kennung danach
+        /// an der Serie gespeichert bliebe.
+        /// </summary>
+        public bool RequireExactArtistName { get; init; }
     }
 }

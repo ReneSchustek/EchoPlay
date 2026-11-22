@@ -47,55 +47,43 @@ namespace EchoPlay.App.Services
             {
                 // Der Text landet in der Oberfläche (Einstellungen → Verbindung testen),
                 // deshalb lokalisiert. Die Ausnahme-Meldungen unten kommen dagegen vom
-                // Framework und werden bewusst unverändert durchgereicht.
+                // Framework und werden unverändert durchgereicht.
                 return new ConnectionTestResult(false, _localizationService.Get("ConnectionTestNoProvider"));
             }
 
             try
             {
                 using IServiceScope scope = _scopeFactory.CreateScope();
-
-                switch (provider)
-                {
-                    case ProviderType.Spotify:
-                        ISpotifyApiClient spotifyClient = scope.ServiceProvider.GetRequiredService<ISpotifyApiClient>();
-                        // Minimalanfrage: Eine Künstlersuche reicht, um Token-Fluss und Netzwerk zu prüfen
-                        _ = await spotifyClient.SearchArtistsAsync("test", 1, cancellationToken);
-                        break;
-
-                    case ProviderType.AppleMusic:
-                        IAppleMusicSearchClient appleClient = scope.ServiceProvider.GetRequiredService<IAppleMusicSearchClient>();
-                        // iTunes Search API ist öffentlich, kein Token nötig, aber Netzwerk muss erreichbar sein
-                        _ = await appleClient.SearchArtistsAsync("test", 1, cancellationToken);
-                        break;
-
-                    case ProviderType.Both:
-                        // Beide Provider testen, Apple Music zuerst (ohne Credentials)
-                        IAppleMusicSearchClient appleBothClient = scope.ServiceProvider.GetRequiredService<IAppleMusicSearchClient>();
-                        _ = await appleBothClient.SearchArtistsAsync("test", 1, cancellationToken);
-
-                        ISpotifyApiClient spotifyBothClient = scope.ServiceProvider.GetRequiredService<ISpotifyApiClient>();
-                        _ = await spotifyBothClient.SearchArtistsAsync("test", 1, cancellationToken);
-                        break;
-                }
-
+                await ProbeAsync(scope.ServiceProvider, provider, cancellationToken);
                 return new ConnectionTestResult(true, null);
             }
-            catch (HttpRequestException ex)
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                // Zeitgrenze des Clients erreicht: ein Fehlschlag des Tests. Ein Abbruch des
+                // Aufrufers dagegen geht nach oben.
+                return new ConnectionTestResult(false, ex.Message);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
             {
                 return new ConnectionTestResult(false, ex.Message);
             }
-            catch (TaskCanceledException ex)
+        }
+
+        /// <summary>
+        /// Stellt je Anbieter eine Minimalanfrage: Eine Künstlersuche reicht, um Token-Fluss und
+        /// Netzwerk zu prüfen. Bei beiden kommt Apple Music zuerst, weil es ohne Zugangsdaten auskommt.
+        /// </summary>
+        private static async Task ProbeAsync(IServiceProvider services, ProviderType provider, CancellationToken cancellationToken)
+        {
+            if (provider is ProviderType.AppleMusic or ProviderType.Both)
             {
-                return new ConnectionTestResult(false, ex.Message);
+                // iTunes Search API ist öffentlich, kein Token nötig, aber Netzwerk muss erreichbar sein
+                _ = await services.GetRequiredService<IAppleMusicSearchClient>().SearchArtistsAsync("test", 1, cancellationToken);
             }
-            catch (JsonException ex)
+
+            if (provider is ProviderType.Spotify or ProviderType.Both)
             {
-                return new ConnectionTestResult(false, ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return new ConnectionTestResult(false, ex.Message);
+                _ = await services.GetRequiredService<ISpotifyApiClient>().SearchArtistsAsync("test", 1, cancellationToken);
             }
         }
     }

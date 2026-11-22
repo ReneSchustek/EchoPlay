@@ -55,12 +55,15 @@ namespace EchoPlay.App.Composition
         /// </summary>
         private static void AddSpotify(IServiceCollection services, IConfiguration configuration)
         {
-            // Basisadressen aus der Konfiguration. Die Zugangsdaten stehen bewusst nicht
-            // dort, sondern im verschlüsselten Speicher des Nutzers.
+            // Basisadressen aus der Konfiguration, sonst die Vorgaben der Optionen. Die Zugangsdaten
+            // stehen bewusst nicht dort, sondern im verschlüsselten Speicher des Nutzers. Eine
+            // unlesbare Adresse in der Konfiguration bricht den Start ab; sie ist ein Fehler der
+            // Auslieferung, kein Zustand, mit dem die Anwendung weiterlaufen sollte.
+            SpotifyOptions defaults = new();
             SpotifyOptions baseOptions = new()
             {
-                ApiBaseUrl = configuration.GetValue<string>("Spotify:ApiBaseUrl") ?? "https://api.spotify.com/v1/",
-                AuthBaseUrl = configuration.GetValue<string>("Spotify:AuthBaseUrl") ?? "https://accounts.spotify.com/"
+                ApiBaseUrl = configuration.GetValue<Uri>("Spotify:ApiBaseUrl") ?? defaults.ApiBaseUrl,
+                AuthBaseUrl = configuration.GetValue<Uri>("Spotify:AuthBaseUrl") ?? defaults.AuthBaseUrl
             };
 
             _ = services.AddSingleton<ISpotifyCredentialStore, SpotifyCredentialStore>();
@@ -76,21 +79,36 @@ namespace EchoPlay.App.Composition
         }
 
         /// <summary>
-        /// Registriert den Client für die Token-Anfrage. Die Zeitgrenze bleibt kurz, denn eine
-        /// hängende Token-Anfrage blockiert jeden weiteren Aufruf der Schnittstelle.
+        /// Grenze je Versuch der Token-Anfrage. Die Antwort ist ein kurzes JSON; was nach
+        /// fünf Sekunden nicht da ist, hängt.
+        /// </summary>
+        internal static readonly TimeSpan TokenAttemptTimeout = TimeSpan.FromSeconds(5);
+
+        /// <summary>
+        /// Gesamtgrenze der Token-Anfrage samt Wiederholungen. Bewusst kürzer als bei den
+        /// übrigen Anfragen: Eine hängende Token-Anfrage hält jeden weiteren Aufruf der
+        /// Schnittstelle auf, denn alle warten auf denselben Token.
+        /// </summary>
+        internal static readonly TimeSpan TokenTotalTimeout = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Registriert den Client für die Token-Anfrage mit kurzer Zeitgrenze
+        /// (<see cref="TokenAttemptTimeout"/>, <see cref="TokenTotalTimeout"/>).
         /// </summary>
         private static void AddTokenClient(IServiceCollection services, SpotifyOptions baseOptions)
         {
             IHttpClientBuilder tokenBuilder = services.AddHttpClient("SpotifyToken", client =>
             {
-                client.BaseAddress = new(baseOptions.AuthBaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(10);
+                client.BaseAddress = baseOptions.AuthBaseUrl;
             });
 
             // Wie bei allen fremden Gegenstellen: ein vorübergehender Fehler beim
             // Token-Holen darf den Import nicht sofort abbrechen.
-            _ = tokenBuilder.AddStandardResilienceHandler();
-            HttpClientRegistration.AttachRequestLogging(tokenBuilder);
+            HttpClientRegistration.AttachResilience(tokenBuilder, withRateLimit: false, options =>
+            {
+                options.AttemptTimeout.Timeout = TokenAttemptTimeout;
+                options.TotalRequestTimeout.Timeout = TokenTotalTimeout;
+            });
 
             // Singleton: Der Token-Zwischenspeicher lebt prozessweit, parallele Anforderungen
             // werden intern serialisiert. Die Zugangsdaten werden erst beim ersten Abruf
@@ -103,6 +121,8 @@ namespace EchoPlay.App.Composition
 
         /// <summary>
         /// Registriert den Client für die Web-Schnittstelle samt automatischer Anmeldung.
+        /// Es gelten die Grenzen der fremden Schnittstellen
+        /// (<see cref="HttpClientRegistration.ProviderTotalTimeout"/>).
         /// </summary>
         /// <remarks>
         /// Die Wiederholungsregel wird zuerst angehängt und liegt damit außen, der
@@ -114,11 +134,10 @@ namespace EchoPlay.App.Composition
         {
             IHttpClientBuilder apiBuilder = services.AddHttpClient("SpotifyApi", client =>
             {
-                client.BaseAddress = new(baseOptions.ApiBaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(15);
+                client.BaseAddress = baseOptions.ApiBaseUrl;
             });
 
-            _ = apiBuilder.AddStandardResilienceHandler();
+            HttpClientRegistration.AttachRetryPipeline(apiBuilder);
             _ = apiBuilder.AddHttpMessageHandler<SpotifyAuthMessageHandler>();
             HttpClientRegistration.AttachRequestLogging(apiBuilder);
 

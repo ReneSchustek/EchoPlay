@@ -38,8 +38,9 @@ namespace EchoPlay.App.ViewModels
         private readonly StatusBarViewModel _statusBar;
         private readonly ILanguageSwitchService? _languageSwitchService;
 
-        // Referenz auf die geladene Entität, nötig für SaveAsync, um den EF-Track nicht zu verlieren
-        private AppSettings? _loadedSettings;
+        // Ob die Seite schon einmal geladen hat. Vorher gibt es nichts zu speichern, was nicht
+        // die Werte in der Datenbank mit den Vorgaben der leeren Felder überschriebe.
+        private bool _isLoaded;
 
         private bool _isLoading;
         private bool _hasUnsavedChanges;
@@ -67,16 +68,16 @@ namespace EchoPlay.App.ViewModels
                 context.ConnectionTestCoordinator, context.CredentialStore, context.OptionsProvider, OnSubVmUserEdit);
             LocalVM = new LocalSettingsViewModel(
                 context.SyncService, context.ErrorDialogService, context.PatternAnalyzer, OnSubVmUserEdit);
-            MaintenanceVM = new MaintenanceSettingsViewModel(
-                context.ScopeFactory, context.LogViewerCoordinator, OnSubVmUserEdit);
+            MaintenanceVM = new MaintenanceSettingsViewModel(context.ScopeFactory, OnSubVmUserEdit);
+            DataTransferVM = context.DataTransfer;
+            ReplicationVM = context.Replication;
+            LogViewerVM = new LogViewerViewModel(context.LogViewerCoordinator, UiDispatcher.TryGetForCurrentThread());
 
             // Ohne Änderungs-Rückruf: Ausblenden und Zurückholen wirken sofort und hängen
             // nicht am gemeinsamen Speichern-Knopf der Seite.
             HiddenDialogsVM = new HiddenDialogsViewModel(
                 context.SuppressionService, context.LocalizationService, context.LoggerFactory);
         }
-
-        // ── Sub-VMs ─────────────────────────────────────────────────────────────
 
         /// <summary>Sub-VM für den Allgemein-Tab (Theme, Sprache, Neuerscheinungen, Offline).</summary>
         public GeneralSettingsViewModel GeneralVM { get; }
@@ -87,13 +88,26 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sub-VM für den Lokal-Tab (Pfad, Muster, Sync, Auto-Import).</summary>
         public LocalSettingsViewModel LocalVM { get; }
 
-        /// <summary>Sub-VM für Verwaltung + Protokolle (Cache, Purge, Reset, Log-Viewer).</summary>
+        /// <summary>Sub-VM für die Verwaltung (Cache, Purge, Reset, Sicherung).</summary>
         public MaintenanceSettingsViewModel MaintenanceVM { get; }
+
+        /// <summary>
+        /// Sub-VM für Export und Einspielen im Wartung-Tab. Ohne eigenen Änderungs-Rückruf: Beides
+        /// wirkt sofort und hängt nicht am Speichern-Knopf der Seite.
+        /// </summary>
+        public DataTransferViewModel? DataTransferVM { get; }
+
+        /// <summary>
+        /// Sub-VM für den Abgleich zwischen Geräten im Wartung-Tab. Wirkt sofort wie
+        /// <see cref="DataTransferVM"/>.
+        /// </summary>
+        public ReplicationSettingsViewModel? ReplicationVM { get; }
+
+        /// <summary>Sub-VM für die Protokolle (Dateiauswahl, Live-Puffer, Filter).</summary>
+        public LogViewerViewModel LogViewerVM { get; }
 
         /// <summary>Sub-VM für die Liste der dauerhaft ausgeblendeten Hinweise.</summary>
         public HiddenDialogsViewModel HiddenDialogsVM { get; }
-
-        // ── Top-VM-State ────────────────────────────────────────────────────────
 
         /// <summary>Gibt an, ob gerade ein Ladevorgang läuft.</summary>
         public bool IsLoading
@@ -122,8 +136,6 @@ namespace EchoPlay.App.ViewModels
         }
 
 
-        // ── Laden und Speichern ──────────────────────────────────────────────────
-
         /// <summary>
         /// Lädt die aktuellen Einstellungen aus der Datenbank und verteilt sie an die Sub-VMs.
         /// Das Laden markiert <see cref="HasUnsavedChanges"/> nicht als geändert.
@@ -139,7 +151,7 @@ namespace EchoPlay.App.ViewModels
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
                 AppSettings settings = await settingsService.GetAsync();
-                _loadedSettings = settings;
+                _isLoaded = true;
 
                 GeneralVM.LoadFrom(settings);
                 OnlineVM.LoadFrom(settings);
@@ -149,10 +161,14 @@ namespace EchoPlay.App.ViewModels
                 // Spotify-Verknüpfungsstatus aus dem Credential-Store laden
                 OnlineVM.LoadSpotifyStatus();
 
-                // Log-Dateien asynchron laden, das darf ruhig parallel zur restlichen Initialisierung laufen
-                await MaintenanceVM.LoadLogFilesAsync();
+                await LogViewerVM.LoadLogFilesAsync();
 
                 await HiddenDialogsVM.LoadAsync();
+
+                if (ReplicationVM is not null)
+                {
+                    await ReplicationVM.LoadAsync();
+                }
             }
             finally
             {
@@ -198,29 +214,22 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Der Task ist abgeschlossen, wenn alle Felder in der Datenbank stehen.</returns>
         public async Task SaveAsync()
         {
-            if (_loadedSettings is null)
+            if (!_isLoaded)
             {
                 return;
             }
 
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("SettingsSave");
 
-            GeneralVM.WriteTo(_loadedSettings);
-            OnlineVM.WriteTo(_loadedSettings);
-            LocalVM.WriteTo(_loadedSettings);
-            MaintenanceVM.WriteTo(_loadedSettings);
-
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            await settingsService.SaveAsync(_loadedSettings);
+            AppSettings saved = await WriteFieldsToDatabaseAsync(languageCode: null);
 
             // StatusBar sofort aktualisieren: Offline-Symbol, Menü-Sichtbarkeit der
             // Online-Mediathek und Provider-Anzeige müssen ohne Seitenwechsel reagieren.
             await _statusBar.RefreshAsync();
 
             // LoggerManager sofort informieren, denn beide Werte gelten ab jetzt für alle laufenden Logger
-            _loggerManager.UpdateRetentionDays(_loadedSettings.LogRetentionDays);
-            _loggerManager.UpdateMinimumLevel(_loadedSettings.MinimumLogLevel);
+            _loggerManager.UpdateRetentionDays(saved.LogRetentionDays);
+            _loggerManager.UpdateMinimumLevel(saved.MinimumLogLevel);
 
             HasUnsavedChanges = false;
 
@@ -255,7 +264,7 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Der Task ist abgeschlossen, wenn gespeichert wurde und der Neustart angestoßen ist.</returns>
         public async Task ChangeLanguageAsync(string languageCode)
         {
-            if (_loadedSettings is null || string.IsNullOrWhiteSpace(languageCode))
+            if (!_isLoaded || string.IsNullOrWhiteSpace(languageCode))
             {
                 return;
             }
@@ -272,19 +281,8 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Sub-VM-Werte in die Entität schreiben, damit der Neustart keine offenen
-            // Änderungen der Einstellungsseite verwirft.
-            GeneralVM.WriteTo(_loadedSettings);
-            OnlineVM.WriteTo(_loadedSettings);
-            LocalVM.WriteTo(_loadedSettings);
-            MaintenanceVM.WriteTo(_loadedSettings);
-            _loadedSettings.ActiveLanguage = languageCode;
-
-            using (IServiceScope scope = _scopeFactory.CreateScope())
-            {
-                IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-                await settingsService.SaveAsync(_loadedSettings);
-            }
+            // Die Werte der Seite mitspeichern, damit der Neustart keine offenen Änderungen verwirft.
+            _ = await WriteFieldsToDatabaseAsync(languageCode);
 
             HasUnsavedChanges = false;
 
@@ -307,6 +305,36 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Schreibt die Felder der Seite in einen frisch gelesenen Datensatz und speichert ihn.
+        /// </summary>
+        /// <remarks>
+        /// Frisch gelesen, nicht der beim Öffnen geladene: Während die Seite offen ist, schreiben
+        /// andere Stellen in dieselbe Zeile, etwa die Lautstärke, die Sortierung der Mediathek
+        /// oder die Zeit der letzten Update-Prüfung. Gespeichert wird der ganze Datensatz; mit dem
+        /// alten Stand gingen diese Werte verloren. Die Bereiche schreiben nur ihre eigenen Felder.
+        /// </remarks>
+        /// <param name="languageCode">Die neue Oberflächensprache, oder <see langword="null"/>, wenn sie bleibt.</param>
+        /// <returns>Der gespeicherte Datensatz.</returns>
+        private async Task<AppSettings> WriteFieldsToDatabaseAsync(string? languageCode)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
+            AppSettings settings = await settingsService.GetAsync();
+
+            GeneralVM.WriteTo(settings);
+            OnlineVM.WriteTo(settings);
+            LocalVM.WriteTo(settings);
+            MaintenanceVM.WriteTo(settings);
+            if (languageCode is not null)
+            {
+                settings.ActiveLanguage = languageCode;
+            }
+
+            await settingsService.SaveAsync(settings);
+            return settings;
+        }
+
+        /// <summary>
         /// Wird von allen Sub-VMs bei Nutzeränderung aufgerufen und aktiviert
         /// <see cref="HasUnsavedChanges"/>. Während <see cref="LoadAsync"/> unterdrückt jedes
         /// Sub-VM selbst den Callback.
@@ -320,6 +348,6 @@ namespace EchoPlay.App.ViewModels
         /// Stoppt den Log-Live-View-Timer und gibt die Sub-VM-Ressourcen frei.
         /// Wird von der Page beim Verlassen aufgerufen.
         /// </summary>
-        public void Dispose() => MaintenanceVM.Dispose();
+        public void Dispose() => LogViewerVM.Dispose();
     }
 }

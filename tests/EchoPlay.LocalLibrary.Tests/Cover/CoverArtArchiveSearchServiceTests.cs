@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using System;
 using System.Collections.Generic;
@@ -46,7 +47,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new(musicBrainzStatus, musicBrainzBody, coverArtStatus);
             HttpClient client = new(handler);
-            return new CoverArtArchiveSearchService(client);
+            return new CoverArtArchiveSearchService(client, new FakeLoggerFactory());
         }
 
         [Fact]
@@ -87,8 +88,8 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             Assert.Equal("TKKG – Hörspiel", result[0].ReleaseTitle);
             Assert.Equal("Cover Art Archive", result[0].Source);
             // URL enthält die MBID aus dem JSON
-            Assert.Contains("abc-123", result[0].ThumbnailUrl, StringComparison.Ordinal);
-            Assert.Contains("abc-123", result[0].FullUrl, StringComparison.Ordinal);
+            Assert.Contains("abc-123", result[0].ThumbnailUrl.OriginalString, StringComparison.Ordinal);
+            Assert.Contains("abc-123", result[0].FullUrl.OriginalString, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -109,14 +110,12 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             // Ein Netzwerkfehler darf nicht zu einer Exception führen; leere Liste als Fallback
             FakeHttpMessageHandler handler = new(throwException: true);
             HttpClient client = new(handler);
-            CoverArtArchiveSearchService service = new(client);
+            CoverArtArchiveSearchService service = new(client, new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("TKKG", ct: TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
-
-        // ── Fake HTTP-Handler ──────────────────────────────────────────────────
 
         /// <summary>
         /// Steuerbarer <see cref="HttpMessageHandler"/> für Tests.

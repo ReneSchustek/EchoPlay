@@ -87,8 +87,8 @@ namespace EchoPlay.App.ViewModels
         public bool IsSpecialEpisode { get; }
 
         /// <summary>
-        /// Cover-Bild der Episode. Null wenn kein Cover vorhanden,
-        /// dann zeigt die UI dann ein Platzhalter-Icon.
+        /// Cover-Bild der Episode. Null, wenn kein Cover vorhanden ist;
+        /// dann zeigt die UI ein Platzhalter-Icon.
         /// </summary>
         public BitmapImage? CoverImage { get; }
 
@@ -130,7 +130,7 @@ namespace EchoPlay.App.ViewModels
             : Title;
 
         /// <summary>
-        /// Automation-Name der Kontextmen\u00fc-Schaltfl\u00e4che auf der Folgen-Kachel.
+        /// Automation-Name der Kontextmenü-Schaltfläche auf der Folgen-Kachel.
         /// </summary>
         public string ActionsAutomationName => AutomationNameFormatter.Format(
             _localizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", DisplayTitle);
@@ -141,14 +141,14 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Ob mindestens eine lokale Audiodatei vorliegt.</summary>
         public bool HasLocalTrack { get; }
 
-        /// <summary>Serientitel \u2013 wird f\u00fcr die Spotify-Suche gebraucht, wenn keine Album-ID vorliegt.</summary>
+        /// <summary>Serientitel – wird für die Spotify-Suche gebraucht, wenn keine Album-ID vorliegt.</summary>
         public string? SeriesTitle { get; }
 
         /// <summary>
-        /// Sichtbarkeit der Aktion \u201eIn Spotify \u00f6ffnen".
-        /// Nur f\u00fcr Folgen ohne lokale Datei \u2014 wo lokal abgespielt werden kann, ist der Umweg
-        /// \u00fcber Spotify kein Gewinn. Ohne Album-ID greift die Suche, damit Spotify unabh\u00e4ngig
-        /// davon nutzbar bleibt, \u00fcber welchen Anbieter importiert wurde.
+        /// Sichtbarkeit der Aktion „In Spotify öffnen“.
+        /// Nur für Folgen ohne lokale Datei — wo lokal abgespielt werden kann, ist der Umweg
+        /// über Spotify kein Gewinn. Ohne Album-ID greift die Suche, damit Spotify unabhängig
+        /// davon nutzbar bleibt, über welchen Anbieter importiert wurde.
         /// </summary>
         public Visibility OpenInSpotifyVisibility =>
             !HasLocalTrack && TryBuildSpotifyUrl(out _)
@@ -156,11 +156,11 @@ namespace EchoPlay.App.ViewModels
                 : Visibility.Collapsed;
 
         /// <summary>
-        /// \u00d6ffnet die Folge in Spotify (App oder Webseite): mit bekannter Album-ID direkt das
+        /// Öffnet die Folge in Spotify (App oder Webseite): mit bekannter Album-ID direkt das
         /// Album, sonst die Spotify-Suche nach Serie und Folge.
-        /// Startet dort nichts \u2014 die Wiedergabe l\u00f6st der Nutzer selbst aus.
+        /// Startet dort nichts — die Wiedergabe löst der Nutzer selbst aus.
         /// </summary>
-        /// <returns><see langword="true"/>, wenn der Link ge\u00f6ffnet werden konnte.</returns>
+        /// <returns><see langword="true"/>, wenn der Link geöffnet werden konnte.</returns>
         public bool OpenInSpotify()
         {
             // Erst die App: dort ist der Nutzer angemeldet, im Browser meist nicht.
@@ -178,7 +178,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Album-Link bevorzugt, Suchlink als Auffangl\u00f6sung.
+        /// Album-Link bevorzugt, Suchlink als Auffanglösung.
         /// </summary>
         private bool TryBuildSpotifyUrl(out string? url)
         {

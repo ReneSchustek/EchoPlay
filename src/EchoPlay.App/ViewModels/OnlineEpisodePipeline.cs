@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
@@ -35,6 +36,11 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Public Call-Counter für Tests.</summary>
         public int ApplyEpisodeCoverCallCount { get; private set; }
 
+        /// <summary>Richtet die Folgen-Pipeline ein.</summary>
+        /// <param name="context">Die Dienste der Online-Mediathek.</param>
+        /// <param name="seriesVM">Die Serienliste mit der Auswahl.</param>
+        /// <param name="episodesVM">Nimmt die Folgenkacheln auf.</param>
+        /// <param name="state">Liefert die gehörten Folgen.</param>
         public OnlineEpisodePipeline(
             OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,
@@ -46,12 +52,7 @@ namespace EchoPlay.App.ViewModels
             _episodesVM = episodesVM;
             _state = state;
 
-            // Der Protokollkanal wird einmalig beim Aufbau geholt, weil die Kontextklasse
-            // keinen führt und der Bereich hier sofort wieder geschlossen wird.
-            using IServiceScope loggerScope = context.ScopeFactory.CreateScope();
-            _logger = loggerScope.ServiceProvider
-                .GetService<EchoPlay.Logger.Abstractions.ILoggerFactory>()
-                ?.CreateLogger("OnlineEpisodePipeline");
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(context.ScopeFactory, nameof(OnlineEpisodePipeline));
         }
 
         /// <summary>
@@ -67,24 +68,12 @@ namespace EchoPlay.App.ViewModels
             // Laufende Cover-Downloads abbrechen, sonst landen Bytes in einem geschlossenen Panel.
             if (card.IsSelectedInAccordion)
             {
-                if (_episodeCoverCts is not null)
-                {
-                    await _episodeCoverCts.CancelAsync();
-                    _episodeCoverCts.Dispose();
-                    _episodeCoverCts = null;
-                }
-
-                _seriesVM.DeselectSeries();
-                _episodesVM.Clear();
+                await CollapseSelectionAsync();
                 return;
             }
 
             // Laufende Cover-Downloads der vorherigen Serie abbrechen
-            if (_episodeCoverCts is not null)
-            {
-                await _episodeCoverCts.CancelAsync();
-                _episodeCoverCts.Dispose();
-            }
+            await CancelEpisodeCoverDownloadsAsync();
             _episodeCoverCts = new CancellationTokenSource();
             CancellationToken ct = _episodeCoverCts.Token;
 
@@ -94,63 +83,64 @@ namespace EchoPlay.App.ViewModels
             _seriesVM.SelectSeries(card);
             _episodesVM.IsLoadingEpisodes = true;
 
-            // Die drei Schritte bis zur Liste werden einzeln gemessen. Ohne diese Zahlen ist
-            // an einer trägen Serienansicht nicht zu erkennen, welcher davon sie träge macht.
-            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-            // Lokale Cover in CoverImages sicherstellen; liest cover.jpg / ID3-Tags aus dem Dateisystem
-            if (_ctx.BackgroundCoverService is not null)
+            try
             {
-                _ = await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title);
+                await LoadEpisodesAsync(card, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Eine andere Serie wurde gewählt; deren Laden bestimmt jetzt die Anzeige.
+            }
+            finally
+            {
+                // Die Ladeanzeige gehört dem jüngsten Aufruf. Ein überholter darf sie nicht
+                // ausschalten, ein gescheiterter muss es, sonst dreht sie, bis die Seite wechselt.
+                if (!ct.IsCancellationRequested)
+                {
+                    _episodesVM.IsLoadingEpisodes = false;
+                }
+            }
+        }
+
+        private async Task CollapseSelectionAsync()
+        {
+            await CancelEpisodeCoverDownloadsAsync();
+            _seriesVM.DeselectSeries();
+            _episodesVM.Clear();
+        }
+
+        private async Task CancelEpisodeCoverDownloadsAsync()
+        {
+            if (_episodeCoverCts is null)
+            {
+                return;
             }
 
-            long ensureMs = stopwatch.ElapsedMilliseconds;
-            stopwatch.Restart();
+            await _episodeCoverCts.CancelAsync();
+            _episodeCoverCts.Dispose();
+            _episodeCoverCts = null;
+        }
 
-            // Cover aus lokalen Episoden auf Online-Episoden kopieren (reine SQL-Operation, ms)
+        /// <summary>
+        /// Lädt die Folgen der gewählten Serie, setzt die ersten Cover und stößt das Nachladen an.
+        /// </summary>
+        /// <param name="card">Die gewählte Serie.</param>
+        /// <param name="ct">Endet, sobald eine andere Serie gewählt wird.</param>
+        private async Task LoadEpisodesAsync(SeriesCardViewModel card, CancellationToken ct)
+        {
             using IServiceScope scope = _ctx.ScopeFactory.CreateScope();
-
-            ICoverCopyService coverCopy = scope.ServiceProvider.GetRequiredService<ICoverCopyService>();
-            _ = await coverCopy.CopyFromMatchingEpisodesAsync(card.Id);
-
-            long copyMs = stopwatch.ElapsedMilliseconds;
-            stopwatch.Restart();
-
-            // Episoden aus DB laden, die Cover sind jetzt schon gesetzt
-            IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
-            IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(card.Id);
-
-            long episodesMs = stopwatch.ElapsedMilliseconds;
-            _logger?.Info(
-                "Serienansicht \"{Title}\": LokaleCover={EnsureMs} ms, CoverKopie={CopyMs} ms, Folgen={EpisodesMs} ms ({Count} Folgen)",
-                card.Title, ensureMs, copyMs, episodesMs, episodes.Count);
-
-            List<OnlineEpisodeCardViewModel> episodeCards = new(episodes.Count);
-
-            foreach (Episode episode in episodes)
-            {
-                episodeCards.Add(new OnlineEpisodeCardViewModel(
-                    episodeId: episode.Id,
-                    episodeNumber: episode.EpisodeNumber,
-                    title: episode.Title,
-                    releaseDate: episode.ReleaseDate,
-                    isCompleted: _state.CompletedEpisodeIds.Contains(episode.Id),
-                    providerUrl: episode.ProviderUrl,
-                    scopeFactory: _ctx.ScopeFactory,
-                    appleMusicAlbumId: episode.AppleMusicAlbumId,
-                    spotifyAlbumId: episode.SpotifyAlbumId));
-            }
+            IReadOnlyList<Episode> episodes = await PrepareEpisodesAsync(scope.ServiceProvider, card, ct);
+            List<OnlineEpisodeCardViewModel> episodeCards = [.. episodes.Select(ToCard)];
 
             // Nur die oberste Reihe bekommt ihr Bild sofort. Vorher alle zu holen hieße bei
             // „Bibi Blocksberg" (399 Folgen, rund 40 MB Bilddaten), dass die Liste erst nach
             // knapp zwanzig Sekunden überhaupt erscheint (gemessen, nicht geschätzt).
-            stopwatch.Restart();
+            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
             await ApplyCoversAsync(episodeCards, episodes, 0, FirstVisibleCovers, ct);
             long firstCoversMs = stopwatch.ElapsedMilliseconds;
 
             stopwatch.Restart();
             _episodesVM.SetEpisodes(episodeCards);
-            _episodesVM.IsLoadingEpisodes = false;
             long setMs = stopwatch.ElapsedMilliseconds;
 
             _logger?.Info(
@@ -165,21 +155,54 @@ namespace EchoPlay.App.ViewModels
 
             // Fehlende Cover im Hintergrund nachladen. Die UI zeigt erst Platzhalter,
             // Cover erscheinen progressiv sobald der Download fertig ist.
-            bool hasMissingCovers = false;
-            foreach (OnlineEpisodeCardViewModel ep in episodeCards)
-            {
-                if (ep.CoverImage is null)
-                {
-                    hasMissingCovers = true;
-                    break;
-                }
-            }
-
-            if (hasMissingCovers && _ctx.CoverCacheService is not null)
+            if (episodeCards.Any(ep => ep.CoverImage is null) && _ctx.CoverCacheService is not null)
             {
                 _ = RefreshMissingEpisodeCoversAsync(card.Id, episodeCards, ct);
             }
         }
+
+        /// <summary>
+        /// Sorgt für die Cover und lädt die Folgen. Die drei Schritte werden einzeln gemessen:
+        /// Ohne diese Zahlen ist an einer trägen Serienansicht nicht zu erkennen, welcher davon sie
+        /// träge macht.
+        /// </summary>
+        private async Task<IReadOnlyList<Episode>> PrepareEpisodesAsync(IServiceProvider services, SeriesCardViewModel card, CancellationToken ct)
+        {
+            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+            // Lokale Cover in CoverImages sicherstellen; liest cover.jpg / ID3-Tags aus dem Dateisystem
+            if (_ctx.BackgroundCoverService is not null)
+            {
+                _ = await _ctx.BackgroundCoverService.EnsureLocalCoversForSeriesAsync(card.Title, ct);
+            }
+
+            long ensureMs = stopwatch.ElapsedMilliseconds;
+            stopwatch.Restart();
+
+            // Cover aus lokalen Episoden auf Online-Episoden kopieren (reine SQL-Operation, ms)
+            _ = await services.GetRequiredService<ICoverCopyService>().CopyFromMatchingEpisodesAsync(card.Id, ct);
+            long copyMs = stopwatch.ElapsedMilliseconds;
+            stopwatch.Restart();
+
+            // Episoden aus DB laden, die Cover sind jetzt schon gesetzt
+            IReadOnlyList<Episode> episodes = await services.GetRequiredService<IEpisodeDataService>().GetBySeriesIdAsync(card.Id, ct);
+            _logger?.Info(
+                "Serienansicht \"{Title}\": LokaleCover={EnsureMs} ms, CoverKopie={CopyMs} ms, Folgen={EpisodesMs} ms ({Count} Folgen)",
+                card.Title, ensureMs, copyMs, stopwatch.ElapsedMilliseconds, episodes.Count);
+            return episodes;
+        }
+
+        /// <summary>Die Kachel einer Folge, noch ohne Cover.</summary>
+        private OnlineEpisodeCardViewModel ToCard(Episode episode) => new(
+            episodeId: episode.Id,
+            episodeNumber: episode.EpisodeNumber,
+            title: episode.Title,
+            releaseDate: episode.ReleaseDate,
+            isCompleted: _state.CompletedEpisodeIds.Contains(episode.Id),
+            providerUrl: WebAddress.TryParse(episode.ProviderUrl),
+            scopeFactory: _ctx.ScopeFactory,
+            appleMusicAlbumId: episode.AppleMusicAlbumId,
+            spotifyAlbumId: episode.SpotifyAlbumId);
 
         /// <summary>
         /// Wie viele Cover vor dem ersten Zeichnen umgewandelt werden. Das deckt den
@@ -226,13 +249,13 @@ namespace EchoPlay.App.ViewModels
         {
             if (_ctx.CoverService is null) return;
 
-            int ende = Math.Min(start + count, cards.Count);
-            if (ende <= start) return;
+            int end = Math.Min(start + count, cards.Count);
+            if (end <= start) return;
 
             // Die Bilddaten dieser Spanne in einem Zug: ein Abruf je Charge statt einem für
             // den ganzen Bestand.
-            List<Guid> episodeIds = new(ende - start);
-            for (int i = start; i < ende; i++)
+            List<Guid> episodeIds = new(end - start);
+            for (int i = start; i < end; i++)
             {
                 episodeIds.Add(episodes[i].Id);
             }
@@ -240,7 +263,7 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyDictionary<Guid, byte[]> coverMap =
                 await _ctx.CoverService.GetEpisodeCoverBytesAsync(episodeIds, ct);
 
-            for (int i = start; i < ende; i++)
+            for (int i = start; i < end; i++)
             {
                 if (ct.IsCancellationRequested) return;
 
@@ -291,9 +314,10 @@ namespace EchoPlay.App.ViewModels
             {
                 // Serienwechsel, also erwarteter Abbruch.
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Cover sind Beiwerk; die Liste bleibt bedienbar.
+                _logger?.Warning("Übrige Folgen-Cover nicht nachgetragen: {Reason}", ex.Message);
             }
         }
 
@@ -334,9 +358,10 @@ namespace EchoPlay.App.ViewModels
             {
                 // Serienwechsel, also erwarteter Abbruch
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Cover-Nachladen ist optional, kein Fehler für den Nutzer
+                // Das Nachladen ist eine Ergänzung; die Liste bleibt mit Platzhaltern bedienbar.
+                _logger?.Warning("Fehlende Folgen-Cover nicht heruntergeladen: {Reason}", ex.Message);
             }
         }
 
@@ -345,15 +370,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task UpdateEpisodeCardsFromDbAsync(List<OnlineEpisodeCardViewModel> episodeCards)
         {
-            List<Guid> missingIds = [];
-            foreach (OnlineEpisodeCardViewModel epCard in episodeCards)
-            {
-                if (epCard.CoverImage is null)
-                {
-                    missingIds.Add(epCard.EpisodeId);
-                }
-            }
-
+            List<Guid> missingIds = [.. episodeCards.Where(epCard => epCard.CoverImage is null).Select(epCard => epCard.EpisodeId)];
             if (missingIds.Count == 0)
             {
                 return;
@@ -414,6 +431,10 @@ namespace EchoPlay.App.ViewModels
         public async Task ApplySelectedEpisodeCoverAsync(OnlineEpisodeCardViewModel card, CoverSearchHit hit)
         {
             ApplyEpisodeCoverCallCount++;
+            if (_ctx.CoverService is null)
+            {
+                return;
+            }
 
             // Netzwerkfehler ergeben null, dann bleibt der Platzhalter stehen.
             byte[]? coverBytes = await _ctx.CoverDownloader.DownloadAsync(hit.FullUrl);

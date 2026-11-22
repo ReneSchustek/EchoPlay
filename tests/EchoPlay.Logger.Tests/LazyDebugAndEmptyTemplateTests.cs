@@ -61,8 +61,6 @@ namespace EchoPlay.Logger.Tests
             Assert.Equal("Serie {SeriesId} importiert", Assert.Single(recording.Messages));
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         /// <summary>Protokollkanal, der jede Meldung mitschreibt.</summary>
         private sealed class RecordingLogger : ILogger
         {

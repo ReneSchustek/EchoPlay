@@ -15,7 +15,7 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="key">Der Ressourcenschlüssel, z.B. <c>"NavDashboard.Content"</c>.</param>
         /// <returns>Der lokalisierte String oder ein Fehlmarker, wenn der Schlüssel fehlt.</returns>
-        // Zugriff bewusst über SafeResourceLoader (Windows-App-SDK-Loader): der WinRT-Loader
+        // Zugriff über SafeResourceLoader (Windows-App-SDK-Loader): der WinRT-Loader
         // crasht im unpackaged-Betrieb. Siehe SafeResourceLoader.
         public string Get(string key) => ResourceKeyResolver.Resolve(key, k => SafeResourceLoader.Get(k));
     }

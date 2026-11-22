@@ -45,7 +45,9 @@ namespace EchoPlay.App.Helpers
             return true;
         }
 
-        [GeneratedRegex("^[0-9]{4,15}$", RegexOptions.Compiled)]
+        // iTunes-Sammlungskennungen sind neun- bis zehnstellig; die Spanne lässt Raum, ohne
+        // Zeichen außer Ziffern zuzulassen.
+        [GeneratedRegex("^[0-9]{4,15}$", RegexOptions.None, matchTimeoutMilliseconds: 500)]
         private static partial Regex AlbumIdPattern();
     }
 }

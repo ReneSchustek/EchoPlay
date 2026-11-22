@@ -114,8 +114,9 @@ namespace EchoPlay.App.Tests.Services
                 new FakeLoggerFactory());
         }
 
-        // ── Test-Stubs ─────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Scheitert bei jedem Aufruf mit der vorgegebenen Ausnahme.
+        /// </summary>
         private sealed class ThrowingAppleClient : IAppleMusicSearchClient
         {
             private readonly Exception _ex;

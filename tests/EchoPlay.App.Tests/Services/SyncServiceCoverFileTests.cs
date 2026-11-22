@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
@@ -75,6 +76,24 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task Sync_WithSavingToFolderSwitchedOff_WritesNoFile()
+        {
+            string root = CreateTempFolder();
+            try
+            {
+                Fixture fixture = await BuildFixtureAsync(root, withStoredCover: true, withLocalFolder: true, saveCoverToDirectory: false);
+
+                _ = await fixture.Service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                Assert.Empty(Directory.GetFiles(root));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Fact]
         public async Task Sync_WithoutStoredCover_WritesNoFile()
         {
             string root = CreateTempFolder();
@@ -110,29 +129,17 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
+        /// <summary>
+        /// Der Dienst eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required SyncService Service { get; init; }
         }
 
-        private static async Task<Fixture> BuildFixtureAsync(
-            string seriesRoot, bool withStoredCover, bool withLocalFolder)
+        /// <summary>Cover-Tabelle, in der das Folgen-Cover wahlweise schon gespeichert ist.</summary>
+        private static async Task<FakeCoverImageDataService> CoverImagesForAsync(Episode episode, bool withStoredCover)
         {
-            FakeSeriesDataService seriesService = new();
-            Series series = new() { Title = "TKKG", LocalFolderPath = seriesRoot };
-            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
-
-            FakeEpisodeDataService episodeService = new();
-            Episode episode = new()
-            {
-                SeriesId = series.Id,
-                Title = "Folge 1",
-                LocalFolderPath = withLocalFolder ? seriesRoot : null,
-            };
-            await episodeService.AddAsync(episode, TestContext.Current.CancellationToken);
-
             FakeCoverImageDataService coverImages = new();
             if (withStoredCover)
             {
@@ -141,40 +148,37 @@ namespace EchoPlay.App.Tests.Services
                     cancellationToken: TestContext.Current.CancellationToken);
             }
 
+            return coverImages;
+        }
+
+        private static async Task<Fixture> BuildFixtureAsync(
+            string seriesRoot, bool withStoredCover, bool withLocalFolder, bool saveCoverToDirectory = true)
+        {
+            FakeSeriesDataService seriesService = new();
+            Series series = new() { Title = "TKKG", LocalFolderPath = seriesRoot };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+
+            FakeEpisodeDataService episodeService = new();
+            Episode episode = new() { SeriesId = series.Id, Title = "Folge 1", LocalFolderPath = withLocalFolder ? seriesRoot : null };
+            await episodeService.AddAsync(episode, TestContext.Current.CancellationToken);
+            FakeCoverImageDataService coverImages = await CoverImagesForAsync(episode, withStoredCover);
+
             FakeAppSettingsDataService settings = new(new AppSettings
             {
                 LocalLibraryEnabled = true,
                 LocalLibraryRootPath = seriesRoot,
+                SaveCoverToDirectory = saveCoverToDirectory,
             });
-
-            ServiceCollection services = new();
-            _ = services.AddScoped<IAppSettingsDataService>(_ => settings);
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
-            _ = services.AddScoped<ILocalLibraryScanner>(_ => new FakeLocalLibraryScanner([]));
-            _ = services.AddScoped<IScanOrchestrator>(_ => new FakeScanOrchestrator(new FakeLocalLibraryScanner([])));
-            _ = services.AddScoped<ILocalCoverService>(_ => new FakeLocalCoverService());
-            _ = services.AddScoped<ITrackMatcher>(_ => new FakeTrackMatcher());
-            _ = services.AddScoped<IAudioMetadataReader>(_ => new FakeAudioMetadataReader());
-            _ = services.AddScoped<ICoverImageDataService>(_ => coverImages);
-            _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
-            _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
-
-            ServiceProvider provider = services.BuildServiceProvider();
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
-            EchoPlay.App.Services.CoverService coverService = new(
-                scopeFactory, provider.GetRequiredService<ILoggerFactory>());
 
             return new Fixture
             {
-                Service = new SyncService(
-                    scopeFactory,
-                    provider.GetRequiredService<ILoggerFactory>(),
-                    new FakeScanEventService(),
-                    coverService),
+                Service = new SyncServiceSetup
+                {
+                    Settings = settings,
+                    Series = seriesService,
+                    Episodes = episodeService,
+                    CoverImages = coverImages,
+                }.Build(),
             };
         }
 

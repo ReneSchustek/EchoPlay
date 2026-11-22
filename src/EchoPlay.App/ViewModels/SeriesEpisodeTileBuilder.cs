@@ -4,6 +4,7 @@ using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -16,7 +17,7 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Liest eine Serie samt ihrer Folgen aus der Datenbank und baut daraus die Kacheln
-    /// der Detailansicht — mit Hörstatus, Fortschritt und Cover.
+    /// der Detailansicht mit Hörstatus, Fortschritt und Cover.
     /// </summary>
     /// <remarks>
     /// Die Wiedergabestände kommen in einer einzigen Abfrage; je Folge einzeln nachzusehen
@@ -29,6 +30,7 @@ namespace EchoPlay.App.ViewModels
         private readonly ILocalizationService? _localizationService;
 
         private ICoverViewModelFactory? _coverFactory;
+        private readonly ILogger? _logger;
 
         /// <summary>
         /// Initialisiert den Kachelbau.
@@ -36,14 +38,17 @@ namespace EchoPlay.App.ViewModels
         /// <param name="scopeFactory">Für die Abfragen und die Cover-Fabrik.</param>
         /// <param name="coverService">Zentraler Cover-Dienst. Nullable für Tests.</param>
         /// <param name="localizationService">Liefert die Namen für die Bedienhilfen. Nullable für Tests.</param>
+        /// <param name="logger">Protokolliert übersprungene Cover-Quellen. Nullable für Tests.</param>
         public SeriesEpisodeTileBuilder(
             IServiceScopeFactory scopeFactory,
             ICoverService? coverService,
-            ILocalizationService? localizationService)
+            ILocalizationService? localizationService,
+            ILogger? logger = null)
         {
             _scopeFactory = scopeFactory;
             _coverService = coverService;
             _localizationService = localizationService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -130,7 +135,7 @@ namespace EchoPlay.App.ViewModels
                 playbackStatus: playbackStatus,
                 releaseDate: episode.ReleaseDate,
                 playEpisode: () => playEpisode(capturedId),
-                progressPercent: CalculateProgress(episodeState, episode.Duration),
+                progressPercent: PlaybackStatusResolver.ProgressPercent(episodeState, episode.Duration),
                 isSpecialEpisode: episode.EpisodeNumber is null or 0,
                 coverImage: cover,
                 localizationService: _localizationService,
@@ -139,19 +144,6 @@ namespace EchoPlay.App.ViewModels
                 appleMusicAlbumId: episode.AppleMusicAlbumId,
                 seriesTitle: series?.Title ?? string.Empty,
                 hasOpenPosition: PlaybackStatusResolver.HasOpenPosition(episodeState, episode.Duration));
-        }
-
-        /// <summary>Berechnet den Fortschritt einer Folge in Prozent (0–100).</summary>
-        private static double CalculateProgress(PlaybackState? state, TimeSpan duration)
-        {
-            if (state is null || duration <= TimeSpan.Zero)
-            {
-                return 0;
-            }
-
-            return state.IsCompleted
-                ? 100
-                : Math.Min(100, state.LastPosition.TotalSeconds / duration.TotalSeconds * 100);
         }
 
         /// <summary>Baut den Fortschrittstext, etwa „42 von 229 Folgen gehört".</summary>
@@ -177,7 +169,7 @@ namespace EchoPlay.App.ViewModels
 
         // Wird beim ersten Cover-Aufruf erzeugt und danach weiterverwendet.
         private ICoverViewModelFactory CoverFactory =>
-            _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService);
+            _coverFactory ??= new CoverViewModelFactory(_scopeFactory, _coverService, _logger);
     }
 
     /// <summary>

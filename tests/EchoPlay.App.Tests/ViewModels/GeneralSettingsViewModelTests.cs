@@ -18,7 +18,7 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class GeneralSettingsViewModelTests
     {
         [Fact]
-        public void Laden_UebernimmtAlleWerteOhneAlsAenderungZuGelten()
+        public void Load_TakesAllValuesWithoutCountingAsChange()
         {
             int edits = 0;
             GeneralSettingsViewModel viewModel = new(() => edits++);
@@ -45,7 +45,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void JedeNutzeraenderung_MeldetSichEinmal()
+        public void EveryUserEdit_ReportsOnce()
         {
             int edits = 0;
             GeneralSettingsViewModel viewModel = new(() => edits++);
@@ -62,7 +62,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void DerselbeWert_GiltNichtAlsAenderung()
+        public void SameValue_DoesNotCountAsChange()
         {
             int edits = 0;
             GeneralSettingsViewModel viewModel = new(() => edits++);
@@ -74,7 +74,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Schreiben_FasstDieGrenzwerte()
+        public void Write_ClampsTheLimits()
         {
             GeneralSettingsViewModel viewModel = new(() => { })
             {
@@ -90,7 +90,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Schreiben_KapptEinZuGrossesZeitfenster()
+        public void Write_CapsATooLargeWindow()
         {
             GeneralSettingsViewModel viewModel = new(() => { }) { NewReleaseDays = 1000 };
 
@@ -101,7 +101,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Schreiben_UebernimmtDieUebrigenWerteUnveraendert()
+        public void Write_TakesTheOtherValuesUnchanged()
         {
             GeneralSettingsViewModel viewModel = new(() => { })
             {
@@ -123,7 +123,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Schreiben_OhneEntitaetWirftEineAussagekraeftigeAusnahme()
+        public void Write_WithoutEntity_ThrowsAMeaningfulException()
         {
             GeneralSettingsViewModel viewModel = new(() => { });
 
@@ -137,7 +137,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [InlineData(2, LogLevel.Information)]
         [InlineData(3, LogLevel.Warning)]
         [InlineData(4, LogLevel.Error)]
-        public void Protokollstufe_LaesstSichUeberDenIndexSetzen(int index, LogLevel expected)
+        public void LogLevel_CanBeSetThroughTheIndex(int index, LogLevel expected)
         {
             GeneralSettingsViewModel viewModel = new(() => { }) { MinimumLogLevelIndex = index };
 
@@ -146,7 +146,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Sprachauswahl_NenntDeutschUndEnglisch()
+        public void LanguageChoice_NamesGermanAndEnglish()
         {
             GeneralSettingsViewModel viewModel = new(() => { });
 

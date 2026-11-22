@@ -11,7 +11,7 @@ namespace EchoPlay.Logger.Abstractions
         /// Schreibt einen Log-Eintrag an das Ziel.
         /// </summary>
         /// <param name="entry">Der zu schreibende Log-Eintrag.</param>
-        /// <returns>Ein Task der die asynchrone Operation repräsentiert.</returns>
+        /// <returns>Ein Task, der die asynchrone Operation darstellt.</returns>
         Task WriteAsync(LogEntry entry);
     }
 }

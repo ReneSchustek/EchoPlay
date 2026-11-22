@@ -1,4 +1,5 @@
 using EchoPlay.App.Infrastructure;
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Services;
 using EchoPlay.Core;
 using EchoPlay.Data.Entities.Library;
@@ -24,6 +25,7 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class LocalArtistsViewModel : ObservableObject
     {
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
         private readonly LocalArtistCardFactory _cardFactory;
         private readonly LocalArtistFilter _filter;
 
@@ -48,6 +50,7 @@ namespace EchoPlay.App.ViewModels
         {
             _cardFactory = new LocalArtistCardFactory(scopeFactory, coverBuilder);
             _filter = filter ?? new LocalArtistFilter();
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(scopeFactory, nameof(LocalArtistsViewModel));
         }
 
         /// <summary>
@@ -101,9 +104,9 @@ namespace EchoPlay.App.ViewModels
         /// Übernimmt ein geändertes Filterkriterium, meldet es und wendet den Filter neu an.
         /// Unveränderte Werte lösen nichts aus, sonst baute jede Zuweisung die Liste neu auf.
         /// </summary>
-        private void SetFilter<T>(T neu, Action<LocalArtistFilter> assign, string name, T alt)
+        private void SetFilter<T>(T newValue, Action<LocalArtistFilter> assign, string name, T oldValue)
         {
-            if (EqualityComparer<T>.Default.Equals(alt, neu))
+            if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
             {
                 return;
             }
@@ -204,10 +207,12 @@ namespace EchoPlay.App.ViewModels
         {
             IReadOnlyList<LocalArtistCardViewModel> cards = await _cardFactory.CreateAllAsync();
 
-            // Auswahl zurücksetzen, dann Liste übernehmen
+            // Auswahl zurücksetzen, dann Liste übernehmen. Sortiert wird hier statt in der
+            // Datenbank: Deren Ordnung nach Zeichencode stellt „Ärger" hinter „Zorro" und
+            // bricht die Abschnitte der Sprungleiste auf.
             SelectedArtist = null;
             SelectedArtistIndex = -1;
-            _allArtists = [.. cards];
+            _allArtists = [.. cards.OrderBy(card => card.Title, AlphabetIndex.TitleOrder)];
             ApplyFilters();
         }
 
@@ -216,6 +221,9 @@ namespace EchoPlay.App.ViewModels
         /// Wird als Callback aus dem Scan-Event aufgerufen. Duplikat-Schutz verhindert
         /// doppelte Kacheln, wenn LoadFromDatabaseAsync und das Event dieselbe Serie melden.
         /// </summary>
+        /// <param name="series">Die gemeldete Serie.</param>
+        /// <returns>Der Task ist abgeschlossen, wenn die Kachel steht oder nachgezogen ist.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Läuft losgelöst aus dem Scan-Ereignis: Datenbank-, Datei- oder Bildfehler einer Serie dürfen weder das Einlesen stören noch unbeobachtet bleiben; die Kachel erscheint spätestens beim abschließenden Neuladen.")]
         public async Task AppendArtistCardAsync(Series series)
         {
             ArgumentNullException.ThrowIfNull(series);
@@ -239,21 +247,24 @@ namespace EchoPlay.App.ViewModels
                     return;
                 }
 
-                _allArtists = [.. _allArtists, await _cardFactory.CreateAsync(series)];
+                // Einsortieren statt anhängen: Am Ende stünde die Serie bis zum nächsten
+                // vollständigen Laden in einem eigenen Abschnitt hinter Z.
+                LocalArtistCardViewModel card = await _cardFactory.CreateAsync(series);
+                int position = _allArtists.FindIndex(a => AlphabetIndex.TitleOrder.Compare(a.Title, card.Title) > 0);
+                _allArtists = [.. _allArtists];
+                _allArtists.Insert(position < 0 ? _allArtists.Count : position, card);
                 ApplyFilters();
             }
-            catch (IOException)
+            catch (Exception ex)
             {
-                // Cover-/Datei-Fehler dürfen den Scan nicht unterbrechen
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Keine Lese-/Schreibrechte: Die Karte erscheint beim abschließenden LoadAsync()
+                // Ein Fehler bei einer Serie unterbricht das Einlesen nicht; die Karte erscheint
+                // spätestens beim abschließenden Neuladen.
+                _logger?.Warning("Kachel für \"{Title}\" während des Einlesens nicht aktualisiert: {Reason}", series.Title, ex.Message);
             }
         }
 
         /// <summary>
-        /// Hebt die Serienauswahl auf. Zurücksetzen der Auswahl-State und der V-Indikatoren.
+        /// Hebt die Serienauswahl auf und nimmt die Markierung aller Kacheln zurück.
         /// </summary>
         public void DeselectArtist()
         {

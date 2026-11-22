@@ -66,6 +66,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
         [Theory]
         [InlineData("Dashboard", NavigationTarget.Dashboard)]
+        [InlineData("Announced", NavigationTarget.Announced)]
         [InlineData("OnlineLibrary", NavigationTarget.OnlineLibrary)]
         [InlineData("LocalLibrary", NavigationTarget.LocalLibrary)]
         [InlineData("TagManager", NavigationTarget.TagManager)]

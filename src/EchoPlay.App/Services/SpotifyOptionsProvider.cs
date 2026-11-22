@@ -16,7 +16,8 @@ namespace EchoPlay.App.Services
         /// Erstellt den Provider mit den statischen Basis-URLs und dem Credential-Store.
         /// </summary>
         /// <param name="baseOptions">
-        /// Basis-Optionen aus <c>appsettings.json</c>; enthält nur ApiBaseUrl und AuthBaseUrl.
+        /// Basis-Optionen aus der Konfiguration oder den Vorgaben von <see cref="SpotifyOptions"/>;
+        /// enthält nur ApiBaseUrl und AuthBaseUrl.
         /// </param>
         /// <param name="credentialStore">Store für die verschlüsselten Credentials.</param>
         public SpotifyOptionsProvider(SpotifyOptions baseOptions, ISpotifyCredentialStore credentialStore)

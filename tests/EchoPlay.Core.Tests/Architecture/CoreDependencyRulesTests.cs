@@ -15,7 +15,7 @@ namespace EchoPlay.Core.Tests.Architecture
         [Fact]
         public void Core_ReferencesNoEchoPlayModule_ExceptLoggerAbstractions()
         {
-            // Anker in EchoPlay.Core; über das Assembly kommen wir an die referenzierten Assemblys.
+            // Anker in EchoPlay.Core; über sein Assembly sind die referenzierten Assemblys erreichbar.
             System.Reflection.Assembly coreAssembly = typeof(AudioExtensions).Assembly;
 
             string[] echoPlayReferences = coreAssembly

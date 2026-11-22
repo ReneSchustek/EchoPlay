@@ -7,11 +7,10 @@ namespace EchoPlay.App.Tests.Infrastructure
     /// Findet das Wurzelverzeichnis des Repositories, ausgehend vom Ausgabeverzeichnis des
     /// Testlaufs.
     /// <para>
-    /// Hier zusammengezogen, weil dieselbe Aufwärtssuche zuvor in mehreren Testklassen stand.
-    /// Der Weg vom Ausgabeverzeichnis zur Quelle hängt von Zielrahmenwerk, Laufzeitkennung und
-    /// Konfiguration ab; wird er mehrfach geführt, stimmt nach dem nächsten Umzug nur noch eine
-    /// der Kopien, und der Test, der danebenliegt, wird stillschweigend grün, weil er nichts
-    /// mehr findet.
+    /// Die Aufwärtssuche steht nur hier. Der Weg vom Ausgabeverzeichnis zur Quelle hängt von
+    /// Zielrahmenwerk, Laufzeitkennung und Konfiguration ab; stünde er in mehreren Testklassen,
+    /// stimmte nach dem nächsten Umzug nur noch eine der Kopien, und der Test daneben würde
+    /// stillschweigend grün, weil er nichts mehr findet.
     /// </para>
     /// </summary>
     internal static class RepositoryPaths

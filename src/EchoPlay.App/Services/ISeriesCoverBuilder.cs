@@ -6,8 +6,7 @@ namespace EchoPlay.App.Services
 {
     /// <summary>
     /// Beschafft das Cover einer Serie und legt die Reihenfolge der Quellen fest.
-    /// Eigener Typ, damit diese Reihenfolge für sich prüfbar ist. Am Ansichtsmodell hing sie
-    /// zuvor an der ganzen Seite.
+    /// Eigener Typ, damit diese Reihenfolge ohne Ansicht und Ansichtsmodell prüfbar ist.
     /// </summary>
     public interface ISeriesCoverBuilder
     {

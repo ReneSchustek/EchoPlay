@@ -1,3 +1,4 @@
+using EchoPlay.Core.Http;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Scoring;
 using EchoPlay.Spotify.Dtos;
@@ -35,7 +36,7 @@ namespace EchoPlay.Spotify.Mapping
                 Source = "Spotify",
                 Title = artist.Name,
                 Description = null,
-                CoverImageUrl = artist.ImageUrl,
+                CoverImageUrl = WebAddress.TryParse(artist.ImageUrl),
                 IsHoerspiel = scoreResult.IsHoerspiel,
                 Score = scoreResult.Score
             };

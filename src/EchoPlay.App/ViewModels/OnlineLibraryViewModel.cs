@@ -19,13 +19,14 @@ namespace EchoPlay.App.ViewModels
     /// Koordiniert drei Sub-VMs (Serienliste, Episoden, Provider-Suche) und den internen
     /// <see cref="OnlineLibraryActions"/>-Orchestrator, der die gesamte Async-Aktions-
     /// Schicht (Laden, Auswahl, Provider-Suche, Refresh, Cover-Pipeline) kapselt.
-    /// Das Top-VM hält nur noch Commands, Cross-Cutting-Zustand und die Pass-Through-
-    /// Schicht für die unveränderte Page-XAML.
+    /// Das Top-VM hält Commands, Cross-Cutting-Zustand und die Pass-Through-Schicht für
+    /// die Page-XAML.
     /// </summary>
     public sealed class OnlineLibraryViewModel : ObservableObject, IDisposable
     {
         private readonly OnlineLibraryActions _actions;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly EchoPlay.Logger.Abstractions.ILogger? _logger;
         private readonly IPageModeGuard? _pageModeGuard;
         private readonly INavigationService? _navigationService;
         private readonly EchoPlay.LocalLibrary.Cover.ICoverSearchService? _coverSearchService;
@@ -38,6 +39,21 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das ViewModel mit den benötigten Services und erzeugt die drei
         /// Sub-VMs sowie den Aktions-Orchestrator.
         /// </summary>
+        /// <param name="scopeFactory">Für die Datenbankzugriffe.</param>
+        /// <param name="confirmationDialogService">Fragt vor dem Entfernen und Abonnieren nach.</param>
+        /// <param name="importService">Sucht beim Anbieter und importiert.</param>
+        /// <param name="errorDialogService">Zeigt Fehler an.</param>
+        /// <param name="localizationService">Liefert die Anzeigetexte.</param>
+        /// <param name="onlineAccessGuard">Fragt im Offline-Modus nach dem Zugang ins Netz.</param>
+        /// <param name="coverDownloader">Lädt Cover vom Anbieter herunter.</param>
+        /// <param name="coverCacheService">Lädt fehlende Folgen-Cover nach; ohne ihn entfällt das.</param>
+        /// <param name="coverService">Liest und speichert Cover in der Datenbank; ohne ihn bleiben Platzhalter.</param>
+        /// <param name="backgroundCoverService">Stellt lokale Cover der Serie bereit.</param>
+        /// <param name="watchToggleService">Schaltet die Überwachung einer Serie um.</param>
+        /// <param name="rateLimiter">Drosselt die Abfragen beim Anbieter.</param>
+        /// <param name="pageModeGuard">Prüft beim Betreten, ob die Seite im aktuellen Modus erlaubt ist.</param>
+        /// <param name="coverSearchService">Sucht Cover-Kandidaten für eine Folge.</param>
+        /// <param name="navigationService">Führt aus dem Leer-Zustand in die Einstellungen.</param>
         public OnlineLibraryViewModel(
             IServiceScopeFactory scopeFactory,
             IConfirmationDialogService confirmationDialogService,
@@ -56,6 +72,7 @@ namespace EchoPlay.App.ViewModels
             INavigationService? navigationService = null)
         {
             _scopeFactory = scopeFactory;
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(scopeFactory, nameof(OnlineLibraryViewModel));
             _pageModeGuard = pageModeGuard;
             _navigationService = navigationService;
             _coverSearchService = coverSearchService;
@@ -72,13 +89,27 @@ namespace EchoPlay.App.ViewModels
                 localizationService,
                 onlineAccessGuard,
                 coverCacheService,
-                coverService!,
+                coverService,
                 backgroundCoverService,
                 watchToggleService,
                 coverDownloader,
                 rateLimiter);
 
-            _actions = new OnlineLibraryActions(
+            _actions = CreateActions(actionsContext);
+            SubscribeToSubViewModels();
+
+            ProviderSearchCommand = new RelayCommand(() => _ = _actions.SearchProviderAsync(SeriesVM.SearchText));
+            AddSelectedCommand = new RelayCommand(() => _actions.AddSelected());
+            RefreshCommand = new RelayCommand(() => _ = _actions.RefreshAllOnlineSeriesAsync());
+            GoToSettingsCommand = new RelayCommand(() => _navigationService?.NavigateTo(NavigationTarget.Settings));
+            FocusSearchCommand = new RelayCommand(StartSearchFromEmptyState);
+        }
+
+        /// <summary>
+        /// Baut die Aktionen; sie schreiben Lade- und Anbieterzustand über Rückrufe zurück.
+        /// </summary>
+        private OnlineLibraryActions CreateActions(OnlineLibraryActionsContext actionsContext) =>
+            new(
                 actionsContext,
                 SeriesVM, EpisodesVM, ProviderSearchVM,
                 setIsLoading: v => IsLoading = v,
@@ -86,6 +117,8 @@ namespace EchoPlay.App.ViewModels
                 setHasNoProvider: v => HasNoProvider = v,
                 reloadAfterImportAsync: ReloadAfterImportAsync);
 
+        private void SubscribeToSubViewModels()
+        {
             // PropertyChanged der Sub-VMs an eigene Pass-Through-Properties weiterreichen,
             // damit die XAML-Bindings auf Top-VM-Properties unverändert funktionieren.
             SeriesVM.PropertyChanged += OnSubVmPropertyChanged;
@@ -95,15 +128,7 @@ namespace EchoPlay.App.ViewModels
             // Cross-Cutting-Visibilities neu berechnen, wenn eine der beteiligten Größen wechselt
             ProviderSearchVM.PropertyChanged += OnProviderSearchPropertyChanged;
             SeriesVM.PropertyChanged += OnSeriesPropertyChanged;
-
-            ProviderSearchCommand = new RelayCommand(() => _ = _actions.SearchProviderAsync(SeriesVM.SearchText));
-            AddSelectedCommand = new RelayCommand(() => _actions.AddSelected());
-            RefreshCommand = new RelayCommand(() => _ = _actions.RefreshAllOnlineSeriesAsync());
-            GoToSettingsCommand = new RelayCommand(() => _navigationService?.NavigateTo(NavigationTarget.Settings));
-            FocusSearchCommand = new RelayCommand(StartSearchFromEmptyState);
         }
-
-        // ── Sub-VMs ─────────────────────────────────────────────────────────────
 
         /// <summary>Sub-VM für die Serienliste mit Filtern, Sortierung und Auswahl.</summary>
         public OnlineSeriesViewModel SeriesVM { get; }
@@ -114,16 +139,12 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sub-VM für die Provider-Suche (Spotify/Apple Music).</summary>
         public OnlineProviderSearchViewModel ProviderSearchVM { get; }
 
-        // ── Events (Top-VM → Page) ──────────────────────────────────────────────
-
         /// <summary>
         /// Wird ausgelöst, wenn der Empty-State-Button „Serie suchen" geklickt wurde.
         /// Die Page setzt den Fokus auf die Suchbox, denn im VM existiert kein WinUI-Konzept.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Fokus-Signal ohne Nutzdaten: die Page setzt Focus auf die Suchbox, das VM kennt keinen FocusManager; Action ist semantisch klarer als leerer EventArgs.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action? FocusSearchRequested;
-
-        // ── Commands ────────────────────────────────────────────────────────────
 
         /// <summary>Startet die Provider-Suche.</summary>
         public ICommand ProviderSearchCommand { get; }
@@ -139,8 +160,6 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Setzt den Fokus auf die Suchleiste, aus dem Empty-State „Keine Serien".</summary>
         public ICommand FocusSearchCommand { get; }
-
-        // ── Top-Level-Zustand ───────────────────────────────────────────────────
 
         /// <summary>Gibt an, ob gerade ein Ladevorgang läuft.</summary>
         public bool IsLoading
@@ -176,8 +195,6 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Cross-Cutting-Visibilities ──────────────────────────────────────────
-
         /// <summary>Leer-Zustand sichtbar wenn keine Serien, keine Suchergebnisse und kein Ladevorgang.</summary>
         public Visibility EmptyStateVisibility =>
             !_isLoading && !SeriesVM.HasFilteredSeries && !ProviderSearchVM.HasResults
@@ -205,8 +222,6 @@ namespace EchoPlay.App.ViewModels
         public Visibility StatusFilterVisibility =>
             !ProviderSearchVM.HasResults && !ProviderSearchVM.IsSearchingProvider
                 ? Visibility.Visible : Visibility.Collapsed;
-
-        // ── Pass-Through-Eigenschaften: Serien ──────────────────────────────────
 
         /// <inheritdoc cref="OnlineSeriesViewModel.Series"/>
         public IReadOnlyList<SeriesCardViewModel> Series => SeriesVM.Series;
@@ -247,8 +262,6 @@ namespace EchoPlay.App.ViewModels
         /// <inheritdoc cref="OnlineSeriesViewModel.EpisodesAccordionVisibility"/>
         public Visibility EpisodesAccordionVisibility => SeriesVM.EpisodesAccordionVisibility;
 
-        // ── Pass-Through-Eigenschaften: Episoden ────────────────────────────────
-
         /// <inheritdoc cref="OnlineEpisodesViewModel.Episodes"/>
         public IReadOnlyList<OnlineEpisodeCardViewModel> Episodes => EpisodesVM.Episodes;
 
@@ -273,7 +286,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Schreibt den gewählten Folgen-Sortierindex in die AppSettings. Fehler werden bewusst
+        /// Schreibt den gewählten Folgen-Sortierindex in die AppSettings. Fehler werden
         /// verschluckt, denn eine nicht gespeicherte Sortier-Vorliebe ist kein nutzerrelevanter Fehler.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort-Persistenz einer UI-Vorliebe: DB-/SQLite-Fehler beim Speichern der Sortierung dürfen die bereits angewandte Sortierung und die UI nicht beeinträchtigen.")]
@@ -294,9 +307,10 @@ namespace EchoPlay.App.ViewModels
                 settings.OnlineEpisodeSortIndex = sortIndex;
                 await settingsService.SaveAsync(settings);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Persistenz der Sortier-Vorliebe ist best-effort.
+                // Die Sortierung gilt für diese Sitzung trotzdem; nur gemerkt wird sie nicht.
+                _logger?.Warning("Sortierung der Folgen nicht gespeichert: {Reason}", ex.Message);
             }
         }
 
@@ -317,9 +331,10 @@ namespace EchoPlay.App.ViewModels
                 AppSettings settings = await settingsService.GetAsync();
                 EpisodesVM.EpisodeSortIndex = settings.OnlineEpisodeSortIndex;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Ohne gespeicherte Vorliebe bleibt der Standard (Nummer aufsteigend).
+                _logger?.Warning("Gespeicherte Sortierung der Folgen nicht lesbar: {Reason}", ex.Message);
             }
         }
 
@@ -328,8 +343,6 @@ namespace EchoPlay.App.ViewModels
 
         /// <inheritdoc cref="OnlineEpisodesViewModel.LoadingEpisodesVisibility"/>
         public Visibility LoadingEpisodesVisibility => EpisodesVM.LoadingEpisodesVisibility;
-
-        // ── Pass-Through-Eigenschaften: Provider-Suche ──────────────────────────
 
         /// <inheritdoc cref="OnlineProviderSearchViewModel.ProviderSearchResults"/>
         public IReadOnlyList<SearchResultViewModel> ProviderSearchResults => ProviderSearchVM.ProviderSearchResults;
@@ -352,8 +365,6 @@ namespace EchoPlay.App.ViewModels
 
         /// <inheritdoc cref="OnlineProviderSearchViewModel.SpotifyFallbackHintVisibility"/>
         public Visibility SpotifyFallbackHintVisibility => ProviderSearchVM.SpotifyFallbackHintVisibility;
-
-        // ── Öffentliche Methoden (Delegation an den Orchestrator) ──────────────
 
         /// <summary>
         /// Wird vom Code-Behind beim Betreten der Seite aufgerufen. Prüft den Offline-Modus
@@ -419,8 +430,6 @@ namespace EchoPlay.App.ViewModels
             await _actions.LoadAsync();
         }
 
-        // ── Empty-State-Hilfen ──────────────────────────────────────────────────
-
         /// <summary>
         /// Wird aus dem Empty-State-Button „Serie suchen" ausgelöst: löst das
         /// <see cref="FocusSearchRequested"/>-Event aus und startet bei vorhandenem Suchtext
@@ -435,8 +444,6 @@ namespace EchoPlay.App.ViewModels
                 ProviderSearchCommand.Execute(null);
             }
         }
-
-        // ── Sub-VM-Verdrahtung ─────────────────────────────────────────────────
 
         private void OnSubVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {

@@ -90,13 +90,13 @@ namespace EchoPlay.App.Tests.Services
             FilterStateStore store = new();
             store.GetOrCreate<LocalArtistFilter>("LocalLibrary").FavoritesOnly = true;
 
-            LocalArtistsViewModel neu = new(
+            LocalArtistsViewModel updated = new(
                 scopeFactory: null!,
                 coverBuilder: null,
                 filter: store.GetOrCreate<LocalArtistFilter>("LocalLibrary"));
 
-            Assert.True(neu.FavoritesOnly);
-            Assert.True(neu.HasActiveFilter);
+            Assert.True(updated.FavoritesOnly);
+            Assert.True(updated.HasActiveFilter);
         }
     }
 }

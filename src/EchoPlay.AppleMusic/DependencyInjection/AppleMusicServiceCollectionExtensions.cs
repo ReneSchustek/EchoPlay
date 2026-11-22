@@ -24,12 +24,12 @@ namespace EchoPlay.AppleMusic.DependencyInjection
         /// <returns>Die erweiterte Service-Sammlung.</returns>
         public static IServiceCollection AddAppleMusicImport(this IServiceCollection services)
         {
-            // HttpClient mit BaseAddress und Timeout für die iTunes Search API.
-            // 15 Sekunden sind für eine Desktop-App das Maximum, danach ist die UX beschädigt.
+            // Nur die Basisadresse. Zeitgrenze und Wiederholungen hängt die Anwendung beim
+            // Zusammensetzen an; eine hier gesetzte HttpClient.Timeout stellte die
+            // Wiederholungsregel ohnehin auf unendlich.
             _ = services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(client =>
             {
                 client.BaseAddress = new Uri("https://itunes.apple.com/");
-                client.Timeout = TimeSpan.FromSeconds(15);
             });
 
             _ = services.AddScoped<ISeriesImportSearch, AppleMusicSeriesSearch>();
@@ -43,7 +43,7 @@ namespace EchoPlay.AppleMusic.DependencyInjection
             services.TryAddScoped<HoerspielDecisionCache>();
             _ = services.AddScoped<AppleMusicHoerspielAnalyzer>();
 
-            // Beide Verträge zeigen bewusst auf DIESELBE Instanz: Der Scorer merkt sich die
+            // Beide Verträge zeigen auf DIESELBE Instanz: Der Scorer merkt sich die
             // Cover-Adresse aus der Albenprüfung, und die Suche holt sie dort ab. Zwei
             // getrennte Instanzen hätten getrennte Speicher, und die Treffer blieben ohne Cover.
             _ = services.AddScoped<AppleMusicHoerspielScorer>();

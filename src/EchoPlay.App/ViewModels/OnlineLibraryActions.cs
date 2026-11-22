@@ -12,8 +12,8 @@ namespace EchoPlay.App.ViewModels
     /// (<see cref="OnlineSeriesLoader"/>, <see cref="OnlineEpisodePipeline"/>,
     /// <see cref="OnlineProviderSearchActions"/>, <see cref="OnlineBulkRefreshActions"/>)
     /// und delegiert alle public Methoden an die passende Sub-Action. Das Top-VM
-    /// <see cref="OnlineLibraryViewModel"/> hält nur noch Commands, Zustands-Properties
-    /// und die Pass-Through-Schicht. Folgt dem Muster aus <see cref="DashboardDataLoader"/>
+    /// <see cref="OnlineLibraryViewModel"/> hält Commands, Zustands-Properties und die
+    /// Pass-Through-Schicht. Folgt dem Muster aus <see cref="DashboardDataLoader"/>
     /// und <see cref="TagManagerActions"/>.
     /// </summary>
     internal sealed class OnlineLibraryActions : IDisposable
@@ -24,6 +24,15 @@ namespace EchoPlay.App.ViewModels
         private readonly OnlineProviderSearchActions _providerSearch;
         private readonly OnlineBulkRefreshActions _bulkRefresh;
 
+        /// <summary>Baut die vier Teil-Aktionen auf einem gemeinsamen Zustand auf.</summary>
+        /// <param name="context">Die Dienste der Online-Mediathek.</param>
+        /// <param name="seriesVM">Die Serienliste.</param>
+        /// <param name="episodesVM">Die Folgen der gewählten Serie.</param>
+        /// <param name="providerSearchVM">Die Treffer der Anbietersuche.</param>
+        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
+        /// <param name="setLoadingStatusText">Setzt den Statustext während des Ladens.</param>
+        /// <param name="setHasNoProvider">Meldet, dass kein Anbieter eingerichtet ist.</param>
+        /// <param name="reloadAfterImportAsync">Lädt die Mediathek nach einem Import neu.</param>
         public OnlineLibraryActions(
             OnlineLibraryActionsContext context,
             OnlineSeriesViewModel seriesVM,

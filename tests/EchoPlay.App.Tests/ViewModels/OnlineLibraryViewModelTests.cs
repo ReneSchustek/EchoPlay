@@ -22,35 +22,22 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class OnlineLibraryViewModelTests
     {
-        private static OnlineLibraryViewModel BuildViewModel(FakeSeriesDataService seriesService, FakePageModeGuard? pageModeGuard = null)
+        private static OnlineLibraryViewModel BuildViewModel(
+            FakeSeriesDataService seriesService,
+            FakePageModeGuard? pageModeGuard = null,
+            FakeEpisodeDataService? episodeService = null,
+            FakePlaybackStateDataService? stateService = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
 
             // LoadAsync liest auch Episode-, PlaybackState- und AppSettings-Daten
-            _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-            _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService ?? new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new EchoPlay.Data.Entities.Settings.AppSettings { ActiveProvider = EchoPlay.Data.Entities.Settings.ProviderType.Spotify }));
-
-            // ImportService + Keyed Services für die Provider-Suche
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
-            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
+            RegisterImportServices(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             EchoPlay.App.Services.ImportService importService = new(
@@ -67,6 +54,30 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeOnlineAccessGuard(),
                 provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>(),
                 pageModeGuard: pageModeGuard);
+        }
+
+        /// <summary>
+        /// Registriert die Anbieter-Nachbauten und die Cover-Dienste, die der Importdienst für die
+        /// Provider-Suche braucht.
+        /// </summary>
+        private static void RegisterImportServices(ServiceCollection services)
+        {
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+                "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
+                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+                "Spotify", (_, _) => new FakeEpisodeImportSource([]));
+            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
+                "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+            _ = services.AddSingleton<IClock>(new FakeClock());
+            _ = services.AddHttpClient();
+            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
+            _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
+            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
+            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
         }
 
         [Fact]
@@ -178,8 +189,6 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Single(vm.Series);
         }
 
-        // --- Suchfilter-Tests ---
-
         [Fact]
         public async Task SearchText_ShowsAllSeries_WhenEmpty()
         {
@@ -257,10 +266,8 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(vm.Series);
         }
 
-        // --- Statusfilter-Tests ---
-
         [Fact]
-        public async Task StatusFilter_Neu_ShowsOnlySeriesWithNewEpisodes()
+        public async Task StatusFilter_New_ShowsOnlySeriesWithNewEpisodes()
         {
             // Filter "Neu" zeigt nur Serien, bei denen noch nicht angehörte Episoden vorhanden sind
             FakeSeriesDataService seriesService = new();
@@ -284,47 +291,11 @@ namespace EchoPlay.App.Tests.ViewModels
             // Episodenservice braucht den Eintrag nur, damit LoadAsync die Serie nicht ignoriert
             await episodeService.AddAsync(new Episode { Title = "Folge 1", SeriesId = tkkg }, cancellationToken: TestContext.Current.CancellationToken);
 
-            ServiceCollection services = new();
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-            _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateServiceWithCounts);
-            _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
-                new EchoPlay.Data.Entities.Settings.AppSettings { ActiveProvider = EchoPlay.Data.Entities.Settings.ProviderType.Spotify }));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => new FakeEpisodeImportSource([]));
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<EchoPlay.App.Services.CoverService>();
-            _ = services.AddSingleton<EchoPlay.App.Services.ICoverService>(sp => sp.GetRequiredService<EchoPlay.App.Services.CoverService>());
-            _ = services.AddSingleton<EchoPlay.App.Services.ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EchoPlay.App.Services.EpisodeCoverCacheService>();
-
-            ServiceProvider provider = services.BuildServiceProvider();
-            EchoPlay.App.Services.ImportService importService = new(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<EchoPlay.App.Services.EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
-
-            OnlineLibraryViewModel vm = new(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeConfirmationDialogService(),
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
-                new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>());
+            OnlineLibraryViewModel vm = BuildViewModel(
+                seriesService, episodeService: episodeService, stateService: stateServiceWithCounts);
 
             await vm.LoadAsync();
-            vm.StatusFilter = SeriesStatusFilter.Neu;
+            vm.StatusFilter = SeriesStatusFilter.New;
 
             _ = Assert.Single(vm.Series);
             Assert.Equal("TKKG", vm.Series[0].Title);

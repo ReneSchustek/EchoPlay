@@ -4,9 +4,8 @@ using Microsoft.EntityFrameworkCore.Design;
 namespace EchoPlay.Data.Context
 {
     /// <summary>
-    /// Designzeit-Fabrik für den DbContext. 
-    /// Ermöglicht es den Entity Framework Core Tools (z.B. Migrations), 
-    /// den Kontext ohne eine laufende Applikation zu instanziieren.
+    /// Designzeit-Fabrik für den DbContext. Die EF-Core-Werkzeuge (<c>dotnet ef migrations</c>)
+    /// erzeugen den Kontext darüber, ohne die Anwendung und ihren DI-Container zu starten.
     /// </summary>
     public sealed class EchoPlayDbContextFactory : IDesignTimeDbContextFactory<EchoPlayDbContext>
     {
@@ -14,9 +13,10 @@ namespace EchoPlay.Data.Context
         public EchoPlayDbContext CreateDbContext(string[] args)
         {
             DbContextOptionsBuilder<EchoPlayDbContext> optionsBuilder = new();
-            string dbPath = DatabasePathProvider.GetDatabasePath();
+            string dbPath = DatabasePathProvider.PrepareDatabasePath();
 
-            // Explizite Konfiguration für SQLite während der Migrations-Erstellung.
+            // Ohne Interceptor und ohne Cache=Shared: Die Werkzeuge vergleichen nur das Modell mit
+            // dem Schnappschuss; die Laufzeit-Einstellungen aus AddEchoPlayData wirken hier nicht.
             _ = optionsBuilder.UseSqlite($"Data Source={dbPath}");
 
             return new(optionsBuilder.Options);

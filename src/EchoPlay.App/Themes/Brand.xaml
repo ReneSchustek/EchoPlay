@@ -1,13 +1,15 @@
 <!--
     Farben, die bewusst nicht mit dem Theme wechseln.
 
-    Zwei Fälle, und beide haben einen Grund, der über Geschmack hinausgeht:
+    Drei Fälle, und alle haben einen Grund, der über Geschmack hinausgeht:
 
     1. Das Startbild erscheint, bevor eine Palette geladen ist. Es kann gar keine
        Theme-Farbe binden. Bände es eine, stünde dort beim Start nichts.
     2. Die Deckfolie beim Theme-Wechsel liegt über der Oberfläche, während genau
        diese Oberfläche ihre Farben tauscht. Eine Theme-Farbe würde mitwechseln
        und die Folie im selben Moment aufleuchten lassen, den sie verdecken soll.
+    3. Was auf einem Cover liegt, steht auf einem Foto in unbekannter Farbe, nicht auf
+       einer Theme-Fläche; eine Theme-Farbe wäre dort auf dem einen Bild unsichtbar.
 
     Alles andere gehört in die sechs Paletten. Wer hier eine Farbe ergänzt, muss
     sagen können, warum sie den Theme-Wechsel überleben soll.

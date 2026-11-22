@@ -14,31 +14,43 @@ using System.Threading.Tasks;
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Hintergrund-Dienst, der fehlende Provider-IDs (SpotifyAlbumId, AppleMusicAlbumId)
-    /// für bestehende Serien und Episoden nachträglich über die jeweilige Provider-API ergänzt.
-    /// Läuft einmal beim App-Start und danach stündlich. Fehler blockieren nicht andere Serien.
+    /// Hintergrund-Dienst, der fehlende Apple-Music-Album-Kennungen an Folgen nachträgt. Er
+    /// liest sie aus der gespeicherten Anbieter-Adresse der Folge, ganz ohne Netzabfrage.
+    /// Läuft eine halbe Minute nach dem Start und danach stündlich.
     /// </summary>
+    /// <remarks>
+    /// Spotify-Kennungen ergänzt er nicht: Sie kommen beim Import mit, und eine Suche über die
+    /// Spotify-Web-API ist nicht gebaut.
+    /// </remarks>
     internal sealed class BackgroundProviderIdService : IDisposable
     {
+        // Stündlich genügt: Neue Folgen ohne Kennung entstehen nur durch einen Import, und die
+        // Arbeit je Durchlauf ist ein Durchsehen der Datenbank ohne Netz.
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
+        // Bis dahin sind Startbild und erstes Zeichnen der Startseite durch; der Durchlauf
+        // konkurriert dann nicht mehr mit ihnen um die Datenbank.
+        private static readonly TimeSpan InitialDelay = TimeSpan.FromSeconds(30);
+
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IHostRateLimiter _rateLimiter;
         private readonly ILogger _logger;
         private CancellationTokenSource? _cts;
         private Task? _runningTask;
 
+        /// <summary>
+        /// Initialisiert den Dienst.
+        /// </summary>
+        /// <param name="scopeFactory">Öffnet je Durchlauf einen eigenen Datenbankbereich.</param>
+        /// <param name="loggerFactory">Fabrik für den Protokollkanal.</param>
         public BackgroundProviderIdService(
             IServiceScopeFactory scopeFactory,
-            IHostRateLimiter rateLimiter,
             ILoggerFactory loggerFactory)
         {
             _scopeFactory = scopeFactory;
-            _rateLimiter = rateLimiter;
             _logger = loggerFactory.CreateLogger("BackgroundProviderIdService");
         }
 
-        /// <summary>Startet den periodischen Enrichment-Lauf. Idempotent — mehrfacher Aufruf ist no-op.</summary>
+        /// <summary>Startet den periodischen Enrichment-Lauf. Idempotent: Ein weiterer Aufruf bewirkt nichts.</summary>
         public void Start()
         {
             if (_runningTask is not null) return;
@@ -87,11 +99,10 @@ namespace EchoPlay.App.Services
             _runningTask = null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Enrichment-Schleife: HTTP-Fehler (Spotify/AppleMusic), DB-Concurrency-Fehler oder Provider-Timeouts dürfen die Schleife nicht beenden; Fehler werden als Error geloggt und der nächste Intervall-Zyklus fährt fort.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Schleife: DB-Fehler (gesperrte Datei, Concurrency) eines Durchlaufs dürfen die Schleife nicht beenden; Fehler werden als Error geloggt und der nächste Intervall-Zyklus fährt fort.")]
         private async Task RunLoopAsync(CancellationToken ct)
         {
-            // Erster Lauf nach kurzem Delay (App-Start nicht blockieren)
-            await Task.Delay(TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
+            await Task.Delay(InitialDelay, ct).ConfigureAwait(false);
 
             while (!ct.IsCancellationRequested)
             {
@@ -131,16 +142,19 @@ namespace EchoPlay.App.Services
             IEpisodeDataService episodeService = scope.ServiceProvider.GetRequiredService<IEpisodeDataService>();
             IReadOnlyList<Series> subscribedSeries = await seriesService.GetSubscribedAsync(ct);
 
-            // Apple-Music-IDs ergänzen (iTunes Search API, ohne Credentials)
+            // Apple-Music-Kennungen aus den gespeicherten Adressen ergänzen; kein Netzzugriff.
             if (provider.Includes(ProviderType.AppleMusic))
             {
                 await EnrichAppleMusicIdsAsync(subscribedSeries, episodeService, ct);
             }
 
-            // Spotify-IDs werden hier nicht ergänzt: die Spotify-Web-API-Suche ist bewusst
+            // Spotify-IDs werden hier nicht ergänzt: die Spotify-Web-API-Suche ist
             // nicht gebaut (Nutzer-Entscheidung), und die Album-IDs kommen beim Import mit.
         }
 
+        /// <summary>
+        /// Trägt an Folgen mit Anbieter-Adresse, aber ohne Apple-Kennung die Kennung aus der Adresse nach.
+        /// </summary>
         private async Task EnrichAppleMusicIdsAsync(
             IReadOnlyList<Series> series,
             IEpisodeDataService episodeService,
@@ -183,7 +197,7 @@ namespace EchoPlay.App.Services
         /// Extrahiert die CollectionId aus einer iTunes-URL.
         /// Format: https://music.apple.com/de/album/.../{CollectionId} oder .../id{CollectionId}
         /// </summary>
-        /// <param name="url">Adresse des herunterzuladenden Bildes.</param>
+        /// <param name="url">Anbieter-Adresse der Folge, etwa ein Link auf music.apple.com.</param>
         internal static string? ExtractITunesCollectionId(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;

@@ -1,4 +1,7 @@
 using EchoPlay.App.Composition;
+using EchoPlay.Data.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -50,6 +53,34 @@ namespace EchoPlay.App.Tests.Composition
             });
 
             provider.Dispose();
+        }
+
+        [Fact]
+        public void Replication_ResolvesFromTheContainer()
+        {
+            // Wie oben: Aufgelöst wird nur, eine Verbindung öffnet erst eine Abfrage.
+            using ServiceProvider provider = CollectRegistrations().BuildServiceProvider();
+            using IServiceScope scope = provider.CreateScope();
+
+            Assert.NotNull(scope.ServiceProvider.GetRequiredService<EchoPlay.Data.Replication.Exchange.DeviceReplicationExchange>());
+            Assert.NotNull(provider.GetRequiredService<EchoPlay.App.Services.DeviceReplicationService>());
+        }
+
+        [Fact]
+        public void DbContext_CarriesTheChangeStampInterceptor()
+        {
+            // Die Optionen des Kontexts entstehen erst beim Auflösen; ValidateOnBuild sieht sie nicht.
+            // Fehlte der Interceptor, bekäme keine Zeile einen Änderungszeitpunkt, und der Abgleich
+            // hielte jede Änderung für älter als die des anderen Geräts. Eine Verbindung öffnet der
+            // Kontext erst bei der ersten Abfrage; die Datenbank wird hier nicht berührt.
+            using ServiceProvider provider = CollectRegistrations().BuildServiceProvider();
+            using IServiceScope scope = provider.CreateScope();
+            EchoPlayDbContext context = scope.ServiceProvider.GetRequiredService<EchoPlayDbContext>();
+
+            CoreOptionsExtension? core = context.GetService<IDbContextOptions>().FindExtension<CoreOptionsExtension>();
+
+            Assert.NotNull(core?.Interceptors);
+            Assert.Contains(core!.Interceptors!, interceptor => interceptor is ChangeStampInterceptor);
         }
 
         [Fact]

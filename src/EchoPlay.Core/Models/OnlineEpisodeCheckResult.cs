@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace EchoPlay.Core.Models
 {
     /// <summary>
@@ -55,8 +53,7 @@ namespace EchoPlay.Core.Models
         public IReadOnlyList<MissingOnlineEpisode> MissingOnlineEpisodes { get; init; } = [];
 
         /// <summary>URL zum Serien-Cover (für Dashboard-Kacheln).</summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-        public string? CoverUrl { get; init; }
+        public Uri? CoverUrl { get; init; }
 
         /// <summary>Zeitpunkt dieser Prüfung (UTC).</summary>
         public DateTime CheckedAtUtc { get; init; }
@@ -93,13 +90,12 @@ namespace EchoPlay.Core.Models
         public required DateTime ReleaseDate { get; init; }
 
         /// <summary>
-        /// URL zum Album-Cover in 100×100 Pixel. Kann für die Kachel-Anzeige auf
+        /// Geprüfte Adresse zum Album-Cover in 100×100 Pixel. Kann für die Kachel-Anzeige auf
         /// größere Auflösungen hochskaliert werden (iTunes-URL-Pattern: /100x100bb → /600x600bb).
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-        public string? CoverUrl { get; init; }
+        public Uri? CoverUrl { get; init; }
 
-        /// <summary>iTunes-Collection-ID – dient als eindeutiger Schlüssel für dieses Album.</summary>
+        /// <summary>iTunes-Collection-ID; sie dient als eindeutiger Schlüssel für dieses Album.</summary>
         public long CollectionId { get; init; }
     }
 

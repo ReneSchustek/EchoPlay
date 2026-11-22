@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
+using EchoPlay.Logger.Abstractions;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Cover
 {
@@ -14,14 +11,19 @@ namespace EchoPlay.LocalLibrary.Cover
     public sealed class CompositeCoverSearchService : ICoverSearchService
     {
         private readonly IReadOnlyList<ICoverSearchService> _providers;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialisiert den Composite-Service mit den einzelnen Anbietern.
         /// </summary>
-        /// <param name="providers">Die konkreten Such-Dienste (z.B. Cover Art Archive, iTunes).</param>
-        public CompositeCoverSearchService(IReadOnlyList<ICoverSearchService> providers)
+        /// <param name="providers">Die Anbieter in Anzeigereihenfolge; ihre Treffer folgen in dieser Reihenfolge aufeinander.</param>
+        /// <param name="loggerFactory">Für Ausfälle, die ein Anbieter nicht selbst abfängt.</param>
+        public CompositeCoverSearchService(IReadOnlyList<ICoverSearchService> providers, ILoggerFactory loggerFactory)
         {
+            ArgumentNullException.ThrowIfNull(providers);
+            ArgumentNullException.ThrowIfNull(loggerFactory);
             _providers = providers;
+            _logger = loggerFactory.CreateLogger(nameof(CompositeCoverSearchService));
         }
 
         /// <inheritdoc/>
@@ -41,34 +43,19 @@ namespace EchoPlay.LocalLibrary.Cover
                 return [];
             }
 
-            // Alle Anbieter parallel abfragen
-            Task<IReadOnlyList<CoverSearchResult>>[] tasks =
-                new Task<IReadOnlyList<CoverSearchResult>>[_providers.Count];
+            IReadOnlyList<CoverSearchResult>[] allResults = await Task.WhenAll(
+                _providers.Select(provider => SafeSearchAsync(provider, title, page, ct))).ConfigureAwait(false);
 
-            for (int i = 0; i < _providers.Count; i++)
-            {
-                tasks[i] = SafeSearchAsync(_providers[i], title, page, ct);
-            }
-
-            IReadOnlyList<CoverSearchResult>[] allResults = await Task.WhenAll(tasks).ConfigureAwait(false);
-
-            // Ergebnisse aller Anbieter zusammenführen
-            List<CoverSearchResult> combined = [];
-            foreach (IReadOnlyList<CoverSearchResult> providerResults in allResults)
-            {
-                combined.AddRange(providerResults);
-            }
-
-            return combined;
+            return [.. allResults.SelectMany(results => results)];
         }
 
         /// <summary>
-        /// Wrapper, der Exceptions eines einzelnen Anbieters abfängt.
-        /// Ein fehlerhafter Anbieter liefert eine leere Liste statt die gesamte Suche abzubrechen.
+        /// Fragt einen Anbieter ab. Ein Ausfall ergibt eine leere Liste statt die gesamte Suche
+        /// abzubrechen.
         /// </summary>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-            Justification = "Safe-Wrapper für Provider-Fan-Out; ein einzelner Provider-Fehler (egal welcher Typ) darf die parallelen Provider-Aufrufe nicht abbrechen.")]
-        private static async Task<IReadOnlyList<CoverSearchResult>> SafeSearchAsync(
+            Justification = "Die Anbieter laufen parallel und melden Ausfälle mit unterschiedlichen, nicht gemeinsam abgeleiteten Typen. Fällt einer aus, liefern die anderen weiter; ein Abbruch des Aufrufers geht vorher durch.")]
+        private async Task<IReadOnlyList<CoverSearchResult>> SafeSearchAsync(
             ICoverSearchService provider,
             string title,
             CoverSearchPage page,
@@ -78,8 +65,16 @@ namespace EchoPlay.LocalLibrary.Cover
             {
                 return await provider.SearchAsync(title, page, ct).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                // Ein Abbruch des Aufrufers ist kein Fehlschlag und gehört nach oben.
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Netz- und Lesefehler fangen die Anbieter selbst ab und protokollieren sie. Was
+                // hier ankommt, ist unerwartet und gehört deshalb als Fehler ins Protokoll.
+                _logger.Error("Cover-Suche bei {Provider} abgebrochen: {Reason}", ex, provider.GetType().Name, ex.Message);
                 return [];
             }
         }

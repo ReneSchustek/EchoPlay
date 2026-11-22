@@ -1,6 +1,6 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.Logger.Abstractions;
 using System;
-using System.Diagnostics;
 
 namespace EchoPlay.App.Services
 {
@@ -31,7 +31,6 @@ namespace EchoPlay.App.Services
         public string? CurrentExecutablePath => Environment.ProcessPath;
 
         /// <inheritdoc/>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Prozessstart ist Komfort (Neustart nach Sprachwechsel): Win32Exception, fehlende Rechte oder ein gesperrter Pfad dürfen die laufende App nicht beenden — false meldet dem Aufrufer, dass er den Nutzer um einen manuellen Neustart bitten muss.")]
         public bool Start(string executablePath)
         {
             if (string.IsNullOrWhiteSpace(executablePath))
@@ -50,17 +49,14 @@ namespace EchoPlay.App.Services
                 return false;
             }
 
-            try
+            if (ShellLauncher.TryStart(executablePath, out string? failureReason))
             {
-                _ = Process.Start(new ProcessStartInfo(executablePath) { UseShellExecute = true });
                 _logger.Info("Prozess gestartet: {Executable}.", current);
                 return true;
             }
-            catch (Exception ex)
-            {
-                _logger.Warning("Prozessstart fehlgeschlagen: {Reason}", ex.Message);
-                return false;
-            }
+
+            _logger.Warning("Prozessstart fehlgeschlagen: {Reason}", failureReason);
+            return false;
         }
     }
 }

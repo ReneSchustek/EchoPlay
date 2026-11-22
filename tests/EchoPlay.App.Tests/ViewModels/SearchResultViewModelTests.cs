@@ -39,7 +39,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "TKKG",
                 Source = "Spotify",
                 SourceSeriesId = "tkkg-001",
-                CoverImageUrl = "https://example.com/cover.jpg"
+                CoverImageUrl = new Uri("https://example.com/cover.jpg")
             };
 
             SearchResultViewModel sut = new(
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "TKKG",
                 Source = "Spotify",
                 SourceSeriesId = "tkkg-001",
-                CoverImageUrl = "https://example.com/cover.jpg"
+                CoverImageUrl = new Uri("https://example.com/cover.jpg")
             };
 
             SearchResultViewModel sut = new(
@@ -114,7 +114,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 Title = "TKKG",
                 Source = "Spotify",
                 SourceSeriesId = "tkkg-001",
-                CoverImageUrl = "https://example.com/cover.jpg"
+                CoverImageUrl = new Uri("https://example.com/cover.jpg")
             };
 
             SearchResultViewModel sut = new(
@@ -134,7 +134,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Trefferkachel_ZeigtDieHerkunftLesbar()
+        public void HitTile_ShowsTheOriginReadably()
         {
             // "AppleMusic" ist der interne Schlüssel; auf der Kachel steht der Name des Anbieters.
             SearchResultViewModel apple = BuildViewModel(new ImportSeries
@@ -156,7 +156,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Albumtreffer_TraegtDenKuenstlerImTitel()
+        public void AlbumHit_CarriesTheArtistInTheTitle()
         {
             SearchResultViewModel sut = BuildViewModel(new ImportSeries
             {
@@ -172,7 +172,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OhneCover_ZeigtDieKachelDenPlatzhalterUndDenHellenRahmen()
+        public void WithoutCover_TheTileShowsThePlaceholderAndTheLightBorder()
         {
             SearchResultViewModel sut = BuildViewModel();
 
@@ -182,7 +182,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void BereitsVorhandeneSerie_ZeigtKeinenHinzufuegenKnopf()
+        public void ExistingSeries_ShowsNoAddButton()
         {
             SearchResultViewModel sut = BuildViewModel(isAlreadyImported: true);
 
@@ -194,7 +194,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Mehrfachauswahl_MerktSichDieKachel()
+        public void MultiSelection_RemembersTheTile()
         {
             SearchResultViewModel sut = BuildViewModel();
 
@@ -224,7 +224,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Hinzufügen_ZeigtDenFehlerUndLässtDenKnopfStehen()
+        public async Task Add_ShowsTheErrorAndKeepsTheButton()
         {
             // Scheitert der Abruf beim Anbieter, darf die Kachel nicht als erledigt
             // erscheinen, sonst hält der Nutzer die Serie für vorhanden.
@@ -255,7 +255,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Func<Task>? onImportCompleted = null,
             string? failForSourceSeriesId = null)
         {
-            ImportSeries treffer = series ?? new ImportSeries
+            ImportSeries hit = series ?? new ImportSeries
             {
                 Title = "TKKG",
                 Source = "Spotify",
@@ -270,28 +270,16 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
                 new AppSettings { ActiveProvider = ProviderType.Spotify }));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => new FakeEpisodeImportSource([], failForSourceSeriesId));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => new FakeEpisodeImportSource([], failForSourceSeriesId));
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddProviderFakes(services, episodeSource: new FakeEpisodeImportSource([], failForSourceSeriesId));
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new SearchResultViewModel(
-                treffer,
+                hit,
                 isAlreadyImported,
                 importService,
                 errorDialogService ?? new FakeErrorDialogService(),

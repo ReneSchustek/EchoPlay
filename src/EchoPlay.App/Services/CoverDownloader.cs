@@ -15,8 +15,8 @@ namespace EchoPlay.App.Services
     public sealed class CoverDownloader : ICoverDownloader
     {
         /// <summary>
-        /// Name des HTTP-Clients für Cover-Downloads. Muss zur Registrierung in
-        /// <c>App.xaml.cs</c> passen; steht hier, damit der Name nur an einer Stelle lebt.
+        /// Name des HTTP-Clients für Cover-Downloads. Die Registrierung in
+        /// <c>HttpClientRegistration</c> liest ihn von hier, damit er nur an einer Stelle steht.
         /// </summary>
         public const string HttpClientName = "CoverDownload";
 
@@ -40,15 +40,14 @@ namespace EchoPlay.App.Services
         /// <inheritdoc/>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types",
             Justification = "Cover-Download-Wrapper: HTTP-, Timeout-, TLS- und Redirect-Fehler einzelner URLs werden zu 'null' normalisiert, damit der Aufrufer den Eintrag überspringt und mit dem nächsten weitermacht. Echte Abbrüche sind davon ausgenommen (when-Filter).")]
-        public async Task<byte[]?> DownloadAsync(string url, CancellationToken cancellationToken = default)
+        public async Task<byte[]?> DownloadAsync(Uri url, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(url)) return null;
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri)) return null;
+            ArgumentNullException.ThrowIfNull(url);
 
             try
             {
                 HttpClient client = _httpClientFactory.CreateClient(HttpClientName);
-                byte[] data = await client.GetByteArrayAsync(uri, cancellationToken).ConfigureAwait(false);
+                byte[] data = await client.GetByteArrayAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Leere Antwort wie einen Fehler behandeln: ein 0-Byte-Cover ist in
                 // CoverImages schlimmer als kein Cover. Der Platzhalter greift dann nicht

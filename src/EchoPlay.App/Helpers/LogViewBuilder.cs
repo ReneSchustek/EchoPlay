@@ -7,13 +7,12 @@ namespace EchoPlay.App.Helpers
     /// </summary>
     /// <remarks>
     /// Eigene Klasse, weil das Befüllen im Code-Behind der Einstellungsseite steckt und
-    /// dort einen WinUI-Host bräuchte. Die Entscheidung, <em>was</em> angezeigt wird, ist
+    /// dort einen WinUI-Host bräuchte. Die Entscheidung, was angezeigt wird, ist
     /// hier testbar; im Code-Behind bleibt nur das Übertragen in den
     /// <c>RichTextBlock</c>.
     /// <para>
-    /// Eine leere Anzeige darf nicht wie ein Fehler aussehen: Genau das war die Meldung
-    /// „Protokollseite bleibt beim Öffnen leer". Dort war es tatsächlich ein Fehler, aber
-    /// ohne Hinweiszeile ist beides von außen nicht zu unterscheiden.
+    /// Eine leere Anzeige darf nicht wie ein Fehler aussehen: Ohne Hinweiszeile wäre eine
+    /// Seite ohne Einträge von einer kaputten nicht zu unterscheiden.
     /// </para>
     /// </remarks>
     internal static class LogViewBuilder

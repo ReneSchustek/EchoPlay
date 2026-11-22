@@ -76,20 +76,11 @@ namespace EchoPlay.App.ViewModels
 
             // DispatcherQueue auf dem UI-Thread erfassen, notwendig für das Marshalling der
             // BitmapImage-Erzeugung. In Tests existiert kein WinUI-3-Dispatcher, dann bleibt das Feld null.
-            try
-            {
-                _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                _dispatcherQueue = null;
-            }
+            _dispatcherQueue = UiDispatcher.TryGetForCurrentThread();
 
             _coverLoaderRunner = new LocalEpisodeCoverLoader(
                 scopeFactory, coverLoader, coverService, logger, _dispatcherQueue);
         }
-
-        // ── Episoden-Daten ───────────────────────────────────────────────────────
 
         /// <summary>
         /// Gefilterte und sortierte Episodenliste der aktuell gewählten Serie.
@@ -182,8 +173,6 @@ namespace EchoPlay.App.ViewModels
         public Visibility EpisodesLoadedVisibility =>
             _episodes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // ── Laden / Zurücksetzen ─────────────────────────────────────────────────
-
         /// <summary>
         /// Lädt die Episoden einer Serie, setzt Filter/Sortierung/Tab zurück und startet
         /// den Cover-Ladevorgang. Vorherige Cover-Tasks werden dabei abgebrochen.
@@ -212,41 +201,40 @@ namespace EchoPlay.App.ViewModels
             CancellationToken coverToken = _coverCts.Token;
 
             // Schritt 1: Karten OHNE Cover erstellen, GridView rendert sofort
-            List<LocalEpisodeCardViewModel> episodeCards = [];
-            List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue = [];
-
-            foreach (Episode episode in episodes.Where(e => e.LocalFolderPath is not null).OrderBy(e => e.EpisodeNumber))
-            {
-                // Serien-Präfix aus dem Episodentitel entfernen, falls vorhanden.
-                // Viele Hörspiel-Ordner heißen z.B. "Abenteurer unserer Zeit - Der Pirat",
-                // und der Serienname am Anfang ist redundant und verschwendet Platz in der Kachel.
-                string displayTitle = StripSeriesPrefix(episode.Title, artist.Title);
-
-                // Sonderfolge: Nummer 0 oder null (kein erkennbares Nummernmuster)
-                bool isSpecial = episode.EpisodeNumber is null or 0;
-
-                LocalEpisodeCardViewModel card = new(
-                    episodeId: episode.Id,
-                    episodeNumber: episode.EpisodeNumber,
-                    title: displayTitle,
-                    localTrackCount: episode.LocalTrackCount ?? 0,
-                    folderPath: episode.LocalFolderPath,
-                    isSpecialEpisode: isSpecial);
-
-                episodeCards.Add(card);
-                coverQueue.Add((card, episode));
-            }
+            List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue = [.. episodes
+                .Where(e => e.LocalFolderPath is not null)
+                .OrderBy(e => e.EpisodeNumber)
+                .Select(e => (ToCard(e, artist.Title), e))];
 
             _completedEpisodeIds = completedIds;
             _inProgressEpisodeIds = inProgressIds;
-
-            // Gehört-Status auf den Karten setzen (nach dem Laden der IDs)
+            List<LocalEpisodeCardViewModel> episodeCards = [.. coverQueue.Select(entry => entry.Card)];
             foreach (LocalEpisodeCardViewModel card in episodeCards)
             {
                 card.IsCompleted = _completedEpisodeIds.Contains(card.EpisodeId);
             }
 
-            // Ungefilterte Gesamtliste speichern, Tab/Filter/Sortierung zurücksetzen
+            ResetListTo(episodeCards);
+            await LoadCoversAsync(coverQueue, coverToken);
+        }
+
+        /// <summary>
+        /// Die Kachel einer Folge, noch ohne Cover. Das Serien-Präfix fällt aus dem Titel:
+        /// Viele Hörspiel-Ordner heißen z.B. "Abenteurer unserer Zeit - Der Pirat", und der
+        /// Serienname am Anfang ist redundant und verschwendet Platz in der Kachel.
+        /// </summary>
+        private static LocalEpisodeCardViewModel ToCard(Episode episode, string seriesTitle) => new(
+            episodeId: episode.Id,
+            episodeNumber: episode.EpisodeNumber,
+            title: StripSeriesPrefix(episode.Title, seriesTitle),
+            localTrackCount: episode.LocalTrackCount ?? 0,
+            folderPath: episode.LocalFolderPath,
+            // Sonderfolge: Nummer 0 oder null (kein erkennbares Nummernmuster)
+            isSpecialEpisode: episode.EpisodeNumber is null or 0);
+
+        /// <summary>Speichert die ungefilterte Gesamtliste und setzt Tab, Filter und Sortierung zurück.</summary>
+        private void ResetListTo(List<LocalEpisodeCardViewModel> episodeCards)
+        {
             _allEpisodes = episodeCards;
             _episodeTabIndex = 0;
             _episodeFilterIndex = 0;
@@ -255,24 +243,25 @@ namespace EchoPlay.App.ViewModels
             OnPropertyChanged(nameof(HasSpecialEpisodes));
             OnPropertyChanged(nameof(SpecialEpisodeCount));
             ApplyFilterAndSort();
+        }
 
-            // Erste Charge: max. 60 Kacheln (reguläre + Sonderfolgen gemischt) MIT Cover laden,
-            // damit der aktive Tab sofort Cover zeigt. Sonderfolgen werden nicht verzögert,
-            // weil die Cover-Dateien auf lokaler SSD schnell genug laden.
-            int firstBatchSize = Math.Min(60, coverQueue.Count);
-
+        /// <summary>
+        /// Lädt die erste Charge (reguläre und Sonderfolgen gemischt) sofort, damit der aktive Tab
+        /// Cover zeigt, und den Rest im Hintergrund in Chargen derselben Größe. Sonderfolgen werden
+        /// nicht verzögert, weil die Cover-Dateien auf lokaler SSD schnell genug laden.
+        /// </summary>
+        private async Task LoadCoversAsync(List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue, CancellationToken coverToken)
+        {
+            int firstBatchSize = Math.Min(LocalEpisodeCoverLoader.BatchSize, coverQueue.Count);
             for (int i = 0; i < firstBatchSize; i++)
             {
                 if (coverToken.IsCancellationRequested) return;
                 await _coverLoaderRunner.LoadSingleAsync(coverQueue[i].Card, coverQueue[i].Episode);
             }
 
-            // Rest im Hintergrund: ab Position 60, in 60er-Chargen nachladend.
             if (coverQueue.Count > firstBatchSize)
             {
-                List<(LocalEpisodeCardViewModel Card, Episode Episode)> remaining =
-                    coverQueue.GetRange(firstBatchSize, coverQueue.Count - firstBatchSize);
-                _ = _coverLoaderRunner.LoadRestAsync(remaining, coverToken);
+                _ = _coverLoaderRunner.LoadRestAsync(coverQueue.GetRange(firstBatchSize, coverQueue.Count - firstBatchSize), coverToken);
             }
         }
 
@@ -293,8 +282,6 @@ namespace EchoPlay.App.ViewModels
             OnPropertyChanged(nameof(HasSpecialEpisodes));
             OnPropertyChanged(nameof(SpecialEpisodeCount));
         }
-
-        // ── Filterung / Sortierung ───────────────────────────────────────────────
 
         /// <summary>
         /// Filtert und sortiert die Episodenliste basierend auf dem gewählten Filter und Sortierkriterium.
@@ -331,11 +318,9 @@ namespace EchoPlay.App.ViewModels
             OnPropertyChanged(nameof(EpisodesLoadedVisibility));
         }
 
-        // ── Episoden-Status ──────────────────────────────────────────────────────
-
         /// <summary>
         /// Markiert eine Episode als vollständig gehört.
-        /// Setzt <c>IsCompleted = true</c> und <c>CompletedAt = DateTime.UtcNow</c> im PlaybackState.
+        /// Setzt <c>IsCompleted</c> und den Abschlusszeitpunkt aus der Uhr im PlaybackState.
         /// Legt einen neuen PlaybackState an, falls noch keiner existiert.
         /// </summary>
         /// <param name="episodeId">Die ID der zu markierenden Episode.</param>
@@ -380,8 +365,6 @@ namespace EchoPlay.App.ViewModels
                 card.IsCompleted = false;
             }
         }
-
-        // ── Hilfsmethoden ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Entfernt den Seriennamen als Präfix aus dem Episodentitel, falls vorhanden.

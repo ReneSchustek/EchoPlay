@@ -68,7 +68,7 @@ namespace EchoPlay.App.Tests.Fakes
         public Task AddAsync(Series series, CancellationToken cancellationToken = default)
         {
             // EF Core setzt die Id nach SaveChanges via store-generated value.
-            // Im Fake übernehmen wir das per Reflection, da Id protected set hat.
+            // Der Fake setzt sie per Reflection, weil Id nur einen geschützten Setter hat.
             PropertyInfo idProp = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
             idProp.SetValue(series, TestIds.Indexed(100 + _nextId++));
             _series.Add(series);

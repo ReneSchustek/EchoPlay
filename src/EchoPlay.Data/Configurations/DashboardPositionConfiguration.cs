@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -10,7 +9,6 @@ namespace EchoPlay.Data.Configurations
     /// Stellt einen eindeutigen Index auf SeriesId + Section sicher, damit
     /// pro Serie und Bereich maximal eine Position existiert.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "EF Core instanziiert IEntityTypeConfiguration-Implementierungen zur Modell-Erstellung via ApplyConfigurationsFromAssembly-Reflection.")]
     internal sealed class DashboardPositionConfiguration : IEntityTypeConfiguration<DashboardPosition>
     {
         /// <summary>
@@ -31,7 +29,7 @@ namespace EchoPlay.Data.Configurations
 
             // Abfrage nach Bereich: GetBySectionAsync() filtert auf Section und sortiert nach Position.
             _ = builder.HasIndex(dp => new { dp.Section, dp.Position })
-                .HasFilter("IsDeleted = 0");
+                .HasFilter(SoftDeleteIndexFilter.ActiveRows);
 
             // Explizite Fremdschlüssel-Beziehung zur Serie.
             // Restrict: Eine Serie darf nicht physisch gelöscht werden, solange Positionen existieren.

@@ -10,6 +10,7 @@
 *.msix binary
 *.db binary
 *.pfx binary
+*.ttf binary
 
 # Shell-Scripts bleiben LF (laufen in Git-Bash/WSL, \r im Shebang bricht)
 *.sh text eol=lf

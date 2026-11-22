@@ -2,6 +2,7 @@ using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Abstractions.Time;
+using EchoPlay.Core.Http;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
@@ -19,9 +20,9 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Baut den Neuerscheinungs-Abschnitt der Startseite: aus den zwischengespeicherten
-    /// Einträgen des Anbieters werden Kacheln, die nach Monat gruppiert erscheinen.
-    /// „Angekündigt" (alles mit Datum in der Zukunft) steht als eigene Gruppe ganz oben,
-    /// darunter die Monate mit dem neuesten zuerst. Bereits gehörte Folgen fallen heraus.
+    /// Einträgen des Anbieters werden Kacheln, die nach Monat gruppiert erscheinen, der
+    /// neueste zuerst. Bereits gehörte Folgen fallen heraus, angekündigte ebenso: Die stehen
+    /// auf der eigenen Seite „Angekündigt", für alle Serien statt nur für überwachte.
     /// </summary>
     internal sealed class NewReleaseGroupBuilder
     {
@@ -37,7 +38,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="scopeFactory">Für die Abfragen je Durchgang.</param>
         /// <param name="coverProvider">Beschafft die Cover.</param>
         /// <param name="cardServices">Die Dienste, die jede Kachel für ihre Befehle braucht.</param>
-        /// <param name="clock">Zeitquelle für die Abgrenzung „angekündigt".</param>
+        /// <param name="clock">Zeitquelle für die Abgrenzung „erschienen".</param>
         /// <param name="logger">Protokollkanal.</param>
         public NewReleaseGroupBuilder(
             IServiceScopeFactory scopeFactory,
@@ -100,8 +101,8 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Wandelt die Einträge in Kacheln um. Gehörte Folgen und Einträge zu nicht
-        /// überwachten Serien fallen dabei heraus.
+        /// Wandelt die Einträge in Kacheln um. Angekündigte und gehörte Folgen sowie Einträge
+        /// zu nicht überwachten Serien fallen dabei heraus.
         /// </summary>
         private async Task<IReadOnlyList<(NewEpisodeCardViewModel Card, DateTime ReleaseDate)>> BuildCardsAsync(
             IReadOnlyList<CachedNewRelease> cached,
@@ -116,6 +117,11 @@ namespace EchoPlay.App.ViewModels
 
             foreach (CachedNewRelease entry in cached)
             {
+                if (entry.ReleaseDate.Date > today)
+                {
+                    continue;
+                }
+
                 Series? series = FindSeriesById(subscribedSeries, entry.SeriesId);
 
                 // Nur überwachte Serien anzeigen, nicht überwachte werden übergangen.
@@ -130,7 +136,7 @@ namespace EchoPlay.App.ViewModels
                     continue;
                 }
 
-                cards.Add((await BuildCardAsync(entry, series, match, entry.ReleaseDate.Date > today), entry.ReleaseDate));
+                cards.Add((await BuildCardAsync(entry, series, match), entry.ReleaseDate));
             }
 
             return cards;
@@ -140,8 +146,7 @@ namespace EchoPlay.App.ViewModels
         private async Task<NewEpisodeCardViewModel> BuildCardAsync(
             CachedNewRelease entry,
             Series series,
-            LocalEpisodeMatch match,
-            bool isAnnounced)
+            LocalEpisodeMatch match)
         {
             (BitmapImage? cover, bool hasEpisodeCover) = await ResolveCoverAsync(entry, series, match.EpisodeId);
 
@@ -158,7 +163,7 @@ namespace EchoPlay.App.ViewModels
                 status: PlaybackStatus.NotStarted,
                 progressPercent: 0,
                 hasLocalTrack: match.HasLocalTrack,
-                isAnnounced: isAnnounced,
+                isAnnounced: false,
                 scopeFactory: _scopeFactory,
                 errorDialogService: _cardServices.ErrorDialogService,
                 confirmationDialogService: _cardServices.ConfirmationDialogService,
@@ -198,40 +203,32 @@ namespace EchoPlay.App.ViewModels
                 return (cover, true);
             }
 
-            if (!string.IsNullOrEmpty(entry.CoverUrl))
+            // Die Adresse kommt vom Anbieter: Eine kaputte darf den Abschnitt nicht werfen,
+            // eine lokale (file://) die Kachel nichts von der Platte laden lassen.
+            Uri? coverAddress = WebAddress.TryParse(
+                entry.CoverUrl?.Replace("100x100bb", "600x600bb", StringComparison.Ordinal));
+            if (coverAddress is not null)
             {
-                string highResCoverUrl = entry.CoverUrl.Replace("100x100bb", "600x600bb", StringComparison.Ordinal);
-                return (new BitmapImage(new Uri(highResCoverUrl)), false);
+                return (new BitmapImage(coverAddress), false);
             }
 
             return (await _coverProvider.BuildSeriesCoverAsync(series), false);
         }
 
         /// <summary>
-        /// Gruppiert die Kacheln: „Angekündigt" zuerst, danach die Monate absteigend.
+        /// Gruppiert die Kacheln nach Monat, der neueste zuerst.
         /// </summary>
         private List<NewEpisodesGroupViewModel> GroupByMonth(
             IReadOnlyList<(NewEpisodeCardViewModel Card, DateTime ReleaseDate)> cards)
         {
             // Die Monatsnamen kommen aus der Oberflächensprache, nicht aus der Systemkultur:
-            // Letztere folgt dem Windows-Gebietsschema und lief bei abweichender App-Sprache
-            // auseinander: englische Oberfläche, deutsche Monatsnamen.
+            // Letztere folgt dem Windows-Gebietsschema, und eine englische Oberfläche zeigte
+            // bei deutschem Gebietsschema deutsche Monatsnamen.
             string[] monthNames = ResolveUiCulture().DateTimeFormat.MonthNames;
             List<NewEpisodesGroupViewModel> groups = [];
 
-            List<NewEpisodeCardViewModel> announced = [.. cards.Where(e => e.Card.IsAnnounced).Select(e => e.Card)];
-            if (announced.Count > 0)
-            {
-                // Die Überschrift kommt aus den Ressourcen: Das Kennzeichen auf derselben
-                // Kachel war bereits übersetzt, die Überschrift blieb deutsch. Auf englischer
-                // Oberfläche standen beide Sprachen nebeneinander.
-                string announcedLabel = _cardServices.LocalizationService?.Get("DashboardGroupAnnounced") ?? "Angekündigt";
-                groups.Add(new NewEpisodesGroupViewModel(announcedLabel, 0, announced));
-            }
-
             IEnumerable<IGrouping<(int Year, int Month), (NewEpisodeCardViewModel Card, DateTime ReleaseDate)>> monthGroups =
                 cards
-                    .Where(e => !e.Card.IsAnnounced)
                     .GroupBy(e => (e.ReleaseDate.Year, e.ReleaseDate.Month))
                     .OrderByDescending(g => g.Key.Year)
                     .ThenByDescending(g => g.Key.Month);
@@ -240,28 +237,17 @@ namespace EchoPlay.App.ViewModels
             {
                 // Die Monatsnamen sind nullbasiert, die Monatszahl beginnt bei eins.
                 string label = $"{monthNames[monthGroup.Key.Month - 1]} {monthGroup.Key.Year}";
-                groups.Add(new NewEpisodesGroupViewModel(label, BuildSortKey(monthGroup.Key), [.. monthGroup.Select(e => e.Card)]));
+                groups.Add(new NewEpisodesGroupViewModel(label, [.. monthGroup.Select(e => e.Card)]));
             }
 
             return groups;
         }
 
         /// <summary>
-        /// Bildet den Sortierschlüssel eines Monats: der negative Tageswert seines Anfangs,
-        /// damit der neueste Monat oben steht.
-        /// </summary>
-        private static int BuildSortKey((int Year, int Month) month)
-        {
-            DateTime monthStart = new(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            return -(int)(monthStart - DateTime.UnixEpoch).TotalDays;
-        }
-
-        /// <summary>
         /// Liefert die Kultur der Oberflächensprache. Grundlage ist die gesetzte
         /// Sprachvorgabe; erst wenn die fehlt, gilt die Systemkultur.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Reine Anzeige-Kultur für Monatsnamen: ein unbekannter Sprachcode oder eine nicht verfügbare Plattform-API darf den Dashboard-Aufbau nicht abbrechen – Fallback ist die aktuelle Kultur.")]
-        private static CultureInfo ResolveUiCulture()
+        internal static CultureInfo ResolveUiCulture()
         {
             try
             {
@@ -271,9 +257,13 @@ namespace EchoPlay.App.ViewModels
                     return new CultureInfo(primary);
                 }
             }
-            catch (Exception)
+            catch (CultureNotFoundException)
             {
-                // Fällt unten auf die aktuelle Kultur zurück.
+                // Ein gespeicherter Sprachcode, den dieses System nicht kennt.
+            }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                // Die Sprach-API des Windows App SDK ist nicht registriert, etwa im Testprozess.
             }
 
             return CultureInfo.CurrentCulture;

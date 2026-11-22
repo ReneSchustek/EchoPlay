@@ -23,12 +23,18 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class LocalArtistsFilterTests
     {
         private static LocalArtistsViewModel BuildViewModel(out FakeEpisodeDataService episodeService)
+            => BuildViewModel(out episodeService, out _);
+
+        private static LocalArtistsViewModel BuildViewModel(out FakeEpisodeDataService episodeService, out FakeSeriesDataService seriesService)
         {
             episodeService = new FakeEpisodeDataService();
+            seriesService = new FakeSeriesDataService();
 
             ServiceCollection services = new();
             IEpisodeDataService episodes = episodeService;
+            ISeriesDataService series = seriesService;
             _ = services.AddScoped<IEpisodeDataService>(_ => episodes);
+            _ = services.AddScoped<ISeriesDataService>(_ => series);
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new LocalArtistsViewModel(provider.GetRequiredService<IServiceScopeFactory>());
@@ -39,7 +45,7 @@ namespace EchoPlay.App.Tests.ViewModels
             Series series = new()
             {
                 Title = title,
-                LocalFolderPath = null,
+                LocalFolderPath = $@"C:\Serie\{title}",
                 IsFavorite = isFavorite,
                 IsWatched = isWatched
             };
@@ -59,29 +65,32 @@ namespace EchoPlay.App.Tests.ViewModels
         };
 
         /// <summary>
-        /// Legt drei Serien an: „Bibi" (Favorit, vollständig), „Benjamin" (überwacht,
-        /// unvollständig) und „TKKG" (schlicht, vollständig).
+        /// Legt drei Serien an: „Bibi" (Favorit, vollständig), „Benjamin" (überwacht, Lücke bei
+        /// Folge 2) und „TKKG" (schlicht, vollständig), und lädt die Mediathek wie die App.
         /// </summary>
         private static async Task<LocalArtistsViewModel> BuildLibraryAsync()
         {
-            LocalArtistsViewModel vm = BuildViewModel(out FakeEpisodeDataService episodes);
+            LocalArtistsViewModel vm = BuildViewModel(out FakeEpisodeDataService episodes, out FakeSeriesDataService seriesService);
 
             Series bibi = MakeSeries(TestIds.SeriesA, "Bibi Blocksberg", isFavorite: true);
             Series benjamin = MakeSeries(TestIds.SeriesB, "Benjamin Blümchen", isWatched: true);
             Series tkkg = MakeSeries(TestIds.SeriesC, "TKKG");
 
+            // Der Fake vergibt beim Anlegen eigene Kennungen; die Folgen kommen deshalb danach.
+            foreach (Series series in new[] { bibi, benjamin, tkkg })
+            {
+                await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
+            }
+
             await episodes.AddRangeAsync(
-                [MakeEpisode(bibi.Id, 1, local: true)], TestContext.Current.CancellationToken);
+                [MakeEpisode(bibi.Id, 1, local: true), MakeEpisode(bibi.Id, 2, local: true)], TestContext.Current.CancellationToken);
             await episodes.AddRangeAsync(
-                [MakeEpisode(benjamin.Id, 1, local: true), MakeEpisode(benjamin.Id, 2, local: false)],
+                [MakeEpisode(benjamin.Id, 1, local: true), MakeEpisode(benjamin.Id, 3, local: true)],
                 TestContext.Current.CancellationToken);
             await episodes.AddRangeAsync(
                 [MakeEpisode(tkkg.Id, 1, local: true)], TestContext.Current.CancellationToken);
 
-            await vm.AppendArtistCardAsync(bibi);
-            await vm.AppendArtistCardAsync(benjamin);
-            await vm.AppendArtistCardAsync(tkkg);
-
+            await vm.LoadFromDatabaseAsync();
             return vm;
         }
 
@@ -119,9 +128,9 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         /// <summary>
-        /// Unvollständig heißt: Es sind Folgen bekannt, von denen welche fehlen. Eine Serie
-        /// ganz ohne bekannte Folgen zählt nicht dazu, denn dort fehlt die Auskunft, nicht der
-        /// Bestand.
+        /// Unvollständig heißt: eine Lücke in der Nummernfolge oder eine neue Folge beim Anbieter.
+        /// Eine Serie ganz ohne bekannte Folgen zählt nicht dazu, denn dort fehlt die Auskunft,
+        /// nicht der Bestand.
         /// </summary>
         [Fact]
         public async Task IncompleteOnly_KeepsSeriesWithMissingEpisodes()
@@ -136,8 +145,9 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task SeriesWithoutKnownEpisodes_IsNotCountedAsIncomplete()
         {
-            LocalArtistsViewModel vm = BuildViewModel(out _);
-            await vm.AppendArtistCardAsync(MakeSeries(TestIds.SeriesA, "Ohne Folgen"));
+            LocalArtistsViewModel vm = BuildViewModel(out _, out FakeSeriesDataService seriesService);
+            await seriesService.AddAsync(MakeSeries(TestIds.SeriesA, "Ohne Folgen"), TestContext.Current.CancellationToken);
+            await vm.LoadFromDatabaseAsync();
 
             vm.IncompleteOnly = true;
 

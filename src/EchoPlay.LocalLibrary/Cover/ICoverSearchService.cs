@@ -1,18 +1,17 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace EchoPlay.LocalLibrary.Cover
 {
     /// <summary>
     /// Sucht online nach Cover-Kandidaten für einen Serien- oder Folgentitel.
     /// Der Nutzer wählt aus den zurückgegebenen Kandidaten das passende Cover aus.
     /// </summary>
+    /// <remarks>
+    /// Jeder Anbieter setzt die Schnittstelle selbst um; registriert ist sie nur einmal, als
+    /// <see cref="CompositeCoverSearchService"/>, der alle Anbieter zusammen abfragt.
+    /// </remarks>
     public interface ICoverSearchService
     {
         /// <summary>
         /// Sucht Cover-Kandidaten für den angegebenen Suchbegriff.
-        /// Die Ergebnisse kommen aus der Cover Art Archive-Datenbank (Teil von MusicBrainz).
         /// </summary>
         /// <param name="title">Suchbegriff, typischerweise Serien- oder Folgentitel.</param>
         /// <param name="ct">Abbruchtoken für den Fall, dass der Nutzer abbricht.</param>
@@ -28,7 +27,7 @@ namespace EchoPlay.LocalLibrary.Cover
         /// <remarks>
         /// Die Anbieter begrenzen ihre Antwort (neun Treffer, bei Deezer-Künstlern sechs). Wer
         /// darunter nichts Passendes findet, könnte ohne Nachladen nur den Suchbegriff ändern. Nachladen
-        /// heißt deshalb: **erneut abfragen** mit Versatz, nicht nachfiltern, was schon da ist.
+        /// heißt deshalb, mit Versatz erneut abzufragen, statt das Vorhandene nachzufiltern.
         /// </remarks>
         /// <param name="title">Suchbegriff, typischerweise Serien- oder Folgentitel.</param>
         /// <param name="page">Welcher Abschnitt geholt wird; <see cref="CoverSearchPage.First"/> entspricht der Überladung ohne Seite.</param>

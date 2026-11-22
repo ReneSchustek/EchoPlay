@@ -1,11 +1,14 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
+using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
@@ -103,6 +106,39 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(sut.Tracks);
             Assert.Equal(Visibility.Visible, sut.TracksEmptyVisibility);
         }
+
+        [Fact]
+        public async Task SetTracks_WithEpisodeNumber_NamesFolgeTracksAndTotalDuration()
+        {
+            LocalTracksViewModel sut = Build(_ => { });
+
+            await sut.SetTracksAsync(
+                BuildEpisodeCard(episodeNumber: 7),
+                [Track(1, TimeSpan.FromMinutes(40)), Track(2, TimeSpan.FromMinutes(22).Add(TimeSpan.FromSeconds(5)))],
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal("Folge 7 \u00B7 2 Tracks \u00B7 1:02:05", sut.TrackPanelSubtitle);
+        }
+
+        [Fact]
+        public async Task SetTracks_WithoutEpisodeNumber_LeavesTheNumberOut()
+        {
+            LocalTracksViewModel sut = Build(_ => { });
+
+            await sut.SetTracksAsync(
+                BuildEpisodeCard(episodeNumber: null),
+                [Track(1, TimeSpan.FromSeconds(95))],
+                TestContext.Current.CancellationToken);
+
+            // Eine Sonderfolge ohne Nummer bekäme sonst ein „Folge  ·" ohne Zahl.
+            Assert.Equal("1 Track \u00B7 1:35", sut.TrackPanelSubtitle);
+        }
+
+        private static LocalEpisodeCardViewModel BuildEpisodeCard(int? episodeNumber)
+            => new(Guid.NewGuid(), episodeNumber, "Der Schatz im Bergsee", localTrackCount: 1, folderPath: null);
+
+        private static LocalTrack Track(int number, TimeSpan duration)
+            => new() { TrackNumber = number, FilePath = $@"D:\Media\TKKG\{number:00}.mp3", Duration = duration };
 
         private static LocalArtistCardViewModel BuildArtistCard(string? localFolderPath)
         {

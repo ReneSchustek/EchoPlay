@@ -26,4 +26,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Derselbe Messbestand wie im Messprojekt tests/EchoPlay.Benchmarks.Cases, damit Wächter und
+         Messung gegen gleiche Daten laufen. -->
+    <Compile Include="..\EchoPlay.Benchmarks.Cases\Infrastructure\BenchmarkTitles.cs" Link="Performance\BenchmarkTitles.cs" />
+    <Compile Include="..\EchoPlay.Benchmarks.Cases\Infrastructure\LibraryShape.cs" Link="Performance\LibraryShape.cs" />
+  </ItemGroup>
+
 </Project>

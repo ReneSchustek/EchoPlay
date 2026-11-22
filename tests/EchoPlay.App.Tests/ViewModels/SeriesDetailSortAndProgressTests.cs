@@ -200,13 +200,13 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Cleanup_LeavesTheViewModelUsable()
+        public async Task Dispose_ThenCancellingThePriorityLoad_StaysQuiet()
         {
-            // Cleanup läuft beim Verlassen der Seite und darf keine Ausnahme werfen,
-            // auch wenn nichts nachzuladen ist.
+            // Die Freigabe läuft beim Verlassen der Seite und darf keine Ausnahme werfen,
+            // auch wenn nichts nachzuladen ist oder danach noch ein Abbruch eintrifft.
             (SeriesDetailViewModel viewModel, _, _) = await LoadAsync(null, (1, "Eins"));
 
-            viewModel.Cleanup();
+            viewModel.Dispose();
             viewModel.CancelPendingPriorityLoad();
         }
     }

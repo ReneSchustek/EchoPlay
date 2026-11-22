@@ -27,7 +27,7 @@ namespace EchoPlay.App.Tests.Services
         private static readonly byte[] CoverBytes = [0x42, 0x43];
 
         [Fact]
-        public async Task SerienCover_WerdenUeberDieAdresseGeholtUndAbgelegt()
+        public async Task SeriesCovers_AreFetchedByAddressAndStored()
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG", CoverImageUrl = SeriesCoverUrl };
@@ -40,15 +40,15 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, new FakeEpisodeDataService(),
                 new FakeCoverImageDataService(), coverService, downloader);
 
-            int geladen = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(1, geladen);
+            Assert.Equal(1, loaded);
             Assert.Equal([SeriesCoverUrl], downloader.RequestedUrls);
             Assert.Equal([series.Id], coverService.StoredSeriesCovers);
         }
 
         [Fact]
-        public async Task SerienCover_OhneAdresseWerdenNichtGeholt()
+        public async Task SeriesCovers_WithoutAddress_AreNotFetched()
         {
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(new Series { Title = "Nur lokal" }, TestContext.Current.CancellationToken);
@@ -58,14 +58,14 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, new FakeEpisodeDataService(),
                 new FakeCoverImageDataService(), new FakeCoverService(), downloader);
 
-            int geladen = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, geladen);
+            Assert.Equal(0, loaded);
             Assert.Empty(downloader.RequestedUrls);
         }
 
         [Fact]
-        public async Task SerienCover_WasSchonAbgelegtIstWirdNichtErneutGeholt()
+        public async Task SeriesCovers_AlreadyStoredIsNotFetchedAgain()
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG", CoverImageUrl = SeriesCoverUrl };
@@ -73,7 +73,7 @@ namespace EchoPlay.App.Tests.Services
 
             FakeCoverImageDataService coverImages = new();
             await coverImages.SetCoverAsync(
-                CoverEntityTypes.Series, series.Id, CoverBytes, SeriesCoverUrl, TestContext.Current.CancellationToken);
+                CoverEntityTypes.Series, series.Id, CoverBytes, new Uri(SeriesCoverUrl), TestContext.Current.CancellationToken);
 
             FakeCoverDownloader downloader = new();
             downloader.SetResponse(SeriesCoverUrl, CoverBytes);
@@ -81,14 +81,14 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, new FakeEpisodeDataService(),
                 coverImages, new FakeCoverService(), downloader);
 
-            int geladen = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, geladen);
+            Assert.Equal(0, loaded);
             Assert.Empty(downloader.RequestedUrls);
         }
 
         [Fact]
-        public async Task SerienCover_EinFehlgeschlagenerDownloadZaehltNicht()
+        public async Task SeriesCovers_AFailedDownloadDoesNotCount()
         {
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(
@@ -101,14 +101,14 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, new FakeEpisodeDataService(),
                 new FakeCoverImageDataService(), coverService, downloader);
 
-            int geladen = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingSeriesProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, geladen);
+            Assert.Equal(0, loaded);
             Assert.Empty(coverService.StoredSeriesCovers);
         }
 
         [Fact]
-        public async Task FolgenCover_WerdenUeberDieAdresseGeholtUndAbgelegt()
+        public async Task EpisodeCovers_AreFetchedByAddressAndStored()
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG" };
@@ -125,14 +125,14 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, episodeService,
                 new FakeCoverImageDataService(), coverService, downloader);
 
-            int geladen = await phases.DownloadMissingEpisodeProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingEpisodeProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(1, geladen);
+            Assert.Equal(1, loaded);
             Assert.Equal([episode.Id], coverService.StoredEpisodeCovers);
         }
 
         [Fact]
-        public async Task FolgenCover_UeberspringenSerienOhneKandidaten()
+        public async Task EpisodeCovers_SkipSeriesWithoutCandidates()
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG" };
@@ -147,14 +147,14 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, episodeService,
                 new FakeCoverImageDataService(), new FakeCoverService(), downloader);
 
-            int geladen = await phases.DownloadMissingEpisodeProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingEpisodeProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, geladen);
+            Assert.Equal(0, loaded);
             Assert.Empty(downloader.RequestedUrls);
         }
 
         [Fact]
-        public async Task FolgenCover_WasSchonAbgelegtIstWirdNichtErneutGeholt()
+        public async Task EpisodeCovers_AlreadyStoredIsNotFetchedAgain()
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG" };
@@ -166,7 +166,7 @@ namespace EchoPlay.App.Tests.Services
 
             FakeCoverImageDataService coverImages = new();
             await coverImages.SetCoverAsync(
-                CoverEntityTypes.Episode, episode.Id, CoverBytes, EpisodeCoverUrl, TestContext.Current.CancellationToken);
+                CoverEntityTypes.Episode, episode.Id, CoverBytes, new Uri(EpisodeCoverUrl), TestContext.Current.CancellationToken);
 
             FakeCoverDownloader downloader = new();
             downloader.SetResponse(EpisodeCoverUrl, CoverBytes);
@@ -174,14 +174,14 @@ namespace EchoPlay.App.Tests.Services
             OnlineCoverPhases phases = BuildPhases(seriesService, episodeService,
                 coverImages, new FakeCoverService(), downloader);
 
-            int geladen = await phases.DownloadMissingEpisodeProviderCoversAsync(TestContext.Current.CancellationToken);
+            int loaded = await phases.DownloadMissingEpisodeProviderCoversAsync(TestContext.Current.CancellationToken);
 
-            Assert.Equal(0, geladen);
+            Assert.Equal(0, loaded);
             Assert.Empty(downloader.RequestedUrls);
         }
 
         [Fact]
-        public async Task FolgenCover_AbbruchBeendetDenLauf()
+        public async Task EpisodeCovers_CancelEndsTheRun()
         {
             FakeSeriesDataService seriesService = new();
             Series series = new() { Title = "TKKG" };
@@ -201,9 +201,9 @@ namespace EchoPlay.App.Tests.Services
             using CancellationTokenSource cts = new();
             await cts.CancelAsync();
 
-            int geladen = await phases.DownloadMissingEpisodeProviderCoversAsync(cts.Token);
+            int loaded = await phases.DownloadMissingEpisodeProviderCoversAsync(cts.Token);
 
-            Assert.Equal(0, geladen);
+            Assert.Equal(0, loaded);
             Assert.Empty(downloader.RequestedUrls);
         }
 
@@ -226,9 +226,7 @@ namespace EchoPlay.App.Tests.Services
                 coverService,
                 downloader,
                 new FakeSpotifyCredentialStore(),
-                new FakeClock(),
-                rateLimiter: null,
-                new FakeLogger());
+                                new FakeLogger());
         }
     }
 }

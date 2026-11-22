@@ -13,7 +13,7 @@ namespace EchoPlay.App.Views
 {
     /// <summary>
     /// Vollständiger Player mit Playlist-Verwaltung.
-    /// Unterstützt das Öffnen von Ordnern (alle MP3-Dateien) und einzelner Dateien.
+    /// Unterstützt das Öffnen von Ordnern (alle Audiodateien) und einzelner Dateien.
     /// Der FolderPicker/FileOpenPicker erfordert WinRT-Interop, da WinUI 3 kein Fenster-Handle
     /// automatisch bereitstellt, es muss explizit übergeben werden.
     /// </summary>
@@ -22,9 +22,6 @@ namespace EchoPlay.App.Views
         /// <summary>Gibt dem XAML-Compiler Zugriff auf das ViewModel für x:Bind.</summary>
         public PlayerViewModel ViewModel { get; }
 
-        /// <summary>
-        /// Initialisiert die Seite und bezieht das ViewModel aus dem DI-Container.
-        /// </summary>
         private readonly IFilePickerService _filePickerService;
 
         /// <summary>
@@ -38,7 +35,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Öffnet einen FolderPicker und lädt alle MP3-Dateien aus dem gewählten Ordner.
+        /// Öffnet einen FolderPicker und lädt alle Audiodateien aus dem gewählten Ordner.
         /// Der zuletzt gewählte Ordner wird in den AppSettings gespeichert.
         /// </summary>
         private async void OnOpenFolderClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
@@ -58,7 +55,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Öffnet einen FileOpenPicker für Mehrfachauswahl von MP3-Dateien.
+        /// Öffnet einen FileOpenPicker für Mehrfachauswahl von Audiodateien.
         /// Die Reihenfolge der Auswahl bestimmt die Playlist-Reihenfolge.
         /// </summary>
         private async void OnOpenFilesClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
@@ -86,7 +83,7 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
-        /// Doppelklick auf einen Playlist-Eintrag startet die Wiedergabe ab diesem Track.
+        /// Ein Klick auf einen Playlist-Eintrag startet die Wiedergabe ab diesem Track.
         /// </summary>
         private void OnPlaylistItemClick(object sender, ItemClickEventArgs args)
         {
@@ -96,10 +93,6 @@ namespace EchoPlay.App.Views
             }
         }
 
-        /// <summary>
-        /// Signalisiert dem ViewModel, dass ein manueller Seek beginnt.
-        /// Verhindert, dass der Slider während des Ziehens durch PlayerService-Updates zurückspringt.
-        /// </summary>
         /// <summary>
         /// Schreibt die eingestellte Lautstärke in die Einstellungen, sobald der Nutzer den
         /// Regler loslässt.
@@ -118,6 +111,10 @@ namespace EchoPlay.App.Views
             await EchoPlay.App.Infrastructure.AsyncEventHandler.RunSafelyAsync(() => ViewModel.Volume.CommitAsync());
         }
 
+        /// <summary>
+        /// Signalisiert dem ViewModel, dass ein manueller Seek beginnt.
+        /// Verhindert, dass der Slider während des Ziehens durch PlayerService-Updates zurückspringt.
+        /// </summary>
         private void OnSliderPointerPressed(object sender, PointerRoutedEventArgs e)
         {
             ViewModel.Time.BeginSeek();

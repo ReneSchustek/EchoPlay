@@ -9,15 +9,10 @@ namespace EchoPlay.Data.Context
     /// <summary>
     /// Zentrale EF-Core-Datenbankkontextklasse für EchoPlay.
     /// Konfiguriert das Mapping und implementiert globale Abfragefilter für das Soft-Delete-System.
-    ///
-    /// Der Primary-Constructor-Syntax (C# 12) übergibt <paramref name="options"/> direkt
-    /// an <see cref="DbContext"/>, kein separater Konstruktorkörper notwendig.
+    /// <see cref="WatchedTitle"/> hat keinen Filter: Die Merkliste löscht physisch.
     /// </summary>
     public class EchoPlayDbContext(DbContextOptions<EchoPlayDbContext> options) : DbContext(options)
     {
-        // DbSet-Properties als Expression-Body (=> Set<T>()): EF Core gibt intern immer
-        // dieselbe DbSet-Instanz zurück, kein Backing-Field notwendig.
-
         /// <summary>Serien.</summary>
         public DbSet<Series> Series => Set<Series>();
 
@@ -42,6 +37,9 @@ namespace EchoPlay.Data.Context
         /// <summary>Gecachte Neuerscheinungen aus der iTunes-API.</summary>
         public DbSet<CachedNewRelease> CachedNewReleases => Set<CachedNewRelease>();
 
+        /// <summary>Veröffentlichungen aller vorhandenen Serien ab dem Vormonat.</summary>
+        public DbSet<ReleaseCalendarEntry> ReleaseCalendarEntries => Set<ReleaseCalendarEntry>();
+
         /// <summary>Cover-Binärdaten, getrennt von Metadaten-Tabellen.</summary>
         public DbSet<CoverImage> CoverImages => Set<CoverImage>();
 
@@ -50,6 +48,9 @@ namespace EchoPlay.Data.Context
 
         /// <summary>Dauerhaft ausgeblendete Dialoge.</summary>
         public DbSet<DialogSuppression> DialogSuppressions => Set<DialogSuppression>();
+
+        /// <summary>Die Geräte im Abgleich und wie weit ihr Protokoll übernommen ist.</summary>
+        public DbSet<ReplicationPeer> ReplicationPeers => Set<ReplicationPeer>();
 
         /// <summary>
         /// Konfiguriert das Modell beim Erstellen.
@@ -74,6 +75,7 @@ namespace EchoPlay.Data.Context
             _ = modelBuilder.Entity<AppSettings>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<DashboardPosition>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<CachedNewRelease>().HasQueryFilter(entity => !entity.IsDeleted);
+            _ = modelBuilder.Entity<ReleaseCalendarEntry>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<CoverImage>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<SecureSetting>().HasQueryFilter(entity => !entity.IsDeleted);
             _ = modelBuilder.Entity<DialogSuppression>().HasQueryFilter(entity => !entity.IsDeleted);

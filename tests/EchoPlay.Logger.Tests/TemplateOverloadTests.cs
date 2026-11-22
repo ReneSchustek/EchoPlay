@@ -88,7 +88,9 @@ namespace EchoPlay.Logger.Tests
             Assert.Equal("Wert (null)", captured.LastMessage);
         }
 
-        // Test-Logger ohne Sinks; nur für Default-Method-Verifikation.
+        /// <summary>
+        /// Test-Logger ohne Sinks; nur für Default-Method-Verifikation.
+        /// </summary>
         private sealed class CapturingTestLogger : ILogger
         {
             public bool IsDebugEnabled { get; set; } = true;

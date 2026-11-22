@@ -20,6 +20,7 @@ namespace EchoPlay.App.Services
         /// Liefert die ID für den nächsten User-Action-Scope. In Tests ersetzbar, damit
         /// Assertions auf den Scope-Namen deterministisch bleiben.
         /// </summary>
+        // Acht Hexzeichen reichen, um gleichzeitige Aktionen im Protokoll auseinanderzuhalten.
         internal static Func<string> IdGenerator { get; set; } = () => Guid.NewGuid().ToString("N")[..8];
 
         /// <summary>

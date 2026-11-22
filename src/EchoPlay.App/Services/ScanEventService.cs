@@ -15,7 +15,7 @@ namespace EchoPlay.App.Services
         private int _isRunning;
 
         /// <inheritdoc/>
-        public bool IsScanRunning => _isRunning == 1;
+        public bool IsScanRunning => Volatile.Read(ref _isRunning) == 1;
 
         /// <inheritdoc/>
         public event Action<Series>? SeriesSynced;
@@ -34,7 +34,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="series">Die Serie, deren Abgleich gerade fertig wurde.</param>
-        public void RaiseSeriesSynced(Series series)
+        public void NotifySeriesSynced(Series series)
         {
             SeriesSynced?.Invoke(series);
         }

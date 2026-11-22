@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using System;
 using System.Collections.Generic;
@@ -38,8 +39,8 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
             CoverSearchResult only = Assert.Single(result);
             Assert.Equal("Folge 1 – Der Fluch", only.ReleaseTitle);
             Assert.Equal("Deezer (Album)", only.Source);
-            Assert.Equal("https://e-cdns-images.dzcdn.net/medium.jpg", only.ThumbnailUrl);
-            Assert.Equal("https://e-cdns-images.dzcdn.net/xl.jpg", only.FullUrl);
+            Assert.Equal(new Uri("https://e-cdns-images.dzcdn.net/medium.jpg"), only.ThumbnailUrl);
+            Assert.Equal(new Uri("https://e-cdns-images.dzcdn.net/xl.jpg"), only.FullUrl);
         }
 
         [Fact]
@@ -57,7 +58,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new();
             HttpClient client = new(handler);
-            DeezerAlbumCoverSearchService service = new(client);
+            DeezerAlbumCoverSearchService service = new(client, new FakeLoggerFactory());
 
             IReadOnlyList<CoverSearchResult> result = await service.SearchAsync("Egal", ct: TestContext.Current.CancellationToken);
 
@@ -68,10 +69,13 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             FakeHttpMessageHandler handler = new(status, body);
             HttpClient client = new(handler);
-            return new DeezerAlbumCoverSearchService(client);
+            return new DeezerAlbumCoverSearchService(client, new FakeLoggerFactory());
         }
 
-        // Lokaler Fake-Handler: GET liefert konfigurierten Status + Body, Throw-Modus simuliert Netzwerkfehler.
+        /// <summary>
+        /// Lokaler Fake-Handler: GET liefert konfigurierten Status + Body, Throw-Modus simuliert
+        /// Netzwerkfehler.
+        /// </summary>
         private sealed class FakeHttpMessageHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _status;

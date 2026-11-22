@@ -36,7 +36,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void BeginUserAction_SchreibtUaPrefixUndNameInDenScopeStack()
+        public void BeginUserAction_WritesUaPrefixAndNameIntoTheScopeStack()
         {
             using IdGeneratorReplacement idReset = new("a3f21c12");
 
@@ -48,7 +48,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void BeginUserAction_NachDispose_EntferntScopeVomStack()
+        public void BeginUserAction_AfterDispose_RemovesScopeFromStack()
         {
             using IdGeneratorReplacement idReset = new("cafebabe");
 
@@ -61,14 +61,14 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void BeginUserAction_MitLeeremNamen_Wirft()
+        public void BeginUserAction_WithEmptyName_Throws()
         {
             _ = Assert.Throws<ArgumentException>(() => UserActionScope.BeginUserAction(string.Empty));
             _ = Assert.Throws<ArgumentException>(() => UserActionScope.BeginUserAction("   "));
         }
 
         [Fact]
-        public void BeginUserAction_StandardGenerator_LiefertAchtStelligeHexId()
+        public void BeginUserAction_DefaultGenerator_ReturnsEightDigitHexId()
         {
             using IDisposable ua = UserActionScope.BeginUserAction("Probe");
 
@@ -83,7 +83,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public void BeginUserAction_ZweiAufrufe_ErzeugenUnterschiedlicheIds()
+        public void BeginUserAction_TwoCalls_CreateDifferentIds()
         {
             string first;
             string second;
@@ -107,15 +107,12 @@ namespace EchoPlay.App.Tests.Services
         /// Log-Zeilen den UA-Prefix als äußersten Scope tragen, so wie es der Support
         /// per Log-Viewer-Filter erwartet.
         /// </summary>
-        [Fact]
-        public async Task LogZeilen_InnerhalbUserAction_TragenAlleDenSelbenUaPrefix()
+        /// <summary>
+        /// Schreibt vier Zeilen eines Imports in einer Nutzeraktion, zwei davon in verschachtelten
+        /// Scopes für Anbieter und HTTP-Aufruf.
+        /// </summary>
+        private static void WriteImportWithNestedScopes(CoreLogger logger)
         {
-            using IdGeneratorReplacement idReset = new("deadbeef");
-
-            MemorySink sink = new(capacity: 32);
-            LoggerOptions options = new() { MinimumLevel = LogLevel.Debug };
-            CoreLogger logger = new("ImportService", [sink], options);
-
             using (UserActionScope.BeginUserAction("ImportSeries"))
             {
                 logger.Info("Import gestartet");
@@ -129,6 +126,18 @@ namespace EchoPlay.App.Tests.Services
                 }
                 logger.Info("DB-Insert abgeschlossen");
             }
+        }
+
+        [Fact]
+        public async Task LogLines_WithinUserAction_AllCarryTheSameUaPrefix()
+        {
+            using IdGeneratorReplacement idReset = new("deadbeef");
+
+            MemorySink sink = new(capacity: 32);
+            LoggerOptions options = new() { MinimumLevel = LogLevel.Debug };
+            CoreLogger logger = new("ImportService", [sink], options);
+
+            WriteImportWithNestedScopes(logger);
 
             // Logger.LogAsync läuft fire-and-forget; ein kurzer Yield reicht, weil MemorySink synchron schreibt.
             await Task.Yield();
@@ -153,7 +162,7 @@ namespace EchoPlay.App.Tests.Services
         /// Nach Dispose des UA-Scopes dürfen Folge-Logs den UA-Prefix nicht mehr tragen.
         /// </summary>
         [Fact]
-        public async Task LogZeilen_NachDisposeDesUaScopes_TragenKeinenUaPrefixMehr()
+        public async Task LogLines_AfterDisposeOfTheUaScope_CarryNoUaPrefix()
         {
             using IdGeneratorReplacement idReset = new("12345678");
 

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using EchoPlay.Core.Security;
 
 namespace EchoPlay.LocalLibrary.Cover
@@ -20,18 +19,17 @@ namespace EchoPlay.LocalLibrary.Cover
         }
 
         /// <summary>
-        /// Lädt ein Coverbild von einer URL herunter.
+        /// Lädt ein Coverbild herunter.
         /// </summary>
-        /// <param name="imageUrl">Die URL des Coverbilds.</param>
+        /// <param name="imageUrl">Die geprüfte Adresse des Coverbilds.</param>
+        /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Die Bilddaten als Byte-Array.</returns>
         /// <exception cref="HttpRequestException">
         /// Wird geworfen, wenn der Download fehlschlägt.
         /// </exception>
-        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Internal API nimmt die URL so entgegen, wie sie in DB/DTO (Provider-URL-String) abgelegt ist. Uri-Refactor würde Cascade durch Cover-Kaskade erfordern und ist bewusst nicht umgesetzt.")]
-        public async Task<byte[]> DownloadAsync(string imageUrl)
+        public async Task<byte[]> DownloadAsync(Uri imageUrl, CancellationToken cancellationToken = default)
         {
-            return await _httpClient.GetByteArrayAsync(new Uri(imageUrl, UriKind.Absolute)).ConfigureAwait(false);
+            return await _httpClient.GetByteArrayAsync(imageUrl, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -44,14 +42,15 @@ namespace EchoPlay.LocalLibrary.Cover
         {
             string targetPath = Path.Combine(folderPath, Core.CoverConstants.CoverFileName);
 
-            // Defense-in-Depth: Cover muss innerhalb des vorgegebenen Ordners landen.
-            // Schutz gegen Symlink-Escape und Manipulation der CoverFileName-Konstante.
+            // Der Dateiname ist eine Konstante; die Prüfung fängt eine künftige Änderung ab, die
+            // einen Pfadanteil hineinbrächte. Sie vergleicht nur den Text, Verknüpfungen im
+            // Dateisystem löst sie nicht auf.
             if (!SecurePathHelper.IsPathInside(targetPath, folderPath))
             {
                 return;
             }
 
-            // Vorhandene Cover nicht überschreiben, denn der Nutzer könnte sie manuell angepasst haben
+            // Eine vorhandene cover.jpg bleibt, sie kann von Hand ausgesucht sein.
             if (File.Exists(targetPath))
             {
                 return;

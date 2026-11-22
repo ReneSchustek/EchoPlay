@@ -54,6 +54,9 @@ namespace EchoPlay.App.Views
             }
         }
 
+        /// <summary>
+        /// Zeigt die fehlenden Folgen einer Serie und bietet den Export als Textdatei an.
+        /// </summary>
         private async void OnMissingEpisodesResolved(IReadOnlyList<string> episodeTitles)
         {
             using Helpers.DialogReentrancyGuard? guard = Helpers.DialogReentrancyGuard.TryAcquire();
@@ -143,7 +146,7 @@ namespace EchoPlay.App.Views
 
             // Lokalzeit für den Datei-Namen, damit der Anwender seinen heutigen Bericht erkennt.
             Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync(
-                suggestedFileName: $"Fehlende-Folgen-{DateTime.Now:yyyy-MM-dd}",
+                suggestedFileName: $"{resources.GetString("MissingEpisodesFileName")}-{DateTime.Now:yyyy-MM-dd}",
                 fileTypeDescription: resources.GetString("CommonTextFileFilter"),
                 fileTypeFilters: [".txt"],
                 startLocation: Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary);

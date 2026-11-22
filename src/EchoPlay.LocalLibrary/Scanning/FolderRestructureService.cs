@@ -3,7 +3,6 @@ using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
-using System.Security;
 using System.Text.Json;
 
 namespace EchoPlay.LocalLibrary.Scanning
@@ -16,6 +15,9 @@ namespace EchoPlay.LocalLibrary.Scanning
     /// </summary>
     public sealed class FolderRestructureService : IFolderRestructureService
     {
+        /// <summary>Dateiname des Journals im Serienordner; wird bei erfolgreichem Umbau gelöscht.</summary>
+        public const string JournalFileName = ".echoplay-restructure-journal.json";
+
         private readonly ILogger _logger;
 
         /// <summary>
@@ -32,101 +34,74 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <inheritdoc />
         public RestructurePreview Analyze(string seriesFolderPath, string folderPattern)
         {
-            if (!Directory.Exists(seriesFolderPath))
-            {
-                return new RestructurePreview
-                {
-                    SeriesFolderPath = seriesFolderPath,
-                    Actions = [],
-                    FolderCount = 0
-                };
-            }
-
-            // Nur Audiodateien direkt im Serienordner sammeln (keine Unterordner)
-            string[] allFiles;
-            try
-            {
-                allFiles = Directory.GetFiles(seriesFolderPath);
-            }
-            catch (IOException)
-            {
-                return EmptyPreview(seriesFolderPath);
-            }
-            catch (UnauthorizedAccessException)
+            List<string>? audioFiles = AudioFilesInSeriesFolder(seriesFolderPath);
+            if (audioFiles is not { Count: > 0 })
             {
                 return EmptyPreview(seriesFolderPath);
             }
 
-            List<string> audioFiles = [];
-            foreach (string file in allFiles)
-            {
-                if (EchoPlay.Core.AudioExtensions.IsAudioFile(file))
-                {
-                    audioFiles.Add(file);
-                }
-            }
+            // Dieselbe Parser-Kette wie beim Einlesen, damit eine Datei hier dieselbe Nummer
+            // bekommt, unter der sie später als Folge erscheint.
+            EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(new EpisodeFolderParser(folderPattern));
+            List<RestructureAction> actions = [.. audioFiles.Select(file => PlanMove(seriesFolderPath, file, fileParsers))];
+            int folderCount = actions.Select(action => action.TargetFolderName).Distinct().Count();
 
-            if (audioFiles.Count == 0)
-            {
-                return EmptyPreview(seriesFolderPath);
-            }
-
-            // Parser für die Nummern/Titel-Extraktion mit denselben Mustern wie im Scanner
-            EpisodeFolderParser configuredParser = new(folderPattern);
-            EpisodeFolderParser[] fileParsers = EpisodeFolderParser.CreateFileNameParserChain(configuredParser);
-
-            List<RestructureAction> actions = [];
-            HashSet<string> targetFolders = [];
-
-            foreach (string filePath in audioFiles)
-            {
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                string fileName = Path.GetFileName(filePath);
-
-                // Parse-Kaskade (Kassette → Parser-Kette → Fallback) zentral in FileNameEpisodeParser.
-                (int? episodeNumber, string title) = FileNameEpisodeParser.Parse(fileNameWithoutExt, fileParsers);
-
-                // Zielordnernamen generieren
-                string targetFolderName = episodeNumber.HasValue
-                    ? $"{episodeNumber.Value:D3} - {EchoPlay.Core.PathSanitizer.SanitizeSegment(title)}"
-                    : EchoPlay.Core.PathSanitizer.SanitizeSegment(title);
-
-                string targetFolderPath = Path.Combine(seriesFolderPath, targetFolderName);
-                _ = targetFolders.Add(targetFolderName);
-
-                actions.Add(new RestructureAction
-                {
-                    SourcePath = filePath,
-                    TargetFolderPath = targetFolderPath,
-                    TargetFolderName = targetFolderName,
-                    FileName = fileName,
-                    EpisodeNumber = episodeNumber,
-                    EpisodeTitle = title
-                });
-            }
-
-            // Nach Episodennummer sortieren, Dateien ohne Nummer ans Ende
-            actions.Sort((a, b) =>
-            {
-                int numA = a.EpisodeNumber ?? int.MaxValue;
-                int numB = b.EpisodeNumber ?? int.MaxValue;
-                return numA.CompareTo(numB);
-            });
+            // Dateien ohne Nummer ans Ende. OrderBy ist stabil, Dateien mit gleicher Nummer
+            // behalten die Reihenfolge des Ordners.
+            List<RestructureAction> sorted = [.. actions.OrderBy(action => action.EpisodeNumber ?? int.MaxValue)];
 
             _logger.Info(
                 "Ordnerstruktur-Analyse: {FileCount} Dateien → {FolderCount} Ordner in '{SeriesFolder}'",
-                actions.Count, targetFolders.Count, Path.GetFileName(seriesFolderPath));
+                actions.Count, folderCount, Path.GetFileName(seriesFolderPath));
 
             return new RestructurePreview
             {
                 SeriesFolderPath = seriesFolderPath,
-                Actions = actions,
-                FolderCount = targetFolders.Count
+                Actions = sorted,
+                FolderCount = folderCount
             };
         }
 
-        /// <summary>Dateiname des Journals im Serienordner; wird bei erfolgreichem Umbau gelöscht.</summary>
-        public const string JournalFileName = ".echoplay-restructure-journal.json";
+        /// <summary>
+        /// Die Audiodateien direkt im Serienordner; was in Unterordnern liegt, hat seine
+        /// Ordnerstruktur schon. Leer, wenn der Ordner fehlt oder nicht lesbar ist.
+        /// </summary>
+        private List<string>? AudioFilesInSeriesFolder(string seriesFolderPath)
+        {
+            if (!Directory.Exists(seriesFolderPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                return [.. Directory.GetFiles(seriesFolderPath).Where(EchoPlay.Core.AudioExtensions.IsAudioFile)];
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.Warning("Serienordner für den Umbau nicht lesbar: {Folder} – {Reason}", PathRedactor.Redact(seriesFolderPath), ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>Wohin eine Datei wandert: in einen Ordner aus Nummer und Titel.</summary>
+        private static RestructureAction PlanMove(string seriesFolderPath, string filePath, EpisodeFolderParser[] fileParsers)
+        {
+            (int? episodeNumber, string title) = FileNameEpisodeParser.Parse(Path.GetFileNameWithoutExtension(filePath), fileParsers);
+            string targetFolderName = episodeNumber.HasValue
+                ? $"{episodeNumber.Value:D3} - {EchoPlay.Core.PathSanitizer.SanitizeSegment(title)}"
+                : EchoPlay.Core.PathSanitizer.SanitizeSegment(title);
+
+            return new RestructureAction
+            {
+                SourcePath = filePath,
+                TargetFolderPath = Path.Combine(seriesFolderPath, targetFolderName),
+                TargetFolderName = targetFolderName,
+                FileName = Path.GetFileName(filePath),
+                EpisodeNumber = episodeNumber,
+                EpisodeTitle = title
+            };
+        }
 
         /// <inheritdoc />
         public int Execute(RestructurePreview preview)
@@ -134,31 +109,14 @@ namespace EchoPlay.LocalLibrary.Scanning
             ArgumentNullException.ThrowIfNull(preview);
 
             string journalPath = Path.Combine(preview.SeriesFolderPath, JournalFileName);
+            List<(string Source, string Destination)> planned = [];
             List<(string Source, string Destination)> completed = [];
-
-            // Leeres Journal vor dem ersten Move persistieren, damit ein Crash
-            // zwischen File.Move und dem Journal-Update trotzdem wiederherstellbar ist.
-            TryWriteJournal(journalPath, completed);
 
             try
             {
                 foreach (RestructureAction action in preview.Actions)
                 {
-                    // Zielordner anlegen (falls noch nicht vorhanden)
-                    _ = Directory.CreateDirectory(action.TargetFolderPath);
-
-                    string destination = Path.Combine(action.TargetFolderPath, action.FileName);
-
-                    // Prüfen, ob die Zieldatei bereits existiert, um eine Kollision zu vermeiden
-                    if (File.Exists(destination))
-                    {
-                        _logger.Warning("Zieldatei existiert bereits, übersprungen: {Destination}", PathRedactor.Redact(destination));
-                        continue;
-                    }
-
-                    File.Move(action.SourcePath, destination);
-                    completed.Add((action.SourcePath, destination));
-                    TryWriteJournal(journalPath, completed);
+                    MoveWithJournal(action, journalPath, planned, completed);
                 }
 
                 _logger.Info(
@@ -169,28 +127,11 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
             catch (Exception ex)
             {
-                // Rollback: bereits verschobene Dateien zurückschieben
+                // Jeder Fehler nimmt den ganzen Umbau zurück und geht danach weiter nach oben;
+                // eine halb umgebaute Serie wäre schwerer zu durchschauen als die alte.
                 _logger.Error("Fehler beim Verschieben, starte Rollback: {Reason}", ex, ex.Message);
 
-                foreach ((string source, string destination) in completed)
-                {
-                    try
-                    {
-                        File.Move(destination, source);
-                    }
-                    catch (Exception rollbackEx) when (rollbackEx is IOException
-                                                       or UnauthorizedAccessException
-                                                       or SecurityException
-                                                       or PathTooLongException
-                                                       or DirectoryNotFoundException
-                                                       or NotSupportedException
-                                                       or ArgumentException)
-                    {
-                        _logger.Error("Rollback fehlgeschlagen für '{Source}': {Reason}", rollbackEx, PathRedactor.Redact(source), rollbackEx.Message);
-                    }
-                }
-
-                // Leere Ordner aufräumen, die durch den Rollback entstanden sind
+                RollBack(completed);
                 CleanupEmptyFolders(preview);
                 TryDeleteJournal(journalPath);
 
@@ -199,12 +140,48 @@ namespace EchoPlay.LocalLibrary.Scanning
         }
 
         /// <summary>
-        /// Versucht, ein liegengebliebenes Journal im Serienordner wiederzugeben, etwa nach einem
-        /// Prozess-Crash zwischen zwei <c>File.Move</c>-Operationen. Gibt die Zahl der zurückgerollten
-        /// Dateien zurück (0 wenn kein Journal existiert oder keine Einträge zu rollen sind).
+        /// Verschiebt eine Datei in ihren Zielordner. Erst die Absicht ins Journal, dann
+        /// verschieben: Endet der Prozess zwischen beidem, steht der Schritt im Journal; die
+        /// Wiederherstellung schiebt nur zurück, was tatsächlich am Ziel liegt. Eine vorhandene
+        /// Datei gleichen Namens wird nicht überschrieben.
         /// </summary>
-        /// <param name="seriesFolderPath">Serienordner, der geprüft werden soll.</param>
-        /// <returns>Anzahl wiederhergestellter Dateien.</returns>
+        private void MoveWithJournal(
+            RestructureAction action,
+            string journalPath,
+            List<(string Source, string Destination)> planned,
+            List<(string Source, string Destination)> completed)
+        {
+            _ = Directory.CreateDirectory(action.TargetFolderPath);
+            string destination = Path.Combine(action.TargetFolderPath, action.FileName);
+            if (File.Exists(destination))
+            {
+                _logger.Warning("Zieldatei existiert bereits, übersprungen: {Destination}", PathRedactor.Redact(destination));
+                return;
+            }
+
+            planned.Add((action.SourcePath, destination));
+            TryWriteJournal(journalPath, planned);
+            File.Move(action.SourcePath, destination);
+            completed.Add((action.SourcePath, destination));
+        }
+
+        /// <summary>Schiebt die schon verschobenen Dateien zurück; was nicht zurückgeht, steht im Protokoll.</summary>
+        private void RollBack(List<(string Source, string Destination)> completed)
+        {
+            foreach ((string source, string destination) in completed)
+            {
+                try
+                {
+                    File.Move(destination, source);
+                }
+                catch (Exception rollbackEx) when (FolderRenameJournal.IsFileSystemError(rollbackEx))
+                {
+                    _logger.Error("Rollback fehlgeschlagen für '{Source}': {Reason}", rollbackEx, PathRedactor.Redact(source), rollbackEx.Message);
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public int TryRecoverPendingJournal(string seriesFolderPath)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(seriesFolderPath);
@@ -215,19 +192,13 @@ namespace EchoPlay.LocalLibrary.Scanning
                 return 0;
             }
 
-            List<JournalEntry>? entries;
-            try
+            List<JournalEntry>? entries = ReadJournal(journalPath);
+            if (entries is null)
             {
-                string json = File.ReadAllText(journalPath);
-                entries = JsonSerializer.Deserialize<List<JournalEntry>>(json);
-            }
-            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-            {
-                _logger.Warning("Journal '{JournalPath}' konnte nicht gelesen werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
                 return 0;
             }
 
-            if (entries is null || entries.Count == 0)
+            if (entries.Count == 0)
             {
                 TryDeleteJournal(journalPath);
                 return 0;
@@ -236,24 +207,7 @@ namespace EchoPlay.LocalLibrary.Scanning
             int recovered = 0;
             foreach (JournalEntry entry in entries)
             {
-                try
-                {
-                    if (File.Exists(entry.Destination) && !File.Exists(entry.Source))
-                    {
-                        File.Move(entry.Destination, entry.Source);
-                        recovered++;
-                    }
-                }
-                catch (Exception ex) when (ex is IOException
-                                           or UnauthorizedAccessException
-                                           or SecurityException
-                                           or PathTooLongException
-                                           or DirectoryNotFoundException
-                                           or NotSupportedException
-                                           or ArgumentException)
-                {
-                    _logger.Error("Journal-Recovery fehlgeschlagen für '{Destination}': {Reason}", ex, entry.Destination, ex.Message);
-                }
+                recovered += TryMoveBack(entry) ? 1 : 0;
             }
 
             _logger.Info(
@@ -261,6 +215,43 @@ namespace EchoPlay.LocalLibrary.Scanning
                 recovered, entries.Count, Path.GetFileName(seriesFolderPath));
             TryDeleteJournal(journalPath);
             return recovered;
+        }
+
+        /// <summary>Liest das Journal; ein unlesbares gilt als nicht vorhanden.</summary>
+        /// <returns>Die Einträge, oder leer, wenn das Journal nicht lesbar war.</returns>
+        private List<JournalEntry>? ReadJournal(string journalPath)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<JournalEntry>>(File.ReadAllText(journalPath)) ?? [];
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                _logger.Warning("Journal '{JournalPath}' konnte nicht gelesen werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Schiebt eine Datei zurück, wenn sie am Ziel liegt und die Quelle frei ist.
+        /// </summary>
+        /// <returns><see langword="true"/>, wenn die Datei zurückgeschoben wurde.</returns>
+        private bool TryMoveBack(JournalEntry entry)
+        {
+            try
+            {
+                if (File.Exists(entry.Destination) && !File.Exists(entry.Source))
+                {
+                    File.Move(entry.Destination, entry.Source);
+                    return true;
+                }
+            }
+            catch (Exception ex) when (FolderRenameJournal.IsFileSystemError(ex))
+            {
+                _logger.Error("Journal-Recovery fehlgeschlagen für '{Destination}': {Reason}", ex, PathRedactor.Redact(entry.Destination), ex.Message);
+            }
+
+            return false;
         }
 
         private void TryWriteJournal(string journalPath, List<(string Source, string Destination)> completed)
@@ -276,9 +267,10 @@ namespace EchoPlay.LocalLibrary.Scanning
                 string json = JsonSerializer.Serialize(entries);
                 File.WriteAllText(journalPath, json);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+            catch (Exception ex) when (FolderRenameJournal.IsFileSystemError(ex))
             {
-                // Journal ist Best-Effort, der Umbau läuft auch ohne persistentes Journal weiter.
+                // Ohne Journal läuft der Umbau weiter; nur ein Absturz mittendrin ließe sich dann
+                // nicht mehr zurückspielen. Ein Abbruch wegen des Journals wäre der größere Schaden.
                 _logger.Warning("Journal '{JournalPath}' konnte nicht geschrieben werden: {Reason}", PathRedactor.Redact(journalPath), ex.Message);
             }
         }
@@ -298,12 +290,17 @@ namespace EchoPlay.LocalLibrary.Scanning
             }
         }
 
+        /// <summary>
+        /// Ein Verschiebeschritt im Journal des Serienordners, festgehalten vor der Ausführung.
+        /// <see cref="TryRecoverPendingJournal"/> liest diese Einträge und schiebt die Dateien
+        /// zurück, wenn ein Umbau mittendrin abbricht.
+        /// </summary>
         private sealed record JournalEntry(string Source, string Destination);
 
         /// <summary>
         /// Entfernt leere Unterordner, die durch einen abgebrochenen Umbau oder Rollback entstanden sind.
         /// </summary>
-        private static void CleanupEmptyFolders(RestructurePreview preview)
+        private void CleanupEmptyFolders(RestructurePreview preview)
         {
             HashSet<string> createdFolders = [];
             foreach (RestructureAction action in preview.Actions)
@@ -320,13 +317,10 @@ namespace EchoPlay.LocalLibrary.Scanning
                         Directory.Delete(folder);
                     }
                 }
-                catch (IOException)
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    // Aufräumen ist Best-Effort, Fehler hier sind nicht kritisch
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // Keine Rechte zum Löschen, nicht kritisch
+                    // Ein leerer Ordner, der stehen bleibt, stört nicht; die Dateien sind zurück.
+                    _logger.Warning("Leerer Ordner nach dem Rollback nicht gelöscht: {Folder} – {Reason}", PathRedactor.Redact(folder), ex.Message);
                 }
             }
         }

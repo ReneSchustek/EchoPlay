@@ -42,7 +42,7 @@ namespace EchoPlay.App.Tests.ViewModels
             await RunScanAsync(sut);
 
             // Gemeldete Zwischenstände dürfen den Lauf nicht aufhalten. Auf Statuszeile und
-            // Detailtext wird bewusst nicht geprüft: `Progress<T>` stellt die Meldungen über
+            // Detailtext wird nicht geprüft: `Progress<T>` stellt die Meldungen über
             // den Aufgabenplaner zu, sie können also noch nach dem Ende eintreffen.
             Assert.Equal(1, sync.SyncCallCount);
             Assert.False(sut.IsScanning);
@@ -129,8 +129,6 @@ namespace EchoPlay.App.Tests.ViewModels
             // Der Neuaufbau löst jede Zuordnung zwischen Ablage und Platte.
             Assert.Equal(0, sync.SyncCallCount);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static async Task RunScanAsync(LocalLibraryScanViewModel sut)
         {

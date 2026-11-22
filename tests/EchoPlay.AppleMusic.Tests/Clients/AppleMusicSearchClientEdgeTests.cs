@@ -121,8 +121,6 @@ namespace EchoPlay.AppleMusic.Tests.Clients
                 () => client.LookupAlbumsAsync(artistId: 1, ct: TestContext.Current.CancellationToken));
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static AppleMusicSearchClient BuildClient(string responseJson)
             => BuildClient(new RecordingHandler(HttpStatusCode.OK, responseJson));
 
@@ -132,6 +130,9 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             return new AppleMusicSearchClient(http, new LoggerFactory([], new LoggerOptions()));
         }
 
+        /// <summary>
+        /// Merkt sich jede angefragte Adresse und antwortet mit festem Status und JSON.
+        /// </summary>
         private sealed class RecordingHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _statusCode;

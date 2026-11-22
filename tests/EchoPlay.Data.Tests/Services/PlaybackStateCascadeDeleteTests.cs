@@ -13,12 +13,11 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class PlaybackStateCascadeDeleteTests : DbTestBase
     {
         /// <summary>
-        /// Stellt sicher, dass das Löschen einer Episode alle zugehörigen PlaybackStates logisch löscht, während die zugehörige Serie
+        /// Prüft, dass das Löschen einer Episode alle zugehörigen PlaybackStates logisch löscht, während die zugehörige Serie
         /// unverändert bestehen bleibt.
-        /// Dieser Test schützt vor unvollständigen Cascades und stellt sicher, dass Wiedergabestände nicht verwaist oder sichtbar bleiben, nachdem
+        /// Schützt vor unvollständigen Kaskaden: Wiedergabestände dürfen nicht verwaist oder sichtbar bleiben, nachdem
         /// ihre Episode logisch entfernt wurde.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
         public async Task DeletingEpisode_SoftDeletesPlaybackState()
         {

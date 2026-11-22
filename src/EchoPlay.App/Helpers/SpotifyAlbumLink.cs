@@ -10,10 +10,12 @@ namespace EchoPlay.App.Helpers
     /// an die installierte Spotify-App weiter; ohne App öffnet die Webseite.
     /// </summary>
     /// <remarks>
-    /// Bewusst der Web-Link und nicht das Protokoll <c>spotify:album:…</c>: <see cref="SafeUrlLauncher"/>
-    /// lässt nur <c>http</c>/<c>https</c> durch, damit eine manipulierte Provider-Angabe aus der
-    /// Datenbank kein beliebiges Programm starten kann. Der Web-Link erreicht dasselbe Ziel,
-    /// ohne diesen Schutz aufzuweichen.
+    /// Zwei Wege mit getrennter Prüfung: Den Web-Link aus <see cref="TryBuild"/> lässt
+    /// <see cref="SafeUrlLauncher.TryOpenInBrowser(string)"/> durch, weil er <c>https</c> ist. Die
+    /// App-URI aus <see cref="TryBuildAppUri"/> geht nur über
+    /// <see cref="SafeUrlLauncher.TryOpenAppLink"/>, das genau das Schema <c>spotify</c> zulässt.
+    /// Eine manipulierte Provider-Angabe aus der Datenbank startet so auf keinem Weg ein
+    /// beliebiges Programm.
     /// </remarks>
     internal static partial class SpotifyAlbumLink
     {
@@ -119,7 +121,7 @@ namespace EchoPlay.App.Helpers
             return true;
         }
 
-        [GeneratedRegex("^[A-Za-z0-9]{22}$", RegexOptions.Compiled)]
+        [GeneratedRegex("^[A-Za-z0-9]{22}$", RegexOptions.None, matchTimeoutMilliseconds: 500)]
         private static partial Regex AlbumIdPattern();
     }
 }

@@ -1,3 +1,4 @@
+using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using System;
 using System.Collections.Generic;
@@ -23,17 +24,20 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     /// </remarks>
     public sealed class CoverSearchEdgeTests
     {
+        private static readonly Uri Thumb = new("https://example.invalid/t1.jpg");
+        private static readonly Uri Full = new("https://example.invalid/f1.jpg");
+
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public async Task Search_WithoutASearchTerm_ReturnsNothing(string titel)
+        public async Task Search_WithoutASearchTerm_ReturnsNothing(string title)
         {
             ITunesCoverSearchService sut = BuildITunes(HttpStatusCode.OK, """{"results":[]}""");
 
-            IReadOnlyList<CoverSearchResult> treffer = await sut.SearchAsync(
-                titel, ct: TestContext.Current.CancellationToken);
+            IReadOnlyList<CoverSearchResult> hit = await sut.SearchAsync(
+                title, ct: TestContext.Current.CancellationToken);
 
-            Assert.Empty(treffer);
+            Assert.Empty(hit);
         }
 
         [Fact]
@@ -41,16 +45,16 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         {
             ITunesCoverSearchService sut = BuildITunes(HttpStatusCode.OK, "null");
 
-            IReadOnlyList<CoverSearchResult> treffer = await sut.SearchAsync(
+            IReadOnlyList<CoverSearchResult> hit = await sut.SearchAsync(
                 "TKKG", ct: TestContext.Current.CancellationToken);
 
-            Assert.Empty(treffer);
+            Assert.Empty(hit);
         }
 
         [Fact]
         public async Task Search_ForAnAlbumWithoutArtwork_LeavesItOut()
         {
-            const string antwort = """
+            const string response = """
                 {
                   "results": [
                     { "collectionName": "Ohne Bild" },
@@ -59,20 +63,20 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
                 }
                 """;
 
-            ITunesCoverSearchService sut = BuildITunes(HttpStatusCode.OK, antwort);
+            ITunesCoverSearchService sut = BuildITunes(HttpStatusCode.OK, response);
 
-            IReadOnlyList<CoverSearchResult> treffer = await sut.SearchAsync(
+            IReadOnlyList<CoverSearchResult> hit = await sut.SearchAsync(
                 "TKKG", ct: TestContext.Current.CancellationToken);
 
             // Ein Treffer ohne Bild ist in einem Bilder-Dialog eine leere Kachel.
-            CoverSearchResult einzig = Assert.Single(treffer);
+            CoverSearchResult einzig = Assert.Single(hit);
             Assert.Equal("Mit Bild", einzig.ReleaseTitle);
         }
 
         [Fact]
         public async Task Search_OnTheSecondPage_SkipsWhatWasAlreadyShown()
         {
-            const string antwort = """
+            const string response = """
                 {
                   "results": [
                     { "artworkUrl100": "https://is1.example.invalid/a/100x100bb.jpg", "collectionName": "Erster" },
@@ -81,50 +85,51 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
                 }
                 """;
 
-            ITunesCoverSearchService sut = BuildITunes(HttpStatusCode.OK, antwort);
+            ITunesCoverSearchService sut = BuildITunes(HttpStatusCode.OK, response);
 
-            IReadOnlyList<CoverSearchResult> ersteSeite = await sut.SearchAsync(
+            IReadOnlyList<CoverSearchResult> firstPage = await sut.SearchAsync(
                 "TKKG", CoverSearchPage.First, TestContext.Current.CancellationToken);
-            IReadOnlyList<CoverSearchResult> zweiteSeite = await sut.SearchAsync(
+            IReadOnlyList<CoverSearchResult> secondPage = await sut.SearchAsync(
                 "TKKG", CoverSearchPage.First.Next, TestContext.Current.CancellationToken);
 
             // Anbieter ohne Versatz liefern beim Nachladen dieselben Treffer erneut. Ohne
             // das Überspringen stünde jede Kachel zweimal im Dialog.
-            Assert.True(zweiteSeite.Count < ersteSeite.Count);
+            Assert.True(secondPage.Count < firstPage.Count);
         }
 
         [Fact]
         public void SearchResult_ComparesByItsFourValues()
         {
-            CoverSearchResult einer = new("t1", "f1", "Folge 1", "iTunes");
-            CoverSearchResult gleich = new("t1", "f1", "Folge 1", "iTunes");
-            CoverSearchResult anders = new("t1", "f1", "Folge 1", "Deezer");
+            CoverSearchResult one = new(Thumb, Full, "Folge 1", "iTunes");
+            CoverSearchResult same = new(Thumb, Full, "Folge 1", "iTunes");
+            CoverSearchResult anders = new(Thumb, Full, "Folge 1", "Deezer");
 
             // Zwei Anbieter können dasselbe Bild kennen. Ohne die Herkunft im Vergleich
             // verschwände einer der beiden Treffer aus dem Dialog.
-            Assert.Equal(einer, gleich);
-            Assert.Equal(einer.GetHashCode(), gleich.GetHashCode());
-            Assert.NotEqual(einer, anders);
+            Assert.Equal(one, same);
+            Assert.Equal(one.GetHashCode(), same.GetHashCode());
+            Assert.NotEqual(one, anders);
         }
 
         [Fact]
         public void SearchResult_IsNeverEqualToNothing()
         {
-            CoverSearchResult einer = new("t1", "f1", "Folge 1", "iTunes");
+            CoverSearchResult one = new(Thumb, Full, "Folge 1", "iTunes");
 
-            CoverSearchResult? nichts = null;
-            Assert.NotEqual(einer, nichts);
-            Assert.False(einer.Equals((object)"kein Treffer"));
+            CoverSearchResult? nothing = null;
+            Assert.NotEqual(one, nothing);
+            Assert.False(one.Equals((object)"kein Treffer"));
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static ITunesCoverSearchService BuildITunes(HttpStatusCode status, string body)
         {
             HttpClient http = new(new StubHandler(status, body));
-            return new ITunesCoverSearchService(http);
+            return new ITunesCoverSearchService(http, new FakeLoggerFactory());
         }
 
+        /// <summary>
+        /// Antwortet mit festem Status und festem Text.
+        /// </summary>
         private sealed class StubHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _status;

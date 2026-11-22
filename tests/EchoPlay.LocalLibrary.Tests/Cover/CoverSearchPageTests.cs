@@ -10,7 +10,7 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
     public sealed class CoverSearchPageTests
     {
         [Fact]
-        public void ErsteSeite_IstOhneVersatzUndOhneVerwerfen()
+        public void FirstPage_HasNoOffsetAndNoDiscard()
         {
             CoverSearchWindow window = CoverSearchPage.First.ToWindow(pageSize: 9, supportsOffset: true);
 
@@ -22,54 +22,53 @@ namespace EchoPlay.LocalLibrary.Tests.Cover
         [Theory]
         [InlineData(1, 9, 0)]
         [InlineData(2, 18, 0)]
-        public void MitVersatz_BleibtDieGrenzeKonstant(int seite, int erwarteterOffset, int erwartetesVerwerfen)
+        public void WithOffset_TheLimitStaysConstant(int page, int expectedOffset, int expectedDiscard)
         {
-            CoverSearchWindow window = new CoverSearchPage(seite).ToWindow(pageSize: 9, supportsOffset: true);
+            CoverSearchWindow window = new CoverSearchPage(page).ToWindow(pageSize: 9, supportsOffset: true);
 
             // Eine echte Folgeabfrage: gleiche Grenze, verschobener Anfang, nichts zu verwerfen.
             Assert.Equal(9, window.Limit);
-            Assert.Equal(erwarteterOffset, window.Offset);
-            Assert.Equal(erwartetesVerwerfen, window.SkipLocally);
+            Assert.Equal(expectedOffset, window.Offset);
+            Assert.Equal(expectedDiscard, window.SkipLocally);
         }
 
         [Theory]
         [InlineData(0, 9, 0)]
         [InlineData(1, 18, 9)]
         [InlineData(2, 27, 18)]
-        public void OhneVersatz_WirdMehrGeholtUndDerAnfangVerworfen(int seite, int erwarteteGrenze, int erwartetesVerwerfen)
+        public void WithoutOffset_MoreIsFetchedAndTheStartDiscarded(int page, int expectedLimit, int expectedDiscard)
         {
-            CoverSearchWindow window = new CoverSearchPage(seite).ToWindow(pageSize: 9, supportsOffset: false);
+            CoverSearchWindow window = new CoverSearchPage(page).ToWindow(pageSize: 9, supportsOffset: false);
 
             // Die iTunes Search API kennt nur limit. Kostet Datenvolumen, ist aber die einzige
             // Variante, die dort überhaupt weiterblättert.
-            Assert.Equal(erwarteteGrenze, window.Limit);
+            Assert.Equal(expectedLimit, window.Limit);
             Assert.Equal(0, window.Offset);
-            Assert.Equal(erwartetesVerwerfen, window.SkipLocally);
+            Assert.Equal(expectedDiscard, window.SkipLocally);
         }
 
         [Fact]
-        public void KleinereSeitengroesse_WirktSichAufBeideRichtungenAus()
+        public void SmallerPageSize_AffectsBothDirections()
         {
             // Deezer-Künstler liefern sechs Treffer, nicht neun.
-            CoverSearchWindow mitVersatz = new CoverSearchPage(2).ToWindow(pageSize: 6, supportsOffset: true);
-            CoverSearchWindow ohneVersatz = new CoverSearchPage(2).ToWindow(pageSize: 6, supportsOffset: false);
+            CoverSearchWindow withOffset = new CoverSearchPage(2).ToWindow(pageSize: 6, supportsOffset: true);
+            CoverSearchWindow withoutOffset = new CoverSearchPage(2).ToWindow(pageSize: 6, supportsOffset: false);
 
-            Assert.Equal((6, 12, 0), (mitVersatz.Limit, mitVersatz.Offset, mitVersatz.SkipLocally));
-            Assert.Equal((18, 0, 12), (ohneVersatz.Limit, ohneVersatz.Offset, ohneVersatz.SkipLocally));
+            Assert.Equal((6, 12, 0), (withOffset.Limit, withOffset.Offset, withOffset.SkipLocally));
+            Assert.Equal((18, 0, 12), (withoutOffset.Limit, withoutOffset.Offset, withoutOffset.SkipLocally));
         }
 
         [Fact]
-        public void Next_ZaehltDieSeiteHoch()
+        public void Next_CountsThePageUp()
         {
             Assert.Equal(1, CoverSearchPage.First.Next.Index);
             Assert.Equal(2, CoverSearchPage.First.Next.Next.Index);
         }
 
         [Fact]
-        public void SeitengroesseNull_WirdAbgewiesen()
+        public void PageSizeZero_IsRejected()
         {
-            // Ohne Guard wäre die Division im Discogs-URL-Aufbau ein Divide-by-zero und die
-            // Grenze 0: eine Anfrage, die nie etwas liefert.
+            // Ohne Prüfung wäre die Grenze 0: eine Anfrage, die nie etwas liefert.
             _ = Assert.Throws<ArgumentOutOfRangeException>(
                 () => CoverSearchPage.First.ToWindow(pageSize: 0, supportsOffset: true));
         }

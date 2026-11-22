@@ -9,9 +9,6 @@ namespace EchoPlay.Data.Services
     /// <summary>
     /// EF-Core-basierte Verwaltung der dauerhaft ausgeblendeten Dialoge.
     /// </summary>
-    /// <remarks>
-    /// Initialisiert eine neue Instanz des <see cref="DialogSuppressionDataService"/>.
-    /// </remarks>
     /// <param name="context">Der zu verwendende EF-Core-Datenbankkontext.</param>
     /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
     public sealed class DialogSuppressionDataService(

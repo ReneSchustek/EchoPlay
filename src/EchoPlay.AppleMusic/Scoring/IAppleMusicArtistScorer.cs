@@ -11,7 +11,7 @@ namespace EchoPlay.AppleMusic.Scoring
     /// Cover-Adresse des ersten Albums, oder <see langword="null"/>, wenn die Albenprüfung
     /// übersprungen wurde oder der Künstler keine Alben hat.
     /// </param>
-    internal readonly record struct AppleMusicArtistScore(HoerspielScoreResult Score, string? ArtworkUrl);
+    internal readonly record struct AppleMusicArtistScore(HoerspielScoreResult Score, Uri? ArtworkUrl);
 
     /// <summary>
     /// Bewertet einen iTunes-Künstler und gibt dabei auch die Cover-Adresse heraus.

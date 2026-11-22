@@ -78,9 +78,21 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Wenn gesetzt, wirft <see cref="RemoveOlderThanAsync"/> den hier erzeugten Fehler,
+        /// statt zu bereinigen. So lässt sich ein scheiternder Aufräumschritt im Startlauf
+        /// nachstellen. Erzeugt wird erst beim Aufruf, damit ein Test genau dann abbrechen kann.
+        /// </summary>
+        public Func<Exception>? RemoveOlderThanFailure { get; init; }
+
         /// <inheritdoc />
         public Task<int> RemoveOlderThanAsync(DateTime cutoff, CancellationToken cancellationToken = default)
         {
+            if (RemoveOlderThanFailure is not null)
+            {
+                return Task.FromException<int>(RemoveOlderThanFailure());
+            }
+
             int removed = _entries.RemoveAll(c => c.ReleaseDate < cutoff);
             return Task.FromResult(removed);
         }

@@ -20,9 +20,7 @@ namespace EchoPlay.App.ViewModels
         StatusBarViewModel StatusBar,
         ILocalCoverLoader CoverLoader,
         IScanEventService ScanEventService,
-        ICoverSearchService CoverSearchService,
         IOnlineAccessGuard OnlineAccessGuard,
-        IOnlineEpisodeChecker OnlineEpisodeChecker,
         IClock Clock,
         EchoPlay.App.Services.ICoverService? CoverService = null,
         IWatchToggleService? WatchToggleService = null,
@@ -31,5 +29,7 @@ namespace EchoPlay.App.ViewModels
         IMissingEpisodesCoordinator? MissingEpisodesCoordinator = null,
         IEpisodeCoverCoordinator? CoverCoordinator = null,
         ILogger? Logger = null,
-        FilterStateStore? FilterState = null);
+        FilterStateStore? FilterState = null,
+        IEpisodeFolderRenameCoordinator? FolderRenameCoordinator = null,
+        ILocalMetadataEditor? MetadataEditor = null);
 }

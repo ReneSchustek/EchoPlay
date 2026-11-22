@@ -15,8 +15,7 @@ namespace EchoPlay.App.Helpers
     /// stehen, welche Seite als Nächstes kommt und welche Kachel gewählt ist.
     /// </summary>
     /// <remarks>
-    /// Das war eine Methode mit acht lokalen Funktionen über gemeinsamem Zustand, also eine
-    /// Klasse, die als Methode geschrieben war. Als Typ ist derselbe Ablauf lesbar: Die
+    /// Eine Klasse statt einer Methode mit lokalen Funktionen über gemeinsamem Zustand: Die
     /// Felder sagen, was die Sitzung sich merkt, und jede Methode hat einen Namen statt
     /// einer Stelle im Ablauf.
     /// </remarks>
@@ -35,7 +34,7 @@ namespace EchoPlay.App.Helpers
 
         // Die Adressen wehren Dubletten ab: Anbieter ohne Versatz liefern beim Nachladen
         // dieselben Treffer erneut, und zwei Anbieter können dasselbe Bild kennen.
-        private readonly HashSet<string> _shownUrls = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<Uri> _shownUrls = [];
 
         private EchoPlay.LocalLibrary.Cover.CoverSearchPage _currentPage =
             EchoPlay.LocalLibrary.Cover.CoverSearchPage.First;
@@ -84,7 +83,7 @@ namespace EchoPlay.App.Helpers
         /// bleiben, damit der Nutzer es mit einem anderen Begriff versuchen kann.
         /// </summary>
         /// <returns>Der Task ist abgeschlossen, wenn die Treffer stehen oder eine Meldung erscheint.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Suche über fremde Gegenstellen (iTunes, CoverArtArchive, Discogs): HTTP-, Parse- oder Provider-Fehler dürfen den Dialog nicht schließen; der Nutzer bekommt eine neutrale Statusmeldung und kann es erneut versuchen.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Suche über fremde Gegenstellen (iTunes, Cover Art Archive, Deezer): HTTP-, Parse- oder Provider-Fehler dürfen den Dialog nicht schließen; der Nutzer bekommt eine neutrale Statusmeldung und kann es erneut versuchen.")]
         public async Task SearchAsync()
         {
             try
@@ -104,7 +103,6 @@ namespace EchoPlay.App.Helpers
         }
 
         /// <summary>Setzt die Liste zurück und holt die erste Seite.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Das Muster kommt zur Laufzeit aus den Ressourcen und ist zum Übersetzungszeitpunkt unbekannt.")]
         private async Task RunSearchAsync(string query)
         {
             _progressRing.IsActive = true;
@@ -124,16 +122,14 @@ namespace EchoPlay.App.Helpers
 
             if (results.Count == 0)
             {
-                _statusText.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    SafeResourceLoader.Get("CoverSearchNoResultsFormat"),
-                    query.Trim());
+                string noResultsPattern = SafeResourceLoader.Get("CoverSearchNoResultsFormat");
+                _statusText.Text = string.Format(CultureInfo.CurrentCulture, noResultsPattern, query.Trim());
                 return;
             }
 
-            int neue = AppendResults(results);
+            int added = AppendResults(results);
             ShowHitCount();
-            EnsureLoadMoreTile(neue > 0);
+            EnsureLoadMoreTile(added > 0);
         }
 
         /// <summary>
@@ -149,21 +145,7 @@ namespace EchoPlay.App.Helpers
 
             try
             {
-                _currentPage = _currentPage.Next;
-
-                IReadOnlyList<CoverSearchHit> weitere =
-                    await _searchFunc(_queryBox.Text.Trim(), _currentPage, _cancellationToken);
-
-                int neue = AppendResults(weitere);
-                ShowHitCount();
-
-                if (neue == 0)
-                {
-                    _statusText.Text = SafeResourceLoader.Get(
-                        "CoverSearchNoMoreResults", "Keine weiteren Treffer.");
-                }
-
-                EnsureLoadMoreTile(neue > 0);
+                await LoadNextPageAsync();
             }
             catch (OperationCanceledException)
             {
@@ -180,6 +162,25 @@ namespace EchoPlay.App.Helpers
             }
         }
 
+        private async Task LoadNextPageAsync()
+        {
+            _currentPage = _currentPage.Next;
+
+            IReadOnlyList<CoverSearchHit> more =
+                await _searchFunc(_queryBox.Text.Trim(), _currentPage, _cancellationToken);
+
+            int added = AppendResults(more);
+            ShowHitCount();
+
+            if (added == 0)
+            {
+                _statusText.Text = SafeResourceLoader.Get(
+                    "CoverSearchNoMoreResults", "Keine weiteren Treffer.");
+            }
+
+            EnsureLoadMoreTile(added > 0);
+        }
+
         /// <summary>
         /// Hängt Treffer an und liefert, wie viele davon neu waren. Erste Suche und
         /// Nachladen teilen sich diesen Weg, sonst stünde der Kachelbau samt Auswahl
@@ -187,25 +188,25 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         private int AppendResults(IReadOnlyList<CoverSearchHit> results)
         {
-            int neue = 0;
+            int added = 0;
 
-            foreach (CoverSearchHit treffer in results)
+            foreach (CoverSearchHit hit in results)
             {
-                if (!_shownUrls.Add(treffer.FullUrl))
+                if (!_shownUrls.Add(hit.FullUrl))
                 {
                     continue;
                 }
 
-                _currentResults.Add(treffer);
+                _currentResults.Add(hit);
                 int tileIndex = _currentResults.Count - 1;
-                neue++;
+                added++;
 
-                Border tileBorder = CoverSearchDialog.CreateCoverTile(treffer);
+                Border tileBorder = CoverSearchDialog.CreateCoverTile(hit);
                 tileBorder.PointerPressed += (_, _) => Select(tileBorder, tileIndex);
                 _resultsPanel.Children.Add(tileBorder);
             }
 
-            return neue;
+            return added;
         }
 
         /// <summary>Hebt die gewählte Kachel hervor und gibt die Übernehmen-Schaltfläche frei.</summary>
@@ -213,9 +214,9 @@ namespace EchoPlay.App.Helpers
         {
             foreach (UIElement child in _resultsPanel.Children)
             {
-                if (child is Border rahmen)
+                if (child is Border border)
                 {
-                    rahmen.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                    border.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 }
             }
 
@@ -225,7 +226,6 @@ namespace EchoPlay.App.Helpers
         }
 
         /// <summary>Schreibt die Trefferzahl in die Statuszeile.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Das Muster kommt zur Laufzeit aus den Ressourcen und ist zum Übersetzungszeitpunkt unbekannt.")]
         private void ShowHitCount()
         {
             _statusText.Text = string.Format(

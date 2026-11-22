@@ -14,11 +14,12 @@ namespace EchoPlay.App.Services
     /// Der Nutzer merkt nichts davon. Cover erscheinen einfach irgendwann.
     /// </summary>
     /// <remarks>
-    /// Diese Klasse entscheidet <b>wann</b> etwas passiert, nicht wie. Die Arbeit liegt in drei
+    /// Der Dienst entscheidet <b>wann</b> etwas passiert, nicht wie. Die Arbeit liegt in drei
     /// Mitspielern, die sie im Konstruktor aufbaut:
     /// <list type="bullet">
     /// <item><see cref="LocalCoverPhases"/>: Dateisystem und SQL-Kopie, ohne Netz.</item>
-    /// <item><see cref="OnlineCoverPhases"/>: Anbieter-Adressen, Downloads, Online-Suche.</item>
+    /// <item><see cref="OnlineCoverPhases"/>: Anbieter-Adressen und Downloads.</item>
+    /// <item><see cref="OnlineCoverSearchPhases"/>: Online-Suche für Folgen und Serien.</item>
     /// <item><see cref="ForegroundCoverCoordinator"/>: alles, was am Hintergrundlauf vorbei darf,
     /// weil der Nutzer davor sitzt.</item>
     /// </list>
@@ -31,6 +32,7 @@ namespace EchoPlay.App.Services
     {
         private readonly LocalCoverPhases _localPhases;
         private readonly OnlineCoverPhases _onlinePhases;
+        private readonly OnlineCoverSearchPhases _searchPhases;
         private readonly ForegroundCoverCoordinator _foreground;
         private readonly BackgroundCoverServiceOptions _options;
         private readonly ILogger _logger;
@@ -56,7 +58,9 @@ namespace EchoPlay.App.Services
 
             _localPhases = new LocalCoverPhases(scopeFactory, coverService, _logger);
             _onlinePhases = new OnlineCoverPhases(
-                scopeFactory, coverService, coverDownloader, credentialStore, clock, rateLimiter, _logger);
+                scopeFactory, coverService, coverDownloader, credentialStore, _logger);
+            _searchPhases = new OnlineCoverSearchPhases(
+                scopeFactory, coverService, coverDownloader, clock, rateLimiter, _logger);
             _foreground = new ForegroundCoverCoordinator(
                 scopeFactory, coverService, coverDownloader, rateLimiter, _logger);
         }
@@ -120,7 +124,7 @@ namespace EchoPlay.App.Services
 
             int loaded = 0;
 
-            // Phase 1a/1b: Lokale Serien- und Episoden-Cover
+            // Phase 1: Lokale Serien- und Episoden-Cover
             int seriesLocalLoaded = await _localPhases.LoadMissingLocalSeriesCoversAsync(ct);
             int episodeLocalLoaded = await _localPhases.LoadMissingLocalEpisodeCoversAsync(ct);
             loaded += seriesLocalLoaded + episodeLocalLoaded;
@@ -128,7 +132,7 @@ namespace EchoPlay.App.Services
                 "RunOnce Phase 1 (lokal): {TotalLoaded} Cover geladen ({SeriesLoaded} Serien, {EpisodeLoaded} Episoden).",
                 seriesLocalLoaded + episodeLocalLoaded, seriesLocalLoaded, episodeLocalLoaded);
 
-            // Phase 1c: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
+            // Phase 1b: Cover von lokalen auf Online-Episoden kopieren (reines SQL)
             int copied = await _localPhases.CopyLocalToOnlineAsync(ct);
             loaded += copied;
             _logger.Info("RunOnce Phase 1b (lokal→online Kopie): {Copied} Cover kopiert.", copied);
@@ -147,14 +151,15 @@ namespace EchoPlay.App.Services
 
             // Phase 3: Was weder lokal noch über eine Provider-URL erreichbar war, bleibt ohne
             // die Online-Suche für immer ohne Cover.
-            int searched = await _onlinePhases.SearchMissingEpisodeCoversOnlineAsync(ct);
-            loaded += searched;
+            // Gezählt werden angestoßene Serien, keine Cover; die Zahl geht deshalb nicht in die
+            // Summe der geladenen Cover ein, genau wie in der Hintergrundschleife.
+            int searched = await _searchPhases.SearchMissingEpisodeCoversOnlineAsync(ct);
             _logger.Info("RunOnce Phase 3 (Online-Suche): {Searched} Serien mit fehlenden Episoden-Covern angestoßen.", searched);
 
             // Phase 4: Dasselbe für die Serien selbst. Ohne diesen Schritt bleibt eine Serie
             // ohne lokale cover.jpg und ohne Provider-URL dauerhaft leer, denn der URL-Nachtrag
             // in Phase 2a füllt ausschließlich Episoden.
-            int seriesFound = await _onlinePhases.SearchMissingSeriesCoversOnlineAsync(ct);
+            int seriesFound = await _searchPhases.SearchMissingSeriesCoversOnlineAsync(ct);
             loaded += seriesFound;
             _logger.Info("RunOnce Phase 4 (Serien-Online-Suche): {Found} Serien-Cover gefunden.", seriesFound);
 
@@ -205,30 +210,7 @@ namespace EchoPlay.App.Services
                 try
                 {
                     await _foreground.WaitWhileInFlightAsync(ct).ConfigureAwait(false);
-
-                    int seriesLocalLoaded = await _localPhases.LoadMissingLocalSeriesCoversAsync(ct);
-                    int episodeLocalLoaded = await _localPhases.LoadMissingLocalEpisodeCoversAsync(ct);
-                    int copied = await _localPhases.CopyLocalToOnlineAsync(ct);
-
-                    // Der URL-Nachtrag zählt nicht mit: eine nachgetragene Adresse ist noch kein
-                    // Cover, sie ist die Voraussetzung für den Download zwei Zeilen weiter.
-                    _ = await _onlinePhases.UpdateMissingCoverUrlsAsync(ct);
-
-                    int seriesProviderLoaded = await _onlinePhases.DownloadMissingSeriesProviderCoversAsync(ct);
-                    int episodeProviderLoaded = await _onlinePhases.DownloadMissingEpisodeProviderCoversAsync(ct);
-                    _ = await _onlinePhases.SearchMissingEpisodeCoversOnlineAsync(ct);
-                    int seriesSearchFound = await _onlinePhases.SearchMissingSeriesCoversOnlineAsync(ct);
-
-                    int localLoaded = seriesLocalLoaded + episodeLocalLoaded;
-                    int providerLoaded = seriesProviderLoaded + episodeProviderLoaded;
-                    int total = localLoaded + copied + providerLoaded + seriesSearchFound;
-
-                    if (total > 0)
-                    {
-                        _logger.Info(
-                            "Hintergrund: {LocalLoaded} lokal, {Copied} kopiert, {ProviderLoaded} Provider, {SeriesSearchFound} Serien-Suche.",
-                            localLoaded, copied, providerLoaded, seriesSearchFound);
-                    }
+                    await RunPhasesOnceAsync(ct);
                 }
                 catch (OperationCanceledException)
                 {
@@ -247,6 +229,35 @@ namespace EchoPlay.App.Services
                 {
                     break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Ein Durchlauf aller Phasen: erst lokal, dann über die Adressen des Anbieters, zuletzt
+        /// die Online-Suche. Protokolliert nur, wenn etwas gefunden wurde.
+        /// </summary>
+        private async Task RunPhasesOnceAsync(CancellationToken ct)
+        {
+            int seriesLocalLoaded = await _localPhases.LoadMissingLocalSeriesCoversAsync(ct);
+            int episodeLocalLoaded = await _localPhases.LoadMissingLocalEpisodeCoversAsync(ct);
+            int copied = await _localPhases.CopyLocalToOnlineAsync(ct);
+
+            // Der URL-Nachtrag zählt nicht mit: eine nachgetragene Adresse ist noch kein
+            // Cover, sie ist die Voraussetzung für den Download zwei Zeilen weiter.
+            _ = await _onlinePhases.UpdateMissingCoverUrlsAsync(ct);
+
+            int seriesProviderLoaded = await _onlinePhases.DownloadMissingSeriesProviderCoversAsync(ct);
+            int episodeProviderLoaded = await _onlinePhases.DownloadMissingEpisodeProviderCoversAsync(ct);
+            _ = await _searchPhases.SearchMissingEpisodeCoversOnlineAsync(ct);
+            int seriesSearchFound = await _searchPhases.SearchMissingSeriesCoversOnlineAsync(ct);
+
+            int localLoaded = seriesLocalLoaded + episodeLocalLoaded;
+            int providerLoaded = seriesProviderLoaded + episodeProviderLoaded;
+            if (localLoaded + copied + providerLoaded + seriesSearchFound > 0)
+            {
+                _logger.Info(
+                    "Hintergrund: {LocalLoaded} lokal, {Copied} kopiert, {ProviderLoaded} Provider, {SeriesSearchFound} Serien-Suche.",
+                    localLoaded, copied, providerLoaded, seriesSearchFound);
             }
         }
 
@@ -276,7 +287,7 @@ namespace EchoPlay.App.Services
             => _foreground.RequestPriorityForSeriesAsync(seriesId, ct);
 
         /// <summary>
-        /// Lädt das Cover für ein Such-Treffer-Element. Persistiert es bewusst nicht, denn ein
+        /// Lädt das Cover für ein Such-Treffer-Element. Persistiert es nicht, denn ein
         /// Such-Treffer ist noch nicht importiert. Details siehe
         /// <see cref="ForegroundCoverCoordinator"/>.
         /// </summary>
@@ -285,21 +296,19 @@ namespace EchoPlay.App.Services
         /// <param name="coverUrl">Cover-Adresse aus dem Such-Treffer, sofern der Anbieter eine liefert.</param>
         /// <param name="ct">Abbruch-Token der laufenden Suche.</param>
         /// <returns>Cover-Bytes oder <see langword="null"/> bei Fehler/Abbruch ohne Daten.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Cover-URL stammt aus DTO der externen Provider-API und wird in der gesamten Cover-Pipeline als string verwaltet (gleiches Muster wie ICoverDownloader).")]
         public virtual Task<byte[]?> RequestCoverForSearchResultAsync(
-            string source, string sourceSeriesId, string? coverUrl, CancellationToken ct = default)
+            string source, string sourceSeriesId, Uri? coverUrl, CancellationToken ct = default)
             => _foreground.RequestCoverForSearchResultAsync(source, sourceSeriesId, coverUrl, ct);
 
         /// <summary>
         /// Gibt an, ob aktuell eine Foreground-Priority-Anfrage verarbeitet wird.
-        /// Für Tests und Telemetry.
+        /// Für Tests und Diagnose.
         /// </summary>
         public bool IsPriorityActive => _foreground.IsActive;
 
         /// <summary>
-        /// Stellt sicher, dass alle lokalen Episoden einer Serie (nach Titel) ihre Cover
-        /// in CoverImages haben. Wird synchron vor der Anzeige aufgerufen, damit der
+        /// Lädt die fehlenden Cover aller lokalen Episoden einer Serie (nach Titel) in
+        /// CoverImages. Wird synchron vor der Anzeige aufgerufen, damit der
         /// CoverCopyService danach Quellen findet.
         /// </summary>
         /// <param name="seriesTitle">Titel der Serie (z.B. "Fünf Freunde").</param>

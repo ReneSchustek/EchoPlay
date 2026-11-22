@@ -57,7 +57,7 @@ namespace EchoPlay.App.Controls
             }
         }
 
-        /// <summary>Schriftschnitt: Ein wirkender Filter steht fett.</summary>
+        /// <summary>Schriftschnitt: Ein wirkender Filter steht halbfett.</summary>
         /// <remarks>
         /// Zahlwert statt <c>FontWeights.SemiBold</c>, denn jene Klasse ist eine WinRT-Komponente
         /// und ohne laufenden XAML-Host nicht ansprechbar.

@@ -10,7 +10,7 @@ namespace EchoPlay.App.Helpers
     /// <summary>
     /// Macht einen <see cref="ContentDialog"/> per Drag verschiebbar.
     /// Der Nutzer kann den Dialog am Titelbereich greifen und frei positionieren,
-    /// um verdeckte Inhalte im Hintergrund einzusehen (z.B. Cover-Kacheln bei der Cover-Auswahl).
+    /// um verdeckte Inhalte im Hintergrund einzusehen, etwa die Cover-Kacheln bei der Cover-Auswahl.
     /// </summary>
     /// <remarks>
     /// WinUI 3 ContentDialog unterstützt kein natives Dragging. Dieser Helper nutzt
@@ -22,6 +22,7 @@ namespace EchoPlay.App.Helpers
     {
         /// <summary>Höhe des Titelbereichs in Pixeln; nur dort soll Drag starten.</summary>
         private const double DialogTitleBarHeight = 60.0;
+
         /// <summary>
         /// Aktiviert Drag-Funktionalität auf dem angegebenen ContentDialog.
         /// Muss vor <c>ShowAsync()</c> aufgerufen werden.
@@ -30,53 +31,66 @@ namespace EchoPlay.App.Helpers
         public static void MakeDraggable(ContentDialog dialog)
         {
             ArgumentNullException.ThrowIfNull(dialog);
-            TranslateTransform transform = new();
-            Point dragStart = default;
-            bool isDragging = false;
+            DialogDrag drag = new();
 
             // Das Loaded-Event feuert, nachdem der Dialog gerendert ist,
             // erst dann ist der visuelle Baum verfügbar.
             dialog.Loaded += (sender, args) =>
             {
-                dialog.RenderTransform = transform;
-
-                // Pointer-Events auf dem gesamten Dialog registrieren.
-                // PointerPressed im Titelbereich startet den Drag.
-                dialog.PointerPressed += (s, e) =>
-                {
-                    // Nur im oberen Bereich (Titel) den Drag starten, nicht im Content
-                    Point position = e.GetCurrentPoint((UIElement)s).Position;
-                    if (position.Y > DialogTitleBarHeight)
-                    {
-                        return;
-                    }
-
-                    isDragging = true;
-                    dragStart = position;
-                    _ = ((UIElement)s).CapturePointer(e.Pointer);
-                };
-
-                dialog.PointerMoved += (s, e) =>
-                {
-                    if (!isDragging)
-                    {
-                        return;
-                    }
-
-                    Point current = e.GetCurrentPoint((UIElement)s).Position;
-                    transform.X += current.X - dragStart.X;
-                    transform.Y += current.Y - dragStart.Y;
-                };
-
-                dialog.PointerReleased += (s, e) =>
-                {
-                    if (isDragging)
-                    {
-                        isDragging = false;
-                        ((UIElement)s).ReleasePointerCapture(e.Pointer);
-                    }
-                };
+                dialog.RenderTransform = drag.Transform;
+                dialog.PointerPressed += drag.OnPointerPressed;
+                dialog.PointerMoved += drag.OnPointerMoved;
+                dialog.PointerReleased += drag.OnPointerReleased;
             };
+        }
+
+        /// <summary>
+        /// Zustand eines Ziehvorgangs: Verschiebung, Startpunkt und ob gerade gezogen wird.
+        /// </summary>
+        private sealed class DialogDrag
+        {
+            private Point _dragStart;
+            private bool _isDragging;
+
+            public TranslateTransform Transform { get; } = new();
+
+            public void OnPointerPressed(object sender, PointerRoutedEventArgs e)
+            {
+                // Nur der Titelbereich zieht; im Inhalt soll ein Klick die Kacheln treffen.
+                UIElement element = (UIElement)sender;
+                Point position = e.GetCurrentPoint(element).Position;
+                if (position.Y > DialogTitleBarHeight)
+                {
+                    return;
+                }
+
+                _isDragging = true;
+                _dragStart = position;
+                _ = element.CapturePointer(e.Pointer);
+            }
+
+            public void OnPointerMoved(object sender, PointerRoutedEventArgs e)
+            {
+                if (!_isDragging)
+                {
+                    return;
+                }
+
+                Point current = e.GetCurrentPoint((UIElement)sender).Position;
+                Transform.X += current.X - _dragStart.X;
+                Transform.Y += current.Y - _dragStart.Y;
+            }
+
+            public void OnPointerReleased(object sender, PointerRoutedEventArgs e)
+            {
+                if (!_isDragging)
+                {
+                    return;
+                }
+
+                _isDragging = false;
+                ((UIElement)sender).ReleasePointerCapture(e.Pointer);
+            }
         }
     }
 }

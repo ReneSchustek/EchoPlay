@@ -45,6 +45,25 @@ namespace EchoPlay.Core.Scoring
                     analysis.DebugInfo);
             }
 
+            (int score, List<string> scoreParts) = SumComponents(analysis, settings, extraComponents);
+
+            string debugInfo = scoreParts.Count > 0
+                ? string.Join("; ", scoreParts) + $" → Gesamt: {score}"
+                : $"Keine Indikatoren gefunden → Gesamt: {score}";
+
+            return score >= settings.MinimumScoreThreshold
+                ? HoerspielScoreResult.Yes(artistId, HoerspielDecisionReason.None, score, debugInfo)
+                : HoerspielScoreResult.No(artistId, HoerspielDecisionReason.None, score, debugInfo);
+        }
+
+        /// <summary>
+        /// Summiert Boni und Abzug der Analyse und hält jeden Bestandteil für die Diagnose fest.
+        /// </summary>
+        private static (int Score, List<string> Parts) SumComponents(
+            IHoerspielAnalysis analysis,
+            HoerspielScorerSettings settings,
+            IReadOnlyList<HoerspielScoreComponent>? extraComponents)
+        {
             int score = 0;
             List<string> scoreParts = [];
 
@@ -70,13 +89,7 @@ namespace EchoPlay.Core.Scoring
                 scoreParts.Add($"Keine Hörspiel-Alben: {settings.NoAlbumPenalty}");
             }
 
-            string debugInfo = scoreParts.Count > 0
-                ? string.Join("; ", scoreParts) + $" → Gesamt: {score}"
-                : $"Keine Indikatoren gefunden → Gesamt: {score}";
-
-            return score >= settings.MinimumScoreThreshold
-                ? HoerspielScoreResult.Yes(artistId, HoerspielDecisionReason.None, score, debugInfo)
-                : HoerspielScoreResult.No(artistId, HoerspielDecisionReason.None, score, debugInfo);
+            return (score, scoreParts);
         }
 
         private static void AddComponent(bool condition, int bonus, string label, ref int score, List<string> scoreParts)

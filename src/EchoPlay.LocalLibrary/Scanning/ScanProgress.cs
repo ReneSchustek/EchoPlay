@@ -15,7 +15,8 @@ namespace EchoPlay.LocalLibrary.Scanning
         ///   <item>3: Folgen ermitteln</item>
         ///   <item>4: Tracks scannen</item>
         /// </list>
-        /// 0 bedeutet: keine Phasen-Information verfügbar (Legacy-Modus).
+        /// 0 heißt: Die Meldung kommt nicht über den <see cref="IScanOrchestrator"/>, sondern
+        /// direkt vom Scanner oder vom Abgleich mit der Datenbank.
         /// </summary>
         public int Phase { get; init; }
 
@@ -32,7 +33,7 @@ namespace EchoPlay.LocalLibrary.Scanning
 
         /// <summary>
         /// Gesamtanzahl der zu verarbeitenden Audiodateien.
-        /// 0 bedeutet: Gesamtzahl unbekannt → Fortschrittsbalken indeterministisch.
+        /// 0 heißt: Gesamtzahl unbekannt, der Fortschrittsbalken bleibt unbestimmt.
         /// </summary>
         public int TotalFiles { get; init; }
 
@@ -62,7 +63,7 @@ namespace EchoPlay.LocalLibrary.Scanning
         /// <summary>
         /// Fortschritt in Prozent (0–100).
         /// Priorität: Audiodateien (Scanner-Phase) vor Serien (DB-Sync-Phase).
-        /// Gibt 0 zurück wenn beide Zähler unbekannt sind (indeterministischer Balken).
+        /// Gibt 0 zurück, wenn beide Zähler unbekannt sind; der Balken ist dann unbestimmt.
         /// </summary>
         public double PercentComplete =>
             TotalFiles > 0 ? ProcessedFiles / (double)TotalFiles * 100.0 :

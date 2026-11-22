@@ -18,29 +18,29 @@ namespace EchoPlay.LocalLibrary.Tests.Metadata
     /// </remarks>
     public sealed class TagReadingTests : IDisposable
     {
-        private readonly string _ordner;
+        private readonly string _folder;
 
         public TagReadingTests()
         {
-            _ordner = Path.Combine(Path.GetTempPath(), $"echoplay-tags-{Guid.NewGuid():N}");
-            _ = Directory.CreateDirectory(_ordner);
+            _folder = Path.Combine(Path.GetTempPath(), $"echoplay-tags-{Guid.NewGuid():N}");
+            _ = Directory.CreateDirectory(_folder);
         }
 
         public void Dispose()
         {
-            if (Directory.Exists(_ordner))
+            if (Directory.Exists(_folder))
             {
-                Directory.Delete(_ordner, recursive: true);
+                Directory.Delete(_folder, recursive: true);
             }
         }
 
         [Fact]
         public void TagTitleReader_ReadsTitleAndAlbum()
         {
-            string datei = AudioTestFiles.CreateMp3WithTags(
-                _ordner, "Der Fall des Jahres", "TKKG Folge 250", trackNumber: 3);
+            string file = AudioTestFiles.CreateMp3WithTags(
+                _folder, "Der Fall des Jahres", "TKKG Folge 250", trackNumber: 3);
 
-            (string Title, string Album) gelesen = new TagTitleReader().Read(datei);
+            (string Title, string Album) gelesen = new TagTitleReader().Read(file);
 
             Assert.Equal("Der Fall des Jahres", gelesen.Title);
             Assert.Equal("TKKG Folge 250", gelesen.Album);
@@ -49,9 +49,9 @@ namespace EchoPlay.LocalLibrary.Tests.Metadata
         [Fact]
         public void TagTitleReader_WithoutAnAlbum_ReturnsAnEmptyValue()
         {
-            string datei = AudioTestFiles.CreateMp3(_ordner);
+            string file = AudioTestFiles.CreateMp3(_folder);
 
-            (string Title, string Album) gelesen = new TagTitleReader().Read(datei);
+            (string Title, string Album) gelesen = new TagTitleReader().Read(file);
 
             // Viele selbst gerippte Dateien tragen nur einen Titel. Das ist kein Fehler.
             Assert.Empty(gelesen.Album);
@@ -60,10 +60,10 @@ namespace EchoPlay.LocalLibrary.Tests.Metadata
         [Fact]
         public void AudioMetadataReader_ReadsTrackNumber()
         {
-            string datei = AudioTestFiles.CreateMp3WithTags(
-                _ordner, "Teil 3", "TKKG", trackNumber: 3);
+            string file = AudioTestFiles.CreateMp3WithTags(
+                _folder, "Teil 3", "TKKG", trackNumber: 3);
 
-            (TimeSpan Duration, int TrackNumber) gelesen = new AudioMetadataReader().Read(datei);
+            (TimeSpan Duration, int TrackNumber) gelesen = new AudioMetadataReader().Read(file);
 
             Assert.Equal(3, gelesen.TrackNumber);
         }
@@ -71,9 +71,9 @@ namespace EchoPlay.LocalLibrary.Tests.Metadata
         [Fact]
         public void AudioMetadataReader_WithoutATrackNumber_ReturnsZero()
         {
-            string datei = AudioTestFiles.CreateMp3(_ordner);
+            string file = AudioTestFiles.CreateMp3(_folder);
 
-            (TimeSpan Duration, int TrackNumber) gelesen = new AudioMetadataReader().Read(datei);
+            (TimeSpan Duration, int TrackNumber) gelesen = new AudioMetadataReader().Read(file);
 
             // Null heißt „nicht gesetzt". Die Reihenfolge kommt dann aus dem Dateinamen.
             Assert.Equal(0, gelesen.TrackNumber);

@@ -9,7 +9,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <UserControl.Resources>
-        <!-- Dezenter Pfeil-Button: dezelt sich in Light/Dark, kompatibel mit Fluent. -->
     </UserControl.Resources>
 
     <Grid>

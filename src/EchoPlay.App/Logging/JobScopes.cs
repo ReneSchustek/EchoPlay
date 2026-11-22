@@ -18,7 +18,9 @@ namespace EchoPlay.App.Logging
         public const string EpisodeCoverCache = "Job:EpisodeCoverCache";
         public const string MissingEpisodes = "Job:MissingEpisodes";
         public const string FolderRestructure = "Job:FolderRestructure";
+        public const string FolderRename = "Job:FolderRename";
         public const string ConnectionTest = "Job:ConnectionTest";
         public const string TagLookup = "Job:TagLookup";
+        public const string ReleaseCalendar = "Job:ReleaseCalendar";
     }
 }

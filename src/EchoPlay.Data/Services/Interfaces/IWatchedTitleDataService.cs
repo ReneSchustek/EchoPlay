@@ -5,7 +5,7 @@ namespace EchoPlay.Data.Services.Interfaces
     /// </summary>
     /// <remarks>
     /// Eigene Schnittstelle statt Anbau an <see cref="ISeriesDataService"/>: Die Merkliste ist ein
-    /// eigenes Aggregat. Sie überlebt bewusst das Leeren der Mediathek, denn dabei verschwinden die
+    /// eigenes Aggregat. Sie überlebt das Leeren der Mediathek, denn dabei verschwinden die
     /// <c>Series</c>-Zeilen physisch, die gemerkten Titel bleiben und geben neu eingelesenen
     /// Serien ihre Überwachung zurück.
     /// </remarks>

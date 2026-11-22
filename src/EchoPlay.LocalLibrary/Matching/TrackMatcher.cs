@@ -8,11 +8,12 @@ namespace EchoPlay.LocalLibrary.Matching
     /// </summary>
     public sealed class TrackMatcher : ITrackMatcher
     {
-        /// <summary>
-        /// Klassifiziert das Verhältnis zwischen lokalen und Online-Tracks.
-        /// </summary>
-        /// <param name="localTrackCount">Anzahl der gefundenen lokalen Audiodateien.</param>
-        /// <param name="onlineTrackCount">Anzahl der Tracks laut Streaming-Anbieter.</param>
+        // Eine Hörspielfolge ist in wenige lange Kapitel geteilt, beim Anbieter oft in viele
+        // kurze Spuren. Zwanzig ist dieselbe Grenze wie in HoerspielAlbumHeuristic: darüber
+        // gilt eine Folge als in Streaming-Spuren zerlegt.
+        private const int MaxChapterTracks = 20;
+
+        /// <inheritdoc/>
         /// <returns>
         /// <see cref="TrackMatchKind.TbT"/> wenn Anzahl übereinstimmt und beide ≤ 20,
         /// <see cref="TrackMatchKind.Streaming"/> wenn beide > 20,
@@ -25,14 +26,12 @@ namespace EchoPlay.LocalLibrary.Matching
                 return TrackMatchKind.Custom;
             }
 
-            // Klassisches Hörspiel: wenige, lange Tracks; lokale und Online-Zahl stimmen überein
-            if (localTrackCount == onlineTrackCount && onlineTrackCount <= 20)
+            if (localTrackCount == onlineTrackCount && onlineTrackCount <= MaxChapterTracks)
             {
                 return TrackMatchKind.TbT;
             }
 
-            // Streaming-Struktur: viele kurze Tracks auf beiden Seiten
-            if (localTrackCount > 20 && onlineTrackCount > 20)
+            if (localTrackCount > MaxChapterTracks && onlineTrackCount > MaxChapterTracks)
             {
                 return TrackMatchKind.Streaming;
             }

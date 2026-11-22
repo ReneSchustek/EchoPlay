@@ -21,9 +21,10 @@ namespace EchoPlay.App.Tests.Services
     /// Ordner, der da ist, sich aber nicht auflisten lässt.
     /// </summary>
     /// <remarks>
-    /// Der Unterschied zwischen Abbruch und Fehler ist der Kern: Ein Fehler bei einer
-    /// einzelnen Serie darf den Durchlauf nicht beenden, ein Abbruch dagegen schon,
-    /// sonst läuft die Prüfung nach dem Schließen des Fensters weiter.
+    /// Der Unterschied zwischen Abbruch und Fehler ist der Kern: Ein Fehler oder eine
+    /// Zeitüberschreitung bei einer einzelnen Serie darf den Durchlauf nicht beenden, ein
+    /// Abbruch des Aufrufers dagegen schon, sonst läuft die Prüfung nach dem Schließen des
+    /// Fensters weiter.
     /// </remarks>
     public sealed class OnlineEpisodeCheckerErrorPathsTests
     {
@@ -47,15 +48,40 @@ namespace EchoPlay.App.Tests.Services
         [Fact]
         public async Task CheckAllAsync_WhenTheLookupIsCancelled_StopsInsteadOfSkipping()
         {
+            using CancellationTokenSource run = new();
             FakeAppleMusicSearchClient client = new(
-                lookupFailure: () => new OperationCanceledException());
+                lookupFailure: () =>
+                {
+                    // Das Fenster schließt mitten im Abruf.
+                    run.Cancel();
+                    return new OperationCanceledException(run.Token);
+                });
 
             OnlineEpisodeChecker checker = BuildChecker(client);
 
             _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(
                 () => checker.CheckAllAsync(
                     [Checkable(ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture))],
-                    CancellationToken.None));
+                    run.Token));
+        }
+
+        /// <summary>
+        /// Eine Zeitüberschreitung meldet der HTTP-Client als <see cref="TaskCanceledException"/>,
+        /// ohne dass der Aufrufer abgebrochen hätte. Sie trifft nur die eine Serie.
+        /// </summary>
+        [Fact]
+        public async Task CheckAllAsync_WhenTheLookupTimesOut_KeepsGoingWithoutResult()
+        {
+            FakeAppleMusicSearchClient client = new(
+                lookupFailure: () => new TaskCanceledException("Zeitgrenze erreicht"));
+
+            OnlineEpisodeChecker checker = BuildChecker(client);
+
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckAllAsync(
+                [Checkable(ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture))],
+                TestContext.Current.CancellationToken);
+
+            Assert.Empty(results);
         }
 
         /// <summary>

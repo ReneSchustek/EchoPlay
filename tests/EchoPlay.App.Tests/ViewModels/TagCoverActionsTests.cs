@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
@@ -26,7 +27,7 @@ namespace EchoPlay.App.Tests.ViewModels
         private const string SecondFile = @"D:\Media\TKKG\002.mp3";
 
         [Fact]
-        public async Task CoverEntfernen_LeertDieAnzeigeUndSchreibtDieDatei()
+        public async Task RemoveCover_ClearsTheDisplayAndWritesTheFile()
         {
             Harness harness = Harness.Build();
             harness.SelectFirst();
@@ -39,7 +40,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task CoverEntfernen_OhneAuswahlTutNichts()
+        public async Task RemoveCover_WithoutSelection_DoesNothing()
         {
             Harness harness = Harness.Build();
 
@@ -49,7 +50,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task CoverAufAlle_OhneCoverFragtGarNicht()
+        public async Task ApplyCoverToAll_WithoutCover_DoesNotAsk()
         {
             // Ohne geladenes Bild gäbe es nichts zu schreiben, die Rückfrage wäre eine
             // Zumutung ohne Zweck.
@@ -62,7 +63,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task CoverEntfernen_MeldetEinenFehlschlag()
+        public async Task RemoveCover_ReportsAFailure()
         {
             Harness harness = Harness.Build(writeCoverFailure: new System.IO.IOException("Datei gesperrt"));
             harness.SelectFirst();
@@ -89,39 +90,26 @@ namespace EchoPlay.App.Tests.ViewModels
 
             public void SelectFirst() => FileList.SetSelectedFiles([FileList.Files[0]]);
 
-            public static Harness Build(bool confirmResult = true, System.Exception? writeCoverFailure = null)
-            {
-                FakeTagService tagService = new(
+            /// <summary>Die beiden Dateien des Ordners mit je eigenem Titel.</summary>
+            private static IReadOnlyList<(string, AudioTag)> TwoTaggedFiles()
+                =>
                 [
                     (FirstFile, new AudioTag { Title = "Erste" }),
                     (SecondFile, new AudioTag { Title = "Zweite" })
-                ])
+                ];
+
+            public static Harness Build(bool confirmResult = true, System.Exception? writeCoverFailure = null)
+            {
+                FakeTagService tagService = new(TwoTaggedFiles())
                 {
                     WriteCoverFailure = writeCoverFailure
                 };
                 FakeConfirmationDialogService confirmation = new(confirmResult);
                 FakeErrorDialogService errorDialog = new();
 
-                ServiceCollection services = new();
-                _ = services.AddScoped<ITagLookupService>(_ => new FakeTagLookupService());
-                ServiceProvider provider = services.BuildServiceProvider();
+                TagManagerActionsContext context = TagActionsTestContext.Create(tagService, errorDialog, confirmation);
 
-                TagManagerActionsContext context = new(
-                    TagService: tagService,
-                    LookupCoordinator: new TagLookupCoordinator(
-                        provider.GetRequiredService<IServiceScopeFactory>(), new FakeLoggerFactory()),
-                    FileRenameService: new FakeFileRenameService(),
-                    ErrorDialogService: errorDialog,
-                    ConfirmationDialogService: confirmation,
-                    OnlineAccessGuard: new FakeOnlineAccessGuard());
-
-                TagFileListViewModel fileList = new();
-                fileList.SetFiles(
-                    [
-                        new TagFileItemViewModel(FirstFile, FolderPath),
-                        new TagFileItemViewModel(SecondFile, FolderPath)
-                    ],
-                    FolderPath);
+                TagFileListViewModel fileList = TagActionsTestContext.FileList(FolderPath, FirstFile, SecondFile);
 
                 TagCoverViewModel cover = new(() => { });
 

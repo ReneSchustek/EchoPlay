@@ -16,14 +16,14 @@ namespace EchoPlay.Spotify.Tests.Import
     public sealed class SpotifyEpisodeImportSourceTests
     {
         /// <summary>
-        /// Stellt sicher, dass bei einer Serie ohne verfügbare Alben
+        /// Prüft, dass bei einer Serie ohne verfügbare Alben
         /// keine Episoden erzeugt werden.
         /// </summary>
         [Fact]
         public async Task GetEpisodesAsync_SeriesWithoutAlbums_ReturnsEmptyList()
         {
             // ARRANGE
-            // Der Fake liefert bewusst nur Künstlerdaten.
+            // Der Fake liefert nur Künstlerdaten.
             // Alben und Tracks sind nicht vorhanden.
             ServiceCollection services = new();
 

@@ -20,9 +20,6 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class DashboardFavoritenViewModel : ObservableObject, IDisposable
     {
-        // Dashboard-Sektionsname für die Positionsspeicherung
-        private const string SectionFavorites = "Favoriten";
-
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
 
@@ -73,7 +70,7 @@ namespace EchoPlay.App.ViewModels
         /// Entfernen einer Kachel), damit das Top-VM abgeleitete Visibilities neu berechnen kann
         /// (z.B. <c>NoFavoritesHintVisibility</c>).
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM-interner Parent/Sub-VM-Bridge-Trigger ohne Nutzdaten: Action-Signatur bleibt semantisch klarer als ein leerer EventArgs-Wrapper, da der Handler im Parent-VM nur abgeleitete Visibilities neu berechnet.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action? FavoritesChanged;
 
         /// <summary>
@@ -141,7 +138,7 @@ namespace EchoPlay.App.ViewModels
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 _logger.Info("Favoriten umsortiert – speichere neue Reihenfolge.");
-                _ = SaveFavoriteSeriesOrderAsync();
+                DetachedTask.Observe(SaveFavoriteSeriesOrderAsync(), _logger);
             }
         }
 
@@ -167,7 +164,7 @@ namespace EchoPlay.App.ViewModels
                 IDashboardPositionDataService positionService =
                     scope.ServiceProvider.GetRequiredService<IDashboardPositionDataService>();
 
-                await positionService.SaveOrderAsync(SectionFavorites, seriesIds);
+                await positionService.SaveOrderAsync(DashboardSnapshot.FavoritesSection, seriesIds);
 
                 _logger.Info("Favoriten-Reihenfolge gespeichert.");
             }

@@ -60,7 +60,7 @@ namespace EchoPlay.Spotify.Tests.Clients
         [Fact]
         public async Task GetArtistAlbumsAsync_EmptyResponse_ReturnsEmptyList()
         {
-            // Volle JSON-Felder für Album-Mapping wären fragil, daher testen wir den Empty-Pfad
+            // Volle JSON-Felder für das Album-Mapping wären fragil, deshalb geht der Test den leeren Pfad
             // gegen die echte Spotify-Response-Form (items + next).
             const string responseJson = """{"items":[],"next":null}""";
             SpotifyApiClient client = BuildClient(responseJson);
@@ -92,8 +92,6 @@ namespace EchoPlay.Spotify.Tests.Clients
                 async () => await client.SearchArtistsAsync("x", limit: 10, cts.Token));
         }
 
-        // ── Test-Helfer ──────────────────────────────────────────────────────────
-
         private static SpotifyApiClient BuildClient(string responseJson, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             StubHandler handler = new(statusCode, responseJson);
@@ -101,6 +99,9 @@ namespace EchoPlay.Spotify.Tests.Clients
             return new SpotifyApiClient(http, NullLoggerFactory.Instance);
         }
 
+        /// <summary>
+        /// Antwortet mit festem Status und JSON.
+        /// </summary>
         private sealed class StubHandler : HttpMessageHandler
         {
             private readonly HttpStatusCode _statusCode;
@@ -124,6 +125,10 @@ namespace EchoPlay.Spotify.Tests.Clients
             }
         }
 
+        /// <summary>
+        /// Echte Logger-Fabrik ohne Senken: Die Protokollaufrufe laufen durch, schreiben aber
+        /// nichts.
+        /// </summary>
         private static class NullLoggerFactory
         {
             public static readonly LoggerFactory Instance = new([], new LoggerOptions());

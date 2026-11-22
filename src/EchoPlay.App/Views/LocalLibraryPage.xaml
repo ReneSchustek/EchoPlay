@@ -73,6 +73,14 @@
                             x:Uid="LokalRestructureItem"
                             Tag="{x:Bind SeriesId, Mode=OneTime}"
                             Click="OnRestructureClick"/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalFolderRenameItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnFolderRenameClick"/>
+                        <MenuFlyoutItem
+                            x:Uid="LokalSeriesEditItem"
+                            Tag="{x:Bind SeriesId, Mode=OneTime}"
+                            Click="OnSeriesEditClick"/>
                     </MenuFlyout>
                 </ctrl:SeriesTileControl.ContextFlyoutMenu>
             </ctrl:SeriesTileControl>
@@ -367,7 +375,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Linke Spalte: Episoden-Kacheln ohne Header (Header ist fixiert in Row 4) -->
+                    <!-- Linke Spalte: Episoden-Kacheln ohne Header (Header ist fixiert in Row 7) -->
                     <ctrl:EpisodeAccordionControl
                         x:Name="EpisodeAccordion"
                         Grid.Column="0"
@@ -397,6 +405,10 @@
                                             <MenuFlyoutItem x:Uid="LokalEpisodeCoverSearchItem"
                                                             Tag="{x:Bind EpisodeId, Mode=OneTime}"
                                                             Click="OnEpisodeCoverSearchClick"/>
+                                            <MenuFlyoutSeparator/>
+                                            <MenuFlyoutItem x:Uid="LokalEpisodeEditItem"
+                                                            Tag="{x:Bind EpisodeId, Mode=OneTime}"
+                                                            Click="OnEpisodeEditClick"/>
                                         </MenuFlyout>
                                     </ctrl:EpisodeTileControl.ActionFlyout>
                                 </ctrl:EpisodeTileControl>

@@ -67,9 +67,17 @@ namespace EchoPlay.App.Tests.Fakes
             return Task.CompletedTask;
         }
 
+        /// <summary>Ist gesetzt, scheitert das Entfernen mit dieser Meldung.</summary>
+        public string? FailClearWith { get; set; }
+
         /// <inheritdoc/>
         public Task ClearAsync(CancellationToken cancellationToken = default)
         {
+            if (FailClearWith is not null)
+            {
+                return Task.FromException(new InvalidOperationException(FailClearWith));
+            }
+
             _credentials = null;
             LastLoadFailedDueToCorruption = false;
             ClearCallCount++;

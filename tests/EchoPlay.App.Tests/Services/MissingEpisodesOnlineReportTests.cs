@@ -165,8 +165,85 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
+        [Fact]
+        public async Task CheckSingleSeriesAsync_OfflineOnly_ListsNewEpisodesTheProviderAlreadyDelivered()
+        {
+            string folder = CreateSeriesFolder("001 - Eins", "002 - Zwei");
+            try
+            {
+                Fixture fixture = await BuildFixtureAsync(
+                    folder, missing: [], localHighest: 2,
+                    knownProviderEpisodes: [(2, "Folge 2: Zwei"), (3, "Folge 3: Der dritte Fall")]);
 
+                IReadOnlyList<string> result = await fixture.Coordinator.CheckSingleSeriesAsync(
+                    fixture.SeriesId, folder, MissingEpisodesMode.OfflineOnly,
+                    cancellationToken: TestContext.Current.CancellationToken);
+
+                // Ohne Netz, aus der Datenbank: Die Folge nach der letzten lokalen ist bekannt.
+                Assert.Contains(result, line => line.Contains("Der dritte Fall", StringComparison.Ordinal));
+                Assert.DoesNotContain(result, line => line.Contains("Folge 2: Zwei", StringComparison.Ordinal));
+            }
+            finally
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_OfflineOnly_ReportsNewEpisodesFromTheProviderTwin()
+        {
+            string folder = CreateSeriesFolder("001 - Eins", "002 - Zwei");
+            try
+            {
+                Fixture fixture = await BuildFixtureAsync(
+                    folder, missing: [], localHighest: 2,
+                    knownProviderEpisodes: [(3, "Folge 3: Drei"), (4, "Folge 4: Vier")]);
+
+                MissingEpisodesReport report = await fixture.Coordinator.CheckAllSeriesAsync(
+                    MissingEpisodesMode.OfflineOnly, TestContext.Current.CancellationToken);
+
+                SeriesMissingEpisodesResult result = Assert.Single(report.Results);
+                Assert.Equal([3, 4], result.OnlineEpisodes.Select(episode => episode.EpisodeNumber));
+                Assert.Equal(4, result.OnlineHighestNumber);
+            }
+            finally
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task CheckAllSeriesAsync_WithOnline_MergesLiveAndKnownEpisodes_KnownTitleWins()
+        {
+            string folder = CreateSeriesFolder("001 - Eins");
+            try
+            {
+                Fixture fixture = await BuildFixtureAsync(
+                    folder,
+                    missing:
+                    [
+                        new MissingOnlineEpisode { EpisodeNumber = 2, AlbumTitle = "Die drei ??? - Folge 2 - Zwei" },
+                        new MissingOnlineEpisode { EpisodeNumber = 3, AlbumTitle = "Die drei ??? - Folge 3 - Drei" }
+                    ],
+                    localHighest: 1,
+                    knownProviderEpisodes: [(2, "Folge 2: Zwei")]);
+
+                MissingEpisodesReport report = await fixture.Coordinator.CheckAllSeriesAsync(
+                    MissingEpisodesMode.WithOnline, TestContext.Current.CancellationToken);
+
+                SeriesMissingEpisodesResult result = Assert.Single(report.Results);
+                Assert.Equal([2, 3], result.OnlineEpisodes.Select(episode => episode.EpisodeNumber));
+                Assert.Equal("Folge 2: Zwei", result.OnlineEpisodes[0].Title);
+            }
+            finally
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// Koordinator, Serie und Statusleiste eines Testfalls.
+        /// </summary>
         private sealed class Fixture
         {
             public required MissingEpisodesCoordinator Coordinator { get; init; }
@@ -174,22 +251,10 @@ namespace EchoPlay.App.Tests.Services
             public required StatusBarViewModel StatusBar { get; init; }
         }
 
-        private static async Task<Fixture> BuildFixtureAsync(
-            string seriesFolderPath,
-            IReadOnlyList<MissingOnlineEpisode>? missing,
-            int localHighest)
-        {
-            FakeSeriesDataService seriesService = new();
-            Series series = new()
-            {
-                Title = "Die drei Fragezeichen",
-                LocalFolderPath = seriesFolderPath,
-                AppleMusicArtistId = "am_ddf",
-                IsSubscribed = true,
-            };
-            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
-
-            IReadOnlyList<OnlineEpisodeCheckResult> results = missing is null
+        /// <summary>Prüfergebnis der Serie; ohne fehlende Folgen meldet die Prüfung nichts.</summary>
+        private static IReadOnlyList<OnlineEpisodeCheckResult> CheckResults(
+            Series series, IReadOnlyList<MissingOnlineEpisode>? missing, int localHighest)
+            => missing is null
                 ? []
                 :
                 [
@@ -202,19 +267,50 @@ namespace EchoPlay.App.Tests.Services
                     }
                 ];
 
+        /// <summary>
+        /// Registriert Daten-Nachbauten, die echte Suche nach bekannten neuen Folgen und die
+        /// Online-Prüfung mit den vorgegebenen Ergebnissen.
+        /// </summary>
+        private static IServiceScopeFactory CreateScopeFactory(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            IReadOnlyList<OnlineEpisodeCheckResult> results)
+        {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<KnownNewEpisodeLookup>();
             _ = services.AddScoped<EchoPlay.Core.Abstractions.IOnlineEpisodeChecker>(
                 _ => new FakeOnlineEpisodeChecker(results));
-            ServiceProvider provider = services.BuildServiceProvider();
+            return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
+        }
 
-            IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+        private static async Task<Fixture> BuildFixtureAsync(
+            string seriesFolderPath,
+            IReadOnlyList<MissingOnlineEpisode>? missing,
+            int localHighest,
+            IReadOnlyList<(int Number, string Title)>? knownProviderEpisodes = null)
+        {
+            FakeSeriesDataService seriesService = new();
+            FakeEpisodeDataService episodeService = new();
+            Series series = new()
+            {
+                Title = "Die drei Fragezeichen",
+                LocalFolderPath = seriesFolderPath,
+                AppleMusicArtistId = "am_ddf",
+                IsSubscribed = true,
+            };
+            await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
 
+            if (knownProviderEpisodes is not null)
+            {
+                await AddProviderTwinAsync(seriesService, episodeService, knownProviderEpisodes);
+            }
+
+            IServiceScopeFactory scopeFactory = CreateScopeFactory(
+                seriesService, episodeService, CheckResults(series, missing, localHighest));
             StatusBarViewModel statusBar = new(
-                scopeFactory,
-                new FakeThemeService(),
-                new TaskbarProgressService(),
-                new FakeClock());
+                scopeFactory, new FakeThemeService(), new TaskbarProgressService(), new FakeClock());
 
             return new Fixture
             {
@@ -223,6 +319,31 @@ namespace EchoPlay.App.Tests.Services
                 SeriesId = series.Id,
                 StatusBar = statusBar,
             };
+        }
+
+        /// <summary>
+        /// Legt das Gegenstück beim Anbieter an: eigener Titel wie bei den „!!!", dieselbe
+        /// Künstlerkennung, die Folgen ohne lokale Dateien.
+        /// </summary>
+        private static async Task AddProviderTwinAsync(
+            FakeSeriesDataService seriesService,
+            FakeEpisodeDataService episodeService,
+            IReadOnlyList<(int Number, string Title)> episodes)
+        {
+            Series twin = new()
+            {
+                Title = "Die drei ???",
+                AppleMusicArtistId = "am_ddf",
+                IsOnlineImported = true,
+            };
+            await seriesService.AddAsync(twin, TestContext.Current.CancellationToken);
+
+            foreach ((int number, string title) in episodes)
+            {
+                await episodeService.AddAsync(
+                    new Episode { SeriesId = twin.Id, EpisodeNumber = number, Title = title },
+                    TestContext.Current.CancellationToken);
+            }
         }
 
         /// <summary>

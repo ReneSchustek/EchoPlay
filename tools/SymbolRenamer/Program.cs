@@ -4,27 +4,36 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.CodeAnalysis.Rename;
 
-// Benennt Symbole über eine ganze Projektmappe um - dieselbe Roslyn-Engine, die Visual Studio
-// hinter "Symbol umbenennen" verwendet. Referenzen in allen Projekten wandern mit; Kommentare,
-// Zeichenketten und Resource-Keys bleiben unberührt (kein Textersatz).
-//
-// Aufruf:  SymbolRenamer <projektwurzel> <auftrag.json> [--dry-run]
-//
-// Auftragsdatei:
-// {
-//   "projects": ["src/EchoPlay.Core/EchoPlay.Core.csproj", "..."],
-//   "renames": [
-//     { "kind": "type",     "container": null,             "from": "RobotsRegelwerk", "to": "RobotsRuleSet" },
-//     { "kind": "member",   "container": "RobotsRuleSet",  "from": "IstErlaubt",      "to": "IsAllowed" }
-//   ]
-// }
-//
-// Lokale Bezeichner laufen nicht über Einzelaufträge, sondern über ein Segment-Wörterbuch:
-// {
-//   "projects": ["..."],
-//   "segmentDictionary": "F:/.../glossar-segmente.txt",
-//   "localProjects": ["EchoPlay.Core"]
-// }
+/// <summary>
+/// Benennt Symbole über eine ganze Projektmappe um - dieselbe Roslyn-Engine, die Visual Studio
+/// hinter "Symbol umbenennen" verwendet. Referenzen in allen Projekten wandern mit; Kommentare,
+/// Zeichenketten und Resource-Keys bleiben unberührt (kein Textersatz).
+/// <para>
+/// Aufruf: SymbolRenamer &lt;projektwurzel&gt; &lt;auftrag.json&gt; [--dry-run]
+/// </para>
+/// <para>
+/// Auftragsdatei:
+/// </para>
+/// <code>
+/// {
+///   "projects": ["src/EchoPlay.Core/EchoPlay.Core.csproj", "..."],
+///   "renames": [
+///     { "kind": "type",     "container": null,             "from": "RobotsRegelwerk", "to": "RobotsRuleSet" },
+///     { "kind": "member",   "container": "RobotsRuleSet",  "from": "IstErlaubt",      "to": "IsAllowed" }
+///   ]
+/// }
+/// </code>
+/// <para>
+/// Lokale Bezeichner laufen nicht über Einzelaufträge, sondern über ein Segment-Wörterbuch:
+/// </para>
+/// <code>
+/// {
+///   "projects": ["..."],
+///   "segmentDictionary": "F:/.../glossar-segmente.txt",
+///   "localProjects": ["EchoPlay.Core"]
+/// }
+/// </code>
+/// </summary>
 internal static class Program
 {
     private static async Task<int> Main(string[] args)
@@ -120,12 +129,12 @@ internal static class Program
         List<Rename> allRenames = [.. job.RenameList];
         if (dictionary is not null && job.AutoMembers)
         {
-            List<(string Kind, string? Container, string From, string To, string Projekt)> collected = await MemberCollector.CollectAsync(
+            List<(string Kind, string? Container, string From, string To, string Project)> collected = await MemberCollector.CollectAsync(
                 solution, dictionary, job.LocalProjects).ConfigureAwait(false);
 
             Console.WriteLine($"Typen und Member mit deutschem Namen: {collected.Count}");
             allRenames.AddRange(collected.Select(g =>
-                new Rename(g.Kind, g.Container, g.From, g.To, [g.Projekt])));
+                new Rename(g.Kind, g.Container, g.From, g.To, [g.Project])));
         }
 
         foreach (Rename rename in allRenames)
@@ -322,6 +331,7 @@ internal static class Program
         MSBuildLocator.RegisterInstance(instanz);
     }
 
+    /// <summary>Die Auftragsdatei, wie sie aus dem JSON gelesen wird.</summary>
     /// <param name="SolutionPath">
     /// Projektmappe, die vor den Einzelprojekten geladen wird (relativ zur Projektwurzel).
     /// Nötig, wo ein Projekt sich einzeln nicht laden lässt.
@@ -371,6 +381,7 @@ internal static class Program
         public List<Rename> RenameList => Renames ?? [];
     }
 
+    /// <summary>Eine einzelne Umbenennung aus der Auftragsdatei.</summary>
     /// <param name="Kind">
     /// Art des Symbols: Typ, Merkmal, Aufzählungswert, Datei. Bestimmt, welcher Umbenenner greift.
     /// </param>

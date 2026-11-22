@@ -26,7 +26,8 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeAppSettingsDataService? settingsService = null,
             ISpotifyClientCredentialsProvider? credentialsProvider = null,
             FakeLanguageSwitchService? languageSwitchService = null,
-            FakeSeriesDataService? seriesService = null)
+            FakeSeriesDataService? seriesService = null,
+            FakeErrorDialogService? errorDialogService = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
@@ -49,11 +50,12 @@ namespace EchoPlay.App.Tests.ViewModels
                 themeService ?? new FakeThemeService(),
                 new TaskbarProgressService(),
                 new FakeClock(),
-                languageSwitchService);
+                languageSwitchService,
+                errorDialogService);
         }
 
         [Fact]
-        public async Task Badges_ZeigenEinzahlUndMehrzahl()
+        public async Task Badges_ShowSingularAndPlural()
         {
             // Die Info-Leiste beschriftet die Zahl selbst. Bei genau einer Serie
             // darf dort nicht "1 Serien" stehen.
@@ -82,7 +84,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Badges_ZeigenDieZahlInJedemText()
+        public void Badges_ShowTheCountInEveryText()
         {
             // Gehört, offen und neu teilen sich denselben Aufbau: Muster plus Zahl.
             StatusBarViewModel sut = BuildViewModel();
@@ -93,7 +95,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void NeueFolgen_OhneTrefferBleibenBadgeUndTrennerAus()
+        public void NewEpisodes_WithoutHits_BadgeAndSeparatorStayOff()
         {
             // Ohne neue Folgen zeigt die Leiste weder Badge noch Trennstrich,
             // sonst steht dort ein Hinweis auf nichts.
@@ -104,7 +106,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Refresh_UebernimmtThemeUndSpracheAusDenEinstellungen()
+        public async Task Refresh_TakesThemeAndLanguageFromTheSettings()
         {
             AppSettings settings = new()
             {
@@ -122,7 +124,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Anbieteranzeige_NenntAppleMusicMitLeerzeichen()
+        public async Task ProviderDisplay_NamesAppleMusicWithASpace()
         {
             StatusBarViewModel sut = BuildViewModel(new AppSettings { ActiveProvider = ProviderType.AppleMusic });
             await sut.RefreshAsync();
@@ -131,7 +133,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Anbieteranzeige_NenntBeideAnbieter()
+        public async Task ProviderDisplay_NamesBothProviders()
         {
             StatusBarViewModel sut = BuildViewModel(new AppSettings { ActiveProvider = ProviderType.Both });
             await sut.RefreshAsync();
@@ -140,7 +142,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Anbieteranzeige_BleibtLeerOhneGewaehltenAnbieter()
+        public async Task ProviderDisplay_WithoutSelectedProvider_StaysEmpty()
         {
             // Ohne Anbieter bleibt das Feld leer und der Menüeintrag "Online-Mediathek" weg.
             StatusBarViewModel sut = BuildViewModel(new AppSettings { ActiveProvider = ProviderType.None });
@@ -151,7 +153,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Anbieteranzeige_MeldetSpotifyOhneZugangsdatenAlsGetrennt()
+        public async Task ProviderDisplay_ReportsSpotifyWithoutCredentialsAsDisconnected()
         {
             // Ohne hinterlegte Zugangsdaten sucht die App über Apple Music weiter.
             // Die Leiste darf Spotify dann nicht als verbunden ausweisen.
@@ -165,7 +167,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Anbieteranzeige_NenntSpotifyMitZugangsdaten()
+        public async Task ProviderDisplay_NamesSpotifyWithCredentials()
         {
             StatusBarViewModel sut = BuildViewModel(
                 new AppSettings { ActiveProvider = ProviderType.Spotify },
@@ -177,7 +179,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Offlinemodus_ZeigtSymbolUndVerbirgtDieOnlineMediathek()
+        public async Task OfflineMode_ShowsIconAndHidesTheOnlineLibrary()
         {
             StatusBarViewModel sut = BuildViewModel(new AppSettings
             {
@@ -195,7 +197,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task VoruebergehendOnline_BlendetDasOfflineSymbolAus()
+        public async Task TemporarilyOnline_HidesTheOfflineIcon()
         {
             // Eine einzelne Aktion darf im Offline-Modus online gehen; die Anzeige
             // folgt ihr, ohne die Einstellung selbst zu verändern.
@@ -211,7 +213,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void UngespeicherteEinstellungen_SteuernDenHinweis()
+        public void UnsavedSettings_ControlTheHint()
         {
             StatusBarViewModel sut = BuildViewModel();
 
@@ -223,7 +225,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void ThemeWechsel_WendetDasThemaAnUndMerktEsSich()
+        public void ThemeSwitch_AppliesTheThemeAndRemembersIt()
         {
             FakeThemeService themeService = new();
             StatusBarViewModel sut = BuildViewModel(themeService: themeService);
@@ -235,7 +237,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void ThemeWechsel_IgnoriertLeerenNamen()
+        public void ThemeSwitch_IgnoresEmptyName()
         {
             // Ein leerer Name käme aus einem falsch verdrahteten Menüeintrag,
             // das Thema darf davon nicht wechseln.
@@ -249,7 +251,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_LaeuftUeberDenDienstWennErRegistriertIst()
+        public async Task LanguageSwitch_GoesThroughTheServiceWhenRegistered()
         {
             FakeLanguageSwitchService languageSwitch = new();
             FakeAppSettingsDataService settingsService = new();
@@ -264,7 +266,32 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_SpeichertOhneDienstNurDieEinstellung()
+        public async Task ChangeLanguage_WhenRestartFails_TellsTheUser()
+        {
+            FakeLanguageSwitchService languageSwitch = new() { ChangeResult = false };
+            FakeErrorDialogService errorDialog = new();
+            StatusBarViewModel sut = BuildViewModel(languageSwitchService: languageSwitch, errorDialogService: errorDialog);
+
+            await sut.ChangeLanguageAsync("en");
+
+            // Gespeichert ist die Sprache, der Neustart kam nicht zustande. Ohne Hinweis
+            // glaubte der Nutzer, die Auswahl sei verloren.
+            _ = Assert.Single(errorDialog.ShownDialogs);
+        }
+
+        [Fact]
+        public async Task ChangeLanguage_WhenRestartWorks_ShowsNoDialog()
+        {
+            FakeErrorDialogService errorDialog = new();
+            StatusBarViewModel sut = BuildViewModel(languageSwitchService: new FakeLanguageSwitchService(), errorDialogService: errorDialog);
+
+            await sut.ChangeLanguageAsync("en");
+
+            Assert.Empty(errorDialog.ShownDialogs);
+        }
+
+        [Fact]
+        public async Task LanguageSwitch_WithoutService_OnlySavesTheSetting()
         {
             FakeAppSettingsDataService settingsService = new();
             StatusBarViewModel sut = BuildViewModel(settingsService: settingsService);
@@ -277,7 +304,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Sprachwechsel_IgnoriertLeerenCode()
+        public async Task LanguageSwitch_IgnoresEmptyCode()
         {
             FakeLanguageSwitchService languageSwitch = new();
             FakeAppSettingsDataService settingsService = new();
@@ -292,7 +319,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void SprachwechselBefehl_ReichtDenCodeWeiter()
+        public void LanguageSwitchCommand_PassesTheCodeOn()
         {
             FakeLanguageSwitchService languageSwitch = new();
             StatusBarViewModel sut = BuildViewModel(languageSwitchService: languageSwitch);

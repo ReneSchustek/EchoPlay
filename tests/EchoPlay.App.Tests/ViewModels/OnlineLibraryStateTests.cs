@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
@@ -38,31 +39,14 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "Spotify", (_, _) => new FakeSeriesImportSearch([], "Spotify"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.ISeriesImportSearch>(
-                "AppleMusic", (_, _) => new FakeSeriesImportSearch([], "AppleMusic"));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "Spotify", (_, _) => episodeSource ?? new FakeEpisodeImportSource([]));
-            _ = services.AddKeyedScoped<EchoPlay.Core.Abstractions.Import.IEpisodeImportSource>(
-                "AppleMusic", (_, _) => episodeSource ?? new FakeEpisodeImportSource([]));
+            ImportTestServices.AddProviderFakes(services, episodeSource: episodeSource);
             _ = services.AddSingleton<EchoPlay.Spotify.Auth.ISpotifyClientCredentialsProvider>(
                 FakeSpotifyClientCredentialsProvider.WithCredentials());
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-            _ = services.AddSingleton<IClock>(new FakeClock());
-            _ = services.AddHttpClient();
-            _ = services.AddSingleton<CoverService>();
-            _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-            _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-            _ = services.AddSingleton<EpisodeCoverCacheService>();
+            ImportTestServices.AddCoverChain(services);
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
-            ImportService importService = new(
-                scopeFactory,
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
+            ImportService importService = ImportTestServices.CreateImportService(provider);
 
             OnlineLibraryViewModel viewModel = new(
                 scopeFactory,
@@ -79,7 +63,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Seitenstart_OhneWaechterLaedtWeiter()
+        public async Task PageStart_WithoutGuard_KeepsLoading()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -87,7 +71,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Seitenstart_HaeltDieSeiteImNurLokalBetriebAn()
+        public async Task PageStart_StopsThePageInLocalOnlyMode()
         {
             // Sagt der Wächter Nein, darf die Seite nicht weiterladen, sonst laufen
             // Anbieter-Abfragen im ausdrücklich gewählten Offline-Betrieb.
@@ -99,7 +83,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Folgensortierung_WirdGemerkt()
+        public async Task EpisodeSort_IsRemembered()
         {
             (OnlineLibraryViewModel viewModel, FakeAppSettingsDataService settings) = Build();
 
@@ -111,7 +95,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Folgensortierung_DerselbeWertSchreibtNichts()
+        public void EpisodeSort_SameValueWritesNothing()
         {
             (OnlineLibraryViewModel viewModel, FakeAppSettingsDataService settings) = Build();
 
@@ -121,7 +105,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Folgensortierung_KehrtNachDemLadenZurueck()
+        public async Task EpisodeSort_ReturnsAfterLoading()
         {
             // Ohne Wiederherstellung stünde nach jedem Start wieder die Standardreihenfolge,
             // und die bewusste Wahl des Nutzers wäre nach einem Serienwechsel verloren.
@@ -137,7 +121,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Suchfeld_LeerenRaeumtAuchDieTrefferAusDerAnbietersuche()
+        public void SearchField_ClearingAlsoClearsTheProviderHits()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
             viewModel.ProviderSearchVM.IsSpotifyFallbackHintVisible = true;
@@ -149,7 +133,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Suchfeld_ReichtDenTextAnDieSerienlisteWeiter()
+        public void SearchField_PassesTheTextToTheSeriesList()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -159,7 +143,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void LeerZustand_VerschwindetSobaldSerienDaSind()
+        public void EmptyState_DisappearsOnceSeriesExist()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -171,7 +155,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void LeerZustand_NenntDenFehlendenAnbieterOderDieFehlendenSerien()
+        public void EmptyState_NamesTheMissingProviderOrTheMissingSeries()
         {
             // Beide Hinweise teilen sich denselben Platz. Steht kein Anbieter fest,
             // hilft der Hinweis auf die Serien nicht weiter.
@@ -182,7 +166,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LeerZustand_OhneAnbieterZeigtDenAnbieterHinweis()
+        public async Task EmptyState_WithoutProvider_ShowsTheProviderHint()
         {
             (OnlineLibraryViewModel viewModel, _) = Build(new AppSettings { ActiveProvider = ProviderType.None });
 
@@ -194,7 +178,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Anbietersuche_TauschtBibliothekUndFilterAus()
+        public void ProviderSearch_SwapsLibraryAndFilter()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -210,24 +194,24 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Durchreichen_MeldetAenderungenDerUnterAnsichten()
+        public void PassThrough_ReportsChangesOfTheSubViews()
         {
             // Die Seite bindet auf das obere Ansichtsmodell. Ohne Weiterreichen bliebe
             // die Anzeige stehen, obwohl sich die Unter-Ansicht geändert hat.
             (OnlineLibraryViewModel viewModel, _) = Build();
-            List<string?> gemeldet = [];
-            viewModel.PropertyChanged += (_, e) => gemeldet.Add(e.PropertyName);
+            List<string?> reported = [];
+            viewModel.PropertyChanged += (_, e) => reported.Add(e.PropertyName);
 
             viewModel.ProviderSearchVM.IsSpotifyFallbackHintVisible = true;
 
-            Assert.Contains(nameof(OnlineLibraryViewModel.IsSpotifyFallbackHintVisible), gemeldet);
-            Assert.Contains(nameof(OnlineLibraryViewModel.SpotifyFallbackHintVisibility), gemeldet);
+            Assert.Contains(nameof(OnlineLibraryViewModel.IsSpotifyFallbackHintVisible), reported);
+            Assert.Contains(nameof(OnlineLibraryViewModel.SpotifyFallbackHintVisibility), reported);
             Assert.True(viewModel.IsSpotifyFallbackHintVisible);
             Assert.Equal(Visibility.Visible, viewModel.SpotifyFallbackHintVisibility);
         }
 
         [Fact]
-        public void Durchreichen_ZeigtDenZustandDerFolgenliste()
+        public void PassThrough_ShowsTheStateOfTheEpisodeList()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -240,15 +224,15 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Durchreichen_SetztFilterUndSortierungDerSerienliste()
+        public void PassThrough_SetsFilterAndSortOfTheSeriesList()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
-            viewModel.StatusFilter = EchoPlay.App.Models.SeriesStatusFilter.AmHoeren;
+            viewModel.StatusFilter = EchoPlay.App.Models.SeriesStatusFilter.InProgress;
             viewModel.SeriesSortIndex = 1;
             viewModel.SearchTypeIndex = 1;
 
-            Assert.Equal(EchoPlay.App.Models.SeriesStatusFilter.AmHoeren, viewModel.SeriesVM.StatusFilter);
+            Assert.Equal(EchoPlay.App.Models.SeriesStatusFilter.InProgress, viewModel.SeriesVM.StatusFilter);
             Assert.Equal(1, viewModel.SeriesVM.SeriesSortIndex);
             Assert.Equal(1, viewModel.ProviderSearchVM.SearchTypeIndex);
             Assert.Equal(-1, viewModel.SelectedSeriesIndex);
@@ -256,7 +240,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void AuswahlAufheben_SchliesstDasAkkordeonUndLeertDieFolgen()
+        public void Deselect_ClosesTheAccordionAndClearsTheEpisodes()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
             SeriesCardViewModel card = BuildCard();
@@ -270,7 +254,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void EinstellungenAufrufen_FuehrtZurEinstellungsseite()
+        public void OpenSettings_GoesToTheSettingsPage()
         {
             FakeNavigationService navigation = new();
             (OnlineLibraryViewModel viewModel, _) = Build(navigationService: navigation);
@@ -281,19 +265,19 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void SucheAusDemLeerZustand_MeldetDenFokusWunsch()
+        public void SearchFromEmptyState_RequestsFocus()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
-            bool fokusAngefordert = false;
-            viewModel.FocusSearchRequested += () => fokusAngefordert = true;
+            bool focusRequested = false;
+            viewModel.FocusSearchRequested += () => focusRequested = true;
 
             viewModel.FocusSearchCommand.Execute(null);
 
-            Assert.True(fokusAngefordert);
+            Assert.True(focusRequested);
         }
 
         [Fact]
-        public async Task Coversuche_OhneDienstLiefertKeineTreffer()
+        public async Task CoverSearch_WithoutService_ReturnsNoHits()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -306,7 +290,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Aufraeumen_LaeuftAuchOhneVorherigesLaden()
+        public void Cleanup_RunsEvenWithoutPriorLoad()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
 
@@ -316,7 +300,44 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LeereSerie_WirdBeimLadenNachimportiert()
+        public async Task ApplySelectedEpisodeCover_WithoutCoverService_LeavesThePlaceholder()
+        {
+            (OnlineLibraryViewModel viewModel, _) = Build();
+            OnlineEpisodeCardViewModel card = new(Guid.NewGuid(), 1, "Der Superhund");
+            EchoPlay.App.Models.CoverSearchHit hit = new(
+                new Uri("https://example.org/small.jpg"), new Uri("https://example.org/large.jpg"), "TKKG", "Test");
+
+            // Ohne Cover-Dienst gibt es keinen Ort für das Bild. Vorher endete das in einer
+            // NullReferenceException, weil der Dienst trotz optionalem Parameter als vorhanden galt.
+            await viewModel.ApplySelectedEpisodeCoverAsync(card, hit);
+
+            Assert.Null(card.CoverImage);
+        }
+
+        [Theory]
+        [InlineData("kein Link")]
+        [InlineData("file:///C:/Windows/win.ini")]
+        public async Task LoadAsync_WithUnusableCoverAddress_StillShowsTheSeries(string coverAddress)
+        {
+            // Die Adresse kommt vom Anbieter. Eine kaputte warf beim Bauen der Kachel und
+            // ließ die ganze Mediathek leer; eine lokale hätte die Kachel eine Datei laden lassen.
+            FakeSeriesDataService seriesService = new();
+            await seriesService.AddAsync(
+                new Series { Title = "TKKG", IsOnlineImported = true, CoverImageUrl = coverAddress },
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            (OnlineLibraryViewModel viewModel, _) = Build(
+                settings: new AppSettings { ActiveProvider = ProviderType.None },
+                seriesService: seriesService);
+
+            await viewModel.LoadAsync();
+
+            SeriesCardViewModel card = Assert.Single(viewModel.Series);
+            Assert.Null(card.CoverImage);
+        }
+
+        [Fact]
+        public async Task EmptySeries_IsReimportedOnLoad()
         {
             // Eine Migration hat die Folgen einer Serie entfernt. Ohne den Nachimport steht
             // die Serie leer in der Mediathek, und der Anwender muss von Hand neu einlesen.
@@ -344,13 +365,13 @@ namespace EchoPlay.App.Tests.ViewModels
             await viewModel.LoadAsync();
 
             Assert.Equal(["sp_tkkg"], source.RequestedSeriesIds);
-            IReadOnlyList<EchoPlay.Data.Entities.Library.Episode> gespeichert =
+            IReadOnlyList<EchoPlay.Data.Entities.Library.Episode> stored =
                 await episodes.GetBySeriesIdAsync(seriesService.All[0].Id, TestContext.Current.CancellationToken);
-            Assert.Equal("Der Superhund", Assert.Single(gespeichert).Title);
+            Assert.Equal("Der Superhund", Assert.Single(stored).Title);
         }
 
         [Fact]
-        public async Task SerieMitFolgen_WirdNichtNachimportiert()
+        public async Task SeriesWithEpisodes_IsNotReimported()
         {
             // Der Nachimport ist eine Reparatur, keine Routine. Wo Folgen liegen, wird
             // der Anbieter beim Laden nicht gefragt.
@@ -404,7 +425,7 @@ namespace EchoPlay.App.Tests.ViewModels
         /// </summary>
         private static async Task WaitForSaveAsync(FakeAppSettingsDataService settings)
         {
-            for (int versuch = 0; versuch < 200 && settings.SaveCallCount == 0; versuch++)
+            for (int attempt = 0; attempt < 200 && settings.SaveCallCount == 0; attempt++)
             {
                 await Task.Yield();
             }

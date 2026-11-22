@@ -7,8 +7,8 @@ namespace EchoPlay.App.Controls
     /// Wiederverwendbarer Hilfe-Button mit gekoppeltem TeachingTip.
     /// Ohne das Control stünden inline-Button, inline-TeachingTip und OnHelpClick-Handler
     /// in sieben Hauptseiten je einmal. Der Aufrufer setzt lediglich
-    /// <see cref="TipUid"/>; der lokalisierte Untertitel wird daraus über die Ressourcen
-    /// (Schlüssel <c>{TipUid}.Subtitle</c>) automatisch geladen.
+    /// <see cref="TipUid"/>; der lokalisierte Untertitel steht in der Ressourcendatei unter
+    /// <c>{TipUid}.Subtitle</c> und wird als <c>{TipUid}/Subtitle</c> gelesen.
     /// </summary>
     public sealed partial class HelpButtonControl : UserControl
     {
@@ -21,8 +21,8 @@ namespace EchoPlay.App.Controls
         }
 
         /// <summary>
-        /// Ressourcen-Schlüssel für den TeachingTip-Untertitel. Zum Schlüsselwert wird
-        /// <c>.Subtitle</c> angehängt, um den lokalisierten Text zu laden.
+        /// Ressourcen-Schlüssel für den TeachingTip-Untertitel. Gelesen wird
+        /// <c>{TipUid}/Subtitle</c>; der Lader schreibt den Punkt der Ressourcendatei als Schrägstrich.
         /// </summary>
         public static readonly DependencyProperty TipUidProperty =
             DependencyProperty.Register(

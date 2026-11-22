@@ -27,8 +27,8 @@ namespace EchoPlay.App.Services
         private bool _disposed;
 
         // Polling-Intervall, in dem ein Background-Consumer prüft, ob die Foreground-Priorität
-        // beendet ist. Klein genug, dass sich kein menschlich spürbares Latenz-Bucket bildet,
-        // groß genug, damit der Thread-Pool keinen Spin aufbaut.
+        // beendet ist. Klein genug, dass niemand die Verzögerung bemerkt, groß genug, dass im
+        // Thread-Pool kein Dauerkreisen entsteht.
         private static readonly TimeSpan BackgroundPollInterval = TimeSpan.FromMilliseconds(25);
 
         /// <summary>
@@ -49,6 +49,10 @@ namespace EchoPlay.App.Services
         {
             _intervals = intervals;
             _suffixIntervals = suffixIntervals ?? new Dictionary<string, TimeSpan>();
+
+            // Eine Sekunde für unbekannte Gegenstellen, so viel wie bei MusicBrainz: Das schont
+            // eine Gegenstelle, deren Grenze niemand kennt, und bremst einen einzelnen Abruf
+            // nicht spürbar.
             _defaultInterval = defaultInterval ?? TimeSpan.FromSeconds(1);
         }
 
@@ -87,7 +91,7 @@ namespace EchoPlay.App.Services
 
         /// <inheritdoc/>
         /// <param name="host">Hostname des Anbieters; die Begrenzung gilt pro Host, nicht global.</param>
-        /// <param name="priority">Vorrang der Anfrage: Vordergrund-Anfragen bekommen einen eigenen Slot.</param>
+        /// <param name="priority">Vorrang der Anfrage: Solange eine Vordergrund-Anfrage wartet oder läuft, stehen Hintergrund-Anfragen zurück.</param>
         /// <param name="ct">Abbruch-Token der umgebenden Operation.</param>
         public async Task WaitAsync(string host, CoverFetchPriority priority, CancellationToken ct = default)
         {

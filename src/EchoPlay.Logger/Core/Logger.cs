@@ -18,7 +18,7 @@ namespace EchoPlay.Logger.Core
     /// <param name="category">Die Quelle der Logs (z.B. "ApiService", "Database").</param>
     /// <param name="sinks">Liste der Ausgabeziele für Log-Einträge.</param>
     /// <param name="options">Logger-Konfiguration; <c>MinimumLevel</c> wird bei jedem Aufruf neu gelesen.</param>
-    [SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "Etablierter Framework-Name; Namespace und Typ sind bewusst identisch wie bei Microsoft.Extensions.Logging.")]
+    [SuppressMessage("Naming", "CA1724:Type names should not match namespaces", Justification = "Die Klasse heißt wie der Namensraum ihrer Baugruppe, weil beide dasselbe bezeichnen. Aufrufer arbeiten mit ILogger; ein Umbenennen träfe jede Registrierung ohne fachlichen Gewinn.")]
     public sealed class Logger(string category, IReadOnlyList<ILogSink> sinks, LoggerOptions options) : ILogger
     {
         private readonly string _category = category;
@@ -123,14 +123,14 @@ namespace EchoPlay.Logger.Core
         private async Task LogAsync(LogLevel level, string message, Exception? exception = null)
         {
             // Frühzeitig abbrechen wenn Level unter Minimum liegt.
-            // Direkter Zugriff auf _options statt gecachtem Wert, das ermöglicht Live-Änderung des Levels.
+            // Gelesen wird _options selbst und kein zwischengespeicherter Wert, damit eine Änderung des Levels sofort wirkt.
             if (level < _options.MinimumLevel)
             {
                 return;
             }
 
-            // UTC-Quelle hält Timestamps stabil über DST-Wechsel und Multi-Region-Container.
-            // Display-Formatter (DefaultLogFormatter, LogViewerCoordinator, LogViewModel) konvertieren beim Rendern auf Lokalzeit.
+            // UTC hält die Zeitstempel über die Zeitumstellung hinweg eindeutig; die Anzeigen
+            // rechnen beim Darstellen in Ortszeit um.
             LogEntry entry = new(
                 Timestamp: DateTime.UtcNow,
                 Level: level,

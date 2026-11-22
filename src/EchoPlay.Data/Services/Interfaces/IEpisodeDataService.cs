@@ -28,7 +28,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Dictionary von SeriesId auf (Total, Local)-Tupel.
         /// <c>Total</c> = Gesamtanzahl der nicht gelöschten Episoden,
         /// <c>Local</c> = Episoden mit mindestens einem gescannten lokalen Ordner.
-        /// Serien ohne Episoden tauchen nicht im Dictionary auf – der Aufrufer bekommt (0, 0).
+        /// Serien ohne Episoden tauchen nicht im Dictionary auf; der Aufrufer bekommt (0, 0).
         /// </returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         Task<IReadOnlyDictionary<Guid, (int Total, int Local)>> GetEpisodeCountsForSeriesAsync(IReadOnlyList<Guid> seriesIds, CancellationToken cancellationToken = default);

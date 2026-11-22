@@ -31,7 +31,17 @@ namespace EchoPlay.App.Services
         {
             _loggerManager = loggerManager;
             _memorySink = memorySink;
+
+            // Coordinator und Puffer leben beide als Singleton bis zum Ende der Anwendung; ein
+            // Abmelden hätte keinen Zeitpunkt, an dem es etwas freigäbe.
+            if (_memorySink is not null)
+            {
+                _memorySink.LogEntryAdded += OnLogEntryAdded;
+            }
         }
+
+        /// <inheritdoc />
+        public event EventHandler? LiveEntriesChanged;
 
         /// <inheritdoc />
         public bool IsLiveViewAvailable => _memorySink is not null;
@@ -40,7 +50,8 @@ namespace EchoPlay.App.Services
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         public async Task<IReadOnlyList<LogFileOption>> LoadLogFileOptionsAsync(CancellationToken cancellationToken = default)
         {
-            // Relativen Pfad in absoluten umwandeln, da AppContext.BaseDirectory je nach Start-Kontext variiert
+            // Ein relativer Protokollordner gilt gegenüber dem Arbeitsverzeichnis; die Liste
+            // trägt deshalb volle Pfade, die auch nach einem Wechsel des Verzeichnisses stimmen.
             string logDirectory = _loggerManager.LogDirectory;
             if (!Path.IsPathRooted(logDirectory))
             {
@@ -67,10 +78,12 @@ namespace EchoPlay.App.Services
                 // Absteigend sortieren, die neueste Datei steht oben in der ComboBox
                 result.Sort((a, b) => b.Date.CompareTo(a.Date));
                 return result;
-            });
+            }, cancellationToken);
 
-            // Live-Option immer an erster Stelle, damit sie der Default bleibt
-            List<LogFileOption> allOptions = [new LogFileOption("Aktuell (Live)", DateTime.MaxValue, null), .. fileOptions];
+            // Live-Option immer an erster Stelle, damit sie der Default bleibt. Ihr Name steht in
+            // der Auswahlliste und kommt deshalb aus den Ressourcen.
+            string liveLabel = EchoPlay.App.Helpers.SafeResourceLoader.Get("LogViewerLiveOption", "Aktuell (Live)");
+            List<LogFileOption> allOptions = [new LogFileOption(liveLabel, DateTime.MaxValue, null), .. fileOptions];
             return allOptions;
         }
 
@@ -147,7 +160,7 @@ namespace EchoPlay.App.Services
                 LogLevel.Warning => "WARN ",
                 LogLevel.Error => "ERROR",
                 LogLevel.Fatal => "FATAL",
-                _ => "????? "
+                _ => "?????"
             };
 
             // LogEntry.Timestamp ist UTC; Lokalzeit für den Anwender im Log-Viewer.
@@ -160,6 +173,11 @@ namespace EchoPlay.App.Services
             }
 
             return line;
+        }
+
+        private void OnLogEntryAdded(object? sender, LogEntryEventArgs e)
+        {
+            LiveEntriesChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

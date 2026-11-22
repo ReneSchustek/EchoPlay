@@ -7,20 +7,17 @@ namespace EchoPlay.App.ViewModels
 {
     /// <summary>
     /// Sub-ViewModel für den Neuerscheinungen-Abschnitt des Dashboards.
-    /// Hält die nach Monat (bzw. „Angekündigt") gruppierten Neuerscheinungen und den
-    /// Lade-Zustand, solange die iTunes-Abfrage im Hintergrund läuft. Der eigentliche Aufbau
-    /// der Gruppen liegt im <see cref="DashboardDataLoader"/>; dieses VM ist ein reiner
-    /// Daten- und Visibility-Halter.
+    /// Hält die nach Monat (bzw. „Angekündigt") gruppierten Neuerscheinungen. Abgefragt
+    /// werden sie im Startbild, die Startseite liest nur den Zwischenspeicher; einen Ladezustand
+    /// gibt es deshalb nicht. Der Aufbau der Gruppen liegt im <see cref="NewReleaseGroupBuilder"/>;
+    /// dieses VM ist ein reiner Daten- und Visibility-Halter.
     /// </summary>
     public sealed class DashboardNeuerscheinungenViewModel : ObservableObject
     {
         private ObservableCollection<NewEpisodesGroupViewModel> _newEpisodeGroups = [];
-        private bool _isLoadingNewReleases;
 
         /// <summary>
-        /// Neue, ungehörte Episoden favorisierter Serien, gruppiert nach Monat.
-        /// <see cref="ObservableCollection{T}"/>, damit das ListView mit <c>CanReorderItems</c>
-        /// die Sammlung direkt per Drag &amp; Drop umsortieren könnte.
+        /// Neue, ungehörte Episoden überwachter Serien, gruppiert nach Monat.
         /// </summary>
         public ObservableCollection<NewEpisodesGroupViewModel> NewEpisodeGroups
         {
@@ -31,7 +28,6 @@ namespace EchoPlay.App.ViewModels
                 {
                     OnPropertyChanged(nameof(NewEpisodeGroupsVisibility));
                     OnPropertyChanged(nameof(NewReleasesSectionVisibility));
-                    OnPropertyChanged(nameof(NewReleasesLoadingVisibility));
                 }
             }
         }
@@ -44,36 +40,9 @@ namespace EchoPlay.App.ViewModels
             _newEpisodeGroups.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
-        /// Gibt an, ob gerade Neuerscheinungen im Hintergrund geladen werden.
-        /// Steuert den Lade-Hinweis im Abschnitt, damit der Nutzer weiß, dass die Daten
-        /// abgerufen werden (dauert bei vielen Serien mehrere Minuten).
+        /// Sichtbarkeit der Überschrift des Abschnitts, sichtbar, sobald Gruppen vorliegen.
         /// </summary>
-        public bool IsLoadingNewReleases
-        {
-            get => _isLoadingNewReleases;
-            set
-            {
-                if (SetProperty(ref _isLoadingNewReleases, value))
-                {
-                    OnPropertyChanged(nameof(NewReleasesLoadingVisibility));
-                    OnPropertyChanged(nameof(NewReleasesSectionVisibility));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sichtbarkeit des Lade-Hinweises, sichtbar, solange die Abfrage läuft und noch keine
-        /// Einträge vorliegen.
-        /// </summary>
-        public Visibility NewReleasesLoadingVisibility =>
-            _isLoadingNewReleases && _newEpisodeGroups.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-
-        /// <summary>
-        /// Sichtbarkeit des gesamten Neuerscheinungs-Abschnitts (Überschrift und Inhalt).
-        /// Sichtbar wenn Daten vorhanden sind ODER gerade geladen wird.
-        /// </summary>
-        public Visibility NewReleasesSectionVisibility =>
-            _isLoadingNewReleases || _newEpisodeGroups.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility NewReleasesSectionVisibility => NewEpisodeGroupsVisibility;
 
         /// <summary>Ersetzt die Neuerscheinungs-Gruppen mit der übergebenen Liste.</summary>
         /// <param name="groups">Die neuen Gruppen, bereits nach Monat sortiert.</param>

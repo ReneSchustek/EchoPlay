@@ -165,6 +165,9 @@ namespace EchoPlay.App.Tests.Services
             }
         }
 
+        /// <summary>
+        /// Liefert einen HttpClient ohne eigenen Handler.
+        /// </summary>
         private sealed class FakeHttpClientFactory : IHttpClientFactory
         {
             public HttpClient CreateClient(string name) => new();

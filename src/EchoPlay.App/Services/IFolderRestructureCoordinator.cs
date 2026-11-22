@@ -23,11 +23,13 @@ namespace EchoPlay.App.Services
         Task<RestructurePreviewDisplay?> AnalyzeAsync(string seriesFolderPath, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Führt den zuvor analysierten Restrukturierungs-Vorgang aus und liefert
-        /// die Anzahl tatsächlich verschobener Dateien.
+        /// Führt den zuvor analysierten Restrukturierungs-Vorgang aus, zieht die Pfade der
+        /// betroffenen Folgen und Spuren in der Datenbank nach und liefert die Anzahl tatsächlich
+        /// verschobener Dateien.
         /// </summary>
+        /// <param name="seriesId">Die Serie, zu der der Ordner gehört.</param>
         /// <param name="preview">Die App-Display-Vorschau, die <see cref="AnalyzeAsync"/> erzeugt hat.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        Task<int> ExecuteAsync(RestructurePreviewDisplay preview, CancellationToken cancellationToken = default);
+        Task<int> ExecuteAsync(System.Guid seriesId, RestructurePreviewDisplay preview, CancellationToken cancellationToken = default);
     }
 }

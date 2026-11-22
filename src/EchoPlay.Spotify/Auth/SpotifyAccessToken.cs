@@ -2,7 +2,7 @@ namespace EchoPlay.Spotify.Auth
 {
     /// <summary>
     /// Repräsentiert ein Zugriffstoken der Spotify-Web-API.
-    /// Das Modell ist bewusst minimal gehalten und enthält nur Informationen, die für Ablaufsteuerung und Header-Setzung relevant sind.
+    /// Das Modell ist minimal gehalten und enthält nur Informationen, die für Ablaufsteuerung und Header-Setzung relevant sind.
     /// </summary>
     internal sealed class SpotifyAccessToken
     {

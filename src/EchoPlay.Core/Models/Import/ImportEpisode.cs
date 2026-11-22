@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace EchoPlay.Core.Models.Import
 {
     /// <summary>
@@ -40,17 +38,15 @@ namespace EchoPlay.Core.Models.Import
         public int OrderIndex { get; init; }
 
         /// <summary>
-        /// URL zum Öffnen der Folge beim Provider (Spotify/Apple Music).
+        /// Geprüfte Adresse zum Öffnen der Folge beim Provider (Spotify/Apple Music).
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-        public string? ProviderUrl { get; init; }
+        public Uri? ProviderUrl { get; init; }
 
         /// <summary>
-        /// URL zum Album-Cover beim Provider.
+        /// Geprüfte Adresse zum Album-Cover beim Provider.
         /// Wird beim Import heruntergeladen und in der CoverImages-Tabelle persistiert.
         /// </summary>
-        [SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification = "DTO spiegelt externes API-Format (iTunes/Spotify JSON); Uri-Typ würde Deserialisierungsaufwand erhöhen.")]
-        public string? CoverImageUrl { get; init; }
+        public Uri? CoverImageUrl { get; init; }
 
         /// <summary>
         /// Bezeichner der Importquelle ("Spotify" oder "AppleMusic").

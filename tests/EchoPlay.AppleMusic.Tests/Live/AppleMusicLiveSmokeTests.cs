@@ -6,10 +6,8 @@ namespace EchoPlay.AppleMusic.Tests.Live
     /// <summary>
     /// Technischer Smoke-Test für die iTunes Search API.
     ///
-    /// Die Tests sind bewusst deaktiviert, da:
-    /// - sie echte Netzwerkzugriffe benötigen
-    /// - Firewall, Proxy oder VPN den Zugriff verhindern können
-    /// - dies keinen Rückschluss auf die Codequalität zulässt
+    /// Die Tests sind abgeschaltet, weil sie echte Netzwerkzugriffe brauchen, Firewall, Proxy
+    /// oder VPN den Zugriff verhindern können und ein Fehlschlag dann nichts über den Code sagt.
     ///
     /// Die Tests dienen ausschließlich der manuellen Verifikation
     /// in einer kontrollierten Umgebung.

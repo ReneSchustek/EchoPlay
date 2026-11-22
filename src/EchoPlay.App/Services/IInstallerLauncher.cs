@@ -6,9 +6,9 @@ namespace EchoPlay.App.Services
     /// <remarks>
     /// Bewusst getrennt von <see cref="IProcessLauncher"/>: Der dortige Namensfilter lässt
     /// ausschließlich <c>EchoPlay.App</c> zu und passt deshalb nicht auf den Installer.
-    /// Ohne eigene Schnittstelle rief der Update-Pfad <c>Process.Start</c> direkt auf; ein
-    /// Test, der bis dorthin lief, startete eine echte ausführbare Datei aus <c>%TEMP%</c>.
-    /// Über diese Abstraktion bekommen Tests ein Fake und lösen nie einen echten Start aus.
+    /// Riefe der Update-Pfad <c>Process.Start</c> direkt auf, startete ein Test, der bis
+    /// dorthin läuft, eine echte ausführbare Datei aus <c>%TEMP%</c>. Über diese Abstraktion
+    /// bekommen Tests ein Fake und lösen nie einen echten Start aus.
     /// </remarks>
     public interface IInstallerLauncher
     {

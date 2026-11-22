@@ -72,7 +72,7 @@ namespace EchoPlay.AppleMusic.Tests.Mapping
 
             ImportEpisode result = AppleMusicEpisodeMapper.MapAlbumToEpisode(album, [], orderIndex: 0);
 
-            Assert.Equal("https://is1-ssl.mzstatic.com/cover/600x600bb.jpg", result.CoverImageUrl);
+            Assert.Equal(new Uri("https://is1-ssl.mzstatic.com/cover/600x600bb.jpg"), result.CoverImageUrl);
         }
 
         [Fact]

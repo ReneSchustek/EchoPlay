@@ -125,19 +125,19 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Gibt an, ob mindestens eine Episode noch nicht angehört wurde.
-        /// Wird für den <see cref="SeriesStatusFilter.Neu"/>-Filter verwendet.
+        /// Wird für den <see cref="SeriesStatusFilter.New"/>-Filter verwendet.
         /// </summary>
         public bool HasNewEpisodes => NewEpisodeCount > 0;
 
         /// <summary>
         /// Gibt an, ob mindestens eine Episode angefangen aber noch nicht fertig gehört wurde.
-        /// Wird für den <see cref="SeriesStatusFilter.AmHoeren"/>-Filter verwendet.
+        /// Wird für den <see cref="SeriesStatusFilter.InProgress"/>-Filter verwendet.
         /// </summary>
         public bool HasInProgressEpisodes => InProgressCount > 0;
 
         /// <summary>
         /// Gibt an, ob alle Episoden dieser Serie vollständig gehört wurden.
-        /// Wird für den <see cref="SeriesStatusFilter.Gehört"/>-Filter verwendet.
+        /// Wird für den <see cref="SeriesStatusFilter.Finished"/>-Filter verwendet.
         /// </summary>
         public bool AllEpisodesFinished =>
             TotalEpisodeCount > 0 && FinishedCount == TotalEpisodeCount;

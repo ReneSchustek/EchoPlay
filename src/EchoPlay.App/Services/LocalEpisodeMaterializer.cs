@@ -23,9 +23,9 @@ namespace EchoPlay.App.Services
     /// Serien in einem Zug, bestehende Folge für Folge abgeglichen.
     /// </summary>
     /// <remarks>
-    /// Das ist der Schritt, der aus einem Dateisystem-Befund einen Bestand macht. Er
-    /// stand als vierte Phase im Einlese-Dienst und machte dort ein Drittel der Klasse
-    /// aus, obwohl er mit dem Suchen und Erkennen davor nichts zu tun hat.
+    /// Das ist der Schritt, der aus einem Dateisystem-Befund einen Bestand macht. Er ist die
+    /// vierte Phase des Einlesens, hat mit dem Suchen und Erkennen davor aber nichts zu tun
+    /// und steht deshalb für sich.
     /// </remarks>
     internal sealed class LocalEpisodeMaterializer
     {
@@ -55,127 +55,187 @@ namespace EchoPlay.App.Services
             IProgress<ScanProgress>? progress,
             CancellationToken cancellationToken)
         {
-            IEpisodeDataService episodeService = sp.GetRequiredService<IEpisodeDataService>();
-            ILocalTrackDataService trackService = sp.GetRequiredService<ILocalTrackDataService>();
-            IAudioMetadataReader metadataReader = sp.GetRequiredService<IAudioMetadataReader>();
-            ITrackMatcher trackMatcher = sp.GetRequiredService<ITrackMatcher>();
-
-            int episodesUpdated = 0;
-            int tracksCreated = 0;
-            int processedSeries = 0;
+            Stores stores = new(
+                sp.GetRequiredService<IEpisodeDataService>(),
+                sp.GetRequiredService<ILocalTrackDataService>(),
+                sp.GetRequiredService<IAudioMetadataReader>(),
+                sp.GetRequiredService<ITrackMatcher>());
 
             // Muster erst in eine Variable: mit dem Aufruf direkt im string.Format verlangt
             // der Analyzer ein zwischengespeichertes CompositeFormat, was bei einem zur
             // Laufzeit wechselnden Sprachtext nichts brächte.
             string syncStatusPattern = SafeResourceLoader.Get(
-                "ScanStatusSyncingSeries", "Synchronisiere „{0}\" …");
+                "ScanStatusSyncingSeries", "Synchronisiere „{0}“ …");
 
+            int episodesUpdated = 0;
+            int tracksCreated = 0;
+            int processedSeries = 0;
             foreach (SyncService.SeriesPipelineEntry entry in materialization.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 processedSeries++;
+                ReportProgress(progress, syncStatusPattern, entry, processedSeries, materialization.Entries.Count);
 
-                progress?.Report(new ScanProgress
-                {
-                    StatusText = string.Format(
-                        CultureInfo.CurrentCulture,
-                        syncStatusPattern,
-                        entry.ScanResult.SeriesName),
-                    DetailText = string.Format(
-                        CultureInfo.CurrentCulture,
-                        PluralText.Pattern(
-                            materialization.Entries.Count,
-                            "ScanDetailSeriesProgressSingular",
-                            "ScanDetailSeriesProgressPlural",
-                            "{0} / {1} Serie",
-                            "{0} / {1} Serien"),
-                        processedSeries, materialization.Entries.Count),
-                    ProcessedSeries = processedSeries,
-                    TotalSeries = materialization.Entries.Count
-                });
+                (int episodes, int tracks) = entry.IsNewlyCreated
+                    ? await ImportNewSeriesAsync(entry, stores, cancellationToken)
+                    : await SyncExistingSeriesAsync(entry, stores, cancellationToken);
+                episodesUpdated += episodes;
+                tracksCreated += tracks;
 
-                if (entry.IsNewlyCreated)
-                {
-                    (int created, int createdTracks) = await ImportEpisodesAsync(
-                        entry.Series.Id, entry.ScanResult.Episodes,
-                        episodeService, trackService, metadataReader, cancellationToken);
-                    episodesUpdated += created;
-                    tracksCreated += createdTracks;
-
-                    _logger.Info(
-                        "Auto-Import: Neue Serie \"{SeriesName}\" mit {CreatedEpisodes} Episoden angelegt",
-                        entry.ScanResult.SeriesName, created);
-
-                    // Erneut melden, jetzt sind die Episoden persistiert. Die in Phase 3 mit noch
-                    // 0 Episoden angelegte Kachel zieht dadurch live auf die korrekte Zahl nach,
-                    // statt bis zum Abschluss-Reload auf "0 / 0" zu verharren.
-                    _scanEventService.RaiseSeriesSynced(entry.Series);
-                    continue;
-                }
-
-                // Bestehende Serie: Episoden anhand Nummer abgleichen
-                IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdAsync(entry.Series.Id, cancellationToken);
-
-                foreach (LocalEpisodeScan episodeScan in entry.ScanResult.Episodes)
-                {
-                    if (episodeScan.ParsedNumber is null) continue;
-
-                    Episode? episode = FindEpisodeByNumber(episodes, episodeScan.ParsedNumber.Value);
-                    if (episode is null) continue;
-
-                    int onlineTrackCount = episode.LocalTrackCount ?? 0;
-                    TrackMatchKind matchKind = trackMatcher.Classify(episodeScan.TrackCount, onlineTrackCount);
-
-                    episode.LocalFolderPath = episodeScan.FolderPath;
-                    episode.LocalTrackCount = episodeScan.TrackCount;
-                    episode.TrackMatchKind = matchKind;
-
-                    await episodeService.UpdateAsync(episode, cancellationToken);
-                    episodesUpdated++;
-
-                    int created = await CreateLocalTracksAsync(
-                        episode.Id, episodeScan.TrackPaths, trackService, metadataReader, cancellationToken);
-                    tracksCreated += created;
-                }
-
-                // Bestehende Serie fertig abgeglichen, Kachelzähler live nachziehen.
-                _scanEventService.RaiseSeriesSynced(entry.Series);
+                // Erneut melden, jetzt sind die Episoden persistiert. Die in Phase 3 mit noch
+                // 0 Episoden angelegte Kachel zieht dadurch live auf die korrekte Zahl nach,
+                // statt bis zum Abschluss-Reload auf "0 / 0" zu verharren.
+                _scanEventService.NotifySeriesSynced(entry.Series);
             }
 
             return (episodesUpdated, tracksCreated);
         }
 
+        /// <summary>Meldet, welche Serie gerade abgeglichen wird und die wievielte sie ist.</summary>
+        private static void ReportProgress(
+            IProgress<ScanProgress>? progress, string statusPattern, SyncService.SeriesPipelineEntry entry, int processed, int total)
+        {
+            progress?.Report(new ScanProgress
+            {
+                StatusText = string.Format(CultureInfo.CurrentCulture, statusPattern, entry.ScanResult.SeriesName),
+                DetailText = string.Format(
+                    CultureInfo.CurrentCulture,
+                    PluralText.Pattern(
+                        total,
+                        "ScanDetailSeriesProgressSingular",
+                        "ScanDetailSeriesProgressPlural",
+                        "{0} / {1} Serie",
+                        "{0} / {1} Serien"),
+                    processed, total),
+                ProcessedSeries = processed,
+                TotalSeries = total
+            });
+        }
+
+        /// <summary>Legt alle Folgen einer neu erkannten Serie in einem Zug an.</summary>
+        private async Task<(int Episodes, int Tracks)> ImportNewSeriesAsync(
+            SyncService.SeriesPipelineEntry entry, Stores stores, CancellationToken cancellationToken)
+        {
+            (int created, int createdTracks) = await ImportEpisodesAsync(
+                entry.Series.Id, entry.ScanResult.Episodes, stores, cancellationToken);
+            _logger.Info(
+                "Auto-Import: Neue Serie \"{SeriesName}\" mit {CreatedEpisodes} Episoden angelegt",
+                entry.ScanResult.SeriesName, created);
+            return (created, createdTracks);
+        }
+
+        /// <summary>
+        /// Gleicht eine bestehende Serie ab: erst über den Ordner, dann über die Nummer. Ordner, die
+        /// noch keiner Folge gehören, sind neu hinzugekommen und werden wie bei einer neuen Serie
+        /// angelegt.
+        /// </summary>
+        private async Task<(int Episodes, int Tracks)> SyncExistingSeriesAsync(
+            SyncService.SeriesPipelineEntry entry, Stores stores, CancellationToken cancellationToken)
+        {
+            IReadOnlyList<Episode> episodes = await stores.Episodes.GetBySeriesIdAsync(entry.Series.Id, cancellationToken);
+            IReadOnlyList<(LocalEpisodeScan Scan, Episode Episode)> matches =
+                StoredEpisodeMatcher.Match(entry.ScanResult.Episodes, episodes);
+
+            int updated = 0;
+            int tracks = 0;
+            int unchanged = 0;
+            foreach ((LocalEpisodeScan episodeScan, Episode episode) in matches)
+            {
+                int? created = await UpdateMatchedEpisodeAsync(episodeScan, episode, stores, cancellationToken);
+                if (created is null)
+                {
+                    unchanged++;
+                    continue;
+                }
+
+                updated++;
+                tracks += created.Value;
+            }
+
+            if (unchanged > 0)
+            {
+                _logger.Debug(() => $"Einlesen: {unchanged} unveränderte Folgen in \"{entry.ScanResult.SeriesName}\" übersprungen");
+            }
+
+            (int added, int addedTracks) = await ImportNewFoldersAsync(entry, matches, stores, cancellationToken);
+            return (updated + added, tracks + addedTracks);
+        }
+
+        /// <summary>Legt Folgen für Ordner an, die noch keiner bekannten Folge gehören.</summary>
+        private async Task<(int Episodes, int Tracks)> ImportNewFoldersAsync(
+            SyncService.SeriesPipelineEntry entry,
+            IReadOnlyList<(LocalEpisodeScan Scan, Episode Episode)> matches,
+            Stores stores,
+            CancellationToken cancellationToken)
+        {
+            IReadOnlyList<LocalEpisodeScan> newScans = StoredEpisodeMatcher.Unmatched(entry.ScanResult.Episodes, matches);
+            if (newScans.Count == 0)
+            {
+                return (0, 0);
+            }
+
+            (int added, int addedTracks) = await ImportEpisodesAsync(entry.Series.Id, newScans, stores, cancellationToken);
+            _logger.Info(
+                "Einlesen: neu angelegt in \"{SeriesName}\": {AddedEpisodes}",
+                entry.ScanResult.SeriesName, added);
+            return (added, addedTracks);
+        }
+
+        /// <summary>
+        /// Gleicht eine schon bekannte Folge mit ihrem Ordner ab.
+        /// </summary>
+        /// <returns>Die Zahl der neu angelegten Spuren, oder <see langword="null"/>, wenn die Folge unverändert ist.</returns>
+        private async Task<int?> UpdateMatchedEpisodeAsync(
+            LocalEpisodeScan episodeScan, Episode episode, Stores stores, CancellationToken cancellationToken)
+        {
+            // Eine unveränderte Folge braucht weder neue Tags noch neue Spuren. Das Lesen der
+            // Tags kostet je Folge rund eine Sekunde; über die ganze Sammlung sind das Stunden.
+            IReadOnlyList<LocalTrack> storedTracks = await stores.Tracks.GetByEpisodeIdAsync(episode.Id, cancellationToken);
+            if (StoredEpisodeMatcher.IsUnchanged(episode, episodeScan, storedTracks))
+            {
+                return null;
+            }
+
+            int onlineTrackCount = episode.LocalTrackCount ?? 0;
+
+            // Die Nummer folgt dem Ordnernamen. Eine abweichend gespeicherte Nummer wird so
+            // beim Einlesen berichtigt, und eine Sonderfolge gibt die Nummer einer
+            // regulären Folge frei.
+            episode.EpisodeNumber = episodeScan.ParsedNumber;
+            episode.LocalFolderPath = episodeScan.FolderPath;
+            episode.LocalTrackCount = episodeScan.TrackCount;
+            episode.TrackMatchKind = stores.Matcher.Classify(episodeScan.TrackCount, onlineTrackCount);
+
+            await stores.Episodes.UpdateAsync(episode, cancellationToken);
+            return await CreateLocalTracksAsync(episode.Id, episodeScan.TrackPaths, stores, cancellationToken);
+        }
+
         /// <summary>
         /// Legt Episoden und lokale Tracks für eine neu auto-importierte Serie an.
-        /// Episoden ohne geparste Nummer erhalten eine sequenzielle Nummer (1, 2, 3 …).
+        /// Die Nummern hat der Scanner schon vergeben; eine Folge ohne Nummer ist eine
+        /// Sonderfolge und bleibt ohne, damit sie keiner regulären Folge die Nummer nimmt.
         /// </summary>
         private async Task<(int Episodes, int Tracks)> ImportEpisodesAsync(
             Guid seriesId,
             IReadOnlyList<LocalEpisodeScan> episodeScans,
-            IEpisodeDataService episodeService,
-            ILocalTrackDataService trackService,
-            IAudioMetadataReader metadataReader,
+            Stores stores,
             CancellationToken cancellationToken)
         {
             List<Episode> newEpisodes = new(episodeScans.Count);
-            int sequentialIndex = 0;
 
             foreach (LocalEpisodeScan episodeScan in episodeScans)
             {
-                sequentialIndex++;
-                int episodeNumber = episodeScan.ParsedNumber ?? sequentialIndex;
-
                 newEpisodes.Add(new Episode
                 {
                     SeriesId = seriesId,
-                    EpisodeNumber = episodeNumber,
-                    Title = episodeScan.ParsedTitle ?? $"Folge {episodeNumber}",
+                    EpisodeNumber = episodeScan.ParsedNumber,
+                    Title = episodeScan.ParsedTitle ?? System.IO.Path.GetFileName(episodeScan.FolderPath),
                     LocalFolderPath = episodeScan.FolderPath,
                     LocalTrackCount = episodeScan.TrackCount
                 });
             }
 
-            await episodeService.AddRangeAsync(newEpisodes, cancellationToken);
+            await stores.Episodes.AddRangeAsync(newEpisodes, cancellationToken);
 
             int trackCount = 0;
             for (int i = 0; i < episodeScans.Count; i++)
@@ -183,8 +243,7 @@ namespace EchoPlay.App.Services
                 int created = await CreateLocalTracksAsync(
                     newEpisodes[i].Id,
                     episodeScans[i].TrackPaths,
-                    trackService,
-                    metadataReader,
+                    stores,
                     cancellationToken);
                 trackCount += created;
             }
@@ -197,67 +256,64 @@ namespace EchoPlay.App.Services
         /// Metadaten aus den Audiodateien. TagLib# läuft synchron auf dem Threadpool.
         /// Nicht lesbare Dateien werden übersprungen.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TagLib-/IO-/DB-Fehler einzelner Audio-Dateien (korrupte Tags, gesperrte Dateien, Pfad-zu-lang) dürfen die Track-Anlage für die restlichen Dateien nicht abbrechen; Einzelfehler werden geloggt und übersprungen.")]
         private async Task<int> CreateLocalTracksAsync(
             Guid episodeId,
             IReadOnlyList<string> trackPaths,
-            ILocalTrackDataService trackService,
-            IAudioMetadataReader metadataReader,
+            Stores stores,
             CancellationToken cancellationToken = default)
         {
-            List<LocalTrack> tracks = await Task.Run(() =>
-            {
-                List<LocalTrack> result = new(trackPaths.Count);
+            // Liegen die Spuren auf mehreren CDs, beginnt die Spurnummer im Tag je CD wieder bei 1.
+            // Die Wiedergabe sortiert nach Spurnummer; dann zählt die Reihenfolge der Dateien.
+            bool spansSeveralFolders = EchoPlay.LocalLibrary.Scanning.EpisodeAudioFiles.FolderCount(trackPaths) > 1;
+            List<LocalTrack> tracks = await Task.Run(
+                () => trackPaths.Select((path, index) => ReadTrack(episodeId, path, index, spansSeveralFolders, stores.Metadata)).ToList(),
+                cancellationToken);
 
-                for (int i = 0; i < trackPaths.Count; i++)
-                {
-                    string path = trackPaths[i];
-                    TimeSpan duration = TimeSpan.Zero;
-                    int trackNumber = i + 1;
-
-                    try
-                    {
-                        (TimeSpan readDuration, int readTrackNumber) = metadataReader.Read(path);
-                        duration = readDuration;
-                        if (readTrackNumber > 0)
-                        {
-                            trackNumber = readTrackNumber;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Warning("Metadaten nicht lesbar, Standardwerte werden verwendet: {Path} ({Reason})", path, ex.Message);
-                    }
-
-                    result.Add(new LocalTrack
-                    {
-                        EpisodeId = episodeId,
-                        FilePath = path,
-                        TrackNumber = trackNumber,
-                        Duration = duration
-                    });
-                }
-
-                return result;
-            }, cancellationToken);
-
-            await trackService.SaveTracksForEpisodeAsync(episodeId, tracks, cancellationToken);
+            await stores.Tracks.SaveTracksForEpisodeAsync(episodeId, tracks, cancellationToken);
             return tracks.Count;
         }
 
         /// <summary>
-        /// Sucht die Folge mit dieser Nummer im vorhandenen Bestand.
+        /// Liest Dauer und Spurnummer einer Datei. Eine nicht lesbare Datei bekommt die Position
+        /// in der Liste als Nummer und keine Dauer.
         /// </summary>
-        private static Episode? FindEpisodeByNumber(IReadOnlyList<Episode> episodes, int number)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TagLib-/IO-/DB-Fehler einzelner Audio-Dateien (korrupte Tags, gesperrte Dateien, Pfad-zu-lang) dürfen die Track-Anlage für die restlichen Dateien nicht abbrechen; Einzelfehler werden geloggt und übersprungen.")]
+        private LocalTrack ReadTrack(Guid episodeId, string path, int index, bool spansSeveralFolders, IAudioMetadataReader metadata)
         {
-            foreach (Episode episode in episodes)
+            TimeSpan duration = TimeSpan.Zero;
+            int trackNumber = index + 1;
+            try
             {
-                if (episode.EpisodeNumber == number)
+                (TimeSpan readDuration, int readTrackNumber) = metadata.Read(path);
+                duration = readDuration;
+                if (readTrackNumber > 0 && !spansSeveralFolders)
                 {
-                    return episode;
+                    trackNumber = readTrackNumber;
                 }
             }
-            return null;
+            catch (Exception ex)
+            {
+                _logger.Warning("Metadaten nicht lesbar, Standardwerte werden verwendet: {Path} ({Reason})", EchoPlay.Core.Logging.PathRedactor.Redact(path), ex.Message);
+            }
+
+            return new LocalTrack
+            {
+                EpisodeId = episodeId,
+                FilePath = path,
+                TrackNumber = trackNumber,
+                Duration = duration
+            };
         }
+
+        /// <summary>Die Dienste eines Durchgangs, aus dem Bereich des Aufrufers.</summary>
+        /// <param name="Episodes">Folgen lesen und schreiben.</param>
+        /// <param name="Tracks">Spuren lesen und schreiben.</param>
+        /// <param name="Metadata">Liest Dauer und Spurnummer aus den Dateien.</param>
+        /// <param name="Matcher">Vergleicht lokale mit bekannten Spurzahlen.</param>
+        private sealed record Stores(
+            IEpisodeDataService Episodes,
+            ILocalTrackDataService Tracks,
+            IAudioMetadataReader Metadata,
+            ITrackMatcher Matcher);
     }
 }

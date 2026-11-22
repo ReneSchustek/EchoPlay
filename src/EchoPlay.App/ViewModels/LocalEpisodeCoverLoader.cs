@@ -30,7 +30,7 @@ namespace EchoPlay.App.ViewModels
         /// Größe einer Nachlade-Charge. Sie erscheinen blockweise, was beim Blättern ruhiger
         /// wirkt als ein Rieseln einzelner Kacheln.
         /// </summary>
-        private const int BatchSize = 60;
+        internal const int BatchSize = 60;
 
         /// <summary>
         /// Wie viele Cover gleichzeitig geladen werden. Genug für flüssiges Nachladen, ohne
@@ -140,7 +140,6 @@ namespace EchoPlay.App.ViewModels
         /// Lädt eine Charge mit begrenzter Gleichzeitigkeit. Die Bilddaten kommen von
         /// Hintergrundfäden, das Bildobjekt entsteht auf dem Oberflächenfaden.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Parallele Cover-Lade-Tasks und UI-Thread-BitmapImage-Konvertierung: native COM-Fehler (SetSourceAsync) oder TagLib-Fehler dürfen weder die Task-Gruppe noch den UI-Thread reißen; ein Platzhalter bleibt stehen.")]
         private async Task LoadBatchAsync(
             List<(LocalEpisodeCardViewModel Card, Episode Episode)> coverQueue,
             CancellationToken cancellationToken)
@@ -160,20 +159,7 @@ namespace EchoPlay.App.ViewModels
                 {
                     try
                     {
-                        byte[]? bytes = await LoadCoverBytesAsync(episode);
-
-                        if (bytes is not null && !cancellationToken.IsCancellationRequested)
-                        {
-                            await SetCoverAsync(card, bytes);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Serienwechsel, also erwarteter Abbruch.
-                    }
-                    catch
-                    {
-                        // Cover-Laden darf die Oberfläche nicht aufhalten.
+                        await LoadOneCoverAsync(card, episode, cancellationToken);
                     }
                     finally
                     {
@@ -192,6 +178,34 @@ namespace EchoPlay.App.ViewModels
             }
 
             throttle.Dispose();
+        }
+
+        /// <summary>
+        /// Lädt das Cover einer Kachel; Fehler und Abbruch lassen den Platzhalter stehen.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Parallele Cover-Lade-Tasks und UI-Thread-BitmapImage-Konvertierung: native COM-Fehler (SetSourceAsync) oder TagLib-Fehler dürfen weder die Task-Gruppe noch den UI-Thread reißen; ein Platzhalter bleibt stehen.")]
+        private async Task LoadOneCoverAsync(
+            LocalEpisodeCardViewModel card,
+            Episode episode,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                byte[]? bytes = await LoadCoverBytesAsync(episode);
+
+                if (bytes is not null && !cancellationToken.IsCancellationRequested)
+                {
+                    await SetCoverAsync(card, bytes);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Serienwechsel, also erwarteter Abbruch.
+            }
+            catch
+            {
+                // Cover-Laden darf die Oberfläche nicht aufhalten.
+            }
         }
 
         /// <summary>

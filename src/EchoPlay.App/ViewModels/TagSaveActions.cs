@@ -13,7 +13,6 @@ namespace EchoPlay.App.ViewModels
     /// Sub-Actions: Speichern und Entfernen von Tags. Beherrscht Einzel- und
     /// Mehrfachauswahl sowie das Löschen aller Tags.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1863:Use 'CompositeFormat'", Justification = "Format-Strings werden zur Laufzeit aus 'SafeResourceLoader.Get(...)' (Resources.resw) geladen und sind zum Kompilierzeitpunkt unbekannt.")]
     internal sealed class TagSaveActions
     {
         private readonly TagManagerActionsContext _ctx;
@@ -33,6 +32,14 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Public Call-Counter für Tests.</summary>
         public int RemoveAllTagsCallCount { get; private set; }
 
+        /// <summary>Richtet die Speicheraktionen ein.</summary>
+        /// <param name="context">Die Dienste des Tag-Managers.</param>
+        /// <param name="fileListVM">Die Dateiliste mit Auswahl.</param>
+        /// <param name="editorVM">Die Eingabefelder.</param>
+        /// <param name="coverVM">Das angezeigte Cover.</param>
+        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
+        /// <param name="setBatchProgress">Setzt den Fortschrittstext.</param>
+        /// <param name="setHasUnsavedChanges">Setzt die Markierung ungespeicherter Änderungen.</param>
         public TagSaveActions(
             TagManagerActionsContext context,
             TagFileListViewModel fileListVM,
@@ -55,7 +62,6 @@ namespace EchoPlay.App.ViewModels
         /// Speichert die aktuell angezeigten Tags. Bei Einzelauswahl werden alle Felder
         /// geschrieben; bei Mehrfachauswahl nur die vom Nutzer geänderten auf alle selektierten Dateien.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Speichern: TagLib-/IO-Fehler (gesperrte Datei, Read-Only, korruptes Format) werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
         public async Task SaveAsync()
         {
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("TagSave");
@@ -64,19 +70,7 @@ namespace EchoPlay.App.ViewModels
             // Einzelauswahl: alle Felder schreiben
             if (_fileListVM.SelectedFile is not null)
             {
-                try
-                {
-                    AudioTag tag = _editorVM.BuildAudioTagFromFields();
-                    await _ctx.TagService.WriteAsync(_fileListVM.SelectedFile.FilePath, tag);
-
-                    _fileListVM.SelectedFile.IsModified = false;
-                    _setHasUnsavedChanges(false);
-                }
-                catch (Exception ex)
-                {
-                    await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerSaveErrorTitle"), ex.Message, DialogKey.TagManagerSaveError);
-                }
-
+                await SaveSingleFileAsync(_fileListVM.SelectedFile);
                 return;
             }
 
@@ -87,21 +81,48 @@ namespace EchoPlay.App.ViewModels
             }
 
             AudioTag editedTag = _editorVM.BuildEditedFieldsTag();
-            await TagBatchRunner.RunBatchAsync(
+            int failed = await MergeIntoFilesAsync(
                 _fileListVM.SelectedFiles,
+                existingTag => TagBatchRunner.MergeEditedIntoExisting(editedTag, existingTag));
+
+            _setHasUnsavedChanges(failed > 0);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Speichern: TagLib-/IO-Fehler (gesperrte Datei, Read-Only, korruptes Format) werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
+        private async Task SaveSingleFileAsync(TagFileItemViewModel file)
+        {
+            try
+            {
+                AudioTag tag = _editorVM.BuildAudioTagFromFields();
+                await _ctx.TagService.WriteAsync(file.FilePath, tag);
+
+                file.IsModified = false;
+                _setHasUnsavedChanges(false);
+            }
+            catch (Exception ex)
+            {
+                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerSaveErrorTitle"), ex.Message, DialogKey.TagManagerSaveError);
+            }
+        }
+
+        /// <summary>
+        /// Liest jede Datei, mischt die Felder aus dem Editor hinein und schreibt sie zurück.
+        /// </summary>
+        /// <returns>Die Zahl der Dateien, die nicht geschrieben werden konnten.</returns>
+        private Task<int> MergeIntoFilesAsync(
+            IReadOnlyList<TagFileItemViewModel> files,
+            Func<AudioTag, AudioTag> mergeIntoExisting) =>
+            TagBatchRunner.RunBatchAsync(
+                files,
                 async file =>
                 {
                     AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag = TagBatchRunner.MergeEditedIntoExisting(editedTag, existingTag);
-                    await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
+                    await _ctx.TagService.WriteAsync(file.FilePath, mergeIntoExisting(existingTag));
                     file.IsModified = false;
                 },
                 SafeResourceLoader.Get("TagManagerSaveErrorTitle"),
                 DialogKey.TagManagerSaveError,
                 _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
-
-            _setHasUnsavedChanges(false);
-        }
 
         /// <summary>Speichert alle modifizierten Dateien auf einmal nach Nutzerbestätigung.</summary>
         public async Task SaveAllAsync()
@@ -116,40 +137,32 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
-                SafeResourceLoader.Get("TagManagerSaveAllConfirmTitle"),
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    PluralText.Pattern(
-                        modifiedFiles.Count,
-                        "TagManagerSaveAllConfirmMessageSingular",
-                        "TagManagerSaveAllConfirmMessagePlural",
-                        "{0} geänderte Datei wird gespeichert.",
-                        "{0} geänderte Dateien werden gespeichert."),
-                    modifiedFiles.Count),
-                DialogKey.TagManagerSaveAll);
-
-            if (!confirmed)
+            if (!await ConfirmSaveAllAsync(modifiedFiles.Count))
             {
                 return;
             }
 
             AudioTag sharedTag = _editorVM.BuildSharedTagFromFields();
-            await TagBatchRunner.RunBatchAsync(
+            int failed = await MergeIntoFilesAsync(
                 modifiedFiles,
-                async file =>
-                {
-                    AudioTag existingTag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    AudioTag mergedTag = TagBatchRunner.MergeSharedIntoExisting(sharedTag, existingTag);
-                    await _ctx.TagService.WriteAsync(file.FilePath, mergedTag);
-                    file.IsModified = false;
-                },
-                SafeResourceLoader.Get("TagManagerSaveErrorTitle"),
-                DialogKey.TagManagerSaveError,
-                _ctx.ErrorDialogService, _setIsLoading, _setBatchProgress);
+                existingTag => TagBatchRunner.MergeSharedIntoExisting(sharedTag, existingTag));
 
-            _setHasUnsavedChanges(false);
+            _setHasUnsavedChanges(failed > 0);
         }
+
+        private Task<bool> ConfirmSaveAllAsync(int fileCount) =>
+            _ctx.ConfirmationDialogService.ConfirmAsync(
+                SafeResourceLoader.Get("TagManagerSaveAllConfirmTitle"),
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    PluralText.Pattern(
+                        fileCount,
+                        "TagManagerSaveAllConfirmMessageSingular",
+                        "TagManagerSaveAllConfirmMessagePlural",
+                        "{0} geänderte Datei wird gespeichert.",
+                        "{0} geänderte Dateien werden gespeichert."),
+                    fileCount),
+                DialogKey.TagManagerSaveAll);
 
         /// <summary>Entfernt alle Tags der ausgewählten Datei nach Nutzerbestätigung.</summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Löschen: TagLib-/IO-Fehler werden als Nutzer-Fehlermeldung angezeigt, damit die App nicht reißt.")]
@@ -163,9 +176,10 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
+            string removeAllPattern = SafeResourceLoader.Get("TagManagerRemoveAllMessage");
             bool confirmed = await _ctx.ConfirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("TagManagerRemoveAllTitle"),
-                string.Format(CultureInfo.CurrentCulture, SafeResourceLoader.Get("TagManagerRemoveAllMessage"), _fileListVM.SelectedFile.FileName),
+                string.Format(CultureInfo.CurrentCulture, removeAllPattern, _fileListVM.SelectedFile.FileName),
                 DialogKey.TagManagerRemoveAll);
 
             if (!confirmed)

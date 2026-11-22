@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.ViewModels
     /// angekündigte Alben bereits als Vorabveröffentlichung. Ohne diese Weiche landete der
     /// Anwender beim Anbieter vor einem Album, das dort nichts abspielt.
     ///
-    /// Der Fall „bereits erschienen, aber nicht lokal vorhanden" bleibt bewusst außen vor:
+    /// Der Fall „bereits erschienen, aber nicht lokal vorhanden" bleibt außen vor:
     /// Er baut eine Suchadresse und öffnet sie im Browser, und ein Test darf keine fremde
     /// Anwendung starten.
     /// </remarks>

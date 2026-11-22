@@ -13,12 +13,10 @@ namespace EchoPlay.Data.Tests.Services
     public sealed class PlaybackStateSoftDeleteTests : DbTestBase
     {
         /// <summary>
-        /// Stellt sicher, dass das Löschen eines PlaybackStates ausschließlich diesen selbst logisch löscht, während Episode und Serie unverändert
+        /// Prüft, dass das Löschen eines PlaybackStates ausschließlich diesen selbst logisch löscht, während Episode und Serie unverändert
         /// bestehen bleiben.
-        /// Dieser Test schützt explizit vor unbeabsichtigten Cascades und stellt sicher, dass der PlaybackState als rein technisches Kindelement
-        /// behandelt wird.
+        /// Schützt vor einer ungewollten Kaskade: Der PlaybackState ist ein rein technisches Kindelement.
         /// </summary>
-        /// <returns>Ein asynchroner Task.</returns>
         [Fact]
         public async Task DeletingPlaybackState_SoftDeletesOnlyPlaybackState()
         {

@@ -1,3 +1,4 @@
+using System;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
@@ -129,7 +130,7 @@ namespace EchoPlay.App.Tests.Services
             EpisodeCoverCoordinator sut = BuildCoordinator(
                 saveCoverToDirectory: true, errorDialog: errorDialog);
             CoverSearchHit hit = new(
-                "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+                new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "TKKG", "Cover Art Archive");
 
             await sut.ApplySelectedSeriesCoverAsync(
@@ -147,7 +148,7 @@ namespace EchoPlay.App.Tests.Services
             EpisodeCoverCoordinator sut = BuildCoordinator(
                 saveCoverToDirectory: true, errorDialog: errorDialog);
             CoverSearchHit hit = new(
-                "https://example.invalid/thumb.jpg", "https://example.invalid/full.jpg",
+                new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");
 
             await sut.ApplySelectedEpisodeCoverAsync(
@@ -168,8 +169,6 @@ namespace EchoPlay.App.Tests.Services
 
             Assert.Equal("TKKG", search.LastSearchTitle);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static EpisodeCoverCoordinator BuildCoordinator(
             bool saveCoverToDirectory,

@@ -126,32 +126,46 @@ namespace EchoPlay.App.Services
                 .GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>()
                 .CreateLogger("PlaybackLauncher");
 
-            log.Info($"Folge {episodeId} ohne lokale Datei. "
-                + $"Spotify-Kennung {(string.IsNullOrWhiteSpace(spotifyAlbumId) ? "fehlt" : "vorhanden")}, "
-                + $"Apple-Kennung {(string.IsNullOrWhiteSpace(appleMusicAlbumId) ? "fehlt" : "vorhanden")}.");
+            log.Info(
+                "Folge {EpisodeId} ohne lokale Datei. Spotify-Kennung vorhanden: {HasSpotifyId}, Apple-Kennung vorhanden: {HasAppleId}.",
+                episodeId, !string.IsNullOrWhiteSpace(spotifyAlbumId), !string.IsNullOrWhiteSpace(appleMusicAlbumId));
 
+            return OpenAtProvider(log, episodeId, seriesTitle, episodeTitle, spotifyAlbumId, appleMusicAlbumId);
+        }
+
+        /// <summary>
+        /// Öffnet die Folge beim Anbieter: über eine Album-Kennung, sonst über die Suche.
+        /// </summary>
+        private static EpisodeLaunchResult OpenAtProvider(
+            EchoPlay.Logger.Abstractions.ILogger log,
+            Guid episodeId,
+            string seriesTitle,
+            string episodeTitle,
+            string? spotifyAlbumId,
+            string? appleMusicAlbumId)
+        {
             // Reihenfolge: Erst die genauen Treffer beider Anbieter, dann erst die Suche.
             // Andernfalls verdrängt eine unscharfe Spotify-Suche die exakte Apple-Kennung,
             // gemessen an „Fünf Freunde Junior, Folge 17": dort gibt es nur die Apple-Kennung.
             if (TryOpenSpotifyAlbum(spotifyAlbumId))
             {
-                log.Info($"Folge {episodeId} in Spotify geöffnet (Album).");
+                log.Info("Folge {EpisodeId} in Spotify geöffnet (Album).", episodeId);
                 return EpisodeLaunchResult.OpenedAtProvider;
             }
 
             if (TryOpenAppleMusic(appleMusicAlbumId))
             {
-                log.Info($"Folge {episodeId} in Apple Music geöffnet (Album).");
+                log.Info("Folge {EpisodeId} in Apple Music geöffnet (Album).", episodeId);
                 return EpisodeLaunchResult.OpenedAtProvider;
             }
 
             if (TryOpenSpotifySearch(seriesTitle, episodeTitle))
             {
-                log.Info($"Folge {episodeId} als Spotify-Suche geöffnet — keine Album-Kennung vorhanden.");
+                log.Info("Folge {EpisodeId} als Spotify-Suche geöffnet, keine Album-Kennung vorhanden.", episodeId);
                 return EpisodeLaunchResult.OpenedAtProvider;
             }
 
-            log.Warning($"Folge {episodeId} konnte weder abgespielt noch beim Anbieter geöffnet werden.");
+            log.Warning("Folge {EpisodeId} konnte weder abgespielt noch beim Anbieter geöffnet werden.", episodeId);
             return EpisodeLaunchResult.NothingToPlay;
         }
 

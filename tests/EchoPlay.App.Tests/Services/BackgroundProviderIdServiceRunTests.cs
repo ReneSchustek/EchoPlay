@@ -44,7 +44,6 @@ namespace EchoPlay.App.Tests.Services
 
             BackgroundProviderIdService service = new(
                 provider2.GetRequiredService<IServiceScopeFactory>(),
-                new SemaphoreHostRateLimiter(new Dictionary<string, TimeSpan>()),
                 new FakeLoggerFactory());
 
             return (service, episodeService);
@@ -125,7 +124,7 @@ namespace EchoPlay.App.Tests.Services
             service.Dispose();
         }
         [Fact]
-        public async Task Start_UndStop_BeendenDenHintergrundlauf()
+        public async Task StartAndStop_EndTheBackgroundRun()
         {
             // Der Lauf beginnt mit einer Wartezeit, damit der Programmstart frei bleibt.
             // Das Beenden muss trotzdem sofort greifen, sonst hängt der Programmschluss.
@@ -140,7 +139,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task Start_MehrfachBleibtEinLauf()
+        public async Task Start_Repeated_StaysOneRun()
         {
             // Zwei Aufrufe dürfen keinen zweiten Lauf erzeugen, sonst liefe die
             // Anreicherung doppelt über denselben Bestand.
@@ -153,7 +152,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task Stop_OhneStartIstHarmlos()
+        public async Task Stop_WithoutStart_IsHarmless()
         {
             (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
 
@@ -161,7 +160,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task Dispose_NachDemStartBrichtDenLaufAb()
+        public async Task Dispose_AfterStart_CancelsTheRun()
         {
             (BackgroundProviderIdService service, _) = Build(ProviderType.AppleMusic);
             service.Start();

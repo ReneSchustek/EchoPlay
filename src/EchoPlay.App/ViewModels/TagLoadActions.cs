@@ -33,6 +33,15 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Public Call-Counter für Tests.</summary>
         public int LoadMultipleFileTagsCallCount { get; private set; }
 
+        /// <summary>Richtet die Ladeaktionen ein.</summary>
+        /// <param name="context">Die Dienste des Tag-Managers.</param>
+        /// <param name="fileListVM">Die Dateiliste mit Auswahl.</param>
+        /// <param name="editorVM">Die Eingabefelder.</param>
+        /// <param name="coverVM">Das angezeigte Cover.</param>
+        /// <param name="renameVM">Die Vorschau des Umbenennens.</param>
+        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
+        /// <param name="setHasUnsavedChanges">Setzt die Markierung ungespeicherter Änderungen.</param>
+        /// <param name="refreshCommandStates">Aktualisiert die Befehle nach dem Laden.</param>
         public TagLoadActions(
             TagManagerActionsContext context,
             TagFileListViewModel fileListVM,
@@ -58,7 +67,7 @@ namespace EchoPlay.App.ViewModels
             => _fileLoadCompletedSource?.Task ?? Task.CompletedTask;
 
         /// <summary>Lädt alle Audiodateien eines Ordners und setzt die Sub-VMs zurück.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ordner-Enumeration: IO-Fehler (UnauthorizedAccess, PathTooLong, IOException) einzelner Unterordner/Dateien werden als Nutzer-Fehlermeldung angezeigt, damit der Tag-Manager nicht abstürzt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Ordner-Enumeration: IO-Fehler (UnauthorizedAccess, PathTooLong, IOException) werden als Nutzer-Fehlermeldung angezeigt, damit der Tag-Manager nicht abstürzt.")]
         public async Task LoadFolderAsync(string folderPath)
         {
             LoadFolderCallCount++;
@@ -125,8 +134,10 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        /// <summary>Lädt die Tags mehrerer Dateien und zeigt gemeinsame Werte an.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Read für Multi-Auswahl: TagLib-/IO-Fehler einer einzelnen Datei dürfen den Batch-Read der restlichen Dateien nicht abbrechen.")]
+        /// <summary>
+        /// Lädt die Tags mehrerer Dateien und zeigt gemeinsame Werte an. Eine unlesbare Datei
+        /// fällt aus dem Vergleich heraus und steht am Ende gesammelt in einem Dialog.
+        /// </summary>
         public async Task LoadMultipleFileTagsAsync(IReadOnlyList<TagFileItemViewModel> files)
         {
             LoadMultipleFileTagsCallCount++;
@@ -140,26 +151,50 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                List<AudioTag> tags = new(files.Count);
-                foreach (TagFileItemViewModel file in files)
+                (List<AudioTag> tags, List<string> failures) = await ReadAllTagsAsync(files);
+                if (tags.Count > 0)
                 {
-                    AudioTag tag = await _ctx.TagService.ReadAsync(file.FilePath);
-                    tags.Add(tag);
+                    _editorVM.PopulateFromMultipleTags(tags);
                 }
 
-                _editorVM.PopulateFromMultipleTags(tags);
-                _coverVM.Clear();
                 _setHasUnsavedChanges(false);
-            }
-            catch (Exception ex)
-            {
-                await _ctx.ErrorDialogService.ShowAsync(SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"), ex.Message, DialogKey.TagManagerTagLoadError);
+
+                if (failures.Count > 0)
+                {
+                    await _ctx.ErrorDialogService.ShowAsync(
+                        SafeResourceLoader.Get("TagManagerTagLoadErrorTitle"),
+                        string.Join(Environment.NewLine, failures),
+                        DialogKey.TagManagerTagLoadError);
+                }
             }
             finally
             {
                 _setIsLoading(false);
                 _ = _fileLoadCompletedSource?.TrySetResult(true);
             }
+        }
+
+        /// <summary>
+        /// Liest die Tags aller Dateien; jede unlesbare Datei landet mit Grund in der Fehlerliste.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Tag-Read für Multi-Auswahl: TagLib-/IO-Fehler einer einzelnen Datei dürfen den Batch-Read der restlichen Dateien nicht abbrechen.")]
+        private async Task<(List<AudioTag> Tags, List<string> Failures)> ReadAllTagsAsync(IReadOnlyList<TagFileItemViewModel> files)
+        {
+            List<AudioTag> tags = new(files.Count);
+            List<string> failures = [];
+            foreach (TagFileItemViewModel file in files)
+            {
+                try
+                {
+                    tags.Add(await _ctx.TagService.ReadAsync(file.FilePath));
+                }
+                catch (Exception ex)
+                {
+                    failures.Add($"{file.FileName}: {ex.Message}");
+                }
+            }
+
+            return (tags, failures);
         }
     }
 }

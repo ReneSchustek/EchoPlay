@@ -20,9 +20,9 @@ namespace EchoPlay.App.Tests.Fakes
         public System.Collections.Generic.List<(string SeriesFolder, string? CoverImageUrl)> Calls { get; } = [];
 
         /// <inheritdoc/>
-        public Task<byte[]?> ResolveAsync(string seriesFolder, string? coverImageUrl, CancellationToken cancellationToken = default)
+        public Task<byte[]?> ResolveAsync(string seriesFolder, Uri? coverImageUrl, CancellationToken cancellationToken = default)
         {
-            Calls.Add((seriesFolder, coverImageUrl));
+            Calls.Add((seriesFolder, coverImageUrl?.OriginalString));
             return Task.FromResult(_cover);
         }
     }

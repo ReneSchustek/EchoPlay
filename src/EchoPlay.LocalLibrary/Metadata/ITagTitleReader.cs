@@ -11,11 +11,12 @@ namespace EchoPlay.LocalLibrary.Metadata
         /// </summary>
         /// <param name="filePath">Absoluter Pfad zur Audiodatei.</param>
         /// <returns>
-        /// Ein Tupel aus <c>Title</c> und <c>Album</c>.
-        /// Leere Strings, wenn die Tags nicht gesetzt sind.
-        /// Wirft Ausnahmen bei unlesbar oder nicht unterstützten Formaten;
-        /// der Aufrufer ist verantwortlich für eine angemessene Fehlerbehandlung.
+        /// Ein Tupel aus <c>Title</c> und <c>Album</c>; leere Zeichenketten, wenn die Tags nicht
+        /// gesetzt sind.
         /// </returns>
+        /// <exception cref="TagLib.UnsupportedFormatException">Wenn TagLib# das Format nicht kennt.</exception>
+        /// <exception cref="TagLib.CorruptFileException">Wenn die Datei beschädigt ist.</exception>
+        /// <exception cref="System.IO.IOException">Wenn die Datei nicht lesbar ist.</exception>
         (string Title, string Album) Read(string filePath);
     }
 }

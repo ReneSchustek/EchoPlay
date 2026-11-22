@@ -109,35 +109,45 @@ namespace EchoPlay.App.ViewModels
                 int totalEpisodes = counts.Values.Sum(c => c.Total);
 
                 int completed = allStates.Count(s => s.IsCompleted);
-                int inProgress = allStates.Count(s => !s.IsCompleted && s.LastPosition > TimeSpan.Zero);
 
                 SeriesCount = allSeries.Count;
                 EpisodeCount = totalEpisodes;
                 CompletedCount = completed;
-                InProgressCount = inProgress;
+                InProgressCount = allStates.Count(s => !s.IsCompleted && s.LastPosition > TimeSpan.Zero);
 
                 double percent = totalEpisodes > 0 ? (double)completed / totalEpisodes * 100 : 0;
                 ProgressPercent = percent;
-                string progressPattern = EchoPlay.App.Helpers.PluralText.Pattern(
-                    totalEpisodes,
-                    "StatistikProgressTextSingular",
-                    "StatistikProgressTextPlural",
-                    "{0} von {1} Folge gehört ({2} %)",
-                    "{0} von {1} Folgen gehört ({2} %)");
-
-                ProgressText = totalEpisodes > 0
-                    ? string.Format(
-                        CultureInfo.CurrentCulture,
-                        progressPattern,
-                        completed,
-                        totalEpisodes,
-                        percent.ToString("F0", CultureInfo.CurrentCulture))
-                    : EchoPlay.App.Helpers.SafeResourceLoader.Get("StatistikNoEpisodes", "Keine Episoden vorhanden");
+                ProgressText = FormatProgressText(completed, totalEpisodes, percent);
             }
             finally
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Baut den Fortschrittstext; ohne Folgen steht dort ein eigener Hinweis.
+        /// </summary>
+        private static string FormatProgressText(int completed, int totalEpisodes, double percent)
+        {
+            if (totalEpisodes == 0)
+            {
+                return EchoPlay.App.Helpers.SafeResourceLoader.Get("StatistikNoEpisodes", "Keine Episoden vorhanden");
+            }
+
+            string progressPattern = EchoPlay.App.Helpers.PluralText.Pattern(
+                totalEpisodes,
+                "StatistikProgressTextSingular",
+                "StatistikProgressTextPlural",
+                "{0} von {1} Folge gehört ({2} %)",
+                "{0} von {1} Folgen gehört ({2} %)");
+
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                progressPattern,
+                completed,
+                totalEpisodes,
+                percent.ToString("F0", CultureInfo.CurrentCulture));
         }
     }
 }

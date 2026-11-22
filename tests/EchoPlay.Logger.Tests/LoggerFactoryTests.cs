@@ -27,7 +27,7 @@ namespace EchoPlay.Logger.Tests
         /// Zwei Aufrufe von CreateLogger liefern unterschiedliche Instanzen.
         /// </summary>
         [Fact]
-        public void CreateLogger_ZweiAufrufe_LiefernVerschiedeneInstanzen()
+        public void CreateLogger_TwoCalls_ReturnDifferentInstances()
         {
             EchoPlay.Logger.Core.LoggerFactory factory = new([], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
 
@@ -42,7 +42,7 @@ namespace EchoPlay.Logger.Tests
         /// Beide Logger senden ihre Einträge an dieselbe Senke.
         /// </summary>
         [Fact]
-        public void ZweiLogger_TeileGleicheSinks_BeideNachrichtenErfasst()
+        public void TwoLoggers_ShareSinks_BothMessagesCaptured()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.LoggerFactory factory = new([sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Debug });
@@ -63,7 +63,7 @@ namespace EchoPlay.Logger.Tests
         /// Nachrichten unterhalb des konfigurierten Minimums werden nicht weitergeleitet.
         /// </summary>
         [Fact]
-        public void MinimumLevel_WirdAnErstellteLoggerWeitergegeben()
+        public void MinimumLevel_IsPassedToCreatedLoggers()
         {
             CapturingSink sink = new();
             EchoPlay.Logger.Core.LoggerFactory factory = new([sink], new Configuration.LoggerOptions { MinimumLevel = LogLevel.Error });

@@ -1,34 +1,26 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
-using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.Logger.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
     /// <summary>
-    /// Sub-ViewModel für den Verwaltung- und Protokolle-Tab der Einstellungsseite.
-    /// Vereint Datenbankpflege (Cache leeren, Purge, VACUUM, Reset) und den Log-Viewer
-    /// (Datei-Auswahl, Live-Puffer, Filter), weil beide Bereiche operativ zusammengehören
-    /// und keinen eigenen Settings-Zustand mehr tragen müssen. Die Entität speichert nur
-    /// <see cref="DbPurgeDays"/> und <see cref="ClearCacheOnNextStart"/>.
+    /// Sub-ViewModel für den Verwaltung-Tab der Einstellungsseite: Datenbankpflege (Cache
+    /// leeren, Purge, VACUUM, Reset) und Sicherung vor Migrationen. Die Entität speichert
+    /// <see cref="DbPurgeDays"/>, <see cref="ClearCacheOnNextStart"/>,
+    /// <see cref="DbBackupEnabled"/> und <see cref="DbBackupRetentionCount"/>. Die
+    /// Protokollansicht liegt in <see cref="LogViewerViewModel"/>.
     /// </summary>
     public sealed class MaintenanceSettingsViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ILogViewerCoordinator _logViewerCoordinator;
         private readonly Action _onUserEdit;
-
-        // DispatcherTimer für Live-View; aktualisiert den Log-Puffer alle 2 Sekunden
-        private DispatcherTimer? _liveViewTimer;
 
         private bool _isBatchLoading;
         private int _dbPurgeDays = 30;
@@ -38,30 +30,16 @@ namespace EchoPlay.App.ViewModels
         private bool _isMaintaining;
         private string _maintenanceStatusText = string.Empty;
 
-        private IReadOnlyList<LogFileOption> _availableLogFiles = [];
-        private LogFileOption? _selectedLogFile;
-        private string _logSearchText = string.Empty;
-        private LogLevel _logMinimumLevel = LogLevel.Debug;
-        private bool _isLiveViewActive;
-
         /// <summary>
-        /// Initialisiert das Sub-VM mit DI-Scope-Fabrik, Log-Viewer-Coordinator und Edit-Callback.
+        /// Initialisiert das Sub-VM mit DI-Scope-Fabrik und Edit-Callback.
         /// </summary>
         /// <param name="scopeFactory">Für Datenbankpflege-Services.</param>
-        /// <param name="logViewerCoordinator">App-Service für Datei- und Live-Log-Zugriff.</param>
         /// <param name="onUserEdit">Wird bei einer Nutzeränderung aufgerufen.</param>
-        public MaintenanceSettingsViewModel(
-            IServiceScopeFactory scopeFactory,
-            ILogViewerCoordinator logViewerCoordinator,
-            Action onUserEdit)
+        public MaintenanceSettingsViewModel(IServiceScopeFactory scopeFactory, Action onUserEdit)
         {
             _scopeFactory = scopeFactory;
-            _logViewerCoordinator = logViewerCoordinator;
             _onUserEdit = onUserEdit;
-            LogEntries = [];
         }
-
-        // ── Datenbankpflege-Eigenschaften ───────────────────────────────────────
 
         /// <summary>
         /// Anzahl der Tage nach denen soft-gelöschte Einträge physisch entfernt werden.
@@ -112,7 +90,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Anzahl der DB-Backups, die vor Migrationen vorgehalten werden.
-        /// Gültiger Bereich 1–20. Der Wert 0 ist äquivalent zum Opt-Out.
+        /// Gültiger Bereich 1–20; ausgeschaltet wird die Sicherung über <see cref="DbBackupEnabled"/>.
         /// </summary>
         public int DbBackupRetentionCount
         {
@@ -161,201 +139,6 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Sichtbarkeit des Wartungs-Statustexts.</summary>
         public Visibility MaintenanceStatusVisibility =>
             string.IsNullOrEmpty(_maintenanceStatusText) ? Visibility.Collapsed : Visibility.Visible;
-
-        // ── Log-Viewer-Eigenschaften ────────────────────────────────────────────
-
-        /// <summary>Gefilterte und formatierte Log-Einträge für den Log-Viewer.</summary>
-        public ObservableCollection<string> LogEntries { get; }
-
-        /// <summary>
-        /// Gibt an, ob der Log-Viewer überhaupt verfügbar ist (MemorySink beim Start registriert).
-        /// </summary>
-        public bool IsLogViewerAvailable => _logViewerCoordinator.IsLiveViewAvailable;
-
-        /// <summary>Freitext-Suchfilter für den Log-Viewer. Jede Änderung triggert ein Refresh.</summary>
-        public string LogSearchText
-        {
-            get => _logSearchText;
-            set
-            {
-                if (SetProperty(ref _logSearchText, value))
-                {
-                    RefreshLogs();
-                }
-            }
-        }
-
-        /// <summary>Minimales Log-Level für den Log-Viewer-Filter. Jede Änderung triggert ein Refresh.</summary>
-        public LogLevel LogMinimumLevel
-        {
-            get => _logMinimumLevel;
-            set
-            {
-                if (SetProperty(ref _logMinimumLevel, value))
-                {
-                    RefreshLogs();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Index des Level-Filters in der ComboBox (0=Alle, 1=Info+, 2=Warnung+, 3=Fehler+).
-        /// </summary>
-        public int LogLevelFilterIndex
-        {
-            get => _logMinimumLevel switch
-            {
-                LogLevel.Debug => 0,
-                LogLevel.Information => 1,
-                LogLevel.Warning => 2,
-                _ => 3
-            };
-            set => LogMinimumLevel = value switch
-            {
-                1 => LogLevel.Information,
-                2 => LogLevel.Warning,
-                3 => LogLevel.Error,
-                _ => LogLevel.Debug
-            };
-        }
-
-        /// <summary>
-        /// Liste aller verfügbaren Log-Dateien. An erster Stelle steht immer „Aktuell (Live)".
-        /// </summary>
-        public IReadOnlyList<LogFileOption> AvailableLogFiles
-        {
-            get => _availableLogFiles;
-            private set => SetProperty(ref _availableLogFiles, value);
-        }
-
-        /// <summary>Aktuell gewählte Log-Datei. <see langword="null"/>-FilePath bedeutet Live-Modus.</summary>
-        public LogFileOption? SelectedLogFile
-        {
-            get => _selectedLogFile;
-            set
-            {
-                if (SetProperty(ref _selectedLogFile, value))
-                {
-                    _ = LoadLogContentAsync(value);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gibt an, ob der Log-Viewer alle 2 Sekunden automatisch aktualisiert wird.
-        /// Startet oder stoppt den internen Dispatcher-Timer entsprechend.
-        /// </summary>
-        public bool IsLiveViewActive
-        {
-            get => _isLiveViewActive;
-            set
-            {
-                if (SetProperty(ref _isLiveViewActive, value))
-                {
-                    if (value)
-                    {
-                        StartLiveViewTimer();
-                    }
-                    else
-                    {
-                        _liveViewTimer?.Stop();
-                    }
-                }
-            }
-        }
-
-        // ── Log-Viewer-Aktionen ─────────────────────────────────────────────────
-
-        /// <summary>
-        /// Lädt die Liste der verfügbaren Log-Dateien neu. Der erste Eintrag ist immer die Live-Option.
-        /// Die zuvor gewählte Datei wird beibehalten, sofern sie noch existiert; andernfalls
-        /// fällt die Auswahl auf die Live-Option zurück.
-        /// </summary>
-        /// <returns>Der Task ist abgeschlossen, wenn die Liste steht und eine Auswahl gesetzt ist.</returns>
-        public async Task LoadLogFilesAsync()
-        {
-            IReadOnlyList<LogFileOption> options = await _logViewerCoordinator.LoadLogFileOptionsAsync();
-            AvailableLogFiles = options;
-
-            // Nur beim ersten Laden auf Live setzen, danach Auswahl des Nutzers beibehalten
-            if (_selectedLogFile is null && options.Count > 0)
-            {
-                _selectedLogFile = options[0];
-                OnPropertyChanged(nameof(SelectedLogFile));
-            }
-        }
-
-        /// <summary>
-        /// Liest alle gepufferten Einträge aus dem MemorySink und wendet Such- und Level-Filter an.
-        /// Neueste Einträge stehen am Ende der Liste.
-        /// </summary>
-        public void RefreshLogs()
-        {
-            LogEntries.Clear();
-
-            IReadOnlyList<string> lines = _logViewerCoordinator.BuildFilteredLiveEntries(_logSearchText, _logMinimumLevel);
-            foreach (string line in lines)
-            {
-                LogEntries.Add(line);
-            }
-        }
-
-        /// <summary>
-        /// Lädt den Inhalt der gewählten Log-Datei in <see cref="LogEntries"/>.
-        /// Die Live-Option (FilePath <see langword="null"/>) zeigt den MemorySink-Puffer.
-        /// </summary>
-        /// <param name="option">Die gewählte Option.</param>
-        /// <returns>Der Task ist abgeschlossen, wenn die Einträge in der Anzeige stehen.</returns>
-        private async Task LoadLogContentAsync(LogFileOption? option)
-        {
-            if (option?.FilePath is null)
-            {
-                // Live-Modus: aus dem MemorySink-Puffer laden
-                RefreshLogs();
-                return;
-            }
-
-            LogEntries.Clear();
-
-            IReadOnlyList<string> lines = await _logViewerCoordinator.LoadFileLinesAsync(option.FilePath);
-            foreach (string line in lines)
-            {
-                LogEntries.Add(line);
-            }
-        }
-
-        /// <summary>
-        /// Erstellt beim ersten Aufruf den <see cref="DispatcherTimer"/> und startet ihn.
-        /// Der Timer muss im UI-Thread erstellt werden, und das ViewModel wird immer dort instanziiert.
-        /// </summary>
-        private void StartLiveViewTimer()
-        {
-            if (_liveViewTimer is null)
-            {
-                _liveViewTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(2)
-                };
-                _liveViewTimer.Tick += OnLiveViewTimerTick;
-            }
-
-            _liveViewTimer.Start();
-        }
-
-        /// <summary>
-        /// Tick-Handler: lädt den MemorySink-Puffer neu.
-        /// Ist eine Datei gewählt, passiert nichts, denn historische Logs ändern sich nicht.
-        /// </summary>
-        private void OnLiveViewTimerTick(object? sender, object e)
-        {
-            // Nur im Live-Modus aktualisieren, Datei-Logs sind statisch
-            if (_selectedLogFile?.FilePath is null)
-            {
-                RefreshLogs();
-            }
-        }
-
-        // ── Datenbankpflege-Aktionen ────────────────────────────────────────────
 
         /// <summary>
         /// Bereinigt soft-gelöschte Einträge die älter als <see cref="DbPurgeDays"/> Tage sind
@@ -407,6 +190,12 @@ namespace EchoPlay.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliothek-Reset: bulk-delete aller Serien/Episoden/Tracks und Cover-Dateien kann IO-/DB-Fehler werfen; der Command darf nicht reißen, der Status wird angezeigt und IsMaintaining im finally zurückgesetzt.")]
         public async Task ResetLibraryAsync(int scopeIndex)
         {
+            // Wie die Bereinigung: Ein zweiter Lauf neben dem ersten griffe auf dieselben Tabellen zu.
+            if (_isMaintaining)
+            {
+                return;
+            }
+
             using IDisposable userAction = EchoPlay.App.Services.UserActionScope.BeginUserAction("LibraryReset");
             IsMaintaining = true;
             MaintenanceStatusText = SafeResourceLoader.Get("ResetRunning", "Bibliothek wird zurückgesetzt …");
@@ -417,25 +206,12 @@ namespace EchoPlay.App.ViewModels
                 IDatabaseMaintenanceService maintenance =
                     scope.ServiceProvider.GetRequiredService<IDatabaseMaintenanceService>();
 
-                switch (scopeIndex)
-                {
-                    case 0:
-                        await maintenance.ClearOnlineLibraryAsync();
-                        MaintenanceStatusText = SafeResourceLoader.Get("ResetOnlineDone", "Online-Bibliothek wurde zurückgesetzt.");
-                        break;
-                    case 1:
-                        await maintenance.ClearLocalLibraryAsync();
-                        MaintenanceStatusText = SafeResourceLoader.Get("ResetLocalDone", "Lokale Bibliothek wurde zurückgesetzt.");
-                        break;
-                    default:
-                        await maintenance.ClearLibraryAsync();
-                        MaintenanceStatusText = SafeResourceLoader.Get("ResetAllDone", "Gesamte Bibliothek wurde zurückgesetzt.");
-                        break;
-                }
+                MaintenanceStatusText = await ClearScopeAsync(maintenance, scopeIndex);
             }
             catch (Exception ex)
             {
-                MaintenanceStatusText = $"{SafeResourceLoader.Get("SyncFailed", "Fehler")}: {ex.Message}";
+                string errorFormat = SafeResourceLoader.Get("ResetFailed", "Zurücksetzen fehlgeschlagen: {0}");
+                MaintenanceStatusText = string.Format(System.Globalization.CultureInfo.CurrentCulture, errorFormat, ex.Message);
             }
             finally
             {
@@ -443,7 +219,22 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Persistenz ──────────────────────────────────────────────────────────
+        /// <summary>Leert den gewählten Bereich und liefert die Erfolgsmeldung dazu.</summary>
+        private static async Task<string> ClearScopeAsync(IDatabaseMaintenanceService maintenance, int scopeIndex)
+        {
+            switch (scopeIndex)
+            {
+                case 0:
+                    await maintenance.ClearOnlineLibraryAsync();
+                    return SafeResourceLoader.Get("ResetOnlineDone", "Online-Bibliothek wurde zurückgesetzt.");
+                case 1:
+                    await maintenance.ClearLocalLibraryAsync();
+                    return SafeResourceLoader.Get("ResetLocalDone", "Lokale Bibliothek wurde zurückgesetzt.");
+                default:
+                    await maintenance.ClearLibraryAsync();
+                    return SafeResourceLoader.Get("ResetAllDone", "Gesamte Bibliothek wurde zurückgesetzt.");
+            }
+        }
 
         /// <summary>Übernimmt die wartungsbezogenen Werte aus der Entität ohne Change-Callback.</summary>
         /// <param name="settings">Die geladene Entität.</param>
@@ -473,21 +264,8 @@ namespace EchoPlay.App.ViewModels
             settings.DbPurgeDays = Math.Max(0, DbPurgeDays);
             settings.ClearCacheOnNextStart = ClearCacheOnNextStart;
             settings.DbBackupEnabled = DbBackupEnabled;
+            // Dieselbe Obergrenze, die DatabaseInitializer beim Lesen anwendet.
             settings.DbBackupRetentionCount = Math.Clamp(DbBackupRetentionCount, 1, 20);
-        }
-
-        /// <summary>
-        /// Stoppt den Live-View-Timer und gibt ihn frei. Wird von <see cref="SettingsViewModel.Dispose"/>
-        /// im Rahmen des Page-Unloads kaskadiert.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_liveViewTimer is not null)
-            {
-                _liveViewTimer.Stop();
-                _liveViewTimer.Tick -= OnLiveViewTimerTick;
-                _liveViewTimer = null;
-            }
         }
 
         private void MarkAsChanged()

@@ -267,7 +267,7 @@ namespace EchoPlay.App.Tests.Services
         /// <summary>Downloader, der jede Anfrage mit einem Netzfehler beantwortet.</summary>
         private sealed class ThrowingCoverDownloader : ICoverDownloader
         {
-            public Task<byte[]?> DownloadAsync(string url, CancellationToken cancellationToken = default)
+            public Task<byte[]?> DownloadAsync(Uri url, CancellationToken cancellationToken = default)
                 => Task.FromException<byte[]?>(new System.Net.Http.HttpRequestException("Nicht erreichbar"));
         }
 

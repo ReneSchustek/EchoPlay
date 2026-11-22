@@ -36,8 +36,8 @@ namespace EchoPlay.Spotify.Tests.Mapping
             Assert.Equal(new DateTime(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc), result.ReleaseDate);
             Assert.Equal(TimeSpan.FromMinutes(45), result.Duration);
             Assert.Equal(5, result.OrderIndex);
-            Assert.Equal("https://open.spotify.com/album/album-1", result.ProviderUrl);
-            Assert.Equal("https://i.scdn.co/album.jpg", result.CoverImageUrl);
+            Assert.Equal(new Uri("https://open.spotify.com/album/album-1"), result.ProviderUrl);
+            Assert.Equal(new Uri("https://i.scdn.co/album.jpg"), result.CoverImageUrl);
             Assert.Equal("Spotify", result.Source);
         }
 
@@ -54,7 +54,7 @@ namespace EchoPlay.Spotify.Tests.Mapping
             ImportEpisode result = SpotifyEpisodeMapper.MapAlbumToEpisode(album, [], orderIndex: 0);
 
             Assert.Equal(TimeSpan.Zero, result.Duration);
-            Assert.Equal("https://open.spotify.com/album/album-empty", result.ProviderUrl);
+            Assert.Equal(new Uri("https://open.spotify.com/album/album-empty"), result.ProviderUrl);
         }
 
         [Fact]

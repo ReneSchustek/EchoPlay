@@ -7,7 +7,7 @@ namespace EchoPlay.Data.Configurations
 {
     /// <summary>
     /// EF-Core-Konfiguration für die Cover-Tabelle.
-    /// Binärdaten sind bewusst von den Metadaten-Tabellen getrennt,
+    /// Binärdaten sind von den Metadaten-Tabellen getrennt,
     /// damit normale Queries keine MB an Bilddaten mitladen.
     /// </summary>
     internal sealed class CoverImageConfiguration : IEntityTypeConfiguration<CoverImage>
@@ -28,7 +28,8 @@ namespace EchoPlay.Data.Configurations
             _ = builder.Property(c => c.EntityId)
                    .IsRequired();
 
-            // Cover maximal 5 MB, das schützt die Datenbank vor übergroßen Bildern
+            // 5 MB als Angabe im Modell. SQLite erzwingt Spaltenlängen nicht; wer ein Bild
+            // speichert, begrenzt seine Größe vorher selbst.
             _ = builder.Property(c => c.ImageData)
                    .IsRequired()
                    .HasMaxLength(5_242_880);
@@ -45,7 +46,7 @@ namespace EchoPlay.Data.Configurations
             // Ein Cover pro aktiver Entity. Soft-deleted Einträge zählen nicht mit, sonst blockierten sie den Reinsert.
             _ = builder.HasIndex(c => new { c.EntityType, c.EntityId })
                    .IsUnique()
-                   .HasFilter("IsDeleted = 0");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows);
 
             // Background-Worker: "alle Entities ohne/mit abgelaufenem Check"
             _ = builder.HasIndex(c => new { c.EntityType, c.LastChecked });

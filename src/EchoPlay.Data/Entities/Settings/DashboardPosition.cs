@@ -1,4 +1,5 @@
 using EchoPlay.Data.Entities.Common;
+using EchoPlay.Data.Entities.Contracts;
 using EchoPlay.Data.Entities.Library;
 
 namespace EchoPlay.Data.Entities.Settings
@@ -15,6 +16,7 @@ namespace EchoPlay.Data.Entities.Settings
         /// <summary>
         /// Referenz auf die zugeordnete Serie (Fremdschlüssel).
         /// </summary>
+        [DataScope(DataScope.LocalIdentity)]
         public Guid SeriesId { get; set; }
 
         /// <summary>
@@ -27,12 +29,14 @@ namespace EchoPlay.Data.Entities.Settings
         /// Dashboard-Bereich, z.B. "Neuerscheinungen" oder "Favoriten".
         /// Zusammen mit <see cref="SeriesId"/> bildet dieser Wert den fachlichen Schlüssel.
         /// </summary>
+        [DataScope(DataScope.Shared)]
         public string Section { get; set; } = string.Empty;
 
         /// <summary>
         /// Sortierposition innerhalb des Bereichs (0-basiert, aufsteigend).
         /// Kleinere Werte erscheinen weiter oben.
         /// </summary>
+        [DataScope(DataScope.Shared)]
         public int Position { get; set; }
     }
 }

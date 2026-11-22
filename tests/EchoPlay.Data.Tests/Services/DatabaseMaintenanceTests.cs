@@ -121,8 +121,6 @@ namespace EchoPlay.Data.Tests.Services
             Assert.Equal(0, trackCount);
         }
 
-        // ── Cover-Bereinigung bei Reset ─────────────────────────────────────────
-
         [Fact]
         public async Task ClearLibraryAsync_DeletesAllCovers()
         {

@@ -15,9 +15,10 @@ namespace EchoPlay.TagManager.Services
     /// Benennt Audiodateien nach einem konfigurierbaren Platzhaltermuster um.
     /// Die Platzhalter-Syntax orientiert sich an MP3Tag, verwendet aber geschweifte Klammern
     /// konsistent mit dem übrigen EchoPlay-Dateinamensystem.
-    ///
+    /// <para>
     /// Auflösungsreihenfolge der Track-Platzhalter: {track:000} und {track:00} werden vor
     /// {track} ersetzt, damit {track} nicht versehentlich den Anfang von {track:00} matcht.
+    /// </para>
     /// </summary>
     internal sealed class FileRenameService : IFileRenameService
     {
@@ -86,27 +87,39 @@ namespace EchoPlay.TagManager.Services
                     continue;
                 }
 
-                try
+                if (await TryMoveAsync(item).ConfigureAwait(false))
                 {
-                    // File.Move ist auf demselben Laufwerk atomar, kein Zwischenkopieren nötig
-                    await Task.Run(() => File.Move(item.FilePath, item.NewFilePath, overwrite: false)).ConfigureAwait(false);
-                    _logger.Debug(() => $"Umbenannt: \"{item.OldName}\" → \"{item.NewName}\"");
                     successCount++;
-                }
-                catch (IOException ex)
-                {
-                    // Gesperrte Dateien oder Namenskonflikte werden übersprungen und geloggt
-                    _logger.Warning("Umbenennung fehlgeschlagen für \"{OldName}\": {Reason}", item.OldName, ex.Message);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    _logger.Warning("Zugriff verweigert für \"{OldName}\": {Reason}", item.OldName, ex.Message);
                 }
             }
 
             _logger.Info("Umbenennung abgeschlossen: {SuccessCount}/{Total} Dateien erfolgreich", successCount, preview.Count);
 
             return successCount;
+        }
+
+        /// <summary>
+        /// Benennt eine Datei um; gesperrte Dateien und Namenskonflikte werden übersprungen und geloggt.
+        /// </summary>
+        private async Task<bool> TryMoveAsync(RenamePreviewItem item)
+        {
+            try
+            {
+                // File.Move ist auf demselben Laufwerk atomar, kein Zwischenkopieren nötig
+                await Task.Run(() => File.Move(item.FilePath, item.NewFilePath, overwrite: false)).ConfigureAwait(false);
+                _logger.Debug(() => $"Umbenannt: \"{item.OldName}\" → \"{item.NewName}\"");
+                return true;
+            }
+            catch (IOException ex)
+            {
+                _logger.Warning("Umbenennung fehlgeschlagen für \"{OldName}\": {Reason}", item.OldName, ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.Warning("Zugriff verweigert für \"{OldName}\": {Reason}", item.OldName, ex.Message);
+            }
+
+            return false;
         }
 
         /// <summary>

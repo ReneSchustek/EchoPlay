@@ -1,4 +1,3 @@
-using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
@@ -7,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using System;
 using System.ComponentModel;
 
 namespace EchoPlay.App.Views
@@ -139,8 +137,6 @@ namespace EchoPlay.App.Views
             _ = SearchBox.Focus(FocusState.Programmatic);
         }
 
-        // ── Akkordeon Split-Logik ────────────────────────────────────────────────
-
         /// <summary>
         /// Reagiert auf Änderungen der Serienliste, des Auswahl-Index oder der Sortierung und
         /// baut die Abschnitte neu auf. Die Sortierung zählt mit, weil sie darüber entscheidet,
@@ -193,8 +189,6 @@ namespace EchoPlay.App.Views
             _sectionHandler.HandleSizeChanged();
         }
 
-        // ── Event-Handler ────────────────────────────────────────────────────────
-
         /// <summary>
         /// Wird ausgelöst wenn der Nutzer eine Serien-Kachel klickt.
         /// Lädt die Episoden und öffnet das Akkordeon.
@@ -235,11 +229,8 @@ namespace EchoPlay.App.Views
 
 
         /// <summary>
-        /// Statusfilter-Änderung.
-        /// </summary>
-        /// <summary>
         /// Übernimmt einen umgeschalteten Statusfilter. Die Zustände schließen einander aus,
-        /// deshalb geht mit dem neuen Chip jeder other aus, und ein second Klick auf den
+        /// deshalb geht mit dem neuen Chip jeder andere aus, und ein zweiter Klick auf den
         /// aktiven Chip führt zurück zu „alle".
         /// </summary>
         private void OnFilterToggled(object? sender, Controls.FilterToggledEventArgs e)
@@ -255,12 +246,12 @@ namespace EchoPlay.App.Views
             ViewModel.StatusFilter = e.Chip.IsActive
                 ? e.Chip.Key switch
                 {
-                    FilterKeyNew => SeriesStatusFilter.Neu,
-                    FilterKeyInProgress => SeriesStatusFilter.AmHoeren,
-                    FilterKeyFinished => SeriesStatusFilter.Gehört,
-                    _ => SeriesStatusFilter.Alle
+                    FilterKeyNew => SeriesStatusFilter.New,
+                    FilterKeyInProgress => SeriesStatusFilter.InProgress,
+                    FilterKeyFinished => SeriesStatusFilter.Finished,
+                    _ => SeriesStatusFilter.All
                 }
-                : SeriesStatusFilter.Alle;
+                : SeriesStatusFilter.All;
         }
 
         /// <summary>
@@ -277,67 +268,5 @@ namespace EchoPlay.App.Views
             }
         }
 
-        /// <summary>
-        /// Navigiert zur Serien-Detailansicht.
-        /// </summary>
-        private void OnSeriesDetailsClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is MenuFlyoutItem item && item.Tag is Guid seriesId)
-            {
-                _navigationService.NavigateTo(NavigationTarget.SeriesDetail, seriesId);
-            }
-        }
-
-        /// <summary>
-        /// Schaltet den Überwachungsstatus einer Serie um. Die Logik (Cache + iTunes-Check)
-        /// liegt im <see cref="OnlineLibraryViewModel"/> bzw. dem zugehörigen Service.
-        /// </summary>
-        private async void OnToggleWatchSeriesClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleMenuFlyoutItem item && item.Tag is Guid seriesId)
-            {
-                bool isChecked = item.IsChecked;
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.ToggleWatchAsync(seriesId, isChecked));
-            }
-        }
-
-        private async void OnRemoveOnlineSeriesClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is MenuFlyoutItem item && item.Tag is Guid seriesId)
-            {
-                await AsyncEventHandler.RunSafelyAsync(() => ViewModel.RemoveSeriesAsync(seriesId));
-            }
-        }
-
-        /// <summary>
-        /// Öffnet den Cover-Such-Dialog für eine Online-Episode.
-        /// Nutzt den gleichen <see cref="Helpers.CoverSearchDialog"/> wie die lokale Mediathek.
-        /// Such- und Apply-Logik liegt im ViewModel; die Page weiß weder etwas vom DI-Scope
-        /// noch vom LocalLibrary-Modell.
-        /// </summary>
-        private async void OnOnlineEpisodeCoverSearchClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is not MenuFlyoutItem { Tag: Guid episodeId }) return;
-
-            OnlineEpisodeCardViewModel? card = null;
-            foreach (OnlineEpisodeCardViewModel ep in ViewModel.Episodes)
-            {
-                if (ep.EpisodeId == episodeId) { card = ep; break; }
-            }
-
-            if (card is null) return;
-
-            await AsyncEventHandler.RunSafelyAsync(async () =>
-            {
-                CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
-                    card.Title,
-                    (query, page, ct) => ViewModel.SearchEpisodeCoversAsync(query, page, ct),
-                    Content.XamlRoot);
-
-                if (selected is null) return;
-
-                await ViewModel.ApplySelectedEpisodeCoverAsync(card, selected);
-            });
-        }
     }
 }

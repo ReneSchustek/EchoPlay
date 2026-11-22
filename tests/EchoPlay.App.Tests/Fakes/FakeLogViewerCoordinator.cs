@@ -24,6 +24,20 @@ namespace EchoPlay.App.Tests.Fakes
         /// </summary>
         public bool IsLiveViewAvailable { get; set; } = true;
 
+        /// <inheritdoc/>
+        public event EventHandler? LiveEntriesChanged;
+
+        /// <summary>Anzahl der aktuell angemeldeten Abonnenten der Live-Meldung.</summary>
+        public int LiveSubscriberCount => LiveEntriesChanged?.GetInvocationList().Length ?? 0;
+
+        /// <summary>Meldet einen neuen Live-Eintrag, wie es der echte Puffer beim Protokollieren tut.</summary>
+        /// <param name="entry">Der neue Eintrag.</param>
+        public void WriteLiveEntry(LogEntry entry)
+        {
+            _liveEntries.Add(entry);
+            LiveEntriesChanged?.Invoke(this, EventArgs.Empty);
+        }
+
         /// <summary>Wie oft die Anzeige neu zusammengestellt wurde.</summary>
         public int BuildCallCount { get; private set; }
 

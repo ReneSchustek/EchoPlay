@@ -1,8 +1,8 @@
 namespace EchoPlay.App.Services
 {
     /// <summary>
-    /// Definiert den Vertrag für Theme-Wechsel zur Laufzeit.
-    /// Ermöglicht die Entkopplung von ViewModels und Tests von der konkreten <see cref="ThemeService"/>-Implementierung.
+    /// Theme-Wechsel zur Laufzeit. ViewModels und Tests hängen an dieser Schnittstelle statt an
+    /// <see cref="ThemeService"/>, der die Ressourcen der laufenden Anwendung umbaut.
     /// </summary>
     public interface IThemeService
     {
@@ -10,7 +10,7 @@ namespace EchoPlay.App.Services
         /// Wechselt das aktive Theme zur Laufzeit.
         /// Unbekannte Namen werden ignoriert.
         /// </summary>
-        /// <param name="themeName">Name des gewünschten Themes. Gültig: "MidnightLibrary", "ModernClassic", "PaperCoffee".</param>
+        /// <param name="themeName">Name des gewünschten Themes. Gültig: "Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey".</param>
         void ApplyTheme(string themeName);
     }
 }

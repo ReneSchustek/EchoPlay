@@ -14,7 +14,7 @@ namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Prüft, wie der Folgenprüfer eine ganze Reihe von Serien abarbeitet: was er
-    /// überspringt, was er trotz Fehler weiterführt und wie er die Anfragen bremst.
+    /// überspringt und was er trotz Fehler weiterführt.
     /// </summary>
     /// <remarks>
     /// Die Prüfung läuft über alle beobachteten Serien. Bricht sie beim ersten Fehler ab,
@@ -147,8 +147,6 @@ namespace EchoPlay.App.Tests.Services
             _ = Assert.Single(result.AnnouncedEpisodes);
             Assert.Equal(250, result.OnlineHighestNumber);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static OnlineEpisodeChecker Build(
             FakeAppleMusicSearchClient client, FakeClock? clock = null)

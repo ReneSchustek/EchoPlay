@@ -12,9 +12,8 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// EF-Core-basierte Implementierung des Datenservices für Wiedergabestände.
-    /// Diese Klasse kapselt den technischen Zugriff auf PlaybackStates und stellt sicher, dass Soft-Delete-Regeln konsistent eingehalten werden.
+    /// Alle Zugriffe auf PlaybackStates laufen hier durch und halten damit die Regeln der logischen Löschung ein.
     /// </summary>
-    /// <remarks>Initialisiert eine neue Instanz des <see cref="PlaybackStateDataService"/>.</remarks>
     /// <param name="context">Der zu verwendende EF-Core-Datenbankkontext.</param>
     /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
     public sealed class PlaybackStateDataService(
@@ -175,8 +174,10 @@ namespace EchoPlay.Data.Services
             return rows;
         }
 
-        // Server-seitige Aggregations-Projektion. Bewusst privat, kein API-Vertrag,
-        // sondern reines Mapping-Ziel der GROUP-BY-Query.
+        /// <summary>
+        /// Zielzeile der Gruppierung in GetCountsBySeriesIdAsync. SQLite zählt, die Anwendung
+        /// bekommt nur diese eine Zeile; privat, weil sie kein Vertrag nach außen ist.
+        /// </summary>
         private sealed class PlaybackCountRow
         {
             public int Total { get; set; }
@@ -207,7 +208,7 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Markiert einen Wiedergabestatus als logisch gelöscht.
-        /// Diese Methode bildet die unterste Ebene der Soft-Delete-Matrix ab:
+        /// Die unterste Ebene der Soft-Delete-Matrix:
         /// Ein PlaybackState besitzt keine abhängigen Kindelemente und kann isoliert logisch gelöscht werden, ohne andere Entitäten zu beeinflussen.
         /// </summary>
         /// <param name="id">Die eindeutige ID des zu löschenden Wiedergabestatus.</param>
@@ -284,7 +285,7 @@ namespace EchoPlay.Data.Services
         public async Task<int> SynchronizeCompletionAcrossSourcesAsync(CancellationToken cancellationToken = default)
         {
             // Altbestand: Wer vor dieser Änderung lokal gehört hat, hat 900+ Folgen, die
-            // online weiter als offen gelten. Die Abfrage ist bewusst idempotent. Beim
+            // online weiter als offen gelten. Die Abfrage ist idempotent. Beim
             // ersten Lauf korrigiert sie den Rückstand, danach findet sie nichts mehr. Das
             // ersetzt einen Einmal-Schalter samt Migration: Ein Zustand, der sich selbst
             // erkennt, braucht kein Merkmal in den Einstellungen.
@@ -298,49 +299,65 @@ namespace EchoPlay.Data.Services
                 return 0;
             }
 
+            List<EpisodeIdentityRow> rows = await LoadNumberedEpisodeIdentitiesAsync(cancellationToken).ConfigureAwait(false);
+            DateTime completedAt = EntityClock.Current.UtcNow;
+            int corrected = 0;
+
+            foreach (Guid episodeId in FindOpenCounterparts(rows, completedIds))
+            {
+                await MarkOneCompletedAsync(episodeId, completedAt, cancellationToken).ConfigureAwait(false);
+                corrected++;
+            }
+
+            if (corrected > 0)
+            {
+                _logger.Info(
+                    "Hörstatus-Abgleich: {Corrected} Folgen als gehört übernommen, weil dieselbe Folge über die andere Quelle gehört wurde.",
+                    corrected);
+            }
+
+            return corrected;
+        }
+
+        /// <summary>
+        /// Lädt Kennung, Serientitel und Nummer aller nummerierten Folgen.
+        /// </summary>
+        private Task<List<EpisodeIdentityRow>> LoadNumberedEpisodeIdentitiesAsync(CancellationToken cancellationToken)
+        {
             // Zuordnung über Serientitel + Folgennummer. Der Folgentitel wäre strenger, traf
             // aber bei 0 von 925 Paaren der Produktivbibliothek zu; Begründung an
             // GetCounterpartIdsAsync. Die Schlagwort-Stufe des Cover-Abgleichs bleibt trotzdem
             // draußen: serienübergreifend zu raten ist eine andere Größenordnung.
-            List<EpisodeIdentityRow> rows = await _context.Episodes
+            return _context.Episodes
                 .Where(episode => episode.EpisodeNumber != null)
                 .Select(episode => new EpisodeIdentityRow(
                     episode.Id,
                     episode.Series.Title,
                     episode.EpisodeNumber!.Value))
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
+                .ToListAsync(cancellationToken);
+        }
 
-            DateTime übernommenAm = DateTime.UtcNow;
-            int korrigiert = 0;
-
-            foreach (IGrouping<(string SeriesTitle, int Number), EpisodeIdentityRow> gruppe in rows
+        /// <summary>
+        /// Liefert die noch offenen Folgen, deren Gegenstück (gleicher Serientitel, gleiche
+        /// Nummer) bereits als gehört gilt.
+        /// </summary>
+        private static IEnumerable<Guid> FindOpenCounterparts(
+            IEnumerable<EpisodeIdentityRow> rows,
+            HashSet<Guid> completedIds)
+        {
+            foreach (IGrouping<(string SeriesTitle, int Number), EpisodeIdentityRow> group in rows
                 .GroupBy(row => (row.SeriesTitle, row.Number)))
             {
-                if (!gruppe.Any(row => completedIds.Contains(row.EpisodeId)))
+                if (!group.Any(row => completedIds.Contains(row.EpisodeId)))
                 {
                     continue;
                 }
 
-                foreach (EpisodeIdentityRow row in gruppe)
+                foreach (EpisodeIdentityRow row in group.Where(row => !completedIds.Contains(row.EpisodeId)))
                 {
-                    if (completedIds.Contains(row.EpisodeId))
-                    {
-                        continue;
-                    }
-
-                    await MarkOneCompletedAsync(row.EpisodeId, übernommenAm, cancellationToken).ConfigureAwait(false);
-                    korrigiert++;
+                    yield return row.EpisodeId;
                 }
             }
-
-            if (korrigiert > 0)
-            {
-                _logger.Info(
-                    "Hörstatus-Abgleich: {Corrected} Folgen als gehört übernommen, weil dieselbe Folge über die andere Quelle gehört wurde.",
-                    korrigiert);
-            }
-
-            return korrigiert;
         }
 
         /// <summary>
@@ -351,7 +368,7 @@ namespace EchoPlay.Data.Services
         /// Der Vergleich läuft über den Serien<em>titel</em>, nicht über die SeriesId: Genau
         /// darum geht es, denn lokale und importierte Fassung derselben Serie sind zwei Zeilen.
         /// <para>
-        /// <b>Der Folgentitel gehört bewusst nicht dazu.</b> Er wäre die strengere Zuordnung,
+        /// <b>Der Folgentitel gehört nicht dazu.</b> Er wäre die strengere Zuordnung,
         /// trifft in echten Daten aber nie: In der Produktivbibliothek stimmte er bei
         /// <b>0 von 925</b> Paaren überein, weil die Quellen anders benennen: lokal
         /// „Fünf Freunde beim Wanderzirkus", online „Folge 1: beim Wanderzirkus". Ein Abgleich
@@ -368,7 +385,7 @@ namespace EchoPlay.Data.Services
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         private async Task<IReadOnlyList<Guid>> GetCounterpartIdsAsync(Guid episodeId, CancellationToken cancellationToken)
         {
-            EpisodeIdentityRow? quelle = await _context.Episodes
+            EpisodeIdentityRow? source = await _context.Episodes
                 .Where(episode => episode.Id == episodeId && episode.EpisodeNumber != null)
                 .Select(episode => new EpisodeIdentityRow(
                     episode.Id,
@@ -376,15 +393,15 @@ namespace EchoPlay.Data.Services
                     episode.EpisodeNumber!.Value))
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
-            if (quelle is null)
+            if (source is null)
             {
                 return [];
             }
 
             return await _context.Episodes
                 .Where(episode => episode.Id != episodeId
-                    && episode.EpisodeNumber == quelle.Number
-                    && episode.Series.Title == quelle.SeriesTitle)
+                    && episode.EpisodeNumber == source.Number
+                    && episode.Series.Title == source.SeriesTitle)
                 .Select(episode => episode.Id)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
         }

@@ -1,12 +1,8 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace EchoPlay.LocalLibrary.Analysis
 {
     /// <summary>
     /// Analysiert einen Bibliotheks-Wurzelordner und schlägt passende Episodenmuster vor,
     /// die im <c>EpisodeFolderPattern</c> der Einstellungen verwendet werden können.
-    /// Geht zwei Ebenen tief: Root → Serien-Unterordner → Episodenordner.
     /// </summary>
     public interface IEpisodePatternAnalyzer
     {
@@ -17,12 +13,12 @@ namespace EchoPlay.LocalLibrary.Analysis
         /// (Root → Serie → Episodenordner) als auch flache Serien (MP3s direkt im Serienordner).
         /// </summary>
         /// <param name="libraryRootPath">
-        /// Vollständiger Pfad zum Bibliotheks-Wurzelordner, z.B. <c>D:\Mp3\Hörspiele</c>.
-        /// Die Analyse geht zwei Ebenen tief (Root → Serie → Episodenordner).
+        /// Vollständiger Pfad zum Bibliotheks-Wurzelordner, etwa <c>D:\Mp3\Hörspiele</c>.
         /// </param>
         /// <returns>
         /// Sortierte Liste von Vorschlägen, bester Treffer zuerst.
-        /// Leer wenn der Ordner nicht existiert oder keine passenden Namen gefunden wurden.
+        /// Leer, wenn der Ordner nicht existiert oder kein Muster mindestens die Hälfte der
+        /// Namen trifft. Geprüft werden die ersten zwanzig Serien.
         /// </returns>
         Task<IReadOnlyList<PatternSuggestion>> AnalyzeAsync(string libraryRootPath);
     }

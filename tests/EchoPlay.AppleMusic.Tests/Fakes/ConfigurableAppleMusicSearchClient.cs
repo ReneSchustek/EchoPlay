@@ -96,7 +96,21 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
             if (_albumsByArtist.TryGetValue(artistId, out List<ITunesCollectionDto>? albums))
             {
-                results.AddRange(albums);
+                // Wie bei iTunes trägt jedes eigene Album die Kennung des Künstlers; ohne sie hielte
+                // die Analyse es für die Sammlung eines anderen Künstlers.
+                results.AddRange(albums.Select(album => album.ArtistId != 0 ? album : new ITunesCollectionDto
+                {
+                    WrapperType = album.WrapperType,
+                    CollectionId = album.CollectionId,
+                    CollectionName = album.CollectionName,
+                    ArtistId = artistId,
+                    ArtistName = album.ArtistName,
+                    TrackCount = album.TrackCount,
+                    ArtworkUrl100 = album.ArtworkUrl100,
+                    ReleaseDate = album.ReleaseDate,
+                    CollectionViewUrl = album.CollectionViewUrl,
+                    PrimaryGenreName = album.PrimaryGenreName
+                }));
             }
 
             ITunesResponseDto<ITunesCollectionDto> response = new()
@@ -137,6 +151,20 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
             return Task.FromResult(response);
         }
 
+        /// <summary>Kopie des Titels mit der Kennung des Albums, zu dem er in der Antwort gehört.</summary>
+        private static ITunesTrackDto InCollection(ITunesTrackDto track, long collectionId)
+            => new()
+            {
+                WrapperType = track.WrapperType,
+                TrackId = track.TrackId,
+                TrackName = track.TrackName,
+                TrackTimeMillis = track.TrackTimeMillis,
+                TrackNumber = track.TrackNumber,
+                ReleaseDate = track.ReleaseDate,
+                CollectionId = collectionId,
+                CollectionName = track.CollectionName
+            };
+
         /// <summary>
         /// Batch-Variante: aggregiert die konfigurierten Tracks aller angefragten Alben in
         /// einer Antwort (je Album ein Collection-Eintrag gefolgt von seinen Tracks).
@@ -155,22 +183,9 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
 
                 if (_tracksByAlbum.TryGetValue(collectionId, out List<ITunesTrackDto>? tracks))
                 {
-                    // Wie die echte Antwort: Jeder Titel trägt die Kennung seines Albums —
+                    // Wie die echte Antwort: Jeder Titel trägt die Kennung seines Albums;
                     // nur daran lässt sich in einer Sammelantwort zuordnen, wozu er gehört.
-                    foreach (ITunesTrackDto track in tracks)
-                    {
-                        results.Add(new ITunesTrackDto
-                        {
-                            WrapperType = track.WrapperType,
-                            TrackId = track.TrackId,
-                            TrackName = track.TrackName,
-                            TrackTimeMillis = track.TrackTimeMillis,
-                            TrackNumber = track.TrackNumber,
-                            ReleaseDate = track.ReleaseDate,
-                            CollectionId = collectionId,
-                            CollectionName = track.CollectionName
-                        });
-                    }
+                    results.AddRange(tracks.Select(track => InCollection(track, collectionId)));
                 }
             }
 

@@ -14,7 +14,11 @@ namespace EchoPlay.TagManager.Services
     /// </summary>
     internal sealed class TagService : ITagService
     {
-        /// <summary>Unterstützte Dateiendungen für <see cref="ReadFolderAsync"/>.</summary>
+        /// <summary>
+        /// Unterstützte Dateiendungen für <see cref="ReadFolderAsync"/>. Mehr als
+        /// <c>AudioExtensions.Supported</c>: <c>.ape</c> und <c>.mpc</c> spielt Windows nicht ab,
+        /// ihre Tags lassen sich aber trotzdem pflegen.
+        /// </summary>
         private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".wma", ".wav", ".opus", ".ape", ".mpc"
@@ -34,7 +38,7 @@ namespace EchoPlay.TagManager.Services
         /// <inheritdoc />
         public async Task<AudioTag> ReadAsync(string filePath)
         {
-            _logger.Debug(() => $"Lese Tags: {filePath}");
+            _logger.Debug(() => $"Lese Tags: {PathRedactor.Redact(filePath)}");
 
             return await Task.Run(() =>
             {
@@ -146,7 +150,7 @@ namespace EchoPlay.TagManager.Services
                 .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
-            _logger.Debug(() => $"ReadFolderAsync: {files.Length} unterstützte Dateien in {folderPath}");
+            _logger.Debug(() => $"ReadFolderAsync: {files.Length} unterstützte Dateien in {PathRedactor.Redact(folderPath)}");
 
             List<(string, AudioTag)> results = new(files.Length);
 
@@ -162,14 +166,12 @@ namespace EchoPlay.TagManager.Services
                     // Bewusst breiter Catch: TagLib# wirft diverse Exceptions
                     // (CorruptFileException, UnsupportedFormatException, IOException etc.).
                     // Einzelne Dateien überspringen, damit der Rest des Ordners verarbeitet wird.
-                    _logger.Warning("Datei übersprungen (Fehler beim Tag-Lesen): {File} – {Reason}", file, ex.Message);
+                    _logger.Warning("Datei übersprungen (Fehler beim Tag-Lesen): {File} – {Reason}", PathRedactor.Redact(file), ex.Message);
                 }
             }
 
             return results;
         }
-
-        // --- Hilfsmethoden ---
 
         /// <summary>
         /// Öffnet eine Datei mit TagLib# und wandelt <see cref="TagLib.UnsupportedFormatException"/>
@@ -214,7 +216,9 @@ namespace EchoPlay.TagManager.Services
             }
             else
             {
-                _logger.Warning("Keine Cover-Daten gefunden – Feld bleibt null");
+                // Eine Datei ohne Bild ist der Normalfall bei Hörspielen mit cover.jpg im Ordner;
+                // als Warnung stünde sie beim Lesen eines Ordners für jede einzelne Datei da.
+                _logger.Debug(() => "Keine Cover-Daten gefunden – Feld bleibt null");
             }
 
             return new AudioTag
@@ -222,7 +226,7 @@ namespace EchoPlay.TagManager.Services
                 Title = NullIfEmpty(source.Title),
                 Album = NullIfEmpty(source.Album),
                 // TagLib liefert Artist und AlbumArtist als Arrays (mehrere Künstler möglich).
-                // Wir fassen sie mit "; " zusammen, wie es in der Praxis üblich ist.
+                // Sie werden mit "; " zusammengefasst, wie es andere Tag-Editoren auch zeigen.
                 Artist = NullIfEmpty(string.Join("; ", source.Performers)),
                 AlbumArtist = NullIfEmpty(string.Join("; ", source.AlbumArtists)),
                 Comment = NullIfEmpty(source.Comment),
@@ -239,10 +243,21 @@ namespace EchoPlay.TagManager.Services
 
         /// <summary>
         /// Schreibt alle nicht-null-Felder aus <paramref name="source"/> in das TagLib-Tag-Objekt.
-        /// Felder mit dem Wert <see langword="null"/> werden bewusst übersprungen,
+        /// Felder mit dem Wert <see langword="null"/> werden übersprungen,
         /// damit bestehende Werte erhalten bleiben (partielles Update).
         /// </summary>
         private static void ApplyAudioTag(TagLib.Tag target, AudioTag source)
+        {
+            ApplyTextFields(target, source);
+            ApplyNumberFields(target, source);
+            if (source.CoverImageData is not null)
+            {
+                target.Pictures = [CreateFrontCover(source.CoverImageData, source.CoverMimeType ?? "image/jpeg")];
+            }
+        }
+
+        /// <summary>Titel, Album, Interpreten, Kommentar und Genre; leere Felder bleiben, wie sie sind.</summary>
+        private static void ApplyTextFields(TagLib.Tag target, AudioTag source)
         {
             if (source.Title is not null)
             {
@@ -256,7 +271,7 @@ namespace EchoPlay.TagManager.Services
 
             if (source.Artist is not null)
             {
-                // TagLib erwartet ein Array; wir übergeben den Künstler als einelementiges Array
+                // TagLib erwartet ein Array; der Künstler geht als einelementiges Array hinein.
                 target.Performers = [source.Artist];
             }
 
@@ -274,7 +289,11 @@ namespace EchoPlay.TagManager.Services
             {
                 target.Genres = [source.Genre];
             }
+        }
 
+        /// <summary>Jahr, Spur und Scheibe samt Gesamtzahlen; leere Felder bleiben, wie sie sind.</summary>
+        private static void ApplyNumberFields(TagLib.Tag target, AudioTag source)
+        {
             if (source.Year.HasValue)
             {
                 target.Year = source.Year.Value;
@@ -298,11 +317,6 @@ namespace EchoPlay.TagManager.Services
             if (source.DiscCount.HasValue)
             {
                 target.DiscCount = source.DiscCount.Value;
-            }
-
-            if (source.CoverImageData is not null)
-            {
-                target.Pictures = [CreateFrontCover(source.CoverImageData, source.CoverMimeType ?? "image/jpeg")];
             }
         }
 

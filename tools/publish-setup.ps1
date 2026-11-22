@@ -21,14 +21,14 @@
     Versionsnummer. Default: VersionPrefix aus Directory.Build.props.
 
 .PARAMETER Distribution
-    Verteilverzeichnis. Default: F:\Entwicklung\publish.
+    Verteilverzeichnis. Default: F:\Publish.
 
 .PARAMETER Runtime
     Ziel-RID. Default: win-x64.
 #>
 param(
     [string]$Version,
-    [string]$Distribution = 'F:\Entwicklung\publish',
+    [string]$Distribution = 'F:\Publish',
     [string]$Runtime = 'win-x64'
 )
 

@@ -116,8 +116,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal([(series.Id, true)], watchToggle.Calls);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static string CreateTempFolder()
         {
             string path = Path.Combine(
@@ -156,9 +154,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 statusBar,
                 new FakeLocalCoverLoader(),
                 new FakeScanEventService(),
-                new FakeCoverSearchService(),
                 new FakeOnlineAccessGuard(),
-                new FakeOnlineEpisodeChecker(),
                 clock,
                 WatchToggleService: watchToggle);
 

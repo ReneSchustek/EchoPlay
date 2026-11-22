@@ -80,6 +80,9 @@ namespace EchoPlay.Spotify.Tests.Auth
             return (apiClient, tokenServer);
         }
 
+        /// <summary>
+        /// Gibt für jeden Namen denselben Client aus.
+        /// </summary>
         private sealed class SingleHttpClientFactory : IHttpClientFactory
         {
             private readonly HttpClient _httpClient;
@@ -87,6 +90,9 @@ namespace EchoPlay.Spotify.Tests.Auth
             public HttpClient CreateClient(string name) => _httpClient;
         }
 
+        /// <summary>
+        /// Liefert immer dieselben Zugangsdaten.
+        /// </summary>
         private sealed class StaticCredentialsProvider : ISpotifyClientCredentialsProvider
         {
             private readonly SpotifyClientCredentials _credentials;

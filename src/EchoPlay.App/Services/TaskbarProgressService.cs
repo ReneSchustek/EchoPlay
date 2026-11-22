@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 
 namespace EchoPlay.App.Services
@@ -9,8 +10,8 @@ namespace EchoPlay.App.Services
     /// wenn eine App Fortschritt meldet. Das kennt man z.B. von Visual Studio während des Builds.
     /// Die Steuerung erfolgt über das COM-Interface <c>ITaskbarList3</c> aus der Windows Shell.
     ///
-    /// Der Service ist als Singleton registriert und wird von <see cref="EchoPlay.App.ViewModels.StatusBarViewModel"/>
-    /// bei jedem Scan-Fortschritts-Update aufgerufen.
+    /// Der Service ist als Singleton registriert; den Scan-Fortschritt reicht ihm der
+    /// <c>ScanProgressIndicator</c> der Statusleiste weiter.
     /// </summary>
     public sealed class TaskbarProgressService
     {
@@ -25,58 +26,32 @@ namespace EchoPlay.App.Services
         /// Zeigt einen bestimmten Fortschrittswert unter dem Taskleisten-Symbol an.
         /// </summary>
         /// <param name="percentComplete">Fortschritt in Prozent (0–100).</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3 ist Win32-COM-Interop: native Shell-Fehler (RPC_E_*, HRESULT-Fehler) aus SetProgressState/SetProgressValue dürfen den Aufrufer nicht reißen. Taskleisten-Fortschritt ist optisch, '_taskbar' wird genullt, damit Folgeaufrufe still abbrechen.")]
-        public void SetProgress(double percentComplete)
+        public void SetProgress(double percentComplete) => Apply((taskbar, hwnd) =>
         {
-            ITaskbarList3? taskbar = GetTaskbar();
-            nint hwnd = GetHwnd();
-            if (taskbar is null || hwnd == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                taskbar.SetProgressState(hwnd, TaskbarProgressState.Normal.ToFlag());
-                taskbar.SetProgressValue(hwnd, TaskbarProgressStateExtensions.ClampPercent(percentComplete), 100UL);
-            }
-            catch
-            {
-                // Taskleisten-Fortschritt ist ein optisches Feature, Fehler dürfen die App nicht beeinflussen.
-                _taskbar = null;
-            }
-        }
+            taskbar.SetProgressState(hwnd, TaskbarProgressState.Normal.ToFlag());
+            taskbar.SetProgressValue(hwnd, TaskbarProgressStateExtensions.ClampPercent(percentComplete), 100UL);
+        });
 
         /// <summary>
         /// Zeigt einen unbestimmten (animierten) Fortschrittsbalken an.
         /// Geeignet für Phasen, in denen die Gesamtdauer noch nicht bekannt ist.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3.SetProgressState (Win32-COM): native Shell-Fehler dürfen den Aufrufer nicht reißen; '_taskbar' wird genullt, damit Folgeaufrufe still abbrechen.")]
-        public void SetIndeterminate()
-        {
-            ITaskbarList3? taskbar = GetTaskbar();
-            nint hwnd = GetHwnd();
-            if (taskbar is null || hwnd == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                taskbar.SetProgressState(hwnd, TaskbarProgressState.Indeterminate.ToFlag());
-            }
-            catch
-            {
-                _taskbar = null;
-            }
-        }
+        public void SetIndeterminate() => Apply((taskbar, hwnd) =>
+            taskbar.SetProgressState(hwnd, TaskbarProgressState.Indeterminate.ToFlag()));
 
         /// <summary>
         /// Entfernt den Fortschrittsbalken aus der Taskleiste.
         /// Wird nach Abschluss des Scans aufgerufen.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ITaskbarList3.SetProgressState (Win32-COM): native Shell-Fehler beim Zurücksetzen des Fortschrittsbalkens dürfen den Aufrufer nicht reißen.")]
-        public void Clear()
+        public void Clear() => Apply((taskbar, hwnd) =>
+            taskbar.SetProgressState(hwnd, TaskbarProgressState.None.ToFlag()));
+
+        /// <summary>
+        /// Führt einen Aufruf an der Taskleiste aus. Scheitert er, bleibt der Balken für den Rest
+        /// der Sitzung aus; er ist eine optische Zugabe und darf keinen Aufrufer stören.
+        /// </summary>
+        /// <param name="call">Der Aufruf mit COM-Instanz und Fenster-Handle.</param>
+        private void Apply(Action<ITaskbarList3, nint> call)
         {
             ITaskbarList3? taskbar = GetTaskbar();
             nint hwnd = GetHwnd();
@@ -87,21 +62,20 @@ namespace EchoPlay.App.Services
 
             try
             {
-                taskbar.SetProgressState(hwnd, TaskbarProgressState.None.ToFlag());
+                call(taskbar, hwnd);
             }
-            catch
+            catch (ExternalException)
             {
+                // COMException für einen HRESULT-Fehler der Shell, SEHException für einen Fehler
+                // im nativen Teil.
                 _taskbar = null;
             }
         }
-
-        // ── Interne Hilfsmethoden ────────────────────────────────────────────────
 
         /// <summary>
         /// Gibt die COM-Instanz zurück, legt sie beim ersten Aufruf an.
         /// Bei Fehlern (z.B. kein Shell-Support) wird null zurückgegeben.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Einmalige COM-Activation von ITaskbarList3: auf Systemen ohne passende Shell-Unterstützung kann 'new TaskbarInstance()' oder 'HrInit' scheitern (COMException/InvalidCastException); das Feature wird dann still deaktiviert.")]
         private ITaskbarList3? GetTaskbar()
         {
             if (_initAttempted)
@@ -118,8 +92,14 @@ namespace EchoPlay.App.Services
                 // HrInit muss vor jedem anderen Aufruf erfolgen, denn es initialisiert die Shell-Integration.
                 _taskbar.HrInit();
             }
-            catch
+            catch (ExternalException)
             {
+                // Die Shell-Klasse ist nicht registriert oder HrInit scheitert.
+                _taskbar = null;
+            }
+            catch (InvalidCastException)
+            {
+                // Die Klasse existiert, bietet die Schnittstelle aber nicht an (ältere Shell).
                 _taskbar = null;
             }
 
@@ -140,15 +120,13 @@ namespace EchoPlay.App.Services
             return WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         }
 
-        // ── COM-Definitionen ─────────────────────────────────────────────────────
-
         /// <summary>
         /// Das ITaskbarList3-Interface aus der Windows Shell.
         /// Die Methodenreihenfolge im Interface entspricht exakt der COM-vtable.
         /// Das ist zwingend, sonst werden die falschen Methoden aufgerufen.
         ///
-        /// Hier sind nur die Methoden bis SetProgressState definiert, weil wir
-        /// die nachfolgenden (RegisterTab, ThumbBar, etc.) nicht benötigen.
+        /// Deklariert sind nur die Methoden bis SetProgressState; die nachfolgenden (RegisterTab,
+        /// ThumbBar usw.) braucht die Anwendung nicht.
         /// </summary>
         [ComImport]
         [Guid("ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf")]

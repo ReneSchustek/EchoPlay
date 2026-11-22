@@ -58,11 +58,11 @@ namespace EchoPlay.App.Views
             base.OnNavigatedTo(e);
 
             ViewModel.LocalVM.PatternSelectionRequested += OnPatternSelectionRequested;
-            ViewModel.MaintenanceVM.PropertyChanged += OnMaintenancePropertyChanged;
+            ViewModel.LogViewerVM.PropertyChanged += OnLogViewerPropertyChanged;
 
             // Den Takt der Live-Ansicht führt das Ansichtsmodell; die Seite zeichnet,
             // sobald dort neue Einträge stehen.
-            ViewModel.MaintenanceVM.LogEntries.CollectionChanged += OnLogEntriesChanged;
+            ViewModel.LogViewerVM.LogEntries.CollectionChanged += OnLogEntriesChanged;
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
@@ -76,11 +76,11 @@ namespace EchoPlay.App.Views
                 SyncLanguageComboBox(ViewModel.GeneralVM.ActiveLanguage);
 
                 // Log-Datei-ComboBox: Live-Option direkt nach dem Laden vorauswählen
-                LogFileComboBox.SelectedItem = ViewModel.MaintenanceVM.SelectedLogFile;
+                LogFileComboBox.SelectedItem = ViewModel.LogViewerVM.SelectedLogFile;
 
                 // Erste Log-Einträge laden, denn der Setter von SelectedLogFile gibt keinen Refresh
                 // aus wenn der Wert sich beim Set nicht geändert hat (SetProperty gibt false zurück).
-                // RefreshLogView statt ViewModel.MaintenanceVM.RefreshLogs: Letzteres füllt nur die Liste im
+                // RefreshLogView statt ViewModel.LogViewerVM.RefreshLogs: Letzteres füllt nur die Liste im
                 // ViewModel, der RichTextBlock bliebe leer bis zum ersten Klick auf Aktualisieren.
                 RefreshLogView();
             });
@@ -97,10 +97,11 @@ namespace EchoPlay.App.Views
         {
             base.OnNavigatingFrom(e);
             ViewModel.LocalVM.PatternSelectionRequested -= OnPatternSelectionRequested;
-            // Vor dem Dispose abmelden: Der Handler schreibt in den RichTextBlock, der nach der
-            // Navigation nicht mehr geladen ist - gleiche Falle wie beim Live-Timer unten.
-            ViewModel.MaintenanceVM.PropertyChanged -= OnMaintenancePropertyChanged;
-            ViewModel.MaintenanceVM.LogEntries.CollectionChanged -= OnLogEntriesChanged;
+            // Vor dem Dispose abmelden: Die Handler schreiben in den RichTextBlock, der nach der
+            // Navigation nicht mehr geladen ist. Ein Live-Eintrag, der danach noch eintrifft,
+            // träfe sonst eine entladene Seite.
+            ViewModel.LogViewerVM.PropertyChanged -= OnLogViewerPropertyChanged;
+            ViewModel.LogViewerVM.LogEntries.CollectionChanged -= OnLogEntriesChanged;
             ViewModel.Dispose();
         }
 
@@ -129,10 +130,14 @@ namespace EchoPlay.App.Views
                 MainWindow? mainWindow = App.MainWindow as MainWindow;
                 mainWindow?.ShowThemeOverlay();
 
+                // Die Pause gibt dem Overlay einen Zeichendurchlauf, bevor der Wechsel die
+                // Oberfläche blockiert; ohne sie erscheint es erst, wenn alles vorbei ist.
                 await Task.Delay(50);
 
                 ViewModel.ApplyTheme(themeName);
 
+                // Das Overlay bleibt stehen, bis die Seiten mit den neuen Farben gezeichnet sind,
+                // damit der Nutzer den Umbau nicht flackern sieht.
                 await Task.Delay(150);
 
                 mainWindow?.HideThemeOverlay();
@@ -203,7 +208,7 @@ namespace EchoPlay.App.Views
         {
             if (sender is ComboBox { SelectedItem: LogFileOption option })
             {
-                ViewModel.MaintenanceVM.SelectedLogFile = option;
+                ViewModel.LogViewerVM.SelectedLogFile = option;
 
                 // Der Setter lädt nur die Einträge ins ViewModel, die Anzeige muss
                 // getrennt nachgezogen werden, sonst zeigt sie weiter die alte Datei.

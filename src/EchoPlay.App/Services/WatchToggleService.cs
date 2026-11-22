@@ -33,7 +33,7 @@ namespace EchoPlay.App.Services
         // nächsten Besuch auf dem alten Stand zu bleiben. Ohne registrierten Service
         // (z. B. Unit-Tests) passiert nichts.
         private static void NotifyCacheChanged(IServiceScope scope) =>
-            scope.ServiceProvider.GetService<INewReleaseEventService>()?.RaiseCacheChanged();
+            scope.ServiceProvider.GetService<INewReleaseEventService>()?.NotifyCacheChanged();
 
         /// <inheritdoc/>
         /// <param name="seriesId">Datenbank-ID der Serie.</param>

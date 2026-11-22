@@ -32,7 +32,7 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Wartet, falls nötig, bis die <see cref="MinimumDuration"/> erreicht ist.
         /// Kehrt sofort zurück, wenn die Mindestzeit bereits überschritten wurde
-        /// oder wenn das Token gecanceled wird.
+        /// oder wenn das Token abgebrochen wird.
         /// </summary>
         /// <param name="cancellationToken">Optionaler Abbruch-Token (Splash-Lebenszyklus).</param>
         public async Task WaitForMinimumDurationAsync(CancellationToken cancellationToken = default)

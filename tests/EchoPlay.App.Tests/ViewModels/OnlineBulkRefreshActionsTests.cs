@@ -32,8 +32,6 @@ namespace EchoPlay.App.Tests.ViewModels
     {
         private static readonly Guid UnknownSeriesId = new("00000000-0000-0000-0000-beef00000001");
 
-        // ── Sammelabruf ──────────────────────────────────────────────────────────
-
         [Fact]
         public async Task RefreshAll_WhenOnlineAccessIsDeclined_ChecksNothing()
         {
@@ -151,8 +149,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.True(harness.Reloaded);
         }
 
-        // ── Serie entfernen ──────────────────────────────────────────────────────
-
         [Fact]
         public async Task RemoveSeries_WithUnknownId_AsksNothing()
         {
@@ -191,8 +187,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Empty(harness.SeriesVM.AllSeries);
         }
 
-        // ── Überwachung ──────────────────────────────────────────────────────────
-
         [Fact]
         public async Task ToggleWatch_WithoutService_DoesNothing()
         {
@@ -218,8 +212,6 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Equal([(series.Id, true)], watchToggle.Calls);
             Assert.True(harness.SeriesVM.Series[0].IsWatched);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static Series OnlineSeries(string title, string spotifyArtistId) =>
             new()
@@ -270,70 +262,16 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 IReadOnlyList<Series> allSeries = series ?? [];
 
-                FakeSeriesDataService seriesService = new();
-                foreach (Series entry in allSeries)
-                {
-                    await seriesService.AddAsync(entry, TestContext.Current.CancellationToken);
-                }
-
+                FakeSeriesDataService seriesService = await SeedSeriesServiceAsync(allSeries);
                 FakeEpisodeImportSource importSource = new([], failForSourceSeriesId);
                 RecordingHostRateLimiter rateLimiter = new();
                 FakeConfirmationDialogService confirmation = new(confirmResult);
 
-                ServiceCollection services = new();
-                _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
-                _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
-                _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
-                _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
-                _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => importSource);
-                _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => importSource);
-                _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
-                    FakeSpotifyClientCredentialsProvider.WithCredentials());
-                _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
-                _ = services.AddSingleton<IClock>(new FakeClock());
-                _ = services.AddHttpClient();
-                _ = services.AddSingleton<CoverService>();
-                _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
-                _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
-                _ = services.AddSingleton<EpisodeCoverCacheService>();
+                ServiceProvider provider = BuildProvider(seriesService, importSource);
 
-                ServiceProvider provider = services.BuildServiceProvider();
-                IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+                OnlineLibraryActionsContext context = CreateContext(provider, confirmation, allowOnlineAccess, watchToggleService, rateLimiter);
 
-                OnlineLibraryActionsContext context = new(
-                    ScopeFactory: scopeFactory,
-                    ConfirmationDialogService: confirmation,
-                    ImportService: new ImportService(
-                        scopeFactory,
-                        provider.GetRequiredService<EpisodeCoverCacheService>(),
-                        provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>()),
-                    ErrorDialogService: new FakeErrorDialogService(),
-                    // Der Fortschrittstext hat Platzhalter, als Muster mitgegeben, sonst
-                    // verschluckt der Schlüssel die eingesetzten Werte.
-                    LocalizationService: new FakeLocalizationService(new Dictionary<string, string>
-                    {
-                        ["OnlineRefreshProgressText"] = "{0} von {1}: {2}",
-                    }),
-                    OnlineAccessGuard: new FakeOnlineAccessGuard(allowOnlineAccess),
-                    CoverCacheService: null,
-                    CoverService: provider.GetRequiredService<CoverService>(),
-                    BackgroundCoverService: null,
-                    WatchToggleService: watchToggleService,
-                    CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
-                    RateLimiter: rateLimiter);
-
-                OnlineSeriesViewModel seriesVM = new();
-                List<SeriesCardViewModel> cards = new(allSeries.Count);
-                foreach (Series entry in allSeries)
-                {
-                    cards.Add(new SeriesCardViewModel(
-                        entry.Id, entry.Title, coverImage: null,
-                        totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
-                        isSubscribed: true, isFavorite: false, isWatched: false,
-                        scopeFactory, confirmation, new FakeLocalizationService()));
-                }
-
-                seriesVM.SetAllSeries(cards);
+                OnlineSeriesViewModel seriesVM = CreateSeriesViewModel(allSeries, provider, confirmation);
 
                 Harness harness = new()
                 {
@@ -357,6 +295,104 @@ namespace EchoPlay.App.Tests.ViewModels
                     });
 
                 return harness;
+            }
+
+            /// <summary>
+            /// Legt die Serien im Daten-Nachbau an.
+            /// </summary>
+            private static async Task<FakeSeriesDataService> SeedSeriesServiceAsync(IReadOnlyList<Series> series)
+            {
+                FakeSeriesDataService seriesService = new();
+                foreach (Series entry in series)
+                {
+                    await seriesService.AddAsync(entry, TestContext.Current.CancellationToken);
+                }
+
+                return seriesService;
+            }
+
+            /// <summary>
+            /// Registriert die Dienste, die Import und Cover-Abruf über den Bereich auflösen.
+            /// </summary>
+            private static ServiceProvider BuildProvider(FakeSeriesDataService seriesService, FakeEpisodeImportSource importSource)
+            {
+                ServiceCollection services = new();
+                _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+                _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
+                _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
+                _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
+                _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => importSource);
+                _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => importSource);
+                _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
+                    FakeSpotifyClientCredentialsProvider.WithCredentials());
+                _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(new FakeLoggerFactory());
+                _ = services.AddSingleton<IClock>(new FakeClock());
+                _ = services.AddHttpClient();
+                _ = services.AddSingleton<CoverService>();
+                _ = services.AddSingleton<ICoverService>(sp => sp.GetRequiredService<CoverService>());
+                _ = services.AddSingleton<ICoverDownloader>(new FakeCoverDownloader());
+                _ = services.AddSingleton<EpisodeCoverCacheService>();
+
+                return services.BuildServiceProvider();
+            }
+
+            /// <summary>
+            /// Baut den Kontext der Sammelvorgänge aus Nachbauten und echten Import- und Cover-Diensten.
+            /// </summary>
+            private static OnlineLibraryActionsContext CreateContext(
+                ServiceProvider provider,
+                FakeConfirmationDialogService confirmation,
+                bool allowOnlineAccess,
+                FakeWatchToggleService? watchToggleService,
+                RecordingHostRateLimiter rateLimiter)
+            {
+                IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+
+                return new OnlineLibraryActionsContext(
+                    ScopeFactory: scopeFactory,
+                    ConfirmationDialogService: confirmation,
+                    ImportService: new ImportService(
+                        scopeFactory,
+                        provider.GetRequiredService<EpisodeCoverCacheService>(),
+                        provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>()),
+                    ErrorDialogService: new FakeErrorDialogService(),
+                    // Der Fortschrittstext hat Platzhalter, als Muster mitgegeben, sonst
+                    // verschluckt der Schlüssel die eingesetzten Werte.
+                    LocalizationService: new FakeLocalizationService(new Dictionary<string, string>
+                    {
+                        ["OnlineRefreshProgressText"] = "{0} von {1}: {2}",
+                    }),
+                    OnlineAccessGuard: new FakeOnlineAccessGuard(allowOnlineAccess),
+                    CoverCacheService: null,
+                    CoverService: provider.GetRequiredService<CoverService>(),
+                    BackgroundCoverService: null,
+                    WatchToggleService: watchToggleService,
+                    CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
+                    RateLimiter: rateLimiter);
+            }
+
+            /// <summary>
+            /// Baut die Serienliste mit einer abonnierten Kachel je Serie.
+            /// </summary>
+            private static OnlineSeriesViewModel CreateSeriesViewModel(
+                IReadOnlyList<Series> series,
+                ServiceProvider provider,
+                FakeConfirmationDialogService confirmation)
+            {
+                IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+                OnlineSeriesViewModel seriesVM = new();
+                List<SeriesCardViewModel> cards = new(series.Count);
+                foreach (Series entry in series)
+                {
+                    cards.Add(new SeriesCardViewModel(
+                        entry.Id, entry.Title, coverImage: null,
+                        totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
+                        isSubscribed: true, isFavorite: false, isWatched: false,
+                        scopeFactory, confirmation, new FakeLocalizationService()));
+                }
+
+                seriesVM.SetAllSeries(cards);
+                return seriesVM;
             }
         }
     }

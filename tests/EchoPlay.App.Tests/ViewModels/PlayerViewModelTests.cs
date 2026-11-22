@@ -65,6 +65,10 @@ namespace EchoPlay.App.Tests.ViewModels
             // Die laufende Spur ist hervorgehoben, nicht die erste der Liste.
             Assert.False(vm.PlaylistItems[0].IsCurrentTrack);
             Assert.True(vm.PlaylistItems[1].IsCurrentTrack);
+
+            // Anzeigen, nicht neu starten: Ein erneutes Play begänne bei der ersten Spur und
+            // ohne Folgenbezug, der Hörstand der laufenden Folge würde nicht mehr gespeichert.
+            Assert.Empty(playerService.PlayCalls);
         }
 
         [Fact]
@@ -78,10 +82,10 @@ namespace EchoPlay.App.Tests.ViewModels
             List<string> tracks = [@"C:\Audio\Serie\01 - Erster Teil.mp3"];
             playerService.SimulateExternalPlayback(tracks, currentPath: tracks[0]);
 
-            PlaylistItemViewModel ersterEintrag = vm.PlaylistItems[0];
+            PlaylistItemViewModel firstEntry = vm.PlaylistItems[0];
             playerService.SimulateExternalPlayback(tracks, currentPath: tracks[0]);
 
-            Assert.Same(ersterEintrag, vm.PlaylistItems[0]);
+            Assert.Same(firstEntry, vm.PlaylistItems[0]);
         }
 
         [Fact]
@@ -89,16 +93,16 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Auch die Wiedergabeliste des Players zeigt den Titel aus der Kennzeichnung;
             // ohne Titel bleibt der Dateiname ohne Endung und ohne Zeilennummer stehen.
-            const string ersterTeil = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
-            const string zweiterTeil = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
+            const string firstPart = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+            const string secondPart = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
 
             FakeTrackTitleResolver titleResolver = new();
-            titleResolver.TitlesByPath[ersterTeil] = "Das leere Haus (Teil 1)";
+            titleResolver.TitlesByPath[firstPart] = "Das leere Haus (Teil 1)";
 
             FakePlayerService playerService = new();
             PlayerViewModel vm = BuildViewModel(playerService, titleResolver);
 
-            vm.LoadFiles([ersterTeil, zweiterTeil]);
+            vm.LoadFiles([firstPart, secondPart]);
             await vm.PendingTitleFill;
 
             Assert.Equal("Das leere Haus (Teil 1)", vm.PlaylistItems[0].Title);
@@ -110,16 +114,16 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Der Anzeigename kommt aus der Kennzeichnung und passt dann nicht mehr zum
             // Dateinamen. Hervorgehoben wird trotzdem die richtige Zeile.
-            const string ersterTeil = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
-            const string zweiterTeil = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
+            const string firstPart = @"C:\Audio\Serie\01 - Das leere Haus (Teil 1).mp3";
+            const string secondPart = @"C:\Audio\Serie\02 - Das leere Haus (Teil 2).mp3";
 
             FakeTrackTitleResolver titleResolver = new();
-            titleResolver.TitlesByPath[zweiterTeil] = "Ein ganz anderer Titel";
+            titleResolver.TitlesByPath[secondPart] = "Ein ganz anderer Titel";
 
             FakePlayerService playerService = new();
             PlayerViewModel vm = BuildViewModel(playerService, titleResolver);
 
-            playerService.SimulateExternalPlayback([ersterTeil, zweiterTeil], currentPath: zweiterTeil);
+            playerService.SimulateExternalPlayback([firstPart, secondPart], currentPath: secondPart);
 
             Assert.False(vm.PlaylistItems[0].IsCurrentTrack);
             Assert.True(vm.PlaylistItems[1].IsCurrentTrack);
@@ -251,7 +255,7 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = Assert.Throws<ArgumentNullException>(() => vm.LoadFiles(null!));
         }
         [Fact]
-        public void PlayPause_SchaltetUmUndZeigtDasPassendeZeichen()
+        public void PlayPause_TogglesAndShowsTheMatchingGlyph()
         {
             // Das Zeichen der Schaltfläche ist der einzige Hinweis darauf, was ein Klick
             // auslöst. Zeigt es das falsche, drückt der Anwender auf Pause und startet.
@@ -267,7 +271,52 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void Steuerbefehle_ErreichenDenAbspieler()
+        public void StopCommand_WhileRunning_StopsThePlayerService()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+            playerService.SetState("Track A", isPlaying: true, positionSeconds: 42, durationSeconds: 60);
+
+            viewModel.StopCommand.Execute(null);
+
+            Assert.True(playerService.StopWasCalled);
+        }
+
+        [Fact]
+        public void StopCommand_AfterStop_DisplayIsIdle()
+        {
+            // Nach dem Stopp darf nichts mehr so aussehen, als liefe eine Spur: kein Titel,
+            // keine hervorgehobene Zeile, die Zeitanzeige auf null.
+            const string firstPart = @"C:\Audio\Serie\01 - Teil 1.mp3";
+            const string secondPart = @"C:\Audio\Serie\02 - Teil 2.mp3";
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+            playerService.SimulateExternalPlayback([firstPart, secondPart], currentPath: secondPart);
+
+            viewModel.StopCommand.Execute(null);
+
+            Assert.Equal(string.Empty, viewModel.CurrentTitle);
+            Assert.DoesNotContain(viewModel.PlaylistItems, item => item.IsCurrentTrack);
+            Assert.False(viewModel.IsPlaying);
+            Assert.Equal(0d, viewModel.Time.PositionSeconds);
+        }
+
+        [Fact]
+        public void StopCommand_AfterStop_KeepsThePlaylistForReplay()
+        {
+            const string firstPart = @"C:\Audio\Serie\01 - Teil 1.mp3";
+            const string secondPart = @"C:\Audio\Serie\02 - Teil 2.mp3";
+            FakePlayerService playerService = new();
+            PlayerViewModel viewModel = BuildViewModel(playerService);
+            playerService.SimulateExternalPlayback([firstPart, secondPart], currentPath: firstPart);
+
+            viewModel.StopCommand.Execute(null);
+
+            Assert.Equal(2, viewModel.PlaylistItems.Count);
+        }
+
+        [Fact]
+        public void ControlCommands_ReachThePlayer()
         {
             FakePlayerService playerService = new();
             PlayerViewModel viewModel = BuildViewModel(playerService);
@@ -280,7 +329,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task DateiAuswahl_BautDieWiedergabeliste()
+        public async Task FileSelection_BuildsThePlaylist()
         {
             // Der Weg über die Dateiauswahl legt dieselbe Liste an wie das Öffnen eines
             // Ordners, nur ohne Zugriff auf das Dateisystem.
@@ -295,7 +344,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void DateiAuswahl_OhneListeWirftEineAussagekraeftigeAusnahme()
+        public void FileSelection_WithoutList_ThrowsAMeaningfulException()
         {
             FakePlayerService playerService = new();
             PlayerViewModel viewModel = BuildViewModel(playerService);
@@ -304,7 +353,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LaufenderTitel_WirdInDerListeHervorgehoben()
+        public async Task RunningTitle_IsHighlightedInTheList()
         {
             // Verglichen wird der Dateipfad: Der Anzeigename kann aus der Kennzeichnung
             // stammen und passt dann nicht mehr zum Dateinamen.
@@ -320,7 +369,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public void OhneCover_ZeigtDieSeiteDenPlatzhalter()
+        public void WithoutCover_ThePageShowsThePlaceholder()
         {
             FakePlayerService playerService = new();
             PlayerViewModel viewModel = BuildViewModel(playerService);
@@ -330,7 +379,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task ZuletztGeoeffneterOrdner_WirdGemerktUndWiedergegeben()
+        public async Task LastOpenedFolder_IsRememberedAndReturned()
         {
             FakePlayerService playerService = new();
             FakeAppSettingsDataService settings = new();

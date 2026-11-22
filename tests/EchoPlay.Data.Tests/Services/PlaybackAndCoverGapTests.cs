@@ -26,19 +26,19 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Playback_AddingTheSameEpisodeTwice_KeepsTheFirstEntry()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode folge = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode episode = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
 
             PlaybackStateDataService sut = new(Context, NullLoggerFactory);
 
             await sut.AddAsync(
-                new PlaybackState { EpisodeId = folge.Id, LastPosition = TimeSpan.FromMinutes(5) },
+                new PlaybackState { EpisodeId = episode.Id, LastPosition = TimeSpan.FromMinutes(5) },
                 TestContext.Current.CancellationToken);
 
             Context.ChangeTracker.Clear();
 
             await sut.AddAsync(
-                new PlaybackState { EpisodeId = folge.Id, LastPosition = TimeSpan.FromMinutes(1) },
+                new PlaybackState { EpisodeId = episode.Id, LastPosition = TimeSpan.FromMinutes(1) },
                 TestContext.Current.CancellationToken);
 
             // Der zweite Eintrag verliert. Ein doppelter Hörstand für dieselbe Folge
@@ -62,24 +62,24 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Playback_CompletedIds_NameOnlyTheFinishedEpisodes()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
-            Episode fertig = await DataBuilder.PersistEpisodeAsync(serie, "Folge 1");
-            Episode offen = await DataBuilder.PersistEpisodeAsync(serie, "Folge 2");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
+            Episode done = await DataBuilder.PersistEpisodeAsync(series, "Folge 1");
+            Episode open = await DataBuilder.PersistEpisodeAsync(series, "Folge 2");
 
             Context.PlaybackStates.AddRange(
-                new PlaybackState { EpisodeId = fertig.Id, IsCompleted = true },
-                new PlaybackState { EpisodeId = offen.Id, IsCompleted = false });
+                new PlaybackState { EpisodeId = done.Id, IsCompleted = true },
+                new PlaybackState { EpisodeId = open.Id, IsCompleted = false });
             _ = await Context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             PlaybackStateDataService sut = new(Context, NullLoggerFactory);
 
             HashSet<Guid> fertige = await sut.GetCompletedEpisodeIdsAsync(
-                [fertig.Id, offen.Id], TestContext.Current.CancellationToken);
+                [done.Id, open.Id], TestContext.Current.CancellationToken);
 
             // Das Häkchen auf der Kachel hängt daran. Eine Folge fälschlich als gehört
             // zu zeigen, ist schlimmer als gar kein Häkchen.
             Guid einzig = Assert.Single(fertige);
-            Assert.Equal(fertig.Id, einzig);
+            Assert.Equal(done.Id, einzig);
         }
 
         [Fact]
@@ -95,24 +95,24 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public void RecentPlaybackRow_CarriesTheValuesForTheDashboard()
         {
-            DateTime sortiert = new(2026, 8, 19, 12, 0, 0, DateTimeKind.Utc);
-            RecentPlaybackRow zeile = new(
-                Guid.NewGuid(), Guid.NewGuid(), IsCompleted: false, TimeSpan.FromMinutes(7), sortiert);
+            DateTime sorted = new(2026, 8, 19, 12, 0, 0, DateTimeKind.Utc);
+            RecentPlaybackRow row = new(
+                Guid.NewGuid(), Guid.NewGuid(), IsCompleted: false, TimeSpan.FromMinutes(7), sorted);
 
             // Die schmale Projektion spart das Laden der vollen Entität samt Prüffeldern.
             // Sie muss trotzdem alles tragen, was die Kachel anzeigt.
-            Assert.False(zeile.IsCompleted);
-            Assert.Equal(TimeSpan.FromMinutes(7), zeile.LastPosition);
-            Assert.Equal(sortiert, zeile.SortKey);
+            Assert.False(row.IsCompleted);
+            Assert.Equal(TimeSpan.FromMinutes(7), row.LastPosition);
+            Assert.Equal(sorted, row.SortKey);
         }
 
         [Fact]
         public async Task Covers_AreCounted()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             CoverImageDataService sut = new(Context, NullLoggerFactory);
 
-            await sut.SetCoverAsync("Series", serie.Id, [0x01, 0x02], null, TestContext.Current.CancellationToken);
+            await sut.SetCoverAsync("Series", series.Id, [0x01, 0x02], null, TestContext.Current.CancellationToken);
 
             Assert.Equal(1, await sut.CountAsync(TestContext.Current.CancellationToken));
         }
@@ -120,11 +120,11 @@ namespace EchoPlay.Data.Tests.Services
         [Fact]
         public async Task Covers_UpsertingTwice_KeepsOneEntryWithTheNewImage()
         {
-            Series serie = await DataBuilder.PersistSeriesAsync("TKKG");
+            Series series = await DataBuilder.PersistSeriesAsync("TKKG");
             CoverImageDataService sut = new(Context, NullLoggerFactory);
 
-            await sut.SetCoverAsync("Series", serie.Id, [0x01], "https://alt.invalid/a.jpg", TestContext.Current.CancellationToken);
-            await sut.SetCoverAsync("Series", serie.Id, [0x02], "https://neu.invalid/b.jpg", TestContext.Current.CancellationToken);
+            await sut.SetCoverAsync("Series", series.Id, [0x01], new Uri("https://alt.invalid/a.jpg"), TestContext.Current.CancellationToken);
+            await sut.SetCoverAsync("Series", series.Id, [0x02], new Uri("https://neu.invalid/b.jpg"), TestContext.Current.CancellationToken);
 
             // Cover werden über den Hintergrundlauf immer wieder nachgezogen. Jedes Mal
             // eine neue Zeile hieße, dass die Datenbank mit jedem Start weiter wächst.
@@ -138,9 +138,9 @@ namespace EchoPlay.Data.Tests.Services
         {
             // Die Fabrik existiert allein für die Werkzeuge, die Migrationen erzeugen.
             // Wirft sie, lässt sich keine neue Migration mehr anlegen.
-            using EchoPlayDbContext kontext = new EchoPlayDbContextFactory().CreateDbContext([]);
+            using EchoPlayDbContext context = new EchoPlayDbContextFactory().CreateDbContext([]);
 
-            Assert.NotNull(kontext);
+            Assert.NotNull(context);
         }
     }
 }

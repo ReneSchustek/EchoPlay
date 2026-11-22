@@ -74,7 +74,7 @@ foreach (string source in audioSources)
     ("Robinson Crusoe", "Daniel Defoe",
         ["Der Sturm", "Die Insel", "Die Spur im Sand", "Freitag", "Die Rettung"]),
     ("Sherlock Holmes", "Arthur Conan Doyle",
-        ["Eine Studie in Scharlachrot", "Das Zeichen der Vier", "Der Hund von Baskerville", "Das letzte Problem", "Das leere Haus", "Der Bund der Rothaarige"]),
+        ["Eine Studie in Scharlachrot", "Das Zeichen der Vier", "Der Hund von Baskerville", "Das letzte Problem", "Das leere Haus", "Der Bund der Rothaarigen"]),
     ("Tom Sawyer", "Mark Twain",
         ["Der Zaun", "Die Insel der Piraten", "Nachts auf dem Friedhof", "Die Höhle"]),
     ("Winnetou", "Karl May",

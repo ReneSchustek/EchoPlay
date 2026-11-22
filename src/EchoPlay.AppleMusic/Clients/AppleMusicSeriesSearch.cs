@@ -93,41 +93,17 @@ namespace EchoPlay.AppleMusic.Clients
 
             _logger.Debug(() => $"Apple-Music-Seriensuche gestartet: '{query}'.");
 
-            ITunesResponseDto<ITunesArtistDto> response =
-                await _searchClient.SearchArtistsAsync(query, ct: cancellationToken).ConfigureAwait(false);
-
-            if (response.Results.Count == 0)
-            {
-                _logger.Debug("Keine Künstler gefunden.");
-                yield break;
-            }
-
-            AppleMusicPrefilterResult prefiltered =
-                AppleMusicArtistPrefilter.SelectCandidates(response.Results, query, _settings);
-
-            _logger.Info(
-                "Vorauswahl für '{Query}': {CandidateCount} von {ArtistCount} Künstlern kommen infrage.",
-                query, prefiltered.Candidates.Count, response.Results.Count);
-
             int deepChecks = 0;
             int skipped = 0;
             int found = 0;
 
-            foreach (AppleMusicArtistCandidate candidate in prefiltered.Candidates)
+            foreach (AppleMusicArtistCandidate candidate in await LoadCandidatesAsync(query, cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                // Bekannte Serien stehen ohne weitere Anfrage fest und zählen deshalb nicht
-                // gegen das Budget der teuren Prüfungen.
-                if (!candidate.IsKnownSeries)
+                if (!TryTakeDeepCheck(candidate, ref deepChecks))
                 {
-                    if (deepChecks >= _settings.MaxDeepChecks)
-                    {
-                        skipped++;
-                        continue;
-                    }
-
-                    deepChecks++;
+                    skipped++;
+                    continue;
                 }
 
                 ImportSeries? series = await ScoreCandidateAsync(candidate.Artist, query, cancellationToken).ConfigureAwait(false);
@@ -142,6 +118,11 @@ namespace EchoPlay.AppleMusic.Clients
                 yield return series;
             }
 
+            LogSearchSummary(query, skipped, found);
+        }
+
+        private void LogSearchSummary(string query, int skipped, int found)
+        {
             if (skipped > 0)
             {
                 _logger.Info(
@@ -150,6 +131,47 @@ namespace EchoPlay.AppleMusic.Clients
             }
 
             _logger.Info("Apple-Music-Seriensuche abgeschlossen: {ResultCount} Hörspielserien gefunden.", found);
+        }
+
+        /// <summary>Sucht die Künstler und wählt vor, welche als Serie infrage kommen.</summary>
+        private async Task<IReadOnlyList<AppleMusicArtistCandidate>> LoadCandidatesAsync(string query, CancellationToken cancellationToken)
+        {
+            ITunesResponseDto<ITunesArtistDto> response =
+                await _searchClient.SearchArtistsAsync(query, ct: cancellationToken).ConfigureAwait(false);
+
+            if (response.Results.Count == 0)
+            {
+                _logger.Debug("Keine Künstler gefunden.");
+                return [];
+            }
+
+            AppleMusicPrefilterResult prefiltered =
+                AppleMusicArtistPrefilter.SelectCandidates(response.Results, query, _settings);
+
+            _logger.Info(
+                "Vorauswahl für '{Query}': {CandidateCount} von {ArtistCount} Künstlern kommen infrage.",
+                query, prefiltered.Candidates.Count, response.Results.Count);
+            return prefiltered.Candidates;
+        }
+
+        /// <summary>
+        /// Ob der Kandidat noch geprüft wird. Bekannte Serien stehen ohne weitere Anfrage fest und
+        /// zählen deshalb nicht gegen das Budget der teuren Prüfungen.
+        /// </summary>
+        private bool TryTakeDeepCheck(AppleMusicArtistCandidate candidate, ref int deepChecks)
+        {
+            if (candidate.IsKnownSeries)
+            {
+                return true;
+            }
+
+            if (deepChecks >= _settings.MaxDeepChecks)
+            {
+                return false;
+            }
+
+            deepChecks++;
+            return true;
         }
 
         /// <summary>
@@ -185,9 +207,9 @@ namespace EchoPlay.AppleMusic.Clients
             catch (Exception ex)
             {
                 // Einzelne Bewertungsfehler dürfen die Gesamtsuche nicht unterbrechen.
-                _logger.Warning(
-                    $"Bewertung für iTunes-Künstler '{artist.ArtistId}' ({artist.ArtistName}) fehlgeschlagen. Künstler wird übersprungen.");
-                _logger.Error("Fehlerdetails:", ex);
+                _logger.Error(
+                    "Bewertung für iTunes-Künstler '{ArtistId}' ({Name}) fehlgeschlagen, Künstler übersprungen.",
+                    ex, artist.ArtistId, artist.ArtistName);
                 return null;
             }
 

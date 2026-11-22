@@ -36,12 +36,12 @@ namespace EchoPlay.Spotify.Tests.Import
 
             SpotifyEpisodeImportSource sut = new(client, BuildLoggerFactory());
 
-            IReadOnlyList<ImportEpisode> folgen = await sut.GetEpisodesAsync(
+            IReadOnlyList<ImportEpisode> episodes = await sut.GetEpisodesAsync(
                 "art1", cancellationToken: TestContext.Current.CancellationToken);
 
             // Ohne Spuren lässt sich die Dauer nicht bestimmen. Die Folge ohne diese
             // Angabe zu importieren wäre eine stille Falschangabe.
-            Assert.Empty(folgen);
+            Assert.Empty(episodes);
         }
 
         [Fact]
@@ -75,14 +75,14 @@ namespace EchoPlay.Spotify.Tests.Import
             SpotifyHoerspielAnalyzer sut = new(
                 client, Options.Create(new SpotifyHoerspielSettings()), BuildLoggerFactory());
 
-            SpotifyHoerspielAnalysis analyse = await sut.AnalyzeAsync(
+            SpotifyHoerspielAnalysis analysis = await sut.AnalyzeAsync(
                 new SpotifyArtistDto { SpotifyArtistId = "art1", Name = "TKKG", Genres = [] },
                 "TKKG",
                 TestContext.Current.CancellationToken);
 
             // Das Album zählt weiter als vorhanden, nur seine Struktur bleibt unbeurteilt.
-            Assert.True(analyse.HasAlbums);
-            Assert.False(analyse.HasHoerspielAlbumStructure);
+            Assert.True(analysis.HasAlbums);
+            Assert.False(analysis.HasHoerspielAlbumStructure);
         }
 
         [Fact]
@@ -96,15 +96,13 @@ namespace EchoPlay.Spotify.Tests.Import
             SpotifySeriesImportSearch sut = new(
                 client, new SpotifySeriesMapper(new ThrowingScorer()), BuildLoggerFactory());
 
-            IReadOnlyList<ImportSeries> treffer = await sut.SearchAsync(
+            IReadOnlyList<ImportSeries> hit = await sut.SearchAsync(
                 "TKKG", TestContext.Current.CancellationToken);
 
             // Die Bewertung ist eine Heuristik über mehrere Merkmale. Scheitert sie für
             // einen Treffer, fällt dieser heraus, die übrigen bleiben in der Liste.
-            Assert.Empty(treffer);
+            Assert.Empty(hit);
         }
-
-        // ── Aufbau ───────────────────────────────────────────────────────────────
 
         private static LoggerFactory BuildLoggerFactory() => new([], new LoggerOptions());
 

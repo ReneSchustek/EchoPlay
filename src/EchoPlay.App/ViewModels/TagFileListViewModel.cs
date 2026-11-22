@@ -175,7 +175,7 @@ namespace EchoPlay.App.ViewModels
         /// Wird ausgelöst, wenn sich die Auswahl geändert hat. Das Top-VM lädt daraufhin
         /// die Tag-Felder der neuen Auswahl und aktualisiert den Editor-Zustand.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Sub-VM -> Top-VM-Bridge: meldet die aktuelle Multi-Auswahl an den Orchestrator (LoadMultipleFileTagsAsync); Action<IReadOnlyList<...>> bleibt semantisch klarer als ein EventArgs-Wrapper mit identischem Inhalt.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action<IReadOnlyList<TagFileItemViewModel>>? SelectionChanged;
 
         /// <summary>

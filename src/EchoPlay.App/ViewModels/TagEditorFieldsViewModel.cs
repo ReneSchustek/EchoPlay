@@ -1,3 +1,4 @@
+using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
 using EchoPlay.TagManager.Models;
 using System;
@@ -16,8 +17,12 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class TagEditorFieldsViewModel : ObservableObject
     {
-        // Platzhalter für Felder mit unterschiedlichen Werten bei Mehrfachauswahl
-        private const string MixedValuePlaceholder = "(verschieden)";
+        /// <summary>
+        /// Platzhalter für Felder mit unterschiedlichen Werten bei Mehrfachauswahl. Er steht
+        /// nur in der Anzeige; die Bausteine für das Speichern lassen ihn weg.
+        /// </summary>
+        internal static string MixedValuePlaceholder { get; } =
+            SafeResourceLoader.Get("TagManagerMixedValuePlaceholder", "(verschieden)");
 
         private readonly Action _onUserEdit;
 
@@ -50,56 +55,56 @@ namespace EchoPlay.App.ViewModels
         public string? Title
         {
             get => _title;
-            set { _ = SetProperty(ref _title, value); _ = _editedFields.Add(nameof(Title)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _title, value), nameof(Title));
         }
 
         /// <summary>Album des Tracks.</summary>
         public string? Album
         {
             get => _album;
-            set { _ = SetProperty(ref _album, value); _ = _editedFields.Add(nameof(Album)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _album, value), nameof(Album));
         }
 
         /// <summary>Haupt-Interpret des Tracks.</summary>
         public string? Artist
         {
             get => _artist;
-            set { _ = SetProperty(ref _artist, value); _ = _editedFields.Add(nameof(Artist)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _artist, value), nameof(Artist));
         }
 
         /// <summary>Album-Künstler (kann von Artist abweichen, z.B. bei Samplern).</summary>
         public string? AlbumArtist
         {
             get => _albumArtist;
-            set { _ = SetProperty(ref _albumArtist, value); _ = _editedFields.Add(nameof(AlbumArtist)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _albumArtist, value), nameof(AlbumArtist));
         }
 
         /// <summary>Erscheinungsjahr als Text; muss beim Speichern in <c>uint</c> geparst werden.</summary>
         public string? Year
         {
             get => _year;
-            set { _ = SetProperty(ref _year, value); _ = _editedFields.Add(nameof(Year)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _year, value), nameof(Year));
         }
 
         /// <summary>Tracknummer als Text.</summary>
         public string? TrackNumber
         {
             get => _trackNumber;
-            set { _ = SetProperty(ref _trackNumber, value); _ = _editedFields.Add(nameof(TrackNumber)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _trackNumber, value), nameof(TrackNumber));
         }
 
         /// <summary>Gesamtanzahl Tracks als Text.</summary>
         public string? TrackCount
         {
             get => _trackCount;
-            set { _ = SetProperty(ref _trackCount, value); _ = _editedFields.Add(nameof(TrackCount)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _trackCount, value), nameof(TrackCount));
         }
 
         /// <summary>Genre des Tracks.</summary>
         public string? Genre
         {
             get => _genre;
-            set { _ = SetProperty(ref _genre, value); _ = _editedFields.Add(nameof(Genre)); _onUserEdit(); }
+            set => MarkEdited(SetProperty(ref _genre, value), nameof(Genre));
         }
 
         /// <summary>
@@ -119,7 +124,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Befüllt die Formularfelder mit den Werten eines <see cref="AudioTag"/>.
-        /// Markiert bewusst keine Änderung, denn der Zustand wird nur aus der Datei geladen.
+        /// Markiert keine Änderung, denn der Zustand wird nur aus der Datei geladen.
         /// </summary>
         /// <param name="tag">Die gelesenen Tags einer Datei.</param>
         public void PopulateFromTag(AudioTag tag)
@@ -140,7 +145,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Befüllt die Felder aus mehreren Dateien. Gemeinsame Werte werden übernommen;
-        /// Felder mit unterschiedlichen Werten zeigen den Platzhalter „(verschieden)".
+        /// Felder mit unterschiedlichen Werten zeigen <see cref="MixedValuePlaceholder"/>.
         /// </summary>
         /// <param name="tags">Die gelesenen Tags der selektierten Dateien. Mindestens ein Eintrag.</param>
         public void PopulateFromMultipleTags(IReadOnlyList<AudioTag> tags)
@@ -251,7 +256,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Baut ein <see cref="AudioTag"/> nur mit den gemeinsamen Feldern aus dem Formular.
-        /// Title und TrackNumber werden bewusst ausgelassen; die bleiben datei-individuell.
+        /// Title und TrackNumber werden ausgelassen; die bleiben datei-individuell.
         /// </summary>
         public AudioTag BuildSharedTagFromFields()
         {
@@ -267,6 +272,14 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
+        /// Ob ein Feld den Platzhalter für unterschiedliche Werte zeigt, also keinen eigenen Wert hat.
+        /// </summary>
+        /// <param name="value">Der Feldinhalt.</param>
+        /// <returns><see langword="true"/>, wenn der Inhalt der Platzhalter ist.</returns>
+        internal static bool IsMixedValue(string? value)
+            => string.Equals(value, MixedValuePlaceholder, StringComparison.Ordinal);
+
+        /// <summary>
         /// Gibt die Anzahl der bisher vom Nutzer geänderten Felder zurück. Wird im Top-VM
         /// benötigt, um bei Mehrfachauswahl zu entscheiden, ob überhaupt gespeichert werden muss.
         /// </summary>
@@ -274,6 +287,22 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Löscht den Merker der editierten Felder nach erfolgreichem Speichern.</summary>
         public void ResetEditedFields() => _editedFields.Clear();
+
+        /// <summary>
+        /// Merkt ein Feld als bearbeitet, aber nur, wenn sich sein Wert wirklich geändert hat.
+        /// Schreibt die Bindung beim Verlassen des Felds denselben Text zurück, bliebe das Feld
+        /// sonst als geändert stehen und ginge bei Mehrfachauswahl in jede Datei.
+        /// </summary>
+        private void MarkEdited(bool changed, string fieldName)
+        {
+            if (!changed)
+            {
+                return;
+            }
+
+            _ = _editedFields.Add(fieldName);
+            _onUserEdit();
+        }
 
         private void RaiseAllFieldChanges()
         {
@@ -287,7 +316,11 @@ namespace EchoPlay.App.ViewModels
             OnPropertyChanged(nameof(Genre));
         }
 
+        /// <summary>
+        /// Leere Felder und der Platzhalter für unterschiedliche Werte werden zu <see langword="null"/>.
+        /// Sonst schriebe „Alle speichern" den Platzhalter als Album oder Genre in jede Datei.
+        /// </summary>
         private static string? NullIfEmpty(string? value)
-            => string.IsNullOrWhiteSpace(value) ? null : value;
+            => string.IsNullOrWhiteSpace(value) || IsMixedValue(value) ? null : value;
     }
 }

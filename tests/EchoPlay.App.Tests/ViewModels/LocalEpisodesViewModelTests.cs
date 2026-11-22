@@ -240,7 +240,7 @@ namespace EchoPlay.App.Tests.ViewModels
             viewModel.Dispose();
         }
         [Fact]
-        public async Task AlsGehoert_SetztDenHakenSofortUndSchreibtDenStand()
+        public async Task MarkPlayed_SetsTheCheckImmediatelyAndWritesTheState()
         {
             // Ohne die sofortige Aktualisierung erschiene der Haken erst nach einem
             // Serienwechsel, und der Anwender hält den Klick dann für wirkungslos.
@@ -257,7 +257,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlsUngehoert_NimmtDenHakenZurueckUndLoeschtDenStand()
+        public async Task MarkUnplayed_RemovesTheCheckAndDeletesTheState()
         {
             FakePlaybackStateDataService states = new();
             (LocalEpisodesViewModel viewModel, _) = await LoadWithStatesAsync(states, Episode(1, "Der Superhund"));
@@ -271,7 +271,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task AlsGehoert_LaeuftAuchFuerEineUnbekannteFolgeDurch()
+        public async Task MarkPlayed_CompletesForAnUnknownEpisodeToo()
         {
             // Der Aufruf kommt aus dem Kachelmenü; steht die Kachel nicht mehr in der
             // Liste, darf der Stand trotzdem geschrieben werden.
@@ -285,7 +285,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Folgentitel_VerliertDenSeriennamenAmAnfang()
+        public async Task EpisodeTitle_LosesTheSeriesNameAtTheStart()
         {
             // Die Ordnernamen tragen den Seriennamen mit. Auf der Kachel steht er ohnehin
             // schon darüber, und zweimal derselbe Name kostet nur Platz.
@@ -300,7 +300,7 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         [Fact]
-        public async Task Folgentitel_BleibtStehenWennNichtsUebrigBliebe()
+        public async Task EpisodeTitle_StaysWhenNothingWouldRemain()
         {
             LocalEpisodesViewModel viewModel = await LoadAsync(Episode(1, "TKKG"));
 

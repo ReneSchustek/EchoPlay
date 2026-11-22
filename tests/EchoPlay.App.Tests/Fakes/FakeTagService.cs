@@ -33,7 +33,7 @@ namespace EchoPlay.App.Tests.Fakes
         /// </param>
         /// <param name="readFolderFailure">
         /// Wird von <see cref="ReadFolderAsync"/> geworfen, wenn gesetzt. Ein defekter
-        /// Kennzeichnungsblock in einer einzigen Datei bringt den echten Dienst zum Werfen —
+        /// Kennzeichnungsblock in einer einzigen Datei bringt den echten Dienst zum Werfen;
         /// ohne diesen Fall bliebe der Behandlungszweig ungeprüft.
         /// </param>
         public FakeTagService(
@@ -52,10 +52,15 @@ namespace EchoPlay.App.Tests.Fakes
         /// </summary>
         public Exception? ReadFailure { get; set; }
 
+        /// <summary>
+        /// Beschränkt <see cref="ReadFailure"/> auf diese eine Datei. Ohne Wert scheitert jedes Lesen.
+        /// </summary>
+        public string? ReadFailurePath { get; set; }
+
         /// <inheritdoc/>
         public Task<AudioTag> ReadAsync(string filePath)
         {
-            if (ReadFailure is not null)
+            if (ReadFailure is not null && (ReadFailurePath is null || ReadFailurePath == filePath))
             {
                 return Task.FromException<AudioTag>(ReadFailure);
             }

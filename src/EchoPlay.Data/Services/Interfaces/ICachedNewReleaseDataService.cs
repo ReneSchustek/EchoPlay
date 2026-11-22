@@ -4,7 +4,7 @@ namespace EchoPlay.Data.Services.Interfaces
 {
     /// <summary>
     /// Schnittstelle für den Zugriff auf gecachte Neuerscheinungen aus der iTunes-API.
-    /// Der Cache ermöglicht es dem Dashboard, gespeicherte Ergebnisse sofort anzuzeigen,
+    /// Mit dem Cache zeigt das Dashboard gespeicherte Ergebnisse sofort an,
     /// während im Hintergrund ein inkrementelles Update gegen die API läuft.
     /// </summary>
     public interface ICachedNewReleaseDataService

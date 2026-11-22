@@ -65,26 +65,12 @@ namespace EchoPlay.Spotify.Services
                 bool isKnown = knownEpisodeTitles is { Count: > 0 }
                     && knownEpisodeTitles.Contains(album.Title);
 
-                IReadOnlyList<SpotifyTrackDto> tracks;
-
-                if (isKnown)
+                IReadOnlyList<SpotifyTrackDto>? tracks = isKnown
+                    ? []
+                    : await TryLoadTracksAsync(album, cancellationToken).ConfigureAwait(false);
+                if (tracks is null)
                 {
-                    tracks = [];
-                }
-                else
-                {
-                    try
-                    {
-                        tracks = await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex) when (TransientRequestError.IsTransient(ex, cancellationToken))
-                    {
-                        // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
-                        _logger.Warning(
-                            $"Tracks für Spotify-Album '{album.SpotifyAlbumId}' ('{album.Title}') konnten nicht geladen werden. Album wird übersprungen.");
-                        _logger.Error("Fehlerdetails:", ex);
-                        continue;
-                    }
+                    continue;
                 }
 
                 // Ein Album = eine Folge, Tracks werden nur für die Dauerberechnung verwendet
@@ -98,6 +84,26 @@ namespace EchoPlay.Spotify.Services
                 episodes.Count, sourceSeriesId);
 
             return episodes;
+        }
+
+        /// <summary>
+        /// Lädt die Titel eines Albums; bei einem vorübergehenden Fehler <see langword="null"/>,
+        /// damit der Import mit dem nächsten Album weitermacht.
+        /// </summary>
+        private async Task<IReadOnlyList<SpotifyTrackDto>?> TryLoadTracksAsync(SpotifyAlbumDto album, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _apiClient.GetAlbumTracksAsync(album.SpotifyAlbumId, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (TransientRequestError.IsTransient(ex, cancellationToken))
+            {
+                // Einzelne Album-Fehler dürfen den Gesamtimport nicht unterbrechen.
+                _logger.Warning(
+                    "Tracks für Spotify-Album '{AlbumId}' ('{Title}') nicht geladen, Album übersprungen: {Reason}",
+                    album.SpotifyAlbumId, album.Title, ex.Message);
+                return null;
+            }
         }
     }
 }

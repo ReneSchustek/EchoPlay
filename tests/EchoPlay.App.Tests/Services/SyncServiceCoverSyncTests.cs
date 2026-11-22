@@ -19,7 +19,7 @@ namespace EchoPlay.App.Tests.Services
     /// Cover aus der Ablage übernommen.
     /// </summary>
     /// <remarks>
-    /// Der Schritt ist bewusst gutmütig gebaut: Er darf das Einlesen nie scheitern lassen.
+    /// Der Schritt ist gutmütig gebaut: Er darf das Einlesen nie scheitern lassen.
     /// Genau deshalb braucht er Tests: Ohne sie sieht ein Abgleich, der gar nicht läuft,
     /// von außen aus wie einer, der nichts zu tun fand.
     /// <para>
@@ -30,7 +30,7 @@ namespace EchoPlay.App.Tests.Services
     public sealed class SyncServiceCoverSyncTests
     {
         [Fact]
-        public async Task Abgleich_FragtJedeSerieMitLokalemOrdner()
+        public async Task Sync_QueriesEverySeriesWithALocalFolder()
         {
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(
@@ -50,7 +50,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task Abgleich_OhneSerienMitOrdnerFragtNiemanden()
+        public async Task Sync_WithoutSeriesWithFolder_QueriesNobody()
         {
             FakeSeriesDataService seriesService = new();
             await seriesService.AddAsync(
@@ -66,7 +66,7 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
-        public async Task Abgleich_LaeuftAuchOhneFolgenDurch()
+        public async Task Sync_CompletesEvenWithoutEpisodes()
         {
             // Eine Serie ohne Folgen hat nichts, was in einen Ordner geschrieben werden
             // könnte. Der Lauf muss trotzdem sauber zu Ende gehen.

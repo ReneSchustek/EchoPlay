@@ -23,5 +23,7 @@
     <Project Path="tests/EchoPlay.Spotify.Tests/EchoPlay.Spotify.Tests.csproj" Id="344a913a-211e-4046-931e-28cc75f7813a" />
     <Project Path="tests/EchoPlay.TagManager.Tests/EchoPlay.TagManager.Tests.csproj" />
     <Project Path="tests/EchoPlay.Fuzz/EchoPlay.Fuzz.csproj" />
+    <Project Path="tests/EchoPlay.Benchmarks/EchoPlay.Benchmarks.csproj" />
+    <Project Path="tests/EchoPlay.Benchmarks.Cases/EchoPlay.Benchmarks.Cases.csproj" />
   </Folder>
 </Solution>

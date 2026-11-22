@@ -1,5 +1,5 @@
-using System.IO;
-using System.Threading.Tasks;
+using EchoPlay.Core.Logging;
+using EchoPlay.Logger.Abstractions;
 
 namespace EchoPlay.LocalLibrary.Cover
 {
@@ -10,6 +10,18 @@ namespace EchoPlay.LocalLibrary.Cover
     /// </summary>
     public sealed class LocalCoverLoader : ILocalCoverLoader
     {
+        private readonly ILogger _logger;
+
+        /// <summary>
+        /// Richtet den Lader ein.
+        /// </summary>
+        /// <param name="loggerFactory">Fabrik für den Protokollkanal; nicht lesbare Dateien werden als Warnung vermerkt.</param>
+        public LocalCoverLoader(ILoggerFactory loggerFactory)
+        {
+            ArgumentNullException.ThrowIfNull(loggerFactory);
+            _logger = loggerFactory.CreateLogger(nameof(LocalCoverLoader));
+        }
+
         /// <inheritdoc/>
         public async Task<byte[]?> LoadAsync(string? episodeFolderPath, string? firstTrackPath)
         {
@@ -25,13 +37,11 @@ namespace EchoPlay.LocalLibrary.Cover
                     {
                         return await File.ReadAllBytesAsync(coverPath).ConfigureAwait(false);
                     }
-                    catch (IOException)
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
-                        // Leserechte fehlen oder Datei ist korrupt: ID3-Fallback versuchen
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        // Keine Leserechte, also ID3-Fallback versuchen
+                        // Danach kommt der ID3-Tag als zweite Quelle; vermerkt wird es trotzdem,
+                        // sonst sucht niemand, warum die cover.jpg nicht erscheint.
+                        _logger.Warning("cover.jpg nicht lesbar, nehme ID3-Tag: {Path} – {Reason}", PathRedactor.Redact(coverPath), ex.Message);
                     }
                 }
             }
@@ -50,33 +60,25 @@ namespace EchoPlay.LocalLibrary.Cover
 
         /// <summary>
         /// Liest das erste eingebettete Bild aus den ID3-Tags der Audiodatei.
-        /// TagLib# wirft bei defekten Dateien Exceptions; alle werden still ignoriert.
+        /// TagLib# wirft bei defekten Dateien Ausnahmen; sie gelten als „kein Cover" und werden als Warnung vermerkt.
         /// </summary>
         /// <param name="trackPath">Absoluter Pfad zur Audiodatei.</param>
         /// <returns>Rohe Bilddaten des ersten Tags oder <see langword="null"/>.</returns>
-        private static byte[]? ReadCoverFromTags(string trackPath)
+        private byte[]? ReadCoverFromTags(string trackPath)
         {
             try
             {
                 using TagLib.File tagFile = TagLib.File.Create(trackPath);
 
-                // Pictures[] enthält alle eingebetteten Bilder, wir nehmen das erste (AlbumArt-Konvention)
+                // Pictures[] enthält alle eingebetteten Bilder; nach der AlbumArt-Konvention ist das erste das Cover.
                 if (tagFile.Tag.Pictures is { Length: > 0 })
                 {
                     return tagFile.Tag.Pictures[0].Data.Data;
                 }
             }
-            catch (TagLib.CorruptFileException)
+            catch (Exception ex) when (ex is TagLib.CorruptFileException or TagLib.UnsupportedFormatException or IOException or UnauthorizedAccessException)
             {
-                // Defekte Tag-Struktur, kein Cover extrahierbar
-            }
-            catch (TagLib.UnsupportedFormatException)
-            {
-                // Unbekanntes Dateiformat, TagLib# kann die Datei nicht lesen
-            }
-            catch (IOException)
-            {
-                // Datei nicht lesbar, aber kein Absturz
+                _logger.Warning("Cover aus dem ID3-Tag nicht lesbar: {Path} – {Reason}", PathRedactor.Redact(trackPath), ex.Message);
             }
 
             return null;

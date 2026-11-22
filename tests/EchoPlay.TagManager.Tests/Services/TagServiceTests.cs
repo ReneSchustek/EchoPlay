@@ -231,8 +231,6 @@ namespace EchoPlay.TagManager.Tests.Services
             }
         }
 
-        // --- Hilfsmethoden ---
-
         /// <summary>
         /// Erstellt ein minimales, gültiges JPEG (1x1 Pixel, weiß).
         /// Wird für Cover-Tests benötigt, damit TagLib# einen gültigen MIME-Typ setzen kann.

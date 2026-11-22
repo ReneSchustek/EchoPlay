@@ -105,7 +105,7 @@ namespace EchoPlay.App.Tests.Services
             search.SetResults(
             [
                 new CoverSearchResult(
-                    "https://i.example.invalid/thumb.jpg", "https://i.example.invalid/tkkg.jpg",
+                    new Uri("https://i.example.invalid/thumb.jpg"), new Uri("https://i.example.invalid/tkkg.jpg"),
                     "TKKG", "Cover Art Archive"),
             ]);
 
@@ -132,7 +132,7 @@ namespace EchoPlay.App.Tests.Services
             search.SetResults(
             [
                 new CoverSearchResult(
-                    "https://i.example.invalid/thumb.jpg", "https://i.example.invalid/tkkg.jpg",
+                    new Uri("https://i.example.invalid/thumb.jpg"), new Uri("https://i.example.invalid/tkkg.jpg"),
                     "TKKG", "Cover Art Archive"),
             ]);
 

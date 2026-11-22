@@ -35,7 +35,7 @@ namespace EchoPlay.Spotify.Tests.Mapping
             Assert.Equal("artist-1", result.SourceSeriesId);
             Assert.Equal("Spotify", result.Source);
             Assert.Equal("Die drei ???", result.Title);
-            Assert.Equal("https://i.scdn.co/cover.jpg", result.CoverImageUrl);
+            Assert.Equal(new Uri("https://i.scdn.co/cover.jpg"), result.CoverImageUrl);
             Assert.True(result.IsHoerspiel);
             Assert.Equal(42, result.Score);
             Assert.Null(result.Description);
@@ -106,9 +106,11 @@ namespace EchoPlay.Spotify.Tests.Mapping
                 () => mapper.MapToImportSeriesAsync(artist, "egal", cts.Token));
         }
 
-        // Lokaler Scorer, der den Token an die ScoreAsync-Implementierung weiterreicht und bei
-        // ausgelöstem Abbruch eine OperationCanceledException wirft. Der allgemeine FakeHoerspielScorer
-        // ignoriert den Token und kann das Verhalten daher nicht abdecken.
+        /// <summary>
+        /// Lokaler Scorer, der den Token an die ScoreAsync-Implementierung weiterreicht und bei
+        /// ausgelöstem Abbruch eine OperationCanceledException wirft. Der allgemeine
+        /// FakeHoerspielScorer ignoriert den Token und kann das Verhalten daher nicht abdecken.
+        /// </summary>
         private sealed class ThrowingCancellationScorer : IHoerspielScorer<SpotifyArtistDto>
         {
             public Task<HoerspielScoreResult> ScoreAsync(

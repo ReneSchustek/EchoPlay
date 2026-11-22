@@ -34,8 +34,11 @@ namespace EchoPlay.App.ViewModels
         IReadOnlyDictionary<Guid, PlaybackState> StateByEpisodeId,
         bool OfflineMode)
     {
-        /// <summary>Abschnittsname, unter dem die Reihenfolge der Neuerscheinungen liegt.</summary>
-        private const string SectionNewReleases = "Neuerscheinungen";
+        /// <summary>
+        /// Abschnittsname, unter dem die vom Nutzer gezogene Reihenfolge der Favoriten liegt.
+        /// Geschrieben wird sie von <see cref="DashboardFavoritenViewModel"/>.
+        /// </summary>
+        internal const string FavoritesSection = "Favoriten";
 
         /// <summary>Ob überhaupt eine Serie abonniert ist. Sonst führt die Startseite ins Einrichten.</summary>
         public bool HasSubscribedSeries => SubscribedSeries.Count > 0;
@@ -116,7 +119,8 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Liest die Favoriten und bringt sie in die vom Nutzer gespeicherte Reihenfolge.
-        /// Serien ohne gespeicherte Position hängen alphabetisch hinten an.
+        /// Serien ohne gespeicherte Position hängen alphabetisch hinten an. „Weiterhören" und
+        /// die Favoriten-Kacheln übernehmen diese Reihenfolge, sie wird nur hier gelesen.
         /// </summary>
         private static async Task<IReadOnlyList<Series>> LoadFavoritesInOrderAsync(
             ISeriesDataService seriesService,
@@ -125,7 +129,7 @@ namespace EchoPlay.App.ViewModels
         {
             IReadOnlyList<Series> favoritesRaw = await seriesService.GetFavoritesAsync();
 
-            IReadOnlyList<DashboardPosition> savedPositions = await positionService.GetBySectionAsync(SectionNewReleases);
+            IReadOnlyList<DashboardPosition> savedPositions = await positionService.GetBySectionAsync(FavoritesSection);
 
             Dictionary<Guid, int> positionBySeriesId = new(savedPositions.Count);
             foreach (DashboardPosition dp in savedPositions)
@@ -135,7 +139,7 @@ namespace EchoPlay.App.ViewModels
 
             List<Series> ordered = [.. favoritesRaw
                 .OrderBy(s => positionBySeriesId.TryGetValue(s.Id, out int pos) ? pos : int.MaxValue)
-                .ThenBy(s => s.Title)];
+                .ThenBy(s => s.Title, StringComparer.CurrentCulture)];
 
             foreach (Series s in ordered)
             {

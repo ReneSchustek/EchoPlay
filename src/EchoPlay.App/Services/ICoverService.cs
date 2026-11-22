@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -14,16 +13,16 @@ namespace EchoPlay.App.Services
     /// </summary>
     public interface ICoverService
     {
-        /// <summary>Lädt das Cover einer Serie als BitmapImage; <c>null</c>, wenn keines vorhanden ist.</summary>
+        /// <summary>Lädt das Cover einer Serie als BitmapImage; <see langword="null"/>, wenn keines vorhanden ist.</summary>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Das Cover oder <c>null</c>.</returns>
+        /// <returns>Das Cover oder <see langword="null"/>.</returns>
         Task<BitmapImage?> GetSeriesCoverImageAsync(Guid seriesId, CancellationToken cancellationToken = default);
 
-        /// <summary>Lädt das Cover einer Episode als BitmapImage; <c>null</c>, wenn keines vorhanden ist.</summary>
+        /// <summary>Lädt das Cover einer Episode als BitmapImage; <see langword="null"/>, wenn keines vorhanden ist.</summary>
         /// <param name="episodeId">Die ID der Episode.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns>Das Cover oder <c>null</c>.</returns>
+        /// <returns>Das Cover oder <see langword="null"/>.</returns>
         Task<BitmapImage?> GetEpisodeCoverImageAsync(Guid episodeId, CancellationToken cancellationToken = default);
 
         /// <summary>Lädt Cover-Binärdaten für mehrere Episoden in einer Query (Batch, kein N+1).</summary>
@@ -38,8 +37,7 @@ namespace EchoPlay.App.Services
         /// <param name="sourceUrl">Optionale Quell-URL.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Der Task ist abgeschlossen, wenn das Cover in der Datenbank steht oder alle Wiederholungen gescheitert sind.</returns>
-        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
-        Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default);
+        Task SetSeriesCoverAsync(Guid seriesId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default);
 
         /// <summary>Speichert ein Cover für eine Episode (mit Retry bei DB-Fehlern).</summary>
         /// <param name="episodeId">Die ID der Episode.</param>
@@ -47,13 +45,12 @@ namespace EchoPlay.App.Services
         /// <param name="sourceUrl">Optionale Quell-URL.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Der Task ist abgeschlossen, wenn das Cover in der Datenbank steht oder alle Wiederholungen gescheitert sind.</returns>
-        [SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "sourceUrl wird als string in der DB-Spalte Covers.SourceUrl persistiert.")]
-        Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default);
+        Task SetEpisodeCoverAsync(Guid episodeId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default);
 
         /// <summary>Prüft, ob ein Cover für eine Serie existiert (ohne den Blob zu laden).</summary>
         /// <param name="seriesId">Die ID der Serie.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        /// <returns><c>true</c>, wenn ein Cover existiert.</returns>
+        /// <returns><see langword="true"/>, wenn ein Cover existiert.</returns>
         Task<bool> HasSeriesCoverAsync(Guid seriesId, CancellationToken cancellationToken = default);
     }
 }

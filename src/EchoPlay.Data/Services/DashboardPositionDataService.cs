@@ -29,7 +29,6 @@ namespace EchoPlay.Data.Services
             _logger.Debug(() => $"Lade Dashboard-Positionen für Bereich '{section}'.");
 
             List<DashboardPosition> result = await _context.DashboardPositions
-
                 .Where(dp => dp.Section == section)
                 .OrderBy(dp => dp.Position)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);

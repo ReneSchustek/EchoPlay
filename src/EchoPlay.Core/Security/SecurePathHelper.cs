@@ -4,7 +4,7 @@ using System.IO;
 namespace EchoPlay.Core.Security
 {
     /// <summary>
-    /// Pfad-Sicherheitsprüfungen gegen Traversal-Angriffe und Symlink-Escape.
+    /// Pfad-Sicherheitsprüfungen gegen Traversal-Angriffe.
     /// Die App schreibt Cover- und Tag-Dateien in Verzeichnisse, deren Pfad
     /// aus DB-Werten oder Tag-Editor-Eingaben stammt; eine zentrale Helferklasse
     /// vermeidet, dass jede Schreibstelle eigene (oft unvollständige) Canonicalization implementiert.
@@ -13,9 +13,14 @@ namespace EchoPlay.Core.Security
     {
         /// <summary>
         /// Prüft, ob <paramref name="candidate"/> tatsächlich innerhalb von
-        /// <paramref name="root"/> liegt, auch nach Auflösung relativer Anteile (<c>..</c>),
-        /// Symlinks und Groß-/Kleinschreibung.
+        /// <paramref name="root"/> liegt, auch nach Auflösung relativer Anteile (<c>..</c>) und
+        /// ohne Rücksicht auf Groß-/Kleinschreibung.
         /// </summary>
+        /// <remarks>
+        /// Symbolische Verknüpfungen und Verbindungspunkte werden nicht aufgelöst:
+        /// <see cref="Path.GetFullPath(string)"/> arbeitet nur am Text des Pfads. Ein Ordner
+        /// unter <paramref name="root"/>, der auf ein Ziel außerhalb zeigt, gilt deshalb als innen.
+        /// </remarks>
         /// <param name="candidate">Zu prüfender Pfad (Datei oder Verzeichnis).</param>
         /// <param name="root">Wurzelverzeichnis, das <paramref name="candidate"/> einschließen muss.</param>
         /// <returns>
@@ -47,8 +52,8 @@ namespace EchoPlay.Core.Security
         }
 
         // Pfad in absolute Form bringen; bei ungültigen Zeichen oder zu langen Pfaden
-        // gibt .NET ArgumentException/PathTooLongException; die schlucken wir hier
-        // und melden Failure, damit Aufrufer sicher 'false' zurückbekommen.
+        // wirft .NET ArgumentException oder PathTooLongException. Beide werden hier gefangen
+        // und als Failure gemeldet, damit der Aufrufer sicher 'false' bekommt.
         private static string? TryGetFullPath(string path)
         {
             try

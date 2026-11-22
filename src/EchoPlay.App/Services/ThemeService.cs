@@ -42,7 +42,7 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Gecachte ResourceDictionary-Instanzen je Theme-Name.
-        /// App.xaml lädt alle sechs Themes vorab. Wir halten die Instanzen hier,
+        /// App.xaml lädt alle sechs Themes vorab. Der Dienst hält die Instanzen fest,
         /// damit beim Wechsel kein erneutes XAML-Parsen nötig ist.
         /// </summary>
         private readonly Dictionary<string, ResourceDictionary> _cache =
@@ -87,9 +87,9 @@ namespace EchoPlay.App.Services
                 ? settings.ActiveTheme
                 : "Ruhrcoder";
 
-            // App.xaml hat alle sechs Themes vorab geladen. Instanzen cachen, bevor wir die inaktiven entfernen.
-            // Beim späteren Theme-Wechsel können wir die gecachte Instanz direkt wiederverwenden,
-            // ohne das XAML nochmals parsen zu müssen.
+            // App.xaml hat alle sechs Themes vorab geladen. Die Instanzen werden gemerkt, bevor die
+            // inaktiven verschwinden; ein späterer Wechsel nimmt die gemerkte Instanz, ohne das XAML
+            // erneut zu parsen.
             CachePreloadedDictionaries();
             RemoveAllThemeDictionaries();
             LoadAndApplyTheme(themeName);
@@ -130,13 +130,6 @@ namespace EchoPlay.App.Services
             // Persistierung im Hintergrund: Ein Fehler darf den Theme-Wechsel nicht blockieren
             _ = PersistThemeAsync(themeName);
         }
-
-        /// <summary>
-        /// Gibt den Namen des aktuell aktiven Themes zurück.
-        /// </summary>
-        /// <returns>Theme-Name, z.B. "MidnightLibrary".</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Bewusst als Methode modelliert, da ThemeService künftig asynchron nachladen könnte (ActiveThemeName via Get-Methode bleibt stabil, Property-Umwandlung wäre Breaking Change).")]
-        public string GetActiveThemeName() => _activeThemeName;
 
         /// <summary>
         /// Setzt <c>RequestedTheme</c> am Root-Element des Hauptfensters auf den zum aktiven Theme passenden Wert.
@@ -258,6 +251,11 @@ namespace EchoPlay.App.Services
                 AppSettings settings = await settingsService.GetAsync(cancellationToken);
                 settings.ActiveTheme = themeName;
                 await settingsService.SaveAsync(settings, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Ein Abbruch des Aufrufers ist kein Fehlschlag und gehört nach oben.
+                throw;
             }
             catch (Exception ex)
             {

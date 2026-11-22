@@ -90,11 +90,9 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(clock.UtcNow.AddDays(-7), checker.LastCutoffDate);
         }
 
-        [Fact]
-        public async Task CheckAndCacheSingleSeriesAsync_WithNewReleases_PutsThemIntoTheCache()
-        {
-            Series series = new() { Title = "TKKG" };
-            FakeOnlineEpisodeChecker checker = new(
+        /// <summary>Online-Prüfung, die für die Serie Folge 240 als Neuerscheinung meldet.</summary>
+        private static FakeOnlineEpisodeChecker CheckerWithEpisode240(Series series)
+            => new(
             [
                 new OnlineEpisodeCheckResult
                 {
@@ -107,12 +105,18 @@ namespace EchoPlay.App.Tests.Services
                             Title = "TKKG - Folge 240 - Der neue Fall",
                             EpisodeNumber = 240,
                             ReleaseDate = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            CoverUrl = "https://example.invalid/cover.jpg",
+                            CoverUrl = new Uri("https://example.invalid/cover.jpg"),
                             CollectionId = 4711,
                         },
                     ],
                 },
             ]);
+
+        [Fact]
+        public async Task CheckAndCacheSingleSeriesAsync_WithNewReleases_PutsThemIntoTheCache()
+        {
+            Series series = new() { Title = "TKKG" };
+            FakeOnlineEpisodeChecker checker = CheckerWithEpisode240(series);
             FakeCachedNewReleaseDataService cache = new();
             ServiceProvider provider = BuildProvider(
                 new AppSettings { OfflineMode = false, NewReleaseDays = 30, LastAppStart = LastStart },

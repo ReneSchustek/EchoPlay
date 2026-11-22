@@ -48,7 +48,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Stellt sicher, dass die Aggregation alle drei Kategorien korrekt zählt
+        /// Prüft, dass die Aggregation alle drei Kategorien korrekt zählt
         /// (1× Finished, 1× InProgress, 1× NotStarted).
         /// </summary>
         [Fact]
@@ -158,7 +158,7 @@ namespace EchoPlay.Data.Tests.Services
         }
 
         /// <summary>
-        /// Stellt sicher, dass die jüngste Aktivität an erster Stelle steht.
+        /// Prüft, dass die jüngste Aktivität an erster Stelle steht.
         /// </summary>
         [Fact]
         public async Task GetRecentActive_OrdersByLastPlayedAtDescending()
@@ -239,25 +239,11 @@ namespace EchoPlay.Data.Tests.Services
 
             // Darf NICHT erscheinen.
             PlaybackState emptyState = new()
-            {
-                EpisodeId = emptyEpisode.Id,
-                LastPosition = TimeSpan.Zero,
-                IsCompleted = false,
-                LastPlayedAt = now
-            };
+            { EpisodeId = emptyEpisode.Id, LastPosition = TimeSpan.Zero, IsCompleted = false, LastPlayedAt = now };
             PlaybackState completedState = new()
-            {
-                EpisodeId = completedEpisode.Id,
-                IsCompleted = true,
-                LastPosition = TimeSpan.FromMinutes(30),
-                LastPlayedAt = now.AddMinutes(-1)
-            };
+            { EpisodeId = completedEpisode.Id, IsCompleted = true, LastPosition = TimeSpan.FromMinutes(30), LastPlayedAt = now.AddMinutes(-1) };
             PlaybackState inProgressState = new()
-            {
-                EpisodeId = inProgressEpisode.Id,
-                LastPosition = TimeSpan.FromMinutes(5),
-                LastPlayedAt = now.AddMinutes(-2)
-            };
+            { EpisodeId = inProgressEpisode.Id, LastPosition = TimeSpan.FromMinutes(5), LastPlayedAt = now.AddMinutes(-2) };
             _context.PlaybackStates.AddRange(emptyState, completedState, inProgressState);
             _ = await _context.SaveChangesAsync(cancellationToken: TestContext.Current.CancellationToken);
 

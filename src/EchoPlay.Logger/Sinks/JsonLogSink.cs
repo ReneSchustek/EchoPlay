@@ -61,6 +61,10 @@ namespace EchoPlay.Logger.Sinks
             return JsonSerializer.Serialize(record, SerializerOptions);
         }
 
+        /// <summary>
+        /// Eine Zeile der JSON-Protokolldatei. Die Reihenfolge der Parameter ist die Reihenfolge
+        /// der Felder in der Ausgabe.
+        /// </summary>
         private sealed record JsonLogRecord(
             string Timestamp,
             string Level,
@@ -69,6 +73,9 @@ namespace EchoPlay.Logger.Sinks
             string Message,
             JsonExceptionRecord? Exception);
 
+        /// <summary>
+        /// Typ, Text und Stacktrace der Ausnahme zu einer Protokollzeile.
+        /// </summary>
         private sealed record JsonExceptionRecord(
             string Type,
             string Message,

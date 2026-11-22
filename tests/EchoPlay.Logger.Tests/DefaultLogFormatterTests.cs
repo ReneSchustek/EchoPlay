@@ -20,7 +20,7 @@ namespace EchoPlay.Logger.Tests
         /// Format ohne Scopes und ohne Exception entspricht dem exakten Grundformat.
         /// </summary>
         [Fact]
-        public void Format_OhneScopes_OhneException_ExaktesGrundformat()
+        public void Format_WithoutScopesAndException_ExactBaseFormat()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -97,7 +97,7 @@ namespace EchoPlay.Logger.Tests
         /// Bei einem Eintrag ohne Scopes enthält das Format keinen Scope-Block.
         /// </summary>
         [Fact]
-        public void Format_OhneScopes_KeinScopeBlock()
+        public void Format_WithoutScopes_NoScopeBlock()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -117,7 +117,7 @@ namespace EchoPlay.Logger.Tests
         /// Bei einem Eintrag mit einem Scope erscheint dieser in eckigen Klammern nach der Kategorie.
         /// </summary>
         [Fact]
-        public void Format_MitEinemScope_ScopeInEckigenKlammern()
+        public void Format_WithOneScope_ScopeInSquareBrackets()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -136,7 +136,7 @@ namespace EchoPlay.Logger.Tests
         /// Mehrere Scopes werden mit einem Pfeil als Trennzeichen dargestellt.
         /// </summary>
         [Fact]
-        public void Format_MitMehrerenScopes_ScopesMitPfeilGetrennt()
+        public void Format_WithSeveralScopes_ScopesSeparatedByArrow()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(
@@ -155,7 +155,7 @@ namespace EchoPlay.Logger.Tests
         /// Bei einem Eintrag ohne Exception erscheint kein Exception-Block im Format.
         /// </summary>
         [Fact]
-        public void Format_OhneException_KeinExceptionBlock()
+        public void Format_WithoutException_NoExceptionBlock()
         {
             DefaultLogFormatter formatter = new();
             LogEntry entry = new(

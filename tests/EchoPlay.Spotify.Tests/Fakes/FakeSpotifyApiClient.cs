@@ -17,7 +17,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
 
         /// <summary>
         /// Simuliert die Spotify-Künstlersuche.
-        /// Die Filterung erfolgt bewusst einfach, um das Verhalten leicht nachvollziehbar zu halten.
+        /// Die Filterung erfolgt einfach, um das Verhalten leicht nachvollziehbar zu halten.
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
@@ -38,8 +38,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         }
 
         /// <summary>
-        /// Liefert für Tests keine Alben zurück.
-        /// Diese Methode ist vorhanden, um das Interface vollständig zu erfüllen, wird in den aktuellen Tests jedoch nicht genutzt.
+        /// Liefert keine Alben; die Methode steht nur da, weil die Schnittstelle sie verlangt.
         /// </summary>
         public Task<IReadOnlyList<SpotifyAlbumDto>> GetArtistAlbumsAsync(string artistId, int limit, CancellationToken cancellationToken = default)
         {

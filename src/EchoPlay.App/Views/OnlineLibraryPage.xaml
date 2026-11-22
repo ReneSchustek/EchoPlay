@@ -406,7 +406,7 @@
                     Visibility="{x:Bind ViewModel.LoadingEpisodesVisibility, Mode=OneWay}"/>
 
                 <!-- Akkordeon: Folgen-Bereich als wiederverwendbares Control -->
-                <!-- Episoden-Kacheln ohne Header (Header ist fixiert in Row 2) -->
+                <!-- Episoden-Kacheln ohne Header (Header ist fixiert in Row 4) -->
                 <ctrl:EpisodeAccordionControl
                     x:Name="EpisodeExpansionPanel"
                     Margin="16,0,0,0"

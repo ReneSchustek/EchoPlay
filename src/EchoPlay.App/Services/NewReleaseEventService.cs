@@ -12,7 +12,7 @@ namespace EchoPlay.App.Services
         public event Action? CacheChanged;
 
         /// <inheritdoc/>
-        public void RaiseCacheChanged()
+        public void NotifyCacheChanged()
         {
             CacheChanged?.Invoke();
         }

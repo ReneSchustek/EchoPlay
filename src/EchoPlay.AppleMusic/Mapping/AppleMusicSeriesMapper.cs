@@ -22,9 +22,7 @@ namespace EchoPlay.AppleMusic.Mapping
         /// Cover in der eigenen Datenbank; für bereits importierte Serien reicht das.
         /// </param>
         /// <returns>Das importierbare Serienmodell.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:URI-like parameters should not be strings",
-            Justification = "Die Adresse stammt als Zeichenkette aus der Anbieter-Antwort und wird in ImportSeries ebenfalls als Zeichenkette geführt; ein Uri-Umweg brächte nur Umwandlungen.")]
-        public static ImportSeries Map(ITunesArtistDto artist, HoerspielScoreResult scoreResult, string? coverImageUrl = null)
+        public static ImportSeries Map(ITunesArtistDto artist, HoerspielScoreResult scoreResult, Uri? coverImageUrl = null)
         {
             ArgumentNullException.ThrowIfNull(artist);
             ArgumentNullException.ThrowIfNull(scoreResult);

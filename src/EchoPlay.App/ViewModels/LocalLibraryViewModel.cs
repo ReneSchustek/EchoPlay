@@ -58,25 +58,47 @@ namespace EchoPlay.App.ViewModels
                 new SeriesCoverBuilder(context.CoverService),
                 context.FilterState?.GetOrCreate<LocalArtistFilter>("LocalLibrary"));
 
-            // Bereich für Scan, Neu-Initialisierung und Ordnerauswahl; bekommt als Callback eine
-            // Referenz auf ArtistsVM.AppendArtistCardAsync, damit live eintreffende Serien sofort
-            // in der lokalen Kachelgrid erscheinen.
-            ScanVM = new LocalLibraryScanViewModel(
+            ScanVM = CreateScanViewModel(context, ArtistsVM);
+            Actions = CreateActions(context);
+
+            // ScanStarting leert die Listen, bevor ein Scan loslegt, denn veraltete Kacheln sollen
+            // während des Scans nicht sichtbar bleiben.
+            ScanVM.ScanStarting += OnScanStarting;
+
+            // Nach Abschluss eines Scans lädt LoadAsync die Serien konsistent aus der DB nach.
+            ScanVM.LibraryReloaded += Actions.LoadAsync;
+
+            FolderRename = new LocalFolderRenameActions(context.FolderRenameCoordinator, ArtistsVM, Actions.LoadAsync);
+            MetadataEditor = context.MetadataEditor;
+
+            CheckAllSeriesCommand = new RelayCommand(() => _ = Actions.CheckAllSeriesAsync());
+            ResetFiltersCommand = new RelayCommand(ArtistsVM.ResetFilters);
+        }
+
+        /// <summary>
+        /// Bereich für Scan, Neu-Initialisierung und Ordnerauswahl; bekommt als Callback eine
+        /// Referenz auf ArtistsVM.AppendArtistCardAsync, damit live eintreffende Serien sofort
+        /// in der lokalen Kachelgrid erscheinen.
+        /// </summary>
+        private static LocalLibraryScanViewModel CreateScanViewModel(LocalLibraryViewModelContext context, LocalArtistsViewModel artists) =>
+            new(
                 context.ScopeFactory,
                 context.SyncService,
                 context.ErrorDialogService,
                 context.ConfirmationDialogService,
                 context.StatusBar,
                 context.ScanEventService,
-                series => _ = ArtistsVM.AppendArtistCardAsync(series));
+                series => _ = artists.AppendArtistCardAsync(series));
 
-            // Orchestrator für alle Async-Aktionen; bekommt die Bereiche und alle Services,
-            // die nur für Aktionen benötigt werden.
-            Actions = new LocalLibraryActions(
+        /// <summary>
+        /// Orchestrator für alle Async-Aktionen; bekommt die Bereiche und alle Services,
+        /// die nur für Aktionen benötigt werden.
+        /// </summary>
+        private LocalLibraryActions CreateActions(LocalLibraryViewModelContext context) =>
+            new(
                 context.ScopeFactory,
                 context.ConfirmationDialogService,
                 context.StatusBar,
-                context.CoverSearchService,
                 context.OnlineAccessGuard,
                 context.WatchToggleService,
                 context.RestructureCoordinator,
@@ -88,23 +110,12 @@ namespace EchoPlay.App.ViewModels
                 EpisodesVM,
                 TracksVM);
 
-            // ScanStarting leert die Listen, bevor ein Scan loslegt, denn veraltete Kacheln sollen
-            // während des Scans nicht sichtbar bleiben.
-            ScanVM.ScanStarting += OnScanStarting;
-
-            // Nach Abschluss eines Scans lädt LoadAsync die Serien konsistent aus der DB nach.
-            ScanVM.LibraryReloaded += Actions.LoadAsync;
-
-            CheckAllSeriesCommand = new RelayCommand(() => _ = Actions.CheckAllSeriesAsync());
-            ResetFiltersCommand = new RelayCommand(ArtistsVM.ResetFilters);
-        }
-
         /// <summary>
         /// Wird ausgelöst, wenn der Nutzer den Tag-Manager für einen Pfad öffnen möchte.
         /// Die <see cref="EchoPlay.App.Views.LocalLibraryPage"/> abonniert dieses Event
         /// und führt die Frame-Navigation durch.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Navigations-Bridge: der Nutzlast-String ist der Zielpfad für den Tag-Manager; Action<string> bleibt klarer als 'PathEventArgs' ohne Mehrwert.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action<string>? NavigateToTagManagerRequested;
 
         /// <summary>
@@ -132,6 +143,14 @@ namespace EchoPlay.App.ViewModels
         /// Ordnerstruktur und Cover. Die Seite ruft sie direkt auf.
         /// </summary>
         internal LocalLibraryActions Actions { get; }
+
+        /// <summary>Die Aktion „Ordner nach Tags umbenennen".</summary>
+        internal LocalFolderRenameActions FolderRename { get; }
+
+        /// <summary>
+        /// Berichtigt Folgen und Serien; <see langword="null"/> in Tests ohne Datei- und Datenzugriff.
+        /// </summary>
+        internal ILocalMetadataEditor? MetadataEditor { get; }
 
         /// <summary>
         /// Nimmt Suche und Filter zurück. Gehört zum „Nichts gefunden"-Hinweis: Von dort führt

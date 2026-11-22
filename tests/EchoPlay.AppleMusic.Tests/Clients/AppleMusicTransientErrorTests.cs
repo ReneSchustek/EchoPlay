@@ -137,8 +137,6 @@ namespace EchoPlay.AppleMusic.Tests.Clients
             Assert.Empty(results);
         }
 
-        // ── Aufbau ───────────────────────────────────────────────────────────────
-
         private static LoggerFactory BuildLoggerFactory() => new([], new LoggerOptions());
 
         private static Microsoft.Extensions.Options.IOptions<AppleMusicHoerspielSettings> BuildSettings() =>

@@ -36,6 +36,8 @@ namespace EchoPlay.App.Helpers
         /// (image/jpeg oder image/png). Wird vom Tag-Manager genutzt, der den Typ
         /// als ID3-Metadatum benötigt.
         /// </summary>
+        /// <param name="windowHandle">HWND des Hauptfensters, Pflicht für WinUI 3 Picker.</param>
+        /// <returns>Bytes und MIME-Typ, oder <see langword="null"/>, wenn der Nutzer abbricht.</returns>
         public static async Task<(byte[] Data, string MimeType)?> PickWithMimeTypeAsync(nint windowHandle)
         {
             StorageFile? file = await ShowPickerAsync(windowHandle);

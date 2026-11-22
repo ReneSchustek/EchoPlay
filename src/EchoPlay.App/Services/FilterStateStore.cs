@@ -25,7 +25,7 @@ namespace EchoPlay.App.Services
         /// Liefert die Kriterien einer Seite und legt sie beim ersten Zugriff an.
         /// </summary>
         /// <typeparam name="T">Typ der Kriterien.</typeparam>
-        /// <param name="pageKey">Schlüssel der Seite, etwa <c>MediathekLokal</c>.</param>
+        /// <param name="pageKey">Schlüssel der Seite, etwa <c>LocalLibrary</c>.</param>
         /// <returns>Dasselbe Objekt bei jedem weiteren Aufruf mit demselben Schlüssel.</returns>
         /// <exception cref="ArgumentException"><paramref name="pageKey"/> ist leer.</exception>
         public T GetOrCreate<T>(string pageKey) where T : class, new()

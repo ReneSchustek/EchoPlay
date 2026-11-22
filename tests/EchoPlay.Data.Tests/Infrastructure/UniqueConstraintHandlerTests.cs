@@ -17,11 +17,11 @@ namespace EchoPlay.Data.Tests.Infrastructure
         /// Baut eine <see cref="SqliteException"/> über einen echten SQLite-Round-Trip,
         /// damit der <see cref="SqliteException.SqliteExtendedErrorCode"/> korrekt gefüllt ist.
         /// Das Konstruktor-API von <see cref="SqliteException"/> erlaubt keine direkte
-        /// Angabe des Extended-Codes, deshalb provozieren wir die Fehler gegen eine
+        /// Angabe des Extended-Codes, deshalb entstehen die Fehler echt gegen eine
         /// In-Memory-Datenbank.
         /// </summary>
         [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
-            Justification = "Test-Helfer: SQL-Strings sind Literale direkt im Testcode, keine externen Eingaben.")]
+            Justification = "Die Helfer bekommen ausschließlich Literale aus dieser Datei. Das SQL an jede Aufrufstelle zu schreiben verdoppelte die Ausführung dort; einen fertigen Befehl zu übergeben löste CA2000 aus.")]
         private static SqliteException ProvokeSqliteException(string setupSql, string failingSql)
         {
             using SqliteConnection connection = new("DataSource=:memory:");

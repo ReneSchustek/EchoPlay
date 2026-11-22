@@ -81,7 +81,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         }
 
         [Fact]
-        public async Task DoppelteFolgenEntfernen_BehaeltEineFolgeUndRettetDenWiedergabestand()
+        public async Task RemoveDuplicateEpisodes_KeepsOneEpisodeAndSavesThePlaybackState()
         {
             using SqliteConnection connection = OpenConnection();
             using EchoPlayDbContext context = CreateContext(connection);
@@ -120,7 +120,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
         }
 
         [Fact]
-        public async Task DoppelteFolgenEntfernen_LaesstFolgenOhneAnbieterkennungUnangetastet()
+        public async Task RemoveDuplicateEpisodes_LeavesEpisodesWithoutProviderIdAlone()
         {
             using SqliteConnection connection = OpenConnection();
             using EchoPlayDbContext context = CreateContext(connection);
@@ -146,7 +146,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             Assert.Equal(2, await ScalarAsync(connection, "SELECT COUNT(*) FROM Episodes;"));
         }
 
-        [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "Test-Helfer mit ausschließlich literalem SQL aus dieser Datei – keine Eingaben von außen.")]
+        [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "Die Helfer bekommen ausschließlich Literale aus dieser Datei. Das SQL an jede Aufrufstelle zu schreiben verdoppelte die Ausführung dort; einen fertigen Befehl zu übergeben löste CA2000 aus.")]
         private static async Task ExecuteAsync(SqliteConnection connection, string sql)
         {
             await using SqliteCommand command = connection.CreateCommand();
@@ -154,7 +154,7 @@ namespace EchoPlay.Data.Tests.Infrastructure
             _ = await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
 
-        [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "Test-Helfer mit ausschließlich literalem SQL aus dieser Datei – keine Eingaben von außen.")]
+        [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities", Justification = "Die Helfer bekommen ausschließlich Literale aus dieser Datei. Das SQL an jede Aufrufstelle zu schreiben verdoppelte die Ausführung dort; einen fertigen Befehl zu übergeben löste CA2000 aus.")]
         private static async Task<long> ScalarAsync(SqliteConnection connection, string sql)
         {
             await using SqliteCommand command = connection.CreateCommand();

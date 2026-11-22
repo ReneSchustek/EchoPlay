@@ -12,8 +12,6 @@ namespace EchoPlay.Logger.Tests
         private static LogEntry MakeEntry(string message) =>
             new(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, message, "Test", []);
 
-        // ── Ringpuffer ────────────────────────────────────────────────────────────
-
         [Fact]
         public async Task WriteAsync_BufferNotFull_AppendsAllEntries()
         {
@@ -55,14 +53,12 @@ namespace EchoPlay.Logger.Tests
             _ = Assert.Single(snapshot);
         }
 
-        // ── ILiveLogSink: Event ──────────────────────────────────────────────────
-
         [Fact]
         public async Task WriteAsync_FiresLogEntryAdded()
         {
             MemorySink sink = new();
             LogEntry? received = null;
-            sink.LogEntryAdded += entry => received = entry;
+            sink.LogEntryAdded += (_, e) => received = e.Entry;
 
             LogEntry written = MakeEntry("live");
             await sink.WriteAsync(written);
@@ -76,7 +72,7 @@ namespace EchoPlay.Logger.Tests
         {
             MemorySink sink = new();
             int callCount = 0;
-            sink.LogEntryAdded += _ => callCount++;
+            sink.LogEntryAdded += (_, _) => callCount++;
 
             await sink.WriteAsync(MakeEntry("1"));
             await sink.WriteAsync(MakeEntry("2"));
@@ -92,7 +88,7 @@ namespace EchoPlay.Logger.Tests
             // sonst gehen Live-Updates bei vollem Puffer verloren
             MemorySink sink = new(capacity: 1);
             int callCount = 0;
-            sink.LogEntryAdded += _ => callCount++;
+            sink.LogEntryAdded += (_, _) => callCount++;
 
             await sink.WriteAsync(MakeEntry("A"));
             await sink.WriteAsync(MakeEntry("B"));
@@ -106,7 +102,7 @@ namespace EchoPlay.Logger.Tests
             MemorySink sink = new();
             int callCount = 0;
 
-            void Handler(LogEntry _) => callCount++;
+            void Handler(object? sender, LogEntryEventArgs _) => callCount++;
             sink.LogEntryAdded += Handler;
 
             await sink.WriteAsync(MakeEntry("first"));
@@ -118,8 +114,6 @@ namespace EchoPlay.Logger.Tests
             // Nur der erste Eintrag hat das Event ausgelöst
             Assert.Equal(1, callCount);
         }
-
-        // ── Capacity-Validierung ─────────────────────────────────────────────────
 
         [Theory]
         [InlineData(0)]
@@ -147,7 +141,7 @@ namespace EchoPlay.Logger.Tests
         {
             MemorySink sink = new();
             LogEntry? captured = null;
-            sink.LogEntryAdded += e => captured = e;
+            sink.LogEntryAdded += (_, e) => captured = e.Entry;
 
             LogEntry expected = new(
                 new DateTime(2026, 3, 23, 14, 0, 0),

@@ -1,3 +1,6 @@
+using EchoPlay.App.Helpers;
+using System.Globalization;
+
 namespace EchoPlay.App.Services
 {
     /// <summary>
@@ -30,22 +33,26 @@ namespace EchoPlay.App.Services
         /// Wenn Ordner gefunden wurden, aber keine passende Serie in der Datenbank vorhanden ist,
         /// erscheint ein Hinweis, denn das ist der häufigste Grund für "0 Ergebnisse" nach einem Erst-Scan.
         /// </summary>
-        /// <returns>Formatierter Ergebnis-Text für die UI-Anzeige.</returns>
+        /// <returns>Ergebnistext in der Sprache der Oberfläche; die Einstellungsseite zeigt ihn an.</returns>
         public override string ToString()
         {
-            string basis =
-                $"Serien: {SeriesMatched} verknüpft, {SeriesUnmatched} nicht gefunden · " +
-                $"Episoden: {EpisodesUpdated} aktualisiert · " +
-                $"Tracks: {TracksCreated} angelegt";
+            string summaryFormat = SafeResourceLoader.Get(
+                "SyncResultSummary",
+                "Serien: {0} verknüpft, {1} nicht gefunden · Episoden: {2} aktualisiert · Tracks: {3} angelegt");
+            string summary = string.Format(
+                CultureInfo.CurrentCulture, summaryFormat, SeriesMatched, SeriesUnmatched, EpisodesUpdated, TracksCreated);
 
-            // Wenn Ordner gefunden wurden, aber kein einziger gematcht werden konnte,
-            // sind noch keine Serien in der Datenbank vorhanden: erst importieren, dann scannen
+            // Ordner da, aber kein einziger zugeordnet: Dann fehlen die Serien in der Datenbank,
+            // und der Nutzer muss sie erst anlegen oder einlesen lassen.
             if (SeriesMatched == 0 && SeriesUnmatched > 0)
             {
-                basis += $"\n{SeriesUnmatched} Ordner gefunden, aber keine passende Serie in der Datenbank vorhanden.";
+                string hintFormat = SafeResourceLoader.Get(
+                    "SyncResultNoMatchingSeries",
+                    "{0} Ordner gefunden, aber keine passende Serie in der Datenbank vorhanden.");
+                summary += "\n" + string.Format(CultureInfo.CurrentCulture, hintFormat, SeriesUnmatched);
             }
 
-            return basis;
+            return summary;
         }
     }
 }

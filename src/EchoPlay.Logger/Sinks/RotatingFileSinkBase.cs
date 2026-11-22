@@ -16,7 +16,7 @@ namespace EchoPlay.Logger.Sinks
         private readonly long _maxFileSizeBytes;
         private readonly string _fileExtension;
         // Parallele WriteAsync-Aufrufer würden sich auf File.AppendAllText gegenseitig blockieren
-        // oder Zeilen verzahnen. Semaphore serialisiert den Datei-Zugriff prozessweit.
+        // oder Zeilen verzahnen. Die Semaphore reiht die Schreibzugriffe dieser Senke hintereinander.
         private readonly SemaphoreSlim _writeLock = new(1, 1);
         private bool _disposed;
 
@@ -158,9 +158,10 @@ namespace EchoPlay.Logger.Sinks
                 return filePath;
             }
 
-            // Hauptdatei voll → nächste freie Nummer suchen
+            // Hauptdatei voll → nächste freie Nummer suchen. Der Name trägt drei Stellen,
+            // daher höchstens 999 Folgedateien am Tag.
             int counter = 1;
-            while (counter < 1000) // Sicherheitslimit
+            while (counter < 1000)
             {
                 filePath = Path.Combine(_logDirectory, $"{baseName}_{counter:D3}{_fileExtension}");
 
@@ -172,7 +173,7 @@ namespace EchoPlay.Logger.Sinks
                 counter++;
             }
 
-            // Notfall: Mehr als 1000 Dateien an einem Tag? Letzte überschreiben.
+            // Alle 999 Folgedateien voll: Die letzte wächst über die Grenze hinaus weiter.
             return filePath;
         }
     }

@@ -23,7 +23,7 @@
                     <Image Source="{x:Bind CoverImage, Mode=OneWay}" Width="160" Height="160" Stretch="UniformToFill"/>
                 </Button>
 
-                <!-- Badge oben links: "Angekündigt" (blau) oder "Neu" (grün) -->
+                <!-- Badge oben links: "Angekündigt" (Akzentfarbe) oder "Neu" (Erfolgsfarbe) -->
                 <Border HorizontalAlignment="Left" VerticalAlignment="Top"
                         Margin="4,4,0,0" CornerRadius="{StaticResource ControlCornerRadius}"
                         Background="{x:Bind BadgeBrush}" Padding="6,2"
@@ -71,6 +71,16 @@
                              Maximum="100" IsIndeterminate="False"
                              Visibility="{x:Bind ProgressBarVisibility, Mode=OneWay}" Height="3"/>
             </Grid>
+        </DataTemplate>
+
+        <!-- Tile-Template für den Veröffentlichungskalender: die gemeinsame Kachel in einer
+             Schaltfläche, ein Klick öffnet die Serie. -->
+        <DataTemplate x:Key="ReleaseCalendarTileTemplate" x:DataType="viewmodels:ReleaseCalendarItemViewModel">
+            <Button Width="160" Height="160" Padding="0" Background="Transparent" BorderThickness="0"
+                    AutomationProperties.Name="{x:Bind AutomationName}" Click="OnReleaseCalendarItemClick"
+                    Tag="{x:Bind SeriesId}" CornerRadius="{StaticResource CardCornerRadius}">
+                <ctrl:ReleaseTileControl Item="{x:Bind}"/>
+            </Button>
         </DataTemplate>
 
         <!-- Tile-Template für In-Progress: kein Badge, kein Kontextmenü, sonst wie Neuerscheinungen. -->
@@ -165,26 +175,12 @@
                     IsOpen="False"
                     IsClosable="True"/>
 
-                <!-- Abschnitt: Neuerscheinungen, gruppiert nach Serie, eine Reihe pro Serie.
-                     Überschrift bleibt sichtbar während des Ladens UND wenn Ergebnisse vorliegen. -->
+                <!-- Abschnitt: Neuerscheinungen, gruppiert nach Monat. Die Überschrift steht,
+                     sobald Ergebnisse vorliegen. -->
                 <TextBlock
                     x:Uid="DashboardHeadingNew"
                     Style="{ThemeResource SubtitleTextBlockStyle}"
                     Visibility="{x:Bind ViewModel.NeuerscheinungenVM.NewReleasesSectionVisibility, Mode=OneWay}"/>
-
-                <!-- Lade-Hinweis für Neuerscheinungen: sichtbar solange die iTunes-API
-                     im Hintergrund abgefragt wird und noch keine Ergebnisse vorliegen -->
-                <StackPanel
-                    Orientation="Horizontal"
-                    Spacing="8"
-                    Visibility="{x:Bind ViewModel.NeuerscheinungenVM.NewReleasesLoadingVisibility, Mode=OneWay}">
-                    <ProgressRing IsActive="True" Width="16" Height="16"/>
-                    <TextBlock
-                        x:Uid="DashboardLoadingNewReleases"
-                        Style="{ThemeResource CaptionTextBlockStyle}"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        VerticalAlignment="Center"/>
-                </StackPanel>
 
                 <!-- Hinweis wenn keine Favoriten gesetzt; erscheint statt der leeren Kachelreihe -->
                 <TextBlock
@@ -203,8 +199,8 @@
                     Style="{ThemeResource CaptionTextBlockStyle}"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
 
-                <!-- Neuerscheinungen: monatlich gruppiert, "Angekündigt" ganz oben,
-                     dann Monate absteigend (neuester zuerst). -->
+                <!-- Neuerscheinungen: monatlich gruppiert, der neueste Monat zuerst. Angekündigtes
+                     steht auf der eigenen Seite „Angekündigt". -->
                 <ItemsControl
                     ItemsSource="{x:Bind ViewModel.NeuerscheinungenVM.NewEpisodeGroups, Mode=OneWay}"
                     Visibility="{x:Bind ViewModel.NeuerscheinungenVM.NewEpisodeGroupsVisibility, Mode=OneWay}">
@@ -222,6 +218,57 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!-- Abschnitt: Veröffentlichungen eines Monats bei allen vorhandenen Serien, mit
+                     Umschalter auf Vor- und Folgemonate. Fehlt im Offline-Modus. -->
+                <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.ReleaseCalendarVM.SectionVisibility, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock
+                            x:Uid="DashboardHeadingReleaseCalendar"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0"/>
+                        <Button x:Uid="DashboardReleaseCalendarPrevious" Style="{StaticResource IconButtonStyle}" Background="Transparent" BorderThickness="0"
+                                Command="{x:Bind ViewModel.ReleaseCalendarVM.PreviousMonthCommand}" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE76B;" FontSize="{StaticResource IconSizeS}"/>
+                        </Button>
+                        <TextBlock
+                            Text="{x:Bind ViewModel.ReleaseCalendarVM.MonthLabel, Mode=OneWay}"
+                            Style="{ThemeResource BodyStrongTextBlockStyle}"
+                            MinWidth="120"
+                            TextAlignment="Center"
+                            VerticalAlignment="Center"/>
+                        <Button x:Uid="DashboardReleaseCalendarNext" Style="{StaticResource IconButtonStyle}" Background="Transparent" BorderThickness="0"
+                                Command="{x:Bind ViewModel.ReleaseCalendarVM.NextMonthCommand}" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE76C;" FontSize="{StaticResource IconSizeS}"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Erster Aufbau: Der Dienst fragt alle Serien nacheinander ab, das dauert Minuten. -->
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        Visibility="{x:Bind ViewModel.ReleaseCalendarVM.RefreshingHintVisibility, Mode=OneWay}">
+                        <ProgressRing IsActive="True" Width="16" Height="16"/>
+                        <TextBlock
+                            x:Uid="DashboardReleaseCalendarRefreshing"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock
+                        x:Uid="DashboardReleaseCalendarEmpty"
+                        Visibility="{x:Bind ViewModel.ReleaseCalendarVM.EmptyHintVisibility, Mode=OneWay}"
+                        TextWrapping="Wrap"
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                    <ctrl:HorizontalTileRowControl
+                        Visibility="{x:Bind ViewModel.ReleaseCalendarVM.ItemsVisibility, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.ReleaseCalendarVM.Items, Mode=OneWay}"
+                        ItemTemplate="{StaticResource ReleaseCalendarTileTemplate}"/>
+                </StackPanel>
 
                 <!-- Abschnitt: Favoriten, nur einblenden wenn favorisierte Serien vorhanden -->
                 <TextBlock
@@ -278,8 +325,7 @@
                                     <Grid.Clip><RectangleGeometry Rect="0,0,160,160"/></Grid.Clip>
                                     <Image Source="{x:Bind CoverImage, Mode=OneTime}" Width="160" Height="160" Stretch="UniformToFill"/>
 
-                                    <!-- Drag-Handle oben links: signalisiert Verschiebbarkeit.
-                                         Gleicher Gripper wie bei den Neuerscheinungen (E700). -->
+                                    <!-- Drag-Handle oben links: signalisiert Verschiebbarkeit. Gripper-Zeichen E700. -->
                                     <Border HorizontalAlignment="Left" VerticalAlignment="Top"
                                         Margin="4,4,0,0" CornerRadius="{StaticResource ControlCornerRadius}" Background="{StaticResource MediaScrimSoftBrush}" Padding="4,2">
                                         <FontIcon Glyph="&#xE700;" FontSize="10" Foreground="{StaticResource TextOnMediaBrush}"/>
@@ -339,9 +385,6 @@
                     Visibility="{x:Bind ViewModel.ZuletztGehoertVM.SectionVisibility, Mode=OneWay}"
                     ItemsSource="{x:Bind ViewModel.ZuletztGehoertVM.Items, Mode=OneWay}"
                     ItemTemplate="{StaticResource RecentSeriesTileTemplate}"/>
-
-                <!-- Keine eigene Ankündigungs-Sektion: Ankündigungen stehen als "Angekündigt"-Gruppe
-                     in den Neuerscheinungen (monatliche Gruppierung, ganz oben). -->
 
             </StackPanel>
         </ScrollViewer>

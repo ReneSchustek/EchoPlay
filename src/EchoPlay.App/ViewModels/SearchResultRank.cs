@@ -20,8 +20,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         /// <param name="series">Der Treffer.</param>
         /// <param name="searchNeedle">
-        /// Der Suchbegriff, unverändert. Der Vergleich ignoriert Groß- und Kleinschreibung,
-        /// ein vorheriges Umwandeln in Großbuchstaben war irreführend.
+        /// Der Suchbegriff, unverändert. Der Vergleich ignoriert Groß- und Kleinschreibung.
         /// </param>
         /// <returns>Der Rang.</returns>
         public static SearchResultRank Create(ImportSeries series, string searchNeedle)
@@ -39,7 +38,7 @@ namespace EchoPlay.App.ViewModels
         /// Namenstreffer zuerst, danach die höhere Bewertung.
         /// </summary>
         /// <param name="other">Der Rang des bereits eingereihten Treffers.</param>
-        /// <returns><c>true</c>, wenn dieser Treffer weiter oben gehört.</returns>
+        /// <returns><see langword="true"/>, wenn dieser Treffer weiter oben gehört.</returns>
         public bool RanksBefore(SearchResultRank other)
         {
             if (MatchesQuery != other.MatchesQuery)

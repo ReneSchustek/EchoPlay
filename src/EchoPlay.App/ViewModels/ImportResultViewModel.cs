@@ -24,12 +24,14 @@ namespace EchoPlay.App.ViewModels
             ArgumentNullException.ThrowIfNull(series);
             Series = series;
             Title = series.Title;
-            ScoreText = $"Score: {series.Score}";
+            // Steht in der Trefferliste der Importseite und kommt deshalb aus den Ressourcen.
+            string scoreFormat = EchoPlay.App.Helpers.SafeResourceLoader.Get("ImportScoreFormat", "Bewertung: {0}");
+            ScoreText = string.Format(System.Globalization.CultureInfo.CurrentCulture, scoreFormat, series.Score);
             IsAlreadyImported = isAlreadyImported;
             ImportCommand = importCommand;
 
             CoverImage = series.CoverImageUrl is not null
-                ? new BitmapImage(new System.Uri(series.CoverImageUrl))
+                ? new BitmapImage(series.CoverImageUrl)
                 : null;
         }
 
@@ -39,7 +41,7 @@ namespace EchoPlay.App.ViewModels
         /// <summary>Titel der Serie.</summary>
         public string Title { get; }
 
-        /// <summary>Fachlicher Score als lesbarer Text, z.B. "Score: 42".</summary>
+        /// <summary>Fachlicher Score als lesbarer Text, z.B. „Bewertung: 42“.</summary>
         public string ScoreText { get; }
 
         /// <summary>Coverbild der Serie, oder null wenn keine URL vorhanden.</summary>

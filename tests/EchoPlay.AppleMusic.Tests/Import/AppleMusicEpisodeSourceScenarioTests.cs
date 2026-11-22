@@ -9,13 +9,13 @@ namespace EchoPlay.AppleMusic.Tests.Import
 {
     /// <summary>
     /// Fachlicher Haupttest für den Apple-Music-Episodenimport.
-    /// Der Test stellt sicher, dass aus der internen iTunes-Struktur
+    /// Der Test prüft, dass aus der internen iTunes-Struktur
     /// eine flache und korrekt aggregierte Episodenliste entsteht.
     /// </summary>
     public sealed class AppleMusicEpisodeSourceScenarioTests
     {
         /// <summary>
-        /// Stellt sicher, dass Episoden albumübergreifend korrekt aggregiert werden.
+        /// Prüft, dass Episoden albumübergreifend korrekt aggregiert werden.
         /// Die Reihenfolge entspricht der Reihenfolge der Alben in der Lookup-Antwort.
         /// </summary>
         [Fact]
@@ -53,7 +53,7 @@ namespace EchoPlay.AppleMusic.Tests.Import
         }
 
         /// <summary>
-        /// Stellt sicher, dass die SourceEpisodeId korrekt aus der iTunes-Track-ID abgeleitet wird.
+        /// Prüft, dass die SourceEpisodeId korrekt aus der iTunes-Track-ID abgeleitet wird.
         /// </summary>
         [Fact]
         public async Task GetEpisodesAsync_TracksHaveCorrectSourceIds()

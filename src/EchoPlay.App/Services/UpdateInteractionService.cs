@@ -127,7 +127,7 @@ namespace EchoPlay.App.Services
         }
 
         /// <summary>
-        /// Lädt das Installationspaket, prüft die Prüfsumme und startet den Installer.
+        /// Lädt das Installationspaket, prüft Prüfsumme und Signatur und startet den Installer.
         /// Bei Erfolg beendet sich die Anwendung, damit der Installer die Dateien
         /// ersetzen kann; sonst bleibt ein Hinweis und der normale Ablauf geht weiter.
         /// </summary>
@@ -137,11 +137,7 @@ namespace EchoPlay.App.Services
             bool success;
             try
             {
-                success = await _downloadService.DownloadAndInstallAsync(
-                    update.DownloadUrl,
-                    update.Version,
-                    update.FileSizeBytes,
-                    update.ExpectedSha256);
+                success = await _downloadService.DownloadAndInstallAsync(update);
             }
             finally
             {
@@ -194,8 +190,8 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Zeigt an, dass der Download läuft. Die beiden Wege in den Dialog unterscheiden
-        /// sich nur hierin: Im Startbild gibt es noch kein Fenster für einen zweiten
-        /// Dialog, dafür aber eine Statuszeile.
+        /// sich nur hierin: Im Startbild ist kein zweiter Dialog möglich, dafür gibt es dort
+        /// eine Statuszeile.
         /// </summary>
         private interface IDownloadFeedback
         {

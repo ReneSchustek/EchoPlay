@@ -22,8 +22,6 @@ namespace EchoPlay.App.Controls
             InitializeComponent();
         }
 
-        // ── Cover ───────────────────────────────────────────────────────────────
-
         /// <summary>Cover-Bild der Serie. Null zeigt den Platzhalter an.</summary>
         public static readonly DependencyProperty CoverImageProperty =
             DependencyProperty.Register(nameof(CoverImage), typeof(BitmapImage), typeof(SeriesTileControl),
@@ -43,8 +41,6 @@ namespace EchoPlay.App.Controls
             control.CoverImageElement.Source = image;
             control.PlaceholderBorder.Visibility = image is null ? Visibility.Visible : Visibility.Collapsed;
         }
-
-        // ── Text ────────────────────────────────────────────────────────────────
 
         /// <summary>Titel der Serie (obere Zeile im Overlay).</summary>
         public static readonly DependencyProperty TitleProperty =
@@ -70,10 +66,8 @@ namespace EchoPlay.App.Controls
             set => SetValue(SubtitleProperty, value);
         }
 
-        // ── Kontextmenü ─────────────────────────────────────────────────────────
-
         /// <summary>
-        /// Das Flyout-Menü für den "..."-Button. Wird von der Page konfiguriert –
+        /// Das Flyout-Menü für den "..."-Button. Wird von der Page konfiguriert;
         /// lokale und Online-Mediathek haben unterschiedliche Menüeinträge.
         /// </summary>
         public static readonly DependencyProperty ContextFlyoutMenuProperty =
@@ -92,8 +86,6 @@ namespace EchoPlay.App.Controls
             SeriesTileControl control = (SeriesTileControl)d;
             control.ContextMenuButton.Flyout = (FlyoutBase?)e.NewValue;
         }
-
-        // ── Favoriten ───────────────────────────────────────────────────────────
 
         /// <summary>Sichtbarkeit des Favoriten-Buttons (nur lokale Mediathek).</summary>
         public static readonly DependencyProperty FavoriteVisibilityProperty =
@@ -131,8 +123,6 @@ namespace EchoPlay.App.Controls
             set => SetValue(FavoriteCommandProperty, value);
         }
 
-        // ── Überwachung (IsWatched) ─────────────────────────────────────────────
-
         /// <summary>Sichtbarkeit des Überwachungs-Icons (Auge).</summary>
         public static readonly DependencyProperty WatchedVisibilityProperty =
             DependencyProperty.Register(nameof(WatchedVisibility), typeof(Visibility), typeof(SeriesTileControl),
@@ -157,8 +147,6 @@ namespace EchoPlay.App.Controls
             set => SetValue(WatchedGlyphProperty, value);
         }
 
-        // ── Ausgewählt-Indikator ────────────────────────────────────────────────
-
         /// <summary>Sichtbarkeit des V-Pfeils unter der Kachel (aktive Serie im Akkordeon).</summary>
         public static readonly DependencyProperty SelectedIndicatorVisibilityProperty =
             DependencyProperty.Register(nameof(SelectedIndicatorVisibility), typeof(Visibility), typeof(SeriesTileControl),
@@ -171,10 +159,9 @@ namespace EchoPlay.App.Controls
             set => SetValue(SelectedIndicatorVisibilityProperty, value);
         }
 
-        // ── Kachelform: Rand statt Anheben ──────────────────────────────────────
-
-        // Die Zustände stehen im XAML, damit die Farben aus der Palette kommen und nicht
-        // hier im Quelltext stehen. Der Code schaltet nur um.
+        // Beim Überfahren färbt sich nur der Rand in der Akzentfarbe, die Kachel hebt sich
+        // nicht an. Die Zustände stehen im XAML, damit die Farben aus der Palette kommen und
+        // nicht hier im Quelltext stehen. Der Code schaltet nur um.
         private void OnTilePointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) =>
             _ = VisualStateManager.GoToState(this, "PointerOver", true);
 

@@ -27,7 +27,7 @@ namespace EchoPlay.App.Services
         private readonly IClock _clock;
 
         // Läuft schon ein Schreibvorgang, wird der nächste übersprungen statt eingereiht:
-        // Der übernächste Durchlauf bringt ohnehin einen aktuelleren Stand.
+        // Der nächste Durchlauf bringt ohnehin einen aktuelleren Stand.
         private readonly SemaphoreSlim _saveLock = new(1, 1);
 
         private bool _disposed;
@@ -71,27 +71,7 @@ namespace EchoPlay.App.Services
                 using IServiceScope scope = _scopeFactory.CreateScope();
                 IPlaybackStateDataService service = scope.ServiceProvider.GetRequiredService<IPlaybackStateDataService>();
 
-                // Das Sichern darf nicht an einem fremden Abbruchzeichen scheitern, die
-                // Gleichzeitigkeit regelt die eigene Sperre.
-                PlaybackState? existing = await service.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
-
-                if (existing is null)
-                {
-                    PlaybackState newState = new()
-                    {
-                        EpisodeId = episodeId,
-                        LastPosition = position,
-                        LastPlayedAt = _clock.UtcNow
-                    };
-
-                    await service.AddAsync(newState, CancellationToken.None);
-                }
-                else
-                {
-                    existing.LastPosition = position;
-                    existing.LastPlayedAt = _clock.UtcNow;
-                    await service.UpdateAsync(existing, CancellationToken.None);
-                }
+                await UpsertPositionAsync(service, episodeId, position);
             }
             catch (Exception ex)
             {
@@ -101,6 +81,33 @@ namespace EchoPlay.App.Services
             {
                 _ = _saveLock.Release();
             }
+        }
+
+        /// <summary>
+        /// Legt den Wiedergabestand an oder schreibt Stelle und Zeitpunkt in den vorhandenen.
+        /// </summary>
+        private async Task UpsertPositionAsync(IPlaybackStateDataService service, Guid episodeId, TimeSpan position)
+        {
+            // Das Sichern darf nicht an einem fremden Abbruchzeichen scheitern, die
+            // Gleichzeitigkeit regelt die eigene Sperre.
+            PlaybackState? existing = await service.GetByEpisodeIdAsync(episodeId, CancellationToken.None);
+
+            if (existing is null)
+            {
+                PlaybackState newState = new()
+                {
+                    EpisodeId = episodeId,
+                    LastPosition = position,
+                    LastPlayedAt = _clock.UtcNow
+                };
+
+                await service.AddAsync(newState, CancellationToken.None);
+                return;
+            }
+
+            existing.LastPosition = position;
+            existing.LastPlayedAt = _clock.UtcNow;
+            await service.UpdateAsync(existing, CancellationToken.None);
         }
 
         /// <summary>Gibt die Sperre frei.</summary>

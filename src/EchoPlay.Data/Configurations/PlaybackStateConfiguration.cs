@@ -36,14 +36,17 @@ namespace EchoPlay.Data.Configurations
             _ = builder.HasIndex(p => p.EpisodeId)
                    .IsUnique();
 
-            // Dashboard und StatusBar fragen "welche Episoden sind gehört?";
-            // der Kombi-Index beschleunigt GetCompletedEpisodeIdsAsync().
-            _ = builder.HasIndex(p => new { p.IsCompleted, p.EpisodeId })
-                   .HasFilter("IsDeleted = 0");
+            // Dashboard und StatusBar fragen "welche Episoden sind gehört?".
+            // Bewusst ohne Löschfilter: Als Teilindex schließt er die gelöschten Zeilen aus, und
+            // SQLite ging dann bei jedem Durchlauf über alle Hörstände den Index statt der Tabelle
+            // durch und holte jede Zeile einzeln nach. Das machte „Zuletzt gehört“ und das Laden
+            // aller Hörstände messbar langsamer, ohne GetCompletedEpisodeIdsAsync() schneller zu
+            // machen (gemessen an einer Kopie der Produktivdatenbank, 20.11.2026).
+            _ = builder.HasIndex(p => new { p.IsCompleted, p.EpisodeId });
 
             // Dashboard "Zuletzt gehört" sortiert nach LastPlayedAt, der Index spart Full-Table-Scan + Sort.
             _ = builder.HasIndex(p => p.LastPlayedAt)
-                   .HasFilter("IsDeleted = 0 AND LastPlayedAt IS NOT NULL");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows + " AND LastPlayedAt IS NOT NULL");
 
             // Purge-Index für DatabaseMaintenanceService
             builder.HasPurgeIndex();

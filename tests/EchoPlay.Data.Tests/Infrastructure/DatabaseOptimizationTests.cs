@@ -13,8 +13,6 @@ namespace EchoPlay.Data.Tests.Infrastructure
     /// </summary>
     public sealed class DatabaseOptimizationTests : DbTestBase
     {
-        // ── Index-Tests ──────────────────────────────────────────────────────────
-
         [Fact]
         public void Migration_CreatesSubscribedTitleIndex_OnSeries()
         {
@@ -96,8 +94,6 @@ namespace EchoPlay.Data.Tests.Infrastructure
             AssertIndexExists("IX_DashboardPositions_Section_Position");
         }
 
-        // ── FK-Tests ─────────────────────────────────────────────────────────────
-
         [Fact]
         public async Task DashboardPosition_RequiresExistingSeries()
         {
@@ -139,14 +135,12 @@ namespace EchoPlay.Data.Tests.Infrastructure
             Assert.Equal("Favoriten", loaded.Section);
         }
 
-        // ── PRAGMA-Tests ─────────────────────────────────────────────────────────
-
         [Fact]
         public void PragmaInterceptor_SetsForeignKeysOn()
         {
             // Der Interceptor muss PRAGMA foreign_keys = ON setzen.
-            // In Tests wird EnsureCreated() verwendet, daher prüfen wir den PRAGMA-Wert
-            // über eine separate Verbindung mit dem Interceptor.
+            // Die Tests legen das Schema mit EnsureCreated() an, deshalb wird der PRAGMA-Wert
+            // über eine eigene Verbindung mit dem Interceptor geprüft.
             SqliteConnection connection = new("DataSource=:memory:");
             connection.Open();
 
@@ -167,22 +161,39 @@ namespace EchoPlay.Data.Tests.Infrastructure
         [Fact]
         public void PragmaInterceptor_SetsJournalModeWal()
         {
-            // WAL-Modus muss nach dem Interceptor aktiv sein
-            SqliteConnection connection = new("DataSource=:memory:");
-            connection.Open();
+            // WAL gibt es nur für Datenbankdateien; eine In-Memory-Datenbank meldet immer
+            // „memory" und könnte ein fehlendes PRAGMA nicht aufdecken.
+            string directory = Path.Combine(Path.GetTempPath(), "EchoPlayPragmaTests_" + Guid.NewGuid().ToString("N"));
+            _ = Directory.CreateDirectory(directory);
+            try
+            {
+                // Die Verbindung endet mit dem try-Block, also vor dem Löschen im finally.
+                using SqliteConnection connection = new($"Data Source={Path.Combine(directory, "wal.db")};Pooling=False");
+                connection.Open();
+                new SqlitePragmaInterceptor().ConnectionOpened(connection, null!);
 
-            SqlitePragmaInterceptor interceptor = new();
-            interceptor.ConnectionOpened(connection, null!);
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = "PRAGMA journal_mode;";
+                Assert.Equal("wal", (string?)command.ExecuteScalar());
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void PragmaInterceptor_SetsCacheSize()
+        {
+            using SqliteConnection connection = new("DataSource=:memory:");
+            connection.Open();
+            new SqlitePragmaInterceptor().ConnectionOpened(connection, null!);
 
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "PRAGMA journal_mode;";
-            string result = (string)command.ExecuteScalar()!;
+            command.CommandText = "PRAGMA cache_size;";
 
-            // In-Memory-DBs verwenden immer "memory", WAL gilt nur für Datei-DBs.
-            // Wichtig ist, dass der PRAGMA-Befehl ohne Fehler durchläuft.
-            Assert.NotNull(result);
-
-            connection.Close();
+            // Negativ heißt Kilobyte: 64 MB.
+            Assert.Equal(-65536L, (long)command.ExecuteScalar()!);
         }
 
         [Fact]
@@ -225,8 +236,6 @@ namespace EchoPlay.Data.Tests.Infrastructure
             connection.Close();
         }
 
-        // ── Connection-String- und Tracking-Tests ─────────────────────────────────
-
         [Fact]
         public void DbContext_UsesNoTrackingByDefault()
         {
@@ -236,8 +245,6 @@ namespace EchoPlay.Data.Tests.Infrastructure
                 QueryTrackingBehavior.NoTracking,
                 Context.ChangeTracker.QueryTrackingBehavior);
         }
-
-        // ── Hilfsmethode ─────────────────────────────────────────────────────────
 
         /// <summary>
         /// Prüft, ob ein Index mit dem angegebenen Namen in der SQLite-Datenbank existiert.

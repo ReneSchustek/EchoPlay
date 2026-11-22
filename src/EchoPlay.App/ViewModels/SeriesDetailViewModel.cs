@@ -4,6 +4,7 @@ using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
@@ -27,8 +28,7 @@ namespace EchoPlay.App.ViewModels
     /// betrifft: die Kopfzeile der Serie, die gewählte Folge samt ihren Spuren, die
     /// Wiedergabe und der Lebenszyklus der Seite.
     /// </remarks>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Der einzige verwerfbare Zustand (_priorityCts) wird über CancelPendingPriorityLoad deterministisch freigegeben, das vom OnNavigatedFrom-Pfad der Page aufgerufen wird; ein eigener Dispose-Kontrakt im Transient-VM würde der bestehenden VM-Konvention widersprechen.")]
-    public sealed class SeriesDetailViewModel : ObservableObject
+    public sealed class SeriesDetailViewModel : ObservableObject, IDisposable
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPlayerService _playerService;
@@ -40,6 +40,7 @@ namespace EchoPlay.App.ViewModels
         // Lifecycle-CTS: gilt für alle Service-Calls in dieser Detail-VM-Instanz.
         // Wird beim Page-Verlassen über Cleanup() gestoppt.
         private readonly CancellationTokenSource _lifecycleCts = new();
+        private bool _disposed;
 
         private Guid _seriesId;
         private bool _isLoading;
@@ -57,19 +58,22 @@ namespace EchoPlay.App.ViewModels
         /// Hintergrund-Scan, bis die sichtbare Serie versorgt ist.
         /// </param>
         /// <param name="localizationService">Für die Automation-Namen der Folgen-Kacheln. Nullable für Tests.</param>
+        /// <param name="loggerFactory">Für das Protokoll der Kachel- und Cover-Aufbereitung. Nullable für Tests.</param>
         public SeriesDetailViewModel(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
             IClock clock,
             ICoverService? coverService = null,
             BackgroundCoverService? backgroundCoverService = null,
-            ILocalizationService? localizationService = null)
+            ILocalizationService? localizationService = null,
+            ILoggerFactory? loggerFactory = null)
         {
             _scopeFactory = scopeFactory;
             _playerService = playerService;
             _clock = clock;
             _backgroundCoverService = backgroundCoverService;
-            _tileBuilder = new SeriesEpisodeTileBuilder(scopeFactory, coverService, localizationService);
+            _tileBuilder = new SeriesEpisodeTileBuilder(
+                scopeFactory, coverService, localizationService, loggerFactory?.CreateLogger(nameof(SeriesDetailViewModel)));
             TrackList = new SeriesTrackList(scopeFactory);
             Header = new SeriesHeader(scopeFactory, _lifecycleCts.Token);
 
@@ -114,7 +118,7 @@ namespace EchoPlay.App.ViewModels
         /// <returns>Der Task ist abgeschlossen, wenn die Episodenliste samt Wiedergabestatus steht.</returns>
         public async Task LoadAsync(Guid seriesId)
         {
-            // Priorität einer vorherigen Detailansicht sauber beenden, bevor wir neu starten.
+            // Den Vorrang einer vorherigen Detailansicht beenden, bevor der neue beginnt.
             CancelPendingPriorityLoad();
 
             IsLoading = true;
@@ -237,18 +241,22 @@ namespace EchoPlay.App.ViewModels
         /// Stoppt alle laufenden Service-Calls und Hintergrund-Aufgaben dieser
         /// Detail-VM-Instanz. Wird beim Verlassen der Page aufgerufen, damit
         /// pending DB-/Cover-Roundtrips nicht in einen verworfenen VM-State schreiben.
+        /// Mehrfaches Aufrufen ist unschädlich.
         /// </summary>
-        public void Cleanup()
+        public void Dispose()
         {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
             CancelPendingPriorityLoad();
-            try
-            {
-                _lifecycleCts.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Bereits entsorgt, also defensiv schlucken.
-            }
+
+            // Erst abbrechen, dann freigeben: Laufende Aufrufe sehen den Abbruch am Token und
+            // enden mit OperationCanceledException, bevor die Quelle verschwindet.
+            _lifecycleCts.Cancel();
+            _lifecycleCts.Dispose();
         }
 
         /// <summary>

@@ -50,32 +50,18 @@ namespace EchoPlay.App.Tests.Fakes
         }
 
         /// <inheritdoc/>
-        public Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default)
+        public Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default)
         {
             CoverImage cover = new()
             {
                 EntityType = entityType,
                 EntityId = entityId,
                 ImageData = imageData,
-                SourceUrl = sourceUrl
+                SourceUrl = sourceUrl?.OriginalString
             };
 
             _covers[(entityType, entityId)] = cover;
             return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(
-            string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default)
-        {
-            List<Guid> result = _covers
-                .Where(kv => kv.Key.EntityType == entityType
-                    && (!kv.Value.LastChecked.HasValue || kv.Value.LastChecked.Value < cooldownThreshold))
-                .Select(kv => kv.Key.EntityId)
-                .Take(limit)
-                .ToList();
-
-            return Task.FromResult<IReadOnlyList<Guid>>(result);
         }
 
         /// <inheritdoc/>

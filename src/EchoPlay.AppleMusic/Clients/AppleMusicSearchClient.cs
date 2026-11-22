@@ -85,15 +85,15 @@ namespace EchoPlay.AppleMusic.Clients
         /// <returns>Die Lookup-Antwort mit Künstler- und Album-Einträgen.</returns>
         public async Task<ITunesResponseDto<ITunesCollectionDto>> LookupAlbumsAsync(long artistId, CancellationToken ct = default)
         {
-            string basisUrl = $"lookup?id={artistId}&entity=album&country={Country}&limit={LookupAlbumCap}";
+            string baseUrl = $"lookup?id={artistId}&entity=album&country={Country}&limit={LookupAlbumCap}";
 
             ITunesResponseDto<ITunesCollectionDto> standard =
-                await GetAsync<ITunesResponseDto<ITunesCollectionDto>>(basisUrl, ct).ConfigureAwait(false);
+                await GetAsync<ITunesResponseDto<ITunesCollectionDto>>(baseUrl, ct).ConfigureAwait(false);
 
-            int albenImStandard = CountAlbums(standard);
+            int albumsInStandard = CountAlbums(standard);
 
             // Unter dem Deckel ist der Bestand vollständig, eine zweite Anfrage brächte nichts.
-            if (albenImStandard < LookupAlbumCap)
+            if (albumsInStandard < LookupAlbumCap)
             {
                 return standard;
             }
@@ -102,16 +102,16 @@ namespace EchoPlay.AppleMusic.Clients
             // Standardreihenfolge beginnt bei den ältesten Alben, deshalb fehlen ausgerechnet
             // die neuen Folgen. `sort=recent` dreht die Reihenfolge um; beide Hälften
             // zusammengelegt decken den Bestand ab.
-            ITunesResponseDto<ITunesCollectionDto> neueste =
-                await GetAsync<ITunesResponseDto<ITunesCollectionDto>>($"{basisUrl}&sort=recent", ct).ConfigureAwait(false);
+            ITunesResponseDto<ITunesCollectionDto> newest =
+                await GetAsync<ITunesResponseDto<ITunesCollectionDto>>($"{baseUrl}&sort=recent", ct).ConfigureAwait(false);
 
-            ITunesResponseDto<ITunesCollectionDto> zusammengelegt = MergeAlbums(standard, neueste);
+            ITunesResponseDto<ITunesCollectionDto> merged = MergeAlbums(standard, newest);
 
             _logger.Debug(() =>
                 $"iTunes-Lookup für Künstler '{artistId}': Deckel von {LookupAlbumCap} ausgeschöpft, " +
-                $"mit sort=recent auf {CountAlbums(zusammengelegt)} Alben ergänzt.");
+                $"mit sort=recent auf {CountAlbums(merged)} Alben ergänzt.");
 
-            return zusammengelegt;
+            return merged;
         }
 
         /// <summary>
@@ -121,16 +121,16 @@ namespace EchoPlay.AppleMusic.Clients
         /// <param name="response">Die Lookup-Antwort.</param>
         private static int CountAlbums(ITunesResponseDto<ITunesCollectionDto> response)
         {
-            int anzahl = 0;
-            foreach (ITunesCollectionDto eintrag in response.Results)
+            int count = 0;
+            foreach (ITunesCollectionDto entry in response.Results)
             {
-                if (IsAlbum(eintrag))
+                if (IsAlbum(entry))
                 {
-                    anzahl++;
+                    count++;
                 }
             }
 
-            return anzahl;
+            return count;
         }
 
         /// <summary>Ob ein Lookup-Eintrag ein Album ist und kein Künstler.</summary>
@@ -149,28 +149,28 @@ namespace EchoPlay.AppleMusic.Clients
             ITunesResponseDto<ITunesCollectionDto> first,
             ITunesResponseDto<ITunesCollectionDto> second)
         {
-            HashSet<long> bekannteAlben = [];
-            foreach (ITunesCollectionDto eintrag in first.Results)
+            HashSet<long> knownAlbums = [];
+            foreach (ITunesCollectionDto entry in first.Results)
             {
-                if (IsAlbum(eintrag))
+                if (IsAlbum(entry))
                 {
-                    _ = bekannteAlben.Add(eintrag.CollectionId);
+                    _ = knownAlbums.Add(entry.CollectionId);
                 }
             }
 
-            List<ITunesCollectionDto> zusammen = [.. first.Results];
-            foreach (ITunesCollectionDto eintrag in second.Results)
+            List<ITunesCollectionDto> combined = [.. first.Results];
+            foreach (ITunesCollectionDto entry in second.Results)
             {
-                if (IsAlbum(eintrag) && bekannteAlben.Add(eintrag.CollectionId))
+                if (IsAlbum(entry) && knownAlbums.Add(entry.CollectionId))
                 {
-                    zusammen.Add(eintrag);
+                    combined.Add(entry);
                 }
             }
 
             return new ITunesResponseDto<ITunesCollectionDto>
             {
-                ResultCount = zusammen.Count,
-                Results = zusammen
+                ResultCount = combined.Count,
+                Results = combined
             };
         }
 
@@ -217,7 +217,7 @@ namespace EchoPlay.AppleMusic.Clients
         /// <returns>Das deserialisierte Antwortobjekt.</returns>
         private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken ct = default) where T : new()
         {
-            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope($"API:iTunes:GET");
+            using EchoPlay.Logger.Scoping.LogScope scope = _logger.BeginScope("API:iTunes:GET");
 
             _logger.Debug(() => $"iTunes-API-Anfrage: GET {relativeUrl}");
 

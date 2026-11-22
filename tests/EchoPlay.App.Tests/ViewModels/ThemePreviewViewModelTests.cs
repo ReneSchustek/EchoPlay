@@ -7,7 +7,7 @@ namespace EchoPlay.App.Tests.ViewModels
 {
     /// <summary>
     /// Tests für <see cref="ThemePreviewViewModel"/>.
-    /// Stellt sicher, dass alle Themes korrekt definiert sind und die Farbwerte
+    /// Prüft, dass alle Themes korrekt definiert sind und die Farbwerte
     /// mit den ResourceDictionary-Dateien übereinstimmen.
     /// </summary>
     public sealed class ThemePreviewViewModelTests

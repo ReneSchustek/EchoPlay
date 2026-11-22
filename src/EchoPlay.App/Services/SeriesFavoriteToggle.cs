@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
+using EchoPlay.App.Infrastructure;
+using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EchoPlay.App.Services
@@ -34,9 +36,12 @@ namespace EchoPlay.App.Services
             ArgumentNullException.ThrowIfNull(scopeFactory);
 
             bool startedWatching;
+            ILogger? logger;
 
             using (IServiceScope scope = scopeFactory.CreateScope())
             {
+                logger = scope.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger(nameof(SeriesFavoriteToggle));
+
                 ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
 
                 // Vorzustand vor dem Update lesen: nur ein echter Übergang „unbeobachtet → überwacht"
@@ -58,26 +63,16 @@ namespace EchoPlay.App.Services
             // Bewusst ohne await: der Check hängt am Provider-Rate-Limiter und würde die
             // Favoriten-Schaltfläche sekundenlang blockieren. Spätestens der nächste
             // App-Start prüft erneut.
-            _ = Task.Run(
-                () => RefreshNewReleasesSafeAsync(scopeFactory, seriesId),
+            Task refresh = Task.Run(
+                () => RefreshNewReleasesAsync(scopeFactory, seriesId, CancellationToken.None),
                 CancellationToken.None);
-        }
 
-        /// <summary>
-        /// Hüllt <see cref="RefreshNewReleasesAsync"/> für den Hintergrundlauf ab.
-        /// Ohne diese Klammer würde eine Exception als unbeobachtete Task-Exception erst
-        /// im Finalizer auftauchen, etwa wenn der Scope beim App-Ende schon entsorgt ist.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Hintergrund-Nachlauf ohne Aufrufer: DB-, Provider- oder Lifecycle-Fehler (entsorgter Scope beim App-Ende) dürfen weder die UI stören noch als unbeobachtete Task-Exception hochkommen. Der Cache wird beim nächsten App-Start ohnehin neu geprüft.")]
-        private static async Task RefreshNewReleasesSafeAsync(IServiceScopeFactory scopeFactory, Guid seriesId)
-        {
-            try
+            // Losgelöst, aber beobachtet: Ein Fehler (etwa ein beim Beenden schon entsorgter
+            // Container) landet im Protokoll statt als unbeobachtete Aufgabe zu verpuffen. Die
+            // Logger-Fabrik fehlt nur in Tests, die den Container von Hand zusammenstellen.
+            if (logger is not null)
             {
-                await RefreshNewReleasesAsync(scopeFactory, seriesId, CancellationToken.None);
-            }
-            catch (Exception)
-            {
-                // Bewusst geschluckt, siehe Methoden-Kommentar.
+                DetachedTask.Observe(refresh, logger, nameof(RefreshNewReleasesAsync));
             }
         }
 
@@ -107,7 +102,7 @@ namespace EchoPlay.App.Services
 
             // Startseite anstoßen: sie ist zu diesem Zeitpunkt längst gerendert und würde
             // die frisch gefundenen Folgen sonst erst beim nächsten Besuch zeigen.
-            scope.ServiceProvider.GetService<INewReleaseEventService>()?.RaiseCacheChanged();
+            scope.ServiceProvider.GetService<INewReleaseEventService>()?.NotifyCacheChanged();
         }
     }
 }

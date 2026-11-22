@@ -15,7 +15,7 @@ namespace EchoPlay.TagManager.Services
     internal sealed class MusicBrainzLookupService : ITagLookupService
     {
         /// <summary>
-        /// Stellt sicher, dass nie zwei Anfragen gleichzeitig abgesetzt werden.
+        /// Lässt nie zwei Anfragen gleichzeitig los.
         /// SemaphoreSlim(1,1) wirkt wie ein asynchrones Lock ohne Threadbindung.
         /// Static, damit auch mehrere Instanzen die Rate gemeinsam einhalten.
         /// </summary>
@@ -50,19 +50,7 @@ namespace EchoPlay.TagManager.Services
                 // 1 Sekunde warten, um die Rate-Limit-Regel einzuhalten.
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
 
-                // MusicBrainz Lucene-Syntax: release:<term> sucht im Titelfeldfeld,
-                // ohne Feldpräfix wird in allen Feldern gesucht.
-                string encodedQuery = Uri.EscapeDataString(query);
-                string requestUri = $"ws/2/release?query={encodedQuery}&fmt=json&limit=5";
-
-                _logger.Debug(() => $"MusicBrainz-Suche: {requestUri}");
-
-                using HttpResponseMessage response = await _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken).ConfigureAwait(false);
-                _ = response.EnsureSuccessStatusCode();
-
-                MusicBrainzReleaseSearchResponse? searchResponse = await response.Content
-                    .ReadFromJsonAsync<MusicBrainzReleaseSearchResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
-
+                MusicBrainzReleaseSearchResponse? searchResponse = await FetchReleasesAsync(query, cancellationToken).ConfigureAwait(false);
                 if (searchResponse is null || searchResponse.Releases.Count == 0)
                 {
                     _logger.Info("Keine Ergebnisse für Suche: {Query}", query);
@@ -87,7 +75,22 @@ namespace EchoPlay.TagManager.Services
             }
         }
 
-        // --- Hilfsmethoden ---
+        private async Task<MusicBrainzReleaseSearchResponse?> FetchReleasesAsync(string query, CancellationToken cancellationToken)
+        {
+            // Ohne Feldpräfix sucht MusicBrainz in allen Feldern; der Suchbegriff geht
+            // deshalb unverändert hinein. Fünf Treffer füllen die Auswahl im Tag-Editor,
+            // mehr verlängern nur die Antwort.
+            string encodedQuery = Uri.EscapeDataString(query);
+            string requestUri = $"ws/2/release?query={encodedQuery}&fmt=json&limit=5";
+
+            _logger.Debug(() => $"MusicBrainz-Suche: {requestUri}");
+
+            using HttpResponseMessage response = await _httpClient.GetAsync(new Uri(requestUri, UriKind.Relative), cancellationToken).ConfigureAwait(false);
+            _ = response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<MusicBrainzReleaseSearchResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
 
         /// <summary>
         /// Wandelt ein <see cref="MusicBrainzRelease"/>-DTO in ein <see cref="TagLookupResult"/> um.
@@ -105,7 +108,7 @@ namespace EchoPlay.TagManager.Services
             uint? year = null;
             if (!string.IsNullOrEmpty(release.Date) && release.Date.Length >= 4)
             {
-                if (uint.TryParse(release.Date[..4], out uint parsedYear))
+                if (uint.TryParse(release.Date[..4], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out uint parsedYear))
                 {
                     year = parsedYear;
                 }

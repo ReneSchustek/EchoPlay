@@ -18,13 +18,20 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.ToTable("Series");
 
-            // Primärschlüssel: EF Core würde "Id" auch ohne explizite Angabe erkennen,
-            // aber die explizite Konfiguration macht die Absicht klar.
             _ = builder.HasKey(s => s.Id);
 
-            // IsRequired() entspricht NOT NULL in SQL.
-            // HasMaxLength() legt die Spaltenlänge in SQLite fest und verhindert
-            // versehentlich riesige Strings (z.B. durch fehlerhafte API-Antworten).
+            ConfigureProperties(builder);
+            ConfigureIndexes(builder);
+
+            // Purge-Index: DatabaseMaintenanceService filtert auf IsDeleted + DeletedAt.
+            // Partial Index nur für gelöschte Einträge, das spart Speicher im Normalfall.
+            builder.HasPurgeIndex();
+        }
+
+        private static void ConfigureProperties(EntityTypeBuilder<Series> builder)
+        {
+            // IsRequired() entspricht NOT NULL in SQL. HasMaxLength() steht im Modell und in
+            // der Migration; SQLite selbst erzwingt die Länge nicht.
             _ = builder.Property(s => s.Title)
                    .IsRequired()
                    .HasMaxLength(256);
@@ -46,18 +53,21 @@ namespace EchoPlay.Data.Configurations
 
             _ = builder.Property(s => s.FolderPattern)
                    .HasMaxLength(256);
+        }
 
+        private static void ConfigureIndexes(EntityTypeBuilder<Series> builder)
+        {
             // Index auf Title beschleunigt die häufige ORDER BY Title-Abfrage in GetAllAsync.
             _ = builder.HasIndex(s => s.Title);
 
             // Abonnierte Serien werden auf dem Dashboard und in der StatusBar gezählt;
             // der Kombi-Index vermeidet Full-Table-Scan bei GetSubscribedAsync().
             _ = builder.HasIndex(s => new { s.IsSubscribed, s.Title })
-                   .HasFilter("IsDeleted = 0");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows);
 
             // Favoriten-Bereich auf dem Dashboard: gleicher Zugriffspfad wie Subscribed.
             _ = builder.HasIndex(s => new { s.IsFavorite, s.Title })
-                   .HasFilter("IsDeleted = 0");
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows);
 
             // Metadaten-Lookup: Spotify sucht Serien über die ArtistId, um Duplikate zu vermeiden.
             _ = builder.HasIndex(s => s.SpotifyArtistId)
@@ -69,11 +79,7 @@ namespace EchoPlay.Data.Configurations
 
             // Online-Mediathek: nur Serien mit IsOnlineImported anzeigen.
             _ = builder.HasIndex(s => new { s.IsOnlineImported, s.Title })
-                   .HasFilter("IsDeleted = 0");
-
-            // Purge-Index: DatabaseMaintenanceService filtert auf IsDeleted + DeletedAt.
-            // Partial Index nur für gelöschte Einträge, das spart Speicher im Normalfall.
-            builder.HasPurgeIndex();
+                   .HasFilter(SoftDeleteIndexFilter.ActiveRows);
         }
     }
 }

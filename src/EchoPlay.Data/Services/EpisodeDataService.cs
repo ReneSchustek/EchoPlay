@@ -13,9 +13,8 @@ namespace EchoPlay.Data.Services
 {
     /// <summary>
     /// EF-Core-basierte Implementierung des Datenservices für Episoden.
-    /// Diese Klasse ist für den technischen Zugriff auf Episodendaten sowie für die Durchsetzung konsistenter Soft-Delete-Regeln verantwortlich.
+    /// Alle Zugriffe auf Episoden laufen hier durch und halten damit die Regeln der logischen Löschung ein.
     /// </summary>
-    /// <remarks>Initialisiert eine neue Instanz des <see cref="EpisodeDataService"/>.</remarks>
     /// <param name="context">Der zu verwendende EF-Core-Datenbankkontext.</param>
     /// <param name="loggerFactory">Die Logger-Factory zur Erstellung des Loggers.</param>
     public sealed class EpisodeDataService(
@@ -54,7 +53,6 @@ namespace EchoPlay.Data.Services
             HashSet<Guid> idSet = new(seriesIds);
 
             List<Episode> result = await _context.Episodes
-
                 .Where(episode => idSet.Contains(episode.SeriesId))
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
 
@@ -72,7 +70,6 @@ namespace EchoPlay.Data.Services
             _logger.Debug(() => $"Lade Episoden für Serie '{seriesId}'.");
 
             List<Episode> result = await _context.Episodes
-
                 .Where(episode => episode.SeriesId == seriesId)
                 .OrderBy(episode => episode.EpisodeNumber)
                 .ThenBy(episode => episode.Title)
@@ -119,7 +116,7 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Hilfsdatensatz für die GroupBy-Projektion in <see cref="GetEpisodeCountsForSeriesAsync"/>.
-        /// Nicht im Interface sichtbar – rein technisches Mapping-Artefakt.
+        /// Nicht im Interface sichtbar, ein rein technisches Mapping-Artefakt.
         /// </summary>
         private sealed class EpisodeCountRow
         {
@@ -253,7 +250,7 @@ namespace EchoPlay.Data.Services
 
         /// <summary>
         /// Markiert eine Episode sowie alle zugehörigen PlaybackStates als logisch gelöscht.
-        /// Diese Methode setzt die mittlere Regel der Soft-Delete-Matrix um:
+        /// Die mittlere Regel der Soft-Delete-Matrix:
         /// Eine gelöschte Episode darf keine aktiven Wiedergabestände behalten, während die übergeordnete Serie unverändert bestehen bleibt.
         /// </summary>
         /// <param name="id">Die eindeutige ID der zu löschenden Episode.</param>

@@ -23,8 +23,8 @@ namespace EchoPlay.App.ViewModels
     /// Interner Orchestrator für die Async-Aktionen der lokalen Mediathek.
     /// Enthält Serien-Laden, Episoden-/Track-Auswahl, Serien-Verwaltung (Löschen, Überwachung,
     /// Alle-Gehört), Fehlende-Folgen-Prüfung, Ordnerstruktur-Assistent und Cover-Verwaltung.
-    /// Das Top-VM <see cref="LocalLibraryViewModel"/> hält nur noch Commands,
-    /// Zustands-Properties und die Pass-Through-Schicht. Folgt dem Muster aus
+    /// Das Top-VM <see cref="LocalLibraryViewModel"/> hält Commands, Zustands-Properties
+    /// und die Pass-Through-Schicht. Folgt dem Muster aus
     /// <see cref="OnlineLibraryActions"/> und <see cref="TagManagerActions"/>.
     /// </summary>
     internal sealed class LocalLibraryActions
@@ -32,7 +32,6 @@ namespace EchoPlay.App.ViewModels
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IConfirmationDialogService _confirmationDialogService;
         private readonly StatusBarViewModel _statusBar;
-        private readonly ICoverSearchService _coverSearchService;
         private readonly IOnlineAccessGuard _onlineAccessGuard;
         private readonly IWatchToggleService? _watchToggleService;
         private readonly IFolderRestructureCoordinator? _restructureCoordinator;
@@ -75,11 +74,23 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert den Orchestrator mit allen Services und Sub-VMs.
         /// </summary>
+        /// <param name="scopeFactory">Für die Datenbankzugriffe.</param>
+        /// <param name="confirmationDialogService">Fragt vor dem Entfernen und Löschen nach.</param>
+        /// <param name="statusBar">Zieht die Zähler der Statusleiste nach.</param>
+        /// <param name="onlineAccessGuard">Fragt im Offline-Modus nach dem Zugang ins Netz.</param>
+        /// <param name="watchToggleService">Schaltet die Überwachung einer Serie um.</param>
+        /// <param name="restructureCoordinator">Plant und führt den Umbau der Ordnerstruktur aus.</param>
+        /// <param name="missingEpisodesCoordinator">Ermittelt fehlende Folgen.</param>
+        /// <param name="coverCoordinator">Sucht und übernimmt Cover.</param>
+        /// <param name="clock">Zeitquelle für den Abschluss einer Folge.</param>
+        /// <param name="scanVM">Bereich für Einlesen und Ordnerauswahl.</param>
+        /// <param name="artistsVM">Bereich der Serienkacheln.</param>
+        /// <param name="episodesVM">Bereich der Folgenkacheln.</param>
+        /// <param name="tracksVM">Bereich der Spuren.</param>
         public LocalLibraryActions(
             IServiceScopeFactory scopeFactory,
             IConfirmationDialogService confirmationDialogService,
             StatusBarViewModel statusBar,
-            ICoverSearchService coverSearchService,
             IOnlineAccessGuard onlineAccessGuard,
             IWatchToggleService? watchToggleService,
             IFolderRestructureCoordinator? restructureCoordinator,
@@ -94,7 +105,6 @@ namespace EchoPlay.App.ViewModels
             _scopeFactory = scopeFactory;
             _confirmationDialogService = confirmationDialogService;
             _statusBar = statusBar;
-            _coverSearchService = coverSearchService;
             _onlineAccessGuard = onlineAccessGuard;
             _watchToggleService = watchToggleService;
             _restructureCoordinator = restructureCoordinator;
@@ -108,11 +118,9 @@ namespace EchoPlay.App.ViewModels
             _tracksVM = tracksVM;
         }
 
-        // ── Laden ────────────────────────────────────────────────────────────────
-
         /// <summary>
         /// Lädt Bibliothekseinstellungen und alle Serien mit lokalem Ordner. Setzt die
-        /// Auswahl zurück – mittlere und rechte Spalte werden geleert. Die Künstler-Liste
+        /// Auswahl zurück; mittlere und rechte Spalte werden geleert. Die Künstler-Liste
         /// und das Cover-Laden übernimmt das <see cref="LocalArtistsViewModel"/>; der Orchestrator
         /// koordiniert nur die AppSettings-Spiegelung in den ScanVM.
         /// </summary>
@@ -130,8 +138,6 @@ namespace EchoPlay.App.ViewModels
             _tracksVM.Clear();
             await _artistsVM.LoadFromDatabaseAsync();
         }
-
-        // ── Auswahl-Logik ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Wählt eine Serie aus und lädt deren Episoden mit lokalem Ordner in die mittlere Spalte.
@@ -165,13 +171,14 @@ namespace EchoPlay.App.ViewModels
             List<Guid> episodeIds = [.. episodes
                 .Where(e => e.LocalFolderPath is not null)
                 .Select(e => e.Id)];
+            HashSet<Guid> localEpisodeIds = [.. episodeIds];
 
             HashSet<Guid> completedIds = await stateService.GetCompletedEpisodeIdsAsync(episodeIds);
 
             IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
 
             HashSet<Guid> inProgressIds = allStates
-                .Where(s => episodeIds.Contains(s.EpisodeId) && !s.IsCompleted && s.LastPosition > TimeSpan.Zero)
+                .Where(s => localEpisodeIds.Contains(s.EpisodeId) && !s.IsCompleted && s.LastPosition > TimeSpan.Zero)
                 .Select(s => s.EpisodeId)
                 .ToHashSet();
 
@@ -192,8 +199,6 @@ namespace EchoPlay.App.ViewModels
 
             await _tracksVM.SetTracksAsync(episode, tracks);
         }
-
-        // ── Serien-Verwaltung ─────────────────────────────────────────────────────
 
         /// <summary>
         /// Schaltet die Neuerscheinungs-Überwachung einer lokalen Serie um und aktualisiert die Karte.
@@ -248,7 +253,7 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>
         /// Entfernt eine Serie aus der Bibliothek (Soft-Delete in der DB).
-        /// Die Dateien auf der Festplatte bleiben erhalten – beim nächsten Scan
+        /// Die Dateien auf der Festplatte bleiben erhalten; beim nächsten Scan
         /// wird die Serie wieder erkannt und kann erneut importiert werden.
         /// </summary>
         /// <param name="seriesId">ID der zu entfernenden Serie.</param>
@@ -273,7 +278,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Löscht eine Serie unwiderruflich – sowohl aus der DB als auch von der Festplatte.
+        /// Löscht eine Serie unwiderruflich, sowohl aus der DB als auch von der Festplatte.
         /// </summary>
         /// <param name="seriesId">ID der Serie.</param>
         /// <param name="folderPath">Lokaler Ordnerpfad der Serie.</param>
@@ -303,8 +308,6 @@ namespace EchoPlay.App.ViewModels
 
             await LoadAsync();
         }
-
-        // ── Fehlende Folgen ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Ermittelt fehlende Folgen einer Serie. Fragt den Nutzer zuerst über
@@ -358,7 +361,7 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Holt den Modus aus dem UI-Dialog. Ohne Listener wird "Nur offline" angenommen –
+        /// Holt den Modus aus dem UI-Dialog. Ohne Listener wird "Nur offline" angenommen;
         /// das ist das Verhalten in Unit-Tests, in denen kein Dialog existiert.
         /// </summary>
         private async Task<MissingEpisodesMode> RequestMissingEpisodesModeAsync()
@@ -370,8 +373,6 @@ namespace EchoPlay.App.ViewModels
 
             return await MissingEpisodesModeRequested.Invoke();
         }
-
-        // ── Ordnerstruktur-Assistent ─────────────────────────────────────────────
 
         /// <summary>
         /// Analysiert den Serienordner und erstellt eine Vorschau für den Ordnerstruktur-Umbau.
@@ -408,9 +409,10 @@ namespace EchoPlay.App.ViewModels
         /// Führt den Ordnerstruktur-Umbau aus und löst danach einen Neu-Scan der Bibliothek aus.
         /// Delegiert an den <see cref="IFolderRestructureCoordinator"/>.
         /// </summary>
+        /// <param name="seriesId">Die Serie des umgebauten Ordners.</param>
         /// <param name="preview">Die zuvor erstellte App-Display-Vorschau.</param>
         /// <returns>Anzahl der verschobenen Dateien.</returns>
-        public async Task<int> ExecuteRestructureAsync(RestructurePreviewDisplay preview)
+        public async Task<int> ExecuteRestructureAsync(Guid seriesId, RestructurePreviewDisplay preview)
         {
             if (_restructureCoordinator is null)
             {
@@ -418,10 +420,8 @@ namespace EchoPlay.App.ViewModels
             }
 
             using IDisposable ua = UserActionScope.BeginUserAction("ExecuteRestructure");
-            return await _restructureCoordinator.ExecuteAsync(preview);
+            return await _restructureCoordinator.ExecuteAsync(seriesId, preview);
         }
-
-        // ── Cover-Verwaltung ────────────────────────────────────────────────────
 
         /// <summary>
         /// Prüft den Offline-Modus und zeigt bei Bedarf einen Bestätigungsdialog.

@@ -16,28 +16,56 @@ namespace EchoPlay.AppleMusic.Tests.Import
     public sealed class AppleMusicEpisodeSourceTests
     {
         /// <summary>
-        /// Stellt sicher, dass bei einer Serie ohne verfügbare Alben
+        /// Baut den produktiven Import mit dem Such-Nachbau. AddAppleMusicImport muss vor dem
+        /// Nachbau stehen, damit dessen Registrierung den produktiven Client überschreibt.
+        /// </summary>
+        private static IEpisodeImportSource CreateImport(IAppleMusicSearchClient client)
+        {
+            ServiceCollection services = new();
+            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
+                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
+            _ = services.AddAppleMusicImport();
+            _ = services.AddSingleton(client);
+
+            return services.BuildServiceProvider().GetRequiredService<IEpisodeImportSource>();
+        }
+
+        /// <summary>Ein Hörspiel-Album mit einem Titel, wie es der Künstler-Lookup liefert.</summary>
+        private static ITunesCollectionDto Album(
+            long collectionId,
+            string name,
+            long artistId,
+            string artistName,
+            string? releaseDate = null,
+            string? artworkUrl = null)
+            => new()
+            {
+                WrapperType = "collection",
+                CollectionId = collectionId,
+                CollectionName = name,
+                ArtistId = artistId,
+                ArtistName = artistName,
+                ReleaseDate = releaseDate,
+                ArtworkUrl100 = artworkUrl,
+                TrackCount = 1,
+                PrimaryGenreName = "Hörspiele"
+            };
+
+        /// <summary>Die Kennung als Text, wie sie der Import erwartet.</summary>
+        private static string Id(long value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Prüft, dass bei einer Serie ohne verfügbare Alben
         /// keine Episoden erzeugt werden.
         /// </summary>
         [Fact]
         public async Task GetEpisodesAsync_SeriesWithoutAlbums_ReturnsEmptyList()
         {
             // ARRANGE
-            // Der Fake liefert bewusst nur Künstlerdaten.
+            // Der Fake liefert nur Künstlerdaten.
             // Alben und Tracks sind nicht vorhanden.
-            ServiceCollection services = new();
-
-            // AddAppleMusicImport muss vor den Fakes aufgerufen werden, damit die Fake-Registrierungen die produktiven Services überschreiben.
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            _ = services.AddAppleMusicImport();
-
-            _ = services.AddSingleton<IAppleMusicSearchClient>(
-                new FakeAppleMusicSearchClient(
-                    artists: [AppleMusicTestData.DieDreiFragezeichen]));
-
-            ServiceProvider provider = services.BuildServiceProvider();
-            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
+            IEpisodeImportSource episodeImport = CreateImport(
+                new FakeAppleMusicSearchClient(artists: [AppleMusicTestData.DieDreiFragezeichen]));
 
             // ACT
             IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync("201306317", cancellationToken: TestContext.Current.CancellationToken);
@@ -56,57 +84,22 @@ namespace EchoPlay.AppleMusic.Tests.Import
         public async Task GetEpisodesAsync_FiltersAlbumsWithForeignArtistId()
         {
             // ARRANGE
-            ServiceCollection services = new();
-
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            _ = services.AddAppleMusicImport();
-
             const long ScotlandYardArtistId = 100100;
             const long DetektivClipperArtistId = 200200;
 
             FakeAppleMusicSearchClient client = new(artists: []);
             client.AddAlbums(ScotlandYardArtistId,
             [
-                new ITunesCollectionDto
-                {
-                    WrapperType = "collection",
-                    CollectionId = 1001,
-                    CollectionName = "Scotland Yard – Folge 1",
-                    ArtistId = ScotlandYardArtistId,
-                    ArtistName = "Scotland Yard",
-                    TrackCount = 1,
-                    PrimaryGenreName = "Hörspiele"
-                },
-                new ITunesCollectionDto
-                {
-                    WrapperType = "collection",
-                    CollectionId = 1002,
-                    CollectionName = "Scotland Yard – Folge 2",
-                    ArtistId = ScotlandYardArtistId,
-                    ArtistName = "Scotland Yard",
-                    TrackCount = 1,
-                    PrimaryGenreName = "Hörspiele"
-                },
-                new ITunesCollectionDto
-                {
-                    WrapperType = "collection",
-                    CollectionId = 9001,
-                    CollectionName = "Detektiv Clipper – Folge 7",
-                    ArtistId = DetektivClipperArtistId,
-                    ArtistName = "Detektiv Clipper",
-                    TrackCount = 1,
-                    PrimaryGenreName = "Hörspiele"
-                }
+                Album(1001, "Scotland Yard – Folge 1", ScotlandYardArtistId, "Scotland Yard"),
+                Album(1002, "Scotland Yard – Folge 2", ScotlandYardArtistId, "Scotland Yard"),
+                Album(9001, "Detektiv Clipper – Folge 7", DetektivClipperArtistId, "Detektiv Clipper")
             ]);
 
-            _ = services.AddSingleton<IAppleMusicSearchClient>(client);
-            ServiceProvider provider = services.BuildServiceProvider();
-            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
+            IEpisodeImportSource episodeImport = CreateImport(client);
 
             // ACT
             IReadOnlyList<ImportEpisode> episodes =
-                await episodeImport.GetEpisodesAsync(ScotlandYardArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture), cancellationToken: TestContext.Current.CancellationToken);
+                await episodeImport.GetEpisodesAsync(Id(ScotlandYardArtistId), cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             // Genau zwei Episoden, das fremde Detektiv-Clipper-Album darf nicht durchrutschen.
@@ -125,12 +118,6 @@ namespace EchoPlay.AppleMusic.Tests.Import
         public async Task GetEpisodesAsync_KnownTitles_SkipsTrackLookupButKeepsMetadata()
         {
             // ARRANGE
-            ServiceCollection services = new();
-
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            _ = services.AddAppleMusicImport();
-
             const long ArtistId = 555000;
             const long KnownCollectionId = 4001;
             const long NewCollectionId = 4002;
@@ -138,43 +125,18 @@ namespace EchoPlay.AppleMusic.Tests.Import
             FakeAppleMusicSearchClient client = new(artists: []);
             client.AddAlbums(ArtistId,
             [
-                new ITunesCollectionDto
-                {
-                    WrapperType = "collection",
-                    CollectionId = KnownCollectionId,
-                    CollectionName = "Folge 1",
-                    ArtistId = ArtistId,
-                    ArtistName = "TKKG",
-                    ReleaseDate = "2020-01-01T00:00:00Z",
-                    ArtworkUrl100 = "https://example.org/100x100/folge1.jpg",
-                    TrackCount = 1,
-                    PrimaryGenreName = "Hörspiele"
-                },
-                new ITunesCollectionDto
-                {
-                    WrapperType = "collection",
-                    CollectionId = NewCollectionId,
-                    CollectionName = "Folge 2",
-                    ArtistId = ArtistId,
-                    ArtistName = "TKKG",
-                    ReleaseDate = "2021-01-01T00:00:00Z",
-                    ArtworkUrl100 = "https://example.org/100x100/folge2.jpg",
-                    TrackCount = 1,
-                    PrimaryGenreName = "Hörspiele"
-                }
+                Album(KnownCollectionId, "Folge 1", ArtistId, "TKKG",
+                    "2020-01-01T00:00:00Z", "https://example.org/100x100/folge1.jpg"),
+                Album(NewCollectionId, "Folge 2", ArtistId, "TKKG",
+                    "2021-01-01T00:00:00Z", "https://example.org/100x100/folge2.jpg")
             ]);
 
-            _ = services.AddSingleton<IAppleMusicSearchClient>(client);
-            ServiceProvider provider = services.BuildServiceProvider();
-            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
-
+            IEpisodeImportSource episodeImport = CreateImport(client);
             HashSet<string> known = new(StringComparer.OrdinalIgnoreCase) { "Folge 1" };
 
             // ACT
             IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync(
-                ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                known,
-                TestContext.Current.CancellationToken);
+                Id(ArtistId), known, TestContext.Current.CancellationToken);
 
             // ASSERT
             // Beide Alben kommen zurück: Die bekannte "Folge 1" wird nicht verschluckt (Cover-Nachtrag).
@@ -182,30 +144,20 @@ namespace EchoPlay.AppleMusic.Tests.Import
             Assert.Contains(episodes, e => e.Title == "Folge 1");
             Assert.Contains(episodes, e => e.Title == "Folge 2");
             // Bekannte "Folge 1" behält ihre Cover-URL aus den Album-Metadaten (kein Track-Lookup nötig).
-            Assert.Contains(episodes, e => e.Title == "Folge 1" && !string.IsNullOrEmpty(e.CoverImageUrl));
+            Assert.Contains(episodes, e => e.Title == "Folge 1" && e.CoverImageUrl is not null);
 
             // Der teure Track-Lookup lief NUR für die neue, unbekannte Folge, nicht für "Folge 1".
             Assert.Equal([NewCollectionId], client.LookedUpCollectionIds);
         }
 
         /// <summary>
-        /// Stellt sicher, dass eine ungültige SourceSeriesId zu einer ArgumentException führt.
+        /// Prüft, dass eine ungültige SourceSeriesId zu einer ArgumentException führt.
         /// </summary>
         [Fact]
         public async Task GetEpisodesAsync_InvalidSourceSeriesId_ThrowsArgumentException()
         {
             // ARRANGE
-            ServiceCollection services = new();
-
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            _ = services.AddAppleMusicImport();
-
-            _ = services.AddSingleton<IAppleMusicSearchClient>(
-                new FakeAppleMusicSearchClient(artists: []));
-
-            ServiceProvider provider = services.BuildServiceProvider();
-            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
+            IEpisodeImportSource episodeImport = CreateImport(new FakeAppleMusicSearchClient(artists: []));
 
             // ACT & ASSERT
             _ = await Assert.ThrowsAsync<ArgumentException>(
@@ -221,11 +173,6 @@ namespace EchoPlay.AppleMusic.Tests.Import
         public async Task GetEpisodesAsync_BatchedTrackLookup_ComputesDurationPerAlbum()
         {
             // ARRANGE
-            ServiceCollection services = new();
-            _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(
-                new EchoPlay.Logger.Core.LoggerFactory([], new EchoPlay.Logger.Configuration.LoggerOptions()));
-            _ = services.AddAppleMusicImport();
-
             const long ArtistId = 777000;
             const long CollectionA = 7001;
             const long CollectionB = 7002;
@@ -246,19 +193,16 @@ namespace EchoPlay.AppleMusic.Tests.Import
                     new ITunesTrackDto { WrapperType = "track", CollectionId = CollectionB, TrackTimeMillis = (int)TimeSpan.FromMinutes(5).TotalMilliseconds }
                 ]);
 
-            _ = services.AddSingleton<IAppleMusicSearchClient>(client);
-            ServiceProvider provider = services.BuildServiceProvider();
-            IEpisodeImportSource episodeImport = provider.GetRequiredService<IEpisodeImportSource>();
+            IEpisodeImportSource episodeImport = CreateImport(client);
 
             // ACT
             IReadOnlyList<ImportEpisode> episodes = await episodeImport.GetEpisodesAsync(
-                ArtistId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                cancellationToken: TestContext.Current.CancellationToken);
+                Id(ArtistId), cancellationToken: TestContext.Current.CancellationToken);
 
             // ASSERT
             Assert.Equal(2, episodes.Count);
-            ImportEpisode a = episodes.Single(e => e.SourceEpisodeId == CollectionA.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            ImportEpisode b = episodes.Single(e => e.SourceEpisodeId == CollectionB.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            ImportEpisode a = episodes.Single(e => e.SourceEpisodeId == Id(CollectionA));
+            ImportEpisode b = episodes.Single(e => e.SourceEpisodeId == Id(CollectionB));
             Assert.Equal(TimeSpan.FromMinutes(10), a.Duration);
             Assert.Equal(TimeSpan.FromMinutes(25), b.Duration);
         }

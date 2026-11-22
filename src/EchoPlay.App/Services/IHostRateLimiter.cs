@@ -7,8 +7,7 @@ namespace EchoPlay.App.Services
     /// <summary>
     /// Zentrale Drosselung für externe API-Aufrufe. Jeder Host hat sein eigenes
     /// Minimum-Intervall. Der Aufrufer wartet per <see cref="WaitAsync(string, CancellationToken)"/>
-    /// bis der nächste Aufruf erlaubt ist. Ersetzt verteilte <c>Task.Delay</c>-Aufrufe durch
-    /// ein konfigurierbares, pro-Host-basiertes Rate-Limiting.
+    /// bis der nächste Aufruf erlaubt ist.
     /// Implementierungen halten interne <c>SemaphoreSlim</c>-Handles, daher ist
     /// <see cref="IDisposable"/> Pflicht, denn der DI-Container gibt die Singleton-Instanz
     /// beim Host-Shutdown frei.

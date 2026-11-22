@@ -90,7 +90,7 @@ namespace EchoPlay.App.Helpers
             int selectedInSlice,
             double availableWidth) where T : class
         {
-            // Ohne Auswahl in diesem Abschnitt gibt es keine Aufklappstelle — alles steht oben.
+            // Ohne Auswahl in diesem Abschnitt gibt es keine Aufklappstelle; alles steht oben.
             if (selectedInSlice < 0)
             {
                 return new LetterGroup<T>(letter, slice, [], holdsSelection: false);

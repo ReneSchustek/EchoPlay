@@ -10,6 +10,9 @@ namespace EchoPlay.App.Services
         /// <summary>Startseite mit Neuerscheinungen, Favoriten, Weiterhören.</summary>
         Dashboard,
 
+        /// <summary>Angekündigte Folgen aller vorhandenen Serien, nach Monat.</summary>
+        Announced,
+
         /// <summary>Online-Mediathek (Provider-Inhalte).</summary>
         OnlineLibrary,
 

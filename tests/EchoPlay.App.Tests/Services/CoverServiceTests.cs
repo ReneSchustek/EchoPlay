@@ -42,18 +42,19 @@ namespace EchoPlay.App.Tests.Services
             Assert.Contains(logger.Warnings, w => w.Contains("endgültig fehlgeschlagen", StringComparison.Ordinal));
         }
 
+        /// <summary>
+        /// Scheitert beim Speichern dauerhaft mit einem Datenbankfehler; alle anderen Methoden sind
+        /// hier nicht vorgesehen.
+        /// </summary>
         private sealed class ThrowingCoverImageDataService : ICoverImageDataService
         {
-            public Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, string? sourceUrl = null, CancellationToken cancellationToken = default) =>
+            public Task SetCoverAsync(string entityType, Guid entityId, byte[] imageData, Uri? sourceUrl = null, CancellationToken cancellationToken = default) =>
                 throw new DbUpdateException("Simulierter dauerhafter DB-Fehler.");
 
             public Task<CoverImage?> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default) =>
                 throw new NotSupportedException();
 
             public Task<IReadOnlyDictionary<Guid, byte[]>> GetImageDataByEntitiesAsync(string entityType, IReadOnlyList<Guid> entityIds, CancellationToken cancellationToken = default) =>
-                throw new NotSupportedException();
-
-            public Task<IReadOnlyList<Guid>> GetUncheckedEntityIdsAsync(string entityType, DateTime cooldownThreshold, int limit, CancellationToken cancellationToken = default) =>
                 throw new NotSupportedException();
 
             public Task<bool> ExistsAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default) =>
@@ -69,11 +70,17 @@ namespace EchoPlay.App.Tests.Services
                 throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// Gibt für jede Kategorie denselben Logger aus.
+        /// </summary>
         private sealed class CapturingLoggerFactory(ILogger logger) : ILoggerFactory
         {
             public ILogger CreateLogger(string category) => logger;
         }
 
+        /// <summary>
+        /// Sammelt nur Warnungen; die übrigen Stufen fallen weg.
+        /// </summary>
         private sealed class CapturingLogger : ILogger
         {
             public List<string> Warnings { get; } = [];

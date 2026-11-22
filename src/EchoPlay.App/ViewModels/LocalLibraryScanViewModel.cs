@@ -3,14 +3,12 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -26,7 +24,6 @@ namespace EchoPlay.App.ViewModels
     /// </summary>
     public sealed class LocalLibraryScanViewModel : ObservableObject, IDisposable
     {
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ISyncService _syncService;
         private readonly IErrorDialogService _errorDialogService;
         private readonly IConfirmationDialogService _confirmationDialogService;
@@ -36,6 +33,9 @@ namespace EchoPlay.App.ViewModels
 
         // Löst die Verbindung zwischen Datenbank und Festplatte, bevor neu eingelesen wird.
         private readonly LocalLibraryReset _libraryReset;
+
+        // Schreibt die Wahl aus dem Ordnerdialog in Einstellungen und Bestand.
+        private readonly LocalLibraryFolderStore _folderStore;
 
         /// <summary>
         /// DispatcherQueue des UI-Threads; wird im Konstruktor auf dem UI-Thread erfasst und
@@ -75,7 +75,7 @@ namespace EchoPlay.App.ViewModels
             IScanEventService scanEventService,
             Action<Series> onSeriesSynced)
         {
-            _scopeFactory = scopeFactory;
+            ArgumentNullException.ThrowIfNull(scopeFactory);
             _syncService = syncService;
             _errorDialogService = errorDialogService;
             _confirmationDialogService = confirmationDialogService;
@@ -83,25 +83,17 @@ namespace EchoPlay.App.ViewModels
             _scanEventService = scanEventService;
             _onSeriesSynced = onSeriesSynced;
             _libraryReset = new LocalLibraryReset(scopeFactory);
+            _folderStore = new LocalLibraryFolderStore(scopeFactory);
 
             // DispatcherQueue auf dem UI-Thread erfassen, denn Events des Scan-Dienstes treffen später
             // vom Hintergrundthread ein und müssen auf den UI-Thread gemarshallt werden.
-            // In Unit-Tests existiert kein WinUI-3-Dispatcher, dort bleibt _dispatcherQueue null.
-            try
-            {
-                _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                _dispatcherQueue = null;
-            }
+            // In Unit-Tests existiert kein WinUI-3-Dispatcher; dort bleibt _dispatcherQueue null.
+            _dispatcherQueue = UiDispatcher.TryGetForCurrentThread();
 
             ScanCommand = new RelayCommand(() => _ = ScanAsync());
             ReInitializeCommand = new RelayCommand(() => _ = ReInitializeAsync());
             AddFolderCommand = new RelayCommand(() => AddFolderRequested?.Invoke());
         }
-
-        // ── Bibliothek ───────────────────────────────────────────────────────────
 
         /// <summary>Pfad zur lokalen Hörspielbibliothek laut AppSettings.</summary>
         public string LibraryRootPath
@@ -192,8 +184,6 @@ namespace EchoPlay.App.ViewModels
             private set => SetProperty(ref _syncStatusText, value);
         }
 
-        // ── Befehle ──────────────────────────────────────────────────────────────
-
         /// <summary>Startet einen neuen Scan der lokalen Bibliothek.</summary>
         public ICommand ScanCommand { get; }
 
@@ -206,13 +196,11 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         public ICommand AddFolderCommand { get; }
 
-        // ── Events ───────────────────────────────────────────────────────────────
-
         /// <summary>
         /// Wird ausgelöst, wenn der Nutzer den Ordner-Hinzufügen-Button drückt.
         /// Die Page reagiert auf das Event und ruft <see cref="AddFolderAsync"/> mit dem Fenster-Handle auf.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "VM->Page-Signal ohne Nutzdaten: die Page ergänzt das HWND erst im Handler; ein EventArgs-Wrapper brachte keinen Mehrwert, da MVVM-strict keine HWND-Referenz ins VM lassen will.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action? AddFolderRequested;
 
         /// <summary>
@@ -220,7 +208,7 @@ namespace EchoPlay.App.ViewModels
         /// z.B. nach Abschluss eines Scans, einer Neu-Initialisierung oder einem Ordnerpicker-Ergebnis.
         /// Das übergeordnete ViewModel reagiert darauf und füllt Kacheln, Episoden und Tracks neu.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Async Parent/Sub-VM-Bridge: der Parent-VM-Handler ist asynchron (Re-Load der Kacheln/Episoden/Tracks); Func<Task> erlaubt natives 'await' auf den Subscriber, was EventHandler<T> nicht leistet.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Das übergeordnete Ansichtsmodell wartet auf seine asynchronen Abonnenten, bevor es weiterarbeitet; EventHandler<T> liefert keinen Task, auf den es warten könnte.")]
         public event Func<Task>? LibraryReloaded;
 
         /// <summary>
@@ -228,10 +216,8 @@ namespace EchoPlay.App.ViewModels
         /// Das übergeordnete ViewModel leert daraufhin seine Listen, damit der Nutzer während
         /// des Scans nicht auf veraltete Kacheln blickt.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Parent-VM-Bridge ohne Nutzdaten: leert Listen vor Scan-Beginn; Action ist semantisch klar, EventArgs-Wrapper wäre ohne Inhalt überflüssig.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1003:Use generic event handler instances", Justification = "Der Typ ist nur öffentlich, weil WinUI-Bindungen öffentliche Typen verlangen; einen Abonnenten außerhalb der Anwendung gibt es nicht. Gleich gebaute Ereignisse in internen Klassen bleiben bei Action — ein EventArgs-Typ allein an den öffentlichen Stellen führte ein zweites Muster ein, ohne dass jemand davon profitiert.")]
         public event Action? ScanStarting;
-
-        // ── Aktivierung ──────────────────────────────────────────────────────────
 
         /// <summary>
         /// Abonniert den <see cref="IScanEventService.SeriesSynced"/>-Stream, damit laufende Scans
@@ -273,15 +259,12 @@ namespace EchoPlay.App.ViewModels
             }
         }
 
-        // ── Scan / Neu-Initialisierung ───────────────────────────────────────────
-
         /// <summary>
         /// Startet einen Bibliotheks-Scan über den SyncService.
         /// Serien werden über <see cref="IScanEventService.SeriesSynced"/> sofort sichtbar gemacht;
         /// nach Abschluss meldet das Sub-VM über <see cref="LibraryReloaded"/>, damit das
         /// übergeordnete ViewModel Episodenzähler und Cover konsistent neu lädt.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Bibliotheks-Scan vom Command: IO-/DB-/TagLib-Fehler der vielen gescannten Ordner werden geloggt und der Nutzer sieht die Fehlermeldung in 'StatusMessage', damit ein einzelner defekter Ordner den Scan-Command nicht reißt.")]
         private async Task ScanAsync()
         {
             if (IsScanning)
@@ -289,57 +272,19 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Listen des übergeordneten ViewModels leeren, denn veraltete Kacheln dürfen nicht stehen bleiben.
-            ScanStarting?.Invoke();
-
-            IsScanning = true;
-            IsScanIndeterminate = true;
-            ScanProgressPercent = 0;
-            ScanDetailText = string.Empty;
-            SyncStatusText = SafeResourceLoader.Get("ScanStatusPreparing");
-
-            try
-            {
-                // Leere DB (z.B. nach "Bibliothek zurücksetzen") zwingt den Scan in den
-                // Vollimport-Modus, unabhängig von AutoImportAfterScan in den Einstellungen.
-                bool forceImportAll;
-                using (IServiceScope checkScope = _scopeFactory.CreateScope())
+            await RunScanAsync(
+                async () =>
                 {
-                    ISeriesDataService checkService = checkScope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-                    IReadOnlyList<Series> existing = await checkService.GetAllAsync();
-                    forceImportAll = !existing.Any();
-                }
+                    // Leere DB (z.B. nach "Bibliothek zurücksetzen") zwingt den Scan in den
+                    // Vollimport-Modus, unabhängig von AutoImportAfterScan in den Einstellungen.
+                    bool forceImportAll = await _folderStore.IsLibraryEmptyAsync();
+                    SyncResult result = await _syncService.SyncAsync(CreateScanProgress(), forceImportAll: forceImportAll);
 
-                Progress<ScanProgress> progress = new(p =>
-                {
-                    SyncStatusText = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
-                    ScanDetailText = p.DetailText ?? string.Empty;
-                    IsScanIndeterminate = p.PercentComplete <= 0;
-                    ScanProgressPercent = p.PercentComplete;
-                    _statusBar.ScanProgress.Update(p);
-                });
-
-                SyncResult result = await _syncService.SyncAsync(progress, forceImportAll: forceImportAll);
-
-                // Fortschrittsbalken sofort ausblenden, bevor der Reload die Liste neu befüllt.
-                // Sonst wirkt die Ladezeit der DB-Ansicht wie ein "hängengebliebener" Scan.
-                _statusBar.ScanProgress.Clear();
-                SyncStatusText = $"Scan abgeschlossen: {result.TracksCreated} Tracks angelegt, {result.EpisodesUpdated} Episoden aktualisiert";
-                ScanDetailText = string.Empty;
-
-                await RaiseLibraryReloadedAsync();
-            }
-            catch (Exception ex)
-            {
-                _statusBar.ScanProgress.Clear();
-                SyncStatusText = string.Empty;
-                ScanDetailText = string.Empty;
-                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryScanFailedTitle"), ex.Message, DialogKey.LibraryScanFailed);
-            }
-            finally
-            {
-                IsScanning = false;
-            }
+                    string scanDone = SafeResourceLoader.Get("ScanStatusCompleted", "Scan abgeschlossen: {0} Tracks angelegt, {1} Episoden aktualisiert");
+                    return string.Format(CultureInfo.CurrentCulture, scanDone, result.TracksCreated, result.EpisodesUpdated);
+                },
+                "LibraryScanFailedTitle",
+                DialogKey.LibraryScanFailed);
         }
 
         /// <summary>
@@ -348,7 +293,6 @@ namespace EchoPlay.App.ViewModels
         /// Online-importierte Serien behalten ihre Metadaten, nur der lokale Pfad und
         /// die Track-Zuordnungen werden gelöscht. Wiedergabestatus bleibt in jedem Fall erhalten.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neuinitialisierung vom Command: DB-/IO-Fehler beim Leeren und Neuanlegen der Bibliothek dürfen den Command nicht reißen; Fehler werden als Status angezeigt.")]
         private async Task ReInitializeAsync()
         {
             bool confirmed = await _confirmationDialogService.ConfirmAsync(
@@ -361,7 +305,38 @@ namespace EchoPlay.App.ViewModels
                 return;
             }
 
-            // Anzeige sofort leeren. Der Nutzer sieht das Reset unmittelbar, bevor der lange DB-Cleanup beginnt.
+            await RunScanAsync(
+                async () =>
+                {
+                    await _libraryReset.ClearLocalAssignmentsAsync();
+
+                    string resettingStatus = SafeResourceLoader.Get("ScanStatusResetting");
+                    SyncStatusText = resettingStatus;
+                    _statusBar.ScanProgress.Update(new ScanProgress { StatusText = resettingStatus });
+
+                    // forceImportAll: true, denn nach dem Reset müssen alle Serienordner neu importiert werden,
+                    // unabhängig davon ob AutoImportAfterScan in den Einstellungen aktiviert ist.
+                    SyncResult result = await _syncService.SyncAsync(CreateScanProgress(), forceImportAll: true);
+
+                    string reinitDone = SafeResourceLoader.Get("ReinitStatusCompleted", "Neu-Initialisierung abgeschlossen: {0} Tracks angelegt");
+                    return string.Format(CultureInfo.CurrentCulture, reinitDone, result.TracksCreated);
+                },
+                "LibraryReinitFailedTitle",
+                DialogKey.LibraryReinitFailed);
+        }
+
+        /// <summary>
+        /// Der gemeinsame Rahmen von Scan und Neu-Initialisierung: Listen leeren, Fortschritt
+        /// zeigen, am Ende das Ergebnis melden und die Bibliothek neu laden, im Fehlerfall einen
+        /// Dialog zeigen.
+        /// </summary>
+        /// <param name="run">Der eigentliche Durchlauf; liefert die Abschlussmeldung.</param>
+        /// <param name="failedTitleKey">Ressourcenschlüssel des Titels im Fehlerdialog.</param>
+        /// <param name="failedDialog">Kennung des Fehlerdialogs.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Scan und Neuinitialisierung vom Command: IO-/DB-/TagLib-Fehler, die bis hierher durchschlagen, erscheinen als Fehlerdialog, damit der Command nicht reißt.")]
+        private async Task RunScanAsync(Func<Task<string>> run, string failedTitleKey, DialogKey failedDialog)
+        {
+            // Listen des übergeordneten ViewModels leeren, denn veraltete Kacheln dürfen nicht stehen bleiben.
             ScanStarting?.Invoke();
 
             IsScanning = true;
@@ -372,27 +347,12 @@ namespace EchoPlay.App.ViewModels
 
             try
             {
-                await _libraryReset.ClearLocalAssignmentsAsync();
+                string doneText = await run();
 
-                string resettingStatus = SafeResourceLoader.Get("ScanStatusResetting");
-                SyncStatusText = resettingStatus;
-                _statusBar.ScanProgress.Update(new ScanProgress { StatusText = resettingStatus });
-
-                Progress<ScanProgress> progress = new(p =>
-                {
-                    SyncStatusText = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
-                    ScanDetailText = p.DetailText ?? string.Empty;
-                    IsScanIndeterminate = p.PercentComplete <= 0;
-                    ScanProgressPercent = p.PercentComplete;
-                    _statusBar.ScanProgress.Update(p);
-                });
-
-                // forceImportAll: true, denn nach dem Reset müssen alle Serienordner neu importiert werden,
-                // unabhängig davon ob AutoImportAfterScan in den Einstellungen aktiviert ist.
-                SyncResult result = await _syncService.SyncAsync(progress, forceImportAll: true);
-
+                // Fortschrittsbalken sofort ausblenden, bevor der Reload die Liste neu befüllt.
+                // Sonst wirkt die Ladezeit der DB-Ansicht wie ein "hängengebliebener" Scan.
                 _statusBar.ScanProgress.Clear();
-                SyncStatusText = $"Neu-Initialisierung abgeschlossen: {result.TracksCreated} Tracks angelegt";
+                SyncStatusText = doneText;
                 ScanDetailText = string.Empty;
 
                 await RaiseLibraryReloadedAsync();
@@ -402,15 +362,13 @@ namespace EchoPlay.App.ViewModels
                 _statusBar.ScanProgress.Clear();
                 SyncStatusText = string.Empty;
                 ScanDetailText = string.Empty;
-                await _errorDialogService.ShowAsync(SafeResourceLoader.Get("LibraryReinitFailedTitle"), ex.Message, DialogKey.LibraryReinitFailed);
+                await _errorDialogService.ShowAsync(SafeResourceLoader.Get(failedTitleKey), ex.Message, failedDialog);
             }
             finally
             {
                 IsScanning = false;
             }
         }
-
-        // ── Ordner wählen ────────────────────────────────────────────────────────
 
         /// <summary>
         /// Öffnet den System-Ordnerpicker, speichert den gewählten Pfad in AppSettings
@@ -423,29 +381,15 @@ namespace EchoPlay.App.ViewModels
         /// </param>
         public async Task PickFolderAsync(nint windowHandle)
         {
-            Windows.Storage.Pickers.FolderPicker picker = new();
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
-            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
-            picker.FileTypeFilter.Add("*");
-
-            Windows.Storage.StorageFolder? folder = await picker.PickSingleFolderAsync();
-
+            Windows.Storage.StorageFolder? folder = await PickFolderFromUserAsync(windowHandle);
             if (folder is null)
             {
                 return;
             }
 
-            // Pfad dauerhaft speichern, damit er beim nächsten Start noch vorhanden ist
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IAppSettingsDataService settingsService = scope.ServiceProvider.GetRequiredService<IAppSettingsDataService>();
-            EchoPlay.Data.Entities.Settings.AppSettings settings = await settingsService.GetAsync();
-            settings.LocalLibraryRootPath = folder.Path;
-            await settingsService.SaveAsync(settings);
-
+            await _folderStore.SaveRootPathAsync(folder.Path);
             await RaiseLibraryReloadedAsync();
         }
-
-        // ── Ordner manuell hinzufügen ────────────────────────────────────────────
 
         /// <summary>
         /// Öffnet den Ordnerpicker, legt den gewählten Ordner als neue lokale Serie an
@@ -458,40 +402,44 @@ namespace EchoPlay.App.ViewModels
         /// </param>
         public async Task AddFolderAsync(nint windowHandle)
         {
+            Windows.Storage.StorageFolder? folder = await PickFolderFromUserAsync(windowHandle);
+            if (folder is null || !await _folderStore.TryAddSeriesFolderAsync(folder.Name, folder.Path))
+            {
+                return;
+            }
+
+            await RaiseLibraryReloadedAsync();
+        }
+
+        /// <summary>
+        /// Spiegelt den gemeldeten Stand eines Durchlaufs in Overlay und Statusleiste.
+        /// Scan und Neu-Initialisierung zeigen ihren Fortschritt gleich.
+        /// </summary>
+        private Progress<ScanProgress> CreateScanProgress() => new(p =>
+        {
+            SyncStatusText = !string.IsNullOrEmpty(p.PhaseLabel) ? p.PhaseLabel : p.StatusText;
+            ScanDetailText = p.DetailText ?? string.Empty;
+            IsScanIndeterminate = p.PercentComplete <= 0;
+            ScanProgressPercent = p.PercentComplete;
+            _statusBar.ScanProgress.Update(p);
+        });
+
+        /// <summary>
+        /// Lässt den Nutzer einen Ordner wählen, beginnend in der Musikbibliothek.
+        /// </summary>
+        /// <param name="windowHandle">
+        /// HWND des Hauptfensters; der WinRT-FolderPicker muss per <c>InitializeWithWindow</c>
+        /// an ein Fenster gebunden werden.
+        /// </param>
+        /// <returns>Der gewählte Ordner, oder <see langword="null"/> bei Abbruch.</returns>
+        private static async Task<Windows.Storage.StorageFolder?> PickFolderFromUserAsync(nint windowHandle)
+        {
             Windows.Storage.Pickers.FolderPicker picker = new();
             WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
             picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
             picker.FileTypeFilter.Add("*");
 
-            Windows.Storage.StorageFolder? folder = await picker.PickSingleFolderAsync();
-
-            if (folder is null)
-            {
-                return;
-            }
-
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
-
-            // Bestehende Serien laden, um Duplikate per Ordnerpfad zu erkennen
-            IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync();
-
-            bool pathAlreadyUsed = allSeries.Any(
-                s => string.Equals(s.LocalFolderPath, folder.Path, StringComparison.OrdinalIgnoreCase));
-
-            if (pathAlreadyUsed)
-            {
-                return;
-            }
-
-            Series newSeries = new()
-            {
-                Title = folder.Name,
-                LocalFolderPath = folder.Path
-            };
-
-            await seriesService.AddAsync(newSeries);
-            await RaiseLibraryReloadedAsync();
+            return await picker.PickSingleFolderAsync();
         }
 
         /// <summary>

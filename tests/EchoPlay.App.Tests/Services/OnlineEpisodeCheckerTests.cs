@@ -9,8 +9,6 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class OnlineEpisodeCheckerTests
     {
-        // ── ExtractEpisodeNumber ────────────────────────────────────────────────
-
         [Fact]
         public void ExtractEpisodeNumber_StandardFormat_ReturnsNumber()
         {
@@ -70,8 +68,6 @@ namespace EchoPlay.App.Tests.Services
             Assert.Equal(100, result);
         }
 
-        // ── GetLocalHighestEpisodeNumber ───────────────────────────────────────
-
         [Fact]
         public void GetLocalHighestEpisodeNumber_NullPath_ReturnsZero()
         {
@@ -115,9 +111,9 @@ namespace EchoPlay.App.Tests.Services
             // Simuliert eine Serienstruktur mit nummerierten Episodenordnern
             string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(2):N}");
             _ = Directory.CreateDirectory(tempDir);
-            _ = Directory.CreateDirectory(Path.Combine(tempDir, "001 - Erste Folge"));
-            _ = Directory.CreateDirectory(Path.Combine(tempDir, "002 - Zweite Folge"));
-            _ = Directory.CreateDirectory(Path.Combine(tempDir, "010 - Zehnte Folge"));
+            CreateEpisodeFolder(tempDir, "001 - Erste Folge");
+            CreateEpisodeFolder(tempDir, "002 - Zweite Folge");
+            CreateEpisodeFolder(tempDir, "010 - Zehnte Folge");
 
             try
             {
@@ -136,9 +132,9 @@ namespace EchoPlay.App.Tests.Services
             // Sonderfolgen (Nummer 0) und Ordner ohne Nummer werden ignoriert
             string tempDir = Path.Combine(Path.GetTempPath(), $"echoplay_test_{TestIds.Indexed(3):N}");
             _ = Directory.CreateDirectory(tempDir);
-            _ = Directory.CreateDirectory(Path.Combine(tempDir, "000 - Sonderfolge"));
-            _ = Directory.CreateDirectory(Path.Combine(tempDir, "005 - Fünfte Folge"));
-            _ = Directory.CreateDirectory(Path.Combine(tempDir, "Bonus - Extra"));
+            CreateEpisodeFolder(tempDir, "000 - Sonderfolge");
+            CreateEpisodeFolder(tempDir, "005 - Fünfte Folge");
+            CreateEpisodeFolder(tempDir, "Bonus - Extra");
 
             try
             {
@@ -149,6 +145,32 @@ namespace EchoPlay.App.Tests.Services
             {
                 Directory.Delete(tempDir, true);
             }
+        }
+
+        [Fact]
+        public void GetLocalHighestEpisodeNumber_FolderWithoutAudio_IsIgnored()
+        {
+            // Ein leerer Ordner „012" ist keine vorhandene Folge; zählte er, fielen neue Folgen
+            // beim Anbieter unter den Tisch.
+            string tempDir = Directory.CreateTempSubdirectory("echoplay_highest_").FullName;
+            CreateEpisodeFolder(tempDir, "011 - Elfte Folge");
+            _ = Directory.CreateDirectory(Path.Combine(tempDir, "012 - Noch leer"));
+
+            try
+            {
+                Assert.Equal(11, OnlineEpisodeChecker.GetLocalHighestEpisodeNumber(tempDir));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        /// <summary>Legt einen Folgenordner mit einer Audiodatei an; Ordner ohne Audio zählen nicht als Folge.</summary>
+        private static void CreateEpisodeFolder(string seriesFolder, string name)
+        {
+            string folder = Directory.CreateDirectory(Path.Combine(seriesFolder, name)).FullName;
+            File.WriteAllText(Path.Combine(folder, "01.mp3"), string.Empty);
         }
     }
 }

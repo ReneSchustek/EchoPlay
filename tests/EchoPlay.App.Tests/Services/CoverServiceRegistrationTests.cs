@@ -9,17 +9,16 @@ using Xunit;
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
-    /// Sichert die DI-Registrierung des CoverService ab. Regression zu einem Startup-Hänger:
-    /// Die <see cref="ICoverService"/>-Factory löste sich selbst auf
-    /// (<c>GetRequiredService&lt;ICoverService&gt;</c> statt <c>&lt;CoverService&gt;</c>),
-    /// wodurch der DI-Container beim Auflösen von <see cref="IStartupValidator"/> endlos
-    /// rekursierte und der App-Start (weißer Splash) einfror. Der Container erkennt nur
+    /// Sichert die DI-Registrierung des CoverService ab. Löste sich die
+    /// <see cref="ICoverService"/>-Factory selbst auf (<c>GetRequiredService&lt;ICoverService&gt;</c>
+    /// statt <c>&lt;CoverService&gt;</c>), rekursierte der DI-Container beim Auflösen von
+    /// <see cref="IStartupValidator"/> endlos, und der App-Start (weißer Splash) fröre ein. Der Container erkennt nur
     /// Konstruktor-, keine Factory-Zyklen, deshalb braucht es diese explizite Absicherung.
     /// </summary>
     public sealed class CoverServiceRegistrationTests
     {
         [Fact]
-        public async Task RegisterCoverService_ICoverService_LoestKonkretenCoverServiceAuf_OhneEndlosRekursion()
+        public async Task RegisterCoverService_ICoverService_ResolvesConcreteCoverService_WithoutEndlessRecursion()
         {
             ServiceCollection services = new();
             // CoverService-Konstruktor braucht ILoggerFactory; IServiceScopeFactory stellt der Container selbst bereit.

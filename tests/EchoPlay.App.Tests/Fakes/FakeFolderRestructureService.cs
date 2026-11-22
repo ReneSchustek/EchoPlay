@@ -58,5 +58,18 @@ namespace EchoPlay.App.Tests.Fakes
             ExecuteCallCount++;
             return _executeReturnValue;
         }
+
+        /// <summary>Wie viele Dateien <see cref="TryRecoverPendingJournal"/> als zurückgespielt meldet.</summary>
+        public int RecoveredFileCount { get; set; }
+
+        /// <summary>Serienordner, für die eine Wiederherstellung angefragt wurde.</summary>
+        public List<string> RecoveredFolders { get; } = [];
+
+        /// <inheritdoc/>
+        public int TryRecoverPendingJournal(string seriesFolderPath)
+        {
+            RecoveredFolders.Add(seriesFolderPath);
+            return RecoveredFileCount;
+        }
     }
 }

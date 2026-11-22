@@ -1,10 +1,7 @@
 using EchoPlay.App.Tests.Fakes;
-using System;
 using EchoPlay.App.ViewModels;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -14,6 +11,21 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class PlayerViewModelTests
     {
+        [Fact]
+        public void StopObservingPlayer_LaterPlayerChanges_NoLongerReachTheViewModel()
+        {
+            FakePlayerService playerService = new();
+            PlayerViewModel vm = BuildViewModel(playerService);
+            playerService.SetState("Erste Spur", isPlaying: true, positionSeconds: 10, durationSeconds: 60);
+            Assert.True(vm.IsPlaying);
+
+            vm.StopObservingPlayer();
+            playerService.SetState("Zweite Spur", isPlaying: false, positionSeconds: 0, durationSeconds: 60);
+
+            // Die verlassene Seite bleibt auf ihrem letzten Stand; der Dienst ruft sie nicht mehr.
+            Assert.True(vm.IsPlaying);
+        }
+
         private static PlayerViewModel BuildViewModel(FakePlayerService playerService)
         {
             return BuildViewModel(playerService, new FakeTrackTitleResolver());

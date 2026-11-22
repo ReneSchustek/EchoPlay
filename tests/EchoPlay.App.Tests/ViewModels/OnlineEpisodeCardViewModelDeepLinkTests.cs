@@ -1,6 +1,5 @@
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using System;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -14,10 +13,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildAppleMusicUrl_WithAlbumId_ReturnsDirectLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: TestIds.EpisodeA,
-                episodeNumber: 1,
-                title: "Testfolge",
-                appleMusicAlbumId: "1234567890");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Testfolge",
+                    AppleMusicAlbumId = "1234567890",
+                });
 
             string url = sut.BuildAppleMusicUrl();
 
@@ -28,9 +30,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildAppleMusicUrl_WithoutAlbumId_ReturnsSearchLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: TestIds.EpisodeB,
-                episodeNumber: 1,
-                title: "Die drei ??? und der Superpapagei");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeB,
+                    EpisodeNumber = 1,
+                    Title = "Die drei ??? und der Superpapagei",
+                });
 
             string url = sut.BuildAppleMusicUrl();
 
@@ -42,10 +47,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildSpotifyUrl_WithAlbumId_ReturnsDirectLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: TestIds.EpisodeC,
-                episodeNumber: 1,
-                title: "Testfolge",
-                spotifyAlbumId: "abc123xyz");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeC,
+                    EpisodeNumber = 1,
+                    Title = "Testfolge",
+                    SpotifyAlbumId = "abc123xyz",
+                });
 
             string url = sut.BuildSpotifyUrl();
 
@@ -56,9 +64,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public void BuildSpotifyUrl_WithoutAlbumId_ReturnsSearchLink()
         {
             OnlineEpisodeCardViewModel sut = new(
-                episodeId: TestIds.EpisodeD,
-                episodeNumber: 1,
-                title: "TKKG - Das leere Grab im Moor");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeD,
+                    EpisodeNumber = 1,
+                    Title = "TKKG - Das leere Grab im Moor",
+                });
 
             string url = sut.BuildSpotifyUrl();
 

@@ -1,7 +1,6 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Playback;
-using System;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

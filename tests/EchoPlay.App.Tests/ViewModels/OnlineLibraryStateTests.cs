@@ -2,15 +2,11 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -49,13 +45,16 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportService importService = ImportTestServices.CreateImportService(provider);
 
             OnlineLibraryViewModel viewModel = new(
-                scopeFactory,
-                new FakeConfirmationDialogService(),
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
-                new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<ICoverDownloader>(),
+                new OnlineLibraryActionsContext
+                {
+                    ScopeFactory = scopeFactory,
+                    ConfirmationDialogService = new FakeConfirmationDialogService(),
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                    CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                },
                 pageModeGuard: pageModeGuard,
                 navigationService: navigationService);
 
@@ -303,7 +302,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task ApplySelectedEpisodeCover_WithoutCoverService_LeavesThePlaceholder()
         {
             (OnlineLibraryViewModel viewModel, _) = Build();
-            OnlineEpisodeCardViewModel card = new(Guid.NewGuid(), 1, "Der Superhund");
+            OnlineEpisodeCardViewModel card = new(
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = Guid.NewGuid(),
+                    EpisodeNumber = 1,
+                    Title = "Der Superhund",
+                });
             EchoPlay.App.Models.CoverSearchHit hit = new(
                 new Uri("https://example.org/small.jpg"), new Uri("https://example.org/large.jpg"), "TKKG", "Test");
 
@@ -404,19 +409,22 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new SeriesCardViewModel(
-                Guid.NewGuid(),
-                "TKKG",
+                new SeriesCardData
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "TKKG",
+                    TotalEpisodeCount = 3,
+                    NewEpisodeCount = 0,
+                    InProgressCount = 0,
+                    FinishedCount = 0,
+                    IsSubscribed = true,
+                    IsFavorite = false,
+                    IsWatched = false,
+                },
                 coverImage: null,
-                totalEpisodeCount: 3,
-                newEpisodeCount: 0,
-                inProgressCount: 0,
-                finishedCount: 0,
-                isSubscribed: true,
-                isFavorite: false,
-                isWatched: false,
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeConfirmationDialogService(),
-                new FakeLocalizationService());
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
+                confirmationDialogService: new FakeConfirmationDialogService(),
+                localizationService: new FakeLocalizationService());
         }
 
         /// <summary>

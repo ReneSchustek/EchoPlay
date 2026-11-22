@@ -1,15 +1,10 @@
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Models;
-using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -46,13 +41,16 @@ namespace EchoPlay.App.Tests.ViewModels
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>());
 
             return new OnlineLibraryViewModel(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeConfirmationDialogService(),
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
-                new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>(),
+                new OnlineLibraryActionsContext
+                {
+                    ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                    ConfirmationDialogService = new FakeConfirmationDialogService(),
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                    CoverDownloader = provider.GetRequiredService<EchoPlay.App.Services.ICoverDownloader>(),
+                },
                 pageModeGuard: pageModeGuard);
         }
 

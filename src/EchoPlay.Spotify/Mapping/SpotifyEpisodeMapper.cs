@@ -25,15 +25,17 @@ namespace EchoPlay.Spotify.Mapping
             ArgumentNullException.ThrowIfNull(tracks);
 
             // Album-ID statt Track-ID, denn ein Album = eine Folge
-            return ImportEpisodeFactory.Create(
-                sourceEpisodeId: album.SpotifyAlbumId,
-                title: album.Title,
-                releaseDate: album.ReleaseDate,
-                trackDurations: tracks.Select(track => track.Duration),
-                orderIndex: orderIndex,
-                providerUrl: WebAddress.TryParse($"https://open.spotify.com/album/{Uri.EscapeDataString(album.SpotifyAlbumId)}"),
-                coverImageUrl: WebAddress.TryParse(album.ImageUrl),
-                source: "Spotify");
+            ImportEpisodeDraft draft = new()
+            {
+                SourceEpisodeId = album.SpotifyAlbumId,
+                Title = album.Title,
+                ReleaseDate = album.ReleaseDate,
+                OrderIndex = orderIndex,
+                ProviderUrl = WebAddress.TryParse($"https://open.spotify.com/album/{Uri.EscapeDataString(album.SpotifyAlbumId)}"),
+                CoverImageUrl = WebAddress.TryParse(album.ImageUrl),
+                Source = "Spotify",
+            };
+            return ImportEpisodeFactory.Create(draft, tracks.Select(track => track.Duration));
         }
     }
 }

@@ -2,7 +2,6 @@ using System.Data.Common;
 using EchoPlay.Data.Configurations;
 using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {

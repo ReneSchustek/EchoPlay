@@ -1,7 +1,4 @@
 using EchoPlay.Core.Models;
-using System;
-using System.Linq;
-using Xunit;
 
 namespace EchoPlay.Core.Tests.Models
 {

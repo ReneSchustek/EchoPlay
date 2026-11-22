@@ -4,11 +4,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -246,14 +241,14 @@ namespace EchoPlay.App.Tests.ViewModels
         private static LocalEpisodeCardViewModel BuildCard(Episode episode)
         {
             return new LocalEpisodeCardViewModel(
-                episode.Id,
-                episodeNumber: null,
-                episode.Title,
-                localTrackCount: 1,
-                episode.LocalFolderPath,
-                coverImage: null,
-                isCompleted: false,
-                isSpecialEpisode: false);
+                new LocalEpisodeCardData
+                {
+                    EpisodeId = episode.Id,
+                    Title = episode.Title,
+                    LocalTrackCount = 1,
+                    FolderPath = episode.LocalFolderPath,
+                },
+                coverImage: null);
         }
 
         private static LocalEpisodeCoverLoader BuildLoader(out ConfigurableLocalCoverLoader coverLoader)

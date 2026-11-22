@@ -3,10 +3,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 using MicrosoftDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue;
 

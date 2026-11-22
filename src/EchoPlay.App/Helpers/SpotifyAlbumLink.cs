@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace EchoPlay.App.Helpers
@@ -68,7 +65,8 @@ namespace EchoPlay.App.Helpers
 
             string query = string.Join(' ', searchTerms
                 .Where(t => !string.IsNullOrWhiteSpace(t))
-                .Select(t => t!.Trim()));
+                .OfType<string>()
+                .Select(t => t.Trim()));
 
             if (string.IsNullOrWhiteSpace(query))
             {

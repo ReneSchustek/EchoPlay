@@ -4,14 +4,8 @@ using EchoPlay.App.Tests.Helpers;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

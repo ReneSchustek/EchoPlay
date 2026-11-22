@@ -5,9 +5,6 @@ using EchoPlay.Data.Services;
 using EchoPlay.Data.Services.Projections;
 using EchoPlay.Data.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Tests.Services
 {
@@ -53,7 +50,7 @@ namespace EchoPlay.Data.Tests.Services
         {
             PlaybackStateDataService sut = new(Context, NullLoggerFactory);
 
-            HashSet<Guid> fertige = await sut.GetCompletedEpisodeIdsAsync(
+            IReadOnlySet<Guid> fertige = await sut.GetCompletedEpisodeIdsAsync(
                 [], TestContext.Current.CancellationToken);
 
             Assert.Empty(fertige);
@@ -73,7 +70,7 @@ namespace EchoPlay.Data.Tests.Services
 
             PlaybackStateDataService sut = new(Context, NullLoggerFactory);
 
-            HashSet<Guid> fertige = await sut.GetCompletedEpisodeIdsAsync(
+            IReadOnlySet<Guid> fertige = await sut.GetCompletedEpisodeIdsAsync(
                 [done.Id, open.Id], TestContext.Current.CancellationToken);
 
             // Das Häkchen auf der Kachel hängt daran. Eine Folge fälschlich als gehört

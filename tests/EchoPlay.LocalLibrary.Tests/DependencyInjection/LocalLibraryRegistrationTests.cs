@@ -4,14 +4,9 @@ using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.DependencyInjection;
 using EchoPlay.LocalLibrary.Metadata;
-using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Tests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Tests.DependencyInjection
 {

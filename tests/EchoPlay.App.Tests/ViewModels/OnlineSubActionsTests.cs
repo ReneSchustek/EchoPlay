@@ -2,16 +2,12 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -27,27 +23,33 @@ namespace EchoPlay.App.Tests.ViewModels
         private static readonly Guid UnknownSeriesId = new("00000000-0000-0000-0000-deadbeef0001");
         private static readonly Guid UnknownRemoveId = new("00000000-0000-0000-0000-deadbeef0002");
 
-        private static OnlineLibraryActionsContext BuildContext(
-            FakeSeriesDataService? seriesService = null,
-            FakeEpisodeDataService? episodeService = null,
-            FakePlaybackStateDataService? stateService = null,
-            ProviderType activeProvider = ProviderType.Spotify,
-            FakeSpotifyClientCredentialsProvider? credentialsProvider = null,
-            EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? spotifySearch = null,
-            EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? appleMusicSearch = null,
-            FakeConfirmationDialogService? confirmationDialogService = null,
-            FakeWatchToggleService? watchToggleService = null)
+        /// <summary>Einstellungen für <see cref="BuildContext"/>; ohne Angabe gelten die Vorgaben.</summary>
+        private sealed record ContextSetup
         {
+            public FakeSeriesDataService? SeriesService { get; init; }
+            public FakeEpisodeDataService? EpisodeService { get; init; }
+            public FakePlaybackStateDataService? StateService { get; init; }
+            public ProviderType ActiveProvider { get; init; } = ProviderType.Spotify;
+            public FakeSpotifyClientCredentialsProvider? CredentialsProvider { get; init; }
+            public EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? SpotifySearch { get; init; }
+            public EchoPlay.Core.Abstractions.Import.ISeriesImportSearch? AppleMusicSearch { get; init; }
+            public FakeConfirmationDialogService? ConfirmationDialogService { get; init; }
+            public FakeWatchToggleService? WatchToggleService { get; init; }
+        }
+
+        private static OnlineLibraryActionsContext BuildContext(ContextSetup? setup = null)
+        {
+            setup ??= new ContextSetup();
             ServiceCollection services = new();
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService ?? new FakeSeriesDataService());
+            _ = services.AddScoped<ISeriesDataService>(_ => setup.SeriesService ?? new FakeSeriesDataService());
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService ?? new FakeEpisodeDataService());
-            _ = services.AddScoped<IPlaybackStateDataService>(_ => stateService ?? new FakePlaybackStateDataService());
+            _ = services.AddScoped<IEpisodeDataService>(_ => setup.EpisodeService ?? new FakeEpisodeDataService());
+            _ = services.AddScoped<IPlaybackStateDataService>(_ => setup.StateService ?? new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(
-                new AppSettings { ActiveProvider = activeProvider }));
-            ImportTestServices.AddProviderFakes(services, spotifySearch: spotifySearch, appleMusicSearch: appleMusicSearch);
+                new AppSettings { ActiveProvider = setup.ActiveProvider }));
+            ImportTestServices.AddProviderFakes(services, spotifySearch: setup.SpotifySearch, appleMusicSearch: setup.AppleMusicSearch);
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
-                credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
+                setup.CredentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
             _ = services.AddScoped<ICoverImageDataService>(_ => new FakeCoverImageDataService());
             _ = services.AddScoped<ICoverCopyService>(_ => new FakeCoverCopyService());
             ImportTestServices.AddCoverChain(services);
@@ -55,25 +57,24 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
             ImportService importService = ImportTestServices.CreateImportService(provider);
 
-            return new OnlineLibraryActionsContext(
-                ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
-                ConfirmationDialogService: confirmationDialogService ?? new FakeConfirmationDialogService(),
-                ImportService: importService,
-                ErrorDialogService: new FakeErrorDialogService(),
-                LocalizationService: new FakeLocalizationService(),
-                OnlineAccessGuard: new FakeOnlineAccessGuard(),
-                CoverCacheService: null,
-                CoverService: provider.GetRequiredService<CoverService>(),
-                BackgroundCoverService: null,
-                WatchToggleService: watchToggleService,
-                CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
-                RateLimiter: null);
+            return new OnlineLibraryActionsContext
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ConfirmationDialogService = setup.ConfirmationDialogService ?? new FakeConfirmationDialogService(),
+                ImportService = importService,
+                ErrorDialogService = new FakeErrorDialogService(),
+                LocalizationService = new FakeLocalizationService(),
+                OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                CoverService = provider.GetRequiredService<CoverService>(),
+                WatchToggleService = setup.WatchToggleService,
+                CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+            };
         }
 
         [Fact]
         public async Task OnlineSeriesLoader_LoadAsync_IncrementsCallCount_AndSetsNoProviderFlag()
         {
-            OnlineLibraryActionsContext ctx = BuildContext(activeProvider: ProviderType.None);
+            OnlineLibraryActionsContext ctx = BuildContext(new() { ActiveProvider = ProviderType.None });
             OnlineSeriesViewModel seriesVM = new();
             OnlineActionsState state = new();
 
@@ -101,7 +102,7 @@ namespace EchoPlay.App.Tests.ViewModels
                     }
                 ]);
 
-            OnlineLibraryActionsContext ctx = BuildContext(stateService: stateService);
+            OnlineLibraryActionsContext ctx = BuildContext(new() { StateService = stateService });
             OnlineSeriesViewModel seriesVM = new();
             OnlineActionsState state = new();
 
@@ -120,15 +121,25 @@ namespace EchoPlay.App.Tests.ViewModels
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
             await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
-            OnlineLibraryActionsContext ctx = BuildContext(seriesService: seriesService);
+            OnlineLibraryActionsContext ctx = BuildContext(new() { SeriesService = seriesService });
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineActionsState state = new();
 
             SeriesCardViewModel card = new(
-                id: series.Id, title: series.Title, coverImage: null,
-                totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
-                isSubscribed: false, isFavorite: false, isWatched: false,
+                new SeriesCardData
+                {
+                    Id = series.Id,
+                    Title = series.Title,
+                    TotalEpisodeCount = 0,
+                    NewEpisodeCount = 0,
+                    InProgressCount = 0,
+                    FinishedCount = 0,
+                    IsSubscribed = false,
+                    IsFavorite = false,
+                    IsWatched = false,
+                },
+                coverImage: null,
                 scopeFactory: ctx.ScopeFactory,
                 confirmationDialogService: ctx.ConfirmationDialogService,
                 localizationService: ctx.LocalizationService);
@@ -149,15 +160,25 @@ namespace EchoPlay.App.Tests.ViewModels
             Series series = new() { Title = "TKKG", SpotifyArtistId = "sp_tkkg", IsOnlineImported = true };
             await seriesService.AddAsync(series, cancellationToken: TestContext.Current.CancellationToken);
 
-            OnlineLibraryActionsContext ctx = BuildContext(seriesService: seriesService);
+            OnlineLibraryActionsContext ctx = BuildContext(new() { SeriesService = seriesService });
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineActionsState state = new();
 
             SeriesCardViewModel card = new(
-                id: series.Id, title: series.Title, coverImage: null,
-                totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
-                isSubscribed: false, isFavorite: false, isWatched: false,
+                new SeriesCardData
+                {
+                    Id = series.Id,
+                    Title = series.Title,
+                    TotalEpisodeCount = 0,
+                    NewEpisodeCount = 0,
+                    InProgressCount = 0,
+                    FinishedCount = 0,
+                    IsSubscribed = false,
+                    IsFavorite = false,
+                    IsWatched = false,
+                },
+                coverImage: null,
                 scopeFactory: ctx.ScopeFactory,
                 confirmationDialogService: ctx.ConfirmationDialogService,
                 localizationService: ctx.LocalizationService);
@@ -188,9 +209,27 @@ namespace EchoPlay.App.Tests.ViewModels
 
             vm.SetEpisodes(
             [
-                new(Helpers.TestIds.EpisodeA, 1, "Folge 1"),
-                new(Helpers.TestIds.EpisodeC, 3, "Folge 3"),
-                new(Helpers.TestIds.EpisodeB, 2, "Folge 2"),
+                new(
+                    new OnlineEpisodeCardData
+                    {
+                        EpisodeId = Helpers.TestIds.EpisodeA,
+                        EpisodeNumber = 1,
+                        Title = "Folge 1",
+                    }),
+                new(
+                    new OnlineEpisodeCardData
+                    {
+                        EpisodeId = Helpers.TestIds.EpisodeC,
+                        EpisodeNumber = 3,
+                        Title = "Folge 3",
+                    }),
+                new(
+                    new OnlineEpisodeCardData
+                    {
+                        EpisodeId = Helpers.TestIds.EpisodeB,
+                        EpisodeNumber = 2,
+                        Title = "Folge 2",
+                    }),
             ]);
 
             // Sortier-Auswahl bleibt erhalten ...
@@ -255,9 +294,11 @@ namespace EchoPlay.App.Tests.ViewModels
                 [new ImportSeries { Title = "Apple", Source = "AppleMusic", SourceSeriesId = "am1" }],
                 "AppleMusic");
 
-            OnlineLibraryActionsContext ctx = BuildContext(
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing(),
-                appleMusicSearch: appleMusicSearch);
+            OnlineLibraryActionsContext ctx = BuildContext(new()
+            {
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+                AppleMusicSearch = appleMusicSearch,
+            });
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineProviderSearchViewModel searchVM = new();
@@ -277,7 +318,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Back-to-Back-Suche in der Online-Mediathek: die zweite Suche muss die erste
             // verdrängen, die spät eintreffenden Stale-Treffer dürfen die UI nicht mehr füllen.
             GatedSeriesImportSearch gated = new();
-            OnlineLibraryActionsContext ctx = BuildContext(spotifySearch: gated);
+            OnlineLibraryActionsContext ctx = BuildContext(new() { SpotifySearch = gated });
             OnlineSeriesViewModel seriesVM = new();
             OnlineEpisodesViewModel episodesVM = new();
             OnlineProviderSearchViewModel searchVM = new()
@@ -357,7 +398,11 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
 
             FakeConfirmationDialogService dialog = new(result: false);
-            OnlineLibraryActionsContext ctx = BuildContext(seriesService, confirmationDialogService: dialog);
+            OnlineLibraryActionsContext ctx = BuildContext(new()
+            {
+                SeriesService = seriesService,
+                ConfirmationDialogService = dialog,
+            });
 
             OnlineSeriesViewModel seriesVM = new();
             seriesVM.SetAllSeries([CardFor(series, ctx.ScopeFactory)]);
@@ -383,8 +428,11 @@ namespace EchoPlay.App.Tests.ViewModels
             Series series = new() { Title = "Die drei Fragezeichen", IsOnlineImported = true };
             await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
 
-            OnlineLibraryActionsContext ctx = BuildContext(
-                seriesService, confirmationDialogService: new FakeConfirmationDialogService(result: true));
+            OnlineLibraryActionsContext ctx = BuildContext(new()
+            {
+                SeriesService = seriesService,
+                ConfirmationDialogService = new FakeConfirmationDialogService(result: true),
+            });
 
             OnlineSeriesViewModel seriesVM = new();
             seriesVM.SetAllSeries([CardFor(series, ctx.ScopeFactory)]);
@@ -410,7 +458,11 @@ namespace EchoPlay.App.Tests.ViewModels
             await seriesService.AddAsync(series, TestContext.Current.CancellationToken);
 
             FakeWatchToggleService watchToggle = new();
-            OnlineLibraryActionsContext ctx = BuildContext(seriesService, watchToggleService: watchToggle);
+            OnlineLibraryActionsContext ctx = BuildContext(new()
+            {
+                SeriesService = seriesService,
+                WatchToggleService = watchToggle,
+            });
 
             OnlineSeriesViewModel seriesVM = new();
             seriesVM.SetAllSeries([CardFor(series, ctx.ScopeFactory)]);
@@ -436,19 +488,22 @@ namespace EchoPlay.App.Tests.ViewModels
         private static SeriesCardViewModel CardFor(Series series, IServiceScopeFactory scopeFactory)
         {
             return new SeriesCardViewModel(
-                series.Id,
-                series.Title,
+                new SeriesCardData
+                {
+                    Id = series.Id,
+                    Title = series.Title,
+                    TotalEpisodeCount = 0,
+                    NewEpisodeCount = 0,
+                    InProgressCount = 0,
+                    FinishedCount = 0,
+                    IsSubscribed = true,
+                    IsFavorite = false,
+                    IsWatched = false,
+                },
                 coverImage: null,
-                totalEpisodeCount: 0,
-                newEpisodeCount: 0,
-                inProgressCount: 0,
-                finishedCount: 0,
-                isSubscribed: true,
-                isFavorite: false,
-                isWatched: false,
-                scopeFactory,
-                new FakeConfirmationDialogService(),
-                new FakeLocalizationService());
+                scopeFactory: scopeFactory,
+                confirmationDialogService: new FakeConfirmationDialogService(),
+                localizationService: new FakeLocalizationService());
         }
     }
 }

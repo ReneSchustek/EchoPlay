@@ -17,8 +17,9 @@ namespace EchoPlay.Logger.Sinks
         /// <param name="logDirectory">Verzeichnis für Log-Dateien.</param>
         /// <param name="formatter">Der Formatter für die Log-Ausgabe.</param>
         /// <param name="maxFileSizeMb">Maximale Dateigröße in MB (Standard: 10).</param>
-        public FileSink(string logDirectory, ILogFormatter formatter, int maxFileSizeMb = 10)
-            : base(logDirectory, "Logs", ".log", maxFileSizeMb)
+        /// <param name="timeProvider">Zeitquelle für den Tag im Dateinamen; ohne Angabe die Systemzeit.</param>
+        public FileSink(string logDirectory, ILogFormatter formatter, int maxFileSizeMb = 10, TimeProvider? timeProvider = null)
+            : base(logDirectory, "Logs", ".log", maxFileSizeMb, timeProvider)
         {
             _formatter = formatter;
         }

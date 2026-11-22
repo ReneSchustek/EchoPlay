@@ -1,9 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.Spotify.Auth;
 using EchoPlay.Spotify.Configuration;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

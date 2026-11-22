@@ -1,7 +1,6 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

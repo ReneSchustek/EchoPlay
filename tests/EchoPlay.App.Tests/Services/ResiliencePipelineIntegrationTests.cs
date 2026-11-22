@@ -2,13 +2,12 @@ using System.Collections.Concurrent;
 using System.Net;
 using EchoPlay.App.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
 
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Integrationstests für die HttpClient-Resilience-Pipeline.
-    /// Prüft das Zusammenspiel von <see cref="AddStandardResilienceHandler"/>
+    /// Prüft das Zusammenspiel von <c>AddStandardResilienceHandler</c>
     /// und <see cref="RateLimitMessageHandler"/> mit einem stubbed Primary-Handler.
     /// </summary>
     public sealed class ResiliencePipelineIntegrationTests

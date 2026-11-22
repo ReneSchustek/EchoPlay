@@ -5,12 +5,7 @@ using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Sinks;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

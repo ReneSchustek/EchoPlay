@@ -7,7 +7,6 @@ using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Management;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -44,23 +43,25 @@ namespace EchoPlay.App.Tests.ViewModels
             StatusBarViewModel statusBar = new(
                 scopeFactory, new FakeThemeService(), new TaskbarProgressService(), new FakeClock());
 
-            return new SettingsViewModel(new SettingsViewModelContext(
-                scopeFactory,
-                new FakeThemeService(),
-                new FakeSyncService(new SyncResult()),
-                errorDialogService ?? new FakeErrorDialogService(),
-                confirmationDialogService ?? new FakeConfirmationDialogService(),
-                new FakeLocalizationService(),
-                new FakeEpisodePatternAnalyzer(),
-                new FakeConnectionTestCoordinator(),
-                credentialStore,
-                new FakeSpotifyOptionsProvider(credentialStore),
-                new FakeLogViewerCoordinator(),
-                BuildLoggerManager(),
-                statusBar,
-                new FakeDialogSuppressionService(),
-                new FakeLoggerFactory(),
-                languageSwitchService));
+            return new SettingsViewModel(new SettingsViewModelContext
+            {
+                ScopeFactory = scopeFactory,
+                ThemeService = new FakeThemeService(),
+                SyncService = new FakeSyncService(new SyncResult()),
+                ErrorDialogService = errorDialogService ?? new FakeErrorDialogService(),
+                ConfirmationDialogService = confirmationDialogService ?? new FakeConfirmationDialogService(),
+                LocalizationService = new FakeLocalizationService(),
+                PatternAnalyzer = new FakeEpisodePatternAnalyzer(),
+                ConnectionTestCoordinator = new FakeConnectionTestCoordinator(),
+                CredentialStore = credentialStore,
+                OptionsProvider = new FakeSpotifyOptionsProvider(credentialStore),
+                LogViewerCoordinator = new FakeLogViewerCoordinator(),
+                LoggerManager = BuildLoggerManager(),
+                StatusBar = statusBar,
+                SuppressionService = new FakeDialogSuppressionService(),
+                LoggerFactory = new FakeLoggerFactory(),
+                LanguageSwitchService = languageSwitchService,
+            });
         }
 
         [Fact]

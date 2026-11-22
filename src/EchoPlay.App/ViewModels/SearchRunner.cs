@@ -4,10 +4,6 @@ using EchoPlay.Core.Search;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -30,38 +26,33 @@ namespace EchoPlay.App.ViewModels
         private readonly IErrorDialogService _errorDialogService;
         private readonly ILocalizationService _localizationService;
         private readonly IServiceScopeFactory? _scopeFactory;
-        private readonly BackgroundCoverService? _backgroundCoverService;
+        private readonly SearchResultServices _services;
         private readonly SearchViewModel _parent;
 
         /// <summary>
         /// Richtet die Durchführung auf die Dienste des Ansichtsmodells ein.
         /// </summary>
-        /// <param name="importService">Sucht beim Anbieter und kennt den Import-Stand.</param>
-        /// <param name="errorDialogService">Wird an die Trefferkarten weitergereicht.</param>
-        /// <param name="localizationService">Wird an die Trefferkarten weitergereicht.</param>
+        /// <param name="services">
+        /// Import, Fehleranzeige, Texte und Cover-Pipeline; die Suche nutzt den Import, die
+        /// Trefferkarten bekommen das Bündel weitergereicht.
+        /// </param>
         /// <param name="scopeFactory">
         /// Für die Suche im eigenen Bestand. Ohne sie bleibt der lokale Zweig leer. So
         /// laufen Tests ohne Datenbank.
         /// </param>
-        /// <param name="backgroundCoverService">Lädt die Cover der Trefferkarten nach.</param>
         /// <param name="parent">
         /// Das Ansichtsmodell, an dem die Karten hängen. Sie melden ihm einen erfolgreichen
         /// Import zurück und es nimmt die fertigen Karten entgegen, deshalb kennt die
         /// Durchführung es.
         /// </param>
-        public SearchRunner(
-            ImportService importService,
-            IErrorDialogService errorDialogService,
-            ILocalizationService localizationService,
-            IServiceScopeFactory? scopeFactory,
-            BackgroundCoverService? backgroundCoverService,
-            SearchViewModel parent)
+        public SearchRunner(SearchResultServices services, IServiceScopeFactory? scopeFactory, SearchViewModel parent)
         {
-            _importService = importService;
-            _errorDialogService = errorDialogService;
-            _localizationService = localizationService;
+            ArgumentNullException.ThrowIfNull(services);
+            _services = services;
+            _importService = services.ImportService;
+            _errorDialogService = services.ErrorDialogService;
+            _localizationService = services.LocalizationService;
             _scopeFactory = scopeFactory;
-            _backgroundCoverService = backgroundCoverService;
             _parent = parent;
         }
 
@@ -183,8 +174,7 @@ namespace EchoPlay.App.ViewModels
             if (coverToken.IsCancellationRequested) return false;
 
             SearchResultViewModel card = new(
-                series, alreadyImported, _importService, _errorDialogService,
-                _localizationService, _backgroundCoverService,
+                series, alreadyImported, _services,
                 parentViewModel: _parent, cancellationToken: coverToken);
 
             _parent.PublishOnlineResult(card, SearchResultRank.Create(series, searchText));
@@ -209,8 +199,7 @@ namespace EchoPlay.App.ViewModels
                 // Lokale Einträge stehen bereits in der Datenbank, eine Import-Schaltfläche
                 // wäre hier ohne Sinn.
                 _parent.PublishLocalResult(new SearchResultViewModel(
-                    series, true, _importService, _errorDialogService,
-                    _localizationService, _backgroundCoverService,
+                    series, isAlreadyImported: true, _services,
                     cancellationToken: coverToken));
             }
 

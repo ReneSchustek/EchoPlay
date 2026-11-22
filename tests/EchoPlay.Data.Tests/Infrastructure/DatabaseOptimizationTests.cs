@@ -1,7 +1,6 @@
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
-using EchoPlay.Data.Tests.Infrastructure;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 

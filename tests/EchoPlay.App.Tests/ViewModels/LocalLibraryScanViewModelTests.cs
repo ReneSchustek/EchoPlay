@@ -1,16 +1,10 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -85,7 +79,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Nach einem Zurücksetzen ist die Datenbank leer. Würde der Lauf hier auf die
             // Einstellung hören, bliebe die Mediathek leer und niemand fände den Grund.
-            Assert.True(harness.SyncService.LastForceImportAll);
+            Assert.Equal(SyncImportScope.AllFolders, harness.SyncService.LastImportScope);
         }
 
         [Fact]
@@ -95,7 +89,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             await harness.RunScanAsync();
 
-            Assert.False(harness.SyncService.LastForceImportAll);
+            Assert.Equal(SyncImportScope.AsConfigured, harness.SyncService.LastImportScope);
         }
 
         [Fact]
@@ -183,7 +177,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Nach dem Auflösen aller Zuordnungen muss alles neu eingelesen werden, auch
             // hier zählt die Einstellung nicht, sonst bliebe der Bestand ohne Dateien.
             Assert.Equal(1, harness.SyncService.SyncCallCount);
-            Assert.True(harness.SyncService.LastForceImportAll);
+            Assert.Equal(SyncImportScope.AllFolders, harness.SyncService.LastImportScope);
         }
 
         [Fact]

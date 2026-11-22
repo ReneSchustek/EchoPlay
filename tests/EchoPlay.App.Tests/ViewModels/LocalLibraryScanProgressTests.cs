@@ -7,8 +7,6 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -113,7 +111,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Nach dem Zurücksetzen ist keine Zuordnung mehr da, der Lauf muss jeden
             // Ordner erneut einlesen, unabhängig von der Einstellung zum Auto-Import.
             Assert.Equal(1, sync.SyncCallCount);
-            Assert.True(sync.LastForceImportAll);
+            Assert.Equal(SyncImportScope.AllFolders, sync.LastImportScope);
             Assert.False(sut.IsScanning);
         }
 

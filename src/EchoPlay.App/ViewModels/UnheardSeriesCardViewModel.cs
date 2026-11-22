@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
 using System.Globalization;
 
 namespace EchoPlay.App.ViewModels

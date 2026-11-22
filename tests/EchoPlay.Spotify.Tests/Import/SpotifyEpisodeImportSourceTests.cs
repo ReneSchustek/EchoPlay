@@ -5,7 +5,6 @@ using EchoPlay.Spotify.DependencyInjection;
 using EchoPlay.Spotify.Tests.Fakes;
 using EchoPlay.Spotify.Tests.TestData;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace EchoPlay.Spotify.Tests.Import
 {

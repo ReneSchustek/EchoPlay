@@ -1,8 +1,6 @@
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System.Collections.Generic;
 using System.ComponentModel;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

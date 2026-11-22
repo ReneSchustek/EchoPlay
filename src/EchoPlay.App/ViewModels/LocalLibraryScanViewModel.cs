@@ -7,9 +7,7 @@ using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using System;
 using System.Globalization;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -277,8 +275,10 @@ namespace EchoPlay.App.ViewModels
                 {
                     // Leere DB (z.B. nach "Bibliothek zurücksetzen") zwingt den Scan in den
                     // Vollimport-Modus, unabhängig von AutoImportAfterScan in den Einstellungen.
-                    bool forceImportAll = await _folderStore.IsLibraryEmptyAsync();
-                    SyncResult result = await _syncService.SyncAsync(CreateScanProgress(), forceImportAll: forceImportAll);
+                    SyncImportScope scope = await _folderStore.IsLibraryEmptyAsync()
+                        ? SyncImportScope.AllFolders
+                        : SyncImportScope.AsConfigured;
+                    SyncResult result = await _syncService.SyncAsync(CreateScanProgress(), scope);
 
                     string scanDone = SafeResourceLoader.Get("ScanStatusCompleted", "Scan abgeschlossen: {0} Tracks angelegt, {1} Episoden aktualisiert");
                     return string.Format(CultureInfo.CurrentCulture, scanDone, result.TracksCreated, result.EpisodesUpdated);
@@ -316,7 +316,7 @@ namespace EchoPlay.App.ViewModels
 
                     // forceImportAll: true, denn nach dem Reset müssen alle Serienordner neu importiert werden,
                     // unabhängig davon ob AutoImportAfterScan in den Einstellungen aktiviert ist.
-                    SyncResult result = await _syncService.SyncAsync(CreateScanProgress(), forceImportAll: true);
+                    SyncResult result = await _syncService.SyncAsync(CreateScanProgress(), SyncImportScope.AllFolders);
 
                     string reinitDone = SafeResourceLoader.Get("ReinitStatusCompleted", "Neu-Initialisierung abgeschlossen: {0} Tracks angelegt");
                     return string.Format(CultureInfo.CurrentCulture, reinitDone, result.TracksCreated);

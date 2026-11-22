@@ -9,7 +9,7 @@ namespace EchoPlay.Data.Entities.Library
     /// Eine Zeile pro Entity (Serie oder Episode), verknüpft über EntityType + EntityId.
     /// Die Trennung verhindert, dass Metadaten-Queries MB an Bilddaten mitladen.
     /// </summary>
-    public class CoverImage : BaseEntity
+    public sealed class CoverImage : BaseEntity
     {
         /// <summary>
         /// Typ der verknüpften Entity: "Series" oder "Episode".

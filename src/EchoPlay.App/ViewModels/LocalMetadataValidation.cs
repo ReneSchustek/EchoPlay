@@ -21,7 +21,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="title">Eingegebener Titel.</param>
         /// <param name="numberText">Eingegebene Nummer; leer bedeutet Sonderfolge.</param>
         /// <param name="yearText">Eingegebenes Jahr; leer bedeutet unbekannt.</param>
-        /// <param name="numberRequired">
+        /// <param name="numberRule">
         /// Ob die Folge eine Nummer behalten muss. Hatte sie eine, stünde die alte Nummer weiter
         /// im Ordnernamen, und das nächste Einlesen setzte sie wieder.
         /// </param>
@@ -29,7 +29,7 @@ namespace EchoPlay.App.ViewModels
         /// <param name="year">Das gelesene Jahr.</param>
         /// <returns>Schlüssel des Fehlertexts, oder <see langword="null"/>, wenn alles stimmt.</returns>
         public static string? ValidateEpisode(
-            string? title, string? numberText, string? yearText, bool numberRequired, out int? number, out int? year)
+            string? title, string? numberText, string? yearText, EpisodeNumberRule numberRule, out int? number, out int? year)
         {
             number = null;
             year = null;
@@ -39,7 +39,7 @@ namespace EchoPlay.App.ViewModels
                 return "EditErrorTitleEmpty";
             }
 
-            string? numberError = ParseNumber(numberText, numberRequired, out number);
+            string? numberError = ParseNumber(numberText, numberRule, out number);
             if (numberError is not null)
             {
                 return numberError;
@@ -55,12 +55,12 @@ namespace EchoPlay.App.ViewModels
             return yearError;
         }
 
-        private static string? ParseNumber(string? numberText, bool numberRequired, out int? number)
+        private static string? ParseNumber(string? numberText, EpisodeNumberRule numberRule, out int? number)
         {
             number = null;
             if (string.IsNullOrWhiteSpace(numberText))
             {
-                return numberRequired ? "EditErrorNumberRequired" : null;
+                return numberRule == EpisodeNumberRule.Required ? "EditErrorNumberRequired" : null;
             }
 
             if (!int.TryParse(numberText.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int parsedNumber)

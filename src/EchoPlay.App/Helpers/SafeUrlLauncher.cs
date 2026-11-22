@@ -1,5 +1,4 @@
 using EchoPlay.Core.Http;
-using System;
 using System.Diagnostics;
 
 namespace EchoPlay.App.Helpers

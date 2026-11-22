@@ -5,11 +5,8 @@ using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -97,13 +94,16 @@ namespace EchoPlay.App.ViewModels
         private TagManagerActions CreateActions(TagManagerActionsContext actionsContext) =>
             new(
                 actionsContext,
-                FileListVM, EditorVM, CoverVM, RenameVM,
-                setIsLoading: v => IsLoading = v,
-                setIsLookingUp: v => IsLookingUp = v,
-                setAutoLookupStatus: v => AutoLookupStatusText = v,
-                setBatchProgress: v => BatchProgressText = v,
-                setHasUnsavedChanges: v => HasUnsavedChanges = v,
-                refreshCommandStates: RefreshCommandStates);
+                new TagManagerParts(FileListVM, EditorVM, CoverVM, RenameVM),
+                new TagManagerCallbacks
+                {
+                    SetIsLoading = v => IsLoading = v,
+                    SetIsLookingUp = v => IsLookingUp = v,
+                    SetAutoLookupStatus = v => AutoLookupStatusText = v,
+                    SetBatchProgress = v => BatchProgressText = v,
+                    SetHasUnsavedChanges = v => HasUnsavedChanges = v,
+                    RefreshCommandStates = RefreshCommandStates,
+                });
 
         /// <summary>Verbindet die Ereignisse der Teil-ViewModels mit diesem ViewModel.</summary>
         private void WireEvents()

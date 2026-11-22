@@ -134,6 +134,30 @@ namespace EchoPlay.Logger.Tests
         }
 
         /// <summary>
+        /// Die Frist rechnet von der Uhr der Optionen aus, nicht von der Wanduhr: Eine heute
+        /// geschriebene Datei ist zehn Tage später abgelaufen.
+        /// </summary>
+        [Fact]
+        public void Cleanup_ClockTenDaysAhead_DeletesTodaysFile()
+        {
+            string file = Path.Combine(_tempDirectory, "2026-03-01.log");
+            File.WriteAllText(file, "Eintrag");
+            Microsoft.Extensions.Time.Testing.FakeTimeProvider clock = new(DateTimeOffset.Now.AddDays(10));
+            LoggerOptions options = new()
+            {
+                LogDirectory = _tempDirectory,
+                EnableAutoCleanup = true,
+                RetentionDays = 7,
+                MaxTotalSizeMb = 0,
+                TimeProvider = clock,
+            };
+
+            new LogCleanupService(options).Cleanup();
+
+            Assert.False(File.Exists(file));
+        }
+
+        /// <summary>
         /// Eine abgelaufene Datei, die sich nicht löschen lässt, bleibt stehen, ohne das Aufräumen
         /// der übrigen oder den Aufrufer zu stören.
         /// </summary>

@@ -1,17 +1,11 @@
-using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -54,18 +48,20 @@ namespace EchoPlay.App.Tests.ViewModels
                 new EchoPlay.App.Services.TaskbarProgressService(),
                 clock);
 
-            LocalLibraryViewModelContext context = new(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                syncService ?? new FakeSyncService(),
-                playerService ?? new FakePlayerService(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                statusBar,
-                new FakeLocalCoverLoader(),
-                new FakeScanEventService(),
-                new FakeOnlineAccessGuard(),
-                clock,
-                MissingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());
+            LocalLibraryViewModelContext context = new()
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                SyncService = syncService ?? new FakeSyncService(),
+                PlayerService = playerService ?? new FakePlayerService(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                StatusBar = statusBar,
+                CoverLoader = new FakeLocalCoverLoader(),
+                ScanEventService = new FakeScanEventService(),
+                OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                Clock = clock,
+                MissingEpisodesCoordinator = new FakeMissingEpisodesCoordinator(),
+            };
 
             return new LocalLibraryViewModel(context);
         }

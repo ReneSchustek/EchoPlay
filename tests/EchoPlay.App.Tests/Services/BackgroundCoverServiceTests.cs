@@ -4,12 +4,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 using AppCoverService = EchoPlay.App.Services.CoverService;
 
@@ -75,17 +70,22 @@ namespace EchoPlay.App.Tests.Services
             }
 
             FakeCoverImageDataService coverImageService = new();
-            SlowLocalCoverLoader coverLoader = new(TimeSpan.FromMilliseconds(200));
+            GatedLocalCoverLoader coverLoader = new();
 
             BackgroundCoverService service = BuildService(
                 seriesService, episodeService, coverImageService, coverLoader);
 
             using CancellationTokenSource cts = new();
-            cts.CancelAfter(TimeSpan.FromMilliseconds(20));
+            Task request = service.RequestPriorityForSeriesAsync(series.Id, cts.Token);
+
+            // Abbrechen, während das erste Cover lädt; erst danach kommt das Cover zurück.
+            await coverLoader.Entered.WaitAsync(TestContext.Current.CancellationToken);
+            await cts.CancelAsync();
+            coverLoader.Release();
 
             // Darf keine Exception werfen; der Foreground-Pfad muss OperationCanceled schlucken,
             // damit das Verlassen der Detailseite kein Log-Rauschen und keinen UI-Fehler erzeugt.
-            await service.RequestPriorityForSeriesAsync(series.Id, cts.Token);
+            await request;
 
             Assert.False(service.IsPriorityActive);
         }
@@ -366,18 +366,21 @@ namespace EchoPlay.App.Tests.Services
             FakeLoggerFactory loggerFactory = new();
 
             return new BackgroundCoverService(
-                scopeFactory,
-                new AppCoverService(scopeFactory, loggerFactory),
-                new CoverDownloader(httpClientFactory, loggerFactory),
-                new FakeSpotifyCredentialStore(),
-                new BackgroundCoverServiceOptions
+                scopeFactory: scopeFactory,
+                sources: new CoverSources
+                {
+                    CoverService = new AppCoverService(scopeFactory, loggerFactory),
+                    CoverDownloader = new CoverDownloader(httpClientFactory, loggerFactory),
+                    RateLimiter = rateLimiter,
+                },
+                credentialStore: new FakeSpotifyCredentialStore(),
+                options: new BackgroundCoverServiceOptions
                 {
                     InitialDelay = TimeSpan.FromMinutes(5),
                     Interval = TimeSpan.FromMinutes(30)
                 },
-                loggerFactory,
-                clock,
-                rateLimiter);
+                loggerFactory: loggerFactory,
+                clock: clock);
         }
 
         /// <summary>
@@ -523,20 +526,22 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>
-        /// Antwortet erst nach der vorgegebenen Verzögerung, für Tests zu Abbruch und Reihenfolge.
+        /// Hält jedes Laden an, bis der Test es freigibt, und meldet, sobald das erste begonnen hat.
+        /// So legt der Test die Reihenfolge von Laden und Abbruch fest, statt sie zu schätzen.
         /// </summary>
-        private sealed class SlowLocalCoverLoader : ILocalCoverLoader
+        private sealed class GatedLocalCoverLoader : ILocalCoverLoader
         {
-            private readonly TimeSpan _delay;
+            private readonly TaskCompletionSource _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            public SlowLocalCoverLoader(TimeSpan delay)
-            {
-                _delay = delay;
-            }
+            public Task Entered => _entered.Task;
+
+            public void Release() => _release.TrySetResult();
 
             public async Task<byte[]?> LoadAsync(string? episodeFolderPath, string? firstTrackPath)
             {
-                await Task.Delay(_delay, cancellationToken: TestContext.Current.CancellationToken);
+                _ = _entered.TrySetResult();
+                await _release.Task.WaitAsync(TestContext.Current.CancellationToken);
                 return null;
             }
         }

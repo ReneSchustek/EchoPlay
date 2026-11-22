@@ -53,6 +53,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Gefundene Test-Künstler.</returns>
         public Task<ITunesResponseDto<ITunesArtistDto>> SearchArtistsAsync(string query, int limit = 25, CancellationToken ct = default)
         {
@@ -81,6 +82,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// Gibt eine leere Liste zurück wenn keine Alben konfiguriert wurden.
         /// </summary>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Lookup-Antwort mit den konfigurierten Alben.</returns>
         public Task<ITunesResponseDto<ITunesCollectionDto>> LookupAlbumsAsync(long artistId, CancellationToken ct = default)
         {
@@ -101,6 +103,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// Liefert keine Tracks; die Tests hier brauchen die Methode nur, weil die Schnittstelle sie verlangt.
         /// </summary>
         /// <param name="collectionId">Die iTunes-Collection-ID.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Leere Lookup-Antwort.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksAsync(long collectionId, CancellationToken ct = default)
         {
@@ -114,6 +117,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// Delta-Filter) ein Track-Lookup ausgelöst wurde.
         /// </summary>
         /// <param name="collectionIds">Die iTunes-Collection-IDs des Batches.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Leere Lookup-Antwort.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
         {

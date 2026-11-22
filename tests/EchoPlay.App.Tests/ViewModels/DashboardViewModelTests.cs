@@ -8,10 +8,6 @@ using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -41,13 +37,15 @@ namespace EchoPlay.App.Tests.ViewModels
 
             ServiceProvider provider = services.BuildServiceProvider();
 
-            return new DashboardViewModel(new DashboardViewModelContext(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                new FakePlayerService(),
-                new FakeLoggerFactory(),
-                Clock: new FakeClock()));
+            return new DashboardViewModel(new DashboardViewModelContext
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                PlayerService = new FakePlayerService(),
+                LoggerFactory = new FakeLoggerFactory(),
+                Clock = new FakeClock(),
+            });
         }
 
         /// <summary>
@@ -413,23 +411,22 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             ServiceProvider provider = services.BuildServiceProvider();
 
+            NewEpisodeCardData data = new()
+            {
+                EpisodeId = TestIds.EpisodeA,
+                SeriesId = TestIds.SeriesA,
+                SeriesName = seriesName,
+                EpisodeTitle = episodeTitle,
+                IsAnnounced = isAnnounced,
+                EpisodeNumber = episodeNumber,
+                ReleaseDate = releaseDate,
+            };
             return new NewEpisodeCardViewModel(
-                episodeId: TestIds.EpisodeA,
-                seriesId: TestIds.SeriesA,
-                seriesName: seriesName,
-                episodeTitle: episodeTitle,
+                data,
                 coverImage: null,
-                status: PlaybackStatus.NotStarted,
-                progressPercent: 0,
-                hasLocalTrack: false,
-                isAnnounced: isAnnounced,
-                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
-                errorDialogService: new FakeErrorDialogService(),
-                confirmationDialogService: new FakeConfirmationDialogService(),
-                playerService: new FakePlayerService(),
-                episodeNumber: episodeNumber,
-                releaseDate: releaseDate,
-                clock: new FakeClock());
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                new NewEpisodeCardServices(new FakeErrorDialogService(), new FakeConfirmationDialogService(), new FakePlayerService(), null),
+                new FakeClock());
         }
 
         [Fact]
@@ -443,19 +440,10 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             NewEpisodeCardViewModel card = new(
-                episodeId: TestIds.EpisodeB,
-                seriesId: TestIds.SeriesB,
-                seriesName: "TKKG",
-                episodeTitle: "Folge 1",
+                new NewEpisodeCardData { EpisodeId = TestIds.EpisodeB, SeriesId = TestIds.SeriesB, SeriesName = "TKKG", EpisodeTitle = "Folge 1" },
                 coverImage: null,
-                status: PlaybackStatus.NotStarted,
-                progressPercent: 0,
-                hasLocalTrack: false,
-                isAnnounced: false,
-                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
-                errorDialogService: new FakeErrorDialogService(),
-                confirmationDialogService: new FakeConfirmationDialogService(result: true),
-                playerService: new FakePlayerService());
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                new NewEpisodeCardServices(new FakeErrorDialogService(), new FakeConfirmationDialogService(result: true), new FakePlayerService(), null));
 
             card.MarkAsPlayedCommand.Execute(null);
 

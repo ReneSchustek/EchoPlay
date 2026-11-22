@@ -132,7 +132,7 @@ namespace EchoPlay.Logger.Core
             // UTC hält die Zeitstempel über die Zeitumstellung hinweg eindeutig; die Anzeigen
             // rechnen beim Darstellen in Ortszeit um.
             LogEntry entry = new(
-                Timestamp: DateTime.UtcNow,
+                Timestamp: _options.TimeProvider.GetUtcNow().UtcDateTime,
                 Level: level,
                 Message: message,
                 Category: _category,

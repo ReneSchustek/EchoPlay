@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.IO.Compression;
 using System.Text;
 using EchoPlay.Core.Replication.Packaging;
@@ -54,7 +55,7 @@ namespace EchoPlay.Data.Replication
                 using ZipArchive archive = OpenArchive(input);
                 LibraryManifest manifest = await ReadCheckedManifestAsync(archive, cancellationToken).ConfigureAwait(false);
                 SpaceCheck.Require(root, manifest.TotalFileLength + PackageExporter.SpaceMargin);
-                SpaceCheck.Require(Path.GetDirectoryName(dataTarget)!, manifest.DataPackage.Length + PackageExporter.SpaceMargin);
+                SpaceCheck.Require(ParentFolder.Of(dataTarget), manifest.DataPackage.Length + PackageExporter.SpaceMargin);
 
                 bool created = !Directory.Exists(root);
                 try
@@ -147,14 +148,14 @@ namespace EchoPlay.Data.Replication
                 throw new PackageRejectedException(problem);
             }
 
-            string json = await ReadManifestTextAsync(archive.GetEntry(LibraryArchiveFormat.ManifestEntry)!, cancellationToken).ConfigureAwait(false);
+            string json = await ReadManifestTextAsync(RequiredEntry.Of(archive, LibraryArchiveFormat.ManifestEntry), cancellationToken).ConfigureAwait(false);
             if (!LibraryManifest.TryParse(json, out LibraryManifest? manifest, out string? error))
             {
                 throw new PackageRejectedException(error ?? "Manifest ungültig.");
             }
 
-            problem = LibraryArchiveGuard.CheckAgainstManifest(entries, manifest!);
-            return problem is null ? manifest! : throw new PackageRejectedException(problem);
+            problem = LibraryArchiveGuard.CheckAgainstManifest(entries, manifest);
+            return problem is null ? manifest : throw new PackageRejectedException(problem);
         }
 
         /// <summary>
@@ -168,7 +169,7 @@ namespace EchoPlay.Data.Replication
                 Stream source = await manifestEntry.OpenAsync(cancellationToken).ConfigureAwait(false);
                 await using (source.ConfigureAwait(false))
                 {
-                    _ = await HashingCopy.CopyAsync(source, buffer, LibraryArchiveFormat.MaxManifestLength * 4L, exactLength: false, onCopied: null, cancellationToken).ConfigureAwait(false);
+                    _ = await HashingCopy.CopyAsync(source, buffer, CopyLimit.AtMost(LibraryArchiveFormat.MaxManifestLength * 4L), onCopied: null, cancellationToken).ConfigureAwait(false);
                 }
 
                 try
@@ -202,14 +203,14 @@ namespace EchoPlay.Data.Replication
             foreach (LibraryFile file in manifest.Files)
             {
                 string path = LibraryRelativePath.Resolve(root, file.Path);
-                _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                ZipArchiveEntry entry = archive.GetEntry(LibraryArchiveFormat.FileEntryName(file.Path))!;
+                _ = Directory.CreateDirectory(ParentFolder.Of(path));
+                ZipArchiveEntry entry = RequiredEntry.Of(archive, LibraryArchiveFormat.FileEntryName(file.Path));
                 await ExtractVerifiedAsync(entry, file.Path, file.Length, file.Sha256, path, OnCopied, cancellationToken).ConfigureAwait(false);
                 File.SetLastWriteTime(path, entry.LastWriteTime.LocalDateTime);
             }
 
             PackageEntry data = manifest.DataPackage;
-            ZipArchiveEntry dataEntry = archive.GetEntry(LibraryArchiveFormat.DataPackageEntry)!;
+            ZipArchiveEntry dataEntry = RequiredEntry.Of(archive, LibraryArchiveFormat.DataPackageEntry);
             await ExtractVerifiedAsync(dataEntry, data.Name, data.Length, data.Sha256, dataTarget, OnCopied, cancellationToken).ConfigureAwait(false);
         }
 
@@ -226,7 +227,7 @@ namespace EchoPlay.Data.Replication
                 FileStream output = new(target, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 20, useAsync: true);
                 await using (output.ConfigureAwait(false))
                 {
-                    (_, string hash) = await HashingCopy.CopyAsync(source, output, length, exactLength: true, onCopied, cancellationToken).ConfigureAwait(false);
+                    (_, string hash) = await HashingCopy.CopyAsync(source, output, CopyLimit.Exactly(length), onCopied, cancellationToken).ConfigureAwait(false);
                     if (!string.Equals(hash, sha256, StringComparison.Ordinal))
                     {
                         throw new PackageRejectedException($"Die Prüfsumme von {name} stimmt nicht; das Archiv ist beschädigt.");

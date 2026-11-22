@@ -2,7 +2,6 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.UI.Xaml;
-using System;
 
 namespace EchoPlay.App.ViewModels
 {

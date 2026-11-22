@@ -11,7 +11,7 @@ namespace EchoPlay.Data.Entities.Settings
     /// Wird von der Drag-&amp;-Drop-Logik auf dem Dashboard geschrieben und beim Laden
     /// für die Sortierung der Kachelreihen ausgewertet.
     /// </summary>
-    public class DashboardPosition : BaseEntity
+    public sealed class DashboardPosition : BaseEntity
     {
         /// <summary>
         /// Referenz auf die zugeordnete Serie (Fremdschlüssel).

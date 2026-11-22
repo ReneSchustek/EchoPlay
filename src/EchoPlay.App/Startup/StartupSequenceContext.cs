@@ -2,7 +2,6 @@ using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Logger.Core;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace EchoPlay.App.Startup
 {
@@ -16,30 +15,41 @@ namespace EchoPlay.App.Startup
     /// kommt weiterhin über die Bereichs-Fabrik; der Startlauf öffnet dafür je Abschnitt
     /// einen eigenen Bereich.
     /// </remarks>
-    /// <param name="ScopeFactory">Öffnet die Bereiche für datenbanknahe Dienste.</param>
-    /// <param name="LoggerManager">Der Protokoll-Verwalter der Anwendung.</param>
-    /// <param name="LanguageSwitchService">Setzt die Sprachvorgabe bei jedem Start neu.</param>
-    /// <param name="Clock">Zeitquelle für den vermerkten Startzeitpunkt.</param>
-    /// <param name="ProviderIdService">Trägt fehlende Anbieter-Kennungen nach.</param>
-    /// <param name="ReleaseCalendarService">Baut den Veröffentlichungskalender im Hintergrund auf.</param>
-    /// <param name="ReplicationService">Gleicht im Hintergrund über den gemeinsamen Ordner ab.</param>
-    /// <param name="ThemeService">Richtet das Farbschema vor dem ersten Zeichnen ein.</param>
-    /// <param name="Validator">Führt die Prüfungen im Startbild aus.</param>
-    /// <param name="UpdateInteraction">Bietet eine gefundene neue Version an.</param>
-    /// <param name="PlayerService">Bekommt die gespeicherte Lautstärke beim Start.</param>
-    internal sealed record StartupSequenceContext(
-        IServiceScopeFactory ScopeFactory,
-        LoggerManager LoggerManager,
-        ILanguageSwitchService LanguageSwitchService,
-        IClock Clock,
-        BackgroundProviderIdService ProviderIdService,
-        ReleaseCalendarRefreshService ReleaseCalendarService,
-        DeviceReplicationService ReplicationService,
-        ThemeService ThemeService,
-        IStartupValidator Validator,
-        UpdateInteractionService UpdateInteraction,
-        IPlayerService PlayerService)
+    internal sealed record StartupSequenceContext
     {
+        /// <summary>Öffnet die Bereiche für datenbanknahe Dienste.</summary>
+        public required IServiceScopeFactory ScopeFactory { get; init; }
+
+        /// <summary>Der Protokoll-Verwalter der Anwendung.</summary>
+        public required LoggerManager LoggerManager { get; init; }
+
+        /// <summary>Setzt die Sprachvorgabe bei jedem Start neu.</summary>
+        public required ILanguageSwitchService LanguageSwitchService { get; init; }
+
+        /// <summary>Zeitquelle für den vermerkten Startzeitpunkt.</summary>
+        public required IClock Clock { get; init; }
+
+        /// <summary>Trägt fehlende Anbieter-Kennungen nach.</summary>
+        public required BackgroundProviderIdService ProviderIdService { get; init; }
+
+        /// <summary>Baut den Veröffentlichungskalender im Hintergrund auf.</summary>
+        public required ReleaseCalendarRefreshService ReleaseCalendarService { get; init; }
+
+        /// <summary>Gleicht im Hintergrund über den gemeinsamen Ordner ab.</summary>
+        public required DeviceReplicationService ReplicationService { get; init; }
+
+        /// <summary>Richtet das Farbschema vor dem ersten Zeichnen ein.</summary>
+        public required ThemeService ThemeService { get; init; }
+
+        /// <summary>Führt die Prüfungen im Startbild aus.</summary>
+        public required IStartupValidator Validator { get; init; }
+
+        /// <summary>Bietet eine gefundene neue Version an.</summary>
+        public required UpdateInteractionService UpdateInteraction { get; init; }
+
+        /// <summary>Bekommt die gespeicherte Lautstärke beim Start.</summary>
+        public required IPlayerService PlayerService { get; init; }
+
         /// <summary>
         /// Löst die Dienste aus dem fertig gebauten Container auf.
         /// </summary>
@@ -53,18 +63,20 @@ namespace EchoPlay.App.Startup
         {
             ArgumentNullException.ThrowIfNull(services);
 
-            return new StartupSequenceContext(
-                services.GetRequiredService<IServiceScopeFactory>(),
-                services.GetRequiredService<LoggerManager>(),
-                services.GetRequiredService<ILanguageSwitchService>(),
-                services.GetRequiredService<IClock>(),
-                services.GetRequiredService<BackgroundProviderIdService>(),
-                services.GetRequiredService<ReleaseCalendarRefreshService>(),
-                services.GetRequiredService<DeviceReplicationService>(),
-                services.GetRequiredService<ThemeService>(),
-                services.GetRequiredService<IStartupValidator>(),
-                services.GetRequiredService<UpdateInteractionService>(),
-                services.GetRequiredService<IPlayerService>());
+            return new StartupSequenceContext
+            {
+                ScopeFactory = services.GetRequiredService<IServiceScopeFactory>(),
+                LoggerManager = services.GetRequiredService<LoggerManager>(),
+                LanguageSwitchService = services.GetRequiredService<ILanguageSwitchService>(),
+                Clock = services.GetRequiredService<IClock>(),
+                ProviderIdService = services.GetRequiredService<BackgroundProviderIdService>(),
+                ReleaseCalendarService = services.GetRequiredService<ReleaseCalendarRefreshService>(),
+                ReplicationService = services.GetRequiredService<DeviceReplicationService>(),
+                ThemeService = services.GetRequiredService<ThemeService>(),
+                Validator = services.GetRequiredService<IStartupValidator>(),
+                UpdateInteraction = services.GetRequiredService<UpdateInteractionService>(),
+                PlayerService = services.GetRequiredService<IPlayerService>(),
+            };
         }
     }
 }

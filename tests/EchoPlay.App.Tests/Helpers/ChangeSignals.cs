@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Helpers
 {

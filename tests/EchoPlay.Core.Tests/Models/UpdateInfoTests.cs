@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.Core.Models;
 
 namespace EchoPlay.Core.Tests.Models

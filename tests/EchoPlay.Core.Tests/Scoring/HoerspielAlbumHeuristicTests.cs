@@ -1,6 +1,4 @@
 using EchoPlay.Core.Scoring;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.Core.Tests.Scoring
 {

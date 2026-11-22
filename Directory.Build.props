@@ -32,9 +32,11 @@
   </PropertyGroup>
 
   <!-- Test-Projekte: xUnit-Konventionen (Unterstriche in Testnamen) -->
+  <!-- Die Dokumentationsdatei bleibt an, weil der Build ungenutzte using-Direktiven (IDE0005)
+       nur dann meldet. Fehlende XML-Kommentare (CS1591) sind in Tests kein Befund: Testmethoden
+       erklären sich über ihren Namen. -->
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) or '$(MSBuildProjectName)' == 'EchoPlay.Fuzz'">
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CA1707;CS1591</NoWarn>
   </PropertyGroup>
 
 

@@ -3,8 +3,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

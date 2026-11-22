@@ -9,9 +9,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -21,29 +18,34 @@ namespace EchoPlay.App.Tests.ViewModels
     /// </summary>
     public sealed class ImportViewModelTests
     {
+        /// <summary>Einstellungen für <see cref="BuildViewModel"/>: die Nachbauten, aus denen der Prüfling gebaut wird.</summary>
+        private sealed record ImportViewSetup
+        {
+            public required FakeAppSettingsDataService SettingsService { get; init; }
+            public required FakeSeriesDataService SeriesService { get; init; }
+            public required FakeEpisodeDataService EpisodeService { get; init; }
+            public required FakeSeriesImportSearch SpotifySearch { get; init; }
+            public required FakeSeriesImportSearch AppleMusicSearch { get; init; }
+            public required FakeEpisodeImportSource SpotifyEpisodeSource { get; init; }
+            public required FakeEpisodeImportSource AppleMusicEpisodeSource { get; init; }
+            public FakeErrorDialogService? ErrorDialogService { get; init; }
+            public FakeOnlineAccessGuard? OnlineGuard { get; init; }
+        }
+
         /// <summary>
         /// Baut eine vollständige <see cref="ImportViewModel"/>-Instanz mit Fakes.
         /// </summary>
-        private static ImportViewModel BuildViewModel(
-            FakeAppSettingsDataService settingsService,
-            FakeSeriesDataService seriesService,
-            FakeEpisodeDataService episodeService,
-            FakeSeriesImportSearch spotifySearch,
-            FakeSeriesImportSearch appleMusicSearch,
-            FakeEpisodeImportSource spotifyEpisodeSource,
-            FakeEpisodeImportSource appleMusicEpisodeSource,
-            FakeErrorDialogService? errorDialogService = null,
-            FakeOnlineAccessGuard? onlineGuard = null)
+        private static ImportViewModel BuildViewModel(ImportViewSetup setup)
         {
             ServiceCollection services = new();
-            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => setup.SettingsService);
+            _ = services.AddScoped<ISeriesDataService>(_ => setup.SeriesService);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => spotifySearch);
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
+            _ = services.AddScoped<IEpisodeDataService>(_ => setup.EpisodeService);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => setup.SpotifySearch);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => setup.AppleMusicSearch);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => setup.SpotifyEpisodeSource);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => setup.AppleMusicEpisodeSource);
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
                 FakeSpotifyClientCredentialsProvider.WithCredentials());
 
@@ -60,8 +62,8 @@ namespace EchoPlay.App.Tests.ViewModels
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<EpisodeCoverCacheService>(),
                 provider.GetRequiredService<ILoggerFactory>());
-            IErrorDialogService errorSvc = errorDialogService ?? new FakeErrorDialogService();
-            EchoPlay.App.Services.IOnlineAccessGuard guard = onlineGuard ?? new FakeOnlineAccessGuard();
+            IErrorDialogService errorSvc = setup.ErrorDialogService ?? new FakeErrorDialogService();
+            EchoPlay.App.Services.IOnlineAccessGuard guard = setup.OnlineGuard ?? new FakeOnlineAccessGuard();
 
             return new ImportViewModel(importService, errorSvc, guard, new FakeLocalizationService());
         }
@@ -73,13 +75,16 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesImportSearch search = new([], "Spotify");
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: search,
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = search,
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             vm.SearchQuery = string.Empty;
             await vm.SearchAsync();
@@ -99,13 +104,16 @@ namespace EchoPlay.App.Tests.ViewModels
 
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch(spotifyResults, "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch(spotifyResults, "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             vm.SearchQuery = "TKKG";
             await vm.SearchAsync();
@@ -119,13 +127,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // StatusText muss "Keine Ergebnisse" signalisieren
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             vm.SearchQuery = "unbekannt";
             await vm.SearchAsync();
@@ -139,13 +150,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // IsSearching muss nach dem Abschluss wieder false sein
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             vm.SearchQuery = "test";
             await vm.SearchAsync();
@@ -159,13 +173,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // ImportSucceeded muss nach einem erfolgreichen Import gefeuert werden
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             bool succeeded = false;
             vm.ImportSucceeded += (_, _) => succeeded = true;
@@ -190,13 +207,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // StatusText nach Import muss gesetzt sein (lokalisierter Erfolgstext)
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries series = new()
             {
@@ -218,13 +238,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // IsImporting muss nach dem Abschluss wieder false sein
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             await vm.ImportAsync(new ImportSeries
             {
@@ -244,13 +267,16 @@ namespace EchoPlay.App.Tests.ViewModels
             // Im Ruhezustand muss der Suchen-Button aktiviert sein
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
 
-            ImportViewModel vm = BuildViewModel(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportViewModel vm = BuildViewModel(new()
+            {
+                SettingsService = settings,
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             Assert.True(vm.IsSearchEnabled);
         }

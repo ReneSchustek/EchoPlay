@@ -1,8 +1,5 @@
 using EchoPlay.App.Controls;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Controls
 {

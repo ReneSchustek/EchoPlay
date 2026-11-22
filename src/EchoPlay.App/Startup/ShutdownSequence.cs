@@ -3,7 +3,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.App.Startup

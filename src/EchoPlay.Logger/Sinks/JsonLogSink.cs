@@ -27,8 +27,9 @@ namespace EchoPlay.Logger.Sinks
         /// </summary>
         /// <param name="logDirectory">Verzeichnis für JSON-Log-Dateien.</param>
         /// <param name="maxFileSizeMb">Maximale Dateigröße in MB pro JSON-Log (Standard: 10).</param>
-        public JsonLogSink(string logDirectory, int maxFileSizeMb = 10)
-            : base(logDirectory, "Logs-Json", ".jsonl", maxFileSizeMb)
+        /// <param name="timeProvider">Zeitquelle für den Tag im Dateinamen; ohne Angabe die Systemzeit.</param>
+        public JsonLogSink(string logDirectory, int maxFileSizeMb = 10, TimeProvider? timeProvider = null)
+            : base(logDirectory, "Logs-Json", ".jsonl", maxFileSizeMb, timeProvider)
         {
         }
 

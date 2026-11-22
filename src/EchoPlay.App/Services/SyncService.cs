@@ -1,25 +1,15 @@
 using EchoPlay.Core.Http;
 using EchoPlay.App.Helpers;
-using EchoPlay.Core.Models;
 using EchoPlay.Core.Scoring;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Cover;
-using EchoPlay.LocalLibrary.Matching;
-using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -87,7 +77,7 @@ namespace EchoPlay.App.Services
         /// <inheritdoc />
         public async Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
-            bool forceImportAll = false,
+            SyncImportScope importScope = SyncImportScope.AsConfigured,
             IProgress<Series>? onSeriesSynced = null,
             CancellationToken cancellationToken = default)
         {
@@ -111,7 +101,7 @@ namespace EchoPlay.App.Services
             try
             {
                 SyncResult result = await RunPhasesAsync(
-                    sp, settings, progress, forceImportAll, onSeriesSynced, cancellationToken);
+                    sp, settings, progress, importScope, onSeriesSynced, cancellationToken);
 
                 _logger.Info("Sync abgeschlossen: {Result}", result);
                 return result;
@@ -129,7 +119,7 @@ namespace EchoPlay.App.Services
             IServiceProvider sp,
             AppSettings settings,
             IProgress<ScanProgress>? progress,
-            bool forceImportAll,
+            SyncImportScope importScope,
             IProgress<Series>? onSeriesSynced,
             CancellationToken cancellationToken)
         {
@@ -143,7 +133,7 @@ namespace EchoPlay.App.Services
 
             // Phase 3: Serien anlegen oder mit DB matchen
             MaterializationResult materialization = await MaterializeSeriesAsync(
-                sp, scanResults, detection, settings, forceImportAll,
+                sp, scanResults, detection, settings, importScope,
                 onSeriesSynced, cancellationToken);
 
             // Phase 4: Folgen und Spuren jeder Serie speichern; die Cover folgen im Abgleich danach.
@@ -152,7 +142,7 @@ namespace EchoPlay.App.Services
 
             // Cover-Abgleich: fehlende Folgen-Cover aus passenden Folgen der Datenbank
             // übernehmen und, wenn eingeschaltet, als cover.jpg in die Folgenordner legen.
-            await ApplyDbCoversToLocalEpisodesAsync(sp, settings.SaveCoverToDirectory, cancellationToken);
+            await ApplyDbCoversToLocalEpisodesAsync(sp, settings, cancellationToken);
 
             return new SyncResult
             {
@@ -184,12 +174,12 @@ namespace EchoPlay.App.Services
             // Alle bereits genutzten Ordnerpfade vorberechnen, das verhindert Duplikate.
             HashSet<string> usedFolderPaths = new(
                 dbSeries
-                    .Where(s => s.LocalFolderPath is not null)
-                    .Select(s => s.LocalFolderPath!),
+                    .Select(s => s.LocalFolderPath)
+                    .OfType<string>(),
                 StringComparer.OrdinalIgnoreCase);
 
             progress?.Report(new ScanProgress { StatusText = SafeResourceLoader.Get("ScanStatusDetectingFolders") });
-            IReadOnlyList<string> seriesFolders = scanner.GetSeriesFolders(settings.LocalLibraryRootPath!);
+            IReadOnlyList<string> seriesFolders = scanner.GetSeriesFolders(settings.LocalLibraryRootPath!); // SyncAsync bricht ohne Wurzelpfad vorher ab
 
             // Bekannte Serien sofort melden. Der Nutzer sieht sie noch vor dem
             // eigentlichen Filesystem-Scan.
@@ -219,7 +209,7 @@ namespace EchoPlay.App.Services
         {
             IScanOrchestrator orchestrator = sp.GetRequiredService<IScanOrchestrator>();
             return await orchestrator.ScanAsync(
-                settings.LocalLibraryRootPath!,
+                settings.LocalLibraryRootPath!, // SyncAsync bricht ohne Wurzelpfad vorher ab
                 settings.EpisodeFolderPattern,
                 progress,
                 cancellationToken);
@@ -237,7 +227,7 @@ namespace EchoPlay.App.Services
             IReadOnlyList<LocalScanResult> scanResults,
             DetectionResult detection,
             AppSettings settings,
-            bool forceImportAll,
+            SyncImportScope importScope,
             IProgress<Series>? onSeriesSynced,
             CancellationToken cancellationToken)
         {
@@ -264,7 +254,7 @@ namespace EchoPlay.App.Services
                     continue;
                 }
 
-                if (!(settings.AutoImportAfterScan || forceImportAll) || detection.UsedFolderPaths.Contains(scanResult.SeriesFolderPath))
+                if (!(settings.AutoImportAfterScan || importScope == SyncImportScope.AllFolders) || detection.UsedFolderPaths.Contains(scanResult.SeriesFolderPath))
                 {
                     unmatched++;
                     continue;
@@ -366,7 +356,7 @@ namespace EchoPlay.App.Services
         // Helper-Methode: Provider kommt aus dem aufrufenden Scope (kein Service-Locator im Konstruktor).
         private async Task ApplyDbCoversToLocalEpisodesAsync(
             IServiceProvider serviceProvider,
-            bool saveCoverToDirectory,
+            AppSettings settings,
             CancellationToken cancellationToken = default)
         {
             try
@@ -378,7 +368,7 @@ namespace EchoPlay.App.Services
 
                 // Wer das Speichern im Ordner abgeschaltet hat, will keine Dateien in seiner
                 // Sammlung; dieselbe Einstellung gilt auch beim Setzen eines Covers von Hand.
-                if (!saveCoverToDirectory)
+                if (!settings.SaveCoverToDirectory)
                 {
                     return;
                 }
@@ -431,7 +421,7 @@ namespace EchoPlay.App.Services
             {
                 if (!covers.TryGetValue(episode.Id, out byte[]? coverData)) continue;
 
-                string coverPath = Path.Combine(episode.LocalFolderPath!, Core.CoverConstants.CoverFileName);
+                string coverPath = Path.Combine(episode.LocalFolderPath!, Core.CoverConstants.CoverFileName); // localEpisodes hat nur Folgen mit Ordner
                 if (File.Exists(coverPath)) continue;
 
                 try

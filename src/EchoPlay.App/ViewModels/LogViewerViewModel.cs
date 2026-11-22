@@ -3,11 +3,7 @@ using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Logger.Models;
 using Microsoft.UI.Dispatching;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

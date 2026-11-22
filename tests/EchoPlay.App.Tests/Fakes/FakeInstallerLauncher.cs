@@ -1,5 +1,4 @@
 using EchoPlay.App.Services;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.Fakes
 {

@@ -2,11 +2,7 @@ using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

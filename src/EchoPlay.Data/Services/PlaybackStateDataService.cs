@@ -4,9 +4,6 @@ using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Data.Services.Projections;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EchoPlay.Data.Services
 {
@@ -188,13 +185,13 @@ namespace EchoPlay.Data.Services
         /// <inheritdoc />
         /// <param name="episodeIds">Datenbank-IDs der zu prüfenden Episoden.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        public async Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlySet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(episodeIds);
 
             if (episodeIds.Count == 0)
             {
-                return [];
+                return new HashSet<Guid>();
             }
 
             // Ein einziger Query: alle abgeschlossenen PlaybackStates für die übergebenen Episoden
@@ -333,7 +330,7 @@ namespace EchoPlay.Data.Services
                 .Select(episode => new EpisodeIdentityRow(
                     episode.Id,
                     episode.Series.Title,
-                    episode.EpisodeNumber!.Value))
+                    episode.EpisodeNumber!.Value)) // nach dem Filter oben nie null
                 .ToListAsync(cancellationToken);
         }
 
@@ -390,7 +387,7 @@ namespace EchoPlay.Data.Services
                 .Select(episode => new EpisodeIdentityRow(
                     episode.Id,
                     episode.Series.Title,
-                    episode.EpisodeNumber!.Value))
+                    episode.EpisodeNumber!.Value)) // nach dem Filter oben nie null
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
             if (source is null)

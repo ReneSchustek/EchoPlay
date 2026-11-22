@@ -1,6 +1,5 @@
 using EchoPlay.Data.Entities.Library;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

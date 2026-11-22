@@ -1,11 +1,9 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
-using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace EchoPlay.App.Views
 {
@@ -22,27 +20,10 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnSeriesCoverSelectClick(object sender, RoutedEventArgs e)
         {
-            if (sender is not MenuFlyoutItem { Tag: Guid seriesId })
+            if (FindSeriesCard(sender) is LocalArtistCardViewModel card)
             {
-                return;
+                await PickCoverAndApplyAsync(bytes => ViewModel.Actions.ApplySeriesCoverFromBytesAsync(card, bytes));
             }
-
-            LocalArtistCardViewModel? card = ViewModel.ArtistsVM.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
-
-            if (card is null)
-            {
-                return;
-            }
-
-            await AsyncEventHandler.RunSafelyAsync(async () =>
-            {
-                byte[]? bytes = await PickImageFileAsync();
-
-                if (bytes is not null)
-                {
-                    await ViewModel.Actions.ApplySeriesCoverFromBytesAsync(card, bytes);
-                }
-            });
         }
 
         /// <summary>
@@ -52,34 +33,10 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnSeriesCoverSearchClick(object sender, RoutedEventArgs e)
         {
-            if (sender is not MenuFlyoutItem { Tag: Guid seriesId })
+            if (FindSeriesCard(sender) is LocalArtistCardViewModel card)
             {
-                return;
+                await SearchCoverAndApplyAsync(card.Title, hit => ViewModel.Actions.ApplySelectedSeriesCoverAsync(card, hit));
             }
-
-            LocalArtistCardViewModel? card = ViewModel.ArtistsVM.Artists.FirstOrDefault(a => a.SeriesId == seriesId);
-
-            if (card is null)
-            {
-                return;
-            }
-
-            await AsyncEventHandler.RunSafelyAsync(async () =>
-            {
-                // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
-                using IDisposable? onlineScope = await ViewModel.Actions.RequestOnlineAccessForCoverSearchAsync();
-                if (onlineScope is null) return;
-
-                CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
-                    card.Title,
-                    (query, page, ct) => ViewModel.Actions.SearchCoversAsync(query, page, ct),
-                    Content.XamlRoot);
-
-                if (selected is not null)
-                {
-                    await ViewModel.Actions.ApplySelectedSeriesCoverAsync(card, selected);
-                }
-            });
         }
 
         /// <summary>
@@ -87,27 +44,10 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnEpisodeCoverSelectClick(object sender, RoutedEventArgs e)
         {
-            if (sender is not MenuFlyoutItem { Tag: Guid episodeId })
+            if (FindEpisodeCard(sender) is LocalEpisodeCardViewModel card)
             {
-                return;
+                await PickCoverAndApplyAsync(bytes => ViewModel.Actions.ApplyEpisodeCoverFromBytesAsync(card, bytes));
             }
-
-            LocalEpisodeCardViewModel? card = ViewModel.EpisodesVM.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId);
-
-            if (card is null)
-            {
-                return;
-            }
-
-            await AsyncEventHandler.RunSafelyAsync(async () =>
-            {
-                byte[]? bytes = await PickImageFileAsync();
-
-                if (bytes is not null)
-                {
-                    await ViewModel.Actions.ApplyEpisodeCoverFromBytesAsync(card, bytes);
-                }
-            });
         }
 
         /// <summary>
@@ -115,34 +55,65 @@ namespace EchoPlay.App.Views
         /// </summary>
         private async void OnEpisodeCoverSearchClick(object sender, RoutedEventArgs e)
         {
-            if (sender is not MenuFlyoutItem { Tag: Guid episodeId })
+            if (FindEpisodeCard(sender) is LocalEpisodeCardViewModel card)
             {
-                return;
+                await SearchCoverAndApplyAsync(card.Title, hit => ViewModel.Actions.ApplySelectedEpisodeCoverAsync(card, hit));
             }
+        }
 
-            LocalEpisodeCardViewModel? card = ViewModel.EpisodesVM.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId);
+        /// <summary>Die Serienkachel, deren Kontextmenü den Eintrag trägt; sonst null.</summary>
+        private LocalArtistCardViewModel? FindSeriesCard(object sender)
+            => sender is MenuFlyoutItem { Tag: Guid seriesId }
+                ? ViewModel.ArtistsVM.Artists.FirstOrDefault(a => a.SeriesId == seriesId)
+                : null;
 
-            if (card is null)
+        /// <summary>Die Folgenkachel, deren Kontextmenü den Eintrag trägt; sonst null.</summary>
+        private LocalEpisodeCardViewModel? FindEpisodeCard(object sender)
+            => sender is MenuFlyoutItem { Tag: Guid episodeId }
+                ? ViewModel.EpisodesVM.Episodes.FirstOrDefault(ep => ep.EpisodeId == episodeId)
+                : null;
+
+        /// <summary>
+        /// Lässt eine Bilddatei wählen und übergibt ihren Inhalt; ohne Auswahl geschieht nichts.
+        /// </summary>
+        /// <param name="apply">Übernimmt die Bilddaten als Cover.</param>
+        /// <param name="operationName">Name der auslösenden Aktion für das Protokoll.</param>
+        private Task PickCoverAndApplyAsync(Func<byte[], Task> apply, [CallerMemberName] string operationName = "")
+            => AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                return;
-            }
+                byte[]? bytes = await PickImageFileAsync();
 
-            await AsyncEventHandler.RunSafelyAsync(async () =>
+                if (bytes is not null)
+                {
+                    await apply(bytes);
+                }
+            }, operationName);
+
+        /// <summary>
+        /// Öffnet die Cover-Suche mit dem Titel als Suchbegriff und übernimmt den gewählten Treffer.
+        /// Im Offline-Modus wird vorher gefragt; ohne Zustimmung öffnet sich der Dialog nicht.
+        /// </summary>
+        /// <param name="title">Vorbelegter Suchbegriff.</param>
+        /// <param name="apply">Übernimmt den gewählten Treffer als Cover.</param>
+        /// <param name="operationName">Name der auslösenden Aktion für das Protokoll.</param>
+        private Task SearchCoverAndApplyAsync(string title, Func<CoverSearchHit, Task> apply, [CallerMemberName] string operationName = "")
+            => AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                // Offline-Modus: Nutzer fragen, bevor der Cover-Such-Dialog geöffnet wird
                 using IDisposable? onlineScope = await ViewModel.Actions.RequestOnlineAccessForCoverSearchAsync();
-                if (onlineScope is null) return;
+                if (onlineScope is null)
+                {
+                    return;
+                }
 
                 CoverSearchHit? selected = await Helpers.CoverSearchDialog.ShowAsync(
-                    card.Title,
+                    title,
                     (query, page, ct) => ViewModel.Actions.SearchCoversAsync(query, page, ct),
                     Content.XamlRoot);
 
                 if (selected is not null)
                 {
-                    await ViewModel.Actions.ApplySelectedEpisodeCoverAsync(card, selected);
+                    await apply(selected);
                 }
-            });
-        }
+            }, operationName);
     }
 }

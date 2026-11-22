@@ -1,8 +1,5 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Scanning;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -19,11 +16,7 @@ namespace EchoPlay.App.Services
         /// Optionaler Fortschritts-Callback, erhält <see cref="ScanProgress"/>-Objekte
         /// mit Text und prozentualem Fortschritt während Scan und Sync.
         /// </param>
-        /// <param name="forceImportAll">
-        /// Wenn <see langword="true"/>, werden alle gescannten Serien importiert, unabhängig von
-        /// der <c>AutoImportAfterScan</c>-Einstellung. Wird von der Neu-Initialisierung verwendet,
-        /// damit nach einem vollständigen Reset garantiert alle Serienordner neu angelegt werden.
-        /// </param>
+        /// <param name="importScope">Welche gefundenen Serienordner als Serie angelegt werden.</param>
         /// <param name="onSeriesSynced">
         /// Optionaler Callback, der nach jeder DB-synchronisierten <see cref="Series"/> aufgerufen wird.
         /// Damit zeigt das ViewModel Serien sofort in der Liste an, ohne auf das Gesamtergebnis
@@ -36,7 +29,7 @@ namespace EchoPlay.App.Services
         /// <returns>Zusammenfassung des Sync-Ergebnisses.</returns>
         Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
-            bool forceImportAll = false,
+            SyncImportScope importScope = SyncImportScope.AsConfigured,
             IProgress<Series>? onSeriesSynced = null,
             CancellationToken cancellationToken = default);
     }

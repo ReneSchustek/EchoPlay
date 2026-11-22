@@ -6,11 +6,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -160,16 +156,19 @@ namespace EchoPlay.App.ViewModels
                 await stateService.GetCountsBySeriesIdAsync(series.Id);
 
             return new SeriesCardViewModel(
-                id: series.Id,
-                title: series.Title,
+                new SeriesCardData
+                {
+                    Id = series.Id,
+                    Title = series.Title,
+                    TotalEpisodeCount = episodeCount,
+                    NewEpisodeCount = notStartedCount,
+                    InProgressCount = inProgressCount,
+                    FinishedCount = finishedCount,
+                    IsSubscribed = series.IsSubscribed,
+                    IsFavorite = series.IsFavorite,
+                    IsWatched = series.IsWatched,
+                },
                 coverImage: await BuildCoverImageAsync(series),
-                totalEpisodeCount: episodeCount,
-                newEpisodeCount: notStartedCount,
-                inProgressCount: inProgressCount,
-                finishedCount: finishedCount,
-                isSubscribed: series.IsSubscribed,
-                isFavorite: series.IsFavorite,
-                isWatched: series.IsWatched,
                 scopeFactory: _ctx.ScopeFactory,
                 confirmationDialogService: _ctx.ConfirmationDialogService,
                 localizationService: _ctx.LocalizationService);

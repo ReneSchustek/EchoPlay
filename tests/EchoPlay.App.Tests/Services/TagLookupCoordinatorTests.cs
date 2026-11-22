@@ -1,7 +1,5 @@
 using EchoPlay.App.Services;
 using EchoPlay.TagManager.Models;
-using System.Collections.Generic;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

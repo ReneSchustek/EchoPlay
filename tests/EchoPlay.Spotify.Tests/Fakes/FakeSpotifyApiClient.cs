@@ -21,6 +21,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
+        /// <param name="cancellationToken">Signal zum Abbrechen.</param>
         /// <returns>Gefundene Test-Künstler.</returns>
         public Task<IReadOnlyList<SpotifyArtistDto>> SearchArtistsAsync(string query, int limit, CancellationToken cancellationToken = default)
         {

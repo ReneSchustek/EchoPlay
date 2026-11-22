@@ -1,10 +1,6 @@
 using EchoPlay.Core;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.LocalLibrary.Cover;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

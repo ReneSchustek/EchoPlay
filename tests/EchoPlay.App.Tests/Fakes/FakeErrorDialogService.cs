@@ -1,8 +1,5 @@
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

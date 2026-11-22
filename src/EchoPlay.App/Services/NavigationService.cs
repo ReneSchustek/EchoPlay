@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml.Controls;
-using System;
 
 namespace EchoPlay.App.Services
 {

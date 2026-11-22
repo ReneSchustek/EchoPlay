@@ -1,7 +1,6 @@
 using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Contracts;
 using EchoPlay.Logger.Models;
-using System;
 
 namespace EchoPlay.Data.Entities.Settings
 {
@@ -9,7 +8,7 @@ namespace EchoPlay.Data.Entities.Settings
     /// Repräsentiert die anwendungsweiten Einstellungen.
     /// Wird als Singleton-Zeile in der Datenbank gespeichert.
     /// </summary>
-    public class AppSettings : BaseEntity
+    public sealed class AppSettings : BaseEntity
     {
         /// <summary>
         /// Quelle für die Metadaten der Hörspiele.

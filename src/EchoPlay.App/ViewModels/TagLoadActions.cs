@@ -1,9 +1,6 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -35,31 +32,20 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Richtet die Ladeaktionen ein.</summary>
         /// <param name="context">Die Dienste des Tag-Managers.</param>
-        /// <param name="fileListVM">Die Dateiliste mit Auswahl.</param>
-        /// <param name="editorVM">Die Eingabefelder.</param>
-        /// <param name="coverVM">Das angezeigte Cover.</param>
-        /// <param name="renameVM">Die Vorschau des Umbenennens.</param>
-        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
-        /// <param name="setHasUnsavedChanges">Setzt die Markierung ungespeicherter Änderungen.</param>
-        /// <param name="refreshCommandStates">Aktualisiert die Befehle nach dem Laden.</param>
-        public TagLoadActions(
-            TagManagerActionsContext context,
-            TagFileListViewModel fileListVM,
-            TagEditorFieldsViewModel editorVM,
-            TagCoverViewModel coverVM,
-            TagRenameViewModel renameVM,
-            Action<bool> setIsLoading,
-            Action<bool> setHasUnsavedChanges,
-            Action refreshCommandStates)
+        /// <param name="parts">Dateiliste, Eingabefelder, Cover und Umbenennungs-Vorschau.</param>
+        /// <param name="callbacks">Ladeanzeige, Markierung ungespeicherter Änderungen und Befehle.</param>
+        public TagLoadActions(TagManagerActionsContext context, TagManagerParts parts, TagManagerCallbacks callbacks)
         {
+            ArgumentNullException.ThrowIfNull(parts);
+            ArgumentNullException.ThrowIfNull(callbacks);
             _ctx = context;
-            _fileListVM = fileListVM;
-            _editorVM = editorVM;
-            _coverVM = coverVM;
-            _renameVM = renameVM;
-            _setIsLoading = setIsLoading;
-            _setHasUnsavedChanges = setHasUnsavedChanges;
-            _refreshCommandStates = refreshCommandStates;
+            _fileListVM = parts.FileList;
+            _editorVM = parts.Editor;
+            _coverVM = parts.Cover;
+            _renameVM = parts.Rename;
+            _setIsLoading = callbacks.SetIsLoading;
+            _setHasUnsavedChanges = callbacks.SetHasUnsavedChanges;
+            _refreshCommandStates = callbacks.RefreshCommandStates;
         }
 
         /// <summary>Wartet auf den Abschluss des laufenden Datei-Ladevorgangs (für deterministische Tests).</summary>

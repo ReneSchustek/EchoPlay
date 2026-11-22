@@ -1,10 +1,5 @@
 using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.LocalLibrary.Tests.Cover
 {

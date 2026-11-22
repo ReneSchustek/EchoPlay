@@ -1,13 +1,8 @@
 using EchoPlay.App.Services;
-using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
-using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Scoping;
 using EchoPlay.Logger.Sinks;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using CoreLogger = EchoPlay.Logger.Core.Logger;
 
 namespace EchoPlay.App.Tests.Services

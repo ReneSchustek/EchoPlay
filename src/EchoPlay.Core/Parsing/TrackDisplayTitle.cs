@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -25,7 +26,7 @@ namespace EchoPlay.Core.Parsing
         /// <returns>Der Anzeigename, nie leer.</returns>
         public static string Choose(string? tagTitle, string filePath, int trackNumber)
         {
-            return IsMeaningful(tagTitle) ? tagTitle!.Trim() : FromFilePath(filePath, trackNumber);
+            return IsMeaningful(tagTitle) ? tagTitle.Trim() : FromFilePath(filePath, trackNumber);
         }
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace EchoPlay.Core.Parsing
         /// </summary>
         /// <param name="tagTitle">Titel aus der Kennzeichnung der Datei.</param>
         /// <returns><see langword="true"/>, wenn der Titel angezeigt werden soll.</returns>
-        public static bool IsMeaningful(string? tagTitle)
+        public static bool IsMeaningful([NotNullWhen(true)] string? tagTitle)
         {
             if (string.IsNullOrWhiteSpace(tagTitle))
             {

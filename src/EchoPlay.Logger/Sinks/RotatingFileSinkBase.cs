@@ -21,6 +21,7 @@ namespace EchoPlay.Logger.Sinks
         private bool _disposed;
 
         private string _logDirectory;
+        private readonly TimeProvider _time;
 
         /// <summary>
         /// Initialisiert die Basis: legt das Log-Verzeichnis an oder weicht bei Fehlern auf einen
@@ -31,9 +32,11 @@ namespace EchoPlay.Logger.Sinks
         /// <param name="appDataFallbackFolder">Unterordner unter <c>AppData\EchoPlay</c> für den Fallback.</param>
         /// <param name="fileExtension">Dateiendung inkl. Punkt (z.B. <c>.log</c> oder <c>.jsonl</c>).</param>
         /// <param name="maxFileSizeMb">Maximale Dateigröße in MB vor Rotation.</param>
+        /// <param name="timeProvider">Zeitquelle für den Tag im Dateinamen; ohne Angabe die Systemzeit.</param>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Sink-Konstruktor darf bei Verzeichnis-Fehlern nicht crashen; Fallback auf AppData\\EchoPlay, sonst No-Op, damit die App auch ohne Logging startet.")]
-        protected RotatingFileSinkBase(string logDirectory, string appDataFallbackFolder, string fileExtension, int maxFileSizeMb)
+        protected RotatingFileSinkBase(string logDirectory, string appDataFallbackFolder, string fileExtension, int maxFileSizeMb, TimeProvider? timeProvider = null)
         {
+            _time = timeProvider ?? TimeProvider.System;
             _fileExtension = fileExtension;
             _maxFileSizeBytes = maxFileSizeMb * 1024L * 1024L;
             _logDirectory = logDirectory;
@@ -149,7 +152,7 @@ namespace EchoPlay.Logger.Sinks
         {
             // Lokalzeit für Datei-Namen, damit der Anwender Log-Dateien anhand seiner Tageszeit
             // wiederfindet (UTC-Datums-Sprung um Mitternacht wäre irritierend).
-            string baseName = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string baseName = _time.GetLocalNow().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             string filePath = Path.Combine(_logDirectory, $"{baseName}{_fileExtension}");
 
             // Hauptdatei existiert nicht oder hat noch Platz? → nutzen

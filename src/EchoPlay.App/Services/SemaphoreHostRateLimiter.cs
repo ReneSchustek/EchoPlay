@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -20,6 +16,7 @@ namespace EchoPlay.App.Services
         private readonly IReadOnlyDictionary<string, TimeSpan> _intervals;
         private readonly IReadOnlyDictionary<string, TimeSpan> _suffixIntervals;
         private readonly TimeSpan _defaultInterval;
+        private readonly TimeProvider _time;
         private readonly ConcurrentDictionary<string, TimeSpan> _resolvedIntervals = new();
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphores = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset> _lastCalls = new();
@@ -42,12 +39,15 @@ namespace EchoPlay.App.Services
         /// wechselnde Rechnernamen. Die alle einzeln einzutragen wäre eine Liste, die bei
         /// jeder Umstellung der Gegenstelle veraltet.
         /// </param>
+        /// <param name="timeProvider">Zeitquelle für den Abstand zwischen zwei Anfragen; ohne Angabe die Systemzeit.</param>
         public SemaphoreHostRateLimiter(
             IReadOnlyDictionary<string, TimeSpan> intervals,
             TimeSpan? defaultInterval = null,
-            IReadOnlyDictionary<string, TimeSpan>? suffixIntervals = null)
+            IReadOnlyDictionary<string, TimeSpan>? suffixIntervals = null,
+            TimeProvider? timeProvider = null)
         {
             _intervals = intervals;
+            _time = timeProvider ?? TimeProvider.System;
             _suffixIntervals = suffixIntervals ?? new Dictionary<string, TimeSpan>();
 
             // Eine Sekunde für unbekannte Gegenstellen, so viel wie bei MusicBrainz: Das schont
@@ -116,7 +116,7 @@ namespace EchoPlay.App.Services
             while (Volatile.Read(ref _foregroundPending) > 0)
             {
                 ct.ThrowIfCancellationRequested();
-                await Task.Delay(BackgroundPollInterval, ct).ConfigureAwait(false);
+                await Task.Delay(BackgroundPollInterval, _time, ct).ConfigureAwait(false);
             }
 
             await WaitForSlotAsync(host, ct).ConfigureAwait(false);
@@ -139,16 +139,16 @@ namespace EchoPlay.App.Services
 
                 if (_lastCalls.TryGetValue(host, out DateTimeOffset lastCall))
                 {
-                    TimeSpan elapsed = DateTimeOffset.UtcNow - lastCall;
+                    TimeSpan elapsed = _time.GetUtcNow() - lastCall;
                     TimeSpan remaining = interval - elapsed;
 
                     if (remaining > TimeSpan.Zero)
                     {
-                        await Task.Delay(remaining, ct).ConfigureAwait(false);
+                        await Task.Delay(remaining, _time, ct).ConfigureAwait(false);
                     }
                 }
 
-                _lastCalls[host] = DateTimeOffset.UtcNow;
+                _lastCalls[host] = _time.GetUtcNow();
             }
             finally
             {

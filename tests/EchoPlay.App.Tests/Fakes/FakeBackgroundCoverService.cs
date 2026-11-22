@@ -1,7 +1,5 @@
 using EchoPlay.App.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {
@@ -19,8 +17,11 @@ namespace EchoPlay.App.Tests.Fakes
             ICoverDownloader coverDownloader)
             : base(
                 scopeFactory,
-                new CoverService(scopeFactory, new FakeLoggerFactory()),
-                coverDownloader,
+                new CoverSources
+                {
+                    CoverService = new CoverService(scopeFactory, new FakeLoggerFactory()),
+                    CoverDownloader = coverDownloader,
+                },
                 new FakeSpotifyCredentialStore(),
                 new BackgroundCoverServiceOptions(),
                 new FakeLoggerFactory(),

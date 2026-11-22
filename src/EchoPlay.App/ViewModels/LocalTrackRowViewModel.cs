@@ -1,9 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Parsing;
-using System;
 using System.Globalization;
-using System.IO;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels

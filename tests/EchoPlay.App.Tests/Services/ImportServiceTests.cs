@@ -9,9 +9,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -22,35 +19,40 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class ImportServiceTests
     {
+        /// <summary>Einstellungen für <see cref="BuildService"/>: die Nachbauten, aus denen der Prüfling gebaut wird.</summary>
+        private sealed record ImportSetup
+        {
+            public required FakeAppSettingsDataService SettingsService { get; init; }
+            public required FakeSeriesDataService SeriesService { get; init; }
+            public required FakeEpisodeDataService EpisodeService { get; init; }
+            public required FakeSeriesImportSearch SpotifySearch { get; init; }
+            public required FakeSeriesImportSearch AppleMusicSearch { get; init; }
+            public required FakeEpisodeImportSource SpotifyEpisodeSource { get; init; }
+            public required FakeEpisodeImportSource AppleMusicEpisodeSource { get; init; }
+            public FakeSpotifyClientCredentialsProvider? CredentialsProvider { get; init; }
+        }
+
         /// <summary>
         /// Baut einen ServiceProvider mit Fakes und gibt einen fertigen ImportService zurück.
         /// </summary>
-        private static ImportService BuildService(
-            FakeAppSettingsDataService settingsService,
-            FakeSeriesDataService seriesService,
-            FakeEpisodeDataService episodeService,
-            FakeSeriesImportSearch spotifySearch,
-            FakeSeriesImportSearch appleMusicSearch,
-            FakeEpisodeImportSource spotifyEpisodeSource,
-            FakeEpisodeImportSource appleMusicEpisodeSource,
-            FakeSpotifyClientCredentialsProvider? credentialsProvider = null)
+        private static ImportService BuildService(ImportSetup setup)
         {
             ServiceCollection services = new();
-            _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
-            _ = services.AddScoped<ISeriesDataService>(_ => seriesService);
+            _ = services.AddScoped<IAppSettingsDataService>(_ => setup.SettingsService);
+            _ = services.AddScoped<ISeriesDataService>(_ => setup.SeriesService);
             _ = services.AddScoped<IWatchedTitleDataService>(_ => new FakeWatchedTitleDataService());
-            _ = services.AddScoped<IEpisodeDataService>(_ => episodeService);
+            _ = services.AddScoped<IEpisodeDataService>(_ => setup.EpisodeService);
 
             // Keyed-Registrierung, entspricht dem Produktionscode in App.xaml.cs
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => spotifySearch);
-            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => appleMusicSearch);
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => spotifyEpisodeSource);
-            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => appleMusicEpisodeSource);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("Spotify", (_, _) => setup.SpotifySearch);
+            _ = services.AddKeyedScoped<ISeriesImportSearch>("AppleMusic", (_, _) => setup.AppleMusicSearch);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("Spotify", (_, _) => setup.SpotifyEpisodeSource);
+            _ = services.AddKeyedScoped<IEpisodeImportSource>("AppleMusic", (_, _) => setup.AppleMusicEpisodeSource);
 
             // ImportService prüft vor dem Spotify-Suchlauf, ob Credentials hinterlegt sind.
             // Default für bestehende Tests: Credentials vorhanden, die bestehende Erwartungshaltung bleibt.
             _ = services.AddSingleton<ISpotifyClientCredentialsProvider>(
-                credentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
+                setup.CredentialsProvider ?? FakeSpotifyClientCredentialsProvider.WithCredentials());
 
             _ = services.AddSingleton<ILoggerFactory>(new FakeLoggerFactory());
             _ = services.AddSingleton<IClock>(new FakeClock());
@@ -74,11 +76,16 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesDataService seriesService,
             FakeEpisodeDataService episodeService,
             IReadOnlyList<ImportEpisode> appleMusicEpisodes)
-            => BuildService(new FakeAppSettingsDataService(new AppSettings()), seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(appleMusicEpisodes));
+            => BuildService(new()
+            {
+                SettingsService = new FakeAppSettingsDataService(new AppSettings()),
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource(appleMusicEpisodes),
+            });
 
         /// <summary>Legt die Serie an und liefert sie zurück, wie der Datendienst sie hält.</summary>
         private static async Task<Series> AddSeriesAsync(FakeSeriesDataService seriesService, Series series)
@@ -143,11 +150,16 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch(spotifyResults, "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch(spotifyResults, "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             SearchOutcome result = await service.SearchAsync("drei", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -173,11 +185,16 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.AppleMusic });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch(spotifyResults, "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch(spotifyResults, "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             SearchOutcome result = await service.SearchAsync("tkkg", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -193,11 +210,16 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             SearchOutcome result = await service.SearchAsync("unbekannt", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -222,12 +244,17 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch(spotifyResults, "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch(spotifyResults, "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+            });
 
             SearchOutcome result = await service.SearchAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -248,12 +275,17 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.AppleMusic });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch(appleMusicResults, "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+            });
 
             SearchOutcome result = await service.SearchAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -269,12 +301,17 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.None });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+            });
 
             SearchOutcome result = await service.SearchAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -290,12 +327,17 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+            });
 
             SearchOutcome result = await service.SearchAlbumsAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -308,11 +350,16 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             SearchOutcome result = await service.SearchAlbumsAsync("query", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -325,12 +372,17 @@ namespace EchoPlay.App.Tests.Services
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
             FakeSeriesDataService series = new();
             FakeEpisodeDataService episodes = new();
-            ImportService service = BuildService(settings, series, episodes,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]),
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = series,
+                EpisodeService = episodes,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+            });
 
             SearchOutcome result = await service.SearchAlbumsAsync("   ", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -345,11 +397,16 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries importSeries = new()
             {
@@ -381,11 +438,16 @@ namespace EchoPlay.App.Tests.Services
                 new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3 },
             ];
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(importEpisodes));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource(importEpisodes),
+            });
 
             ImportSeries importSeries = new()
             {
@@ -446,11 +508,16 @@ namespace EchoPlay.App.Tests.Services
                 new() { SourceEpisodeId = "album-3", Title = "Folge 3", EpisodeNumber = 3 },
             ];
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(importEpisodes));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource(importEpisodes),
+            });
 
             ImportSeries importSeries = new()
             {
@@ -481,11 +548,16 @@ namespace EchoPlay.App.Tests.Services
                 IsOnlineImported = true
             }, cancellationToken: TestContext.Current.CancellationToken);
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries importSeries = new()
             {
@@ -509,11 +581,16 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesDataService seriesService = new();
             FakeEpisodeDataService episodeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries importSeries = new()
             {
@@ -544,11 +621,16 @@ namespace EchoPlay.App.Tests.Services
                 IsOnlineImported = true
             }, cancellationToken: TestContext.Current.CancellationToken);
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries series = new()
             {
@@ -587,11 +669,16 @@ namespace EchoPlay.App.Tests.Services
                 new() { SourceEpisodeId = "ep3", Title = "Folge 3", EpisodeNumber = 3 },
             ];
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(providerEpisodes));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource(providerEpisodes),
+            });
 
             int count = await service.ReImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -696,12 +783,17 @@ namespace EchoPlay.App.Tests.Services
                 new() { SourceEpisodeId = "am170", Title = "Folge 170", EpisodeNumber = 170 },
             ]);
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: spotifySource,
-                appleMusicEpisodeSource: appleSource,
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.Missing());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = spotifySource,
+                AppleMusicEpisodeSource = appleSource,
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.Missing(),
+            });
 
             int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -736,12 +828,17 @@ namespace EchoPlay.App.Tests.Services
             ]);
             FakeEpisodeImportSource appleSource = new([]);
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: spotifySource,
-                appleMusicEpisodeSource: appleSource,
-                credentialsProvider: FakeSpotifyClientCredentialsProvider.WithCredentials());
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = spotifySource,
+                AppleMusicEpisodeSource = appleSource,
+                CredentialsProvider = FakeSpotifyClientCredentialsProvider.WithCredentials(),
+            });
 
             int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -756,11 +853,16 @@ namespace EchoPlay.App.Tests.Services
             FakeSeriesDataService seriesService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
             FakeEpisodeDataService episodeService = new();
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries series = new()
             {
@@ -795,11 +897,16 @@ namespace EchoPlay.App.Tests.Services
                 IsOnlineImported = false
             }, cancellationToken: TestContext.Current.CancellationToken);
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource([]));
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource([]),
+            });
 
             ImportSeries series = new()
             {
@@ -893,14 +1000,19 @@ namespace EchoPlay.App.Tests.Services
                 AppleMusicAlbumId = "am240"
             }, cancellationToken: TestContext.Current.CancellationToken);
 
-            ImportService service = BuildService(settings, seriesService, episodeService,
-                spotifySearch: new FakeSeriesImportSearch([], "Spotify"),
-                appleMusicSearch: new FakeSeriesImportSearch([], "AppleMusic"),
-                spotifyEpisodeSource: new FakeEpisodeImportSource([]),
-                appleMusicEpisodeSource: new FakeEpisodeImportSource(
+            ImportService service = BuildService(new()
+            {
+                SettingsService = settings,
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                SpotifySearch = new FakeSeriesImportSearch([], "Spotify"),
+                AppleMusicSearch = new FakeSeriesImportSearch([], "AppleMusic"),
+                SpotifyEpisodeSource = new FakeEpisodeImportSource([]),
+                AppleMusicEpisodeSource = new FakeEpisodeImportSource(
                 [
                     new() { SourceEpisodeId = "am240", Title = "Folge 240: Das verschollene Zepter", EpisodeNumber = 240 },
-                ]));
+                ]),
+            });
 
             int newCount = await service.DeltaImportEpisodesAsync(existingSeries, cancellationToken: TestContext.Current.CancellationToken);
 

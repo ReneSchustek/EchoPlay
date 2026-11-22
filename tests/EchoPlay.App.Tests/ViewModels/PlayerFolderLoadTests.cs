@@ -4,8 +4,6 @@ using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System.IO;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

@@ -3,9 +3,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -112,12 +109,14 @@ namespace EchoPlay.App.Tests.ViewModels
             PlaybackStatus status = PlaybackStatus.NotStarted,
             Action? playEpisode = null)
             => new(
-                TestIds.EpisodeA,
-                episodeNumber,
-                title,
-                totalDuration,
-                status,
-                releaseDate: null,
+                new EpisodeTileData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = episodeNumber,
+                    Title = title,
+                    TotalDuration = totalDuration,
+                    PlaybackStatus = status,
+                },
                 playEpisode ?? (() => { }),
                 localizationService: new FakeLocalizationService(new Dictionary<string, string>
                 {

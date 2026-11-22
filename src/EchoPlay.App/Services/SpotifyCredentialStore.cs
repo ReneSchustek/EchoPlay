@@ -1,10 +1,8 @@
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

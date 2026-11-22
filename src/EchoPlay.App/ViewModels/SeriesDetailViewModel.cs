@@ -1,17 +1,10 @@
 using EchoPlay.App.Infrastructure;
-using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Abstractions.Time;
-using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
 {

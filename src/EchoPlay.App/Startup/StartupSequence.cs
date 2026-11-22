@@ -1,5 +1,4 @@
 using EchoPlay.App.Services;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Infrastructure;
 using EchoPlay.Data.Replication;
@@ -7,9 +6,7 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Core;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Startup
 {

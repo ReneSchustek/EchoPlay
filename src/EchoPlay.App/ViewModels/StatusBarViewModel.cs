@@ -5,11 +5,8 @@ using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using System;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 

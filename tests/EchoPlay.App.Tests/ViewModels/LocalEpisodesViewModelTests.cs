@@ -4,9 +4,6 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -36,14 +33,13 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         private static LocalArtistCardViewModel BuildArtist(IServiceScopeFactory scopeFactory) => new(
-            seriesId: TestIds.SeriesA,
-            title: "TKKG",
+            new LocalArtistCardData
+            {
+                SeriesId = TestIds.SeriesA,
+                Title = "TKKG",
+                LocalFolderPath = @"C:\Hörspiele\TKKG",
+            },
             coverImage: null,
-            localFolderPath: @"C:\Hörspiele\TKKG",
-            localEpisodeCount: 0,
-            totalEpisodeCount: 0,
-            isFavorite: false,
-            isWatched: false,
             scopeFactory: scopeFactory);
 
         /// <summary>
@@ -80,8 +76,8 @@ namespace EchoPlay.App.Tests.ViewModels
             await viewModel.LoadForSeriesAsync(
                 BuildArtist(scopeFactory),
                 episodes,
-                completedIds: [],
-                inProgressIds: []);
+                completedIds: new HashSet<Guid>(),
+                inProgressIds: new HashSet<Guid>());
 
             return viewModel;
         }
@@ -329,8 +325,8 @@ namespace EchoPlay.App.Tests.ViewModels
             await viewModel.LoadForSeriesAsync(
                 BuildArtist(scopeFactory),
                 episodes,
-                completedIds: [],
-                inProgressIds: []);
+                completedIds: new HashSet<Guid>(),
+                inProgressIds: new HashSet<Guid>());
 
             return (viewModel, scopeFactory);
         }

@@ -1,9 +1,5 @@
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Tests.Fakes;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Tests.Cover
 {

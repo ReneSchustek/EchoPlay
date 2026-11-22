@@ -1,11 +1,9 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
-using EchoPlay.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 using System.ComponentModel;
 
 namespace EchoPlay.App

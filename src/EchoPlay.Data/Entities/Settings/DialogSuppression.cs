@@ -18,7 +18,7 @@ namespace EchoPlay.Data.Entities.Settings
     /// übergangen werden und nicht beim Lesen die ganze Abfrage reißen.
     /// </para>
     /// </remarks>
-    public class DialogSuppression : BaseEntity
+    public sealed class DialogSuppression : BaseEntity
     {
         /// <summary>Name des <c>DialogKey</c>-Werts, fachlicher Schlüssel der Zeile.</summary>
         [DataScope(DataScope.Shared)]

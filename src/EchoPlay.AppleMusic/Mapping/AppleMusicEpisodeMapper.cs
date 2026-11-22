@@ -27,15 +27,17 @@ namespace EchoPlay.AppleMusic.Mapping
 
             // Collection-ID statt Track-ID, weil ein Album eine Folge ist. iTunes liefert nur
             // eine 100er-Vorschau; die Größe im Pfad lässt sich gegen das große Bild tauschen.
-            return ImportEpisodeFactory.Create(
-                sourceEpisodeId: album.CollectionId.ToString(CultureInfo.InvariantCulture),
-                title: album.CollectionName,
-                releaseDate: TryParseReleaseDate(album.ReleaseDate),
-                trackDurations: tracks.Select(track => TimeSpan.FromMilliseconds(track.TrackTimeMillis ?? 0)),
-                orderIndex: orderIndex,
-                providerUrl: WebAddress.TryParse($"https://music.apple.com/de/album/{album.CollectionId}"),
-                coverImageUrl: AppleMusicArtworkUrl.WithSize(WebAddress.TryParse(album.ArtworkUrl100), AppleMusicArtworkUrl.EpisodeCoverSize),
-                source: "AppleMusic");
+            ImportEpisodeDraft draft = new()
+            {
+                SourceEpisodeId = album.CollectionId.ToString(CultureInfo.InvariantCulture),
+                Title = album.CollectionName,
+                ReleaseDate = TryParseReleaseDate(album.ReleaseDate),
+                OrderIndex = orderIndex,
+                ProviderUrl = WebAddress.TryParse($"https://music.apple.com/de/album/{album.CollectionId}"),
+                CoverImageUrl = AppleMusicArtworkUrl.WithSize(WebAddress.TryParse(album.ArtworkUrl100), AppleMusicArtworkUrl.EpisodeCoverSize),
+                Source = "AppleMusic",
+            };
+            return ImportEpisodeFactory.Create(draft, tracks.Select(track => TimeSpan.FromMilliseconds(track.TrackTimeMillis ?? 0)));
         }
 
         /// <summary>

@@ -3,7 +3,6 @@ using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Clients;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
-using System;
 
 namespace EchoPlay.App.Composition
 {
@@ -83,25 +82,25 @@ namespace EchoPlay.App.Composition
         /// <returns>Dieselbe Dienstsammlung, damit Aufrufe verkettet werden können.</returns>
         public static IServiceCollection AddEchoPlayTypedHttpClients(this IServiceCollection services)
         {
-            AttachResilience(services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(), withRateLimit: true);
-            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.CoverService>(), withRateLimit: false);
-            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.CoverArtArchiveSearchService>(), withRateLimit: true);
-            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.ITunesCoverSearchService>(), withRateLimit: true);
-            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerArtistCoverSearchService>(), withRateLimit: false);
-            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerAlbumCoverSearchService>(), withRateLimit: false);
+            AttachResilience(services.AddHttpClient<IAppleMusicSearchClient, AppleMusicSearchClient>(), HostThrottling.PerHost);
+            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.CoverService>(), HostThrottling.None);
+            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.CoverArtArchiveSearchService>(), HostThrottling.PerHost);
+            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.ITunesCoverSearchService>(), HostThrottling.PerHost);
+            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerArtistCoverSearchService>(), HostThrottling.None);
+            AttachResilience(services.AddHttpClient<EchoPlay.LocalLibrary.Cover.DeezerAlbumCoverSearchService>(), HostThrottling.None);
 
             // MusicBrainzLookupService ist internal; der benannte Client heißt per Konvention
             // wie die Schnittstelle des typisierten Clients.
-            AttachResilience(services.AddHttpClient("ITagLookupService"), withRateLimit: true);
+            AttachResilience(services.AddHttpClient("ITagLookupService"), HostThrottling.PerHost);
             return services;
         }
 
         /// <summary>
-        /// Hängt die Standard-Wiederholungsregel, wahlweise die Ratenbremse und in jedem
-        /// Fall die Anfrage-Protokollierung an einen Client.
+        /// Hängt die Standard-Wiederholungsregel, je nach <paramref name="throttling"/> die
+        /// Ratenbremse und in jedem Fall die Anfrage-Protokollierung an einen Client.
         /// </summary>
         /// <param name="clientBuilder">Der Aufbau des betroffenen Clients.</param>
-        /// <param name="withRateLimit">Ob die Ratenbremse je Gegenstelle greifen soll.</param>
+        /// <param name="throttling">Ob die Ratenbremse je Gegenstelle greifen soll.</param>
         /// <param name="configureOptions">
         /// Eigene Optionen der Wiederholungsregel; ohne Angabe gelten die Grenzen der
         /// fremden Schnittstellen (<see cref="ProviderAttemptTimeout"/>,
@@ -109,11 +108,11 @@ namespace EchoPlay.App.Composition
         /// </param>
         public static void AttachResilience(
             IHttpClientBuilder clientBuilder,
-            bool withRateLimit,
+            HostThrottling throttling,
             Action<HttpStandardResilienceOptions>? configureOptions = null)
         {
             AttachRetryPipeline(clientBuilder, configureOptions);
-            if (withRateLimit)
+            if (throttling == HostThrottling.PerHost)
             {
                 _ = clientBuilder.AddHttpMessageHandler<RateLimitMessageHandler>();
             }

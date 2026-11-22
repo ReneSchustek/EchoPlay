@@ -8,11 +8,6 @@ using EchoPlay.Spotify.Mapping;
 using EchoPlay.Spotify.Scoring;
 using EchoPlay.Spotify.Services;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Spotify.Tests.Import
 {

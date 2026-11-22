@@ -1,7 +1,3 @@
-using System;
-using EchoPlay.App;
-using Xunit;
-
 namespace EchoPlay.App.Tests
 {
     /// <summary>

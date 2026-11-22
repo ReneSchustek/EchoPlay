@@ -1,20 +1,12 @@
 using EchoPlay.App.Models;
-using EchoPlay.App.Services;
-using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Http;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -154,30 +146,24 @@ namespace EchoPlay.App.ViewModels
             // eigene, damit die Liste eindeutig bleibt.
             Guid cardEpisodeId = match.EpisodeId != Guid.Empty ? match.EpisodeId : Guid.NewGuid();
 
-            NewEpisodeCardViewModel card = new(
-                episodeId: cardEpisodeId,
-                seriesId: series.Id,
-                seriesName: series.Title,
-                episodeTitle: entry.Title,
-                coverImage: cover,
-                status: PlaybackStatus.NotStarted,
-                progressPercent: 0,
-                hasLocalTrack: match.HasLocalTrack,
-                isAnnounced: false,
-                scopeFactory: _scopeFactory,
-                errorDialogService: _cardServices.ErrorDialogService,
-                confirmationDialogService: _cardServices.ConfirmationDialogService,
-                playerService: _cardServices.PlayerService,
-                episodeNumber: entry.EpisodeNumber,
-                releaseDate: entry.ReleaseDate,
-                localizationService: _cardServices.LocalizationService,
-                clock: _clock,
+            NewEpisodeCardData data = new()
+            {
+                EpisodeId = cardEpisodeId,
+                SeriesId = series.Id,
+                SeriesName = series.Title,
+                EpisodeTitle = entry.Title,
+                Status = PlaybackStatus.NotStarted,
+                HasLocalTrack = match.HasLocalTrack,
+                EpisodeNumber = entry.EpisodeNumber,
+                ReleaseDate = entry.ReleaseDate,
                 // Die Sammlungs-Kennung des Anbieters ist bei Apple Music die Album-Kennung.
                 // Sie liegt im Eintrag vor, anders als eine Folgen-Id, die es für eine reine
                 // Neuerscheinung noch gar nicht gibt.
-                appleMusicAlbumId: entry.CollectionId > 0
+                AppleMusicAlbumId = entry.CollectionId > 0
                     ? entry.CollectionId.ToString(CultureInfo.InvariantCulture)
-                    : null);
+                    : null,
+            };
+            NewEpisodeCardViewModel card = new(data, cover, _scopeFactory, _cardServices, _clock);
 
             // Nur lokal bekannte Folgen kommen ins Nachtragen. Ein reiner Eintrag ohne
             // lokalen Treffer hat keine durchsuchbare Cover-Quelle.

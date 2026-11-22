@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using EchoPlay.Logger.Abstractions;
 
 namespace EchoPlay.App.Services

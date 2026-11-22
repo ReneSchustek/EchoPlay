@@ -1,7 +1,5 @@
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -13,14 +11,15 @@ namespace EchoPlay.App.Tests.ViewModels
     public sealed class LocalArtistCardViewModelTests
     {
         private static LocalArtistCardViewModel BuildCard(int local, int total) => new(
-            seriesId: TestIds.SeriesA,
-            title: "TKKG",
+            new LocalArtistCardData
+            {
+                SeriesId = TestIds.SeriesA,
+                Title = "TKKG",
+                LocalFolderPath = @"D:\Mp3\Hörspiele\TKKG",
+                LocalEpisodeCount = local,
+                TotalEpisodeCount = total,
+            },
             coverImage: null,
-            localFolderPath: @"D:\Mp3\Hörspiele\TKKG",
-            localEpisodeCount: local,
-            totalEpisodeCount: total,
-            isFavorite: false,
-            isWatched: false,
             scopeFactory: null!);
 
         [Fact]

@@ -1,8 +1,3 @@
-using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace EchoPlay.App.Services
 {
     /// <summary>
@@ -18,15 +13,18 @@ namespace EchoPlay.App.Services
         /// </summary>
         public static readonly TimeSpan MinimumDuration = TimeSpan.FromMilliseconds(1500);
 
-        private readonly Stopwatch _stopwatch;
+        private readonly TimeProvider _time;
+        private readonly long _startTimestamp;
 
         /// <summary>
-        /// Startet den Stopwatch sofort. Soll im Konstruktor des Splash-Fensters
+        /// Beginnt die Zeitmessung sofort. Soll im Konstruktor des Splash-Fensters
         /// oder unmittelbar danach aufgerufen werden.
         /// </summary>
-        public SplashLifetimeController()
+        /// <param name="timeProvider">Zeitquelle für Messung und Wartezeit; ohne Angabe die Systemzeit.</param>
+        public SplashLifetimeController(TimeProvider? timeProvider = null)
         {
-            _stopwatch = Stopwatch.StartNew();
+            _time = timeProvider ?? TimeProvider.System;
+            _startTimestamp = _time.GetTimestamp();
         }
 
         /// <summary>
@@ -37,7 +35,7 @@ namespace EchoPlay.App.Services
         /// <param name="cancellationToken">Optionaler Abbruch-Token (Splash-Lebenszyklus).</param>
         public async Task WaitForMinimumDurationAsync(CancellationToken cancellationToken = default)
         {
-            TimeSpan elapsed = _stopwatch.Elapsed;
+            TimeSpan elapsed = _time.GetElapsedTime(_startTimestamp);
             if (elapsed >= MinimumDuration)
             {
                 return;
@@ -46,7 +44,7 @@ namespace EchoPlay.App.Services
             TimeSpan remaining = MinimumDuration - elapsed;
             try
             {
-                await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(remaining, _time, cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {

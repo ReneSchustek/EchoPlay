@@ -1,21 +1,12 @@
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Infrastructure;
-using EchoPlay.App.Services;
-using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -186,8 +177,8 @@ namespace EchoPlay.App.ViewModels
         public async Task LoadForSeriesAsync(
             LocalArtistCardViewModel artist,
             IReadOnlyList<Episode> episodes,
-            HashSet<Guid> completedIds,
-            HashSet<Guid> inProgressIds)
+            IReadOnlySet<Guid> completedIds,
+            IReadOnlySet<Guid> inProgressIds)
         {
             ArgumentNullException.ThrowIfNull(artist);
             // Laufende Cover-Tasks der vorherigen Serie abbrechen. Das verhindert,
@@ -206,8 +197,9 @@ namespace EchoPlay.App.ViewModels
                 .OrderBy(e => e.EpisodeNumber)
                 .Select(e => (ToCard(e, artist.Title), e))];
 
-            _completedEpisodeIds = completedIds;
-            _inProgressEpisodeIds = inProgressIds;
+            // Eigene Kopien: Das Markieren als gehört ändert sie später, die Mengen des Aufrufers bleiben unberührt.
+            _completedEpisodeIds = [.. completedIds];
+            _inProgressEpisodeIds = [.. inProgressIds];
             List<LocalEpisodeCardViewModel> episodeCards = [.. coverQueue.Select(entry => entry.Card)];
             foreach (LocalEpisodeCardViewModel card in episodeCards)
             {
@@ -224,13 +216,16 @@ namespace EchoPlay.App.ViewModels
         /// Serienname am Anfang ist redundant und verschwendet Platz in der Kachel.
         /// </summary>
         private static LocalEpisodeCardViewModel ToCard(Episode episode, string seriesTitle) => new(
-            episodeId: episode.Id,
-            episodeNumber: episode.EpisodeNumber,
-            title: StripSeriesPrefix(episode.Title, seriesTitle),
-            localTrackCount: episode.LocalTrackCount ?? 0,
-            folderPath: episode.LocalFolderPath,
-            // Sonderfolge: Nummer 0 oder null (kein erkennbares Nummernmuster)
-            isSpecialEpisode: episode.EpisodeNumber is null or 0);
+            new LocalEpisodeCardData
+            {
+                EpisodeId = episode.Id,
+                EpisodeNumber = episode.EpisodeNumber,
+                Title = StripSeriesPrefix(episode.Title, seriesTitle),
+                LocalTrackCount = episode.LocalTrackCount ?? 0,
+                FolderPath = episode.LocalFolderPath,
+                // Sonderfolge: Nummer 0 oder null (kein erkennbares Nummernmuster)
+                IsSpecialEpisode = episode.EpisodeNumber is null or 0,
+            });
 
         /// <summary>Speichert die ungefilterte Gesamtliste und setzt Tab, Filter und Sortierung zurück.</summary>
         private void ResetListTo(List<LocalEpisodeCardViewModel> episodeCards)

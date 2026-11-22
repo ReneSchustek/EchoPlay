@@ -1,6 +1,4 @@
 using EchoPlay.LocalLibrary.Analysis;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

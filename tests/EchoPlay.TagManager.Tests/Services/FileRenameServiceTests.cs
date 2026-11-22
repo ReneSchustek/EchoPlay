@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.TagManager.Models;
 using EchoPlay.TagManager.Services;
 using EchoPlay.TagManager.Tests.Fakes;

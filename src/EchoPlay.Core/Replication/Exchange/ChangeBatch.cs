@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace EchoPlay.Core.Replication.Exchange
@@ -60,7 +61,7 @@ namespace EchoPlay.Core.Replication.Exchange
         /// <param name="batch">Die gelesene Datei.</param>
         /// <param name="error">Der Grund der Ablehnung.</param>
         /// <returns><see langword="true"/>, wenn die Datei gültig ist.</returns>
-        public static bool TryParse(string? json, out ChangeBatch? batch, out string? error)
+        public static bool TryParse(string? json, [NotNullWhen(true)] out ChangeBatch? batch, out string? error)
         {
             batch = null;
             error = StrictJson.TryDeserialize(
@@ -73,12 +74,14 @@ namespace EchoPlay.Core.Replication.Exchange
                 return false;
             }
 
+            // ValidateHeader hat Kopf und Satzliste auf null geprüft.
             error = ValidateRecords(document!.Records!, out List<ChangeRecord> records);
             if (error is not null)
             {
                 return false;
             }
 
+            // ValidateHeader hat die Gerätekennung geprüft.
             batch = new ChangeBatch(document.FormatVersion, Guid.ParseExact(document.DeviceId!, "N"), document.Sequence, document.Snapshot, records);
             return true;
         }
@@ -95,7 +98,7 @@ namespace EchoPlay.Core.Replication.Exchange
                     return error;
                 }
 
-                records.Add(parsed!);
+                records.Add(parsed!); // ohne Fehler ist der Satz immer gesetzt
             }
 
             return null;
@@ -149,7 +152,7 @@ namespace EchoPlay.Core.Replication.Exchange
                 return $"Felder von {r.Key} fehlen oder sind zu lang.";
             }
 
-            record = new ChangeRecord(r.Kind!, r.Key, string.IsNullOrEmpty(r.Parent) ? null : r.Parent, stamp, r.Deleted, new Dictionary<string, string?>(r.Fields, StringComparer.Ordinal));
+            record = new ChangeRecord(r.Kind, r.Key, string.IsNullOrEmpty(r.Parent) ? null : r.Parent, stamp, r.Deleted, new Dictionary<string, string?>(r.Fields, StringComparer.Ordinal));
             return null;
         }
 

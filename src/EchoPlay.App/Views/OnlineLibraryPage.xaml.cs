@@ -45,13 +45,15 @@ namespace EchoPlay.App.Views
             _sectionHandler = new Helpers.LetterSectionSplitHandler<SeriesCardViewModel>(
                 new Helpers.ItemsControlSectionHost(TopSectionsHost),
                 new Helpers.ItemsControlSectionHost(BottomSectionsHost),
-                () => ViewModel.Series,
-                card => card.Title,
-                () => ViewModel.SelectedSeriesIndex,
-                () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 32),
+                new Helpers.LetterSectionSource<SeriesCardViewModel>(
+                    () => ViewModel.Series,
+                    card => card.Title,
+                    () => ViewModel.SelectedSeriesIndex,
+                    () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 32)),
                 _resources.GetString("OnlineLetterSectionFormat"),
-                () => ViewModel.SeriesSortIndex == SortByNameIndex,
-                _resources.GetString("OnlineSeriesListName"));
+                new Helpers.LetterSectionGrouping(
+                    () => ViewModel.SeriesSortIndex == SortByNameIndex,
+                    _resources.GetString("OnlineSeriesListName")));
 
             SeriesAlphabetBar.AutomationNameFormat = _resources.GetString("OnlineAlphabetJumpFormat");
 

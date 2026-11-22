@@ -1,5 +1,4 @@
 using EchoPlay.Spotify.Configuration;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

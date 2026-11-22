@@ -1,8 +1,5 @@
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

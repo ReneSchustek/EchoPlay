@@ -177,6 +177,20 @@ namespace EchoPlay.Data.Tests.Replication
         }
 
         [Fact]
+        public async Task Apply_NamesTheBackupAfterTheClock()
+        {
+            string databasePath = Location.FilePath;
+            await File.WriteAllBytesAsync(databasePath, SqliteBytes(), TestContext.Current.CancellationToken);
+            await File.WriteAllBytesAsync(Path.Combine(_install, PackageStager.StagedFileName), SqliteBytes(), TestContext.Current.CancellationToken);
+            new PendingImport(null, Guid.NewGuid()).Write(_install);
+            Microsoft.Extensions.Time.Testing.FakeTimeProvider clock = new(new DateTimeOffset(2031, 5, 17, 8, 9, 10, TimeSpan.Zero));
+
+            ImportCarryOver? carry = await PendingImportApplier.ApplyAsync(databasePath, clock, TestContext.Current.CancellationToken);
+
+            Assert.EndsWith("echoplay.db.before-import-20310517-080910", carry?.BackupPath, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public async Task Finish_WithoutSettingsInTheOldInstall_KeepsThePackagesSettings()
         {
             await using EchoPlayDbContext context = await OpenMigratedAsync();

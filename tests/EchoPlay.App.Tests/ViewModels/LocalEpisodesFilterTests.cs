@@ -3,13 +3,8 @@ using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -130,8 +125,8 @@ namespace EchoPlay.App.Tests.ViewModels
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
             using LocalEpisodesViewModel sut = new(scopeFactory, new FakeLocalCoverLoader(), new FakeClock());
 
-            await sut.LoadForSeriesAsync(BuildArtist(scopeFactory), [Episode(1, "Erste")], [], []);
-            await sut.LoadForSeriesAsync(BuildArtist(scopeFactory), [Episode(2, "Zweite")], [], []);
+            await sut.LoadForSeriesAsync(BuildArtist(scopeFactory), [Episode(1, "Erste")], new HashSet<Guid>(), new HashSet<Guid>());
+            await sut.LoadForSeriesAsync(BuildArtist(scopeFactory), [Episode(2, "Zweite")], new HashSet<Guid>(), new HashSet<Guid>());
 
             // Beim Serienwechsel bricht das Nachladen der Cover der vorigen Serie ab,
             // sonst landeten deren Bilder auf den neuen Kacheln.
@@ -147,7 +142,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 provider.GetRequiredService<IServiceScopeFactory>(), new FakeLocalCoverLoader(), new FakeClock());
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => sut.LoadForSeriesAsync(null!, [], [], []));
+                () => sut.LoadForSeriesAsync(null!, [], new HashSet<Guid>(), new HashSet<Guid>()));
         }
 
         private static ServiceProvider BuildProvider()
@@ -162,14 +157,13 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         private static LocalArtistCardViewModel BuildArtist(IServiceScopeFactory scopeFactory) => new(
-            seriesId: TestIds.SeriesA,
-            title: "TKKG",
+            new LocalArtistCardData
+            {
+                SeriesId = TestIds.SeriesA,
+                Title = "TKKG",
+                LocalFolderPath = @"C:\Hörspiele\TKKG",
+            },
             coverImage: null,
-            localFolderPath: @"C:\Hörspiele\TKKG",
-            localEpisodeCount: 0,
-            totalEpisodeCount: 0,
-            isFavorite: false,
-            isWatched: false,
             scopeFactory: scopeFactory);
 
         private static Episode Episode(int? number, string title) => new()

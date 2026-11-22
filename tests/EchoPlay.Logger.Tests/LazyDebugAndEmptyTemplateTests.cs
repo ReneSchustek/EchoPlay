@@ -1,7 +1,5 @@
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.Logger.Tests
 {

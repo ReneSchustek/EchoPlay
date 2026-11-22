@@ -169,7 +169,7 @@ namespace EchoPlay.App.Services
         /// <summary>Die höchste Folgennummer unter den Neuerscheinungen, 0 ohne nummerierte.</summary>
         private static int HighestNumber(List<NewReleaseEpisode> newReleases) => newReleases
             .Where(e => e.EpisodeNumber.HasValue)
-            .Select(e => e.EpisodeNumber!.Value)
+            .Select(e => e.EpisodeNumber!.Value) // nach dem Filter oben nie null
             .DefaultIfEmpty(0)
             .Max();
 

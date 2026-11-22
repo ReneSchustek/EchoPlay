@@ -1,4 +1,3 @@
-using EchoPlay.Data.Entities.Common;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Entities.Settings;
@@ -11,7 +10,7 @@ namespace EchoPlay.Data.Context
     /// Konfiguriert das Mapping und implementiert globale Abfragefilter für das Soft-Delete-System.
     /// <see cref="WatchedTitle"/> hat keinen Filter: Die Merkliste löscht physisch.
     /// </summary>
-    public class EchoPlayDbContext(DbContextOptions<EchoPlayDbContext> options) : DbContext(options)
+    public sealed class EchoPlayDbContext(DbContextOptions<EchoPlayDbContext> options) : DbContext(options)
     {
         /// <summary>Serien.</summary>
         public DbSet<Series> Series => Set<Series>();

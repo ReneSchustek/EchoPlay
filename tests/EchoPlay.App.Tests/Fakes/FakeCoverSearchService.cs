@@ -1,7 +1,4 @@
 using EchoPlay.LocalLibrary.Cover;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {
@@ -15,7 +12,7 @@ namespace EchoPlay.App.Tests.Fakes
         private IReadOnlyList<CoverSearchResult> _results = [];
 
         /// <summary>
-        /// Letzter Suchbegriff, der an <see cref="SearchAsync"/> übergeben wurde.
+        /// Letzter Suchbegriff, der an <see cref="SearchAsync(string, CoverSearchPage, System.Threading.CancellationToken)"/> übergeben wurde.
         /// Nützlich für Assertions in Tests.
         /// </summary>
         public string? LastSearchTitle { get; private set; }

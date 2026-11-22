@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace EchoPlay.App.Helpers
 {
     /// <summary>
@@ -21,8 +18,7 @@ namespace EchoPlay.App.Helpers
         private readonly Func<int> _getSelectedIndex;
         private readonly Func<double> _getAvailableWidth;
         private readonly string _automationNameFormat;
-        private readonly Func<bool>? _groupByLetter;
-        private readonly string? _ungroupedAutomationName;
+        private readonly LetterSectionGrouping? _grouping;
 
         private int _lastTilesPerRow;
 
@@ -31,54 +27,37 @@ namespace EchoPlay.App.Helpers
         /// </summary>
         /// <param name="topHost">Liste oberhalb des Folgenbereichs.</param>
         /// <param name="bottomHost">Liste unterhalb des Folgenbereichs.</param>
-        /// <param name="getItems">Liefert die aktuelle Kachelliste aus dem ViewModel.</param>
-        /// <param name="titleOf">Liefert den Titel einer Kachel; er bestimmt den Buchstaben.</param>
-        /// <param name="getSelectedIndex">Liefert den gewählten Index; -1, wenn nichts gewählt ist.</param>
-        /// <param name="getAvailableWidth">Liefert die verfügbare Breite in Pixel.</param>
+        /// <param name="source">Kacheln, Titel, Auswahl und verfügbare Breite.</param>
         /// <param name="automationNameFormat">
         /// Vorlage für die Sprachausgabe der Abschnitte, mit <c>{0}</c> für den Buchstaben.
         /// </param>
-        /// <param name="groupByLetter">
-        /// Ob nach Buchstaben gegliedert wird. <see langword="null"/> heißt: immer. Seiten, die
-        /// auch anders sortieren können, geben hier ihre Sortierung weiter; bei einer Liste
-        /// nach Folgenanzahl wäre eine Buchstaben-Gliederung nur noch Zufall.
-        /// </param>
-        /// <param name="ungroupedAutomationName">
-        /// Beschriftung der ungegliederten Liste für die Sprachausgabe. Pflicht, sobald
-        /// <paramref name="groupByLetter"/> gesetzt ist.
+        /// <param name="grouping">
+        /// Ob nach Buchstaben gegliedert wird, und wie die Liste sonst heißt.
+        /// <see langword="null"/> heißt: immer gegliedert.
         /// </param>
         public LetterSectionSplitHandler(
             ILetterSectionHost topHost,
             ILetterSectionHost bottomHost,
-            Func<IReadOnlyList<T>> getItems,
-            Func<T, string?> titleOf,
-            Func<int> getSelectedIndex,
-            Func<double> getAvailableWidth,
+            LetterSectionSource<T> source,
             string automationNameFormat,
-            Func<bool>? groupByLetter = null,
-            string? ungroupedAutomationName = null)
+            LetterSectionGrouping? grouping = null)
         {
+            ArgumentNullException.ThrowIfNull(source);
             _topHost = topHost;
             _bottomHost = bottomHost;
-            _getItems = getItems;
-            _titleOf = titleOf;
-            _getSelectedIndex = getSelectedIndex;
-            _getAvailableWidth = getAvailableWidth;
+            _getItems = source.GetItems;
+            _titleOf = source.TitleOf;
+            _getSelectedIndex = source.GetSelectedIndex;
+            _getAvailableWidth = source.GetAvailableWidth;
             _automationNameFormat = automationNameFormat;
-            _groupByLetter = groupByLetter;
-            _ungroupedAutomationName = ungroupedAutomationName;
-
-            if (groupByLetter is not null)
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(ungroupedAutomationName);
-            }
+            _grouping = grouping;
         }
 
         /// <summary>
         /// Ob die Liste gerade nach Buchstaben gegliedert ist. Nur dann taugt die Sprungleiste
         /// als Anlaufpunkt; sonst gehört sie ausgeblendet.
         /// </summary>
-        public bool IsGroupedByLetter => _groupByLetter is null || _groupByLetter();
+        public bool IsGroupedByLetter => _grouping is null || _grouping.IsGrouped();
 
         /// <summary>
         /// Buchstaben, unter denen der aktuelle Bestand Einträge führt. Die Leiste stellt alle
@@ -93,11 +72,11 @@ namespace EchoPlay.App.Helpers
         {
             IReadOnlyList<T> items = _getItems();
 
-            (IReadOnlyList<LetterSection> top, IReadOnlyList<LetterSection> bottom) = IsGroupedByLetter
-                ? LetterSectionBuilder.Build(
-                    items, _titleOf, _getSelectedIndex(), _getAvailableWidth(), _automationNameFormat)
-                : LetterSectionBuilder.BuildUngrouped(
-                    items, _getSelectedIndex(), _getAvailableWidth(), _ungroupedAutomationName!);
+            (IReadOnlyList<LetterSection> top, IReadOnlyList<LetterSection> bottom) = _grouping is { } grouping && !grouping.IsGrouped()
+                ? LetterSectionBuilder.BuildUngrouped(
+                    items, _getSelectedIndex(), _getAvailableWidth(), grouping.UngroupedAutomationName)
+                : LetterSectionBuilder.Build(
+                    items, _titleOf, _getSelectedIndex(), _getAvailableWidth(), _automationNameFormat);
 
             _topHost.Sections = top;
             _bottomHost.Sections = bottom;

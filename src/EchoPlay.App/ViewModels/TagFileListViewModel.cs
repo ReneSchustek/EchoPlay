@@ -1,7 +1,5 @@
 using EchoPlay.App.Infrastructure;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace EchoPlay.App.ViewModels

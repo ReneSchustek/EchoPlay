@@ -7,7 +7,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

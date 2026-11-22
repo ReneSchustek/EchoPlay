@@ -20,6 +20,7 @@ namespace EchoPlay.Spotify.Tests.Fakes
         /// </summary>
         /// <param name="source">Der Spotify-Künstler.</param>
         /// <param name="searchQuery">Der ursprüngliche Suchbegriff.</param>
+        /// <param name="cancellationToken">Signal zum Abbrechen.</param>
         /// <returns>Das fest konfigurierte Bewertungsergebnis.</returns>
         public Task<HoerspielScoreResult> ScoreAsync(
             SpotifyArtistDto source,

@@ -1,9 +1,6 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Logger.Models;
-using System;
-using System.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

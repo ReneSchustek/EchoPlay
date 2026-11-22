@@ -29,7 +29,7 @@ namespace EchoPlay.Logger.Management
             // unbegrenzt, weil sie nie bereinigt würden.
             string[] directories = [.. new[] { _options.LogDirectory, _options.JsonLogDirectory }
                 .Where(directory => !string.IsNullOrEmpty(directory) && Directory.Exists(directory))
-                .Select(directory => directory!)
+                .OfType<string>()
                 .Distinct(StringComparer.OrdinalIgnoreCase)];
             if (directories.Length == 0)
             {
@@ -48,7 +48,7 @@ namespace EchoPlay.Logger.Management
             {
                 // Lokalzeit, weil Log-Dateien lokale Zeitstempel im Namen tragen; UTC wäre
                 // beim Vergleich mit File.LastWriteTime (Lokalzeit) fehleranfällig.
-                DateTime cutoffDate = DateTime.Now.AddDays(-_options.RetentionDays);
+                DateTime cutoffDate = _options.TimeProvider.GetLocalNow().DateTime.AddDays(-_options.RetentionDays);
                 logFiles = CleanupByAge(logFiles, cutoffDate);
             }
 

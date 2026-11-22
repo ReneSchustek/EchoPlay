@@ -4,11 +4,8 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -156,19 +153,21 @@ namespace EchoPlay.App.Tests.ViewModels
             StatusBarViewModel statusBar = new(
                 scopeFactory, new FakeThemeService(), new TaskbarProgressService(), clock);
 
-            LocalLibraryViewModelContext context = new(
-                scopeFactory,
-                new FakeSyncService(),
-                new FakePlayerService(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                statusBar,
-                new FakeLocalCoverLoader(),
-                scanEvents,
-                new FakeOnlineAccessGuard(),
-                clock,
-                PageModeGuard: pageModeGuard,
-                MissingEpisodesCoordinator: new FakeMissingEpisodesCoordinator());
+            LocalLibraryViewModelContext context = new()
+            {
+                ScopeFactory = scopeFactory,
+                SyncService = new FakeSyncService(),
+                PlayerService = new FakePlayerService(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                StatusBar = statusBar,
+                CoverLoader = new FakeLocalCoverLoader(),
+                ScanEventService = scanEvents,
+                OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                Clock = clock,
+                PageModeGuard = pageModeGuard,
+                MissingEpisodesCoordinator = new FakeMissingEpisodesCoordinator(),
+            };
 
             return new LocalLibraryViewModel(context);
         }

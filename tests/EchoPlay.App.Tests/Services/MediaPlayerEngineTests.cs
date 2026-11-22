@@ -1,6 +1,5 @@
 using EchoPlay.App.Services;
 using Windows.Media.Playback;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

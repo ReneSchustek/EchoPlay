@@ -98,7 +98,7 @@ namespace EchoPlay.Data.Services.Interfaces
         /// Episoden ohne PlaybackState oder mit <c>IsCompleted == false</c> fehlen im Set.
         /// </returns>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
-        Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default);
+        Task<IReadOnlySet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Liefert die zuletzt aktiven Wiedergabestände als schmale Projektion für Dashboard-Ansichten.

@@ -1,10 +1,5 @@
 using EchoPlay.App.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Xml.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Views
 {

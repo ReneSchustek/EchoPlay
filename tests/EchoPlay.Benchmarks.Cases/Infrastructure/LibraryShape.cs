@@ -2,7 +2,7 @@ namespace EchoPlay.Benchmarks.Cases.Infrastructure
 {
     /// <summary>
     /// Größe und Verteilung der Produktivbibliothek, aus einem lesenden Abzug vom 20.11.2026. Der
-    /// Messbestand (<see cref="LibrarySeed"/>), der Ordnerbaum und die Titel richten sich danach.
+    /// Messbestand (<c>LibrarySeed</c>), der Ordnerbaum und die Titel richten sich danach.
     /// </summary>
     /// <remarks>
     /// Eigene Klasse ohne Abhängigkeiten, damit auch Testprojekte ohne Datenschicht sie nutzen.

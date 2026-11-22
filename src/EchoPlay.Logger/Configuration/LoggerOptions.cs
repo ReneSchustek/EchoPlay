@@ -70,5 +70,11 @@ namespace EchoPlay.Logger.Configuration
         /// Default ist das normale <see cref="LogDirectory"/>; kann für getrennte Rotation gesetzt werden.
         /// </summary>
         public string? JsonLogDirectory { get; set; }
+
+        /// <summary>
+        /// Zeitquelle für Zeitstempel, Dateinamen und Aufbewahrungsfrist. Standard ist die
+        /// Systemzeit; Tests stellen eine Uhr, um Tageswechsel und Fristen ohne Warten zu prüfen.
+        /// </summary>
+        public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
     }
 }

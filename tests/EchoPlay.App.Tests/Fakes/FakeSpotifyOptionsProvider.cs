@@ -1,8 +1,5 @@
-using System;
 using EchoPlay.App.Services;
 using EchoPlay.Spotify.Configuration;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

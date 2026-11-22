@@ -4,11 +4,7 @@ using EchoPlay.Core.Http;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -162,15 +158,18 @@ namespace EchoPlay.App.ViewModels
             }
 
             return new ReleaseCalendarItemViewModel(
-                entry.SeriesId,
-                entry.Series?.Title ?? string.Empty,
-                entry.Title,
-                dateLine,
-                ResolveCoverUri(entry),
-                ResolveBadge(isAnnounced, availability),
-                utc,
-                isAnnounced,
-                availability);
+                new ReleaseCalendarItemData
+                {
+                    SeriesId = entry.SeriesId,
+                    SeriesName = entry.Series?.Title ?? string.Empty,
+                    EpisodeTitle = entry.Title,
+                    DateLine = dateLine,
+                    CoverUri = ResolveCoverUri(entry),
+                    BadgeText = ResolveBadge(isAnnounced, availability),
+                    ReleaseDateUtc = utc,
+                    IsAnnounced = isAnnounced,
+                    Availability = availability,
+                });
         }
 
         /// <summary>

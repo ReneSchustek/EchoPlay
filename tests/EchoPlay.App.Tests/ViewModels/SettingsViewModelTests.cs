@@ -8,8 +8,6 @@ using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -42,47 +40,54 @@ namespace EchoPlay.App.Tests.ViewModels
                 new FakeClock());
         }
 
-        private static SettingsViewModel BuildViewModel(
-            FakeAppSettingsDataService settingsService,
-            FakeSyncService? syncService = null,
-            FakeThemeService? themeService = null,
-            FakeErrorDialogService? errorDialogService = null,
-            FakeDatabaseMaintenanceService? maintenanceService = null,
-            FakeConnectionTestCoordinator? connectionTestCoordinator = null,
-            FakeLogViewerCoordinator? logViewerCoordinator = null,
-            FakeSpotifyCredentialStore? credentialStore = null,
-            FakeSpotifyOptionsProvider? optionsProvider = null)
+        /// <summary>Einstellungen für <see cref="BuildViewModel"/>; ohne Angabe gelten die Vorgaben.</summary>
+        private sealed record SettingsSetup
         {
+            public FakeSyncService? SyncService { get; init; }
+            public FakeThemeService? ThemeService { get; init; }
+            public FakeErrorDialogService? ErrorDialogService { get; init; }
+            public FakeDatabaseMaintenanceService? MaintenanceService { get; init; }
+            public FakeConnectionTestCoordinator? ConnectionTestCoordinator { get; init; }
+            public FakeLogViewerCoordinator? LogViewerCoordinator { get; init; }
+            public FakeSpotifyCredentialStore? CredentialStore { get; init; }
+            public FakeSpotifyOptionsProvider? OptionsProvider { get; init; }
+        }
+
+        private static SettingsViewModel BuildViewModel(FakeAppSettingsDataService settingsService, SettingsSetup? setup = null)
+        {
+            setup ??= new SettingsSetup();
             ServiceCollection services = new();
             _ = services.AddScoped<IAppSettingsDataService>(_ => settingsService);
             // StatusBar.RefreshAsync benötigt diese Services, sonst schlägt SaveAsync fehl
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
             _ = services.AddScoped<IEpisodeDataService>(_ => new FakeEpisodeDataService());
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
-            _ = services.AddScoped<IDatabaseMaintenanceService>(_ => maintenanceService ?? new FakeDatabaseMaintenanceService());
+            _ = services.AddScoped<IDatabaseMaintenanceService>(_ => setup.MaintenanceService ?? new FakeDatabaseMaintenanceService());
 
             ServiceProvider provider = services.BuildServiceProvider();
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-            FakeSpotifyCredentialStore resolvedCredentialStore = credentialStore ?? new FakeSpotifyCredentialStore();
-            FakeSpotifyOptionsProvider resolvedOptionsProvider = optionsProvider ?? new FakeSpotifyOptionsProvider(resolvedCredentialStore);
+            FakeSpotifyCredentialStore resolvedCredentialStore = setup.CredentialStore ?? new FakeSpotifyCredentialStore();
+            FakeSpotifyOptionsProvider resolvedOptionsProvider = setup.OptionsProvider ?? new FakeSpotifyOptionsProvider(resolvedCredentialStore);
 
-            return new SettingsViewModel(new SettingsViewModelContext(
-                scopeFactory,
-                themeService ?? new FakeThemeService(),
-                syncService ?? new FakeSyncService(new SyncResult()),
-                errorDialogService ?? new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                new FakeLocalizationService(),
-                new FakeEpisodePatternAnalyzer(),
-                connectionTestCoordinator ?? new FakeConnectionTestCoordinator(),
-                resolvedCredentialStore,
-                resolvedOptionsProvider,
-                logViewerCoordinator ?? new FakeLogViewerCoordinator(),
-                BuildLoggerManager(),
-                BuildStatusBar(scopeFactory),
-                new FakeDialogSuppressionService(),
-                new FakeLoggerFactory()));
+            return new SettingsViewModel(new SettingsViewModelContext
+            {
+                ScopeFactory = scopeFactory,
+                ThemeService = setup.ThemeService ?? new FakeThemeService(),
+                SyncService = setup.SyncService ?? new FakeSyncService(new SyncResult()),
+                ErrorDialogService = setup.ErrorDialogService ?? new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                LocalizationService = new FakeLocalizationService(),
+                PatternAnalyzer = new FakeEpisodePatternAnalyzer(),
+                ConnectionTestCoordinator = setup.ConnectionTestCoordinator ?? new FakeConnectionTestCoordinator(),
+                CredentialStore = resolvedCredentialStore,
+                OptionsProvider = resolvedOptionsProvider,
+                LogViewerCoordinator = setup.LogViewerCoordinator ?? new FakeLogViewerCoordinator(),
+                LoggerManager = BuildLoggerManager(),
+                StatusBar = BuildStatusBar(scopeFactory),
+                SuppressionService = new FakeDialogSuppressionService(),
+                LoggerFactory = new FakeLoggerFactory(),
+            });
         }
 
         [Fact]
@@ -165,7 +170,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // ApplyTheme muss ActiveTheme setzen und den ThemeService aufrufen
             FakeThemeService themeService = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, themeService: themeService);
+            SettingsViewModel vm = BuildViewModel(settings, new() { ThemeService = themeService });
 
             vm.ApplyTheme("PaperCoffee");
 
@@ -192,7 +197,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 LocalLibraryEnabled = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
-            SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
+            SettingsViewModel vm = BuildViewModel(settings, new() { SyncService = syncService });
 
             await vm.LoadAsync();
             await vm.LocalVM.SyncAsync();
@@ -212,7 +217,7 @@ namespace EchoPlay.App.Tests.ViewModels
                 LocalLibraryEnabled = true,
                 LocalLibraryRootPath = @"C:\Musik"
             });
-            SettingsViewModel vm = BuildViewModel(settings, syncService: syncService);
+            SettingsViewModel vm = BuildViewModel(settings, new() { SyncService = syncService });
 
             await vm.LoadAsync();
 
@@ -343,7 +348,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Ohne Live-View-Verfügbarkeit ist der Log-Viewer deaktiviert
             FakeLogViewerCoordinator coordinator = new() { IsLiveViewAvailable = false };
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { LogViewerCoordinator = coordinator });
 
             vm.LogViewerVM.RefreshLogs();
 
@@ -360,7 +365,7 @@ namespace EchoPlay.App.Tests.ViewModels
             coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Warning, "Warnung", "Service", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { LogViewerCoordinator = coordinator });
             vm.LogViewerVM.RefreshLogs();
 
             Assert.Equal(2, vm.LogViewerVM.LogEntries.Count);
@@ -375,7 +380,7 @@ namespace EchoPlay.App.Tests.ViewModels
             coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Daten gespeichert", "Data", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { LogViewerCoordinator = coordinator });
             vm.LogViewerVM.LogSearchText = "spotify";
 
             _ = Assert.Single(vm.LogViewerVM.LogEntries);
@@ -393,7 +398,7 @@ namespace EchoPlay.App.Tests.ViewModels
             coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Information, "Spotify gestartet", "Import", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { LogViewerCoordinator = coordinator });
 
             List<string?> reported = [];
             vm.LogViewerVM.PropertyChanged += (_, e) => reported.Add(e.PropertyName);
@@ -416,7 +421,7 @@ namespace EchoPlay.App.Tests.ViewModels
             coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Error, "Fehler", "D", []));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { LogViewerCoordinator = coordinator });
             vm.LogViewerVM.LogMinimumLevel = LogLevel.Warning;
 
             Assert.Equal(2, vm.LogViewerVM.LogEntries.Count);
@@ -431,7 +436,7 @@ namespace EchoPlay.App.Tests.ViewModels
             coordinator.AddLiveEntry(new LogEntry(new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc), LogLevel.Error, "Fehler beim Laden", "Net", [], ex));
 
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, logViewerCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { LogViewerCoordinator = coordinator });
             vm.LogViewerVM.RefreshLogs();
 
             _ = Assert.Single(vm.LogViewerVM.LogEntries);
@@ -459,7 +464,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Erfolgreicher Test muss ConnectionTestSuccess auf true setzen
             FakeConnectionTestCoordinator coordinator = new(new ConnectionTestResult(true, null));
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.Spotify });
-            SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { ConnectionTestCoordinator = coordinator });
 
             await vm.LoadAsync();
             await vm.OnlineVM.TestConnectionAsync();
@@ -475,7 +480,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Fehlerhafter Test muss ConnectionTestSuccess auf false setzen und Fehlerdetail enthalten
             FakeConnectionTestCoordinator coordinator = new(new ConnectionTestResult(false, "Timeout"));
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.AppleMusic });
-            SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { ConnectionTestCoordinator = coordinator });
 
             await vm.LoadAsync();
             await vm.OnlineVM.TestConnectionAsync();
@@ -490,7 +495,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Bei Provider "Keine" darf kein API-Aufruf erfolgen
             FakeConnectionTestCoordinator coordinator = new();
             FakeAppSettingsDataService settings = new(new AppSettings { ActiveProvider = ProviderType.None });
-            SettingsViewModel vm = BuildViewModel(settings, connectionTestCoordinator: coordinator);
+            SettingsViewModel vm = BuildViewModel(settings, new() { ConnectionTestCoordinator = coordinator });
 
             await vm.LoadAsync();
             await vm.OnlineVM.TestConnectionAsync();
@@ -503,7 +508,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeDatabaseMaintenanceService maintenance = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, maintenanceService: maintenance);
+            SettingsViewModel vm = BuildViewModel(settings, new() { MaintenanceService = maintenance });
 
             await vm.MaintenanceVM.ResetLibraryAsync(0);
 
@@ -517,7 +522,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeDatabaseMaintenanceService maintenance = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, maintenanceService: maintenance);
+            SettingsViewModel vm = BuildViewModel(settings, new() { MaintenanceService = maintenance });
 
             await vm.MaintenanceVM.ResetLibraryAsync(1);
 
@@ -530,7 +535,7 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeDatabaseMaintenanceService maintenance = new();
             FakeAppSettingsDataService settings = new(new AppSettings());
-            SettingsViewModel vm = BuildViewModel(settings, maintenanceService: maintenance);
+            SettingsViewModel vm = BuildViewModel(settings, new() { MaintenanceService = maintenance });
 
             await vm.MaintenanceVM.ResetLibraryAsync(2);
 

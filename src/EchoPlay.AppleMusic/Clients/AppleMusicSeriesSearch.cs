@@ -4,7 +4,6 @@ using EchoPlay.AppleMusic.Mapping;
 using EchoPlay.AppleMusic.Scoring;
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
-using EchoPlay.Core.Scoring;
 using Microsoft.Extensions.Options;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;

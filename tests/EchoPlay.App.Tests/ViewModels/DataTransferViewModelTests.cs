@@ -3,10 +3,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Replication.Packaging;
 using EchoPlay.Data.Replication;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

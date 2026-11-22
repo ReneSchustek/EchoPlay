@@ -4,12 +4,7 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.LocalLibrary.Analysis;
-using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

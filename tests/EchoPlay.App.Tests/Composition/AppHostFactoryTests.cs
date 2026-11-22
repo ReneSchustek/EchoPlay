@@ -1,15 +1,9 @@
 using EchoPlay.App.Composition;
 using EchoPlay.Data.Context;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Composition
 {
@@ -53,6 +47,20 @@ namespace EchoPlay.App.Tests.Composition
             });
 
             provider.Dispose();
+        }
+
+        [Fact]
+        public void PageViewModels_ResolveFromTheContainer()
+        {
+            // ValidateOnBuild prüft nur die Ketten; die Fabriken der Seiten-ViewModels laufen erst
+            // beim Auflösen. Fehlt dort ein Dienst im Bündel, merkt es erst der Seitenwechsel.
+            using ServiceProvider provider = CollectRegistrations().BuildServiceProvider();
+
+            Assert.NotNull(provider.GetRequiredService<EchoPlay.App.ViewModels.SearchViewModel>());
+            Assert.NotNull(provider.GetRequiredService<EchoPlay.App.ViewModels.OnlineLibraryViewModel>());
+            Assert.NotNull(provider.GetRequiredService<EchoPlay.App.ViewModels.LocalLibraryViewModel>());
+            Assert.NotNull(provider.GetRequiredService<EchoPlay.App.ViewModels.DashboardViewModel>());
+            Assert.NotNull(provider.GetRequiredService<EchoPlay.App.ViewModels.SettingsViewModel>());
         }
 
         [Fact]

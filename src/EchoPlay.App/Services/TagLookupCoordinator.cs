@@ -3,12 +3,6 @@ using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System;
 
 namespace EchoPlay.App.Services
 {

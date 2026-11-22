@@ -62,6 +62,29 @@ namespace EchoPlay.Logger.Tests
         }
 
         /// <summary>
+        /// Der Dateiname trägt den Tag der Zeitquelle, nicht den der Wanduhr.
+        /// </summary>
+        [Fact]
+        public async Task WriteAsync_NamesTheFileAfterTheClocksDay()
+        {
+            string testDir = Path.Combine(_tempDirectory, "test_tag");
+            _ = Directory.CreateDirectory(testDir);
+            Microsoft.Extensions.Time.Testing.FakeTimeProvider clock = new(new DateTimeOffset(2031, 5, 17, 12, 0, 0, TimeSpan.Zero));
+            clock.SetLocalTimeZone(TimeZoneInfo.Utc);
+            using FileSink sink = new(testDir, new DefaultLogFormatter(), timeProvider: clock);
+            LogEntry entry = new(
+                Timestamp: new DateTime(2031, 5, 17, 12, 0, 0, DateTimeKind.Utc),
+                Level: LogLevel.Information,
+                Message: "Testmeldung",
+                Category: "TestKlasse",
+                Scopes: []);
+
+            await sink.WriteAsync(entry);
+
+            Assert.True(File.Exists(Path.Combine(testDir, "2031-05-17.log")));
+        }
+
+        /// <summary>
         /// WriteAsync schreibt Kategorie, Level und Nachricht in die Log-Datei.
         /// </summary>
         [Fact]

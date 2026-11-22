@@ -1,12 +1,7 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -41,7 +36,17 @@ namespace EchoPlay.App.Tests.ViewModels
         private AnnouncedViewModel Build() => new(_source, Berlin, German);
 
         private static ReleaseCalendarItemViewModel Item(string title, DateTime releaseUtc) => new(
-            Guid.NewGuid(), "TKKG", title, "Tag", null, "Angekündigt", releaseUtc, true, ReleaseAvailability.Missing);
+            new ReleaseCalendarItemData
+            {
+                SeriesId = Guid.NewGuid(),
+                SeriesName = "TKKG",
+                EpisodeTitle = title,
+                DateLine = "Tag",
+                BadgeText = "Angekündigt",
+                ReleaseDateUtc = releaseUtc,
+                IsAnnounced = true,
+                Availability = ReleaseAvailability.Missing,
+            });
 
         [Fact]
         public async Task LoadAsync_GroupsByLocalMonthInOrder()

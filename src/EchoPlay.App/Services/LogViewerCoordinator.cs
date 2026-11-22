@@ -2,11 +2,7 @@ using EchoPlay.App.Models;
 using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Sinks;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

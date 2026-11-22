@@ -1,5 +1,4 @@
 using EchoPlay.App.ViewModels;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -12,7 +11,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public void ValidateEpisode_ValidInput_ReturnsNumbers()
         {
-            string? problem = LocalMetadataValidation.ValidateEpisode("Tanz der Herzen", " 66 ", "2019", numberRequired: true, out int? number, out int? year);
+            string? problem = LocalMetadataValidation.ValidateEpisode("Tanz der Herzen", " 66 ", "2019", EpisodeNumberRule.Required, out int? number, out int? year);
 
             Assert.Null(problem);
             Assert.Equal(66, number);
@@ -31,7 +30,7 @@ namespace EchoPlay.App.Tests.ViewModels
         [InlineData("Titel", "1", "neunzehn", "EditErrorYear")]
         public void ValidateEpisode_InvalidInput_NamesTheReason(string title, string numberText, string yearText, string expected)
         {
-            Assert.Equal(expected, LocalMetadataValidation.ValidateEpisode(title, numberText, yearText, numberRequired: false, out _, out _));
+            Assert.Equal(expected, LocalMetadataValidation.ValidateEpisode(title, numberText, yearText, EpisodeNumberRule.Optional, out _, out _));
         }
 
         [Fact]
@@ -39,13 +38,13 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Die alte Nummer stünde weiter im Ordnernamen und käme mit dem nächsten Einlesen zurück.
             Assert.Equal("EditErrorNumberRequired",
-                LocalMetadataValidation.ValidateEpisode("Titel", "", "", numberRequired: true, out _, out _));
+                LocalMetadataValidation.ValidateEpisode("Titel", "", "", EpisodeNumberRule.Required, out _, out _));
         }
 
         [Fact]
         public void ValidateEpisode_EmptyNumberAndYearOnSpecial_IsAccepted()
         {
-            string? problem = LocalMetadataValidation.ValidateEpisode("Adventskalender", "", "", numberRequired: false, out int? number, out int? year);
+            string? problem = LocalMetadataValidation.ValidateEpisode("Adventskalender", "", "", EpisodeNumberRule.Optional, out int? number, out int? year);
 
             Assert.Null(problem);
             Assert.Null(number);

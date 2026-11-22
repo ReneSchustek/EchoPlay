@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using EchoPlay.App.Services;
 
 namespace EchoPlay.App.Tests.Services

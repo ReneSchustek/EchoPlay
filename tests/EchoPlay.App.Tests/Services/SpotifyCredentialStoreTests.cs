@@ -6,7 +6,6 @@ using EchoPlay.Logger.Core;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {

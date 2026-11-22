@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.Globalization;
 using System.Reflection;
 using EchoPlay.Data.Entities.Contracts;
@@ -54,10 +55,22 @@ namespace EchoPlay.Data.Replication
         /// <param name="databasePath">Die Datei der Datenbank.</param>
         /// <param name="cancellationToken">Abbruch-Token.</param>
         /// <returns>Was erhalten bleibt, oder <see langword="null"/>, wenn nichts anstand.</returns>
-        public static async Task<ImportCarryOver?> ApplyAsync(string databasePath, CancellationToken cancellationToken = default)
+        public static Task<ImportCarryOver?> ApplyAsync(string databasePath, CancellationToken cancellationToken = default)
+            => ApplyAsync(databasePath, TimeProvider.System, cancellationToken);
+
+        /// <summary>
+        /// Ersetzt die Datenbank, wenn ein Einspielen ansteht; der Zeitpunkt im Namen der
+        /// Sicherung kommt aus der übergebenen Zeitquelle.
+        /// </summary>
+        /// <param name="databasePath">Die Datei der Datenbank.</param>
+        /// <param name="timeProvider">Zeitquelle für den Namen der Sicherung.</param>
+        /// <param name="cancellationToken">Abbruch-Token.</param>
+        /// <returns>Was erhalten bleibt, oder <see langword="null"/>, wenn nichts anstand.</returns>
+        public static async Task<ImportCarryOver?> ApplyAsync(string databasePath, TimeProvider timeProvider, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
-            string directory = Path.GetDirectoryName(Path.GetFullPath(databasePath))!;
+            ArgumentNullException.ThrowIfNull(timeProvider);
+            string directory = ParentFolder.Of(Path.GetFullPath(databasePath));
 
             PendingImport? marker = PendingImport.TryRead(directory);
             string staged = Path.Combine(directory, PackageStager.StagedFileName);
@@ -82,7 +95,7 @@ namespace EchoPlay.Data.Replication
                 hadSettings = await ReadCarryOverAsync(databasePath, settings, secrets, cancellationToken).ConfigureAwait(false);
                 backup = await SqliteSnapshot.CreateAsync(
                     databasePath,
-                    $"echoplay.db.before-import-{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}",
+                    $"echoplay.db.before-import-{timeProvider.GetUtcNow().ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}",
                     cancellationToken).ConfigureAwait(false);
             }
 

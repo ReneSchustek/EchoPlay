@@ -1,6 +1,5 @@
 using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Models;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

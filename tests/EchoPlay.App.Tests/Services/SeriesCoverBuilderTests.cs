@@ -2,12 +2,6 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

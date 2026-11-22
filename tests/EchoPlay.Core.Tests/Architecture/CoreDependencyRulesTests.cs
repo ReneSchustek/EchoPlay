@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using Xunit;
-
 namespace EchoPlay.Core.Tests.Architecture
 {
     /// <summary>

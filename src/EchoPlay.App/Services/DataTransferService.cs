@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -71,7 +72,7 @@ namespace EchoPlay.App.Services
 
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-        private string DataDirectory => Path.GetDirectoryName(databaseFile.FilePath)!;
+        private string DataDirectory => ParentFolder.Of(databaseFile.FilePath);
 
         /// <inheritdoc/>
         public async Task<(string Path, long Length)> ExportAsync(

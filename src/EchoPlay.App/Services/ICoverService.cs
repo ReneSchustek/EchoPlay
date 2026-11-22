@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace EchoPlay.App.Services

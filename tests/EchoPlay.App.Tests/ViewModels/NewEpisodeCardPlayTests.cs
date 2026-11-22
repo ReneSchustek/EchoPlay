@@ -1,12 +1,8 @@
-using EchoPlay.App.Models;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -55,11 +51,28 @@ namespace EchoPlay.App.Tests.ViewModels
             Assert.Contains("verfügbar", shown.Message, StringComparison.OrdinalIgnoreCase);
         }
 
+        [Fact]
+        public async Task Play_WithoutFileOrProviderHint_SaysItIsNotPlayable()
+        {
+            // Erschienen, aber weder als Datei da noch beim Anbieter zu finden: Der Hinweis
+            // unterscheidet das vom angekündigten Fall.
+            FakeErrorDialogService errorDialog = new();
+            NewEpisodeCardViewModel card = Build(
+                errorDialog, new FakeClock(), releaseDate: null, isAnnounced: false, titles: (string.Empty, string.Empty));
+
+            card.PlayCommand.Execute(null);
+            _ = await errorDialog.FirstDialogShown
+                .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+            Assert.Equal(EchoPlay.Core.Models.DialogKey.EpisodeNotPlayable, Assert.Single(errorDialog.ShownKeys));
+        }
+
         private static NewEpisodeCardViewModel Build(
             FakeErrorDialogService errorDialog,
             FakeClock clock,
             DateTime? releaseDate,
-            bool isAnnounced)
+            bool isAnnounced,
+            (string Series, string Episode)? titles = null)
         {
             ServiceCollection services = new();
             _ = services.AddScoped<ISeriesDataService>(_ => new FakeSeriesDataService());
@@ -67,26 +80,26 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ILocalTrackDataService>(_ => new FakeLocalTrackDataService());
             _ = services.AddScoped<IPlaybackStateDataService>(_ => new FakePlaybackStateDataService());
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService());
+            _ = services.AddScoped<EchoPlay.Logger.Abstractions.ILoggerFactory>(_ => new FakeLoggerFactory());
 
             ServiceProvider provider = services.BuildServiceProvider();
 
+            NewEpisodeCardData data = new()
+            {
+                EpisodeId = TestIds.EpisodeA,
+                SeriesId = TestIds.SeriesA,
+                SeriesName = titles?.Series ?? "TKKG",
+                EpisodeTitle = titles?.Episode ?? "Folge 250",
+                IsAnnounced = isAnnounced,
+                EpisodeNumber = 250,
+                ReleaseDate = releaseDate,
+            };
             return new NewEpisodeCardViewModel(
-                TestIds.EpisodeA,
-                TestIds.SeriesA,
-                "TKKG",
-                "Folge 250",
+                data,
                 coverImage: null,
-                PlaybackStatus.NotStarted,
-                progressPercent: 0,
-                hasLocalTrack: false,
-                isAnnounced,
                 provider.GetRequiredService<IServiceScopeFactory>(),
-                errorDialog,
-                new FakeConfirmationDialogService(),
-                new FakePlayerService(),
-                episodeNumber: 250,
-                releaseDate: releaseDate,
-                clock: clock);
+                new NewEpisodeCardServices(errorDialog, new FakeConfirmationDialogService(), new FakePlayerService(), null),
+                clock);
         }
     }
 }

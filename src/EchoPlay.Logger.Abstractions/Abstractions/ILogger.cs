@@ -53,6 +53,12 @@ namespace EchoPlay.Logger.Abstractions
         /// <summary>
         /// Schreibt eine Warnung.
         /// </summary>
+        /// <remarks>
+        /// Für erwartete, behandelte Zustände: Netz weg, Datei gesperrt, Anbieter antwortet nicht.
+        /// Dort genügt der Grund, die Aufrufer geben ihn als Text mit. Den Stapel braucht nur ein
+        /// unerwarteter Fehler; der geht über <see cref="Error(string, Exception?)"/> samt Ausnahme.
+        /// Deshalb nimmt die Warnstufe bewusst keine Ausnahme an.
+        /// </remarks>
         /// <param name="message">Die Log-Nachricht.</param>
         void Warning(string message);
 
@@ -96,6 +102,7 @@ namespace EchoPlay.Logger.Abstractions
         /// <summary>
         /// Schreibt eine Warnung mit Message-Template.
         /// </summary>
+        /// <remarks>Wie <see cref="Warning(string)"/> ohne Ausnahme; der Grund steht in einem Platzhalter.</remarks>
         /// <param name="template">Message-Template mit benannten Platzhaltern.</param>
         /// <param name="args">Werte für die Platzhalter.</param>
         void Warning(string template, params object?[] args)

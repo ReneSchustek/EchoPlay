@@ -5,10 +5,6 @@ using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -58,8 +54,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagManagerActionsContext ctx = BuildContext(tagService);
             (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLoadActions sut = new(ctx, fileList, editor, cover, rename,
-                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            TagLoadActions sut = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks());
 
             await sut.LoadFolderAsync(@"D:\test");
 
@@ -78,8 +73,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagManagerActionsContext ctx = BuildContext(tagService);
             (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLoadActions sut = new(ctx, fileList, editor, cover, rename,
-                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            TagLoadActions sut = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks());
 
             await sut.LoadFolderAsync(@"D:\test");
             await sut.LoadFileTagsAsync(fileList.Files[0]);
@@ -116,8 +110,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagManagerActionsContext ctx = BuildContext(tagService);
             (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
-                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            TagLoadActions loader = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks());
             await loader.LoadFolderAsync(@"D:\test");
             fileList.SetSelectedFiles([fileList.Files[0]]);
             await loader.WaitForFileLoadCompleteAsync();
@@ -151,8 +144,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagManagerActionsContext ctx = BuildContext(tagService) with { ConfirmationDialogService = confirmation };
             (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
-                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            TagLoadActions loader = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks());
             await loader.LoadFolderAsync(@"D:\test");
             foreach (TagFileItemViewModel file in fileList.Files)
             {
@@ -196,8 +188,7 @@ namespace EchoPlay.App.Tests.ViewModels
             TagManagerActionsContext ctx = BuildContext(tagService) with { ConfirmationDialogService = confirmation };
             (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
-                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            TagLoadActions loader = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks());
             await loader.LoadFolderAsync(@"D:\test");
             fileList.SetSelectedFiles([fileList.Files[0]]);
             await loader.WaitForFileLoadCompleteAsync();
@@ -228,8 +219,7 @@ namespace EchoPlay.App.Tests.ViewModels
             };
             (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLoadActions loader = new(ctx, fileList, editor, cover, rename,
-                setIsLoading: _ => { }, setHasUnsavedChanges: _ => { }, refreshCommandStates: () => { });
+            TagLoadActions loader = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks());
             await loader.LoadFolderAsync(@"D:\test");
             fileList.SetSelectedFiles([fileList.Files[0]]);
             await loader.WaitForFileLoadCompleteAsync();
@@ -251,13 +241,10 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeTagService tagService = new();
             TagManagerActionsContext ctx = BuildContext(tagService);
-            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, _, TagRenameViewModel rename) = BuildSubVms();
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
             bool unsavedChangesRaised = false;
-            TagLookupActions sut = new(ctx, fileList, editor, rename,
-                setIsLoading: _ => { }, setIsLookingUp: _ => { }, setAutoLookupStatus: _ => { },
-                setBatchProgress: _ => { }, setHasUnsavedChanges: v => unsavedChangesRaised = v,
-                refreshCommandStates: () => { }, previewRenameAsync: () => Task.CompletedTask);
+            TagLookupActions sut = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks { SetHasUnsavedChanges = v => unsavedChangesRaised = v }, previewRenameAsync: () => Task.CompletedTask);
 
             sut.ApplyLookupResult(new TagLookupResult { Title = "T", Album = "A", Year = 2024 });
 
@@ -271,12 +258,9 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeTagService tagService = new();
             TagManagerActionsContext ctx = BuildContext(tagService);
-            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, _, TagRenameViewModel rename) = BuildSubVms();
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
-            TagLookupActions sut = new(ctx, fileList, editor, rename,
-                setIsLoading: _ => { }, setIsLookingUp: _ => { }, setAutoLookupStatus: _ => { },
-                setBatchProgress: _ => { }, setHasUnsavedChanges: _ => { },
-                refreshCommandStates: () => { }, previewRenameAsync: () => Task.CompletedTask);
+            TagLookupActions sut = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks(), previewRenameAsync: () => Task.CompletedTask);
 
             await sut.LookupOnlineAsync();
 
@@ -291,13 +275,10 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             FakeTagService tagService = new();
             TagManagerActionsContext ctx = BuildContext(tagService);
-            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, _, TagRenameViewModel rename) = BuildSubVms();
+            (TagFileListViewModel fileList, TagEditorFieldsViewModel editor, TagCoverViewModel cover, TagRenameViewModel rename) = BuildSubVms();
 
             bool unsavedChangesRaised = false;
-            TagLookupActions sut = new(ctx, fileList, editor, rename,
-                setIsLoading: _ => { }, setIsLookingUp: _ => { }, setAutoLookupStatus: _ => { },
-                setBatchProgress: _ => { }, setHasUnsavedChanges: v => unsavedChangesRaised = v,
-                refreshCommandStates: () => { }, previewRenameAsync: () => Task.CompletedTask);
+            TagLookupActions sut = new(ctx, new TagManagerParts(fileList, editor, cover, rename), new TagManagerCallbacks { SetHasUnsavedChanges = v => unsavedChangesRaised = v }, previewRenameAsync: () => Task.CompletedTask);
 
             // Ohne vorherige Suche ist die Trefferliste leer, jeder Index liegt daneben.
             // Der Anwender klickt in einer Liste, die sich zwischenzeitlich geändert haben

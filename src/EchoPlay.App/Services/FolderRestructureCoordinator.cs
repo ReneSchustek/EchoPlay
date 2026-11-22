@@ -6,11 +6,6 @@ using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

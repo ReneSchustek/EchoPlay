@@ -6,7 +6,6 @@ using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -32,14 +31,16 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<ICachedNewReleaseDataService>(_ => cache);
             ServiceProvider provider = services.BuildServiceProvider();
 
-            DashboardViewModel vm = new(new DashboardViewModelContext(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                new FakePlayerService(),
-                new FakeLoggerFactory(),
-                Clock: new FakeClock(),
-                NewReleaseEventService: events));
+            DashboardViewModel vm = new(new DashboardViewModelContext
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                PlayerService = new FakePlayerService(),
+                LoggerFactory = new FakeLoggerFactory(),
+                Clock = new FakeClock(),
+                NewReleaseEventService = events,
+            });
 
             return (vm, events, cache);
         }

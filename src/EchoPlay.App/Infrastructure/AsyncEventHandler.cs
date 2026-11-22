@@ -2,10 +2,8 @@ using EchoPlay.App.Helpers;
 using EchoPlay.App.Services;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Infrastructure
 {

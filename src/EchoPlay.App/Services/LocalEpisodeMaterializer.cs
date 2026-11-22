@@ -1,20 +1,13 @@
 using EchoPlay.App.Helpers;
-using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Matching;
 using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

@@ -14,29 +14,18 @@ namespace EchoPlay.Core.Models.Import
         /// Baut eine Import-Episode: summiert die Track-Dauern, leitet die Episodennummer
         /// aus dem Titel ab und setzt die übergebenen Felder.
         /// </summary>
-        /// <param name="sourceEpisodeId">Die Quell-ID der Episode (Album-/Collection-ID).</param>
-        /// <param name="title">Der Episodentitel.</param>
-        /// <param name="releaseDate">Das Veröffentlichungsdatum, falls bekannt.</param>
+        /// <param name="draft">Die Felder der Folge, wie der Anbieter sie liefert.</param>
         /// <param name="trackDurations">Die Einzeldauern der Tracks (werden aufsummiert).</param>
-        /// <param name="orderIndex">Sortierposition innerhalb der Serie.</param>
-        /// <param name="providerUrl">Die geprüfte Anbieter-Adresse der Folge; <see langword="null"/>, wenn die Antwort keine brauchbare lieferte.</param>
-        /// <param name="coverImageUrl">Die geprüfte Cover-Adresse, falls vorhanden.</param>
-        /// <param name="source">Der Quell-Bezeichner (z.B. "Spotify", "AppleMusic").</param>
         /// <returns>Die zusammengesetzte Import-Episode.</returns>
         public static ImportEpisode Create(
-            string sourceEpisodeId,
-            string title,
-            DateTime? releaseDate,
-            IEnumerable<TimeSpan> trackDurations,
-            int orderIndex,
-            Uri? providerUrl,
-            Uri? coverImageUrl,
-            string source)
+            ImportEpisodeDraft draft,
+            IEnumerable<TimeSpan> trackDurations)
         {
-            ArgumentNullException.ThrowIfNull(sourceEpisodeId);
-            ArgumentNullException.ThrowIfNull(title);
+            ArgumentNullException.ThrowIfNull(draft);
+            ArgumentNullException.ThrowIfNull(draft.SourceEpisodeId);
+            ArgumentNullException.ThrowIfNull(draft.Title);
             ArgumentNullException.ThrowIfNull(trackDurations);
-            ArgumentNullException.ThrowIfNull(source);
+            ArgumentNullException.ThrowIfNull(draft.Source);
 
             TimeSpan totalDuration = TimeSpan.Zero;
             foreach (TimeSpan duration in trackDurations)
@@ -46,15 +35,15 @@ namespace EchoPlay.Core.Models.Import
 
             return new ImportEpisode
             {
-                SourceEpisodeId = sourceEpisodeId,
-                Title = title,
-                EpisodeNumber = EpisodeNumberParser.Extract(title),
-                ReleaseDate = releaseDate,
+                SourceEpisodeId = draft.SourceEpisodeId,
+                Title = draft.Title,
+                EpisodeNumber = EpisodeNumberParser.Extract(draft.Title),
+                ReleaseDate = draft.ReleaseDate,
                 Duration = totalDuration,
-                OrderIndex = orderIndex,
-                ProviderUrl = providerUrl,
-                CoverImageUrl = coverImageUrl,
-                Source = source
+                OrderIndex = draft.OrderIndex,
+                ProviderUrl = draft.ProviderUrl,
+                CoverImageUrl = draft.CoverImageUrl,
+                Source = draft.Source
             };
         }
     }

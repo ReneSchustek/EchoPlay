@@ -10,7 +10,6 @@ using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {

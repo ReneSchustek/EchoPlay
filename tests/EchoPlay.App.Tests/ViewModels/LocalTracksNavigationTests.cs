@@ -6,10 +6,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -135,7 +131,14 @@ namespace EchoPlay.App.Tests.ViewModels
         }
 
         private static LocalEpisodeCardViewModel BuildEpisodeCard(int? episodeNumber)
-            => new(Guid.NewGuid(), episodeNumber, "Der Schatz im Bergsee", localTrackCount: 1, folderPath: null);
+            => new(
+                new LocalEpisodeCardData
+                {
+                    EpisodeId = Guid.NewGuid(),
+                    EpisodeNumber = episodeNumber,
+                    Title = "Der Schatz im Bergsee",
+                    LocalTrackCount = 1,
+                });
 
         private static LocalTrack Track(int number, TimeSpan duration)
             => new() { TrackNumber = number, FilePath = $@"D:\Media\TKKG\{number:00}.mp3", Duration = duration };
@@ -146,15 +149,16 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new LocalArtistCardViewModel(
-                TestIds.SeriesA,
-                "Die drei Fragezeichen",
+                new LocalArtistCardData
+                {
+                    SeriesId = TestIds.SeriesA,
+                    Title = "Die drei Fragezeichen",
+                    LocalFolderPath = localFolderPath,
+                    LocalEpisodeCount = 1,
+                    TotalEpisodeCount = 1,
+                },
                 coverImage: null,
-                localFolderPath,
-                localEpisodeCount: 1,
-                totalEpisodeCount: 1,
-                isFavorite: false,
-                isWatched: false,
-                provider.GetRequiredService<IServiceScopeFactory>());
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
         }
 
         private static LocalTracksViewModel Build(

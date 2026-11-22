@@ -1,8 +1,5 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Parsing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EchoPlay.App.Services
 {

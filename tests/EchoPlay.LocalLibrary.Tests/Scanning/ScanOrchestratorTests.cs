@@ -1,10 +1,5 @@
 using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.LocalLibrary.Tests.Fakes;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.LocalLibrary.Tests.Scanning
 {

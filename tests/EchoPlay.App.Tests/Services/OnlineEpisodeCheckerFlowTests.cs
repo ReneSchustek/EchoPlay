@@ -5,12 +5,7 @@ using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {

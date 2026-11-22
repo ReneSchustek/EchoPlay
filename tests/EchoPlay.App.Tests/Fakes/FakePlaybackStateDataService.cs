@@ -1,10 +1,6 @@
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Data.Services.Projections;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {
@@ -115,14 +111,14 @@ namespace EchoPlay.App.Tests.Fakes
             => Task.FromResult(0);
 
         /// <inheritdoc/>
-        public Task<HashSet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
+        public Task<IReadOnlySet<Guid>> GetCompletedEpisodeIdsAsync(IReadOnlyList<Guid> episodeIds, CancellationToken cancellationToken = default)
         {
             HashSet<Guid> completed = _states
                 .Where(s => episodeIds.Contains(s.EpisodeId) && s.IsCompleted)
                 .Select(s => s.EpisodeId)
                 .ToHashSet();
 
-            return Task.FromResult(completed);
+            return Task.FromResult<IReadOnlySet<Guid>>(completed);
         }
 
         /// <inheritdoc/>

@@ -1,6 +1,3 @@
-using EchoPlay.Core.Search;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace EchoPlay.App.ViewModels

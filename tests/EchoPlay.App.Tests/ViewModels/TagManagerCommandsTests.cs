@@ -4,7 +4,6 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.TagManager.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

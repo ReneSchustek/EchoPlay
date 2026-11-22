@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace EchoPlay.Core.Replication.Exchange
 {
     /// <summary>
@@ -44,6 +46,6 @@ namespace EchoPlay.Core.Replication.Exchange
         /// <summary>Ob <paramref name="kind"/> eine bekannte Art ist.</summary>
         /// <param name="kind">Die Art aus einer Datei.</param>
         /// <returns><see langword="true"/>, wenn sie bekannt ist.</returns>
-        public static bool IsKnown(string? kind) => kind is not null && All.Contains(kind, StringComparer.Ordinal);
+        public static bool IsKnown([NotNullWhen(true)] string? kind) => kind is not null && All.Contains(kind, StringComparer.Ordinal);
     }
 }

@@ -1,7 +1,5 @@
 using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.LocalLibrary.Tests.Infrastructure;
-using System;
-using System.IO;
 
 namespace EchoPlay.LocalLibrary.Tests.Metadata
 {

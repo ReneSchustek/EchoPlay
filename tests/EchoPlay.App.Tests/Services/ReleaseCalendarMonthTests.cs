@@ -1,5 +1,4 @@
 using EchoPlay.App.Services;
-using System;
 
 namespace EchoPlay.App.Tests.Services
 {

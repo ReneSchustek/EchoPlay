@@ -4,11 +4,7 @@ using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
-using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -211,14 +207,17 @@ namespace EchoPlay.App.Tests.Services
             IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
             return new BackgroundCoverService(
-                scopeFactory,
-                provider.GetRequiredService<EchoPlay.App.Services.CoverService>(),
-                downloader,
-                new FakeSpotifyCredentialStore(),
-                options ?? new BackgroundCoverServiceOptions(),
-                new FakeLoggerFactory(),
-                new FakeClock(),
-                rateLimiter);
+                scopeFactory: scopeFactory,
+                sources: new CoverSources
+                {
+                    CoverService = provider.GetRequiredService<EchoPlay.App.Services.CoverService>(),
+                    CoverDownloader = downloader,
+                    RateLimiter = rateLimiter,
+                },
+                credentialStore: new FakeSpotifyCredentialStore(),
+                options: options ?? new BackgroundCoverServiceOptions(),
+                loggerFactory: new FakeLoggerFactory(),
+                clock: new FakeClock());
         }
     }
 }

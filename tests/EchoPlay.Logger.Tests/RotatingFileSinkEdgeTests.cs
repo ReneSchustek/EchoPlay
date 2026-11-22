@@ -1,12 +1,7 @@
-using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Sinks;
-using System;
-using System.Globalization;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Logger.Tests
 {
@@ -67,12 +62,16 @@ namespace EchoPlay.Logger.Tests
             string folder = CreateTempFolder();
             try
             {
-                string today = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                // Feste Uhr: Mit der Wanduhr könnte der Tag zwischen dem Anlegen der vollen Datei
+                // und dem Schreiben wechseln, kurz vor Mitternacht schlüge der Test dann fehl.
+                Microsoft.Extensions.Time.Testing.FakeTimeProvider clock = new(new DateTimeOffset(2031, 5, 17, 23, 59, 0, TimeSpan.Zero));
+                clock.SetLocalTimeZone(TimeZoneInfo.Utc);
+                const string today = "2031-05-17";
                 await File.WriteAllBytesAsync(
                     Path.Combine(folder, $"{today}.log"), new byte[1024 * 1024 + 1],
                     TestContext.Current.CancellationToken);
 
-                using ProbeSink sink = new(folder, $"Test-{Path.GetRandomFileName()}");
+                using ProbeSink sink = new(folder, $"Test-{Path.GetRandomFileName()}", clock);
                 await sink.WriteAsync(Entry("erste Zeile nach der Rotation"));
 
                 // Ohne Rotation wüchse eine Datei über den Tag hinweg, bis kein Editor sie
@@ -181,8 +180,8 @@ namespace EchoPlay.Logger.Tests
         /// <summary>Ablage mit eigener Endung und eigenem Ausweichordner, damit kein Test die echten Protokolle anfasst.</summary>
         private sealed class ProbeSink : RotatingFileSinkBase
         {
-            public ProbeSink(string logDirectory, string fallbackFolder)
-                : base(logDirectory, fallbackFolder, ".log", maxFileSizeMb: 1)
+            public ProbeSink(string logDirectory, string fallbackFolder, TimeProvider? timeProvider = null)
+                : base(logDirectory, fallbackFolder, ".log", maxFileSizeMb: 1, timeProvider)
             {
             }
 

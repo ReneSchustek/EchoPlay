@@ -3,7 +3,6 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
 using System.Globalization;
 using System.Windows.Input;
 
@@ -22,57 +21,34 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Erstellt ein Kachel-ViewModel für eine Episode.
         /// </summary>
-        /// <param name="episodeId">Datenbank-ID der Episode.</param>
-        /// <param name="episodeNumber">Episodennummer oder null wenn nicht vorhanden.</param>
-        /// <param name="title">Episodentitel.</param>
-        /// <param name="totalDuration">Gesamtdauer der Episode oder null wenn unbekannt.</param>
-        /// <param name="playbackStatus">Wiedergabestatus der Episode.</param>
-        /// <param name="releaseDate">Erscheinungsdatum oder null.</param>
+        /// <param name="data">Was die Kachel anzeigt.</param>
         /// <param name="playEpisode">
         /// Callback zum Abspielen dieser Episode.
         /// Wird als RelayCommand verpackt, damit die Page/ViewModel-Grenze gewahrt bleibt.
         /// </param>
-        /// <param name="progressPercent">Wiedergabefortschritt in Prozent (0–100).</param>
-        /// <param name="isSpecialEpisode">Ob es sich um eine Sonderfolge handelt.</param>
         /// <param name="coverImage">Vorab geladenes Cover oder null für Platzhalter.</param>
         /// <param name="localizationService">Für den Automation-Namen der Kontextmenü-Schaltfläche. Nullable für Tests.</param>
-        /// <param name="spotifyAlbumId">Spotify-Album-ID der Folge, sofern bekannt.</param>
-        /// <param name="hasLocalTrack">Ob mindestens eine lokale Audiodatei vorliegt.</param>
-        /// <param name="appleMusicAlbumId">Apple-Music-Album-ID der Folge, sofern bekannt.</param>
-        /// <param name="seriesTitle">Serientitel als Suchbegriff für Spotify, wenn keine Album-ID vorliegt.</param>
-        /// <param name="hasOpenPosition">Ob die Folge an einer offenen Stelle steht, an der weitergehört werden kann.</param>
         public EpisodeTileViewModel(
-            Guid episodeId,
-            int? episodeNumber,
-            string title,
-            TimeSpan? totalDuration,
-            PlaybackStatus playbackStatus,
-            DateTime? releaseDate,
+            EpisodeTileData data,
             Action playEpisode,
-            double progressPercent = 0,
-            bool isSpecialEpisode = false,
             BitmapImage? coverImage = null,
-            EchoPlay.App.Services.ILocalizationService? localizationService = null,
-            string? spotifyAlbumId = null,
-            bool hasLocalTrack = true,
-            string? appleMusicAlbumId = null,
-            string? seriesTitle = null,
-            bool hasOpenPosition = false)
+            EchoPlay.App.Services.ILocalizationService? localizationService = null)
         {
-            SpotifyAlbumId = spotifyAlbumId;
-            AppleMusicAlbumId = appleMusicAlbumId;
-            SeriesTitle = seriesTitle;
-            HasLocalTrack = hasLocalTrack;
+            ArgumentNullException.ThrowIfNull(data);
+            SpotifyAlbumId = data.SpotifyAlbumId;
+            AppleMusicAlbumId = data.AppleMusicAlbumId;
+            SeriesTitle = data.SeriesTitle;
+            HasLocalTrack = data.HasLocalTrack;
             _localizationService = localizationService;
-            EpisodeId = episodeId;
-            EpisodeNumber = episodeNumber;
-            Title = title;
-            TotalDuration = totalDuration;
-            Progress = playbackStatus;
-            HasOpenPosition = hasOpenPosition;
-            ReleaseDate = releaseDate;
-            ProgressPercent = progressPercent;
-            IsSpecialEpisode = isSpecialEpisode;
+            EpisodeId = data.EpisodeId;
+            EpisodeNumber = data.EpisodeNumber;
+            Title = data.Title;
+            TotalDuration = data.TotalDuration;
+            Progress = data.PlaybackStatus;
+            HasOpenPosition = data.HasOpenPosition;
+            ReleaseDate = data.ReleaseDate;
+            ProgressPercent = data.ProgressPercent;
+            IsSpecialEpisode = data.IsSpecialEpisode;
             CoverImage = coverImage;
             PlayCommand = new RelayCommand(playEpisode);
         }

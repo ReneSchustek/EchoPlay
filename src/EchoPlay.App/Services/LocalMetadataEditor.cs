@@ -7,11 +7,6 @@ using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

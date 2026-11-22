@@ -5,11 +5,6 @@ using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using AppCoverService = EchoPlay.App.Services.CoverService;
 
 namespace EchoPlay.App.Tests.Services

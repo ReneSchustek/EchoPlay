@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
@@ -7,9 +6,6 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -195,14 +191,15 @@ namespace EchoPlay.App.Tests.Services
 
         private static LocalEpisodeCardViewModel BuildEpisodeCard(string? folderPath)
             => new(
-                TestIds.EpisodeA,
-                episodeNumber: 1,
-                "Folge 1",
-                localTrackCount: 1,
-                folderPath,
-                coverImage: null,
-                isCompleted: false,
-                isSpecialEpisode: false);
+                new LocalEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    LocalTrackCount = 1,
+                    FolderPath = folderPath,
+                },
+                coverImage: null);
 
         private static LocalArtistCardViewModel BuildArtistCard(string? localFolderPath)
         {
@@ -210,15 +207,16 @@ namespace EchoPlay.App.Tests.Services
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new LocalArtistCardViewModel(
-                TestIds.SeriesA,
-                "Die drei Fragezeichen",
+                new LocalArtistCardData
+                {
+                    SeriesId = TestIds.SeriesA,
+                    Title = "Die drei Fragezeichen",
+                    LocalFolderPath = localFolderPath,
+                    LocalEpisodeCount = 3,
+                    TotalEpisodeCount = 3,
+                },
                 coverImage: null,
-                localFolderPath,
-                localEpisodeCount: 3,
-                totalEpisodeCount: 3,
-                isFavorite: false,
-                isWatched: false,
-                provider.GetRequiredService<IServiceScopeFactory>());
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
         }
 
         private static string CreateTempFolder()

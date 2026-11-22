@@ -1,9 +1,6 @@
 using EchoPlay.TagManager.Models;
 using EchoPlay.TagManager.Services;
 using EchoPlay.TagManager.Tests.Fakes;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.TagManager.Tests.Services
 {

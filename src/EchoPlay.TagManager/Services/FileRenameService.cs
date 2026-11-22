@@ -3,11 +3,7 @@ using EchoPlay.Core.Security;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.TagManager.Services
 {

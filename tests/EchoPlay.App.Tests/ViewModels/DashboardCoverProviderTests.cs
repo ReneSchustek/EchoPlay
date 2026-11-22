@@ -1,18 +1,12 @@
-using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
-using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -171,19 +165,10 @@ namespace EchoPlay.App.Tests.ViewModels
 
         private static NewEpisodeCardViewModel BuildCard(Fixture fixture)
             => new(
-                TestIds.EpisodeA,
-                TestIds.SeriesA,
-                "TKKG",
-                "Folge 1",
+                new NewEpisodeCardData { EpisodeId = TestIds.EpisodeA, SeriesId = TestIds.SeriesA, SeriesName = "TKKG", EpisodeTitle = "Folge 1" },
                 coverImage: null,
-                PlaybackStatus.NotStarted,
-                progressPercent: 0,
-                hasLocalTrack: false,
-                isAnnounced: false,
                 fixture.ScopeFactory,
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                new FakePlayerService());
+                new NewEpisodeCardServices(new FakeErrorDialogService(), new FakeConfirmationDialogService(), new FakePlayerService(), null));
 
         private static Fixture Build(bool withBackgroundService = true)
         {
@@ -207,8 +192,16 @@ namespace EchoPlay.App.Tests.ViewModels
 
             BackgroundCoverService? background = withBackgroundService
                 ? new BackgroundCoverService(
-                    scopeFactory, coverService, downloader, new FakeSpotifyCredentialStore(),
-                    new BackgroundCoverServiceOptions(), new FakeLoggerFactory(), new FakeClock())
+                    scopeFactory: scopeFactory,
+                    sources: new CoverSources
+                    {
+                        CoverService = coverService,
+                        CoverDownloader = downloader,
+                    },
+                    credentialStore: new FakeSpotifyCredentialStore(),
+                    options: new BackgroundCoverServiceOptions(),
+                    loggerFactory: new FakeLoggerFactory(),
+                    clock: new FakeClock())
                 : null;
 
             return new Fixture

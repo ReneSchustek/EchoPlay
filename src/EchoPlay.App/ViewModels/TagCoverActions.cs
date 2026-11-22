@@ -1,8 +1,6 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.Core.Models;
-using System;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

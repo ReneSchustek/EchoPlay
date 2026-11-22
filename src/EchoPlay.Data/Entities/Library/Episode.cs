@@ -7,7 +7,7 @@ namespace EchoPlay.Data.Entities.Library
     /// <summary>
     /// Repräsentiert eine einzelne Hörspielfolge innerhalb einer Serie.
     /// </summary>
-    public class Episode : BaseEntity
+    public sealed class Episode : BaseEntity
     {
         /// <summary>
         /// Titel der Episode.

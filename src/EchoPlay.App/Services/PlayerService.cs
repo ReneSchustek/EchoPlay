@@ -1,12 +1,7 @@
 using EchoPlay.Core.Abstractions.Time;
-using EchoPlay.Data.Entities.Playback;
-using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading.Tasks;
 using EchoPlay.App.Helpers;
 using Windows.Media.Core;
 using Windows.Media.Playback;

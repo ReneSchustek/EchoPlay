@@ -10,8 +10,6 @@ using EchoPlay.Spotify.DependencyInjection;
 using EchoPlay.TagManager.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Net.Http;
 
 namespace EchoPlay.App.Composition
 {
@@ -104,7 +102,7 @@ namespace EchoPlay.App.Composition
 
             // Wie bei allen fremden Gegenstellen: ein vorübergehender Fehler beim
             // Token-Holen darf den Import nicht sofort abbrechen.
-            HttpClientRegistration.AttachResilience(tokenBuilder, withRateLimit: false, options =>
+            HttpClientRegistration.AttachResilience(tokenBuilder, HostThrottling.None, options =>
             {
                 options.AttemptTimeout.Timeout = TokenAttemptTimeout;
                 options.TotalRequestTimeout.Timeout = TokenTotalTimeout;

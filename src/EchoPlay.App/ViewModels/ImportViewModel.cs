@@ -2,10 +2,7 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Models;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

@@ -1,6 +1,4 @@
 using EchoPlay.Spotify.Auth;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

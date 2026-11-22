@@ -1,8 +1,5 @@
 using EchoPlay.App.Services;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Time.Testing;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -12,57 +9,70 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class SemaphoreHostRateLimiterTests
     {
+        private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
         [Fact]
-        public async Task WaitAsync_FirstCall_ReturnsImmediately()
+        public void WaitAsync_FirstCall_ReturnsImmediately()
         {
-            SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
-            {
-                ["test.host"] = TimeSpan.FromSeconds(1)
-            });
+            FakeTimeProvider clock = new();
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan> { ["test.host"] = TimeSpan.FromSeconds(1) },
+                timeProvider: clock);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("test.host", ct: TestContext.Current.CancellationToken);
-            sw.Stop();
-
-            // Erster Aufruf darf keine nennenswerte Wartezeit haben
-            Assert.True(sw.ElapsedMilliseconds < 200);
+            Assert.True(limiter.WaitAsync("test.host", ct: Ct).IsCompletedSuccessfully);
         }
 
         [Fact]
-        public async Task WaitAsync_SecondCallTooFast_EnforcesMinimumInterval()
+        public async Task WaitAsync_IntervalAlreadyPassedOnTheClock_DoesNotWait()
         {
-            SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
-            {
-                ["slow.host"] = TimeSpan.FromMilliseconds(300)
-            });
+            // Zehn Minuten Abstand, die auf der Uhr schon vergangen sind: Wartete die Drossel nach
+            // der Wanduhr statt nach ihrer Zeitquelle, hinge der zweite Aufruf zehn Minuten.
+            FakeTimeProvider clock = new();
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan> { ["slow.host"] = TimeSpan.FromMinutes(10) },
+                timeProvider: clock);
+            await limiter.WaitAsync("slow.host", ct: Ct);
 
-            await limiter.WaitAsync("slow.host", ct: TestContext.Current.CancellationToken);
+            clock.Advance(TimeSpan.FromMinutes(11));
+            Task second = limiter.WaitAsync("slow.host", ct: Ct);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("slow.host", ct: TestContext.Current.CancellationToken);
-            sw.Stop();
+            Assert.True(second.IsCompletedSuccessfully);
+            await second;
+        }
 
-            // Zweiter Aufruf muss mindestens ~300 ms warten
-            Assert.True(sw.ElapsedMilliseconds >= 250, $"Erwartet >= 250 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+        [Fact]
+        public async Task WaitAsync_SecondCallTooFast_WaitsExactlyTheRemainingInterval()
+        {
+            FakeTimeProvider clock = new();
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan> { ["slow.host"] = TimeSpan.FromMilliseconds(300) },
+                timeProvider: clock);
+            await limiter.WaitAsync("slow.host", ct: Ct);
+            clock.Advance(TimeSpan.FromMilliseconds(100));
+
+            Task second = limiter.WaitAsync("slow.host", ct: Ct);
+            clock.Advance(TimeSpan.FromMilliseconds(199));
+            Assert.False(second.IsCompleted);
+
+            clock.Advance(TimeSpan.FromMilliseconds(1));
+            await second;
         }
 
         [Fact]
         public async Task WaitAsync_DifferentHosts_AreIndependent()
         {
-            SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
-            {
-                ["host-a"] = TimeSpan.FromSeconds(5),
-                ["host-b"] = TimeSpan.FromSeconds(5)
-            });
+            FakeTimeProvider clock = new();
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan>
+                {
+                    ["host-a"] = TimeSpan.FromSeconds(5),
+                    ["host-b"] = TimeSpan.FromSeconds(5),
+                },
+                timeProvider: clock);
+            await limiter.WaitAsync("host-a", ct: Ct);
 
-            await limiter.WaitAsync("host-a", ct: TestContext.Current.CancellationToken);
-
-            // Host-B wurde noch nie aufgerufen und darf sofort zurückkehren
-            Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("host-b", ct: TestContext.Current.CancellationToken);
-            sw.Stop();
-
-            Assert.True(sw.ElapsedMilliseconds < 200);
+            // Host-B wurde noch nie aufgerufen und darf sofort zurückkehren, obwohl die Uhr steht.
+            Assert.True(limiter.WaitAsync("host-b", ct: Ct).IsCompletedSuccessfully);
         }
 
         [Fact]
@@ -72,32 +82,28 @@ namespace EchoPlay.App.Tests.Services
             // Reihenfolge am gemeinsamen Semaphore: Die Background-Anfrage geht auf einen Host,
             // der noch nie aufgerufen wurde und kein Intervall kennt, sie liefe also sofort
             // durch. Sie muss trotzdem warten, solange eine Foreground-Anfrage im Flug ist.
-            SemaphoreHostRateLimiter limiter = new(new Dictionary<string, TimeSpan>
-            {
-                ["foreground.host"] = TimeSpan.FromMilliseconds(300),
-                ["background.host"] = TimeSpan.Zero
-            });
-
-            // Setzt den Zeitstempel: Die nächste Anfrage an diesen Host wartet das volle
-            // Intervall ab und hält den Vorrang so lange offen.
-            await limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
+            FakeTimeProvider clock = new();
+            SemaphoreHostRateLimiter limiter = new(
+                new Dictionary<string, TimeSpan>
+                {
+                    ["foreground.host"] = TimeSpan.FromMilliseconds(300),
+                    ["background.host"] = TimeSpan.Zero,
+                },
+                timeProvider: clock);
+            await limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: Ct);
 
             // Direkt aufrufen und nicht über Task.Run: WaitAsync zählt den Foreground-Vorrang
-            // synchron hoch, bevor es das erste Mal wartet. Damit steht die Reservierung fest,
-            // sobald der Aufruf zurückkehrt. Eine über Task.Run gestartete Anfrage kann unter
-            // Last später anlaufen, und dann sieht die Background-Anfrage keinen Vorrang.
-            Task foreground = limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: TestContext.Current.CancellationToken);
-            Task background = limiter.WaitAsync("background.host", CoverFetchPriority.Background, ct: TestContext.Current.CancellationToken);
+            // synchron hoch, bevor es das erste Mal wartet.
+            Task foreground = limiter.WaitAsync("foreground.host", CoverFetchPriority.Foreground, ct: Ct);
+            Task background = limiter.WaitAsync("background.host", CoverFetchPriority.Background, ct: Ct);
 
-            // Deutlich vor Ablauf des Foreground-Intervalls nachsehen: Ohne Vorrangregel wäre
-            // die Background-Anfrage zu diesem Zeitpunkt längst durch.
-            await Task.Delay(100, cancellationToken: TestContext.Current.CancellationToken);
-
+            clock.Advance(TimeSpan.FromMilliseconds(299));
             Assert.False(background.IsCompleted,
                 "Die Background-Anfrage darf nicht durchlaufen, solange eine Foreground-Anfrage wartet.");
 
+            clock.Advance(TimeSpan.FromMilliseconds(1));
             await foreground;
-            await background;
+            await AdvanceUntilAsync(clock, background);
         }
 
         [Fact]
@@ -129,18 +135,18 @@ namespace EchoPlay.App.Tests.Services
             // Bilder holt man bei einem Auslieferungsnetz, nicht bei einer API: Dort gibt es
             // kein Kontingent zu schonen. Mit dem Standardabstand von einer Sekunde erschien
             // das fünfzehnte Cover einer Trefferseite erst nach fünfzehn Sekunden.
+            FakeTimeProvider clock = new();
             SemaphoreHostRateLimiter limiter = new(
                 new Dictionary<string, TimeSpan> { ["itunes.apple.com"] = TimeSpan.FromSeconds(5) },
                 defaultInterval: TimeSpan.FromSeconds(5),
-                suffixIntervals: new Dictionary<string, TimeSpan> { [".mzstatic.com"] = TimeSpan.FromMilliseconds(20) });
+                suffixIntervals: new Dictionary<string, TimeSpan> { [".mzstatic.com"] = TimeSpan.FromMilliseconds(20) },
+                timeProvider: clock);
+            await limiter.WaitAsync("is1-ssl.mzstatic.com", ct: Ct);
 
-            await limiter.WaitAsync("is1-ssl.mzstatic.com", ct: TestContext.Current.CancellationToken);
+            Task second = limiter.WaitAsync("is1-ssl.mzstatic.com", ct: Ct);
+            clock.Advance(TimeSpan.FromMilliseconds(20));
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("is1-ssl.mzstatic.com", ct: TestContext.Current.CancellationToken);
-            sw.Stop();
-
-            Assert.True(sw.ElapsedMilliseconds < 500, $"Erwartet < 500 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+            await second;
         }
 
         [Fact]
@@ -148,35 +154,55 @@ namespace EchoPlay.App.Tests.Services
         {
             // Der exakte Eintrag schlägt die Endung, sonst würde eine großzügige Regel für
             // Bildhosts versehentlich auch die API entfesseln.
+            FakeTimeProvider clock = new();
             SemaphoreHostRateLimiter limiter = new(
                 new Dictionary<string, TimeSpan> { ["itunes.apple.com"] = TimeSpan.FromMilliseconds(300) },
                 defaultInterval: TimeSpan.FromMilliseconds(10),
-                suffixIntervals: new Dictionary<string, TimeSpan> { [".com"] = TimeSpan.FromMilliseconds(10) });
+                suffixIntervals: new Dictionary<string, TimeSpan> { [".com"] = TimeSpan.FromMilliseconds(10) },
+                timeProvider: clock);
+            await limiter.WaitAsync("itunes.apple.com", ct: Ct);
 
-            await limiter.WaitAsync("itunes.apple.com", ct: TestContext.Current.CancellationToken);
+            Task second = limiter.WaitAsync("itunes.apple.com", ct: Ct);
+            clock.Advance(TimeSpan.FromMilliseconds(299));
+            Assert.False(second.IsCompleted);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("itunes.apple.com", ct: TestContext.Current.CancellationToken);
-            sw.Stop();
-
-            Assert.True(sw.ElapsedMilliseconds >= 250, $"Erwartet >= 250 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+            clock.Advance(TimeSpan.FromMilliseconds(1));
+            await second;
         }
 
         [Fact]
         public async Task WaitAsync_ForAHostWithoutAnyRule_UsesTheDefaultInterval()
         {
+            FakeTimeProvider clock = new();
             SemaphoreHostRateLimiter limiter = new(
                 new Dictionary<string, TimeSpan>(),
                 defaultInterval: TimeSpan.FromMilliseconds(300),
-                suffixIntervals: new Dictionary<string, TimeSpan> { [".mzstatic.com"] = TimeSpan.FromMilliseconds(10) });
+                suffixIntervals: new Dictionary<string, TimeSpan> { [".mzstatic.com"] = TimeSpan.FromMilliseconds(10) },
+                timeProvider: clock);
+            await limiter.WaitAsync("beispiel.test", ct: Ct);
 
-            await limiter.WaitAsync("beispiel.test", ct: TestContext.Current.CancellationToken);
+            Task second = limiter.WaitAsync("beispiel.test", ct: Ct);
+            clock.Advance(TimeSpan.FromMilliseconds(299));
+            Assert.False(second.IsCompleted);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await limiter.WaitAsync("beispiel.test", ct: TestContext.Current.CancellationToken);
-            sw.Stop();
+            clock.Advance(TimeSpan.FromMilliseconds(1));
+            await second;
+        }
 
-            Assert.True(sw.ElapsedMilliseconds >= 250, $"Erwartet >= 250 ms, tatsächlich {sw.ElapsedMilliseconds} ms");
+        /// <summary>
+        /// Stellt die Uhr in Schritten des Abfragetakts vor, bis die Anfrage durch ist. Die
+        /// Background-Schleife legt ihre nächste Wartezeit erst an, wenn die vorige abgelaufen
+        /// ist; ein einzelner Sprung träfe deshalb unter Umständen ins Leere.
+        /// </summary>
+        private static async Task AdvanceUntilAsync(FakeTimeProvider clock, Task pending)
+        {
+            for (int step = 0; step < 200 && !pending.IsCompleted; step++)
+            {
+                clock.Advance(TimeSpan.FromMilliseconds(25));
+                await Task.Yield();
+            }
+
+            await pending;
         }
     }
 }

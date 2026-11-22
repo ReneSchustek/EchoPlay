@@ -7,12 +7,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -61,6 +56,7 @@ namespace EchoPlay.App.Services
         private CancellationTokenSource? _cts;
         private Task? _runningTask;
         private volatile bool _isRefreshing;
+        private volatile bool _stopped;
 
         /// <summary>
         /// Initialisiert den Dienst.
@@ -106,6 +102,7 @@ namespace EchoPlay.App.Services
                 return;
             }
 
+            _stopped = false;
             _cts = new CancellationTokenSource();
             // Task.Run löst die Schleife vom Synchronisationskontext des Aufrufers und gibt
             // StopAsync etwas, auf dessen Ende es warten kann.
@@ -120,6 +117,9 @@ namespace EchoPlay.App.Services
         /// <returns>Der Task ist abgeschlossen, wenn die Schleife steht oder die Wartezeit um ist.</returns>
         public async Task StopAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
+            // Ab hier still: Beim Beenden käme die Meldung erst an, wenn die Startseite ihren
+            // Container schon verloren hat, und ihr Nachladen liefe ins Leere.
+            _stopped = true;
             if (_cts is null || _runningTask is null)
             {
                 return;
@@ -195,6 +195,15 @@ namespace EchoPlay.App.Services
             {
                 _isRefreshing = false;
                 // Auch nach einem Abbruch: Die Startseite nimmt dann ihren Hinweis „wird aufgebaut" zurück.
+                RaiseCalendarChanged();
+            }
+        }
+
+        /// <summary>Meldet eine Änderung, solange der Dienst nicht angehalten ist.</summary>
+        private void RaiseCalendarChanged()
+        {
+            if (!_stopped)
+            {
                 CalendarChanged?.Invoke();
             }
         }
@@ -288,7 +297,7 @@ namespace EchoPlay.App.Services
             await services.GetRequiredService<IReleaseCalendarDataService>()
                 .UpsertRangeAsync(entries, cancellationToken).ConfigureAwait(false);
 
-            CalendarChanged?.Invoke();
+            RaiseCalendarChanged();
             return entries.Count;
         }
 

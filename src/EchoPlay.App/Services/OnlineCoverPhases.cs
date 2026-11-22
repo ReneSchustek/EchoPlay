@@ -5,11 +5,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -141,7 +136,7 @@ namespace EchoPlay.App.Services
             Dictionary<string, Uri> titleToUrl = new(StringComparer.OrdinalIgnoreCase);
             foreach (ImportEpisode importEp in providerEpisodes.Where(e => e.CoverImageUrl is not null))
             {
-                titleToUrl[importEp.Title] = importEp.CoverImageUrl!;
+                titleToUrl[importEp.Title] = importEp.CoverImageUrl!; // nach dem Filter der Schleife nie null
             }
 
             int updated = 0;

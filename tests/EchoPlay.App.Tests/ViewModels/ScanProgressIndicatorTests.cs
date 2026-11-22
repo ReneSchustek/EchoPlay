@@ -2,7 +2,6 @@ using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using EchoPlay.LocalLibrary.Scanning;
 using Microsoft.UI.Xaml;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

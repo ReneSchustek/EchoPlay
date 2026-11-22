@@ -1,8 +1,6 @@
-using EchoPlay.App.Models;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -20,17 +18,18 @@ namespace EchoPlay.App.Tests.ViewModels
             bool hasLocalTrack,
             string? appleMusicAlbumId = null,
             string? seriesTitle = "Benjamin Blümchen") => new(
-            episodeId: TestIds.EpisodeA,
-            episodeNumber: 1,
-            title: "Die Insel der Abenteuer",
-            totalDuration: TimeSpan.FromMinutes(41),
-            playbackStatus: PlaybackStatus.NotStarted,
-            releaseDate: null,
-            playEpisode: () => { },
-            spotifyAlbumId: spotifyAlbumId,
-            hasLocalTrack: hasLocalTrack,
-            appleMusicAlbumId: appleMusicAlbumId,
-            seriesTitle: seriesTitle);
+            new EpisodeTileData
+            {
+                EpisodeId = TestIds.EpisodeA,
+                EpisodeNumber = 1,
+                Title = "Die Insel der Abenteuer",
+                TotalDuration = TimeSpan.FromMinutes(41),
+                SpotifyAlbumId = spotifyAlbumId,
+                HasLocalTrack = hasLocalTrack,
+                AppleMusicAlbumId = appleMusicAlbumId,
+                SeriesTitle = seriesTitle,
+            },
+            playEpisode: () => { });
 
         [Fact]
         public void OpenInSpotify_NoLocalTrackAndAlbumKnown_IsVisible()
@@ -73,15 +72,8 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             // Ohne Serien- und Folgentitel gäbe es nichts zu suchen.
             EpisodeTileViewModel tile = new(
-                episodeId: TestIds.EpisodeB,
-                episodeNumber: null,
-                title: string.Empty,
-                totalDuration: null,
-                playbackStatus: PlaybackStatus.NotStarted,
-                releaseDate: null,
-                playEpisode: () => { },
-                hasLocalTrack: false,
-                seriesTitle: null);
+                new EpisodeTileData { EpisodeId = TestIds.EpisodeB, Title = string.Empty, HasLocalTrack = false },
+                playEpisode: () => { });
 
             Assert.Equal(Visibility.Collapsed, tile.OpenInSpotifyVisibility);
             Assert.False(tile.OpenInSpotify());

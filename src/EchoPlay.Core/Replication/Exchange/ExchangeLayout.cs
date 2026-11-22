@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace EchoPlay.Core.Replication.Exchange
@@ -52,7 +53,7 @@ namespace EchoPlay.Core.Replication.Exchange
         /// <param name="path">Der Pfad.</param>
         /// <param name="file">Die erkannte Datei.</param>
         /// <returns><see langword="true"/>, wenn der Name zum Protokoll gehört.</returns>
-        public static bool TryRead(string path, out ExchangeFile? file)
+        public static bool TryRead(string path, [NotNullWhen(true)] out ExchangeFile? file)
         {
             ArgumentNullException.ThrowIfNull(path);
             file = null;

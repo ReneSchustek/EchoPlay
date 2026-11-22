@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace EchoPlay.LocalLibrary.Tests.Infrastructure
 {
     /// <summary>

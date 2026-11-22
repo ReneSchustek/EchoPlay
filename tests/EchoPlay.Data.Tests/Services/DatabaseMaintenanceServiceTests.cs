@@ -3,7 +3,6 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services;
 using EchoPlay.Data.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Tests.Services
 {

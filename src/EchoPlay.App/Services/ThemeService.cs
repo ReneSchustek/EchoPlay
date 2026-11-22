@@ -4,10 +4,6 @@ using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

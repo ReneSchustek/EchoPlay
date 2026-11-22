@@ -1,12 +1,9 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;
-using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

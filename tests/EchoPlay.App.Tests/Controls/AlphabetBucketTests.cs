@@ -1,5 +1,4 @@
 using EchoPlay.App.Controls;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Controls
 {

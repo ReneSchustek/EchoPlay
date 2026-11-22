@@ -1,6 +1,4 @@
 using EchoPlay.Core.Abstractions.Time;
-using System;
-using EchoPlay.App.Services;
 
 namespace EchoPlay.App.Tests.Fakes
 {

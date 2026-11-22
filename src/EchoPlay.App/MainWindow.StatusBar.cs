@@ -1,7 +1,6 @@
 using EchoPlay.App.Infrastructure;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 
 namespace EchoPlay.App
 {

@@ -1,11 +1,8 @@
-using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.DependencyInjection;
 using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Core;
 using Microsoft.Extensions.DependencyInjection;
-using System.IO;
-using System.Linq;
 
 namespace EchoPlay.Logger.Tests
 {

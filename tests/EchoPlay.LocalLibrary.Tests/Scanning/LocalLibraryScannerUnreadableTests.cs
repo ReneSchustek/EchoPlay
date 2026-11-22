@@ -2,10 +2,6 @@ using EchoPlay.LocalLibrary.Models;
 using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Tests.Scanning
 {

@@ -12,27 +12,39 @@ namespace EchoPlay.App.ViewModels
     /// und jeder neue Dienst verschöbe die Reihenfolge erneut.
     /// Die Abschnitts-Ansichtsmodelle entstehen intern und gehören nicht hierher.
     /// </summary>
-    /// <param name="ScopeFactory">Für datenbanknahe Zugriffe beim Laden und in den Kachel-Befehlen.</param>
-    /// <param name="ErrorDialogService">Für Hinweise bei nicht verfügbaren Folgen.</param>
-    /// <param name="ConfirmationDialogService">Für Rückfragen vor Änderungen am Hörstatus.</param>
-    /// <param name="PlayerService">Startet die Wiedergabe.</param>
-    /// <param name="LoggerFactory">Fabrik für den Protokollkanal.</param>
-    /// <param name="CoverService">Zentraler Cover-Dienst. Nullable für Tests.</param>
-    /// <param name="LocalizationService">Liefert die Anzeigetexte. Nullable für Tests.</param>
-    /// <param name="Clock">Zeitquelle. Nullable; fehlt sie, gilt die Systemzeit.</param>
-    /// <param name="BackgroundCoverService">Trägt fehlende Folgen-Cover nach. Nullable für Tests.</param>
-    /// <param name="NewReleaseEventService">Meldet Änderungen am Neuerscheinungs-Zwischenspeicher. Nullable für Tests.</param>
-    /// <param name="ReleaseCalendarService">Baut den Veröffentlichungskalender auf und meldet neue Einträge. Nullable für Tests.</param>
-    internal sealed record DashboardViewModelContext(
-        IServiceScopeFactory ScopeFactory,
-        IErrorDialogService ErrorDialogService,
-        IConfirmationDialogService ConfirmationDialogService,
-        IPlayerService PlayerService,
-        ILoggerFactory LoggerFactory,
-        ICoverService? CoverService = null,
-        ILocalizationService? LocalizationService = null,
-        IClock? Clock = null,
-        BackgroundCoverService? BackgroundCoverService = null,
-        INewReleaseEventService? NewReleaseEventService = null,
-        ReleaseCalendarRefreshService? ReleaseCalendarService = null);
+    internal sealed record DashboardViewModelContext
+    {
+        /// <summary>Für datenbanknahe Zugriffe beim Laden und in den Kachel-Befehlen.</summary>
+        public required IServiceScopeFactory ScopeFactory { get; init; }
+
+        /// <summary>Für Hinweise bei nicht verfügbaren Folgen.</summary>
+        public required IErrorDialogService ErrorDialogService { get; init; }
+
+        /// <summary>Für Rückfragen vor Änderungen am Hörstatus.</summary>
+        public required IConfirmationDialogService ConfirmationDialogService { get; init; }
+
+        /// <summary>Startet die Wiedergabe.</summary>
+        public required IPlayerService PlayerService { get; init; }
+
+        /// <summary>Fabrik für den Protokollkanal.</summary>
+        public required ILoggerFactory LoggerFactory { get; init; }
+
+        /// <summary>Zentraler Cover-Dienst. Nullable für Tests.</summary>
+        public ICoverService? CoverService { get; init; }
+
+        /// <summary>Liefert die Anzeigetexte. Nullable für Tests.</summary>
+        public ILocalizationService? LocalizationService { get; init; }
+
+        /// <summary>Zeitquelle. Nullable; fehlt sie, gilt die Systemzeit.</summary>
+        public IClock? Clock { get; init; }
+
+        /// <summary>Trägt fehlende Folgen-Cover nach. Nullable für Tests.</summary>
+        public BackgroundCoverService? BackgroundCoverService { get; init; }
+
+        /// <summary>Meldet Änderungen am Neuerscheinungs-Zwischenspeicher. Nullable für Tests.</summary>
+        public INewReleaseEventService? NewReleaseEventService { get; init; }
+
+        /// <summary>Baut den Veröffentlichungskalender auf und meldet neue Einträge. Nullable für Tests.</summary>
+        public ReleaseCalendarRefreshService? ReleaseCalendarService { get; init; }
+    }
 }

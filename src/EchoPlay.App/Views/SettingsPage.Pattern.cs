@@ -2,9 +2,7 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {

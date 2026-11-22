@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.IO.Compression;
 using System.Text;
 using EchoPlay.Core.Replication.Packaging;
@@ -95,7 +96,7 @@ namespace EchoPlay.Data.Replication
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
 
-            string staged = Path.Combine(Path.GetDirectoryName(_databaseFile.FilePath)!, StagedFileName);
+            string staged = Path.Combine(ParentFolder.Of(_databaseFile.FilePath), StagedFileName);
             FileStream packageStream = new(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20, useAsync: true);
             await using (packageStream.ConfigureAwait(false))
             {
@@ -106,11 +107,11 @@ namespace EchoPlay.Data.Replication
                 RejectNewerVersion(manifest);
 
                 PackageEntry databaseEntry = manifest.Entries.Single(e => e.Name == PackageFormat.DatabaseEntry);
-                SpaceCheck.Require(Path.GetDirectoryName(staged)!, databaseEntry.Length + PackageExporter.SpaceMargin);
+                SpaceCheck.Require(ParentFolder.Of(staged), databaseEntry.Length + PackageExporter.SpaceMargin);
 
                 try
                 {
-                    await ExtractVerifiedAsync(archive.GetEntry(PackageFormat.DatabaseEntry)!, databaseEntry, staged, cancellationToken).ConfigureAwait(false);
+                    await ExtractVerifiedAsync(RequiredEntry.Of(archive, PackageFormat.DatabaseEntry), databaseEntry, staged, cancellationToken).ConfigureAwait(false);
                     RequireSqliteHeader(staged);
                     ReadOnlyMemory<byte> credentials = await ReadCredentialsAsync(archive, manifest, cancellationToken).ConfigureAwait(false);
                     ImportPreview preview = await PreviewAsync(staged, cancellationToken).ConfigureAwait(false);
@@ -160,7 +161,7 @@ namespace EchoPlay.Data.Replication
 
         private static async Task<PackageManifest> ReadManifestAsync(ZipArchive archive, CancellationToken cancellationToken)
         {
-            ZipArchiveEntry entry = archive.GetEntry(PackageFormat.ManifestEntry)!;
+            ZipArchiveEntry entry = RequiredEntry.Of(archive, PackageFormat.ManifestEntry);
             byte[] data = await ReadBoundedAsync(entry, ArchiveGuard.MaxLengthOf(PackageFormat.ManifestEntry), cancellationToken).ConfigureAwait(false);
             string json;
             try
@@ -173,7 +174,7 @@ namespace EchoPlay.Data.Replication
             }
 
             return PackageManifest.TryParse(json, out PackageManifest? manifest, out string? error)
-                ? manifest!
+                ? manifest
                 : throw new PackageRejectedException(error ?? "Manifest ungültig.");
         }
 
@@ -201,7 +202,7 @@ namespace EchoPlay.Data.Replication
                 FileStream output = new(target, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20, useAsync: true);
                 await using (output.ConfigureAwait(false))
                 {
-                    string hash = await CopyBoundedAsync(source, output, expected.Length, cancellationToken).ConfigureAwait(false);
+                    string hash = await CopyBoundedAsync(source, output, CopyLimit.Exactly(expected.Length), cancellationToken).ConfigureAwait(false);
                     if (!string.Equals(hash, expected.Sha256, StringComparison.Ordinal))
                     {
                         throw new PackageRejectedException($"Die Prüfsumme von {expected.Name} stimmt nicht; das Paket ist beschädigt.");
@@ -223,7 +224,7 @@ namespace EchoPlay.Data.Replication
                 MemoryStream buffer = new();
                 await using (buffer.ConfigureAwait(false))
                 {
-                    string hash = await CopyBoundedAsync(source, buffer, expected.Length, cancellationToken).ConfigureAwait(false);
+                    string hash = await CopyBoundedAsync(source, buffer, CopyLimit.Exactly(expected.Length), cancellationToken).ConfigureAwait(false);
                     return string.Equals(hash, expected.Sha256, StringComparison.Ordinal)
                         ? buffer.ToArray()
                         : throw new PackageRejectedException($"Die Prüfsumme von {expected.Name} stimmt nicht; das Paket ist beschädigt.");
@@ -239,18 +240,18 @@ namespace EchoPlay.Data.Replication
                 MemoryStream buffer = new();
                 await using (buffer.ConfigureAwait(false))
                 {
-                    _ = await CopyBoundedAsync(source, buffer, maxLength, cancellationToken, exactLength: false).ConfigureAwait(false);
+                    _ = await CopyBoundedAsync(source, buffer, CopyLimit.AtMost(maxLength), cancellationToken).ConfigureAwait(false);
                     return buffer.ToArray();
                 }
             }
         }
 
         /// <summary>
-        /// Kopiert höchstens <paramref name="length"/> Byte und bricht ab, wenn mehr kommt. Mit
-        /// <paramref name="exactLength"/> muss es genau so viel sein.
+        /// Kopiert innerhalb der Grenze und liefert die Prüfsumme; mehr, oder bei einer genauen
+        /// Grenze weniger, bricht ab.
         /// </summary>
-        private static async Task<string> CopyBoundedAsync(Stream source, Stream target, long length, CancellationToken cancellationToken, bool exactLength = true)
-            => (await HashingCopy.CopyAsync(source, target, length, exactLength, onCopied: null, cancellationToken).ConfigureAwait(false)).Sha256;
+        private static async Task<string> CopyBoundedAsync(Stream source, Stream target, CopyLimit limit, CancellationToken cancellationToken)
+            => (await HashingCopy.CopyAsync(source, target, limit, onCopied: null, cancellationToken).ConfigureAwait(false)).Sha256;
 
         private static void RequireSqliteHeader(string path)
         {

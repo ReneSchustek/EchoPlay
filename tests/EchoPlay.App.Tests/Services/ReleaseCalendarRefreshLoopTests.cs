@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Library;
@@ -7,10 +8,6 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -26,8 +23,6 @@ namespace EchoPlay.App.Tests.Services
         private static readonly TimeSpan ClockStep = TimeSpan.FromMinutes(61);
 
         // Echte Obergrenze, falls eine Bedingung nie eintritt.
-        private static readonly TimeSpan GiveUpAfter = TimeSpan.FromSeconds(10);
-
         /// <summary>Einstellungsdienst, der beim ersten Lesen scheitert und danach liefert.</summary>
         private sealed class FailingOnceSettings : IAppSettingsDataService
         {
@@ -94,16 +89,8 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>Dreht die Uhr, bis die Bedingung eintritt, und gibt den Fortsetzungen dazwischen Zeit.</summary>
-        private static async Task AdvanceUntilAsync(FakeTimeProvider time, Func<bool> condition)
-        {
-            DateTime giveUp = DateTime.UtcNow + GiveUpAfter;
-            while (!condition())
-            {
-                Assert.True(DateTime.UtcNow < giveUp, "Bedingung trat nicht ein.");
-                time.Advance(ClockStep);
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
-        }
+        private static Task AdvanceUntilAsync(FakeTimeProvider time, Func<bool> condition)
+            => Eventually.TrueAsync(condition, () => time.Advance(ClockStep));
 
         [Fact]
         public async Task Start_AfterTheInitialDelay_BuildsTheCalendar()

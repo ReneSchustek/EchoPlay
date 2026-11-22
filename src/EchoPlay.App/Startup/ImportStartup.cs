@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Replication;
@@ -47,7 +48,7 @@ namespace EchoPlay.App.Startup
                 .FinishAsync(carryOver).ConfigureAwait(false);
 
             ISpotifyCredentialStore store = scope.ServiceProvider.GetRequiredService<ISpotifyCredentialStore>();
-            string directory = Path.GetDirectoryName(DatabasePath(scopeFactory))!;
+            string directory = ParentFolder.Of(DatabasePath(scopeFactory));
             if (await DataTransferService.ApplyPendingCredentialsAsync(directory, store, CancellationToken.None).ConfigureAwait(false))
             {
                 logger.Info("Zugangsdaten aus dem Paket übernommen.");

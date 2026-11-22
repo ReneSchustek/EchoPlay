@@ -2,7 +2,6 @@ using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

@@ -1,6 +1,5 @@
 using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.Fakes
 {

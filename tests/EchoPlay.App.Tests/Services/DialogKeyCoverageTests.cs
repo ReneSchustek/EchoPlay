@@ -1,10 +1,6 @@
 using EchoPlay.App.Tests.Infrastructure;
 using EchoPlay.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

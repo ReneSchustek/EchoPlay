@@ -1,15 +1,9 @@
-using EchoPlay.App.Models;
-using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -75,26 +69,22 @@ namespace EchoPlay.App.ViewModels
             (BitmapImage? cover, bool hasEpisodeCover) =
                 await _coverProvider.ResolveCardCoverAsync(series, episode.Id);
 
-            NewEpisodeCardViewModel card = new(
-                episodeId: episode.Id,
-                seriesId: series.Id,
-                seriesName: series.Title,
-                episodeTitle: episode.Title,
-                coverImage: cover,
-                status: PlaybackStatusResolver.Resolve(state),
-                progressPercent: PlaybackStatusResolver.ProgressPercent(state, episode.Duration),
-                hasLocalTrack: hasLocalTrack,
-                isAnnounced: isAnnounced,
-                scopeFactory: _scopeFactory,
-                errorDialogService: _cardServices.ErrorDialogService,
-                confirmationDialogService: _cardServices.ConfirmationDialogService,
-                playerService: _cardServices.PlayerService,
-                episodeNumber: episode.EpisodeNumber,
-                releaseDate: episode.ReleaseDate,
-                localizationService: _cardServices.LocalizationService,
-                clock: _clock,
-                spotifyAlbumId: episode.SpotifyAlbumId,
-                appleMusicAlbumId: episode.AppleMusicAlbumId);
+            NewEpisodeCardData data = new()
+            {
+                EpisodeId = episode.Id,
+                SeriesId = series.Id,
+                SeriesName = series.Title,
+                EpisodeTitle = episode.Title,
+                Status = PlaybackStatusResolver.Resolve(state),
+                ProgressPercent = PlaybackStatusResolver.ProgressPercent(state, episode.Duration),
+                HasLocalTrack = hasLocalTrack,
+                IsAnnounced = isAnnounced,
+                EpisodeNumber = episode.EpisodeNumber,
+                ReleaseDate = episode.ReleaseDate,
+                SpotifyAlbumId = episode.SpotifyAlbumId,
+                AppleMusicAlbumId = episode.AppleMusicAlbumId,
+            };
+            NewEpisodeCardViewModel card = new(data, cover, _scopeFactory, _cardServices, _clock);
 
             if (!hasEpisodeCover)
             {

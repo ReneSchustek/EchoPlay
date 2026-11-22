@@ -1,7 +1,5 @@
-using EchoPlay.App.Infrastructure;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -21,34 +19,23 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Erstellt ein Kachel-ViewModel für die mittlere Spalte.
         /// </summary>
-        /// <param name="episodeId">Datenbank-ID der Episode.</param>
-        /// <param name="episodeNumber">Episodennummer oder null wenn keine Nummer vorhanden.</param>
-        /// <param name="title">Episodentitel.</param>
-        /// <param name="localTrackCount">Anzahl der lokal zugeordneten Tracks.</param>
-        /// <param name="folderPath">Ordnerpfad der Episode für den "Alle Tracks bearbeiten"-Button.</param>
+        /// <param name="data">Was die Kachel anzeigt.</param>
         /// <param name="coverImage">
         /// Vorab geladenes Cover-Bild oder <see langword="null"/> wenn kein Cover vorhanden.
         /// </param>
-        /// <param name="isCompleted">Ob die Episode als gehört markiert ist.</param>
-        /// <param name="isSpecialEpisode">Ob es sich um eine Sonderfolge handelt (Nummer 0, 000-Präfix oder ohne Nummer).</param>
         public LocalEpisodeCardViewModel(
-            Guid episodeId,
-            int? episodeNumber,
-            string title,
-            int localTrackCount,
-            string? folderPath,
-            BitmapImage? coverImage = null,
-            bool isCompleted = false,
-            bool isSpecialEpisode = false)
+            LocalEpisodeCardData data,
+            BitmapImage? coverImage = null)
         {
-            EpisodeId = episodeId;
-            EpisodeNumber = episodeNumber;
-            Title = title;
-            LocalTrackCount = localTrackCount;
-            FolderPath = folderPath;
-            IsSpecialEpisode = isSpecialEpisode;
+            ArgumentNullException.ThrowIfNull(data);
+            EpisodeId = data.EpisodeId;
+            EpisodeNumber = data.EpisodeNumber;
+            Title = data.Title;
+            LocalTrackCount = data.LocalTrackCount;
+            FolderPath = data.FolderPath;
+            IsSpecialEpisode = data.IsSpecialEpisode;
             CoverImage = coverImage;
-            _isCompleted = isCompleted;
+            _isCompleted = data.IsCompleted;
         }
 
         /// <summary>Datenbank-ID der Episode.</summary>

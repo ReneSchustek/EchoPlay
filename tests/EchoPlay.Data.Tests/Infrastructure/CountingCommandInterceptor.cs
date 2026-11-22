@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {

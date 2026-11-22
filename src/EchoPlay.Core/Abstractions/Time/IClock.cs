@@ -1,5 +1,3 @@
-using System;
-
 namespace EchoPlay.Core.Abstractions.Time
 {
     /// <summary>

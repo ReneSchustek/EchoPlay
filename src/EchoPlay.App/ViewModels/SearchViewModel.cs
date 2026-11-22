@@ -4,11 +4,8 @@ using EchoPlay.Core.Models;
 using EchoPlay.Core.Search;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -50,13 +47,11 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert das ViewModel mit den benötigten Services.
         /// </summary>
-        /// <param name="importService">Koordiniert Suche und Import über externe Provider.</param>
-        /// <param name="errorDialogService">Zeigt Fehler als Dialog an.</param>
+        /// <param name="services">Import, Fehleranzeige, Texte und Cover-Pipeline der Suche und ihrer Trefferkarten.</param>
         /// <param name="scopeFactory">
         /// Optionale Scope-Fabrik für die lokale Datenbanksuche.
         /// Wenn <see langword="null"/>, ist lokale Suche deaktiviert und gibt immer eine leere Liste zurück.
         /// </param>
-        /// <param name="localizationService">Für lokalisierte Dialog-Texte.</param>
         /// <param name="navigationService">
         /// Optionaler Navigationsdienst. Nur nötig wenn das ViewModel aus der echten App-Shell
         /// heraus navigieren können soll (z. B. Wechsel zur Online-Mediathek nach erfolgreichem Import).
@@ -66,35 +61,27 @@ namespace EchoPlay.App.ViewModels
         /// Optionaler Page-Mode-Guard; prüft den Offline-Modus beim Betreten der Page.
         /// In Tests kann der Parameter weggelassen werden, dann wird der Check übersprungen.
         /// </param>
-        /// <param name="backgroundCoverService">
-        /// Optionale zentrale Cover-Pipeline. Wird an <see cref="SearchResultViewModel"/>
-        /// weitergereicht; bei <see langword="null"/> bleiben die Trefferkacheln ohne Cover.
-        /// </param>
         /// <param name="logger">
         /// Optionaler Protokollkanal für die Laufzeitmarken einer Suche. In Tests kann der
         /// Parameter weggelassen werden.
         /// </param>
         public SearchViewModel(
-            ImportService importService,
-            IErrorDialogService errorDialogService,
-            ILocalizationService localizationService,
+            SearchResultServices services,
             IServiceScopeFactory? scopeFactory = null,
             INavigationService? navigationService = null,
             IPageModeGuard? pageModeGuard = null,
-            BackgroundCoverService? backgroundCoverService = null,
             EchoPlay.Logger.Abstractions.ILogger? logger = null)
         {
-            _errorDialogService = errorDialogService;
-            _localizationService = localizationService;
+            ArgumentNullException.ThrowIfNull(services);
+            _errorDialogService = services.ErrorDialogService;
+            _localizationService = services.LocalizationService;
             _navigationService = navigationService;
             _pageModeGuard = pageModeGuard;
             _timing = new SearchTimingLog(logger);
 
             _results.Items.CollectionChanged += OnResultsChanged;
 
-            _searchRunner = new SearchRunner(
-                importService, errorDialogService, localizationService,
-                scopeFactory, backgroundCoverService, this);
+            _searchRunner = new SearchRunner(services, scopeFactory, this);
 
             SearchCommand = new RelayCommand(() => _ = SearchAsync());
             ResetCommand = new RelayCommand(Reset);
@@ -362,7 +349,7 @@ namespace EchoPlay.App.ViewModels
             }
             catch (Exception ex)
             {
-                await ShowFailureUnlessObsoleteAsync(ex, isObsolete: coverToken.IsCancellationRequested);
+                await ShowFailureUnlessSupersededAsync(ex, coverToken);
             }
             finally
             {
@@ -378,13 +365,15 @@ namespace EchoPlay.App.ViewModels
         }
 
         /// <summary>
-        /// Zeigt einen Restfehler (z.B. lokale DB); eine überholte Suche zeigt keinen mehr.
+        /// Zeigt einen Restfehler der Suche, etwa aus der lokalen Datenbank. Eine überholte Suche
+        /// zeigt keinen mehr; ihr Token ist dann abgebrochen, und die neue läuft schon.
         /// </summary>
-        private Task ShowFailureUnlessObsoleteAsync(Exception ex, bool isObsolete) =>
-            isObsolete
+        private Task ShowFailureUnlessSupersededAsync(Exception ex, CancellationToken searchToken) =>
+            searchToken.IsCancellationRequested
                 ? Task.CompletedTask
+                // Der offene Dialog bleibt stehen, auch wenn danach eine neue Suche beginnt.
                 : _errorDialogService.ShowAsync(
-                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message, DialogKey.OnlineSearchFailed);
+                    _localizationService.Get("OnlineSearchFailedTitle"), ex.Message, DialogKey.OnlineSearchFailed, CancellationToken.None);
 
         /// <summary>
         /// Leert die Trefferansicht VOR dem ersten Await: Die UI zeigt sofort Loader und leere

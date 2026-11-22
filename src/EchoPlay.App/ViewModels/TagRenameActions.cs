@@ -1,10 +1,7 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

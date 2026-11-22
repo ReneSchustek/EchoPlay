@@ -7,9 +7,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

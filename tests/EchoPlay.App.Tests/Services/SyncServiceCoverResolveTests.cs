@@ -3,18 +3,7 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
-using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Abstractions;
-using EchoPlay.LocalLibrary.Cover;
-using EchoPlay.LocalLibrary.Matching;
 using EchoPlay.LocalLibrary.Models;
-using EchoPlay.LocalLibrary.Metadata;
-using EchoPlay.LocalLibrary.Scanning;
-using EchoPlay.Logger.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

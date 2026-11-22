@@ -4,8 +4,6 @@ using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using System;
-using System.Collections.Generic;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 
@@ -32,6 +30,17 @@ namespace EchoPlay.App.Views
             ViewModel = App.Services.GetRequiredService<PlayerViewModel>();
             _filePickerService = App.Services.GetRequiredService<IFilePickerService>();
             InitializeComponent();
+        }
+
+        /// <summary>
+        /// Die Seite wird bei jedem Besuch neu angelegt; ihr ViewModel meldet sich beim Verlassen
+        /// vom Wiedergabedienst ab, damit der es nicht festhält.
+        /// </summary>
+        /// <param name="e">Angaben zur Navigation.</param>
+        protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            ViewModel.StopObservingPlayer();
+            base.OnNavigatedFrom(e);
         }
 
         /// <summary>

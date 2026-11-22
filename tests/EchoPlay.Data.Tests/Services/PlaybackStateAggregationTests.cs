@@ -6,7 +6,6 @@ using EchoPlay.Data.Services;
 using EchoPlay.Data.Services.Projections;
 using EchoPlay.Data.Tests.Helpers;
 using EchoPlay.Data.Tests.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace EchoPlay.Data.Tests.Services
 {

@@ -9,9 +9,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -77,7 +75,7 @@ namespace EchoPlay.App.Services
 
             // Phase 2: neue Folgen, aus der Datenbank immer, live nur wenn gewünscht
             List<string> newEpisodeMessages = await AnalyzeNewEpisodesAsync(
-                seriesId, seriesFolderPath, mode == MissingEpisodesMode.WithOnline, cancellationToken);
+                seriesId, seriesFolderPath, mode, cancellationToken);
             if (newEpisodeMessages.Count > 0)
             {
                 result.Add(string.Empty);
@@ -162,23 +160,23 @@ namespace EchoPlay.App.Services
 
         /// <summary>
         /// Neue Folgen nach der letzten lokalen Nummer für den Einzelbericht: die beim Anbieter
-        /// bekannten aus der Datenbank, mit <paramref name="includeLive"/> zusätzlich der
+        /// bekannten aus der Datenbank, bei einer Prüfung mit Netz zusätzlich der
         /// Live-Abgleich. Während des Live-Abgleichs zeigt die Statusleiste den temporären
         /// Online-Status (Nutzer hat im Dialog bereits zugestimmt).
         /// </summary>
         /// <param name="seriesId">Die geprüfte Serie.</param>
         /// <param name="seriesFolderPath">Ihr lokaler Ordner.</param>
-        /// <param name="includeLive">Ob zusätzlich live beim Anbieter abgefragt wird.</param>
+        /// <param name="mode">Mit <see cref="MissingEpisodesMode.WithOnline"/> zusätzlich live beim Anbieter.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Neue Folgen sind eine Ergänzung zur lokalen Lückensuche: Datenbank- oder Provider-Fehler (iTunes-Search-API, HTTP-Timeout) dürfen den Dialog nicht reißen; der StatusBar-Flag wird im finally zurückgesetzt und die Liste bleibt im Fehlerfall leer.")]
         private async Task<List<string>> AnalyzeNewEpisodesAsync(
-            Guid seriesId, string seriesFolderPath, bool includeLive, CancellationToken cancellationToken = default)
+            Guid seriesId, string seriesFolderPath, MissingEpisodesMode mode, CancellationToken cancellationToken = default)
         {
-            _statusBar.IsTemporarilyOnline = includeLive;
+            _statusBar.IsTemporarilyOnline = mode == MissingEpisodesMode.WithOnline;
 
             try
             {
-                return await CollectNewEpisodesAsync(seriesId, seriesFolderPath, includeLive, cancellationToken);
+                return await CollectNewEpisodesAsync(seriesId, seriesFolderPath, mode, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -202,7 +200,7 @@ namespace EchoPlay.App.Services
         /// und liefert sie als Zeilen für den Dialog.
         /// </summary>
         private async Task<List<string>> CollectNewEpisodesAsync(
-            Guid seriesId, string seriesFolderPath, bool includeLive, CancellationToken cancellationToken)
+            Guid seriesId, string seriesFolderPath, MissingEpisodesMode mode, CancellationToken cancellationToken)
         {
             using IServiceScope scope = _scopeFactory.CreateScope();
             ISeriesDataService seriesService = scope.ServiceProvider.GetRequiredService<ISeriesDataService>();
@@ -217,7 +215,7 @@ namespace EchoPlay.App.Services
             IReadOnlyList<OnlineEpisodeInfo> known = await scope.ServiceProvider
                 .GetRequiredService<KnownNewEpisodeLookup>()
                 .FindAfterAsync(series, localHighest, cancellationToken);
-            IReadOnlyList<OnlineEpisodeInfo> live = includeLive
+            IReadOnlyList<OnlineEpisodeInfo> live = mode == MissingEpisodesMode.WithOnline
                 ? (await CheckLiveAsync(series, seriesFolderPath,
                     scope.ServiceProvider.GetRequiredService<IOnlineEpisodeChecker>(), cancellationToken)).Episodes
                 : [];

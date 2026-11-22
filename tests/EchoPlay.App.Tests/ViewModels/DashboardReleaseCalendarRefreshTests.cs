@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
@@ -7,8 +8,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -62,14 +61,16 @@ namespace EchoPlay.App.Tests.ViewModels
             ReleaseCalendarRefreshService service = new(
                 provider.GetRequiredService<IServiceScopeFactory>(), clock, new FakeLoggerFactory());
 
-            DashboardViewModel vm = new(new DashboardViewModelContext(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                new FakePlayerService(),
-                new FakeLoggerFactory(),
-                Clock: clock,
-                ReleaseCalendarService: service));
+            DashboardViewModel vm = new(new DashboardViewModelContext
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                PlayerService = new FakePlayerService(),
+                LoggerFactory = new FakeLoggerFactory(),
+                Clock = clock,
+                ReleaseCalendarService = service,
+            });
 
             return (vm, service);
         }
@@ -87,11 +88,7 @@ namespace EchoPlay.App.Tests.ViewModels
             // Dienst seinen Stapel meldet.
             _ = await service.RunOnceAsync(TestContext.Current.CancellationToken);
 
-            DateTime giveUp = DateTime.UtcNow.AddSeconds(5);
-            while (vm.ReleaseCalendarVM.Items.Count == 0 && DateTime.UtcNow < giveUp)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
+            await Eventually.TrueAsync(() => vm.ReleaseCalendarVM.Items.Count > 0);
 
             // Den Seriennamen lädt der echte Datendienst per Include mit; der Fake hält nur den Eintrag.
             ReleaseCalendarItemViewModel item = Assert.Single(vm.ReleaseCalendarVM.Items);

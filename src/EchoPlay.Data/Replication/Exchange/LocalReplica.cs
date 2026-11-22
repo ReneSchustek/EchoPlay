@@ -6,6 +6,7 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EchoPlay.Data.Replication.Exchange
 {
@@ -126,7 +127,7 @@ namespace EchoPlay.Data.Replication.Exchange
         /// <param name="entity">Die Entität, bei der Startseiten-Reihenfolge leer.</param>
         /// <param name="record">Der Stand.</param>
         /// <returns><see langword="true"/>, wenn es ihn gibt.</returns>
-        public bool TryGet(string kind, string key, out BaseEntity? entity, out ChangeRecord? record)
+        public bool TryGet(string kind, string key, out BaseEntity? entity, [NotNullWhen(true)] out ChangeRecord? record)
         {
             bool found = _entries.TryGetValue((kind, key), out (BaseEntity? Entity, ChangeRecord Record) entry);
             entity = entry.Entity;

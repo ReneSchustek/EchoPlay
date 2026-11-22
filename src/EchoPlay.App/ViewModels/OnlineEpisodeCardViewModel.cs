@@ -1,14 +1,8 @@
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Infrastructure;
-using EchoPlay.App.Services;
-using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -28,38 +22,25 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Erstellt ein Kachel-ViewModel für eine Online-Episode.
         /// </summary>
-        /// <param name="episodeId">Datenbank-ID der Episode.</param>
-        /// <param name="episodeNumber">Episodennummer oder null.</param>
-        /// <param name="title">Episodentitel.</param>
-        /// <param name="releaseDate">Erscheinungsdatum oder null.</param>
-        /// <param name="isCompleted">Ob die Episode als gehört markiert ist.</param>
-        /// <param name="providerUrl">Geprüfte Adresse zum Öffnen beim Anbieter oder null.</param>
+        /// <param name="data">Was die Kachel anzeigt.</param>
         /// <param name="scopeFactory">Für DB-Zugriff beim Setzen des Gehört-Status. Null in Tests.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable, Fallback auf <see cref="SystemClock"/>.</param>
-        /// <param name="appleMusicAlbumId">Apple-Music-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
-        /// <param name="spotifyAlbumId">Spotify-Album-ID für Deep-Links. Null → Fallback auf Suchlink.</param>
         public OnlineEpisodeCardViewModel(
-            Guid episodeId,
-            int? episodeNumber,
-            string title,
-            DateTime? releaseDate = null,
-            bool isCompleted = false,
-            Uri? providerUrl = null,
+            OnlineEpisodeCardData data,
             IServiceScopeFactory? scopeFactory = null,
-            IClock? clock = null,
-            string? appleMusicAlbumId = null,
-            string? spotifyAlbumId = null)
+            IClock? clock = null)
         {
-            EpisodeId = episodeId;
-            EpisodeNumber = episodeNumber;
-            Title = title;
-            ReleaseDate = releaseDate;
-            ProviderUrl = providerUrl;
-            AppleMusicAlbumId = appleMusicAlbumId;
-            SpotifyAlbumId = spotifyAlbumId;
+            ArgumentNullException.ThrowIfNull(data);
+            EpisodeId = data.EpisodeId;
+            EpisodeNumber = data.EpisodeNumber;
+            Title = data.Title;
+            ReleaseDate = data.ReleaseDate;
+            ProviderUrl = data.ProviderUrl;
+            AppleMusicAlbumId = data.AppleMusicAlbumId;
+            SpotifyAlbumId = data.SpotifyAlbumId;
             _scopeFactory = scopeFactory;
             _clock = clock ?? new SystemClock();
-            _isCompleted = isCompleted;
+            _isCompleted = data.IsCompleted;
 
             OpenInBrowserCommand = new RelayCommand(OpenInBrowser);
         }

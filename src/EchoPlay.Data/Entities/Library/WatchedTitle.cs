@@ -12,7 +12,7 @@ namespace EchoPlay.Data.Entities.Library
     /// Der Abgleich läuft über <see cref="NormalizedTitle"/>, weil derselbe Titel je nach Quelle
     /// unterschiedlich geschrieben ankommt (Ordnername vs. Provider-Antwort).
     /// </remarks>
-    public class WatchedTitle : BaseEntity
+    public sealed class WatchedTitle : BaseEntity
     {
         /// <summary>Serientitel in der Schreibweise, in der er gemerkt wurde (für Anzeige und Diagnose).</summary>
         [DataScope(DataScope.Shared)]

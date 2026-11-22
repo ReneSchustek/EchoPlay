@@ -3,7 +3,6 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Services
 {

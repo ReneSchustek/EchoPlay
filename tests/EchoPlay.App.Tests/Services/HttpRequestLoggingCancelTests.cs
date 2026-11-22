@@ -1,11 +1,5 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -56,7 +57,7 @@ namespace EchoPlay.Core.Replication.Packaging
         /// <param name="manifest">Das gelesene Manifest.</param>
         /// <param name="error">Der Grund der Ablehnung.</param>
         /// <returns><see langword="true"/>, wenn das Manifest gültig ist.</returns>
-        public static bool TryParse(string? json, out LibraryManifest? manifest, out string? error)
+        public static bool TryParse(string? json, [NotNullWhen(true)] out LibraryManifest? manifest, out string? error)
         {
             manifest = null;
             error = StrictJson.TryDeserialize(
@@ -69,6 +70,7 @@ namespace EchoPlay.Core.Replication.Packaging
                 return false;
             }
 
+            // Validate hat alle Pflichtfelder auf null geprüft; ab hier ist das Dokument vollständig.
             manifest = new LibraryManifest(
                 document!.FormatVersion,
                 DateTimeOffset.Parse(document.CreatedUtc!, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal),
@@ -106,7 +108,7 @@ namespace EchoPlay.Core.Replication.Packaging
                 return "Datenpaket ohne gültige Länge oder Prüfsumme.";
             }
 
-            return ValidateFiles(d.Files) ?? ValidateDirectories(d.Directories, d.Files!);
+            return ValidateFiles(d.Files) ?? ValidateDirectories(d.Directories, d.Files!); // ValidateFiles lehnt eine fehlende Liste ab
         }
 
         private static string? ValidateFiles(List<FileDocument>? files)
@@ -119,7 +121,7 @@ namespace EchoPlay.Core.Replication.Packaging
             HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
             foreach (FileDocument file in files)
             {
-                if (!LibraryRelativePath.IsSafe(file.Path) || !seen.Add(file.Path!))
+                if (!LibraryRelativePath.IsSafe(file.Path) || !seen.Add(file.Path))
                 {
                     return $"Unzulässiger oder doppelter Pfad: {file.Path}";
                 }

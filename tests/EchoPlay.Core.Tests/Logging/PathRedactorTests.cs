@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.Core.Logging;
 
 namespace EchoPlay.Core.Tests.Logging

@@ -1,6 +1,5 @@
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Dtos;
-using Xunit;
 
 namespace EchoPlay.Spotify.Tests.Live
 {

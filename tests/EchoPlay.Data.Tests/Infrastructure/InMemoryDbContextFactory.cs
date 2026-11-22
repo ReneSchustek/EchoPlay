@@ -1,7 +1,6 @@
 using EchoPlay.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 
 namespace EchoPlay.Data.Tests.Infrastructure
 {

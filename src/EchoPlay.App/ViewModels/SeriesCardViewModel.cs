@@ -6,8 +6,6 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -27,44 +25,29 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert das Kachel-ViewModel mit Stammdaten und Services.
         /// </summary>
-        /// <param name="id">Datenbank-ID der Serie.</param>
-        /// <param name="title">Titel der Serie.</param>
+        /// <param name="data">Was die Kachel anzeigt.</param>
         /// <param name="coverImage">Vorschaubild oder null.</param>
-        /// <param name="totalEpisodeCount">Gesamtanzahl der Episoden.</param>
-        /// <param name="newEpisodeCount">Anzahl noch nicht angehörter Episoden (NotStarted).</param>
-        /// <param name="inProgressCount">Anzahl begonnener Episoden (InProgress).</param>
-        /// <param name="finishedCount">Anzahl vollständig gehörter Episoden (Finished).</param>
-        /// <param name="isSubscribed">Aktueller Abonnementstatus.</param>
-        /// <param name="isFavorite">Aktueller Favoritenstatus.</param>
-        /// <param name="isWatched">Aktueller Überwachungsstatus für Neuerscheinungen.</param>
         /// <param name="scopeFactory">Für DB-Zugriffe im Toggle-Command.</param>
         /// <param name="confirmationDialogService">Für Bestätigungs-Dialoge.</param>
         /// <param name="localizationService">Für lokalisierte Dialog-Texte.</param>
         public SeriesCardViewModel(
-            Guid id,
-            string title,
+            SeriesCardData data,
             BitmapImage? coverImage,
-            int totalEpisodeCount,
-            int newEpisodeCount,
-            int inProgressCount,
-            int finishedCount,
-            bool isSubscribed,
-            bool isFavorite,
-            bool isWatched,
             IServiceScopeFactory scopeFactory,
             IConfirmationDialogService confirmationDialogService,
             ILocalizationService localizationService)
         {
-            Id = id;
-            Title = title;
+            ArgumentNullException.ThrowIfNull(data);
+            Id = data.Id;
+            Title = data.Title;
             CoverImage = coverImage;
-            TotalEpisodeCount = totalEpisodeCount;
-            NewEpisodeCount = newEpisodeCount;
-            InProgressCount = inProgressCount;
-            FinishedCount = finishedCount;
-            _isSubscribed = isSubscribed;
-            IsFavorite = isFavorite;
-            IsWatched = isWatched;
+            TotalEpisodeCount = data.TotalEpisodeCount;
+            NewEpisodeCount = data.NewEpisodeCount;
+            InProgressCount = data.InProgressCount;
+            FinishedCount = data.FinishedCount;
+            _isSubscribed = data.IsSubscribed;
+            IsFavorite = data.IsFavorite;
+            IsWatched = data.IsWatched;
 
             _scopeFactory = scopeFactory;
             _confirmationDialogService = confirmationDialogService;

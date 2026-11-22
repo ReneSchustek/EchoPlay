@@ -1,8 +1,4 @@
 using EchoPlay.App.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Helpers
 {
@@ -67,13 +63,9 @@ namespace EchoPlay.App.Tests.Helpers
             LetterSectionSplitHandler<Tile> handler = new(
                 top,
                 bottom,
-                () => tiles,
-                tile => tile.Title,
-                () => selectedIndex,
-                () => FourPerRow,
+                new LetterSectionSource<Tile>(() => tiles, tile => tile.Title, () => selectedIndex, () => FourPerRow),
                 "Abschnitt {0}",
-                groupByLetter,
-                groupByLetter is null ? null : "Serien");
+                groupByLetter is null ? null : new LetterSectionGrouping(groupByLetter, "Serien"));
 
             return (handler, top, bottom);
         }
@@ -272,13 +264,9 @@ namespace EchoPlay.App.Tests.Helpers
         /// schon, sonst liest die Sprachausgabe den Typnamen vor.
         /// </summary>
         [Fact]
-        public void Constructor_WithSortingRuleButNoName_IsRejected()
+        public void Grouping_WithSortingRuleButNoName_IsRejected()
         {
-            FakeHost host = new();
-
-            _ = Assert.Throws<ArgumentException>(() => new LetterSectionSplitHandler<Tile>(
-                host, host, () => [], t => t.Title, () => -1, () => FourPerRow,
-                "Abschnitt {0}", () => true, "  "));
+            _ = Assert.Throws<ArgumentException>(() => new LetterSectionGrouping(() => true, "  "));
         }
     }
 }

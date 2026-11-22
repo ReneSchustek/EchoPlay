@@ -11,10 +11,6 @@ using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Startup
 {

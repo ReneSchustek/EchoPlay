@@ -3,16 +3,11 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -53,9 +48,19 @@ namespace EchoPlay.App.Tests.ViewModels
 
             public SeriesCardViewModel CreateCard(Guid id, string title)
                 => new(
-                    id: id, title: title, coverImage: null,
-                    totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
-                    isSubscribed: false, isFavorite: false, isWatched: false,
+                    new SeriesCardData
+                    {
+                        Id = id,
+                        Title = title,
+                        TotalEpisodeCount = 0,
+                        NewEpisodeCount = 0,
+                        InProgressCount = 0,
+                        FinishedCount = 0,
+                        IsSubscribed = false,
+                        IsFavorite = false,
+                        IsWatched = false,
+                    },
+                    coverImage: null,
                     scopeFactory: Context.ScopeFactory,
                     confirmationDialogService: Context.ConfirmationDialogService,
                     localizationService: Context.LocalizationService);
@@ -97,19 +102,18 @@ namespace EchoPlay.App.Tests.ViewModels
         /// </summary>
         private static OnlineLibraryActionsContext CreateContext(
             ServiceProvider provider, FakeCoverDownloader downloader, bool withCoverCache)
-            => new(
-                ScopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
-                ConfirmationDialogService: new FakeConfirmationDialogService(),
-                ImportService: ImportTestServices.CreateImportService(provider),
-                ErrorDialogService: new FakeErrorDialogService(),
-                LocalizationService: new FakeLocalizationService(),
-                OnlineAccessGuard: new FakeOnlineAccessGuard(),
-                CoverCacheService: withCoverCache ? provider.GetRequiredService<EpisodeCoverCacheService>() : null,
-                CoverService: provider.GetRequiredService<CoverService>(),
-                BackgroundCoverService: null,
-                WatchToggleService: null,
-                CoverDownloader: downloader,
-                RateLimiter: null);
+            => new()
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                ImportService = ImportTestServices.CreateImportService(provider),
+                ErrorDialogService = new FakeErrorDialogService(),
+                LocalizationService = new FakeLocalizationService(),
+                OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                CoverCacheService = withCoverCache ? provider.GetRequiredService<EpisodeCoverCacheService>() : null,
+                CoverService = provider.GetRequiredService<CoverService>(),
+                CoverDownloader = downloader,
+            };
 
         /// <summary>
         /// Legt fortlaufend nummerierte Folgen einer Serie an und gibt sie in dieser
@@ -442,7 +446,12 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             Harness harness = BuildHarness();
             OnlineEpisodeCardViewModel card = new(
-                episodeId: EpisodeId, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = EpisodeId,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
             CoverSearchHit hit = new(
                 new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");
@@ -465,7 +474,12 @@ namespace EchoPlay.App.Tests.ViewModels
             harness.Downloader.SetResponse("https://example.invalid/full.jpg", coverBytes);
 
             OnlineEpisodeCardViewModel card = new(
-                episodeId: EpisodeId, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = EpisodeId,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
             CoverSearchHit hit = new(
                 new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");
@@ -486,7 +500,12 @@ namespace EchoPlay.App.Tests.ViewModels
         {
             Harness harness = BuildHarness();
             OnlineEpisodeCardViewModel card = new(
-                episodeId: EpisodeId, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = EpisodeId,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
             CoverSearchHit hit = new(
                 new Uri("https://example.invalid/thumb.jpg"), new Uri("https://example.invalid/full.jpg"),
                 "Folge 1", "Cover Art Archive");

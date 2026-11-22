@@ -5,12 +5,7 @@ using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -331,6 +326,14 @@ namespace EchoPlay.App.ViewModels
                     && string.Equals(item.FullPath, currentPath, StringComparison.OrdinalIgnoreCase);
             }
         }
+
+        /// <summary>
+        /// Meldet das ViewModel vom Wiedergabedienst ab, wenn die Seite verlassen wird. Der Dienst
+        /// lebt so lange wie die Anwendung; ohne Abmeldung hielte er das ViewModel jeder verlassenen
+        /// Seite fest und versorgte es weiter im Takt der Wiedergabe. Kein <see cref="IDisposable"/>:
+        /// Der Container hielte transiente freigebbare Instanzen sonst bis zum Beenden fest.
+        /// </summary>
+        public void StopObservingPlayer() => _playerService.StateChanged -= OnPlayerStateChanged;
 
         private void OnPlayerStateChanged(object? sender, EventArgs e)
         {

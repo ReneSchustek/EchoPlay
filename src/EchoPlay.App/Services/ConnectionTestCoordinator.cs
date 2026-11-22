@@ -3,11 +3,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Spotify.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

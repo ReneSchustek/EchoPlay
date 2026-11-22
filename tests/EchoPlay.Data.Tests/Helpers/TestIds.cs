@@ -1,5 +1,3 @@
-using System;
-
 namespace EchoPlay.Data.Tests.Helpers
 {
     /// <summary>

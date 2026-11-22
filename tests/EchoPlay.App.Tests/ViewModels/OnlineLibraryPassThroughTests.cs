@@ -3,16 +3,10 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -83,7 +77,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void DeselectSeries_ClosesTheEpisodeArea()
         {
             OnlineLibraryViewModel sut = BuildViewModel();
-            sut.EpisodesVM.SetEpisodes([new OnlineEpisodeCardViewModel(TestIds.EpisodeA, 1, "Folge 1")]);
+            sut.EpisodesVM.SetEpisodes([new OnlineEpisodeCardViewModel(
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                })]);
 
             sut.DeselectSeries();
 
@@ -113,7 +113,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public async Task ApplySelectedEpisodeCoverAsync_WithoutHit_ThrowsArgumentNullException()
         {
             OnlineLibraryViewModel sut = BuildViewModel();
-            OnlineEpisodeCardViewModel card = new(TestIds.EpisodeA, 1, "Folge 1");
+            OnlineEpisodeCardViewModel card = new(
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
 
             _ = await Assert.ThrowsAsync<ArgumentNullException>(
                 () => sut.ApplySelectedEpisodeCoverAsync(card, null!));
@@ -282,14 +288,17 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new OnlineLibraryViewModel(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeConfirmationDialogService(),
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
-                new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<ICoverDownloader>(),
-                watchToggleService: watchToggle);
+                new OnlineLibraryActionsContext
+                {
+                    ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                    ConfirmationDialogService = new FakeConfirmationDialogService(),
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                    CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                    WatchToggleService = watchToggle,
+                });
         }
     }
 }

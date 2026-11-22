@@ -3,18 +3,7 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
-using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.LocalLibrary.Abstractions;
-using EchoPlay.LocalLibrary.Cover;
-using EchoPlay.LocalLibrary.Matching;
-using EchoPlay.LocalLibrary.Metadata;
 using EchoPlay.LocalLibrary.Models;
-using EchoPlay.LocalLibrary.Scanning;
-using EchoPlay.Logger.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -24,25 +13,29 @@ namespace EchoPlay.App.Tests.Services
     /// </summary>
     public sealed class SyncServiceTests
     {
-        private static SyncService BuildService(
-            FakeAppSettingsDataService settingsService,
-            FakeSeriesDataService? seriesService = null,
-            FakeEpisodeDataService? episodeService = null,
-            FakeLocalTrackDataService? trackService = null,
-            FakeLocalLibraryScanner? scanner = null,
-            FakeTrackMatcher? trackMatcher = null,
-            FakeAudioMetadataReader? metadataReader = null,
-            FakeScanEventService? scanEventService = null)
+        /// <summary>Einstellungen für <see cref="BuildService"/>; ohne Angabe gelten die Vorgaben.</summary>
+        private sealed record SyncSetup
+        {
+            public FakeSeriesDataService? SeriesService { get; init; }
+            public FakeEpisodeDataService? EpisodeService { get; init; }
+            public FakeLocalTrackDataService? TrackService { get; init; }
+            public FakeLocalLibraryScanner? Scanner { get; init; }
+            public FakeTrackMatcher? TrackMatcher { get; init; }
+            public FakeAudioMetadataReader? MetadataReader { get; init; }
+            public FakeScanEventService? ScanEventService { get; init; }
+        }
+
+        private static SyncService BuildService(FakeAppSettingsDataService settingsService, SyncSetup? setup = null)
             => new SyncServiceSetup
             {
                 Settings = settingsService,
-                Series = seriesService ?? new FakeSeriesDataService(),
-                Episodes = episodeService ?? new FakeEpisodeDataService(),
-                Tracks = trackService ?? new FakeLocalTrackDataService(),
-                Scanner = scanner ?? new FakeLocalLibraryScanner([]),
-                TrackMatcher = trackMatcher ?? new FakeTrackMatcher(),
-                MetadataReader = metadataReader ?? new FakeAudioMetadataReader(),
-                ScanEvents = scanEventService ?? new FakeScanEventService(),
+                Series = setup?.SeriesService ?? new FakeSeriesDataService(),
+                Episodes = setup?.EpisodeService ?? new FakeEpisodeDataService(),
+                Tracks = setup?.TrackService ?? new FakeLocalTrackDataService(),
+                Scanner = setup?.Scanner ?? new FakeLocalLibraryScanner([]),
+                TrackMatcher = setup?.TrackMatcher ?? new FakeTrackMatcher(),
+                MetadataReader = setup?.MetadataReader ?? new FakeAudioMetadataReader(),
+                ScanEvents = setup?.ScanEventService ?? new FakeScanEventService(),
             }.Build();
 
         /// <summary>
@@ -119,13 +112,15 @@ namespace EchoPlay.App.Tests.Services
                 LocalLibraryRootPath = "/music"
             });
 
-            SyncService service = BuildService(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner([]),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(settings, new()
+            {
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                TrackService = new FakeLocalTrackDataService(),
+                Scanner = new FakeLocalLibraryScanner([]),
+                TrackMatcher = new FakeTrackMatcher(),
+                MetadataReader = new FakeAudioMetadataReader(),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -145,13 +140,15 @@ namespace EchoPlay.App.Tests.Services
                 LocalLibraryRootPath = null
             });
 
-            SyncService service = BuildService(settings,
-                seriesService: new FakeSeriesDataService(),
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner([]),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(settings, new()
+            {
+                SeriesService = new FakeSeriesDataService(),
+                EpisodeService = new FakeEpisodeDataService(),
+                TrackService = new FakeLocalTrackDataService(),
+                Scanner = new FakeLocalLibraryScanner([]),
+                TrackMatcher = new FakeTrackMatcher(),
+                MetadataReader = new FakeAudioMetadataReader(),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -181,12 +178,15 @@ namespace EchoPlay.App.Tests.Services
                 }
             ];
 
-            SyncService service = BuildService(settings, seriesService,
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(settings, new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = new FakeEpisodeDataService(),
+                TrackService = new FakeLocalTrackDataService(),
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+                TrackMatcher = new FakeTrackMatcher(),
+                MetadataReader = new FakeAudioMetadataReader(),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -215,13 +215,15 @@ namespace EchoPlay.App.Tests.Services
                 }
             ];
 
-            SyncService service = BuildService(settings,
-                seriesService: new FakeSeriesDataService(),  // leere DB
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(settings, new()
+            {
+                SeriesService = new FakeSeriesDataService(), // leere DB
+                EpisodeService = new FakeEpisodeDataService(),
+                TrackService = new FakeLocalTrackDataService(),
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+                TrackMatcher = new FakeTrackMatcher(),
+                MetadataReader = new FakeAudioMetadataReader(),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -240,8 +242,12 @@ namespace EchoPlay.App.Tests.Services
             IReadOnlyList<LocalScanResult> scanResults = ScanOf("TKKG", "/music/TKKG",
                 EpisodeScan("/music/TKKG/001 - Folge 1", 1, "/music/TKKG/001 - Folge 1/track1.mp3"));
 
-            SyncService service = BuildService(EnabledSettings(), seriesService, episodeService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(), new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -261,9 +267,13 @@ namespace EchoPlay.App.Tests.Services
                 EpisodeScan("/music/Die drei ???/001", 1, "/music/001/track1.mp3", "/music/001/track2.mp3"));
 
             FakeLocalTrackDataService trackService = new();
-            SyncService service = BuildService(EnabledSettings(), seriesService, episodeService,
-                trackService: trackService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(), new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                TrackService = trackService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -289,8 +299,12 @@ namespace EchoPlay.App.Tests.Services
                 .. ScanOf("Unbekannte Serie", "/music/Unbekannte Serie"),
             ];
 
-            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: false), seriesService, episodeService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: false), new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -313,10 +327,12 @@ namespace EchoPlay.App.Tests.Services
             IReadOnlyList<LocalScanResult> scanResults = ScanOf("Neue Serie", "/music/Neue Serie",
                 NumberedEpisodes(episodeCount, "track1.mp3", "track2.mp3"));
 
-            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true),
-                episodeService: episodeService,
-                trackService: trackService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true), new()
+            {
+                EpisodeService = episodeService,
+                TrackService = trackService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -356,10 +372,12 @@ namespace EchoPlay.App.Tests.Services
                 maxEpisodesSeenAtEmit = Math.Max(maxEpisodesSeenAtEmit, seen);
             };
 
-            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true),
-                episodeService: episodeService,
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                scanEventService: scanEvents);
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true), new()
+            {
+                EpisodeService = episodeService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+                ScanEventService = scanEvents,
+            });
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -382,9 +400,12 @@ namespace EchoPlay.App.Tests.Services
                 EpisodeScan("/music/TKKG/unbekannt", null, "/music/TKKG/unbekannt/track.mp3"));
 
             FakeEpisodeDataService episodeService = new();
-            SyncService service = BuildService(EnabledSettings(), seriesService,
-                episodeService: episodeService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(), new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -407,11 +428,14 @@ namespace EchoPlay.App.Tests.Services
 
             FakeEpisodeDataService episodeService = new();
             FakeLocalTrackDataService trackService = new();
-            SyncService service = BuildService(EnabledSettings(), seriesService,
-                episodeService: episodeService,
-                trackService: trackService,
-                scanner: new FakeLocalLibraryScanner(scanResults),
-                metadataReader: new FakeAudioMetadataReader(defaultTrackNumber: 1));
+            SyncService service = BuildService(EnabledSettings(), new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = episodeService,
+                TrackService = trackService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+                MetadataReader = new FakeAudioMetadataReader(defaultTrackNumber: 1),
+            });
 
             _ = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -435,13 +459,15 @@ namespace EchoPlay.App.Tests.Services
 
             FakeLocalLibraryScanner scanner = new([], ["/music/TKKG", "/music/Neu1", "/music/Neu2"]);
 
-            SyncService service = BuildService(settings,
-                seriesService: seriesService,
-                episodeService: new FakeEpisodeDataService(),
-                trackService: new FakeLocalTrackDataService(),
-                scanner: scanner,
-                trackMatcher: new FakeTrackMatcher(),
-                metadataReader: new FakeAudioMetadataReader());
+            SyncService service = BuildService(settings, new()
+            {
+                SeriesService = seriesService,
+                EpisodeService = new FakeEpisodeDataService(),
+                TrackService = new FakeLocalTrackDataService(),
+                Scanner = scanner,
+                TrackMatcher = new FakeTrackMatcher(),
+                MetadataReader = new FakeAudioMetadataReader(),
+            });
 
             // Kein Progress<T>: das stellt seine Rückrufe über den ThreadPool zu, wodurch der
             // Test unter Last am Zeitverhalten kippte statt an der Sache.
@@ -466,8 +492,11 @@ namespace EchoPlay.App.Tests.Services
 
             IReadOnlyList<LocalScanResult> scanResults = ScanOf("Die drei ???", "/music/Die drei ???");
 
-            SyncService service = BuildService(EnabledSettings(), seriesService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(), new()
+            {
+                SeriesService = seriesService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -492,9 +521,11 @@ namespace EchoPlay.App.Tests.Services
                 EpisodeScan("/music/Neu/002", 2, "/music/Neu/002/t.mp3"),
                 EpisodeScan("/music/Neu/003", 3, "/music/Neu/003/t.mp3"));
 
-            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true),
-                episodeService: episodeService,
-                scanner: new FakeLocalLibraryScanner(scanResults));
+            SyncService service = BuildService(EnabledSettings(autoImportAfterScan: true), new()
+            {
+                EpisodeService = episodeService,
+                Scanner = new FakeLocalLibraryScanner(scanResults),
+            });
 
             SyncResult result = await service.SyncAsync(cancellationToken: TestContext.Current.CancellationToken);
 

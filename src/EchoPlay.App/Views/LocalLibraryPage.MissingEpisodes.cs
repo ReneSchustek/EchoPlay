@@ -1,13 +1,9 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
-using EchoPlay.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {
@@ -58,6 +54,25 @@ namespace EchoPlay.App.Views
         }
 
         /// <summary>
+        /// Der Berichtstext: eine Zeile je fehlender Folge, oder der Hinweis, dass alle da sind.
+        /// </summary>
+        private string MissingEpisodesReport(IReadOnlyList<string> episodeTitles)
+        {
+            if (episodeTitles.Count == 0)
+            {
+                return _resources.GetString("MissingEpisodesAllPresent");
+            }
+
+            StringBuilder builder = new();
+            foreach (string title in episodeTitles)
+            {
+                _ = builder.AppendLine(title);
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        /// <summary>
         /// Zeigt die fehlenden Folgen einer Serie und bietet den Export als Textdatei an.
         /// </summary>
         private async void OnMissingEpisodesResolved(IReadOnlyList<string> episodeTitles)
@@ -67,27 +82,16 @@ namespace EchoPlay.App.Views
 
             await AsyncEventHandler.RunSafelyAsync(async () =>
             {
-                string content;
-
-                if (episodeTitles.Count == 0)
-                {
-                    content = _resources.GetString("MissingEpisodesAllPresent");
-                }
-                else
-                {
-                    StringBuilder builder = new();
-                    foreach (string title in episodeTitles)
-                    {
-                        _ = builder.AppendLine(title);
-                    }
-                    content = builder.ToString().TrimEnd();
-                }
+                string content = MissingEpisodesReport(episodeTitles);
 
                 ContentDialogResult result = await Helpers.ScrollableTextDialog.ShowAsync(
                     XamlRoot,
                     title: _resources.GetString("MissingEpisodesResultTitle"),
                     content: content,
-                    primaryButtonText: _resources.GetString("CommonSaveAsTxtButton"));
+                    new Helpers.ScrollableTextDialogOptions
+                    {
+                        PrimaryButtonText = _resources.GetString("CommonSaveAsTxtButton"),
+                    });
 
                 if (result == ContentDialogResult.Primary)
                 {
@@ -126,9 +130,12 @@ namespace EchoPlay.App.Views
                     XamlRoot,
                     title: _resources.GetString("MissingEpisodesAllSeriesTitle"),
                     content: reportText,
-                    primaryButtonText: _resources.GetString("CommonSaveAsTxtButton"),
-                    maxHeight: 500,
-                    useMonospace: true);
+                    new Helpers.ScrollableTextDialogOptions
+                    {
+                        PrimaryButtonText = _resources.GetString("CommonSaveAsTxtButton"),
+                        MaxHeight = 500,
+                        UseMonospace = true,
+                    });
 
                 if (result == ContentDialogResult.Primary)
                 {

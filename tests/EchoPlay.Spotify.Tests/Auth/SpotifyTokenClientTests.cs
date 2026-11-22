@@ -46,13 +46,17 @@ namespace EchoPlay.Spotify.Tests.Auth
         [Fact]
         public async Task GetAccessTokenAsync_SerializesParallelRequests_ToSingleRoundtrip()
         {
-            RecordingHandler handler = new() { ResponseDelay = TimeSpan.FromMilliseconds(50) };
+            // Die erste Anfrage hängt an der Schleuse, bis alle zehn gestellt sind; erst dann
+            // antwortet der Server. Die übrigen neun müssen auf sie warten statt selbst zu fragen.
+            TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            RecordingHandler handler = new() { Gate = gate.Task };
             handler.EnqueueToken("token-shared", expiresInSeconds: 3600);
             SpotifyTokenClient tokenClient = CreateTokenClient(handler);
 
             Task<string>[] tasks = Enumerable.Range(0, 10)
                 .Select(_ => tokenClient.GetAccessTokenAsync(cancellationToken: TestContext.Current.CancellationToken))
                 .ToArray();
+            gate.SetResult();
             string[] tokens = await Task.WhenAll(tasks);
 
             Assert.All(tokens, t => Assert.Equal("token-shared", t));
@@ -62,7 +66,8 @@ namespace EchoPlay.Spotify.Tests.Auth
         [Fact]
         public async Task GetAccessTokenAsync_Throws_WhenCancellationRequested()
         {
-            RecordingHandler handler = new() { ResponseDelay = TimeSpan.FromSeconds(5) };
+            // Die Schleuse geht nie auf: Die Antwort kommt erst gar nicht, nur der Abbruch.
+            RecordingHandler handler = new() { Gate = new TaskCompletionSource().Task };
             handler.EnqueueToken("token-never-delivered", expiresInSeconds: 3600);
             SpotifyTokenClient tokenClient = CreateTokenClient(handler);
 
@@ -142,7 +147,8 @@ namespace EchoPlay.Spotify.Tests.Auth
 
             public int CallCount => _callCount;
 
-            public TimeSpan ResponseDelay { get; set; } = TimeSpan.Zero;
+            /// <summary>Die Antwort wartet, bis diese Aufgabe fertig ist; ohne Angabe sofort.</summary>
+            public Task Gate { get; set; } = Task.CompletedTask;
 
             public void EnqueueToken(string token, int expiresInSeconds)
                 => _responses.Enqueue((token, expiresInSeconds));
@@ -153,11 +159,7 @@ namespace EchoPlay.Spotify.Tests.Auth
             {
                 _ = Interlocked.Increment(ref _callCount);
 
-                if (ResponseDelay > TimeSpan.Zero)
-                {
-                    // Simulierte Server-Latenz für den Parallel-Cache-Test.
-                    await Task.Delay(ResponseDelay, cancellationToken).ConfigureAwait(false);
-                }
+                await Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 if (!_responses.TryDequeue(out (string Token, int ExpiresIn) entry))
                 {

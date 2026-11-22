@@ -1,12 +1,8 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

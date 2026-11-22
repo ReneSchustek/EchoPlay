@@ -1,9 +1,5 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Tests.Fakes;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Infrastructure
 {

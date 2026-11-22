@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 
 namespace EchoPlay.App.Views
 {
@@ -54,8 +53,10 @@ namespace EchoPlay.App.Views
 
             Microsoft.UI.Xaml.Documents.Paragraph paragraph = new();
 
-            foreach (string entry in EchoPlay.App.Helpers.LogViewBuilder.BuildLines(
-                ViewModel.LogViewerVM.LogEntries, ViewModel.LogViewerVM.IsLogViewerAvailable))
+            IReadOnlyList<string> lines = ViewModel.LogViewerVM.IsLogViewerAvailable
+                ? EchoPlay.App.Helpers.LogViewBuilder.BuildLines(ViewModel.LogViewerVM.LogEntries)
+                : EchoPlay.App.Helpers.LogViewBuilder.UnavailableLines();
+            foreach (string entry in lines)
             {
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = entry });
                 paragraph.Inlines.Add(new Microsoft.UI.Xaml.Documents.LineBreak());

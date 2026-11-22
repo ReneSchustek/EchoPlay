@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.Globalization;
 using EchoPlay.Core.Replication.Packaging;
 using EchoPlay.Data.Context;
@@ -104,7 +105,7 @@ namespace EchoPlay.App.Services
             string archivePath, string targetRoot, IProgress<double>? progress, CancellationToken cancellationToken)
         {
             dataTransfer.DiscardImport();
-            string dataPackage = Path.Combine(Path.GetDirectoryName(databaseFile.FilePath)!, UnpackedDataPackageName);
+            string dataPackage = Path.Combine(ParentFolder.Of(databaseFile.FilePath), UnpackedDataPackageName);
 
             LibraryExtraction extraction = await LibraryArchiveExtractor.ExtractAsync(
                 archivePath, targetRoot, dataPackage, progress, cancellationToken).ConfigureAwait(false);

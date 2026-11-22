@@ -1,8 +1,5 @@
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using System;
-using System.Collections.Generic;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

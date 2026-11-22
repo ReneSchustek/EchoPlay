@@ -67,13 +67,13 @@ namespace EchoPlay.Logger.DependencyInjection
 
             if (options.EnableFileLogging)
             {
-                sinks.Add(new FileSink(options.LogDirectory, formatter, options.MaxFileSizeMb));
+                sinks.Add(new FileSink(options.LogDirectory, formatter, options.MaxFileSizeMb, options.TimeProvider));
             }
 
             if (options.EnableJsonSink)
             {
                 string jsonDir = options.JsonLogDirectory ?? options.LogDirectory;
-                sinks.Add(new JsonLogSink(jsonDir, options.MaxFileSizeMb));
+                sinks.Add(new JsonLogSink(jsonDir, options.MaxFileSizeMb, options.TimeProvider));
             }
 
             if (options.EnableMemorySink)

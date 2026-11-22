@@ -4,15 +4,11 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models;
-using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
 using System.Globalization;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -24,25 +20,20 @@ namespace EchoPlay.App.ViewModels
     public sealed class NewEpisodeCardViewModel : ObservableObject
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IErrorDialogService _errorDialogService;
-        private readonly IConfirmationDialogService _confirmationDialogService;
-        private readonly IPlayerService _playerService;
-        private readonly ILocalizationService? _localizationService;
+        private readonly NewEpisodeCardServices _services;
+        private readonly NewEpisodeCardData _data;
         private readonly IClock _clock;
 
         /// <summary>
         /// Veröffentlichungsdatum der Folge. Entscheidet beim Klick darüber, ob der Sprung zum
         /// Anbieter sinnvoll ist, denn vor dem Erscheinen steht dort nur eine Vorabveröffentlichung.
         /// </summary>
-        private readonly DateTime? _releaseDate;
 
         /// <summary>
         /// Anbieter-Kennungen der Folge, mitgegeben statt nachgeladen: Eine Neuerscheinung
         /// stammt vom Anbieter und ist noch keine gespeicherte Folge; ihre Id steht in keiner
         /// Tabelle, ein Nachladen fände nie etwas.
         /// </summary>
-        private readonly string? _spotifyAlbumId;
-        private readonly string? _appleMusicAlbumId;
 
         private PlaybackStatus _status;
         private double _progressPercent;
@@ -52,78 +43,48 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert das Kachel-ViewModel mit allen Stammdaten und benötigten Services.
         /// </summary>
-        /// <param name="episodeId">ID der darzustellenden Episode.</param>
-        /// <param name="seriesId">ID der zugehörigen Serie.</param>
-        /// <param name="seriesName">Anzeigename der Serie.</param>
-        /// <param name="episodeTitle">Titel der Episode.</param>
+        /// <param name="data">Was die Karte anzeigt.</param>
         /// <param name="coverImage">Cover-Bild der Serie; kann null sein.</param>
-        /// <param name="status">Aktueller Wiedergabestatus.</param>
-        /// <param name="progressPercent">Fortschritt in Prozent (0–100) für den Fortschrittsbalken.</param>
-        /// <param name="hasLocalTrack">Gibt an, ob lokale Audiodateien vorhanden sind.</param>
-        /// <param name="isAnnounced">Gibt an, ob die Episode nur angekündigt (noch nicht verfügbar) ist.</param>
         /// <param name="scopeFactory">Für scoped DB-Zugriffe in den Commands.</param>
-        /// <param name="errorDialogService">Für Info-Dialoge bei Ankündigungen.</param>
-        /// <param name="confirmationDialogService">Für Bestätigungs-Dialoge vor Statusänderungen.</param>
-        /// <param name="playerService">Für das Starten der Wiedergabe.</param>
-        /// <param name="episodeNumber">Folgennummer für die Anzeige, oder null wenn nicht bekannt.</param>
-        /// <param name="releaseDate">Erscheinungsdatum für Ankündigungen, oder null.</param>
-        /// <param name="localizationService">Liefert lokalisierte UI-Strings. Nullable für Tests.</param>
+        /// <param name="services">Dialoge, Wiedergabe und Texte für die Befehle der Karte.</param>
         /// <param name="clock">Abstrahierte Uhr für testbare Zeitstempel. Nullable, Fallback auf <see cref="SystemClock"/>.</param>
-        /// <param name="spotifyAlbumId">Spotify-Album-Kennung der Folge, sofern bekannt.</param>
-        /// <param name="appleMusicAlbumId">Apple-Music-Album-Kennung der Folge, sofern bekannt.</param>
         public NewEpisodeCardViewModel(
-            Guid episodeId,
-            Guid seriesId,
-            string seriesName,
-            string episodeTitle,
+            NewEpisodeCardData data,
             BitmapImage? coverImage,
-            PlaybackStatus status,
-            double progressPercent,
-            bool hasLocalTrack,
-            bool isAnnounced,
             IServiceScopeFactory scopeFactory,
-            IErrorDialogService errorDialogService,
-            IConfirmationDialogService confirmationDialogService,
-            IPlayerService playerService,
-            int? episodeNumber = null,
-            DateTime? releaseDate = null,
-            ILocalizationService? localizationService = null,
-            IClock? clock = null,
-            string? spotifyAlbumId = null,
-            string? appleMusicAlbumId = null)
+            NewEpisodeCardServices services,
+            IClock? clock = null)
         {
-            _spotifyAlbumId = spotifyAlbumId;
-            _appleMusicAlbumId = appleMusicAlbumId;
-            ArgumentNullException.ThrowIfNull(seriesName);
-            ArgumentNullException.ThrowIfNull(episodeTitle);
+            ArgumentNullException.ThrowIfNull(data);
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(data.SeriesName);
+            ArgumentNullException.ThrowIfNull(data.EpisodeTitle);
+            ILocalizationService? localizationService = services.LocalizationService;
+            _data = data;
+            _services = services;
             _clock = clock ?? new SystemClock();
-            EpisodeId = episodeId;
-            SeriesId = seriesId;
-            SeriesName = seriesName;
-            EpisodeTitle = EpisodeCardLabels.CleanEpisodeTitle(episodeTitle, seriesName);
+            EpisodeId = data.EpisodeId;
+            SeriesId = data.SeriesId;
+            SeriesName = data.SeriesName;
+            EpisodeTitle = EpisodeCardLabels.CleanEpisodeTitle(data.EpisodeTitle, data.SeriesName);
             _coverImage = coverImage;
-            EpisodeNumber = episodeNumber;
-            _localizationService = localizationService;
-            _releaseDate = releaseDate;
+            EpisodeNumber = data.EpisodeNumber;
 
-            EpisodeNumberText = FormatEpisodeNumber(localizationService, episodeNumber);
-            IsOnlineOnly = !hasLocalTrack;
+            EpisodeNumberText = FormatEpisodeNumber(localizationService, data.EpisodeNumber);
+            IsOnlineOnly = !data.HasLocalTrack;
 
-            InfoLineText = EpisodeCardLabels.InfoLine(localizationService, episodeNumber, releaseDate, isAnnounced, hasLocalTrack);
-            ReleaseDateText = FormatFutureReleaseDate(releaseDate, _clock.UtcNow.Date);
+            InfoLineText = EpisodeCardLabels.InfoLine(localizationService, data.EpisodeNumber, data.ReleaseDate, data.IsAnnounced, data.HasLocalTrack);
+            ReleaseDateText = FormatFutureReleaseDate(data.ReleaseDate, _clock.UtcNow.Date);
 
             (BadgeText, BadgeVisibility, BadgeBrush) =
-                EpisodeCardLabels.Badge(localizationService, isAnnounced, releaseDate, _clock.UtcNow.Date);
+                EpisodeCardLabels.Badge(localizationService, data.IsAnnounced, data.ReleaseDate, _clock.UtcNow.Date);
 
-            _status = status;
-            _progressPercent = progressPercent;
-            HasLocalTrack = hasLocalTrack;
-            IsAnnounced = isAnnounced;
+            _status = data.Status;
+            _progressPercent = data.ProgressPercent;
+            HasLocalTrack = data.HasLocalTrack;
+            IsAnnounced = data.IsAnnounced;
 
             _scopeFactory = scopeFactory;
-            _errorDialogService = errorDialogService;
-            _confirmationDialogService = confirmationDialogService;
-            _playerService = playerService;
 
             PlayCommand = new RelayCommand(() => _ = PlayAsync());
             MarkAsPlayedCommand = new RelayCommand(() => _ = MarkAsPlayedAsync());
@@ -160,13 +121,13 @@ namespace EchoPlay.App.ViewModels
         /// Automation-Name der Cover-Schaltfläche: nennt die Aktion und die Folge.
         /// </summary>
         public string PlayAutomationName => AutomationNameFormatter.Format(
-            _localizationService, "TilePlayAutomationName", "Abspielen: {0}", EpisodeTitle);
+            _services.LocalizationService, "TilePlayAutomationName", "Abspielen: {0}", EpisodeTitle);
 
         /// <summary>
         /// Automation-Name der Kontextmenü-Schaltfläche.
         /// </summary>
         public string ActionsAutomationName => AutomationNameFormatter.Format(
-            _localizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", EpisodeTitle);
+            _services.LocalizationService, "TileActionsAutomationName", "Weitere Aktionen: {0}", EpisodeTitle);
 
         /// <summary>Episodennummer oder null wenn keine Nummer bekannt ist.</summary>
         public int? EpisodeNumber { get; }
@@ -324,20 +285,20 @@ namespace EchoPlay.App.ViewModels
             // Album vollständig zur Verfügung steht, lohnt der Sprung zum Anbieter. Apple Music
             // führt angekündigte Alben zwar schon als Vorabveröffentlichung, zu hören gibt es
             // dort aber nichts, und der Nutzer landet außerhalb der Anwendung.
-            bool notYetReleased = _releaseDate.HasValue && _releaseDate.Value.Date > _clock.UtcNow.Date;
+            bool notYetReleased = _data.ReleaseDate.HasValue && _data.ReleaseDate.Value.Date > _clock.UtcNow.Date;
 
-            if (notYetReleased || (IsAnnounced && !_releaseDate.HasValue))
+            if (notYetReleased || (IsAnnounced && !_data.ReleaseDate.HasValue))
             {
-                await _errorDialogService.ShowAsync(
-                    _localizationService?.Get("EpisodeNotAvailableTitle") ?? "Noch nicht verfügbar",
-                    _localizationService?.Get("EpisodeNotAvailableMessage")
+                await _services.ErrorDialogService.ShowAsync(
+                    _services.LocalizationService?.Get("EpisodeNotAvailableTitle") ?? "Noch nicht verfügbar",
+                    _services.LocalizationService?.Get("EpisodeNotAvailableMessage")
                         ?? "Diese Episode ist noch nicht lokal verfügbar und kann noch nicht abgespielt werden.",
                     DialogKey.EpisodeNotAvailable);
                 return;
             }
 
             EpisodeLaunchResult result = await PlaybackLauncher.PlayOrOpenProviderAsync(
-                _scopeFactory, _playerService, EpisodeId, SeriesName, EpisodeTitle, _spotifyAlbumId, _appleMusicAlbumId);
+                _scopeFactory, _services.PlayerService, new EpisodeLaunchRequest(EpisodeId, SeriesName, EpisodeTitle, _data.SpotifyAlbumId, _data.AppleMusicAlbumId));
 
             if (result != EpisodeLaunchResult.NothingToPlay)
             {
@@ -346,9 +307,9 @@ namespace EchoPlay.App.ViewModels
 
             // „Noch nicht verfügbar" trifft nur den angekündigten Fall oben. Hier gibt es die Folge; sie ist nur
             // nirgends erreichbar.
-            await _errorDialogService.ShowAsync(
-                _localizationService?.Get("EpisodeNotPlayableTitle") ?? "Nicht abspielbar",
-                _localizationService?.Get("EpisodeNotPlayableMessage")
+            await _services.ErrorDialogService.ShowAsync(
+                _services.LocalizationService?.Get("EpisodeNotPlayableTitle") ?? "Nicht abspielbar",
+                _services.LocalizationService?.Get("EpisodeNotPlayableMessage")
                     ?? "Diese Folge liegt nicht auf diesem Rechner, und es ist kein Anbieter hinterlegt, bei dem sie geöffnet werden könnte.",
                 DialogKey.EpisodeNotPlayable);
         }
@@ -359,7 +320,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task MarkAsPlayedAsync()
         {
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
+            bool confirmed = await _services.ConfirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("EpisodeMarkPlayedTitle"),
                 SafeResourceLoader.Get("EpisodeMarkPlayedMessage"),
                 DialogKey.EpisodeMarkPlayed);
@@ -384,7 +345,7 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private async Task MarkAsUnplayedAsync()
         {
-            bool confirmed = await _confirmationDialogService.ConfirmAsync(
+            bool confirmed = await _services.ConfirmationDialogService.ConfirmAsync(
                 SafeResourceLoader.Get("EpisodeMarkUnplayedTitle"),
                 SafeResourceLoader.Get("EpisodeMarkUnplayedMessage"),
                 DialogKey.EpisodeMarkUnplayed);

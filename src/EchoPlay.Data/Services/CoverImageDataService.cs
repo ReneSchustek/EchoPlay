@@ -5,12 +5,8 @@ using EchoPlay.Data.Internal;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Data.Services
 {

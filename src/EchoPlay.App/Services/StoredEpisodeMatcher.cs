@@ -1,8 +1,5 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EchoPlay.App.Services
 {
@@ -156,7 +153,7 @@ namespace EchoPlay.App.Services
         {
             return stored
                 .Where(episode => !string.IsNullOrEmpty(folderOf(episode)))
-                .GroupBy(episode => folderOf(episode)!, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(episode => folderOf(episode)!, StringComparer.OrdinalIgnoreCase) // nach dem Filter oben nie null
                 .Where(group => group.Count() == 1)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         }

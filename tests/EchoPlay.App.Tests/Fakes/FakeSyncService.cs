@@ -1,11 +1,7 @@
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.LocalLibrary.Scanning;
-using System;
-using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {
@@ -32,8 +28,8 @@ namespace EchoPlay.App.Tests.Fakes
         /// <summary>Gibt an, wie oft <see cref="SyncAsync"/> aufgerufen wurde.</summary>
         public int SyncCallCount { get; private set; }
 
-        /// <summary>Gibt an, ob der letzte Aufruf <c>forceImportAll = true</c> gesetzt hatte.</summary>
-        public bool LastForceImportAll { get; private set; }
+        /// <summary>Der Umfang des letzten Aufrufs.</summary>
+        public SyncImportScope LastImportScope { get; private set; }
 
         /// <summary>
         /// Stände, die der Lauf meldet, bevor er sein Ergebnis liefert. Damit lässt sich
@@ -44,12 +40,12 @@ namespace EchoPlay.App.Tests.Fakes
         /// <inheritdoc/>
         public Task<SyncResult> SyncAsync(
             IProgress<ScanProgress>? progress = null,
-            bool forceImportAll = false,
+            SyncImportScope importScope = SyncImportScope.AsConfigured,
             IProgress<Series>? onSeriesSynced = null,
             CancellationToken cancellationToken = default)
         {
             SyncCallCount++;
-            LastForceImportAll = forceImportAll;
+            LastImportScope = importScope;
 
             foreach (ScanProgress step in ProgressSteps)
             {

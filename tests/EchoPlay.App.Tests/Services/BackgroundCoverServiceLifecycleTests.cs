@@ -1,10 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
-using System;
 using System.Diagnostics;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -27,9 +23,9 @@ namespace EchoPlay.App.Tests.Services
 
             BackgroundCoverService service = CreateService(new NoopServiceScopeFactory(), options);
 
+            // Gleich, ob der Lauf schon in der Anfangswartezeit steht oder noch gar nicht begonnen
+            // hat: Er beobachtet den Abbruch, und StopAsync endet weit vor dem Timeout.
             service.Start();
-            // Kurz warten, damit RunAsync bis zum ersten await Task.Delay(InitialDelay, ct) läuft.
-            await Task.Delay(50, cancellationToken: TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
             await service.StopAsync(TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
@@ -58,8 +54,7 @@ namespace EchoPlay.App.Tests.Services
             BackgroundCoverService service = CreateService(hangingFactory, options);
 
             service.Start();
-            // Kurz warten, damit RunAsync in den blockierenden CreateScope()-Aufruf läuft.
-            await Task.Delay(100, cancellationToken: TestContext.Current.CancellationToken);
+            await hangingFactory.Entered.WaitAsync(TestContext.Current.CancellationToken);
 
             Stopwatch sw = Stopwatch.StartNew();
             await service.StopAsync(TimeSpan.FromMilliseconds(500), cancellationToken: TestContext.Current.CancellationToken);
@@ -119,13 +114,16 @@ namespace EchoPlay.App.Tests.Services
             FakeSpotifyCredentialStore credentialStore = new();
 
             return new BackgroundCoverService(
-                scopeFactory,
-                coverService,
-                new CoverDownloader(httpClientFactory, loggerFactory),
-                credentialStore,
-                options,
-                loggerFactory,
-                new FakeClock());
+                scopeFactory: scopeFactory,
+                sources: new CoverSources
+                {
+                    CoverService = coverService,
+                    CoverDownloader = new CoverDownloader(httpClientFactory, loggerFactory),
+                },
+                credentialStore: credentialStore,
+                options: options,
+                loggerFactory: loggerFactory,
+                clock: new FakeClock());
         }
 
         /// <summary>
@@ -148,9 +146,14 @@ namespace EchoPlay.App.Tests.Services
             : Microsoft.Extensions.DependencyInjection.IServiceScopeFactory, IDisposable
         {
             private readonly ManualResetEventSlim _release = new(false);
+            private readonly TaskCompletionSource _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            /// <summary>Erfüllt, sobald der Dienst im blockierenden Aufruf angekommen ist.</summary>
+            public Task Entered => _entered.Task;
 
             public Microsoft.Extensions.DependencyInjection.IServiceScope CreateScope()
             {
+                _ = _entered.TrySetResult();
                 // Bewusst ohne CancellationToken-Argument: simuliert Code, der CT ignoriert.
                 _release.Wait(cancellationToken: TestContext.Current.CancellationToken);
                 throw new InvalidOperationException("Released — Iteration wird hart abgebrochen.");

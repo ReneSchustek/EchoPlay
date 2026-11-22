@@ -1,17 +1,12 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
-using EchoPlay.Core.Abstractions;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -127,23 +122,23 @@ namespace EchoPlay.App.ViewModels
             BitmapImage? cover = await CoverFactory.BuildEpisodeCoverAsync(episode)
                                  ?? await CoverFactory.BuildSeriesCoverAsync(series);
 
-            return new EpisodeTileViewModel(
-                episodeId: episode.Id,
-                episodeNumber: episode.EpisodeNumber,
-                title: episode.Title,
-                totalDuration: episode.Duration > TimeSpan.Zero ? episode.Duration : null,
-                playbackStatus: playbackStatus,
-                releaseDate: episode.ReleaseDate,
-                playEpisode: () => playEpisode(capturedId),
-                progressPercent: PlaybackStatusResolver.ProgressPercent(episodeState, episode.Duration),
-                isSpecialEpisode: episode.EpisodeNumber is null or 0,
-                coverImage: cover,
-                localizationService: _localizationService,
-                spotifyAlbumId: episode.SpotifyAlbumId,
-                hasLocalTrack: episode.LocalTrackCount is > 0,
-                appleMusicAlbumId: episode.AppleMusicAlbumId,
-                seriesTitle: series?.Title ?? string.Empty,
-                hasOpenPosition: PlaybackStatusResolver.HasOpenPosition(episodeState, episode.Duration));
+            EpisodeTileData data = new()
+            {
+                EpisodeId = episode.Id,
+                EpisodeNumber = episode.EpisodeNumber,
+                Title = episode.Title,
+                TotalDuration = episode.Duration > TimeSpan.Zero ? episode.Duration : null,
+                PlaybackStatus = playbackStatus,
+                ReleaseDate = episode.ReleaseDate,
+                ProgressPercent = PlaybackStatusResolver.ProgressPercent(episodeState, episode.Duration),
+                IsSpecialEpisode = episode.EpisodeNumber is null or 0,
+                SpotifyAlbumId = episode.SpotifyAlbumId,
+                HasLocalTrack = episode.LocalTrackCount is > 0,
+                AppleMusicAlbumId = episode.AppleMusicAlbumId,
+                SeriesTitle = series?.Title ?? string.Empty,
+                HasOpenPosition = PlaybackStatusResolver.HasOpenPosition(episodeState, episode.Duration),
+            };
+            return new EpisodeTileViewModel(data, () => playEpisode(capturedId), cover, _localizationService);
         }
 
         /// <summary>Baut den Fortschrittstext, etwa „42 von 229 Folgen gehört".</summary>

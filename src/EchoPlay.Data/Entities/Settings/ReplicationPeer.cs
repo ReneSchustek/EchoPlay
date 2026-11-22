@@ -14,7 +14,7 @@ namespace EchoPlay.Data.Entities.Settings
     /// mit einem Datenpaket von einem anderen Gerät, stimmen sie auch dort, denn das Paket enthält
     /// genau den Stand, den sie beschreiben.
     /// </remarks>
-    public class ReplicationPeer : BaseEntity
+    public sealed class ReplicationPeer : BaseEntity
     {
         /// <summary>Geräte-Kennung, eindeutig.</summary>
         [DataScope(DataScope.Cache)]

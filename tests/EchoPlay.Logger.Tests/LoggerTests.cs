@@ -13,6 +13,19 @@ namespace EchoPlay.Logger.Tests
         /// Eine Debug-Nachricht wird bei Minimum-Level Trace weitergeleitet.
         /// </summary>
         [Fact]
+        public void Info_TimestampComesFromTheOptionsClock()
+        {
+            CapturingSink sink = new();
+            DateTimeOffset now = new(2026, 3, 29, 1, 30, 0, TimeSpan.Zero);
+            Microsoft.Extensions.Time.Testing.FakeTimeProvider clock = new(now);
+            EchoPlay.Logger.Core.Logger logger = new("Kat", [sink], new Configuration.LoggerOptions { TimeProvider = clock });
+
+            logger.Info("Testmeldung");
+
+            Assert.Equal(now.UtcDateTime, Assert.Single(sink.Entries).Timestamp);
+        }
+
+        [Fact]
         public void Debug_MinimumLevelIsTrace_ForwardsToSink()
         {
             CapturingSink sink = new();

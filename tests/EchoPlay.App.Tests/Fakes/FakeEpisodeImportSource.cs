@@ -1,8 +1,5 @@
 using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

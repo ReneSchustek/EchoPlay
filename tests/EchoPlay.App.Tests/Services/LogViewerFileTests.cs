@@ -3,11 +3,6 @@ using EchoPlay.App.Services;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Management;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

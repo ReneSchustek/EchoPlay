@@ -1,8 +1,4 @@
 using EchoPlay.App.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Helpers
 {

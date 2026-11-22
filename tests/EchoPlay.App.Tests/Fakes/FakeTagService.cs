@@ -1,9 +1,5 @@
 using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

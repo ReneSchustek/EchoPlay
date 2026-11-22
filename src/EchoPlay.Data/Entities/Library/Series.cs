@@ -8,7 +8,7 @@ namespace EchoPlay.Data.Entities.Library
     /// Repräsentiert eine Hörspielserie
     /// (z. B. "Die drei ???", "Fünf Freunde").
     /// </summary>
-    public class Series : BaseEntity
+    public sealed class Series : BaseEntity
     {
         /// <summary>
         /// Titel der Hörspielserie.

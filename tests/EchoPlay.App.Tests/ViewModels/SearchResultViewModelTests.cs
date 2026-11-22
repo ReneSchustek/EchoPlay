@@ -2,17 +2,11 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System.Collections.Generic;
-using System.Net.Http;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -43,12 +37,15 @@ namespace EchoPlay.App.Tests.ViewModels
             };
 
             SearchResultViewModel sut = new(
-                series,
+                importSeries: series,
                 isAlreadyImported: false,
-                importService: null!,
-                errorDialogService: new FakeErrorDialogService(),
-                localizationService: new FakeLocalizationService(),
-                backgroundCoverService: coverService);
+                services: new SearchResultServices
+                {
+                    ImportService = null!,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    BackgroundCoverService = coverService,
+                });
 
             await (sut.CoverLoadTask ?? Task.CompletedTask);
 
@@ -77,12 +74,15 @@ namespace EchoPlay.App.Tests.ViewModels
             };
 
             SearchResultViewModel sut = new(
-                series,
+                importSeries: series,
                 isAlreadyImported: false,
-                importService: null!,
-                errorDialogService: new FakeErrorDialogService(),
-                localizationService: new FakeLocalizationService(),
-                backgroundCoverService: coverService);
+                services: new SearchResultServices
+                {
+                    ImportService = null!,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    BackgroundCoverService = coverService,
+                });
 
             await (sut.CoverLoadTask ?? Task.CompletedTask);
 
@@ -118,12 +118,15 @@ namespace EchoPlay.App.Tests.ViewModels
             };
 
             SearchResultViewModel sut = new(
-                series,
+                importSeries: series,
                 isAlreadyImported: false,
-                importService: null!,
-                errorDialogService: new FakeErrorDialogService(),
-                localizationService: new FakeLocalizationService(),
-                backgroundCoverService: coverService,
+                services: new SearchResultServices
+                {
+                    ImportService = null!,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    BackgroundCoverService = coverService,
+                },
                 cancellationToken: cts.Token);
 
             await (sut.CoverLoadTask ?? Task.CompletedTask);
@@ -279,11 +282,14 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new SearchResultViewModel(
-                hit,
-                isAlreadyImported,
-                importService,
-                errorDialogService ?? new FakeErrorDialogService(),
-                new FakeLocalizationService(),
+                importSeries: hit,
+                isAlreadyImported: isAlreadyImported,
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = errorDialogService ?? new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                },
                 onImportCompleted: onImportCompleted);
         }
 

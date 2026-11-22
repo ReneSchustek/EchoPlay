@@ -5,9 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {
@@ -45,10 +43,11 @@ namespace EchoPlay.App.Views
             _sectionHandler = new Helpers.LetterSectionSplitHandler<LocalArtistCardViewModel>(
                 new Helpers.ItemsControlSectionHost(TopSectionsHost),
                 new Helpers.ItemsControlSectionHost(BottomSectionsHost),
-                () => ViewModel.ArtistsVM.Artists,
-                artist => artist.Title,
-                () => ViewModel.ArtistsVM.SelectedArtistIndex,
-                () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 16),
+                new Helpers.LetterSectionSource<LocalArtistCardViewModel>(
+                    () => ViewModel.ArtistsVM.Artists,
+                    artist => artist.Title,
+                    () => ViewModel.ArtistsVM.SelectedArtistIndex,
+                    () => Math.Max(Helpers.AccordionSplitHelper.SeriesTileSlotWidth, ActualWidth - 16)),
                 _resources.GetString("LokalLetterSectionFormat"));
 
             SeriesAlphabetBar.AutomationNameFormat = _resources.GetString("LokalAlphabetJumpFormat");

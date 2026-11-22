@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -65,7 +66,7 @@ namespace EchoPlay.Core.Replication.Packaging
         /// <param name="manifest">Das gelesene Manifest.</param>
         /// <param name="error">Der Grund der Ablehnung, für das Protokoll.</param>
         /// <returns><see langword="true"/>, wenn das Manifest gültig ist.</returns>
-        public static bool TryParse(string? json, out PackageManifest? manifest, out string? error)
+        public static bool TryParse(string? json, [NotNullWhen(true)] out PackageManifest? manifest, out string? error)
         {
             manifest = null;
             error = StrictJson.TryDeserialize(
@@ -78,6 +79,7 @@ namespace EchoPlay.Core.Replication.Packaging
                 return false;
             }
 
+            // Validate hat alle Pflichtfelder auf null geprüft; ab hier ist das Dokument vollständig.
             manifest = new PackageManifest(
                 document!.FormatVersion,
                 document.AppVersion!,

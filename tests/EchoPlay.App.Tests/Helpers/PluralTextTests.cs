@@ -1,6 +1,5 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Tests.Fakes;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.Helpers
 {

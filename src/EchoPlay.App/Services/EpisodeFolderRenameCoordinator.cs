@@ -5,12 +5,6 @@ using EchoPlay.LocalLibrary.Abstractions;
 using EchoPlay.LocalLibrary.Models;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -123,7 +117,7 @@ namespace EchoPlay.App.Services
             Episode episode,
             string newFolder)
         {
-            string oldFolder = episode.LocalFolderPath!;
+            string oldFolder = episode.LocalFolderPath!; // der Aufrufer hat nur Folgen mit Ordner ausgewählt
             episode.LocalFolderPath = newFolder;
             await episodeService.UpdateAsync(episode).ConfigureAwait(false);
 

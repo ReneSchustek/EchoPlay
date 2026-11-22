@@ -1,12 +1,9 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -60,8 +57,15 @@ namespace EchoPlay.App.Tests.ViewModels
             => new(_source, _clock, Berlin, German, _log) { IsAvailable = true };
 
         private static ReleaseCalendarItemViewModel Item(string title) => new(
-            Guid.NewGuid(), "TKKG", title, "14. November · Nr. 230", null, null,
-            new DateTime(2026, 11, 14, 8, 0, 0, DateTimeKind.Utc), false, ReleaseAvailability.Missing);
+            new ReleaseCalendarItemData
+            {
+                SeriesId = Guid.NewGuid(),
+                SeriesName = "TKKG",
+                EpisodeTitle = title,
+                DateLine = "14. November · Nr. 230",
+                ReleaseDateUtc = new DateTime(2026, 11, 14, 8, 0, 0, DateTimeKind.Utc),
+                Availability = ReleaseAvailability.Missing,
+            });
 
         [Fact]
         public async Task LoadAsync_ShowsTheCurrentMonth()
@@ -210,11 +214,7 @@ namespace EchoPlay.App.Tests.ViewModels
 
             // Das Abbrechen des hängenden Ladens läuft über einen Rückruf im Thread-Pool; der
             // zweite Wechsel endet deshalb erst danach.
-            DateTime giveUp = DateTime.UtcNow.AddSeconds(5);
-            while (vm.SelectedMonth != new ReleaseCalendarMonth(2026, 10) && DateTime.UtcNow < giveUp)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
+            await Eventually.TrueAsync(() => vm.SelectedMonth == new ReleaseCalendarMonth(2026, 10));
 
             Assert.Equal(new ReleaseCalendarMonth(2026, 10), vm.SelectedMonth);
             Assert.DoesNotContain(_log.Entries, e => e.Level == "Warning");

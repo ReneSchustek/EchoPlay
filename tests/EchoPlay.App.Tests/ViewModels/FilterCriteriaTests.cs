@@ -1,6 +1,4 @@
 using EchoPlay.App.ViewModels;
-using System;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -18,16 +16,18 @@ namespace EchoPlay.App.Tests.ViewModels
             int total = 1,
             bool isIncomplete = false) =>
             new(
-                seriesId: Guid.NewGuid(),
-                title: title,
+                new LocalArtistCardData
+                {
+                    SeriesId = Guid.NewGuid(),
+                    Title = title,
+                    LocalEpisodeCount = local,
+                    TotalEpisodeCount = total,
+                    IsFavorite = isFavorite,
+                    IsWatched = isWatched,
+                    IsIncomplete = isIncomplete,
+                },
                 coverImage: null,
-                localFolderPath: null,
-                localEpisodeCount: local,
-                totalEpisodeCount: total,
-                isFavorite: isFavorite,
-                isWatched: isWatched,
-                scopeFactory: null!,
-                isIncomplete: isIncomplete);
+                scopeFactory: null!);
 
         [Fact]
         public void ArtistFilter_WithoutCriteria_KeepsEverything()

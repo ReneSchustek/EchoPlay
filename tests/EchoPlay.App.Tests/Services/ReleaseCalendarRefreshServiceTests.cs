@@ -6,9 +6,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -72,6 +69,29 @@ namespace EchoPlay.App.Tests.Services
                 }
             ]
         };
+
+        [Fact]
+        public async Task StopAsync_SilencesTheChangeSignal()
+        {
+            // Beim Beenden käme die Meldung erst an, wenn die Startseite ihren Container schon
+            // verloren hat; das Nachladen liefe ins Leere und hinterließe eine Warnung.
+            await AddSeriesAsync(1);
+            Guid seriesId = _series.All[0].Id;
+            ReleaseCalendarRefreshService running = Build(new FakeOnlineEpisodeChecker([ResultFor(seriesId, 4711, Now.AddDays(5))]));
+            ReleaseCalendarRefreshService stopped = Build(new FakeOnlineEpisodeChecker([ResultFor(seriesId, 4712, Now.AddDays(6))]));
+            int runningSignals = 0;
+            int stoppedSignals = 0;
+            running.CalendarChanged += () => runningSignals++;
+            stopped.CalendarChanged += () => stoppedSignals++;
+
+            await stopped.StopAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+            _ = await running.RunOnceAsync(TestContext.Current.CancellationToken);
+            _calendar.LastRefresh = null;
+            _ = await stopped.RunOnceAsync(TestContext.Current.CancellationToken);
+
+            Assert.True(runningSignals > 0);
+            Assert.Equal(0, stoppedSignals);
+        }
 
         [Fact]
         public async Task RunOnceAsync_InOfflineMode_AsksNobody()

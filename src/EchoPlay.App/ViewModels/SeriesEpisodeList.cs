@@ -1,10 +1,6 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
-using EchoPlay.Core.Abstractions;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EchoPlay.App.ViewModels
 {

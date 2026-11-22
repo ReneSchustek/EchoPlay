@@ -13,22 +13,20 @@ namespace EchoPlay.Data.Replication
         private const int BufferSize = 1 << 20;
 
         /// <summary>
-        /// Kopiert höchstens <paramref name="maxLength"/> Byte und bricht ab, sobald mehr kommt. Die
-        /// Länge in einem Archiv ist nur eine Angabe; gezählt wird deshalb selbst.
+        /// Kopiert höchstens so viele Byte, wie <paramref name="limit"/> erlaubt, und bricht ab,
+        /// sobald mehr kommt. Die Länge in einem Archiv ist nur eine Angabe; gezählt wird deshalb selbst.
         /// </summary>
         /// <param name="source">Der Quellstrom.</param>
         /// <param name="target">Der Zielstrom.</param>
-        /// <param name="maxLength">Höchstzahl der Byte.</param>
-        /// <param name="exactLength">Ob es genau <paramref name="maxLength"/> Byte sein müssen.</param>
+        /// <param name="limit">Obergrenze, oder die genaue Länge, die kommen muss.</param>
         /// <param name="onCopied">Erhält nach jedem Block die Zahl der neu kopierten Byte; darf fehlen.</param>
         /// <param name="cancellationToken">Bricht das Kopieren ab.</param>
         /// <returns>Die Zahl der kopierten Byte und die SHA-256 in Kleinbuchstaben.</returns>
-        /// <exception cref="PackageRejectedException">Mehr als erlaubt, oder mit <paramref name="exactLength"/> weniger.</exception>
+        /// <exception cref="PackageRejectedException">Mehr als erlaubt, oder bei einer genauen Länge weniger.</exception>
         public static async Task<(long Length, string Sha256)> CopyAsync(
             Stream source,
             Stream target,
-            long maxLength,
-            bool exactLength,
+            CopyLimit limit,
             Action<long>? onCopied,
             CancellationToken cancellationToken)
         {
@@ -45,7 +43,7 @@ namespace EchoPlay.Data.Replication
                 while ((read = await source.ReadAsync(buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false)) > 0)
                 {
                     total += read;
-                    if (total > maxLength)
+                    if (total > limit.Length)
                     {
                         throw new PackageRejectedException("Ein Eintrag ist länger als angegeben.");
                     }
@@ -60,7 +58,7 @@ namespace EchoPlay.Data.Replication
                 ArrayPool<byte>.Shared.Return(buffer);
             }
 
-            if (exactLength && total != maxLength)
+            if (limit.IsExact && total != limit.Length)
             {
                 throw new PackageRejectedException("Ein Eintrag ist kürzer als angegeben.");
             }

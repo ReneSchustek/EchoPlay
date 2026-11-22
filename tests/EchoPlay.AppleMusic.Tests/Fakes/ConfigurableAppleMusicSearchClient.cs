@@ -63,6 +63,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// </summary>
         /// <param name="query">Der Suchtext.</param>
         /// <param name="limit">Maximale Anzahl der Ergebnisse.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Leere Suchantwort.</returns>
         public Task<ITunesResponseDto<ITunesArtistDto>> SearchArtistsAsync(string query, int limit = 25, CancellationToken ct = default)
         {
@@ -84,6 +85,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// Das erste Element ist ein Artist-Eintrag (simuliert das Verhalten der iTunes Lookup API).
         /// </summary>
         /// <param name="artistId">Die iTunes-Artist-ID.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Die Lookup-Antwort mit Artist- und Album-Einträgen.</returns>
         public Task<ITunesResponseDto<ITunesCollectionDto>> LookupAlbumsAsync(long artistId, CancellationToken ct = default)
         {
@@ -127,6 +129,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// Das erste Element ist ein Collection-Eintrag (simuliert das Verhalten der iTunes Lookup API).
         /// </summary>
         /// <param name="collectionId">Die iTunes-Collection-ID.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Die Lookup-Antwort mit Collection- und Track-Einträgen.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksAsync(long collectionId, CancellationToken ct = default)
         {
@@ -170,6 +173,7 @@ namespace EchoPlay.AppleMusic.Tests.Fakes
         /// einer Antwort (je Album ein Collection-Eintrag gefolgt von seinen Tracks).
         /// </summary>
         /// <param name="collectionIds">Die iTunes-Collection-IDs des Batches.</param>
+        /// <param name="ct">Signal zum Abbrechen.</param>
         /// <returns>Die Lookup-Antwort mit Collection- und Track-Einträgen aller Alben.</returns>
         public Task<ITunesResponseDto<ITunesTrackDto>> LookupTracksBatchAsync(IReadOnlyList<long> collectionIds, CancellationToken ct = default)
         {

@@ -1,6 +1,4 @@
 using EchoPlay.TagManager.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.TagManager.Abstractions
 {

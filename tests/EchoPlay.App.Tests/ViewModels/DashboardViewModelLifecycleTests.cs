@@ -1,10 +1,7 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -26,13 +23,15 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IAppSettingsDataService>(_ => new FakeAppSettingsDataService(new Data.Entities.Settings.AppSettings()));
             ServiceProvider provider = services.BuildServiceProvider();
 
-            return new DashboardViewModel(new DashboardViewModelContext(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                new FakePlayerService(),
-                new FakeLoggerFactory(),
-                Clock: new FakeClock()));
+            return new DashboardViewModel(new DashboardViewModelContext
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                PlayerService = new FakePlayerService(),
+                LoggerFactory = new FakeLoggerFactory(),
+                Clock = new FakeClock(),
+            });
         }
 
         [Fact]

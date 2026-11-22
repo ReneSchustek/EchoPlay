@@ -1,11 +1,6 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

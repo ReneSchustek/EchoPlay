@@ -2,8 +2,6 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.TagManager.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.IO;
 
 namespace EchoPlay.App.ViewModels
 {

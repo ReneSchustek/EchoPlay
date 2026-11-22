@@ -6,8 +6,6 @@ using EchoPlay.Logger.Management;
 using EchoPlay.Logger.Models;
 using EchoPlay.Logger.Sinks;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.IO;
 
 namespace EchoPlay.Logger.Tests.DependencyInjection
 {

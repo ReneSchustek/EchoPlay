@@ -2,12 +2,7 @@ using EchoPlay.App.Helpers;
 using EchoPlay.App.Models;
 using EchoPlay.Core.Models;
 using EchoPlay.TagManager.Models;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -52,39 +47,27 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Richtet die Abfrage bei MusicBrainz ein.</summary>
         /// <param name="context">Die Dienste des Tag-Managers.</param>
-        /// <param name="fileListVM">Die Dateiliste mit Auswahl und Ordner.</param>
-        /// <param name="editorVM">Die Eingabefelder.</param>
-        /// <param name="renameVM">Das Umbenennungsmuster für die anschließende Vorschau.</param>
-        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
-        /// <param name="setIsLookingUp">Schaltet die Anzeige der laufenden Abfrage.</param>
-        /// <param name="setAutoLookupStatus">Setzt den Statustext der automatischen Abfrage.</param>
-        /// <param name="setBatchProgress">Setzt den Fortschrittstext.</param>
-        /// <param name="setHasUnsavedChanges">Setzt die Markierung ungespeicherter Änderungen.</param>
-        /// <param name="refreshCommandStates">Aktualisiert die Befehle.</param>
+        /// <param name="parts">Dateiliste, Eingabefelder und Umbenennungsmuster für die anschließende Vorschau.</param>
+        /// <param name="callbacks">Anzeigen, Statustexte, Markierung ungespeicherter Änderungen und Befehle.</param>
         /// <param name="previewRenameAsync">Baut die Vorschau des Umbenennens neu.</param>
         public TagLookupActions(
             TagManagerActionsContext context,
-            TagFileListViewModel fileListVM,
-            TagEditorFieldsViewModel editorVM,
-            TagRenameViewModel renameVM,
-            Action<bool> setIsLoading,
-            Action<bool> setIsLookingUp,
-            Action<string> setAutoLookupStatus,
-            Action<string> setBatchProgress,
-            Action<bool> setHasUnsavedChanges,
-            Action refreshCommandStates,
+            TagManagerParts parts,
+            TagManagerCallbacks callbacks,
             Func<Task> previewRenameAsync)
         {
+            ArgumentNullException.ThrowIfNull(parts);
+            ArgumentNullException.ThrowIfNull(callbacks);
             _ctx = context;
-            _fileListVM = fileListVM;
-            _editorVM = editorVM;
-            _renameVM = renameVM;
-            _setIsLoading = setIsLoading;
-            _setIsLookingUp = setIsLookingUp;
-            _setAutoLookupStatus = setAutoLookupStatus;
-            _setBatchProgress = setBatchProgress;
-            _setHasUnsavedChanges = setHasUnsavedChanges;
-            _refreshCommandStates = refreshCommandStates;
+            _fileListVM = parts.FileList;
+            _editorVM = parts.Editor;
+            _renameVM = parts.Rename;
+            _setIsLoading = callbacks.SetIsLoading;
+            _setIsLookingUp = callbacks.SetIsLookingUp;
+            _setAutoLookupStatus = callbacks.SetAutoLookupStatus;
+            _setBatchProgress = callbacks.SetBatchProgress;
+            _setHasUnsavedChanges = callbacks.SetHasUnsavedChanges;
+            _refreshCommandStates = callbacks.RefreshCommandStates;
             _previewRenameAsync = previewRenameAsync;
         }
 
@@ -299,7 +282,17 @@ namespace EchoPlay.App.ViewModels
         }
 
         private static TagLookupCandidate ToCandidate(TagLookupResult result, int index) =>
-            new(index, result.Title, result.Artist, result.Album, result.Year, result.TrackCount, result.Genre, result.Source);
+            new()
+            {
+                Index = index,
+                Title = result.Title,
+                Artist = result.Artist,
+                Album = result.Album,
+                Year = result.Year,
+                TrackCount = result.TrackCount,
+                Genre = result.Genre,
+                Source = result.Source,
+            };
 
         private static List<TagLookupCandidate> ToCandidates(IReadOnlyList<TagLookupResult> results)
         {

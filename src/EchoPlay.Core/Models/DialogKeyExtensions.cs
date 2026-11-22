@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace EchoPlay.Core.Models
 {
     /// <summary>

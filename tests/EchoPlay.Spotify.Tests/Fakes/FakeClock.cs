@@ -1,5 +1,4 @@
 using EchoPlay.Core.Abstractions.Time;
-using System;
 
 namespace EchoPlay.Spotify.Tests.Fakes
 {

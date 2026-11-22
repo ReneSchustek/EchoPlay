@@ -1,5 +1,3 @@
-using System.IO;
-using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -74,7 +72,7 @@ namespace EchoPlay.App.Helpers
 
             InitializeWithWindow.Initialize(picker, windowHandle);
 
-            return picker.PickSingleFileAsync().AsTask()!;
+            return picker.PickSingleFileAsync().AsTask()!; // Projektion sagt nicht-null, bei Abbruch kommt null; ! passt nur die Annotation an
         }
     }
 }

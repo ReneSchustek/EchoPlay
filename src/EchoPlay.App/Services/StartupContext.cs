@@ -1,7 +1,5 @@
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Services
 {

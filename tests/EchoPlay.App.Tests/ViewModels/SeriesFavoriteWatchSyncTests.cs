@@ -4,8 +4,6 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -35,14 +33,12 @@ namespace EchoPlay.App.Tests.ViewModels
             (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             LocalArtistCardViewModel card = new(
-                seriesId: seriesId,
-                title: "TKKG",
+                new LocalArtistCardData
+                {
+                    SeriesId = seriesId,
+                    Title = "TKKG",
+                },
                 coverImage: null,
-                localFolderPath: null,
-                localEpisodeCount: 0,
-                totalEpisodeCount: 0,
-                isFavorite: false,
-                isWatched: false,
                 scopeFactory: scopeFactory);
 
             card.ToggleFavoriteCommand.Execute(null);
@@ -58,16 +54,19 @@ namespace EchoPlay.App.Tests.ViewModels
             (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             SeriesCardViewModel card = new(
-                id: seriesId,
-                title: "TKKG",
+                new SeriesCardData
+                {
+                    Id = seriesId,
+                    Title = "TKKG",
+                    TotalEpisodeCount = 0,
+                    NewEpisodeCount = 0,
+                    InProgressCount = 0,
+                    FinishedCount = 0,
+                    IsSubscribed = true,
+                    IsFavorite = false,
+                    IsWatched = false,
+                },
                 coverImage: null,
-                totalEpisodeCount: 0,
-                newEpisodeCount: 0,
-                inProgressCount: 0,
-                finishedCount: 0,
-                isSubscribed: true,
-                isFavorite: false,
-                isWatched: false,
                 scopeFactory: scopeFactory,
                 confirmationDialogService: new FakeConfirmationDialogService(),
                 localizationService: new FakeLocalizationService());
@@ -86,14 +85,14 @@ namespace EchoPlay.App.Tests.ViewModels
             (IServiceScopeFactory scopeFactory, Guid seriesId) = await BuildScopeAsync();
 
             LocalArtistCardViewModel card = new(
-                seriesId: seriesId,
-                title: "TKKG",
+                new LocalArtistCardData
+                {
+                    SeriesId = seriesId,
+                    Title = "TKKG",
+                    IsFavorite = true,
+                    IsWatched = true,
+                },
                 coverImage: null,
-                localFolderPath: null,
-                localEpisodeCount: 0,
-                totalEpisodeCount: 0,
-                isFavorite: true,
-                isWatched: true,
                 scopeFactory: scopeFactory);
 
             card.ToggleFavoriteCommand.Execute(null);

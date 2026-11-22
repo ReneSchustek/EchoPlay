@@ -5,10 +5,6 @@ using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -126,6 +122,23 @@ namespace EchoPlay.App.Tests.Services
         }
 
         [Fact]
+        public async Task PlayOrOpenProvider_WithoutFileIdOrTitle_ReportsNothingToPlay()
+        {
+            // Weder Datei noch Album-Kennung noch ein Titel für die Suche: Es bleibt nur der
+            // Hinweis, und keine Anwendung geht auf.
+            FakePlayerService player = new();
+
+            EpisodeLaunchResult result = await PlaybackLauncher.PlayOrOpenProviderAsync(
+                BuildScopeFactory(),
+                player,
+                new EpisodeLaunchRequest(EpisodeId, string.Empty, string.Empty),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(EpisodeLaunchResult.NothingToPlay, result);
+            Assert.Empty(player.PlayCalls);
+        }
+
+        [Fact]
         public async Task PlayOrOpenProvider_WithLocalFiles_PlaysInsteadOfOpeningTheProvider()
         {
             FakePlayerService player = new();
@@ -134,10 +147,8 @@ namespace EchoPlay.App.Tests.Services
             EpisodeLaunchResult result = await PlaybackLauncher.PlayOrOpenProviderAsync(
                 scopeFactory,
                 player,
-                EpisodeId,
-                "Die drei Fragezeichen",
-                "Folge 001",
-                cancellationToken: TestContext.Current.CancellationToken);
+                new EpisodeLaunchRequest(EpisodeId, "Die drei Fragezeichen", "Folge 001"),
+                TestContext.Current.CancellationToken);
 
             // „Erst lokal, sonst online": Liegt die Datei vor, verlässt niemand die Anwendung.
             Assert.Equal(EpisodeLaunchResult.PlayedLocally, result);

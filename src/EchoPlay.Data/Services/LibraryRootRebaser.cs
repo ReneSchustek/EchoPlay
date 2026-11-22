@@ -79,7 +79,7 @@ namespace EchoPlay.Data.Services
                 .ConfigureAwait(false);
             foreach (Series item in series)
             {
-                item.LocalFolderPath = counter.Rebase(oldRoot, newRoot, item.LocalFolderPath!);
+                item.LocalFolderPath = counter.Rebase(oldRoot, newRoot, item.LocalFolderPath!); // die Abfrage lädt nur Serien mit Ordner
             }
 
             List<Episode> episodes = await _context.Episodes
@@ -90,7 +90,7 @@ namespace EchoPlay.Data.Services
                 .ConfigureAwait(false);
             foreach (Episode episode in episodes)
             {
-                episode.LocalFolderPath = counter.Rebase(oldRoot, newRoot, episode.LocalFolderPath!);
+                episode.LocalFolderPath = counter.Rebase(oldRoot, newRoot, episode.LocalFolderPath!); // die Abfrage lädt nur Folgen mit Ordner
             }
 
             await RebaseTrackPathsAsync(counter, oldRoot, newRoot, cancellationToken).ConfigureAwait(false);

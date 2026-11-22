@@ -117,8 +117,7 @@ namespace EchoPlay.Spotify.Clients
 
                 List<SpotifyAlbumDto> albums = [.. items.EnumerateArray()
                     .Select(ReadSearchAlbum)
-                    .Where(album => album is not null)
-                    .Select(album => album!)];
+                    .OfType<SpotifyAlbumDto>()];
 
                 _logger.Info("Spotify-Albumsuche erfolgreich: {AlbumCount} Ergebnisse.", albums.Count);
                 return albums;
@@ -234,8 +233,7 @@ namespace EchoPlay.Spotify.Clients
                 Genres = item.TryGetProperty("genres", out JsonElement genres) && genres.ValueKind == JsonValueKind.Array
                     ? [.. genres.EnumerateArray()
                         .Select(g => g.GetString())
-                        .Where(g => g is not null)
-                        .Select(g => g!)]
+                        .OfType<string>()]
                     : [],
 
                 // Für EchoPlay genügt ein einzelnes Bild.

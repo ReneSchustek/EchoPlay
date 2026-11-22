@@ -1,9 +1,6 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -21,16 +18,18 @@ namespace EchoPlay.App.Tests.ViewModels
             DateTime? releaseDate = null,
             bool hasOpenPosition = false)
         {
-            return new EpisodeTileViewModel(
-                Guid.NewGuid(),
-                episodeNumber,
-                title,
-                totalDuration: TimeSpan.FromMinutes(60),
-                status,
-                releaseDate,
-                playEpisode: () => { },
-                isSpecialEpisode: isSpecialEpisode,
-                hasOpenPosition: hasOpenPosition);
+            EpisodeTileData data = new()
+            {
+                EpisodeId = Guid.NewGuid(),
+                EpisodeNumber = episodeNumber,
+                Title = title,
+                TotalDuration = TimeSpan.FromMinutes(60),
+                PlaybackStatus = status,
+                ReleaseDate = releaseDate,
+                IsSpecialEpisode = isSpecialEpisode,
+                HasOpenPosition = hasOpenPosition,
+            };
+            return new EpisodeTileViewModel(data, playEpisode: () => { });
         }
 
         private static SeriesEpisodeList BuildList(params EpisodeTileViewModel[] tiles)

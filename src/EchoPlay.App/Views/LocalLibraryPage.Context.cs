@@ -4,9 +4,6 @@ using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {
@@ -134,11 +131,14 @@ namespace EchoPlay.App.Views
                 Content.XamlRoot,
                 title: _resources.GetString("RestructureDialogTitle"),
                 content: RestructurePreviewText(preview),
-                primaryButtonText: _resources.GetString("RestructureExecuteButton"),
-                closeButtonText: _resources.GetString("CommonCancelButton"),
-                useMonospace: true,
-                monospaceFontSize: 12,
-                defaultButton: ContentDialogButton.Close);
+                new Helpers.ScrollableTextDialogOptions
+                {
+                    PrimaryButtonText = _resources.GetString("RestructureExecuteButton"),
+                    CloseButtonText = _resources.GetString("CommonCancelButton"),
+                    UseMonospace = true,
+                    MonospaceFontSize = 12,
+                    DefaultButton = ContentDialogButton.Close,
+                });
 
             // Nach dem Umbau: Bibliothek neu laden, damit die neue Struktur sichtbar wird
             if (result == ContentDialogResult.Primary
@@ -223,7 +223,10 @@ namespace EchoPlay.App.Views
                     Content.XamlRoot,
                     title: _resources.GetString("FolderRenameDialogTitle"),
                     content: ViewModels.FolderRenamePreviewText.BuildResult(result),
-                    closeButtonText: _resources.GetString("CommonCloseButton"));
+                    new Helpers.ScrollableTextDialogOptions
+                    {
+                        CloseButtonText = _resources.GetString("CommonCloseButton"),
+                    });
             });
         }
 
@@ -237,12 +240,15 @@ namespace EchoPlay.App.Views
                 Content.XamlRoot,
                 title: _resources.GetString("FolderRenameDialogTitle"),
                 content: ViewModels.FolderRenamePreviewText.Build(plan),
-                primaryButtonText: canRename ? _resources.GetString("FolderRenameExecuteButton") : null,
-                closeButtonText: _resources.GetString(canRename ? "CommonCancelButton" : "CommonCloseButton"),
-                maxHeight: 500,
-                useMonospace: true,
-                monospaceFontSize: 12,
-                defaultButton: ContentDialogButton.Close);
+                new Helpers.ScrollableTextDialogOptions
+                {
+                    PrimaryButtonText = canRename ? _resources.GetString("FolderRenameExecuteButton") : null,
+                    CloseButtonText = _resources.GetString(canRename ? "CommonCancelButton" : "CommonCloseButton"),
+                    MaxHeight = 500,
+                    UseMonospace = true,
+                    MonospaceFontSize = 12,
+                    DefaultButton = ContentDialogButton.Close,
+                });
         }
     }
 }

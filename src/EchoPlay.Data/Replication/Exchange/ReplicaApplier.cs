@@ -46,9 +46,10 @@ namespace EchoPlay.Data.Replication.Exchange
         private bool ApplyOne(ChangeRecord incoming)
         {
             _ = clock.Observe(incoming.Stamp);
-            bool exists = replica.TryGet(incoming.Kind, incoming.Key, out BaseEntity? entity, out ChangeRecord? local);
-            ChangeRecord merged = exists ? ChangeMerge.Merge(local!, incoming) : incoming;
-            if (exists && merged.Equals(local))
+            ChangeRecord merged = replica.TryGet(incoming.Kind, incoming.Key, out BaseEntity? entity, out ChangeRecord? local)
+                ? ChangeMerge.Merge(local, incoming)
+                : incoming;
+            if (local is not null && merged.Equals(local))
             {
                 return false;
             }

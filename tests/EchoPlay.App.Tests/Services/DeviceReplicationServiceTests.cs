@@ -1,4 +1,5 @@
 using EchoPlay.App.Services;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Replication;
 using EchoPlay.Core.Replication.Exchange;
@@ -13,12 +14,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -171,16 +166,8 @@ namespace EchoPlay.App.Tests.Services
         }
 
         /// <summary>Lässt die künstliche Zeit laufen, bis die Bedingung erfüllt ist oder fünf echte Sekunden um sind.</summary>
-        private async Task AdvanceUntilAsync(Func<bool> condition)
-        {
-            for (int i = 0; i < 500 && !condition(); i++)
-            {
-                _time.Advance(TimeSpan.FromSeconds(10));
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
-
-            Assert.True(condition());
-        }
+        private Task AdvanceUntilAsync(Func<bool> condition)
+            => Eventually.TrueAsync(condition, () => _time.Advance(TimeSpan.FromSeconds(10)));
 
         private async Task<DeviceReplicationService> CreateAsync(bool enabled, bool createFolder = true)
         {

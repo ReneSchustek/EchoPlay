@@ -163,7 +163,7 @@ namespace EchoPlay.Logger.Tests
         /// Das Dispose eines äußeren Scopes vor dem inneren verletzt die LIFO-Reihenfolge.
         /// <see cref="LogScope.Dispose"/> wirft in diesem Fall keine Exception; Exceptions aus
         /// Dispose() würden eine bereits aktive Exception überdecken und die Fehlerdiagnose erschweren.
-        /// Der Stack-Fehler wird stattdessen über <see cref="System.Diagnostics.Trace.WriteLine"/> gemeldet.
+        /// Der Stack-Fehler wird stattdessen über <see cref="System.Diagnostics.Trace.WriteLine(string)"/> gemeldet.
         /// </summary>
         [Fact]
         public void ScopeDisposeInReverseOrder_DoesNotThrow()

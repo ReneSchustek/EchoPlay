@@ -1,6 +1,4 @@
 using EchoPlay.App.Helpers;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.Helpers
 {

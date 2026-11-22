@@ -10,7 +10,7 @@ namespace EchoPlay.Data.Entities.Playback
     /// Diese Entität speichert dauerhaft relevante Informationen über Fortschritt, Abschluss und letzte Aktivität und dient als Grundlage
     /// für Resume-Funktionen, Fortschrittsanzeigen und Abschlusslogik.
     /// </summary>
-    public class PlaybackState : BaseEntity
+    public sealed class PlaybackState : BaseEntity
     {
         /// <summary>
         /// Fremdschlüssel zur zugehörigen Episode.

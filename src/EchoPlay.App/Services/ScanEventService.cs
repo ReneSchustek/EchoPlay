@@ -1,6 +1,4 @@
 using EchoPlay.Data.Entities.Library;
-using System;
-using System.Threading;
 
 namespace EchoPlay.App.Services
 {

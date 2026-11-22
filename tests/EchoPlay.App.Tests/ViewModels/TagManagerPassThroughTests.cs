@@ -5,8 +5,6 @@ using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

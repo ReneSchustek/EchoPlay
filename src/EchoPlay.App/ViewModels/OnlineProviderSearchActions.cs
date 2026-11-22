@@ -1,9 +1,5 @@
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -162,14 +158,20 @@ namespace EchoPlay.App.ViewModels
         private async Task<List<SearchResultViewModel>?> BuildResultsAsync(List<ImportSeries> combined, CancellationToken coverToken)
         {
             List<SearchResultViewModel> viewModels = new(combined.Count);
+            SearchResultServices resultServices = new()
+            {
+                ImportService = _ctx.ImportService,
+                ErrorDialogService = _ctx.ErrorDialogService,
+                LocalizationService = _ctx.LocalizationService,
+                BackgroundCoverService = _ctx.BackgroundCoverService,
+            };
             foreach (ImportSeries series in combined)
             {
                 bool alreadyImported = await _ctx.ImportService.IsAlreadyImportedAsync(series, coverToken);
                 if (coverToken.IsCancellationRequested) return null;
 
                 viewModels.Add(new SearchResultViewModel(
-                    series, alreadyImported, _ctx.ImportService, _ctx.ErrorDialogService,
-                    _ctx.LocalizationService, _ctx.BackgroundCoverService,
+                    series, alreadyImported, resultServices,
                     onImportCompleted: _reloadAfterImportAsync,
                     cancellationToken: coverToken));
             }

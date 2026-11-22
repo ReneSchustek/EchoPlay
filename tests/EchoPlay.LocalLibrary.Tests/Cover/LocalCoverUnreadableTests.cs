@@ -1,12 +1,7 @@
 using EchoPlay.LocalLibrary.Tests.Fakes;
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Tests.Infrastructure;
-using System;
-using System.IO;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Tests.Cover
 {

@@ -1,21 +1,12 @@
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Helpers;
-using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
-using EchoPlay.Core.Abstractions;
 using EchoPlay.Core.Models;
-using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -74,48 +65,26 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert den Orchestrator mit allen Services und Sub-VMs.
         /// </summary>
-        /// <param name="scopeFactory">Für die Datenbankzugriffe.</param>
-        /// <param name="confirmationDialogService">Fragt vor dem Entfernen und Löschen nach.</param>
-        /// <param name="statusBar">Zieht die Zähler der Statusleiste nach.</param>
-        /// <param name="onlineAccessGuard">Fragt im Offline-Modus nach dem Zugang ins Netz.</param>
-        /// <param name="watchToggleService">Schaltet die Überwachung einer Serie um.</param>
-        /// <param name="restructureCoordinator">Plant und führt den Umbau der Ordnerstruktur aus.</param>
-        /// <param name="missingEpisodesCoordinator">Ermittelt fehlende Folgen.</param>
-        /// <param name="coverCoordinator">Sucht und übernimmt Cover.</param>
-        /// <param name="clock">Zeitquelle für den Abschluss einer Folge.</param>
-        /// <param name="scanVM">Bereich für Einlesen und Ordnerauswahl.</param>
-        /// <param name="artistsVM">Bereich der Serienkacheln.</param>
-        /// <param name="episodesVM">Bereich der Folgenkacheln.</param>
-        /// <param name="tracksVM">Bereich der Spuren.</param>
-        public LocalLibraryActions(
-            IServiceScopeFactory scopeFactory,
-            IConfirmationDialogService confirmationDialogService,
-            StatusBarViewModel statusBar,
-            IOnlineAccessGuard onlineAccessGuard,
-            IWatchToggleService? watchToggleService,
-            IFolderRestructureCoordinator? restructureCoordinator,
-            IMissingEpisodesCoordinator? missingEpisodesCoordinator,
-            IEpisodeCoverCoordinator? coverCoordinator,
-            IClock clock,
-            LocalLibraryScanViewModel scanVM,
-            LocalArtistsViewModel artistsVM,
-            LocalEpisodesViewModel episodesVM,
-            LocalTracksViewModel tracksVM)
+        /// <param name="services">Die Dienste der Aktionen.</param>
+        /// <param name="parts">Einlesen, Serien-, Folgen- und Spurenbereich.</param>
+        public LocalLibraryActions(LocalLibraryActionServices services, LocalLibraryParts parts)
         {
-            _scopeFactory = scopeFactory;
-            _confirmationDialogService = confirmationDialogService;
-            _statusBar = statusBar;
-            _onlineAccessGuard = onlineAccessGuard;
-            _watchToggleService = watchToggleService;
-            _restructureCoordinator = restructureCoordinator;
-            _missingEpisodesCoordinator = missingEpisodesCoordinator;
-            _coverCoordinator = coverCoordinator;
-            _clock = clock;
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(parts);
+            _scopeFactory = services.ScopeFactory;
+            _confirmationDialogService = services.ConfirmationDialogService;
+            _statusBar = services.StatusBar;
+            _onlineAccessGuard = services.OnlineAccessGuard;
+            _watchToggleService = services.WatchToggleService;
+            _restructureCoordinator = services.RestructureCoordinator;
+            _missingEpisodesCoordinator = services.MissingEpisodesCoordinator;
+            _coverCoordinator = services.CoverCoordinator;
+            _clock = services.Clock;
 
-            _scanVM = scanVM;
-            _artistsVM = artistsVM;
-            _episodesVM = episodesVM;
-            _tracksVM = tracksVM;
+            _scanVM = parts.Scan;
+            _artistsVM = parts.Artists;
+            _episodesVM = parts.Episodes;
+            _tracksVM = parts.Tracks;
         }
 
         /// <summary>
@@ -173,7 +142,7 @@ namespace EchoPlay.App.ViewModels
                 .Select(e => e.Id)];
             HashSet<Guid> localEpisodeIds = [.. episodeIds];
 
-            HashSet<Guid> completedIds = await stateService.GetCompletedEpisodeIdsAsync(episodeIds);
+            IReadOnlySet<Guid> completedIds = await stateService.GetCompletedEpisodeIdsAsync(episodeIds);
 
             IReadOnlyList<PlaybackState> allStates = await stateService.GetAllAsync();
 

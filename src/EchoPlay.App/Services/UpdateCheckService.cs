@@ -4,16 +4,10 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -83,7 +77,7 @@ namespace EchoPlay.App.Services
 
                 GitHubRelease? release = await FetchLatestReleaseAsync(cancellationToken).ConfigureAwait(false);
                 string? remoteVersion = NewerVersionOf(release, settings.SkippedUpdateVersion);
-                return remoteVersion is null ? null : ToUpdateInfo(release!, remoteVersion);
+                return remoteVersion is null || release is null ? null : ToUpdateInfo(release, remoteVersion);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.IO.Compression;
 using System.Security.Cryptography;
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Infrastructure;

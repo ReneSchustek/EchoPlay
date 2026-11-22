@@ -1,7 +1,6 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.LocalLibrary.Parsing;
 using EchoPlay.Logger.Abstractions;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace EchoPlay.App.Services

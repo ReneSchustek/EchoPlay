@@ -4,10 +4,7 @@ using EchoPlay.Core.Models.Import;
 using EchoPlay.Core.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -35,15 +32,9 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert das ViewModel mit Suchergebnis und benötigten Services.
         /// </summary>
+        /// <param name="services">Import, Fehleranzeige, Texte und Cover-Pipeline.</param>
         /// <param name="importSeries">Das Suchergebnis aus der externen API.</param>
         /// <param name="isAlreadyImported">Ob die Serie bereits in der lokalen Datenbank vorhanden ist.</param>
-        /// <param name="importService">Führt den tatsächlichen Import durch.</param>
-        /// <param name="errorDialogService">Zeigt Fehlermeldungen an.</param>
-        /// <param name="localizationService">Für lokalisierte Fehlertexte.</param>
-        /// <param name="backgroundCoverService">
-        /// Lädt das Cover über die zentrale Cover-Pipeline (DB-First, dann Provider-URL über
-        /// <c>IHostRateLimiter</c> mit Foreground-Priorität). Null deaktiviert das Cover-Laden.
-        /// </param>
         /// <param name="cancellationToken">
         /// Abbruch-Token, das vom Eltern-VM beim Start einer neuen Suche oder beim Verlassen
         /// der Page abgebrochen wird. Hält verwaiste HTTP-Requests aus alten Suchläufen draußen.
@@ -59,20 +50,18 @@ namespace EchoPlay.App.ViewModels
         public SearchResultViewModel(
             ImportSeries importSeries,
             bool isAlreadyImported,
-            ImportService importService,
-            IErrorDialogService errorDialogService,
-            ILocalizationService localizationService,
-            BackgroundCoverService? backgroundCoverService = null,
+            SearchResultServices services,
             SearchViewModel? parentViewModel = null,
             Func<Task>? onImportCompleted = null,
             CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(importSeries);
             _importSeries = importSeries;
-            _importService = importService;
-            _errorDialogService = errorDialogService;
-            _localizationService = localizationService;
-            _backgroundCoverService = backgroundCoverService;
+            _importService = services.ImportService;
+            _errorDialogService = services.ErrorDialogService;
+            _localizationService = services.LocalizationService;
+            _backgroundCoverService = services.BackgroundCoverService;
             _cancellationToken = cancellationToken;
             _parentViewModel = parentViewModel;
             _onImportCompleted = onImportCompleted;
@@ -90,9 +79,9 @@ namespace EchoPlay.App.ViewModels
             // Auch ohne Adresse: Der erste Schritt der Pipeline ist der Blick in die eigene
             // Datenbank, und der trägt jeden Treffer, dessen Serie bereits importiert ist,
             // denn auf Künstlerebene liefert Apple Music überhaupt kein Artwork.
-            if (_backgroundCoverService is not null && !string.IsNullOrEmpty(importSeries.SourceSeriesId))
+            if (_backgroundCoverService is { } coverService && !string.IsNullOrEmpty(importSeries.SourceSeriesId))
             {
-                CoverLoadTask = LoadCoverAndAnalyzeAsync(importSeries.CoverImageUrl);
+                CoverLoadTask = LoadCoverAndAnalyzeAsync(coverService, importSeries.CoverImageUrl);
             }
 
             ImportCommand = new RelayCommand(() => _ = ImportAsync());
@@ -331,11 +320,11 @@ namespace EchoPlay.App.ViewModels
         /// Die WinRT-COM-Typen für die Analyse leben in <see cref="Services.CoverBrightnessAnalyzer"/>.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Cover-Download + Helligkeits-Analyse für eine Trefferkarte: HTTP-/Bild-Dekodier-Fehler dürfen die Kachel nicht zerstören – der Platzhalter bleibt stehen.")]
-        private async Task LoadCoverAndAnalyzeAsync(Uri? coverUrl)
+        private async Task LoadCoverAndAnalyzeAsync(BackgroundCoverService coverService, Uri? coverUrl)
         {
             try
             {
-                byte[]? coverBytes = await _backgroundCoverService!
+                byte[]? coverBytes = await coverService
                     .RequestCoverForSearchResultAsync(
                         _importSeries.Source,
                         _importSeries.SourceSeriesId,

@@ -3,10 +3,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -143,16 +139,19 @@ namespace EchoPlay.App.ViewModels
         private LocalArtistCardViewModel BuildCard(Series series, int localCount, int totalCount, BitmapImage? cover, bool isIncomplete)
         {
             return new LocalArtistCardViewModel(
-                seriesId: series.Id,
-                title: series.Title,
+                new LocalArtistCardData
+                {
+                    SeriesId = series.Id,
+                    Title = series.Title,
+                    LocalFolderPath = series.LocalFolderPath,
+                    LocalEpisodeCount = localCount,
+                    TotalEpisodeCount = totalCount,
+                    IsFavorite = series.IsFavorite,
+                    IsWatched = series.IsWatched,
+                    IsIncomplete = isIncomplete,
+                },
                 coverImage: cover,
-                localFolderPath: series.LocalFolderPath,
-                localEpisodeCount: localCount,
-                totalEpisodeCount: totalCount,
-                isFavorite: series.IsFavorite,
-                isWatched: series.IsWatched,
-                scopeFactory: _scopeFactory,
-                isIncomplete: isIncomplete);
+                scopeFactory: _scopeFactory);
         }
     }
 }

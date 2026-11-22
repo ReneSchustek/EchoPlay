@@ -1,5 +1,3 @@
-using System;
-
 namespace EchoPlay.App.Controls
 {
     /// <summary>

@@ -4,13 +4,7 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http;
 using AppCoverService = EchoPlay.App.Services.CoverService;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -143,11 +137,13 @@ namespace EchoPlay.App.Tests.Services
         /// </summary>
         private static LocalEpisodeCardViewModel BuildEpisodeCard()
             => new(
-                episodeId: new Guid("cccccccc-1111-2222-3333-777777777777"),
-                episodeNumber: 1,
-                title: "Der Superhund",
-                localTrackCount: 3,
-                folderPath: null);
+                new LocalEpisodeCardData
+                {
+                    EpisodeId = new Guid("cccccccc-1111-2222-3333-777777777777"),
+                    EpisodeNumber = 1,
+                    Title = "Der Superhund",
+                    LocalTrackCount = 3,
+                });
 
         /// <summary>
         /// Baut eine Künstler-Kachel ohne Cover. Der Bildwert bleibt leer, weil ein
@@ -160,15 +156,15 @@ namespace EchoPlay.App.Tests.Services
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new LocalArtistCardViewModel(
-                SeriesId,
-                "Die drei Fragezeichen",
+                new LocalArtistCardData
+                {
+                    SeriesId = SeriesId,
+                    Title = "Die drei Fragezeichen",
+                    LocalEpisodeCount = 3,
+                    TotalEpisodeCount = 3,
+                },
                 coverImage: null,
-                localFolderPath: null,
-                localEpisodeCount: 3,
-                totalEpisodeCount: 3,
-                isFavorite: false,
-                isWatched: false,
-                provider.GetRequiredService<IServiceScopeFactory>());
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
         }
 
         [Fact]

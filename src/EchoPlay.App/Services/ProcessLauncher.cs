@@ -1,6 +1,5 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.Logger.Abstractions;
-using System;
 
 namespace EchoPlay.App.Services
 {

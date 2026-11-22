@@ -1,7 +1,6 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

@@ -1,65 +1,57 @@
-using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using EchoPlay.App.Services;
+using Microsoft.Extensions.Time.Testing;
 
 namespace EchoPlay.App.Tests.Services
 {
     /// <summary>
     /// Verifiziert, dass die Mindest-Anzeigedauer des Splash auch bei warmem Cache eingehalten wird.
+    /// Die Uhr wird vorgestellt statt abgewartet; so prüfen die Tests die Grenze genau und ohne
+    /// anderthalb Sekunden Echtzeit.
     /// </summary>
     public sealed class SplashLifetimeControllerTests
     {
         [Fact]
-        public async Task WaitForMinimumDurationAsync_ElapsedAlreadyExceedsMinimum_ReturnsImmediately()
+        public void WaitForMinimumDurationAsync_ElapsedAlreadyExceedsMinimum_ReturnsImmediately()
         {
-            SplashLifetimeController controller = new();
-            // Mindestdauer überschreiten, damit die Wartezeit entfällt.
-            await Task.Delay(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+            FakeTimeProvider clock = new();
+            SplashLifetimeController controller = new(clock);
+            clock.Advance(SplashLifetimeController.MinimumDuration + TimeSpan.FromMilliseconds(50));
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await controller.WaitForMinimumDurationAsync(cancellationToken: TestContext.Current.CancellationToken);
-            sw.Stop();
+            Task wait = controller.WaitForMinimumDurationAsync(TestContext.Current.CancellationToken);
 
-            Assert.True(sw.ElapsedMilliseconds < 200,
-                $"Erwartet sofortiger Return (< 200 ms), tatsächlich {sw.ElapsedMilliseconds} ms.");
+            Assert.True(wait.IsCompletedSuccessfully);
         }
 
         [Fact]
-        public async Task WaitForMinimumDurationAsync_FreshController_WaitsCloseToMinimum()
+        public async Task WaitForMinimumDurationAsync_FreshController_WaitsExactlyTheMinimum()
         {
-            SplashLifetimeController controller = new();
+            FakeTimeProvider clock = new();
+            SplashLifetimeController controller = new(clock);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await controller.WaitForMinimumDurationAsync(cancellationToken: TestContext.Current.CancellationToken);
-            sw.Stop();
+            Task wait = controller.WaitForMinimumDurationAsync(TestContext.Current.CancellationToken);
+            clock.Advance(SplashLifetimeController.MinimumDuration - TimeSpan.FromMilliseconds(1));
+            Assert.False(wait.IsCompleted);
 
-            // Der Test toleriert Scheduler-Jitter, prüft aber, dass die Wartezeit signifikant
-            // über 1000 ms liegt (Default-Mindestdauer ist 1500 ms).
-            Assert.True(sw.ElapsedMilliseconds >= 1000,
-                $"Erwartet >= 1000 ms Wartezeit, tatsächlich {sw.ElapsedMilliseconds} ms.");
+            clock.Advance(TimeSpan.FromMilliseconds(1));
+            await wait;
         }
 
         [Fact]
-        public async Task WaitForMinimumDurationAsync_TokenCanceled_ReturnsEarly()
+        public async Task WaitForMinimumDurationAsync_TokenCanceled_ReturnsEarlyWithoutThrowing()
         {
-            SplashLifetimeController controller = new();
+            FakeTimeProvider clock = new();
+            SplashLifetimeController controller = new(clock);
             using CancellationTokenSource cts = new();
 
-            // Cancellation kurz nach Beginn: Die Wartezeit muss vorzeitig enden.
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(50);
-                await cts.CancelAsync();
-            }, cancellationToken: TestContext.Current.CancellationToken);
+            Task wait = controller.WaitForMinimumDurationAsync(cts.Token);
+            Assert.False(wait.IsCompleted);
 
-            Stopwatch sw = Stopwatch.StartNew();
-            await controller.WaitForMinimumDurationAsync(cts.Token);
-            sw.Stop();
+            // Der Splash wird geschlossen, bevor die Mindestzeit um ist: Das Warten endet
+            // sofort und still, die Uhr steht dabei noch am Anfang.
+            await cts.CancelAsync();
+            await wait;
 
-            Assert.True(sw.ElapsedMilliseconds < 1000,
-                $"Erwartet vorzeitiges Ende (< 1000 ms), tatsächlich {sw.ElapsedMilliseconds} ms.");
+            Assert.True(wait.IsCompletedSuccessfully);
         }
     }
 }

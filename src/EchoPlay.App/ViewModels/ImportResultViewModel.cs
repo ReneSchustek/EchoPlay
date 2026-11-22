@@ -2,7 +2,6 @@ using EchoPlay.Core.Models.Import;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Windows.Input;
-using System;
 
 namespace EchoPlay.App.ViewModels
 {

@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
@@ -9,10 +8,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -135,14 +130,14 @@ namespace EchoPlay.App.Tests.ViewModels
 
         private static LocalEpisodeCardViewModel BuildEpisodeCard()
             => new(
-                TestIds.EpisodeA,
-                episodeNumber: 1,
-                "Folge 1",
-                localTrackCount: 1,
-                folderPath: null,
-                coverImage: null,
-                isCompleted: false,
-                isSpecialEpisode: false);
+                new LocalEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    LocalTrackCount = 1,
+                },
+                coverImage: null);
 
         private static LocalArtistCardViewModel BuildArtistCard()
         {
@@ -150,15 +145,15 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new LocalArtistCardViewModel(
-                TestIds.SeriesA,
-                "Die drei Fragezeichen",
+                new LocalArtistCardData
+                {
+                    SeriesId = TestIds.SeriesA,
+                    Title = "Die drei Fragezeichen",
+                    LocalEpisodeCount = 1,
+                    TotalEpisodeCount = 1,
+                },
                 coverImage: null,
-                localFolderPath: null,
-                localEpisodeCount: 1,
-                totalEpisodeCount: 1,
-                isFavorite: false,
-                isWatched: false,
-                provider.GetRequiredService<IServiceScopeFactory>());
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
         }
 
         private static LocalLibraryViewModel BuildViewModel(FakeEpisodeCoverCoordinator? coverCoordinator)
@@ -178,18 +173,20 @@ namespace EchoPlay.App.Tests.ViewModels
             StatusBarViewModel statusBar = new(
                 scopeFactory, new FakeThemeService(), new TaskbarProgressService(), clock);
 
-            LocalLibraryViewModelContext context = new(
-                scopeFactory,
-                new FakeSyncService(),
-                new FakePlayerService(),
-                new FakeErrorDialogService(),
-                new FakeConfirmationDialogService(),
-                statusBar,
-                new FakeLocalCoverLoader(),
-                new FakeScanEventService(),
-                new FakeOnlineAccessGuard(),
-                clock,
-                CoverCoordinator: coverCoordinator);
+            LocalLibraryViewModelContext context = new()
+            {
+                ScopeFactory = scopeFactory,
+                SyncService = new FakeSyncService(),
+                PlayerService = new FakePlayerService(),
+                ErrorDialogService = new FakeErrorDialogService(),
+                ConfirmationDialogService = new FakeConfirmationDialogService(),
+                StatusBar = statusBar,
+                CoverLoader = new FakeLocalCoverLoader(),
+                ScanEventService = new FakeScanEventService(),
+                OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                Clock = clock,
+                CoverCoordinator = coverCoordinator,
+            };
 
             return new LocalLibraryViewModel(context);
         }

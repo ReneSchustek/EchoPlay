@@ -1,7 +1,5 @@
 using EchoPlay.LocalLibrary.Scanning;
 using EchoPlay.LocalLibrary.Tests.Fakes;
-using System;
-using System.IO;
 
 namespace EchoPlay.LocalLibrary.Tests.Scanning
 {

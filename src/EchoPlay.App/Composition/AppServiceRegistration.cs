@@ -2,8 +2,6 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Startup;
 using EchoPlay.Core.Abstractions.Time;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Composition
 {
@@ -210,6 +208,12 @@ namespace EchoPlay.App.Composition
             RegisterCoverService(services);
 
             _ = services.AddSingleton(new BackgroundCoverServiceOptions());
+            _ = services.AddSingleton(provider => new CoverSources
+            {
+                CoverService = provider.GetRequiredService<ICoverService>(),
+                CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                RateLimiter = provider.GetRequiredService<IHostRateLimiter>(),
+            });
             _ = services.AddSingleton<BackgroundCoverService>();
             _ = services.AddSingleton<BackgroundProviderIdService>();
             _ = services.AddSingleton<ReleaseCalendarRefreshService>();

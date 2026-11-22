@@ -2,17 +2,10 @@ using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Clients;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.AppleMusic.Scoring;
-using EchoPlay.Core.Abstractions.Import;
 using EchoPlay.Core.Models.Import;
-using EchoPlay.Core.Scoring;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.AppleMusic.Tests.Clients
 {

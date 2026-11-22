@@ -1,5 +1,4 @@
 using EchoPlay.LocalLibrary.Metadata;
-using System.Collections.Generic;
 
 namespace EchoPlay.LocalLibrary.Tests.Fakes
 {

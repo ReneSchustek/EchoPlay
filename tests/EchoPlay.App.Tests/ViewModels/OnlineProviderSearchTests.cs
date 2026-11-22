@@ -2,15 +2,11 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -165,13 +161,16 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new OnlineLibraryViewModel(
-                scopeFactory,
-                new FakeConfirmationDialogService(),
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
-                new FakeOnlineAccessGuard(),
-                provider.GetRequiredService<ICoverDownloader>());
+                new OnlineLibraryActionsContext
+                {
+                    ScopeFactory = scopeFactory,
+                    ConfirmationDialogService = new FakeConfirmationDialogService(),
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                    OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                    CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                });
         }
     }
 }

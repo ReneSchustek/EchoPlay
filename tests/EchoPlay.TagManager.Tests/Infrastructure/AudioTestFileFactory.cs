@@ -1,5 +1,3 @@
-using System.Threading;
-
 namespace EchoPlay.TagManager.Tests.Infrastructure
 {
     /// <summary>

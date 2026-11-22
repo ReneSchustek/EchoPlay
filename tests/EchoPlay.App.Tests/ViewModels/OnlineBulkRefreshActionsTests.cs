@@ -7,10 +7,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -348,27 +344,27 @@ namespace EchoPlay.App.Tests.ViewModels
             {
                 IServiceScopeFactory scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
 
-                return new OnlineLibraryActionsContext(
-                    ScopeFactory: scopeFactory,
-                    ConfirmationDialogService: confirmation,
-                    ImportService: new ImportService(
+                return new OnlineLibraryActionsContext
+                {
+                    ScopeFactory = scopeFactory,
+                    ConfirmationDialogService = confirmation,
+                    ImportService = new ImportService(
                         scopeFactory,
                         provider.GetRequiredService<EpisodeCoverCacheService>(),
                         provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>()),
-                    ErrorDialogService: new FakeErrorDialogService(),
+                    ErrorDialogService = new FakeErrorDialogService(),
                     // Der Fortschrittstext hat Platzhalter, als Muster mitgegeben, sonst
                     // verschluckt der Schlüssel die eingesetzten Werte.
-                    LocalizationService: new FakeLocalizationService(new Dictionary<string, string>
+                    LocalizationService = new FakeLocalizationService(new Dictionary<string, string>
                     {
                         ["OnlineRefreshProgressText"] = "{0} von {1}: {2}",
                     }),
-                    OnlineAccessGuard: new FakeOnlineAccessGuard(allowOnlineAccess),
-                    CoverCacheService: null,
-                    CoverService: provider.GetRequiredService<CoverService>(),
-                    BackgroundCoverService: null,
-                    WatchToggleService: watchToggleService,
-                    CoverDownloader: provider.GetRequiredService<ICoverDownloader>(),
-                    RateLimiter: rateLimiter);
+                    OnlineAccessGuard = new FakeOnlineAccessGuard(allowOnlineAccess),
+                    CoverService = provider.GetRequiredService<CoverService>(),
+                    WatchToggleService = watchToggleService,
+                    CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                    RateLimiter = rateLimiter,
+                };
             }
 
             /// <summary>
@@ -385,10 +381,22 @@ namespace EchoPlay.App.Tests.ViewModels
                 foreach (Series entry in series)
                 {
                     cards.Add(new SeriesCardViewModel(
-                        entry.Id, entry.Title, coverImage: null,
-                        totalEpisodeCount: 0, newEpisodeCount: 0, inProgressCount: 0, finishedCount: 0,
-                        isSubscribed: true, isFavorite: false, isWatched: false,
-                        scopeFactory, confirmation, new FakeLocalizationService()));
+                        new SeriesCardData
+                        {
+                            Id = entry.Id,
+                            Title = entry.Title,
+                            TotalEpisodeCount = 0,
+                            NewEpisodeCount = 0,
+                            InProgressCount = 0,
+                            FinishedCount = 0,
+                            IsSubscribed = true,
+                            IsFavorite = false,
+                            IsWatched = false,
+                        },
+                        coverImage: null,
+                        scopeFactory: scopeFactory,
+                        confirmationDialogService: confirmation,
+                        localizationService: new FakeLocalizationService()));
                 }
 
                 seriesVM.SetAllSeries(cards);

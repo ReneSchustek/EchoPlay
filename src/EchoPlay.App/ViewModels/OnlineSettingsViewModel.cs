@@ -3,8 +3,6 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.UI.Xaml;
-using System;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels

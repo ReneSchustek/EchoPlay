@@ -1,8 +1,5 @@
 using EchoPlay.App.Models;
 using EchoPlay.TagManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -26,41 +23,29 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert den Koordinator und verdrahtet die fünf Sub-Actions sowie die
         /// Workflow-Callbacks zwischen Rename-Preview und Folder-Reload.
         /// </summary>
-        public TagManagerActions(
-            TagManagerActionsContext context,
-            TagFileListViewModel fileListVM,
-            TagEditorFieldsViewModel editorVM,
-            TagCoverViewModel coverVM,
-            TagRenameViewModel renameVM,
-            Action<bool> setIsLoading,
-            Action<bool> setIsLookingUp,
-            Action<string> setAutoLookupStatus,
-            Action<string> setBatchProgress,
-            Action<bool> setHasUnsavedChanges,
-            Action refreshCommandStates)
+        /// <param name="context">Die Dienste des Tag-Managers.</param>
+        /// <param name="parts">Die vier Teil-ViewModels.</param>
+        /// <param name="callbacks">Die Rückrufe in den Zustand des Tag-Managers.</param>
+        public TagManagerActions(TagManagerActionsContext context, TagManagerParts parts, TagManagerCallbacks callbacks)
         {
-            _loadActions = new TagLoadActions(
-                context, fileListVM, editorVM, coverVM, renameVM,
-                setIsLoading, setHasUnsavedChanges, refreshCommandStates);
+            ArgumentNullException.ThrowIfNull(parts);
+            ArgumentNullException.ThrowIfNull(callbacks);
+            _loadActions = new TagLoadActions(context, parts, callbacks);
 
             _saveActions = new TagSaveActions(
-                context, fileListVM, editorVM, coverVM,
-                setIsLoading, setBatchProgress, setHasUnsavedChanges);
+                context, parts.FileList, parts.Editor, parts.Cover,
+                callbacks.SetIsLoading, callbacks.SetBatchProgress, callbacks.SetHasUnsavedChanges);
 
             _renameActions = new TagRenameActions(
-                context, fileListVM, renameVM,
-                setIsLoading, refreshCommandStates,
+                context, parts.FileList, parts.Rename,
+                callbacks.SetIsLoading, callbacks.RefreshCommandStates,
                 reloadFolderAsync: _loadActions.LoadFolderAsync);
 
-            _lookupActions = new TagLookupActions(
-                context, fileListVM, editorVM, renameVM,
-                setIsLoading, setIsLookingUp, setAutoLookupStatus, setBatchProgress,
-                setHasUnsavedChanges, refreshCommandStates,
-                previewRenameAsync: _renameActions.PreviewRenameAsync);
+            _lookupActions = new TagLookupActions(context, parts, callbacks, previewRenameAsync: _renameActions.PreviewRenameAsync);
 
             _coverActions = new TagCoverActions(
-                context, fileListVM, coverVM,
-                setIsLoading, setBatchProgress, setHasUnsavedChanges);
+                context, parts.FileList, parts.Cover,
+                callbacks.SetIsLoading, callbacks.SetBatchProgress, callbacks.SetHasUnsavedChanges);
         }
 
         /// <summary>Lookup-Ergebnisse für die Page, weitergereicht von <see cref="TagLookupActions"/>.</summary>

@@ -1,17 +1,9 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Helpers;
 using EchoPlay.App.Services;
-using EchoPlay.Core;
 using EchoPlay.Data.Entities.Library;
-using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

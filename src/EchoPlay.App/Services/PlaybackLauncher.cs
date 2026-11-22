@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using EchoPlay.App.Helpers;
 using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Playback;
@@ -82,25 +78,19 @@ namespace EchoPlay.App.Services
         /// </summary>
         /// <param name="scopeFactory">Die Scope-Factory des aufrufenden ViewModels.</param>
         /// <param name="playerService">Der Player-Service, der die Wiedergabe startet.</param>
-        /// <param name="episodeId">Die ID der Folge.</param>
-        /// <param name="seriesTitle">Serientitel, dient der Suche beim Anbieter, wenn keine Album-Kennung vorliegt.</param>
-        /// <param name="episodeTitle">Folgentitel, ebenfalls für die Suche.</param>
-        /// <param name="spotifyAlbumId">Spotify-Album-Kennung, sofern der Aufrufer sie kennt.</param>
-        /// <param name="appleMusicAlbumId">Apple-Music-Album-Kennung, sofern der Aufrufer sie kennt.</param>
+        /// <param name="request">Die Folge und ihre Kennungen beim Anbieter.</param>
         /// <param name="cancellationToken">Abbruch-Token der umgebenden Operation.</param>
         /// <returns>Was tatsächlich geschehen ist.</returns>
         public static async Task<EpisodeLaunchResult> PlayOrOpenProviderAsync(
             IServiceScopeFactory scopeFactory,
             IPlayerService playerService,
-            Guid episodeId,
-            string seriesTitle,
-            string episodeTitle,
-            string? spotifyAlbumId = null,
-            string? appleMusicAlbumId = null,
+            EpisodeLaunchRequest request,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(scopeFactory);
             ArgumentNullException.ThrowIfNull(playerService);
+            ArgumentNullException.ThrowIfNull(request);
+            Guid episodeId = request.EpisodeId;
 
             using IServiceScope scope = scopeFactory.CreateScope();
             ILocalTrackDataService trackService = scope.ServiceProvider.GetRequiredService<ILocalTrackDataService>();
@@ -128,38 +118,33 @@ namespace EchoPlay.App.Services
 
             log.Info(
                 "Folge {EpisodeId} ohne lokale Datei. Spotify-Kennung vorhanden: {HasSpotifyId}, Apple-Kennung vorhanden: {HasAppleId}.",
-                episodeId, !string.IsNullOrWhiteSpace(spotifyAlbumId), !string.IsNullOrWhiteSpace(appleMusicAlbumId));
+                episodeId, !string.IsNullOrWhiteSpace(request.SpotifyAlbumId), !string.IsNullOrWhiteSpace(request.AppleMusicAlbumId));
 
-            return OpenAtProvider(log, episodeId, seriesTitle, episodeTitle, spotifyAlbumId, appleMusicAlbumId);
+            return OpenAtProvider(log, request);
         }
 
         /// <summary>
         /// Öffnet die Folge beim Anbieter: über eine Album-Kennung, sonst über die Suche.
         /// </summary>
-        private static EpisodeLaunchResult OpenAtProvider(
-            EchoPlay.Logger.Abstractions.ILogger log,
-            Guid episodeId,
-            string seriesTitle,
-            string episodeTitle,
-            string? spotifyAlbumId,
-            string? appleMusicAlbumId)
+        private static EpisodeLaunchResult OpenAtProvider(EchoPlay.Logger.Abstractions.ILogger log, EpisodeLaunchRequest request)
         {
+            Guid episodeId = request.EpisodeId;
             // Reihenfolge: Erst die genauen Treffer beider Anbieter, dann erst die Suche.
             // Andernfalls verdrängt eine unscharfe Spotify-Suche die exakte Apple-Kennung,
             // gemessen an „Fünf Freunde Junior, Folge 17": dort gibt es nur die Apple-Kennung.
-            if (TryOpenSpotifyAlbum(spotifyAlbumId))
+            if (TryOpenSpotifyAlbum(request.SpotifyAlbumId))
             {
                 log.Info("Folge {EpisodeId} in Spotify geöffnet (Album).", episodeId);
                 return EpisodeLaunchResult.OpenedAtProvider;
             }
 
-            if (TryOpenAppleMusic(appleMusicAlbumId))
+            if (TryOpenAppleMusic(request.AppleMusicAlbumId))
             {
                 log.Info("Folge {EpisodeId} in Apple Music geöffnet (Album).", episodeId);
                 return EpisodeLaunchResult.OpenedAtProvider;
             }
 
-            if (TryOpenSpotifySearch(seriesTitle, episodeTitle))
+            if (TryOpenSpotifySearch(request.SeriesTitle, request.EpisodeTitle))
             {
                 log.Info("Folge {EpisodeId} als Spotify-Suche geöffnet, keine Album-Kennung vorhanden.", episodeId);
                 return EpisodeLaunchResult.OpenedAtProvider;

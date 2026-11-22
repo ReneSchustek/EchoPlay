@@ -12,41 +12,60 @@ namespace EchoPlay.App.ViewModels
     /// zwei vertauschte Dienste gleichen Typs bemerkte kein Compiler.
     /// Die Reiter-Ansichtsmodelle entstehen intern und gehören nicht hierher.
     /// </summary>
-    /// <param name="ScopeFactory">Für datenbanknahe Zugriffe beim Laden und Speichern.</param>
-    /// <param name="ThemeService">Wendet ein Farbschema sofort an.</param>
-    /// <param name="SyncService">Gleicht die lokale Mediathek ab.</param>
-    /// <param name="ErrorDialogService">Zeigt Fehlerhinweise.</param>
-    /// <param name="ConfirmationDialogService">Fragt beim Verlassen mit ungespeicherten Änderungen nach.</param>
-    /// <param name="LocalizationService">Liefert die Texte der Dialoge.</param>
-    /// <param name="PatternAnalyzer">Erkennt das Ordnermuster der Folgen im Bibliotheksordner.</param>
-    /// <param name="ConnectionTestCoordinator">Kapselt den Verbindungstest gegen den aktiven Anbieter.</param>
-    /// <param name="CredentialStore">Speichert und liest die Spotify-Zugangsdaten.</param>
-    /// <param name="OptionsProvider">Liefert zur Laufzeit die vollständigen Spotify-Einstellungen.</param>
-    /// <param name="LogViewerCoordinator">Kapselt Datei- und Speicherzugriff der Protokollansicht.</param>
-    /// <param name="LoggerManager">Wird nach dem Speichern mit den neuen Werten versorgt.</param>
-    /// <param name="StatusBar">Wird über ungespeicherte Änderungen informiert.</param>
-    /// <param name="SuppressionService">Kennt die dauerhaft ausgeblendeten Hinweise.</param>
-    /// <param name="LoggerFactory">Protokolliert, was die Schaltflächen der Hinweisliste nebenher tun.</param>
-    /// <param name="LanguageSwitchService">Kapselt Ablage, Sprachvorgabe und Neustart. Nullable für Tests.</param>
-    /// <param name="DataTransfer">Export und Einspielen unter Wartung. Nullable für Tests.</param>
-    /// <param name="Replication">Abgleich zwischen Geräten unter Wartung. Nullable für Tests.</param>
-    internal sealed record SettingsViewModelContext(
-        IServiceScopeFactory ScopeFactory,
-        IThemeService ThemeService,
-        ISyncService SyncService,
-        IErrorDialogService ErrorDialogService,
-        IConfirmationDialogService ConfirmationDialogService,
-        ILocalizationService LocalizationService,
-        IEpisodePatternAnalyzer PatternAnalyzer,
-        IConnectionTestCoordinator ConnectionTestCoordinator,
-        ISpotifyCredentialStore CredentialStore,
-        ISpotifyOptionsProvider OptionsProvider,
-        ILogViewerCoordinator LogViewerCoordinator,
-        LoggerManager LoggerManager,
-        StatusBarViewModel StatusBar,
-        IDialogSuppressionService SuppressionService,
-        EchoPlay.Logger.Abstractions.ILoggerFactory LoggerFactory,
-        ILanguageSwitchService? LanguageSwitchService = null,
-        DataTransferViewModel? DataTransfer = null,
-        ReplicationSettingsViewModel? Replication = null);
+    internal sealed record SettingsViewModelContext
+    {
+        /// <summary>Für datenbanknahe Zugriffe beim Laden und Speichern.</summary>
+        public required IServiceScopeFactory ScopeFactory { get; init; }
+
+        /// <summary>Wendet ein Farbschema sofort an.</summary>
+        public required IThemeService ThemeService { get; init; }
+
+        /// <summary>Gleicht die lokale Mediathek ab.</summary>
+        public required ISyncService SyncService { get; init; }
+
+        /// <summary>Zeigt Fehlerhinweise.</summary>
+        public required IErrorDialogService ErrorDialogService { get; init; }
+
+        /// <summary>Fragt beim Verlassen mit ungespeicherten Änderungen nach.</summary>
+        public required IConfirmationDialogService ConfirmationDialogService { get; init; }
+
+        /// <summary>Liefert die Texte der Dialoge.</summary>
+        public required ILocalizationService LocalizationService { get; init; }
+
+        /// <summary>Erkennt das Ordnermuster der Folgen im Bibliotheksordner.</summary>
+        public required IEpisodePatternAnalyzer PatternAnalyzer { get; init; }
+
+        /// <summary>Kapselt den Verbindungstest gegen den aktiven Anbieter.</summary>
+        public required IConnectionTestCoordinator ConnectionTestCoordinator { get; init; }
+
+        /// <summary>Speichert und liest die Spotify-Zugangsdaten.</summary>
+        public required ISpotifyCredentialStore CredentialStore { get; init; }
+
+        /// <summary>Liefert zur Laufzeit die vollständigen Spotify-Einstellungen.</summary>
+        public required ISpotifyOptionsProvider OptionsProvider { get; init; }
+
+        /// <summary>Kapselt Datei- und Speicherzugriff der Protokollansicht.</summary>
+        public required ILogViewerCoordinator LogViewerCoordinator { get; init; }
+
+        /// <summary>Wird nach dem Speichern mit den neuen Werten versorgt.</summary>
+        public required LoggerManager LoggerManager { get; init; }
+
+        /// <summary>Wird über ungespeicherte Änderungen informiert.</summary>
+        public required StatusBarViewModel StatusBar { get; init; }
+
+        /// <summary>Kennt die dauerhaft ausgeblendeten Hinweise.</summary>
+        public required IDialogSuppressionService SuppressionService { get; init; }
+
+        /// <summary>Protokolliert, was die Schaltflächen der Hinweisliste nebenher tun.</summary>
+        public required EchoPlay.Logger.Abstractions.ILoggerFactory LoggerFactory { get; init; }
+
+        /// <summary>Kapselt Ablage, Sprachvorgabe und Neustart. Nullable für Tests.</summary>
+        public ILanguageSwitchService? LanguageSwitchService { get; init; }
+
+        /// <summary>Export und Einspielen unter Wartung. Nullable für Tests.</summary>
+        public DataTransferViewModel? DataTransfer { get; init; }
+
+        /// <summary>Abgleich zwischen Geräten unter Wartung. Nullable für Tests.</summary>
+        public ReplicationSettingsViewModel? Replication { get; init; }
+    }
 }

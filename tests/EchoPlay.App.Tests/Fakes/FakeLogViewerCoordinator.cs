@@ -1,11 +1,7 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
 using EchoPlay.Logger.Models;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using System;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -30,35 +29,19 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Initialisiert die Kachel.
         /// </summary>
-        /// <param name="seriesId">Kennung der Serie; ein Klick öffnet ihre Detailseite.</param>
-        /// <param name="seriesName">Name der Serie.</param>
-        /// <param name="episodeTitle">Albumname beim Anbieter.</param>
-        /// <param name="dateLine">Erscheinungstag und Folgennummer, fertig formatiert.</param>
-        /// <param name="coverUri">Adresse des Covers, oder <c>null</c>.</param>
-        /// <param name="badgeText">Kennzeichen oben links, oder <c>null</c> für keines.</param>
-        /// <param name="releaseDateUtc">Erscheinungszeitpunkt (UTC).</param>
-        /// <param name="isAnnounced">Ob die Folge noch nicht erschienen ist.</param>
-        /// <param name="availability">Wo die Folge im Bestand liegt.</param>
-        public ReleaseCalendarItemViewModel(
-            Guid seriesId,
-            string seriesName,
-            string episodeTitle,
-            string dateLine,
-            Uri? coverUri,
-            string? badgeText,
-            DateTime releaseDateUtc,
-            bool isAnnounced,
-            ReleaseAvailability availability)
+        /// <param name="data">Was der Eintrag anzeigt.</param>
+        public ReleaseCalendarItemViewModel(ReleaseCalendarItemData data)
         {
-            SeriesId = seriesId;
-            SeriesName = seriesName;
-            EpisodeTitle = episodeTitle;
-            DateLine = dateLine;
-            CoverUri = coverUri;
-            BadgeText = badgeText;
-            ReleaseDateUtc = releaseDateUtc;
-            IsAnnounced = isAnnounced;
-            Availability = availability;
+            ArgumentNullException.ThrowIfNull(data);
+            SeriesId = data.SeriesId;
+            SeriesName = data.SeriesName;
+            EpisodeTitle = data.EpisodeTitle;
+            DateLine = data.DateLine;
+            CoverUri = data.CoverUri;
+            BadgeText = data.BadgeText;
+            ReleaseDateUtc = data.ReleaseDateUtc;
+            IsAnnounced = data.IsAnnounced;
+            Availability = data.Availability;
         }
 
         /// <summary>Kennung der Serie.</summary>

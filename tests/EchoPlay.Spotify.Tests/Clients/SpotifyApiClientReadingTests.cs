@@ -2,14 +2,9 @@ using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using EchoPlay.Spotify.Clients;
 using EchoPlay.Spotify.Dtos;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.Spotify.Tests.Clients
 {

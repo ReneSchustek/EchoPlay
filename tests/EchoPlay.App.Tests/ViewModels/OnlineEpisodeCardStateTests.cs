@@ -1,10 +1,7 @@
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -25,7 +22,12 @@ namespace EchoPlay.App.Tests.ViewModels
             // Online eingelesene Folgen tragen die Nummer bereits im Titel; die
             // Nummer aus der Datenbank ist die Spur im Album und gehört nicht davor.
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 4, title: "125 - Der Karpatenhund");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 4,
+                    Title = "125 - Der Karpatenhund",
+                });
 
             Assert.Equal("125 - Der Karpatenhund", card.DisplayText);
         }
@@ -34,8 +36,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void ReleaseDateText_WithDate_ShowsItInDayMonthYear()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1",
-                releaseDate: new DateTime(2026, 3, 7, 0, 0, 0, DateTimeKind.Utc));
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    ReleaseDate = new DateTime(2026, 3, 7, 0, 0, 0, DateTimeKind.Utc),
+                });
 
             Assert.Equal("07.03.2026", card.ReleaseDateText);
         }
@@ -44,7 +51,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public void ReleaseDateText_WithoutDate_StaysEmpty()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
 
             Assert.Equal(string.Empty, card.ReleaseDateText);
         }
@@ -53,8 +65,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void OpenInBrowserVisibility_WithProviderUrl_ShowsTheButton()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1",
-                providerUrl: new Uri("https://example.invalid/album/1"));
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    ProviderUrl = new Uri("https://example.invalid/album/1"),
+                });
 
             Assert.Equal(Visibility.Visible, card.OpenInBrowserVisibility);
         }
@@ -63,7 +80,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public void OpenInBrowserVisibility_WithoutProviderUrl_HidesTheButton()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
 
             Assert.Equal(Visibility.Collapsed, card.OpenInBrowserVisibility);
         }
@@ -72,7 +94,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void CompletedVisibility_FollowsTheCompletedFlag()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1", isCompleted: true);
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    IsCompleted = true,
+                });
 
             Assert.Equal(Visibility.Visible, card.CompletedVisibility);
 
@@ -85,7 +113,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public void IsCompleted_WhenChanged_AnnouncesTheCheckmarkAsWell()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
             List<string?> changed = [];
             ((INotifyPropertyChanged)card).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -101,7 +134,13 @@ namespace EchoPlay.App.Tests.ViewModels
         public void IsCompleted_SetToTheSameValue_AnnouncesNothing()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1", isCompleted: true);
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    IsCompleted = true,
+                });
             List<string?> changed = [];
             ((INotifyPropertyChanged)card).PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -114,7 +153,12 @@ namespace EchoPlay.App.Tests.ViewModels
         public void OpenInBrowserCommand_WithoutProviderUrl_DoesNotMarkTheEpisodeAsHeard()
         {
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1");
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                });
 
             card.OpenInBrowserCommand.Execute(null);
 
@@ -128,8 +172,13 @@ namespace EchoPlay.App.Tests.ViewModels
             // Adresse würde sonst ein beliebiges Programm starten, und die Folge wäre
             // obendrein als gehört vermerkt, ohne dass etwas passiert ist.
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, episodeNumber: 1, title: "Folge 1",
-                providerUrl: new Uri("file:///C:/Windows/System32/calc.exe"));
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Folge 1",
+                    ProviderUrl = new Uri("file:///C:/Windows/System32/calc.exe"),
+                });
 
             card.OpenInBrowserCommand.Execute(null);
 

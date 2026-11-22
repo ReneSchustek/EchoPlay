@@ -1,5 +1,4 @@
 using EchoPlay.App.Helpers;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Tests.Helpers
 {
@@ -15,7 +14,7 @@ namespace EchoPlay.App.Tests.Helpers
         {
             List<string> entries = ["10:00 INFO Start", "10:01 WARN Platte fast voll"];
 
-            IReadOnlyList<string> lines = LogViewBuilder.BuildLines(entries, isViewerAvailable: true);
+            IReadOnlyList<string> lines = LogViewBuilder.BuildLines(entries);
 
             Assert.Equal(entries, lines);
         }
@@ -23,7 +22,7 @@ namespace EchoPlay.App.Tests.Helpers
         [Fact]
         public void BuildLines_WithoutEntries_ReturnsHintInsteadOfNothing()
         {
-            IReadOnlyList<string> lines = LogViewBuilder.BuildLines([], isViewerAvailable: true);
+            IReadOnlyList<string> lines = LogViewBuilder.BuildLines([]);
 
             string single = Assert.Single(lines);
             Assert.Equal("Keine Protokolleinträge vorhanden.", single);
@@ -32,18 +31,17 @@ namespace EchoPlay.App.Tests.Helpers
         [Fact]
         public void BuildLines_WithNullEntries_ReturnsHint()
         {
-            IReadOnlyList<string> lines = LogViewBuilder.BuildLines(null, isViewerAvailable: true);
+            IReadOnlyList<string> lines = LogViewBuilder.BuildLines(null);
 
             _ = Assert.Single(lines);
         }
 
         [Fact]
-        public void BuildLines_WithoutViewer_ExplainsWhyNothingIsShown()
+        public void UnavailableLines_ExplainWhyNothingIsShown()
         {
             // Ohne registrierten Puffer kann die Anzeige nie etwas enthalten, der
             // Hinweis unterscheidet diesen Zustand von „nichts passiert".
-            IReadOnlyList<string> lines = LogViewBuilder.BuildLines(
-                ["10:00 INFO Start"], isViewerAvailable: false);
+            IReadOnlyList<string> lines = LogViewBuilder.UnavailableLines();
 
             string single = Assert.Single(lines);
             Assert.Contains("nicht verfügbar", single, System.StringComparison.Ordinal);

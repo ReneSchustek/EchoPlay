@@ -4,14 +4,8 @@ using EchoPlay.AppleMusic.Abstractions;
 using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Spotify.Abstractions;
-using EchoPlay.Spotify.Dtos;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

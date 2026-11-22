@@ -3,10 +3,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.Spotify.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Composition
 {

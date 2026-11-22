@@ -222,7 +222,7 @@ namespace EchoPlay.Data.Replication.Exchange
                 return (null, error);
             }
 
-            return batch!.DeviceId != peer || batch.Sequence != file.Sequence || batch.IsSnapshot != file.IsSnapshot
+            return batch.DeviceId != peer || batch.Sequence != file.Sequence || batch.IsSnapshot != file.IsSnapshot
                 ? (null, "Inhalt passt nicht zu Ordner und Dateiname; die Datei gehört nicht hierher.")
                 : (batch, null);
         }
@@ -249,7 +249,7 @@ namespace EchoPlay.Data.Replication.Exchange
             {
                 if (ExchangeLayout.TryRead(path, out ExchangeFile? file))
                 {
-                    files.Add(file!);
+                    files.Add(file);
                 }
             }
 

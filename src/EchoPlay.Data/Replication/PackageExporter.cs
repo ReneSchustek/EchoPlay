@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.IO.Compression;
 using EchoPlay.Core.Replication;
 using EchoPlay.Core.Replication.Packaging;
@@ -22,7 +23,12 @@ namespace EchoPlay.Data.Replication
     /// <param name="context">Der Datenbankkontext.</param>
     /// <param name="databaseFile">Die Datei der Datenbank.</param>
     /// <param name="device">Die Geräte-Kennung für das Manifest.</param>
-    public sealed class PackageExporter(EchoPlayDbContext context, DatabaseFileLocation databaseFile, IDeviceIdentity device)
+    /// <param name="timeProvider">Zeitquelle für den Erstellzeitpunkt im Manifest; ohne Angabe die Systemzeit.</param>
+    public sealed class PackageExporter(
+        EchoPlayDbContext context,
+        DatabaseFileLocation databaseFile,
+        IDeviceIdentity device,
+        TimeProvider? timeProvider = null)
     {
         /// <summary>Spielraum über die Größe der Datenbank hinaus, den der Export am Ziel verlangt.</summary>
         internal const long SpaceMargin = 64L * 1024 * 1024;
@@ -62,7 +68,7 @@ namespace EchoPlay.Data.Replication
             {
                 await RemoveCredentialsAsync(snapshot, cancellationToken).ConfigureAwait(false);
 
-                SpaceCheck.Require(Path.GetDirectoryName(targetPath)!, new FileInfo(snapshot).Length + SpaceMargin);
+                SpaceCheck.Require(ParentFolder.Of(targetPath), new FileInfo(snapshot).Length + SpaceMargin);
 
                 await WritePackageAsync(
                     partial,
@@ -96,7 +102,7 @@ namespace EchoPlay.Data.Replication
         private PackageManifest CreateManifest(string appVersion, string lastMigration, string? root, List<PackageEntry> entries) =>
             new(
                 PackageFormat.CurrentFormatVersion, appVersion, lastMigration, _device.DeviceId,
-                DateTimeOffset.UtcNow, string.IsNullOrWhiteSpace(root) ? null : root, entries);
+                (timeProvider ?? TimeProvider.System).GetUtcNow(), string.IsNullOrWhiteSpace(root) ? null : root, entries);
 
         /// <summary>Liest die zuletzt eingespielte Migration und den Stammpfad der Mediathek.</summary>
         private async Task<(string LastMigration, string? Root)> ReadSchemaAndRootAsync(CancellationToken cancellationToken)
@@ -194,7 +200,7 @@ namespace EchoPlay.Data.Replication
                         progress.Report(Math.Min(0.99, (double)written / length));
                     };
                 (long total, string sha256) = await HashingCopy.CopyAsync(
-                    input, target, long.MaxValue, exactLength: false, onCopied, cancellationToken).ConfigureAwait(false);
+                    input, target, CopyLimit.Unlimited, onCopied, cancellationToken).ConfigureAwait(false);
                 return new PackageEntry(name, total, sha256);
             }
         }

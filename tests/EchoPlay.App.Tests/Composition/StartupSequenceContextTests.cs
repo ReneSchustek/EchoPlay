@@ -2,17 +2,12 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Startup;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 using EchoPlay.Logger.Management;
-using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.IO;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Composition
 {
@@ -111,6 +106,12 @@ namespace EchoPlay.App.Tests.Composition
         {
             _ = services.AddSingleton<ISpotifyCredentialStore>(new FakeSpotifyCredentialStore());
             _ = services.AddSingleton(new BackgroundCoverServiceOptions());
+            _ = services.AddSingleton(provider => new CoverSources
+            {
+                CoverService = provider.GetRequiredService<ICoverService>(),
+                CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                RateLimiter = provider.GetRequiredService<IHostRateLimiter>(),
+            });
             _ = services.AddSingleton<BackgroundCoverService>();
             _ = services.AddSingleton<IHostRateLimiter>(new RecordingHostRateLimiter());
             _ = services.AddSingleton<IInstallerLauncher>(new FakeInstallerLauncher());

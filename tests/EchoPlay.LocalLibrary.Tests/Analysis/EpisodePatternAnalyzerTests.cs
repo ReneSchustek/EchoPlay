@@ -1,7 +1,4 @@
 using EchoPlay.LocalLibrary.Analysis;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace EchoPlay.LocalLibrary.Tests.Analysis
 {

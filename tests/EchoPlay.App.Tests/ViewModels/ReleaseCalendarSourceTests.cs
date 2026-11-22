@@ -2,7 +2,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Library;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Globalization;
 
 namespace EchoPlay.App.Tests.ViewModels

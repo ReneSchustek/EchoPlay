@@ -1,7 +1,5 @@
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
-using System;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

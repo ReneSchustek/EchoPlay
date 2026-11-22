@@ -1,8 +1,5 @@
 using EchoPlay.Core.Parsing;
 using EchoPlay.LocalLibrary.Metadata;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Fakes
 {

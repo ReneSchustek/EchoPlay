@@ -2,7 +2,6 @@ using System.Reflection;
 using EchoPlay.Data.Context;
 using EchoPlay.Data.Entities.Contracts;
 using EchoPlay.Data.Tests.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EchoPlay.Data.Tests.Replication
 {

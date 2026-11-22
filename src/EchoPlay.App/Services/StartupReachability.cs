@@ -1,11 +1,5 @@
-using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Logger.Abstractions;
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {

@@ -174,7 +174,7 @@ namespace EchoPlay.Data.Replication
             _ when target == typeof(int) => Convert.ToInt32(raw, CultureInfo.InvariantCulture),
             _ when target == typeof(double) => Convert.ToDouble(raw, CultureInfo.InvariantCulture),
             _ when target == typeof(DateTime) => DateTime.SpecifyKind(
-                DateTime.Parse(Convert.ToString(raw, CultureInfo.InvariantCulture)!, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
+                DateTime.Parse(Convert.ToString(raw, CultureInfo.InvariantCulture) ?? string.Empty, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
                 DateTimeKind.Utc),
             _ when target.IsEnum => Enum.ToObject(target, Convert.ToInt64(raw, CultureInfo.InvariantCulture)),
             _ => null,

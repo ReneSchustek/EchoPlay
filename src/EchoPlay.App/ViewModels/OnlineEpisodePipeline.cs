@@ -5,10 +5,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -155,9 +151,9 @@ namespace EchoPlay.App.ViewModels
 
             // Fehlende Cover im Hintergrund nachladen. Die UI zeigt erst Platzhalter,
             // Cover erscheinen progressiv sobald der Download fertig ist.
-            if (episodeCards.Any(ep => ep.CoverImage is null) && _ctx.CoverCacheService is not null)
+            if (episodeCards.Any(ep => ep.CoverImage is null) && _ctx.CoverCacheService is { } coverCache)
             {
-                _ = RefreshMissingEpisodeCoversAsync(card.Id, episodeCards, ct);
+                _ = RefreshMissingEpisodeCoversAsync(coverCache, card.Id, episodeCards, ct);
             }
         }
 
@@ -194,15 +190,18 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Die Kachel einer Folge, noch ohne Cover.</summary>
         private OnlineEpisodeCardViewModel ToCard(Episode episode) => new(
-            episodeId: episode.Id,
-            episodeNumber: episode.EpisodeNumber,
-            title: episode.Title,
-            releaseDate: episode.ReleaseDate,
-            isCompleted: _state.CompletedEpisodeIds.Contains(episode.Id),
-            providerUrl: WebAddress.TryParse(episode.ProviderUrl),
-            scopeFactory: _ctx.ScopeFactory,
-            appleMusicAlbumId: episode.AppleMusicAlbumId,
-            spotifyAlbumId: episode.SpotifyAlbumId);
+            new OnlineEpisodeCardData
+            {
+                EpisodeId = episode.Id,
+                EpisodeNumber = episode.EpisodeNumber,
+                Title = episode.Title,
+                ReleaseDate = episode.ReleaseDate,
+                IsCompleted = _state.CompletedEpisodeIds.Contains(episode.Id),
+                ProviderUrl = WebAddress.TryParse(episode.ProviderUrl),
+                AppleMusicAlbumId = episode.AppleMusicAlbumId,
+                SpotifyAlbumId = episode.SpotifyAlbumId,
+            },
+            scopeFactory: _ctx.ScopeFactory);
 
         /// <summary>
         /// Wie viele Cover vor dem ersten Zeichnen umgewandelt werden. Das deckt den
@@ -327,13 +326,14 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Nachlade-Task für fehlende Episoden-Cover im Hintergrund: HTTP-/Provider-/Cache-Fehler dürfen die UI nicht stören; Fehler werden geloggt.")]
         private async Task RefreshMissingEpisodeCoversAsync(
+            EpisodeCoverCacheService coverCache,
             Guid seriesId,
             List<OnlineEpisodeCardViewModel> episodeCards,
             CancellationToken ct)
         {
             try
             {
-                Task cacheTask = _ctx.CoverCacheService!.CacheCoversAsync(seriesId, ct: ct);
+                Task cacheTask = coverCache.CacheCoversAsync(seriesId, ct: ct);
 
                 // Kacheln periodisch aktualisieren bis der Download fertig ist
                 while (!cacheTask.IsCompleted && !ct.IsCancellationRequested)

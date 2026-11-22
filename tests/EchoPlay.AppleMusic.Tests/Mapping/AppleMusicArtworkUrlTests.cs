@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.AppleMusic.Mapping;
 
 namespace EchoPlay.AppleMusic.Tests.Mapping

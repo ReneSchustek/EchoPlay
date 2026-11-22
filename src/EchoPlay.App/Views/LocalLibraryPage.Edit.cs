@@ -4,10 +4,7 @@ using EchoPlay.App.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using System;
 using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Views
 {
@@ -64,7 +61,10 @@ namespace EchoPlay.App.Views
                     Content.XamlRoot,
                     title: _resources.GetString("EditEpisodeDialogTitle"),
                     content: string.Format(CultureInfo.CurrentCulture, _resources.GetString("EditTagsFailedFormat"), outcome.TagsFailed),
-                    closeButtonText: _resources.GetString("CommonCloseButton"));
+                    new Helpers.ScrollableTextDialogOptions
+                    {
+                        CloseButtonText = _resources.GetString("CommonCloseButton"),
+                    });
             }
         }
 
@@ -87,7 +87,7 @@ namespace EchoPlay.App.Views
             dialog.PrimaryButtonClick += (_, args) =>
             {
                 string? problem = LocalMetadataValidation.ValidateEpisode(
-                    titleBox.Text, numberBox.Text, yearBox.Text, numberRequired: current.Number is not null, out number, out year);
+                    titleBox.Text, numberBox.Text, yearBox.Text, current.Number is null ? EpisodeNumberRule.Optional : EpisodeNumberRule.Required, out number, out year);
                 ShowProblem(error, problem, args);
             };
 

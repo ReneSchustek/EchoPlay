@@ -3,8 +3,6 @@ using EchoPlay.App.Services;
 using EchoPlay.Logger.Core;
 using Microsoft.UI.Dispatching;
 using Microsoft.Windows.AppLifecycle;
-using System;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Startup
 {

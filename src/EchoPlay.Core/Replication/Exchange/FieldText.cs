@@ -58,7 +58,7 @@ namespace EchoPlay.Core.Replication.Exchange
                 _ when target == typeof(TimeSpan) => TimeSpan.TryParseExact(text, "c", CultureInfo.InvariantCulture, out TimeSpan t) ? (true, t) : (false, null),
                 _ when target == typeof(DateTime) => DateTime.TryParseExact(text, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime dt) ? (true, dt) : (false, null),
                 _ when target == typeof(Guid) => Guid.TryParseExact(text, "N", out Guid g) ? (true, g) : (false, null),
-                _ when target.IsEnum => Enum.TryParse(target, text, ignoreCase: false, out object? e) && Enum.IsDefined(target, e!) ? (true, e) : (false, null),
+                _ when target.IsEnum => Enum.TryParse(target, text, ignoreCase: false, out object? e) && Enum.IsDefined(target, e) ? (true, e) : (false, null),
                 _ => (false, null),
             };
             return parsed;

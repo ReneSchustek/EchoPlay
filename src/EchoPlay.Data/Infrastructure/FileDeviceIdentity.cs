@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using EchoPlay.Core.Replication;
 
 namespace EchoPlay.Data.Infrastructure
@@ -41,7 +42,7 @@ namespace EchoPlay.Data.Infrastructure
             }
 
             Guid created = Guid.NewGuid();
-            _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            _ = Directory.CreateDirectory(ParentFolder.Of(path));
             File.WriteAllText(path, created.ToString("N"));
             return created;
         }

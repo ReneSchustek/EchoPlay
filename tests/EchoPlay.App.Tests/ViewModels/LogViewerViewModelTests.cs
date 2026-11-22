@@ -1,8 +1,5 @@
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

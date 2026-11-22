@@ -58,13 +58,16 @@ namespace EchoPlay.App.Composition
             _ = services.AddTransient(CreateLocalLibraryViewModel);
 
             _ = services.AddTransient<SearchViewModel>(provider => new SearchViewModel(
-                provider.GetRequiredService<ImportService>(),
-                provider.GetRequiredService<IErrorDialogService>(),
-                provider.GetRequiredService<ILocalizationService>(),
+                new SearchResultServices
+                {
+                    ImportService = provider.GetRequiredService<ImportService>(),
+                    ErrorDialogService = provider.GetRequiredService<IErrorDialogService>(),
+                    LocalizationService = provider.GetRequiredService<ILocalizationService>(),
+                    BackgroundCoverService = provider.GetRequiredService<BackgroundCoverService>(),
+                },
                 provider.GetRequiredService<IServiceScopeFactory>(),
                 provider.GetRequiredService<INavigationService>(),
                 provider.GetRequiredService<IPageModeGuard>(),
-                provider.GetRequiredService<BackgroundCoverService>(),
                 provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("SearchViewModel")));
 
             _ = services.AddTransient<SeriesDetailViewModel>(provider => new SeriesDetailViewModel(
@@ -79,34 +82,39 @@ namespace EchoPlay.App.Composition
 
         /// <summary>Baut das Ansichtsmodell aus dem Container.</summary>
         private static DashboardViewModel CreateDashboardViewModel(IServiceProvider provider) => new(
-                new DashboardViewModelContext(
-                    provider.GetRequiredService<IServiceScopeFactory>(),
-                    provider.GetRequiredService<IErrorDialogService>(),
-                    provider.GetRequiredService<IConfirmationDialogService>(),
-                    provider.GetRequiredService<IPlayerService>(),
-                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
-                    provider.GetRequiredService<ICoverService>(),
-                    provider.GetRequiredService<ILocalizationService>(),
-                    provider.GetRequiredService<IClock>(),
-                    provider.GetRequiredService<BackgroundCoverService>(),
-                    provider.GetRequiredService<INewReleaseEventService>(),
-                    provider.GetRequiredService<ReleaseCalendarRefreshService>()));
+                new DashboardViewModelContext
+                {
+                    ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                    ErrorDialogService = provider.GetRequiredService<IErrorDialogService>(),
+                    ConfirmationDialogService = provider.GetRequiredService<IConfirmationDialogService>(),
+                    PlayerService = provider.GetRequiredService<IPlayerService>(),
+                    LoggerFactory = provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
+                    CoverService = provider.GetRequiredService<ICoverService>(),
+                    LocalizationService = provider.GetRequiredService<ILocalizationService>(),
+                    Clock = provider.GetRequiredService<IClock>(),
+                    BackgroundCoverService = provider.GetRequiredService<BackgroundCoverService>(),
+                    NewReleaseEventService = provider.GetRequiredService<INewReleaseEventService>(),
+                    ReleaseCalendarService = provider.GetRequiredService<ReleaseCalendarRefreshService>(),
+                });
 
 
         /// <summary>Baut das Ansichtsmodell aus dem Container.</summary>
         private static OnlineLibraryViewModel CreateOnlineLibraryViewModel(IServiceProvider provider) => new(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<IConfirmationDialogService>(),
-                provider.GetRequiredService<ImportService>(),
-                provider.GetRequiredService<IErrorDialogService>(),
-                provider.GetRequiredService<ILocalizationService>(),
-                provider.GetRequiredService<IOnlineAccessGuard>(),
-                provider.GetRequiredService<ICoverDownloader>(),
-                provider.GetRequiredService<EpisodeCoverCacheService>(),
-                provider.GetRequiredService<ICoverService>(),
-                provider.GetRequiredService<BackgroundCoverService>(),
-                provider.GetRequiredService<IWatchToggleService>(),
-                provider.GetRequiredService<IHostRateLimiter>(),
+                new OnlineLibraryActionsContext
+                {
+                    ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                    ConfirmationDialogService = provider.GetRequiredService<IConfirmationDialogService>(),
+                    ImportService = provider.GetRequiredService<ImportService>(),
+                    ErrorDialogService = provider.GetRequiredService<IErrorDialogService>(),
+                    LocalizationService = provider.GetRequiredService<ILocalizationService>(),
+                    OnlineAccessGuard = provider.GetRequiredService<IOnlineAccessGuard>(),
+                    CoverDownloader = provider.GetRequiredService<ICoverDownloader>(),
+                    CoverCacheService = provider.GetRequiredService<EpisodeCoverCacheService>(),
+                    CoverService = provider.GetRequiredService<ICoverService>(),
+                    BackgroundCoverService = provider.GetRequiredService<BackgroundCoverService>(),
+                    WatchToggleService = provider.GetRequiredService<IWatchToggleService>(),
+                    RateLimiter = provider.GetRequiredService<IHostRateLimiter>(),
+                },
                 provider.GetRequiredService<IPageModeGuard>(),
                 provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ICoverSearchService>(),
                 provider.GetRequiredService<INavigationService>());
@@ -114,27 +122,29 @@ namespace EchoPlay.App.Composition
 
         /// <summary>Baut das Ansichtsmodell aus dem Container.</summary>
         private static LocalLibraryViewModel CreateLocalLibraryViewModel(IServiceProvider provider) => new(
-                new LocalLibraryViewModelContext(
-                    provider.GetRequiredService<IServiceScopeFactory>(),
-                    provider.GetRequiredService<ISyncService>(),
-                    provider.GetRequiredService<IPlayerService>(),
-                    provider.GetRequiredService<IErrorDialogService>(),
-                    provider.GetRequiredService<IConfirmationDialogService>(),
-                    provider.GetRequiredService<StatusBarViewModel>(),
-                    provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(),
-                    provider.GetRequiredService<IScanEventService>(),
-                    provider.GetRequiredService<IOnlineAccessGuard>(),
-                    provider.GetRequiredService<IClock>(),
-                    provider.GetRequiredService<ICoverService>(),
-                    provider.GetRequiredService<IWatchToggleService>(),
-                    provider.GetRequiredService<IPageModeGuard>(),
-                    provider.GetRequiredService<IFolderRestructureCoordinator>(),
-                    provider.GetRequiredService<IMissingEpisodesCoordinator>(),
-                    provider.GetRequiredService<IEpisodeCoverCoordinator>(),
-                    provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("LocalLibrary"),
-                    provider.GetRequiredService<FilterStateStore>(),
-                    provider.GetRequiredService<IEpisodeFolderRenameCoordinator>(),
-                    provider.GetRequiredService<ILocalMetadataEditor>()));
+                new LocalLibraryViewModelContext
+                {
+                    ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                    SyncService = provider.GetRequiredService<ISyncService>(),
+                    PlayerService = provider.GetRequiredService<IPlayerService>(),
+                    ErrorDialogService = provider.GetRequiredService<IErrorDialogService>(),
+                    ConfirmationDialogService = provider.GetRequiredService<IConfirmationDialogService>(),
+                    StatusBar = provider.GetRequiredService<StatusBarViewModel>(),
+                    CoverLoader = provider.GetRequiredService<EchoPlay.LocalLibrary.Cover.ILocalCoverLoader>(),
+                    ScanEventService = provider.GetRequiredService<IScanEventService>(),
+                    OnlineAccessGuard = provider.GetRequiredService<IOnlineAccessGuard>(),
+                    Clock = provider.GetRequiredService<IClock>(),
+                    CoverService = provider.GetRequiredService<ICoverService>(),
+                    WatchToggleService = provider.GetRequiredService<IWatchToggleService>(),
+                    PageModeGuard = provider.GetRequiredService<IPageModeGuard>(),
+                    RestructureCoordinator = provider.GetRequiredService<IFolderRestructureCoordinator>(),
+                    MissingEpisodesCoordinator = provider.GetRequiredService<IMissingEpisodesCoordinator>(),
+                    CoverCoordinator = provider.GetRequiredService<IEpisodeCoverCoordinator>(),
+                    Logger = provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>().CreateLogger("LocalLibrary"),
+                    FilterState = provider.GetRequiredService<FilterStateStore>(),
+                    FolderRenameCoordinator = provider.GetRequiredService<IEpisodeFolderRenameCoordinator>(),
+                    MetadataEditor = provider.GetRequiredService<ILocalMetadataEditor>(),
+                });
 
         /// <summary>Wiedergabeseite und der kleine Spieler in der Kopfzeile.</summary>
         private static void AddPlaybackViewModels(IServiceCollection services)
@@ -165,25 +175,27 @@ namespace EchoPlay.App.Composition
 
         /// <summary>Die Einstellungsseite samt Datenumzug und Abgleich.</summary>
         private static SettingsViewModel CreateSettingsViewModel(IServiceProvider provider) => new(
-            new SettingsViewModelContext(
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                provider.GetRequiredService<IThemeService>(),
-                provider.GetRequiredService<ISyncService>(),
-                provider.GetRequiredService<IErrorDialogService>(),
-                provider.GetRequiredService<IConfirmationDialogService>(),
-                provider.GetRequiredService<ILocalizationService>(),
-                provider.GetRequiredService<EchoPlay.LocalLibrary.Analysis.IEpisodePatternAnalyzer>(),
-                provider.GetRequiredService<IConnectionTestCoordinator>(),
-                provider.GetRequiredService<ISpotifyCredentialStore>(),
-                provider.GetRequiredService<ISpotifyOptionsProvider>(),
-                provider.GetRequiredService<ILogViewerCoordinator>(),
-                provider.GetRequiredService<EchoPlay.Logger.Core.LoggerManager>(),
-                provider.GetRequiredService<StatusBarViewModel>(),
-                provider.GetRequiredService<IDialogSuppressionService>(),
-                provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
-                provider.GetRequiredService<ILanguageSwitchService>(),
-                CreateDataTransferViewModel(provider),
-                CreateReplicationSettingsViewModel(provider)));
+            new SettingsViewModelContext
+            {
+                ScopeFactory = provider.GetRequiredService<IServiceScopeFactory>(),
+                ThemeService = provider.GetRequiredService<IThemeService>(),
+                SyncService = provider.GetRequiredService<ISyncService>(),
+                ErrorDialogService = provider.GetRequiredService<IErrorDialogService>(),
+                ConfirmationDialogService = provider.GetRequiredService<IConfirmationDialogService>(),
+                LocalizationService = provider.GetRequiredService<ILocalizationService>(),
+                PatternAnalyzer = provider.GetRequiredService<EchoPlay.LocalLibrary.Analysis.IEpisodePatternAnalyzer>(),
+                ConnectionTestCoordinator = provider.GetRequiredService<IConnectionTestCoordinator>(),
+                CredentialStore = provider.GetRequiredService<ISpotifyCredentialStore>(),
+                OptionsProvider = provider.GetRequiredService<ISpotifyOptionsProvider>(),
+                LogViewerCoordinator = provider.GetRequiredService<ILogViewerCoordinator>(),
+                LoggerManager = provider.GetRequiredService<EchoPlay.Logger.Core.LoggerManager>(),
+                StatusBar = provider.GetRequiredService<StatusBarViewModel>(),
+                SuppressionService = provider.GetRequiredService<IDialogSuppressionService>(),
+                LoggerFactory = provider.GetRequiredService<EchoPlay.Logger.Abstractions.ILoggerFactory>(),
+                LanguageSwitchService = provider.GetRequiredService<ILanguageSwitchService>(),
+                DataTransfer = CreateDataTransferViewModel(provider),
+                Replication = CreateReplicationSettingsViewModel(provider),
+            });
 
         /// <summary>Datenumzug und Mediathek-Archiv der Einstellungsseite.</summary>
         private static DataTransferViewModel CreateDataTransferViewModel(IServiceProvider provider) => new(

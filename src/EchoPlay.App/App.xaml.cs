@@ -1,15 +1,12 @@
 using EchoPlay.App.Composition;
 using EchoPlay.App.Services;
 using EchoPlay.App.Startup;
-using EchoPlay.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App
 {

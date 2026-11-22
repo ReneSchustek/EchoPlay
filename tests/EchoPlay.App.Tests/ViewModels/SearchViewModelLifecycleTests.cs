@@ -2,19 +2,12 @@ using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.Core.Abstractions.Import;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -118,7 +111,13 @@ namespace EchoPlay.App.Tests.ViewModels
             ImportService importService = ImportTestServices.CreateImportService(provider);
 
             return new SearchViewModel(
-                importService, new FakeErrorDialogService(), new FakeLocalizationService(), scopeFactory);
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                },
+                scopeFactory: scopeFactory);
         }
     }
 }

@@ -1,12 +1,9 @@
 using EchoPlay.App.Tests.Fakes;
-using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

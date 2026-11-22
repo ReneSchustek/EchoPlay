@@ -7,11 +7,6 @@ using EchoPlay.Data.Entities.Library;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -280,13 +275,16 @@ namespace EchoPlay.App.Tests.Services
             FakeLoggerFactory loggerFactory = new();
 
             return new BackgroundCoverService(
-                scopeFactory,
-                new CoverService(scopeFactory, loggerFactory),
-                new CoverDownloader(provider.GetRequiredService<IHttpClientFactory>(), loggerFactory),
-                new FakeSpotifyCredentialStore(),
-                new BackgroundCoverServiceOptions(),
-                loggerFactory,
-                new FakeClock());
+                scopeFactory: scopeFactory,
+                sources: new CoverSources
+                {
+                    CoverService = new CoverService(scopeFactory, loggerFactory),
+                    CoverDownloader = new CoverDownloader(provider.GetRequiredService<IHttpClientFactory>(), loggerFactory),
+                },
+                credentialStore: new FakeSpotifyCredentialStore(),
+                options: new BackgroundCoverServiceOptions(),
+                loggerFactory: loggerFactory,
+                clock: new FakeClock());
         }
 
         [Fact]

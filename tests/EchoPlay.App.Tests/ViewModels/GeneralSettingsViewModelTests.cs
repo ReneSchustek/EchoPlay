@@ -1,8 +1,6 @@
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Logger.Models;
-using System;
-using System.Linq;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

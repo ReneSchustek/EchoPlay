@@ -1,9 +1,6 @@
 using EchoPlay.App.Helpers;
 using EchoPlay.LocalLibrary.Models;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 
 namespace EchoPlay.App.ViewModels

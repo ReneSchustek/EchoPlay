@@ -1,5 +1,4 @@
 using EchoPlay.App.Helpers;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Helpers
 {

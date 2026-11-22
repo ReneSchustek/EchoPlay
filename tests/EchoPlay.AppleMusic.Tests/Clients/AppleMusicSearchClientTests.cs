@@ -1,12 +1,7 @@
-using System;
 using System.Net;
-using System.Net.Http;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using EchoPlay.AppleMusic.Clients;
 using EchoPlay.AppleMusic.Dtos;
-using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Configuration;
 using EchoPlay.Logger.Core;
 

@@ -8,9 +8,6 @@ using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.LocalLibrary.Cover;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -461,19 +458,23 @@ namespace EchoPlay.App.Tests.ViewModels
                     _ => { });
 
                 return new LocalLibraryActions(
-                    scopeFactory,
-                    new FakeConfirmationDialogService(confirmResult),
-                    statusBar,
-                    new FakeOnlineAccessGuard(),
-                    watchToggleService,
-                    restructureCoordinator,
-                    missingEpisodesCoordinator,
-                    coverCoordinator,
-                    new FakeClock(),
-                    scanVM,
-                    artistsVM,
-                    new LocalEpisodesViewModel(scopeFactory, new FakeLocalCoverLoader(), new FakeClock()),
-                    new LocalTracksViewModel(new FakePlayerService(), scopeFactory, _ => { }));
+                    new LocalLibraryActionServices
+                    {
+                        ScopeFactory = scopeFactory,
+                        ConfirmationDialogService = new FakeConfirmationDialogService(confirmResult),
+                        StatusBar = statusBar,
+                        OnlineAccessGuard = new FakeOnlineAccessGuard(),
+                        Clock = new FakeClock(),
+                        WatchToggleService = watchToggleService,
+                        RestructureCoordinator = restructureCoordinator,
+                        MissingEpisodesCoordinator = missingEpisodesCoordinator,
+                        CoverCoordinator = coverCoordinator,
+                    },
+                    new LocalLibraryParts(
+                        scanVM,
+                        artistsVM,
+                        new LocalEpisodesViewModel(scopeFactory, new FakeLocalCoverLoader(), new FakeClock()),
+                        new LocalTracksViewModel(new FakePlayerService(), scopeFactory, _ => { })));
             }
         }
     }

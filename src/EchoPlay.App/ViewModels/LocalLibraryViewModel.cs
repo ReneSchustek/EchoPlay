@@ -1,7 +1,5 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
-using System;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -96,19 +94,19 @@ namespace EchoPlay.App.ViewModels
         /// </summary>
         private LocalLibraryActions CreateActions(LocalLibraryViewModelContext context) =>
             new(
-                context.ScopeFactory,
-                context.ConfirmationDialogService,
-                context.StatusBar,
-                context.OnlineAccessGuard,
-                context.WatchToggleService,
-                context.RestructureCoordinator,
-                context.MissingEpisodesCoordinator,
-                context.CoverCoordinator,
-                context.Clock,
-                ScanVM,
-                ArtistsVM,
-                EpisodesVM,
-                TracksVM);
+                new LocalLibraryActionServices
+                {
+                    ScopeFactory = context.ScopeFactory,
+                    ConfirmationDialogService = context.ConfirmationDialogService,
+                    StatusBar = context.StatusBar,
+                    OnlineAccessGuard = context.OnlineAccessGuard,
+                    Clock = context.Clock,
+                    WatchToggleService = context.WatchToggleService,
+                    RestructureCoordinator = context.RestructureCoordinator,
+                    MissingEpisodesCoordinator = context.MissingEpisodesCoordinator,
+                    CoverCoordinator = context.CoverCoordinator,
+                },
+                new LocalLibraryParts(ScanVM, ArtistsVM, EpisodesVM, TracksVM));
 
         /// <summary>
         /// Wird ausgelöst, wenn der Nutzer den Tag-Manager für einen Pfad öffnen möchte.

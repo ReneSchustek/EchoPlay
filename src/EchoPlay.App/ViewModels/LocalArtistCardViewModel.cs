@@ -1,10 +1,7 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Services;
-using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
-using System;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -25,37 +22,24 @@ namespace EchoPlay.App.ViewModels
         /// <summary>
         /// Erstellt ein Kachel-ViewModel für die linke Spalte.
         /// </summary>
-        /// <param name="seriesId">Datenbank-ID der Serie.</param>
-        /// <param name="title">Titel der Serie.</param>
+        /// <param name="data">Was die Kachel anzeigt.</param>
         /// <param name="coverImage">Vorschaubild oder null wenn kein Cover vorhanden ist.</param>
-        /// <param name="localFolderPath">Lokaler Serienordner für den "Alle Tracks"-Button.</param>
-        /// <param name="localEpisodeCount">Episoden mit mindestens einem lokal gefundenen Track.</param>
-        /// <param name="totalEpisodeCount">Gesamtanzahl aller Episoden dieser Serie.</param>
-        /// <param name="isFavorite">Ob die Serie aktuell als Favorit markiert ist.</param>
-        /// <param name="isWatched">Ob die Serie auf Neuerscheinungen überwacht wird.</param>
         /// <param name="scopeFactory">Für scoped DB-Zugriffe beim Favoriten-Toggle.</param>
-        /// <param name="isIncomplete">Ob der Serie Folgen fehlen, berechnet von <see cref="Services.IncompleteSeries"/>.</param>
         public LocalArtistCardViewModel(
-            Guid seriesId,
-            string title,
+            LocalArtistCardData data,
             BitmapImage? coverImage,
-            string? localFolderPath,
-            int localEpisodeCount,
-            int totalEpisodeCount,
-            bool isFavorite,
-            bool isWatched,
-            IServiceScopeFactory scopeFactory,
-            bool isIncomplete = false)
+            IServiceScopeFactory scopeFactory)
         {
-            SeriesId = seriesId;
-            Title = title;
+            ArgumentNullException.ThrowIfNull(data);
+            SeriesId = data.SeriesId;
+            Title = data.Title;
             CoverImage = coverImage;
-            LocalFolderPath = localFolderPath;
-            LocalEpisodeCount = localEpisodeCount;
-            TotalEpisodeCount = totalEpisodeCount;
-            IsFavorite = isFavorite;
-            IsWatched = isWatched;
-            IsIncomplete = isIncomplete;
+            LocalFolderPath = data.LocalFolderPath;
+            LocalEpisodeCount = data.LocalEpisodeCount;
+            TotalEpisodeCount = data.TotalEpisodeCount;
+            IsFavorite = data.IsFavorite;
+            IsWatched = data.IsWatched;
+            IsIncomplete = data.IsIncomplete;
             _scopeFactory = scopeFactory;
 
             ToggleFavoriteCommand = new RelayCommand(() => _ = ToggleFavoriteAsync());

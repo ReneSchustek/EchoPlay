@@ -4,11 +4,8 @@ using EchoPlay.App.Services;
 using EchoPlay.Core.Models;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {

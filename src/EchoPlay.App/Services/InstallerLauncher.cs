@@ -1,4 +1,3 @@
-using System;
 using EchoPlay.App.Helpers;
 using EchoPlay.Logger.Abstractions;
 

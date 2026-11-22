@@ -1,4 +1,3 @@
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
@@ -11,10 +10,6 @@ using EchoPlay.Data.Services.Interfaces;
 using EchoPlay.Spotify.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -70,7 +65,14 @@ namespace EchoPlay.App.Tests.ViewModels
                 searchResults, series, overrideSearch,
                 credentialsProvider: credentialsProvider,
                 appleMusicSearch: appleMusicSearch);
-            return new SearchViewModel(importService, new FakeErrorDialogService(), new FakeLocalizationService(), scopeFactory);
+            return new SearchViewModel(
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                },
+                scopeFactory: scopeFactory);
         }
 
         /// <summary>
@@ -239,7 +241,13 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeSeriesDataService seriesService = new();
             ImportService importService = BuildImportService([], seriesService, throwingSearch);
 
-            SearchViewModel vm = new(importService, errorDialog, new FakeLocalizationService());
+            SearchViewModel vm = new(
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = errorDialog,
+                    LocalizationService = new FakeLocalizationService(),
+                });
             vm.SearchText = "Irgendwas";
             vm.SearchCommand.Execute(null);
 
@@ -262,6 +270,29 @@ namespace EchoPlay.App.Tests.ViewModels
 
             _ = Assert.Single(vm.Results);
             Assert.Equal("Spotify", vm.Results[0].SourceLabel);
+        }
+
+        [Fact]
+        public async Task SearchCommand_WhenTheLocalSearchFails_ShowsTheError()
+        {
+            // Der Bereich kennt den Seriendienst nicht: Die lokale Suche scheitert, und der Fehler
+            // erscheint als Meldung, statt die Suche still abzubrechen.
+            FakeErrorDialogService errors = new();
+            SearchViewModel vm = new(
+                services: new SearchResultServices
+                {
+                    ImportService = BuildImportService([], new FakeSeriesDataService(), null),
+                    ErrorDialogService = errors,
+                    LocalizationService = new FakeLocalizationService(),
+                },
+                scopeFactory: new ServiceCollection().BuildServiceProvider().GetRequiredService<IServiceScopeFactory>());
+            vm.SelectedScopeIndex = 2; // Lokal
+            vm.SearchText = "TKKG";
+
+            vm.SearchCommand.Execute(null);
+            await vm.WaitForSearchCompleteAsync();
+
+            Assert.Equal(EchoPlay.Core.Models.DialogKey.OnlineSearchFailed, Assert.Single(errors.ShownKeys));
         }
 
         [Fact]
@@ -468,8 +499,14 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeErrorDialogService errorDialog = new();
             ImportService importService = BuildImportService([], new FakeSeriesDataService(), new ThrowingSeriesImportSearch());
 
-            SearchViewModel vm = new(importService, errorDialog, new FakeLocalizationService(),
-                BuildLocalScopeFactory(localSeries));
+            SearchViewModel vm = new(
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = errorDialog,
+                    LocalizationService = new FakeLocalizationService(),
+                },
+                scopeFactory: BuildLocalScopeFactory(localSeries));
             vm.SearchText = "Benjamin";
             vm.SearchCommand.Execute(null);
             await vm.WaitForSearchCompleteAsync();
@@ -659,9 +696,12 @@ namespace EchoPlay.App.Tests.ViewModels
             FakeNavigationService navigation = new();
             ImportService importService = BuildImportService([], new FakeSeriesDataService(), null);
             SearchViewModel viewModel = new(
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                },
                 navigationService: navigation);
 
             viewModel.NavigateToOnlineMediathek();
@@ -708,9 +748,12 @@ namespace EchoPlay.App.Tests.ViewModels
                 searchResults, new FakeSeriesDataService(), null);
 
             return new SearchViewModel(
-                importService,
-                new FakeErrorDialogService(),
-                new FakeLocalizationService(),
+                services: new SearchResultServices
+                {
+                    ImportService = importService,
+                    ErrorDialogService = new FakeErrorDialogService(),
+                    LocalizationService = new FakeLocalizationService(),
+                },
                 pageModeGuard: pageModeGuard);
         }
     }

@@ -1,16 +1,8 @@
 using EchoPlay.App.Models;
-using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
-using EchoPlay.TagManager.Abstractions;
 using EchoPlay.TagManager.Models;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -437,15 +429,12 @@ namespace EchoPlay.App.Tests.ViewModels
             private static TagLookupActions CreateActions(Harness harness, TagManagerActionsContext context)
                 => new(
                     context,
-                    harness.FileList,
-                    harness.Editor,
-                    harness.Rename,
-                    setIsLoading: _ => { },
-                    setIsLookingUp: state => harness.LookingUpStates.Add(state),
-                    setAutoLookupStatus: status => harness.AutoLookupStatus = status,
-                    setBatchProgress: _ => { },
-                    setHasUnsavedChanges: _ => { },
-                    refreshCommandStates: () => { },
+                    new TagManagerParts(harness.FileList, harness.Editor, new TagCoverViewModel(() => { }), harness.Rename),
+                    new TagManagerCallbacks
+                    {
+                        SetIsLookingUp = state => harness.LookingUpStates.Add(state),
+                        SetAutoLookupStatus = status => harness.AutoLookupStatus = status,
+                    },
                     previewRenameAsync: () =>
                     {
                         harness.PreviewRefreshed = true;

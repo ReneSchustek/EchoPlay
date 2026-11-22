@@ -1,11 +1,7 @@
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Services
 {
@@ -42,27 +38,32 @@ namespace EchoPlay.App.Services
         /// <summary>
         /// Initialisiert den Background-Cover-Service.
         /// </summary>
+        /// <param name="scopeFactory">Für die Datenbankzugriffe der einzelnen Durchgänge.</param>
+        /// <param name="sources">Cover-Speicher, Downloader und Drossel.</param>
+        /// <param name="credentialStore">Liefert die Spotify-Zugangsdaten für die Online-Phase.</param>
+        /// <param name="options">Takt und Umfang der Hintergrunddurchgänge.</param>
+        /// <param name="loggerFactory">Liefert den Protokollkanal des Dienstes.</param>
+        /// <param name="clock">Zeitquelle für die Wartefrist zwischen zwei Online-Suchen.</param>
         public BackgroundCoverService(
             IServiceScopeFactory scopeFactory,
-            ICoverService coverService,
-            ICoverDownloader coverDownloader,
+            CoverSources sources,
             ISpotifyCredentialStore credentialStore,
             BackgroundCoverServiceOptions options,
             ILoggerFactory loggerFactory,
-            IClock clock,
-            IHostRateLimiter? rateLimiter = null)
+            IClock clock)
         {
+            ArgumentNullException.ThrowIfNull(sources);
             ArgumentNullException.ThrowIfNull(loggerFactory);
             _options = options;
             _logger = loggerFactory.CreateLogger("BackgroundCoverService");
 
-            _localPhases = new LocalCoverPhases(scopeFactory, coverService, _logger);
+            _localPhases = new LocalCoverPhases(scopeFactory, sources.CoverService, _logger);
             _onlinePhases = new OnlineCoverPhases(
-                scopeFactory, coverService, coverDownloader, credentialStore, _logger);
+                scopeFactory, sources.CoverService, sources.CoverDownloader, credentialStore, _logger);
             _searchPhases = new OnlineCoverSearchPhases(
-                scopeFactory, coverService, coverDownloader, clock, rateLimiter, _logger);
+                scopeFactory, sources.CoverService, sources.CoverDownloader, clock, sources.RateLimiter, _logger);
             _foreground = new ForegroundCoverCoordinator(
-                scopeFactory, coverService, coverDownloader, rateLimiter, _logger);
+                scopeFactory, sources.CoverService, sources.CoverDownloader, sources.RateLimiter, _logger);
         }
 
         /// <summary>

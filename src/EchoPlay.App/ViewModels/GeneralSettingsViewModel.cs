@@ -2,8 +2,6 @@ using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Models;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Logger.Models;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.ViewModels
 {

@@ -3,10 +3,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -54,19 +50,22 @@ namespace EchoPlay.App.Tests.ViewModels
             ServiceProvider provider = services.BuildServiceProvider();
 
             return new SeriesCardViewModel(
-                Guid.NewGuid(),
-                title,
+                new SeriesCardData
+                {
+                    Id = Guid.NewGuid(),
+                    Title = title,
+                    TotalEpisodeCount = 3,
+                    NewEpisodeCount = newCount,
+                    InProgressCount = inProgress,
+                    FinishedCount = finished,
+                    IsSubscribed = true,
+                    IsFavorite = false,
+                    IsWatched = false,
+                },
                 coverImage: null,
-                totalEpisodeCount: 3,
-                newEpisodeCount: newCount,
-                inProgressCount: inProgress,
-                finishedCount: finished,
-                isSubscribed: true,
-                isFavorite: false,
-                isWatched: false,
-                provider.GetRequiredService<IServiceScopeFactory>(),
-                new FakeConfirmationDialogService(),
-                new FakeLocalizationService());
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>(),
+                confirmationDialogService: new FakeConfirmationDialogService(),
+                localizationService: new FakeLocalizationService());
         }
     }
 }

@@ -1,8 +1,5 @@
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Core;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Infrastructure
 {

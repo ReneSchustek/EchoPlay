@@ -1,9 +1,5 @@
 using EchoPlay.App.Models;
 using EchoPlay.App.Services;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.ViewModels
 {
@@ -26,33 +22,27 @@ namespace EchoPlay.App.ViewModels
 
         /// <summary>Baut die vier Teil-Aktionen auf einem gemeinsamen Zustand auf.</summary>
         /// <param name="context">Die Dienste der Online-Mediathek.</param>
-        /// <param name="seriesVM">Die Serienliste.</param>
-        /// <param name="episodesVM">Die Folgen der gewählten Serie.</param>
-        /// <param name="providerSearchVM">Die Treffer der Anbietersuche.</param>
-        /// <param name="setIsLoading">Schaltet die Ladeanzeige.</param>
-        /// <param name="setLoadingStatusText">Setzt den Statustext während des Ladens.</param>
-        /// <param name="setHasNoProvider">Meldet, dass kein Anbieter eingerichtet ist.</param>
-        /// <param name="reloadAfterImportAsync">Lädt die Mediathek nach einem Import neu.</param>
-        public OnlineLibraryActions(
-            OnlineLibraryActionsContext context,
-            OnlineSeriesViewModel seriesVM,
-            OnlineEpisodesViewModel episodesVM,
-            OnlineProviderSearchViewModel providerSearchVM,
-            Action<bool> setIsLoading,
-            Action<string> setLoadingStatusText,
-            Action<bool> setHasNoProvider,
-            Func<Task> reloadAfterImportAsync)
+        /// <param name="parts">Serienliste, Folgen der gewählten Serie und Treffer der Anbietersuche.</param>
+        /// <param name="callbacks">Ladeanzeige, Statustext, Anbietermeldung und Neuladen nach dem Import.</param>
+        public OnlineLibraryActions(OnlineLibraryActionsContext context, OnlineLibraryParts parts, OnlineLibraryCallbacks callbacks)
         {
+            ArgumentNullException.ThrowIfNull(parts);
+            ArgumentNullException.ThrowIfNull(callbacks);
+            OnlineSeriesViewModel seriesVM = parts.Series;
+            OnlineEpisodesViewModel episodesVM = parts.Episodes;
+            Action<bool> setIsLoading = callbacks.SetIsLoading;
+            Action<string> setLoadingStatusText = callbacks.SetLoadingStatusText;
+
             _seriesLoader = new OnlineSeriesLoader(
                 context, seriesVM, _state,
-                setIsLoading, setLoadingStatusText, setHasNoProvider);
+                setIsLoading, setLoadingStatusText, callbacks.SetHasNoProvider);
 
             _episodePipeline = new OnlineEpisodePipeline(
                 context, seriesVM, episodesVM, _state);
 
             _providerSearch = new OnlineProviderSearchActions(
-                context, seriesVM, episodesVM, providerSearchVM,
-                reloadAfterImportAsync);
+                context, seriesVM, episodesVM, parts.ProviderSearch,
+                callbacks.ReloadAfterImportAsync);
 
             _bulkRefresh = new OnlineBulkRefreshActions(
                 context, seriesVM, episodesVM,

@@ -1,4 +1,3 @@
-using System.IO;
 using EchoPlay.Core.Security;
 
 namespace EchoPlay.Core.Tests.Security

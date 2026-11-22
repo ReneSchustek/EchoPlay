@@ -1,8 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Helpers
 {
@@ -19,42 +17,33 @@ namespace EchoPlay.App.Helpers
         /// Bei einer <see cref="COMException"/>, etwa weil bereits ein anderer Dialog offen ist,
         /// liefert die Methode <see cref="ContentDialogResult.None"/> zurück und wirft nicht weiter.
         /// </summary>
+        /// <param name="options">Schaltflächen, Höhe und Schrift; ohne Angabe die Vorgaben.</param>
         /// <param name="xamlRoot">XamlRoot der aufrufenden Page, Pflicht für WinUI 3 ContentDialog.</param>
         /// <param name="title">Titelzeile des Dialogs.</param>
         /// <param name="content">Anzuzeigender Text, wird in einem ScrollViewer mit selektierbarem TextBlock dargestellt.</param>
-        /// <param name="primaryButtonText">Optionaler Primärbutton, etwa "Als TXT speichern"; <see langword="null"/> zeigt nur die Schließen-Schaltfläche.</param>
-        /// <param name="closeButtonText">Beschriftung der Schließen-Schaltfläche; ohne Angabe die Ressource <c>CommonCloseButton</c>.</param>
-        /// <param name="maxHeight">Maximale Höhe des ScrollViewers. Default: 400.</param>
-        /// <param name="useMonospace">True schaltet die Mono-Schrift des Themes ein (sinnvoll für Berichte und Dateilisten).</param>
-        /// <param name="monospaceFontSize">Schriftgröße bei Monospace-Modus (default 14, Berichte können kleiner laufen lassen).</param>
-        /// <param name="defaultButton">Welcher Button durch Enter ausgelöst wird; wichtig bei destruktiven Aktionen.</param>
         public static async Task<ContentDialogResult> ShowAsync(
             XamlRoot xamlRoot,
             string title,
             string content,
-            string? primaryButtonText = null,
-            string? closeButtonText = null,
-            double maxHeight = 400,
-            bool useMonospace = false,
-            double monospaceFontSize = 14,
-            ContentDialogButton defaultButton = ContentDialogButton.None)
+            ScrollableTextDialogOptions options)
         {
+            ArgumentNullException.ThrowIfNull(options);
             ContentDialog dialog = new()
             {
                 XamlRoot = xamlRoot,
                 Title = title,
                 Content = new ScrollViewer
                 {
-                    MaxHeight = maxHeight,
-                    Content = CreateTextBlock(content, useMonospace, monospaceFontSize)
+                    MaxHeight = options.MaxHeight,
+                    Content = CreateTextBlock(content, options)
                 },
-                CloseButtonText = closeButtonText ?? SafeResourceLoader.Get("CommonCloseButton", "OK"),
-                DefaultButton = defaultButton
+                CloseButtonText = options.CloseButtonText ?? SafeResourceLoader.Get("CommonCloseButton", "OK"),
+                DefaultButton = options.DefaultButton
             };
 
-            if (primaryButtonText is not null)
+            if (options.PrimaryButtonText is not null)
             {
-                dialog.PrimaryButtonText = primaryButtonText;
+                dialog.PrimaryButtonText = options.PrimaryButtonText;
             }
 
             try
@@ -70,7 +59,7 @@ namespace EchoPlay.App.Helpers
             }
         }
 
-        private static TextBlock CreateTextBlock(string content, bool useMonospace, double monospaceFontSize)
+        private static TextBlock CreateTextBlock(string content, ScrollableTextDialogOptions options)
         {
             TextBlock textBlock = new()
             {
@@ -79,10 +68,10 @@ namespace EchoPlay.App.Helpers
                 IsTextSelectionEnabled = true
             };
 
-            if (useMonospace)
+            if (options.UseMonospace)
             {
                 textBlock.FontFamily = ThemeFonts.Mono();
-                textBlock.FontSize = monospaceFontSize;
+                textBlock.FontSize = options.MonospaceFontSize;
                 // Berichte mit fester Spaltenbreite sollen nicht umgebrochen werden
                 textBlock.TextWrapping = TextWrapping.NoWrap;
             }

@@ -3,19 +3,13 @@ using EchoPlay.AppleMusic.Dtos;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using EchoPlay.App.Tests.Helpers;
-using EchoPlay.Core.Abstractions.Import;
-using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models.Import;
 using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
-using EchoPlay.Logger.Abstractions;
 using EchoPlay.Spotify.Abstractions;
 using EchoPlay.Spotify.Auth;
 using EchoPlay.Spotify.Dtos;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EchoPlay.App.Tests.Services
 {

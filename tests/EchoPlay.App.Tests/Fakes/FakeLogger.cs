@@ -1,6 +1,5 @@
 using EchoPlay.Logger.Abstractions;
 using EchoPlay.Logger.Scoping;
-using System;
 
 namespace EchoPlay.App.Tests.Fakes
 {

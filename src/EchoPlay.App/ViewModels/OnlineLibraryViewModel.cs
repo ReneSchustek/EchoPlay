@@ -5,11 +5,7 @@ using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace EchoPlay.App.ViewModels
@@ -39,40 +35,19 @@ namespace EchoPlay.App.ViewModels
         /// Initialisiert das ViewModel mit den benötigten Services und erzeugt die drei
         /// Sub-VMs sowie den Aktions-Orchestrator.
         /// </summary>
-        /// <param name="scopeFactory">Für die Datenbankzugriffe.</param>
-        /// <param name="confirmationDialogService">Fragt vor dem Entfernen und Abonnieren nach.</param>
-        /// <param name="importService">Sucht beim Anbieter und importiert.</param>
-        /// <param name="errorDialogService">Zeigt Fehler an.</param>
-        /// <param name="localizationService">Liefert die Anzeigetexte.</param>
-        /// <param name="onlineAccessGuard">Fragt im Offline-Modus nach dem Zugang ins Netz.</param>
-        /// <param name="coverDownloader">Lädt Cover vom Anbieter herunter.</param>
-        /// <param name="coverCacheService">Lädt fehlende Folgen-Cover nach; ohne ihn entfällt das.</param>
-        /// <param name="coverService">Liest und speichert Cover in der Datenbank; ohne ihn bleiben Platzhalter.</param>
-        /// <param name="backgroundCoverService">Stellt lokale Cover der Serie bereit.</param>
-        /// <param name="watchToggleService">Schaltet die Überwachung einer Serie um.</param>
-        /// <param name="rateLimiter">Drosselt die Abfragen beim Anbieter.</param>
+        /// <param name="services">Die Dienste der Online-Mediathek.</param>
         /// <param name="pageModeGuard">Prüft beim Betreten, ob die Seite im aktuellen Modus erlaubt ist.</param>
         /// <param name="coverSearchService">Sucht Cover-Kandidaten für eine Folge.</param>
         /// <param name="navigationService">Führt aus dem Leer-Zustand in die Einstellungen.</param>
         public OnlineLibraryViewModel(
-            IServiceScopeFactory scopeFactory,
-            IConfirmationDialogService confirmationDialogService,
-            ImportService importService,
-            IErrorDialogService errorDialogService,
-            ILocalizationService localizationService,
-            IOnlineAccessGuard onlineAccessGuard,
-            ICoverDownloader coverDownloader,
-            EpisodeCoverCacheService? coverCacheService = null,
-            ICoverService? coverService = null,
-            BackgroundCoverService? backgroundCoverService = null,
-            IWatchToggleService? watchToggleService = null,
-            IHostRateLimiter? rateLimiter = null,
+            OnlineLibraryActionsContext services,
             IPageModeGuard? pageModeGuard = null,
             EchoPlay.LocalLibrary.Cover.ICoverSearchService? coverSearchService = null,
             INavigationService? navigationService = null)
         {
-            _scopeFactory = scopeFactory;
-            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(scopeFactory, nameof(OnlineLibraryViewModel));
+            ArgumentNullException.ThrowIfNull(services);
+            _scopeFactory = services.ScopeFactory;
+            _logger = EchoPlay.App.Infrastructure.ScopedLogger.Create(services.ScopeFactory, nameof(OnlineLibraryViewModel));
             _pageModeGuard = pageModeGuard;
             _navigationService = navigationService;
             _coverSearchService = coverSearchService;
@@ -81,21 +56,7 @@ namespace EchoPlay.App.ViewModels
             EpisodesVM = new OnlineEpisodesViewModel();
             ProviderSearchVM = new OnlineProviderSearchViewModel();
 
-            OnlineLibraryActionsContext actionsContext = new(
-                scopeFactory,
-                confirmationDialogService,
-                importService,
-                errorDialogService,
-                localizationService,
-                onlineAccessGuard,
-                coverCacheService,
-                coverService,
-                backgroundCoverService,
-                watchToggleService,
-                coverDownloader,
-                rateLimiter);
-
-            _actions = CreateActions(actionsContext);
+            _actions = CreateActions(services);
             SubscribeToSubViewModels();
 
             ProviderSearchCommand = new RelayCommand(() => _ = _actions.SearchProviderAsync(SeriesVM.SearchText));
@@ -111,11 +72,12 @@ namespace EchoPlay.App.ViewModels
         private OnlineLibraryActions CreateActions(OnlineLibraryActionsContext actionsContext) =>
             new(
                 actionsContext,
-                SeriesVM, EpisodesVM, ProviderSearchVM,
-                setIsLoading: v => IsLoading = v,
-                setLoadingStatusText: v => LoadingStatusText = v,
-                setHasNoProvider: v => HasNoProvider = v,
-                reloadAfterImportAsync: ReloadAfterImportAsync);
+                new OnlineLibraryParts(SeriesVM, EpisodesVM, ProviderSearchVM),
+                new OnlineLibraryCallbacks(
+                    SetIsLoading: v => IsLoading = v,
+                    SetLoadingStatusText: v => LoadingStatusText = v,
+                    SetHasNoProvider: v => HasNoProvider = v,
+                    ReloadAfterImportAsync: ReloadAfterImportAsync));
 
         private void SubscribeToSubViewModels()
         {

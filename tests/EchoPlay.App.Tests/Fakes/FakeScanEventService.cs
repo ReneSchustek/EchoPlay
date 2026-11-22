@@ -1,6 +1,5 @@
 using EchoPlay.App.Services;
 using EchoPlay.Data.Entities.Library;
-using System;
 
 namespace EchoPlay.App.Tests.Fakes
 {

@@ -1,5 +1,6 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
+using EchoPlay.App.Tests.Helpers;
 using EchoPlay.App.ViewModels;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Models;
@@ -15,12 +16,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -195,15 +190,7 @@ namespace EchoPlay.App.Tests.ViewModels
             }
         }
 
-        private static async Task WaitUntilAsync(Func<bool> condition)
-        {
-            for (int i = 0; i < 200 && !condition(); i++)
-            {
-                await Task.Delay(10, TestContext.Current.CancellationToken);
-            }
-
-            Assert.True(condition());
-        }
+        private static Task WaitUntilAsync(Func<bool> condition) => Eventually.TrueAsync(condition);
 
         private async Task<(ReplicationSettingsViewModel ViewModel, DeviceReplicationService Service)> CreateAsync(FakeConfirmationDialogService? confirm = null)
         {

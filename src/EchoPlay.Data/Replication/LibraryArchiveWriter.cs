@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using System.IO.Compression;
 using EchoPlay.Core.Replication.Packaging;
 
@@ -46,7 +47,7 @@ namespace EchoPlay.Data.Replication
             (List<FileInfo> files, List<string> directories) = Enumerate(root);
             long dataLength = new FileInfo(dataPackagePath).Length;
             long total = files.Sum(f => f.Length) + dataLength;
-            SpaceCheck.Require(Path.GetDirectoryName(target)!, total + PackageExporter.SpaceMargin);
+            SpaceCheck.Require(ParentFolder.Of(target), total + PackageExporter.SpaceMargin);
 
             string partial = target + ".partial";
             try
@@ -191,7 +192,7 @@ namespace EchoPlay.Data.Replication
                 Stream target = await entry.OpenAsync(cancellationToken).ConfigureAwait(false);
                 await using (target.ConfigureAwait(false))
                 {
-                    return await HashingCopy.CopyAsync(input, target, LibraryArchiveFormat.MaxFileLength, exactLength: false, onCopied, cancellationToken).ConfigureAwait(false);
+                    return await HashingCopy.CopyAsync(input, target, CopyLimit.AtMost(LibraryArchiveFormat.MaxFileLength), onCopied, cancellationToken).ConfigureAwait(false);
                 }
             }
         }

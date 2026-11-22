@@ -2,10 +2,6 @@ using EchoPlay.App.Composition;
 using EchoPlay.App.Services;
 using EchoPlay.App.Tests.Fakes;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Net.Http;
-using System.Threading;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Composition
 {

@@ -1,5 +1,4 @@
 using EchoPlay.Core.Models;
-using System;
 
 namespace EchoPlay.App.Models
 {

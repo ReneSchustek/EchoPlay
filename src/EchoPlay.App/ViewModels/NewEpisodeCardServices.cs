@@ -12,7 +12,7 @@ namespace EchoPlay.App.ViewModels
     /// <param name="ConfirmationDialogService">Fragt vor Änderungen am Hörstatus nach.</param>
     /// <param name="PlayerService">Startet die Wiedergabe.</param>
     /// <param name="LocalizationService">Liefert die Anzeigetexte. Ohne ihn gelten die Vorgabewerte.</param>
-    internal sealed record NewEpisodeCardServices(
+    public sealed record NewEpisodeCardServices(
         IErrorDialogService ErrorDialogService,
         IConfirmationDialogService ConfirmationDialogService,
         IPlayerService PlayerService,

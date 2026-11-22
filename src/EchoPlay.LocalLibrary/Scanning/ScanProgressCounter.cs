@@ -1,5 +1,3 @@
-using EchoPlay.LocalLibrary.Models;
-
 namespace EchoPlay.LocalLibrary.Scanning
 {
     /// <summary>

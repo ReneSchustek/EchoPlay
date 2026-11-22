@@ -3,8 +3,6 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.LocalLibrary.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using System;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {

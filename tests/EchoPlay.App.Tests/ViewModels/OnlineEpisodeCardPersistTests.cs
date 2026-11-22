@@ -4,9 +4,6 @@ using EchoPlay.App.ViewModels;
 using EchoPlay.Data.Entities.Playback;
 using EchoPlay.Data.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.ViewModels
 {
@@ -28,7 +25,13 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddScoped<IPlaybackStateDataService>(_ => states);
             ServiceProvider provider = services.BuildServiceProvider();
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, 1, "Der Superhund", scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Der Superhund",
+                },
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
 
             await card.PersistCompletedStatusAsync();
 
@@ -45,7 +48,13 @@ namespace EchoPlay.App.Tests.ViewModels
             _ = services.AddSingleton<EchoPlay.Logger.Abstractions.ILoggerFactory>(loggers);
             ServiceProvider provider = services.BuildServiceProvider();
             OnlineEpisodeCardViewModel card = new(
-                TestIds.EpisodeA, 1, "Der Superhund", scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Der Superhund",
+                },
+                scopeFactory: provider.GetRequiredService<IServiceScopeFactory>());
 
             await card.PersistCompletedStatusAsync();
 
@@ -55,7 +64,13 @@ namespace EchoPlay.App.Tests.ViewModels
         [Fact]
         public async Task PersistCompletedStatus_WithoutScopeFactory_DoesNothing()
         {
-            OnlineEpisodeCardViewModel card = new(TestIds.EpisodeA, 1, "Der Superhund");
+            OnlineEpisodeCardViewModel card = new(
+                new OnlineEpisodeCardData
+                {
+                    EpisodeId = TestIds.EpisodeA,
+                    EpisodeNumber = 1,
+                    Title = "Der Superhund",
+                });
 
             Exception? error = await Record.ExceptionAsync(card.PersistCompletedStatusAsync);
 

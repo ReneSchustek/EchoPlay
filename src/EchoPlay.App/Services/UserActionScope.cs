@@ -1,5 +1,4 @@
 using EchoPlay.Logger.Scoping;
-using System;
 
 namespace EchoPlay.App.Services
 {

@@ -1,6 +1,5 @@
 using System.Globalization;
 using EchoPlay.Data.Context;
-using EchoPlay.Data.Entities.Settings;
 using EchoPlay.Data.Internal;
 using EchoPlay.Logger.Abstractions;
 using Microsoft.Data.Sqlite;

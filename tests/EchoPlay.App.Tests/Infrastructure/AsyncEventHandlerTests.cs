@@ -1,13 +1,10 @@
 using EchoPlay.App.Infrastructure;
 using EchoPlay.App.Tests.Fakes;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Infrastructure
 {
     /// <summary>
-    /// Tests für <see cref="AsyncEventHandler.RunSafelyAsync"/>, das Sicherheitsnetz
+    /// Tests für <c>RunSafelyAsync</c> aus <see cref="AsyncEventHandler"/>, das Sicherheitsnetz
     /// für async-void-UI-Handler. Jede Exception muss geloggt und als Dialog gezeigt
     /// werden; <see cref="OperationCanceledException"/> ist ein gewollter Abbruch.
     /// </summary>

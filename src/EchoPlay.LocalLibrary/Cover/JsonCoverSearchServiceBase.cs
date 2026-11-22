@@ -97,8 +97,7 @@ namespace EchoPlay.LocalLibrary.Cover
             return [.. items
                 .Skip(window.SkipLocally)
                 .Select(item => mapItem(item, title))
-                .Where(result => result is not null)
-                .Select(result => result!)];
+                .OfType<CoverSearchResult>()];
         }
 
         /// <summary>Fragt den Anbieter und liest die Antwort.</summary>

@@ -1,6 +1,5 @@
 using EchoPlay.App.Helpers;
 using System.Diagnostics.CodeAnalysis;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Helpers
 {

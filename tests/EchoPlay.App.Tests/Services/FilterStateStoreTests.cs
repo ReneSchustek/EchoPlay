@@ -1,7 +1,5 @@
 using EchoPlay.App.Services;
 using EchoPlay.App.ViewModels;
-using System;
-using Xunit;
 
 namespace EchoPlay.App.Tests.Services
 {

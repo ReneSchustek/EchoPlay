@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace EchoPlay.App.Helpers
 {
     /// <summary>
@@ -21,20 +19,9 @@ namespace EchoPlay.App.Helpers
         /// Liefert die anzuzeigenden Zeilen.
         /// </summary>
         /// <param name="entries">Die gefilterten Einträge aus dem ViewModel.</param>
-        /// <param name="isViewerAvailable">
-        /// <see langword="false"/>, wenn der Protokoll-Puffer beim Start nicht registriert
-        /// wurde. Dann kann die Anzeige grundsätzlich nichts enthalten.
-        /// </param>
         /// <returns>Mindestens eine Zeile; nie eine leere Liste.</returns>
-        public static IReadOnlyList<string> BuildLines(IReadOnlyList<string>? entries, bool isViewerAvailable)
+        public static IReadOnlyList<string> BuildLines(IReadOnlyList<string>? entries)
         {
-            if (!isViewerAvailable)
-            {
-                return new[] { SafeResourceLoader.Get(
-                    "LogViewUnavailable",
-                    "Der Protokoll-Puffer ist nicht verfügbar. Starte die Anwendung neu, um die Live-Ansicht zu aktivieren.") };
-            }
-
             if (entries is null || entries.Count == 0)
             {
                 return new[] { SafeResourceLoader.Get("LogViewNoEntries", "Keine Protokolleinträge vorhanden.") };
@@ -42,5 +29,15 @@ namespace EchoPlay.App.Helpers
 
             return entries;
         }
+
+        /// <summary>
+        /// Die Zeile für den Fall, dass der Protokoll-Puffer beim Start nicht registriert wurde.
+        /// Dann kann die Anzeige grundsätzlich nichts enthalten.
+        /// </summary>
+        /// <returns>Eine Zeile mit dem Hinweis auf den Neustart.</returns>
+        public static IReadOnlyList<string> UnavailableLines() =>
+            new[] { SafeResourceLoader.Get(
+                "LogViewUnavailable",
+                "Der Protokoll-Puffer ist nicht verfügbar. Starte die Anwendung neu, um die Live-Ansicht zu aktivieren.") };
     }
 }

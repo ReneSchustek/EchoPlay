@@ -1,6 +1,4 @@
 using EchoPlay.App.Views;
-using System;
-using System.Collections.Generic;
 
 namespace EchoPlay.App.Services
 {

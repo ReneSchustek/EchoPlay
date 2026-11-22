@@ -1,3 +1,4 @@
+using EchoPlay.Core;
 using EchoPlay.Core.Abstractions.Time;
 using EchoPlay.Core.Replication;
 using EchoPlay.Data.Context;
@@ -31,7 +32,7 @@ namespace EchoPlay.Data.DependencyInjection
             // Geräte-Kennung und Uhr gehören zur Installation: die Kennung als Datei neben der
             // Datenbank, damit ein eingespieltes Paket sie nicht mitbringt.
             services.TryAddSingleton<IClock, SystemClock>();
-            _ = services.AddSingleton<IDeviceIdentity>(new FileDeviceIdentity(Path.GetDirectoryName(dbPath)!));
+            _ = services.AddSingleton<IDeviceIdentity>(new FileDeviceIdentity(ParentFolder.Of(dbPath)));
             _ = services.AddSingleton<IHybridClock, HybridLogicalClock>();
             _ = services.AddSingleton<ChangeStampInterceptor>();
 

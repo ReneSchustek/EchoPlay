@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace EchoPlay.Core.Replication.Packaging
 {
     /// <summary>
@@ -28,7 +30,7 @@ namespace EchoPlay.Core.Replication.Packaging
         /// </summary>
         /// <param name="path">Der Pfad mit <c>/</c> als Trenner.</param>
         /// <returns><see langword="true"/>, wenn jeder Abschnitt ein gewöhnlicher Name ist.</returns>
-        public static bool IsSafe(string? path)
+        public static bool IsSafe([NotNullWhen(true)] string? path)
         {
             if (string.IsNullOrEmpty(path) || path.Length > LibraryArchiveFormat.MaxRelativePathLength)
             {

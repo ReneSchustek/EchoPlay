@@ -30,14 +30,14 @@ namespace EchoPlay.App.Helpers
         {
             if (!isViewerAvailable)
             {
-                return [SafeResourceLoader.Get(
+                return new[] { SafeResourceLoader.Get(
                     "LogViewUnavailable",
-                    "Der Protokoll-Puffer ist nicht verfügbar. Starte die Anwendung neu, um die Live-Ansicht zu aktivieren.")];
+                    "Der Protokoll-Puffer ist nicht verfügbar. Starte die Anwendung neu, um die Live-Ansicht zu aktivieren.") };
             }
 
             if (entries is null || entries.Count == 0)
             {
-                return [SafeResourceLoader.Get("LogViewNoEntries", "Keine Protokolleinträge vorhanden.")];
+                return new[] { SafeResourceLoader.Get("LogViewNoEntries", "Keine Protokolleinträge vorhanden.") };
             }
 
             return entries;

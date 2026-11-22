@@ -17,6 +17,9 @@ namespace EchoPlay.App.Views
     /// </summary>
     public sealed partial class LocalLibraryPage : Page
     {
+        /// <summary>Dateityp des gespeicherten Berichts.</summary>
+        private static readonly string[] TextFileTypes = [".txt"];
+
         /// <summary>
         /// Zeigt einen Drei-Optionen-Dialog vor der Fehlende-Folgen-Prüfung:
         /// Online + Offline, Nur offline oder Abbrechen.
@@ -148,7 +151,7 @@ namespace EchoPlay.App.Views
             Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync(
                 suggestedFileName: $"{resources.GetString("MissingEpisodesFileName")}-{DateTime.Now:yyyy-MM-dd}",
                 fileTypeDescription: resources.GetString("CommonTextFileFilter"),
-                fileTypeFilters: [".txt"],
+                fileTypeFilters: TextFileTypes,
                 startLocation: Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary);
 
             if (file is not null)

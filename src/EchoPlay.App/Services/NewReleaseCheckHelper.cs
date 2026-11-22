@@ -48,7 +48,7 @@ namespace EchoPlay.App.Services
 
                 DateTime cutoffDate = (settings.LastAppStart ?? clock.UtcNow).AddDays(-settings.NewReleaseDays);
                 IReadOnlyList<OnlineEpisodeCheckResult> results = await serviceProvider.GetRequiredService<IOnlineEpisodeChecker>()
-                    .CheckNewReleasesAsync([ToCheckable(series)], cutoffDate, cancellationToken);
+                    .CheckNewReleasesAsync(new[] { ToCheckable(series) }, cutoffDate, cancellationToken);
 
                 List<CachedNewRelease> newEntries = ToCacheEntries(results, clock.UtcNow);
                 if (newEntries.Count > 0)

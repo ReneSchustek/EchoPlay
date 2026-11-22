@@ -58,10 +58,10 @@ namespace EchoPlay.App.Views
 
             TagManagerSearchField.PlaceholderText = _resources.GetString("TagManagerSearchPlaceholder");
 
-            TagManagerFilterBar.Chips =
-            [
-                new Controls.FilterChip(FilterKeyModified, _resources.GetString("TagManagerFilterModified"))
-            ];
+            TagManagerFilterBar.Chips = new Controls.FilterChip[]
+            {
+                new(FilterKeyModified, _resources.GetString("TagManagerFilterModified"))
+            };
 
             TagManagerNoResultsPanel.Message = _resources.GetString("TagManagerFileListNoResultsMessage");
             TagManagerNoResultsPanel.ActionText = _resources.GetString("TagManagerResetFiltersAction");

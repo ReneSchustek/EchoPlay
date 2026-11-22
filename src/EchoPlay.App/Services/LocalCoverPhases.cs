@@ -68,7 +68,7 @@ namespace EchoPlay.App.Services
             }
 
             IReadOnlyDictionary<Guid, byte[]> existingSeries = await coverImageService.GetImageDataByEntitiesAsync(
-                CoverEntityTypes.Series, [.. seriesWithFolder.Select(s => s.Id)], ct);
+                CoverEntityTypes.Series, seriesWithFolder.Select(s => s.Id).ToArray(), ct);
             _logger.Info(
                 "Lokal-Check Serien: {WithFolderCount} mit LocalFolderPath, {ExistingCount} in DB, {MissingCount} fehlen.",
                 seriesWithFolder.Count, existingSeries.Count, seriesWithFolder.Count - existingSeries.Count);
@@ -124,7 +124,7 @@ namespace EchoPlay.App.Services
             CoverTools tools = CoverTools.From(scope.ServiceProvider);
 
             IReadOnlyList<Series> allSeries = await scope.ServiceProvider.GetRequiredService<ISeriesDataService>().GetAllAsync(ct);
-            IReadOnlyList<Episode> allEpisodes = await tools.Episodes.GetBySeriesIdsAsync([.. allSeries.Select(s => s.Id)], ct);
+            IReadOnlyList<Episode> allEpisodes = await tools.Episodes.GetBySeriesIdsAsync(allSeries.Select(s => s.Id).ToArray(), ct);
 
             EpisodeCoverResult result = await LoadForEpisodesAsync(allEpisodes, tools, ct);
             if (result.Candidates == 0)
@@ -152,10 +152,10 @@ namespace EchoPlay.App.Services
             }
 
             IReadOnlyDictionary<Guid, byte[]> existing =
-                await tools.Images.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, [.. candidates.Select(e => e.Id)], ct);
+                await tools.Images.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, candidates.Select(e => e.Id).ToArray(), ct);
             List<Episode> missing = [.. candidates.Where(e => !existing.ContainsKey(e.Id))];
             IReadOnlyDictionary<Guid, LocalTrack> firstTracks =
-                await tools.Tracks.GetFirstTracksByEpisodeIdsAsync([.. missing.Select(e => e.Id)], ct);
+                await tools.Tracks.GetFirstTracksByEpisodeIdsAsync(missing.Select(e => e.Id).ToArray(), ct);
 
             int loaded = 0;
             int notFound = 0;

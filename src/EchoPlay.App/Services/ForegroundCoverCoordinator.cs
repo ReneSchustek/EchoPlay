@@ -277,7 +277,7 @@ namespace EchoPlay.App.Services
             if (episodes.Count == 0) return [];
 
             IReadOnlyDictionary<Guid, byte[]> existing =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, [.. episodes.Select(e => e.Id)], ct);
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, episodes.Select(e => e.Id).ToArray(), ct);
             return [.. episodes.Where(e => !existing.ContainsKey(e.Id))];
         }
 
@@ -289,7 +289,7 @@ namespace EchoPlay.App.Services
         {
             ILocalCoverLoader coverLoader = services.GetRequiredService<ILocalCoverLoader>();
             IReadOnlyDictionary<Guid, LocalTrack> firstTracks = await services.GetRequiredService<ILocalTrackDataService>()
-                .GetFirstTracksByEpisodeIdsAsync([.. missing.Select(e => e.Id)], ct);
+                .GetFirstTracksByEpisodeIdsAsync(missing.Select(e => e.Id).ToArray(), ct);
 
             ParallelOptions parallelOptions = new()
             {
@@ -322,7 +322,7 @@ namespace EchoPlay.App.Services
         private async Task LoadProviderCoversAsync(ICoverImageDataService coverImageService, List<Episode> missing, CancellationToken ct)
         {
             IReadOnlyDictionary<Guid, byte[]> stillMissing =
-                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, [.. missing.Select(e => e.Id)], ct);
+                await coverImageService.GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, missing.Select(e => e.Id).ToArray(), ct);
 
             foreach (Episode episode in missing)
             {

@@ -25,7 +25,7 @@ namespace EchoPlay.App.Services
         /// Alle bekannten Theme-Namen; sie entsprechen den Dateinamen in EchoPlay.App/Themes/.
         /// </summary>
         private static readonly IReadOnlyList<string> KnownThemes =
-            ["Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey"];
+            new[] { "Ruhrcoder", "ModernClassic", "MidnightLibrary", "PaperCoffee", "ForestSignal", "AmberWhiskey" };
 
         /// <summary>
         /// Themes mit fester dunkler Palette. ThemeService setzt RequestedTheme auf Dark,

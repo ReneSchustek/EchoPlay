@@ -72,15 +72,15 @@ namespace EchoPlay.App.Views
             // Der Anfangszustand kommt aus dem ViewModel, nicht aus der Voreinstellung: Die
             // Filter überleben den Seitenwechsel, und ein wirkender Filter ohne aktiven Chip
             // sähe aus wie ein leerer Bestand.
-            LokalFilterBar.Chips =
-            [
-                new Controls.FilterChip(
+            LokalFilterBar.Chips = new Controls.FilterChip[]
+            {
+                new(
                     FilterKeyFavorites, _resources.GetString("LokalFilterFavorites"), ViewModel.ArtistsVM.FavoritesOnly),
-                new Controls.FilterChip(
+                new(
                     FilterKeyWatched, _resources.GetString("LokalFilterWatched"), ViewModel.ArtistsVM.WatchedOnly),
-                new Controls.FilterChip(
+                new(
                     FilterKeyIncomplete, _resources.GetString("LokalFilterIncomplete"), ViewModel.ArtistsVM.IncompleteOnly)
-            ];
+            };
 
             LokalNoResultsPanel.Message = _resources.GetString("LokalNoResultsMessage");
             LokalNoResultsPanel.ActionText = _resources.GetString("LokalResetFiltersAction");

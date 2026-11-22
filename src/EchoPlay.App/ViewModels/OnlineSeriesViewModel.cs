@@ -213,7 +213,7 @@ namespace EchoPlay.App.ViewModels
                 _ => filtered.OrderBy(c => c.Title, AlphabetIndex.TitleOrder)
             };
 
-            Series = [.. sorted];
+            Series = sorted.ToArray();
         }
 
         private bool MatchesSearchText(SeriesCardViewModel card)

@@ -67,10 +67,11 @@ namespace EchoPlay.App.ViewModels
         /// Einmalig beim Konstruktor initialisiert, keine Datenbankabfrage nötig.
         /// </summary>
         public IReadOnlyList<LanguageOption> AvailableLanguages { get; } =
-        [
-            new("de", "Deutsch"),
-            new("en", "English")
-        ];
+            new LanguageOption[]
+            {
+                new("de", "Deutsch"),
+                new("en", "English")
+            };
 
         /// <summary>
         /// Zeitfenster in Tagen für den Neuerscheinungen-Filter auf dem Dashboard.

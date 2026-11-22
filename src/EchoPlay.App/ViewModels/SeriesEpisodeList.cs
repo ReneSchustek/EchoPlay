@@ -157,7 +157,7 @@ namespace EchoPlay.App.ViewModels
             remaining = FilterByStatus(remaining);
             remaining = FilterBySearch(remaining);
 
-            Episodes = [.. Sort(remaining)];
+            Episodes = Sort(remaining).ToArray();
 
             OnPropertyChanged(nameof(HasActiveFilter));
             OnPropertyChanged(nameof(NoResultsVisibility));

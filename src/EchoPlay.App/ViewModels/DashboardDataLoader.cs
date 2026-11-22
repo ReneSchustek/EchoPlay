@@ -245,7 +245,7 @@ namespace EchoPlay.App.ViewModels
                 _ = uniqueIds.Add(state.EpisodeId);
             }
 
-            return await episodeService.GetByIdsAsync([.. uniqueIds], cancellationToken);
+            return await episodeService.GetByIdsAsync(uniqueIds.ToArray(), cancellationToken);
         }
 
         /// <summary>

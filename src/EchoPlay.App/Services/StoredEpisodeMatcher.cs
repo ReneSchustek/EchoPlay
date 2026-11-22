@@ -105,9 +105,9 @@ namespace EchoPlay.App.Services
             HashSet<LocalEpisodeScan> matched = new(matches.Select(match => match.Scan), ReferenceEqualityComparer.Instance);
             HashSet<string> sharedFolders = SharedFolders(scans);
 
-            return [.. scans.Where(scan =>
+            return scans.Where(scan =>
                 !matched.Contains(scan)
-                && (scan.ParsedNumber is not null || !sharedFolders.Contains(scan.FolderPath)))];
+                && (scan.ParsedNumber is not null || !sharedFolders.Contains(scan.FolderPath))).ToArray();
         }
 
         /// <summary>

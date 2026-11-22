@@ -188,10 +188,10 @@ namespace EchoPlay.App.Services
             out string? webUrl)
         {
             _ = SpotifyAlbumLink.TryBuildAppUri(spotifyAlbumId, out appUri)
-                || SpotifyAlbumLink.TrySearchAppUri([seriesTitle, episodeTitle], out appUri);
+                || SpotifyAlbumLink.TrySearchAppUri(new[] { seriesTitle, episodeTitle }, out appUri);
 
             _ = SpotifyAlbumLink.TryBuild(spotifyAlbumId, out webUrl)
-                || SpotifyAlbumLink.TrySearch([seriesTitle, episodeTitle], out webUrl);
+                || SpotifyAlbumLink.TrySearch(new[] { seriesTitle, episodeTitle }, out webUrl);
 
             return appUri is not null || webUrl is not null;
         }
@@ -210,12 +210,12 @@ namespace EchoPlay.App.Services
 
         private static bool TryOpenSpotifySearch(string seriesTitle, string episodeTitle)
         {
-            if (!SpotifyAlbumLink.TrySearch([seriesTitle, episodeTitle], out string? webUrl))
+            if (!SpotifyAlbumLink.TrySearch(new[] { seriesTitle, episodeTitle }, out string? webUrl))
             {
                 return false;
             }
 
-            _ = SpotifyAlbumLink.TrySearchAppUri([seriesTitle, episodeTitle], out string? appUri);
+            _ = SpotifyAlbumLink.TrySearchAppUri(new[] { seriesTitle, episodeTitle }, out string? appUri);
             return SafeUrlLauncher.TryOpenAppLink(appUri, "spotify") || SafeUrlLauncher.TryOpenInBrowser(webUrl);
         }
 

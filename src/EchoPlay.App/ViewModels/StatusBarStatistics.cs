@@ -35,7 +35,7 @@ namespace EchoPlay.App.ViewModels
 
             // Alle Episoden der abonnierten Serien in einem einzigen Query laden,
             // denn ein Query pro Serie wäre ein N+1-Problem.
-            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync([.. subscribedSeries.Select(s => s.Id)]);
+            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(subscribedSeries.Select(s => s.Id).ToArray());
 
             int finished = 0;
             int unfinished = 0;

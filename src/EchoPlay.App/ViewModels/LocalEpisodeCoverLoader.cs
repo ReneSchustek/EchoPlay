@@ -262,7 +262,7 @@ namespace EchoPlay.App.ViewModels
             if (_coverService is not null)
             {
                 IReadOnlyDictionary<Guid, byte[]> coverMap =
-                    await _coverService.GetEpisodeCoverBytesAsync([episode.Id]);
+                    await _coverService.GetEpisodeCoverBytesAsync(new[] { episode.Id });
                 if (coverMap.TryGetValue(episode.Id, out byte[]? dbBytes))
                 {
                     return dbBytes;

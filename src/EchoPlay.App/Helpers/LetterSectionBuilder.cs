@@ -112,7 +112,7 @@ namespace EchoPlay.App.Helpers
 
             if (selectedIndex < 0 || selectedIndex >= items.Count)
             {
-                return ([Ungrouped(items, automationName)], []);
+                return (new[] { Ungrouped(items, automationName) }, []);
             }
 
             int splitIndex = AccordionSplitHelper.CalculateSplitIndex(selectedIndex, items.Count, availableWidth);

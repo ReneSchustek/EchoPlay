@@ -47,7 +47,7 @@ namespace EchoPlay.App.ViewModels
 
             // Folgenzähler in einer Sammelabfrage; sie ersetzt einen Aufruf je Serie
             IReadOnlyDictionary<Guid, (int Total, int Local)> episodeCounts =
-                await episodeService.GetEpisodeCountsForSeriesAsync([.. localSeries.Select(series => series.Id)]);
+                await episodeService.GetEpisodeCountsForSeriesAsync(localSeries.Select(series => series.Id).ToArray());
 
             // Ebenso die Folgen für „Unvollständig", samt der Online-Gegenstücke
             IReadOnlyList<Episode> episodes = await episodeService.GetBySeriesIdsAsync(IncompleteSeries.SeriesToLoad(allSeries));

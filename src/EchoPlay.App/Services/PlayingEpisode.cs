@@ -42,7 +42,7 @@ namespace EchoPlay.App.Services
             lock (_lock)
             {
                 _id = id;
-                _trackPaths = [.. trackPaths];
+                _trackPaths = trackPaths.ToArray();
                 _timeline = timeline;
             }
         }

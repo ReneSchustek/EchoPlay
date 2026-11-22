@@ -180,7 +180,7 @@ namespace EchoPlay.App.Services
             }
 
             IReadOnlyDictionary<Guid, byte[]> existingSeries = await coverImageService.GetImageDataByEntitiesAsync(
-                CoverEntityTypes.Series, [.. seriesNeedingCover.Select(s => s.Id)], ct);
+                CoverEntityTypes.Series, seriesNeedingCover.Select(s => s.Id).ToArray(), ct);
             _logger.Info(
                 "Provider-Check Serien: {NeedingCoverCount} mit CoverImageUrl, {ExistingCount} bereits in DB, {MissingCount} fehlen.",
                 seriesNeedingCover.Count, existingSeries.Count, seriesNeedingCover.Count - existingSeries.Count);
@@ -269,7 +269,7 @@ namespace EchoPlay.App.Services
             }
 
             IReadOnlyDictionary<Guid, byte[]> existing = await coverImageService.GetImageDataByEntitiesAsync(
-                CoverEntityTypes.Episode, [.. candidates.Select(e => e.Id)], ct);
+                CoverEntityTypes.Episode, candidates.Select(e => e.Id).ToArray(), ct);
 
             int loaded = 0;
             foreach (Episode episode in candidates)

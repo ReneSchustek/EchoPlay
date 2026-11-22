@@ -110,7 +110,7 @@ namespace EchoPlay.App.ViewModels
                     .ThenBy(e => e.Title, StringComparer.OrdinalIgnoreCase)
             };
 
-            Episodes = [.. sorted];
+            Episodes = sorted.ToArray();
         }
     }
 }

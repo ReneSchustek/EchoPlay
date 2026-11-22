@@ -19,8 +19,11 @@ dotnet_style_namespace_declarations = file_scoped:warning
 # ── Vereinfachungen erzwingen ────────────────────────────────────────────────
 # using-Anweisungen ohne Block (using var x = ...; statt using (var x = ...) { })
 csharp_prefer_simple_using_statement = true:warning
-# Sammlungs-Initialisierung: [] statt new List<T>() wo möglich (C# 12+)
-dotnet_style_collection_expression = true:warning
+# Sammlungs-Initialisierung: [] statt new List<T>() wo möglich (C# 12+). Nur bei exakt
+# passendem Zieltyp: Gegen eine Schnittstelle wie IReadOnlyList<T> hat ein Sammlungsausdruck
+# keinen festen Typ, und der WinRT-Generator der App lehnt ihn ab (CsWinRT1032). Dort steht
+# deshalb ein Array oder ToArray(), und diese Regel darf es nicht zurückverlangen.
+dotnet_style_collection_expression = when_types_exactly_match:warning
 # Target-Typed new: new() statt new ClassName() wenn Typ aus Kontext klar
 csharp_style_implicit_object_creation_when_type_is_apparent = true:warning
 # Vereinfachte default-Ausdrücke: default statt default(T)
@@ -157,3 +160,11 @@ indent_size = 4
 [**/{*.xaml.cs,*Page.*.cs,*Window.xaml.cs,*Control.xaml.cs}]
 dotnet_diagnostic.IDE0051.severity = none
 dotnet_diagnostic.IDE0060.severity = none
+
+# Das App-Testprojekt läuft durch den WinRT-Generator, weil es die App referenziert. Dessen
+# Prüfung CsWinRT1032 (Sammlungsausdruck gegen eine Schnittstelle) betrifft getrimmte und
+# AOT-übersetzte Assemblies, deren Sammlungen eine WinRT-Grenze überqueren. Testassemblies
+# werden weder getrimmt noch übersetzt und reichen keine Sammlung an WinRT; dort hat die
+# Prüfung keinen Gegenstand. Die App selbst hält sie ein.
+[tests/EchoPlay.App.Tests/**.cs]
+dotnet_diagnostic.CsWinRT1032.severity = none

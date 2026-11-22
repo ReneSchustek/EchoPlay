@@ -34,7 +34,7 @@ namespace EchoPlay.App.Helpers
         /// </para>
         /// </summary>
         public static IReadOnlyList<char> Buckets { get; } =
-            [.. Enumerable.Range('A', 26).Select(c => (char)c).Append(OtherBucket)];
+            Enumerable.Range('A', 26).Select(c => (char)c).Append(OtherBucket).ToArray();
 
         /// <summary>
         /// Sortierung für Listen unter der Sprungleiste: zuerst das Fach in der Reihenfolge von

@@ -194,7 +194,7 @@ namespace EchoPlay.App.Services
             FolderRenamePlan plan = new()
             {
                 SeriesFolderPath = seriesFolder,
-                Items = [new FolderRenameItem(folder, target, FolderRenameStatus.Rename, TitleFromTag: false)]
+                Items = new[] { new FolderRenameItem(folder, target, FolderRenameStatus.Rename, TitleFromTag: false) }
             };
             FolderRenameResult result = await _folderRename.ExecuteAsync(episode.SeriesId, plan, cancellationToken).ConfigureAwait(false);
             return result.Moves.Count > 0;

@@ -237,7 +237,7 @@ namespace EchoPlay.App.ViewModels
             {
                 // Die Monatsnamen sind nullbasiert, die Monatszahl beginnt bei eins.
                 string label = $"{monthNames[monthGroup.Key.Month - 1]} {monthGroup.Key.Year}";
-                groups.Add(new NewEpisodesGroupViewModel(label, [.. monthGroup.Select(e => e.Card)]));
+                groups.Add(new NewEpisodesGroupViewModel(label, monthGroup.Select(e => e.Card).ToArray()));
             }
 
             return groups;

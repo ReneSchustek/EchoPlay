@@ -346,7 +346,7 @@ namespace EchoPlay.App.ViewModels
             ITrackTitleResolver resolver = scope.ServiceProvider.GetRequiredService<ITrackTitleResolver>();
 
             IReadOnlyList<string> titles = await resolver.ResolveAsync(
-                [new TrackTitleRequest(path, TrackDisplayTitle.NoNumberShown)]);
+                new[] { new TrackTitleRequest(path, TrackDisplayTitle.NoNumberShown) });
 
             if (titles.Count > 0 && string.Equals(path, _titleSourcePath, StringComparison.OrdinalIgnoreCase))
             {

@@ -56,7 +56,7 @@ namespace EchoPlay.App.Views
                     return;
                 }
 
-                StorageFile? archive = await FilePicker.PickFileAsync([LibraryArchiveFormat.FileExtension], PickerLocationId.DocumentsLibrary);
+                StorageFile? archive = await FilePicker.PickFileAsync(new[] { LibraryArchiveFormat.FileExtension }, PickerLocationId.DocumentsLibrary);
                 if (archive is null)
                 {
                     return;

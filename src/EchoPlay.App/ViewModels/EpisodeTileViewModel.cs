@@ -166,7 +166,7 @@ namespace EchoPlay.App.ViewModels
             // Erst die App: dort ist der Nutzer angemeldet, im Browser meist nicht.
             // Ist Spotify nicht installiert, meldet der Launcher das und der Web-Link greift.
             if (SpotifyAlbumLink.TryBuildAppUri(SpotifyAlbumId, out string? appUri)
-                || SpotifyAlbumLink.TrySearchAppUri([SeriesTitle, Title], out appUri))
+                || SpotifyAlbumLink.TrySearchAppUri(new[] { SeriesTitle, Title }, out appUri))
             {
                 if (SafeUrlLauncher.TryOpenAppLink(appUri, "spotify"))
                 {
@@ -187,7 +187,7 @@ namespace EchoPlay.App.ViewModels
                 return true;
             }
 
-            return SpotifyAlbumLink.TrySearch([SeriesTitle, Title], out url);
+            return SpotifyAlbumLink.TrySearch(new[] { SeriesTitle, Title }, out url);
         }
 
         /// <summary>Apple-Music-Album-ID der Folge, sofern bekannt.</summary>

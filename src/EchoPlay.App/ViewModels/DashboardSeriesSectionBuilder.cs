@@ -57,7 +57,7 @@ namespace EchoPlay.App.ViewModels
             IReadOnlyDictionary<Guid, PlaybackState> stateByEpisodeId)
         {
             IReadOnlyList<Episode> allFavoriteEpisodes =
-                await episodeService.GetBySeriesIdsAsync([.. favoriteSeries.Select(s => s.Id)]);
+                await episodeService.GetBySeriesIdsAsync(favoriteSeries.Select(s => s.Id).ToArray());
 
             Dictionary<Guid, List<Episode>> episodesBySeriesId = GroupBySeries(allFavoriteEpisodes, favoriteSeries.Count);
             List<UnheardSeriesCardViewModel> unheardList = [];

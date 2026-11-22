@@ -154,14 +154,14 @@ namespace EchoPlay.App.Services
             ICoverImageDataService coverImageService = scope.ServiceProvider.GetRequiredService<ICoverImageDataService>();
 
             IReadOnlyList<Series> allSeries = await seriesService.GetAllAsync(ct);
-            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync([.. allSeries.Select(s => s.Id)], ct);
+            IReadOnlyList<Episode> allEpisodes = await episodeService.GetBySeriesIdsAsync(allSeries.Select(s => s.Id).ToArray(), ct);
             if (allEpisodes.Count == 0)
             {
                 return [];
             }
 
             IReadOnlyDictionary<Guid, byte[]> existing = await coverImageService.GetImageDataByEntitiesAsync(
-                CoverEntityTypes.Episode, [.. allEpisodes.Select(e => e.Id)], ct);
+                CoverEntityTypes.Episode, allEpisodes.Select(e => e.Id).ToArray(), ct);
 
             return [.. allEpisodes.Where(e => !existing.ContainsKey(e.Id)).Select(e => e.SeriesId).Distinct()];
         }
@@ -182,7 +182,7 @@ namespace EchoPlay.App.Services
             }
 
             IReadOnlyDictionary<Guid, byte[]> existing = await coverImageService.GetImageDataByEntitiesAsync(
-                CoverEntityTypes.Series, [.. allSeries.Select(s => s.Id)], ct);
+                CoverEntityTypes.Series, allSeries.Select(s => s.Id).ToArray(), ct);
 
             return [.. allSeries.Where(series =>
                 !existing.ContainsKey(series.Id)

@@ -31,13 +31,14 @@ namespace EchoPlay.App.ViewModels
         /// Bei Änderungen an den Theme-Dateien müssen die Werte hier synchron aktualisiert werden.
         /// </summary>
         public static IReadOnlyList<ThemePreviewViewModel> All { get; } =
-        [
+        new ThemePreviewViewModel[]
+        {
             new() { Tag = "Ruhrcoder",       DisplayName = "Ruhrcoder",        BackgroundHex = "#EEEEEE", PaneHex = "#2F4858", AccentHex = "#2E6DA4" },
             new() { Tag = "ModernClassic",   DisplayName = "Modern Classic",   BackgroundHex = "#FFFFFF", PaneHex = "#FFFFFF", AccentHex = "#4361EE" },
             new() { Tag = "PaperCoffee",     DisplayName = "Paper Coffee",     BackgroundHex = "#FFFBF2", PaneHex = "#FCF5E5", AccentHex = "#A06040" },
             new() { Tag = "MidnightLibrary", DisplayName = "Midnight Library", BackgroundHex = "#12141D", PaneHex = "#1B1E2B", AccentHex = "#5B4DFF" },
             new() { Tag = "ForestSignal",    DisplayName = "Forest Signal",    BackgroundHex = "#0F1A14", PaneHex = "#16241C", AccentHex = "#3FA37A" },
             new() { Tag = "AmberWhiskey",    DisplayName = "Amber Whiskey",    BackgroundHex = "#1A1410", PaneHex = "#241B16", AccentHex = "#C27A2C" }
-        ];
+        };
     }
 }

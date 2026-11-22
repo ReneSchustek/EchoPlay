@@ -118,7 +118,7 @@ namespace EchoPlay.App.ViewModels
         internal IEnumerable<AnnouncedMonthGroupViewModel> GroupByMonth(IReadOnlyList<ReleaseCalendarItemViewModel> items)
             => items
                 .GroupBy(item => ReleaseCalendarMonth.FromUtc(item.ReleaseDateUtc, _timeZone))
-                .Select(group => new AnnouncedMonthGroupViewModel(FormatMonth(group.Key), [.. group]));
+                .Select(group => new AnnouncedMonthGroupViewModel(FormatMonth(group.Key), group.ToArray()));
 
         /// <summary>Monatsname in der Oberflächensprache und Jahr.</summary>
         private string FormatMonth(ReleaseCalendarMonth month)

@@ -68,8 +68,8 @@ namespace EchoPlay.App.Services
 
             if (string.IsNullOrWhiteSpace(seriesFolderPath) || !Directory.Exists(seriesFolderPath))
             {
-                return [SafeResourceLoader.Get(
-                    "MissingEpisodesNoLocalFolder", "Kein lokaler Ordner für diese Serie vorhanden.")];
+                return new[] { SafeResourceLoader.Get(
+                    "MissingEpisodesNoLocalFolder", "Kein lokaler Ordner für diese Serie vorhanden.") };
             }
 
             // Phase 1: Dateisystem-Lücken im Thread-Pool analysieren
@@ -245,7 +245,7 @@ namespace EchoPlay.App.Services
                 CoverImageUrl = WebAddress.TryParse(series.CoverImageUrl)
             };
 
-            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckAllAsync([checkable], cancellationToken);
+            IReadOnlyList<OnlineEpisodeCheckResult> results = await checker.CheckAllAsync(new[] { checkable }, cancellationToken);
             if (results.Count == 0)
             {
                 return ([], 0);

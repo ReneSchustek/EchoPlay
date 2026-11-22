@@ -55,12 +55,12 @@ namespace EchoPlay.App.Services
         {
             ArgumentNullException.ThrowIfNull(allSeries);
 
-            return [.. allSeries
+            return allSeries
                 .Where(series => series.LocalFolderPath is not null)
                 .SelectMany(series => new[] { series, FindProviderSeries(series, allSeries) })
                 .OfType<Series>()
                 .Select(series => series.Id)
-                .Distinct()];
+                .Distinct().ToArray();
         }
 
         /// <summary>

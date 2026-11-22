@@ -10,6 +10,11 @@
          GitHub-Release-Tag (vX.Y.Z). Bei jedem Release hier UND in
          src/EchoPlay.App/Package.appxmanifest (Version="X.Y.Z.0") synchron hochzählen. -->
     <VersionPrefix>1.5.3</VersionPrefix>
+    <!-- Fester Stand der Windows-Projektion. Ohne Angabe nimmt jedes SDK seine eigene mit
+         (10.0.403 bringt .57, 10.0.404 bringt .87), und mit .87 kam eine neue Prüfung des
+         WinRT-Generators hinzu. Der lokale Bau war dadurch grün, während das Fließband mit
+         demselben Code rot war. Beim Anheben beide Seiten gemeinsam bauen. -->
+    <WindowsSdkPackageVersion>10.0.19041.87</WindowsSdkPackageVersion>
     <!-- Nullability: Null-Reference-Warnungen als Fehler -->
     <Nullable>enable</Nullable>
     <!-- Moderne using-Direktiven automatisch -->

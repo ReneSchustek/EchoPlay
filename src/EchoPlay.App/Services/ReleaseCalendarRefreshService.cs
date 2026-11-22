@@ -240,7 +240,7 @@ namespace EchoPlay.App.Services
             IReadOnlyList<Series> series = await services.GetRequiredService<ISeriesDataService>()
                 .GetAllAsync(cancellationToken).ConfigureAwait(false);
 
-            return [.. series.Select(s => new CheckableSeriesInfo
+            return series.Select(s => new CheckableSeriesInfo
             {
                 SeriesId = s.Id,
                 Title = s.Title,
@@ -251,7 +251,7 @@ namespace EchoPlay.App.Services
                 // wurden. Ein geratener Künstler brächte fremde Folgen in die Liste und bliebe
                 // an der Serie gespeichert.
                 RequireExactArtistName = true
-            })];
+            }).ToArray();
         }
 
         /// <summary>Prüft einen Stapel Serien und schreibt die Treffer.</summary>

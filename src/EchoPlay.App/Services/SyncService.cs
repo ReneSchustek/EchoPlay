@@ -425,7 +425,7 @@ namespace EchoPlay.App.Services
             if (localEpisodes.Count == 0) return;
 
             IReadOnlyDictionary<Guid, byte[]> covers = await serviceProvider.GetRequiredService<ICoverImageDataService>()
-                .GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, [.. localEpisodes.Select(e => e.Id)], cancellationToken);
+                .GetImageDataByEntitiesAsync(CoverEntityTypes.Episode, localEpisodes.Select(e => e.Id).ToArray(), cancellationToken);
 
             foreach (Episode episode in localEpisodes)
             {

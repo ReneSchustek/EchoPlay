@@ -108,14 +108,14 @@ namespace EchoPlay.App.Tests.Composition
         /// </summary>
         private static async Task<TimeoutOutcome> MeasureAsync(string clientName, Uri requestUri)
         {
-            FakeTimeProvider time = ClockDriver.CreateClock();
+            ObservedClock time = ClockDriver.CreateClock();
             HangingHttpHandler hanging = new();
 
             using ServiceProvider provider = BuildProvider(time, clientName, hanging);
             HttpClient client = provider.GetRequiredService<IHttpClientFactory>().CreateClient(clientName);
 
             Task<HttpResponseMessage> send = client.GetAsync(requestUri, TestContext.Current.CancellationToken);
-            TimeSpan elapsed = await ClockDriver.RunUntilCompletedAsync(time, send, hanging.FirstAttempt);
+            TimeSpan elapsed = await ClockDriver.RunUntilCompletedAsync(time, send, hanging);
             Exception error = await Assert.ThrowsAnyAsync<Exception>(() => send);
             return new TimeoutOutcome(elapsed, error, hanging.Attempts);
         }

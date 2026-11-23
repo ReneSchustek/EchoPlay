@@ -5,7 +5,6 @@ using EchoPlay.App.Tests.Fakes;
 using EchoPlay.Core.Models;
 using EchoPlay.Data.Entities.Settings;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Time.Testing;
 
 namespace EchoPlay.App.Tests.Services
 {
@@ -56,7 +55,7 @@ namespace EchoPlay.App.Tests.Services
             // Über den echten Client mit seiner Wiederholungsregel: Der Dienst setzt keine
             // eigene Frist, also endet die Prüfung genau an der Gesamtgrenze des Clients,
             // nach mindestens einer Wiederholung.
-            FakeTimeProvider time = ClockDriver.CreateClock();
+            ObservedClock time = ClockDriver.CreateClock();
             HangingHttpHandler hanging = new();
 
             ServiceCollection services = new();
@@ -73,7 +72,7 @@ namespace EchoPlay.App.Tests.Services
                 new FakeLoggerFactory());
 
             Task<UpdateInfo?> check = service.CheckForUpdateAsync(TestContext.Current.CancellationToken);
-            TimeSpan elapsed = await ClockDriver.RunUntilCompletedAsync(time, check, hanging.FirstAttempt);
+            TimeSpan elapsed = await ClockDriver.RunUntilCompletedAsync(time, check, hanging);
 
             Assert.Null(await check);
             TimeSpan limit = HttpClientRegistration.UpdateCheckTotalTimeout;

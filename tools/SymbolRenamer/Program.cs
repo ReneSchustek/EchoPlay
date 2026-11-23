@@ -72,13 +72,13 @@ internal static class Program
 
         using MSBuildWorkspace workspace = MSBuildWorkspace.Create(properties);
         workspace.LoadMetadataForReferencedProjects = true;
-        workspace.WorkspaceFailed += (_, e) =>
+        using IDisposable workspaceFailedRegistration = workspace.RegisterWorkspaceFailedHandler(e =>
         {
             if (e.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
             {
                 Console.Error.WriteLine("  [Workspace] " + e.Diagnostic.Message);
             }
-        };
+        });
 
         // Projektmappe vor Einzelprojekten: Manche Projekte lassen sich einzeln gar nicht
         // laden - ein Testprojekt, das auf eine eigenständige Anwendung verweist, scheitert

@@ -4,7 +4,18 @@ Alle nennenswerten Änderungen an EchoPlay stehen hier.
 Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung [Semantic Versioning](https://semver.org/lang/de/).
 
-## [Unveröffentlicht]
+## [1.6.1] — 2026-11-23
+
+### Geändert
+
+- Abhängigkeiten aktualisiert: Windows App SDK 2.7, Microsoft.Extensions 11 (unter .NET 10),
+  Entity Framework Core 10.0.15. Entity Framework Core 11 setzt .NET 11 voraus und folgt erst
+  mit dem Wechsel der Laufzeit.
+
+### Behoben
+
+- Zwei Tests schlugen gelegentlich fehl: der Test-Logger war nicht threadsicher, und der
+  Zeittreiber der HTTP-Tests drehte die Uhr weiter, während die Pipeline noch rechnete.
 
 ## [1.6.0] — 2026-11-22
 

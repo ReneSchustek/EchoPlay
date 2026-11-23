@@ -7,8 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Werkzeug, kein Produktivcode und nicht Teil der Projektmappe: Die Analyzer-Strenge des Repos gilt hier nicht. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);CA1707;CA1812;CA1303;CA1305;CA1849;CA2007;IDE0058</NoWarn>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CA1707;CA1812;CA1303;CA1305;CA1849;CA2007;IDE0058;CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,10 +15,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="Microsoft.Build.Locator" />
-    <!-- Hebt das transitive Paket aus Workspaces.MSBuild auf einen Stand ohne bekannte Lücke. -->
-    <PackageReference Include="Microsoft.Build.Tasks.Core" ExcludeAssets="runtime" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" />
-    <PackageReference Include="System.Security.Cryptography.Xml" />
+    <!-- MSBuild kommt zur Laufzeit über den Locator aus dem SDK; eine eigene Kopie im Ausgabeordner würde damit kollidieren. -->
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.StringTools" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

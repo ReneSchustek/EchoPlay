@@ -221,8 +221,8 @@ Vielfaches langsamer wird.
 
 ## Weiterarbeiten
 
-Das Projekt ist seit dem 22.11.2026 abgeschlossen; der Stand trägt das Tag
-`abgeschlossen-2026-11-22`. Abgeschlossen heißt: Es gibt keine offenen Aufgaben, das Programm
+Das Projekt ist seit dem 23.11.2026 abgeschlossen; der Stand trägt das Tag
+`abgeschlossen-2026-11-23`. Abgeschlossen heißt: Es gibt keine offenen Aufgaben, das Programm
 ist installiert und aktualisiert sich über GitHub Releases. Für Änderungen wird es wieder
 geöffnet:
 

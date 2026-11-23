@@ -108,13 +108,13 @@ internal static class Program
                 ["UseAppHost"] = "true",
             };
             using MSBuildWorkspace workspace = MSBuildWorkspace.Create(wsProps);
-            workspace.WorkspaceFailed += (_, e) =>
+            using IDisposable workspaceFailedRegistration = workspace.RegisterWorkspaceFailedHandler(e =>
             {
                 if (e.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
                 {
                     Out.Err($"  Workspace-Failure: {e.Diagnostic.Message}");
                 }
-            };
+            });
             Project project;
             try
             {
